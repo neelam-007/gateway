@@ -43,6 +43,7 @@ import java.net.PasswordAuthentication;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -182,14 +183,19 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             }
 
             // Enforces rules on propagation of request JMS message properties.
-            final JmsKnob jmsInboundKnob = (JmsKnob)context.getRequest().getKnob(JmsKnob.class);
-            if (jmsInboundKnob != null) {
-                final Map<String, Object> inboundRequestProps = jmsInboundKnob.getJmsMsgPropMap();
-                final Map<String, Object> outboundRequestProps = new HashMap<String, Object>();
-                enforceJmsMessagePropertyRuleSet(context, data.getRequestJmsMessagePropertyRuleSet(), inboundRequestProps, outboundRequestProps);
-                for (String name : outboundRequestProps.keySet()) {
-                    jmsOutboundRequest.setObjectProperty(name, outboundRequestProps.get(name));
-                }
+            final Map<String, Object> inboundRequestProps;
+            final Map<String, Object> outboundRequestProps = new HashMap<String, Object>();
+
+            final JmsKnob jmsInboundKnob = (JmsKnob) context.getRequest().getKnob(JmsKnob.class);
+            if ( jmsInboundKnob != null ) {
+                inboundRequestProps = jmsInboundKnob.getJmsMsgPropMap();
+            } else {
+                inboundRequestProps = Collections.emptyMap();
+            }
+
+            enforceJmsMessagePropertyRuleSet(context, data.getRequestJmsMessagePropertyRuleSet(), inboundRequestProps, outboundRequestProps);
+            for ( String name : outboundRequestProps.keySet() ) {
+                jmsOutboundRequest.setObjectProperty(name, outboundRequestProps.get(name));
             }
 
             boolean inbound = context.isReplyExpected()
@@ -229,6 +235,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     } else if ( jmsResponse instanceof BytesMessage ) {
                         BytesMessage bmsg = (BytesMessage)jmsResponse;
                         final StashManager stashManager = stashManagerFactory.createStashManager();
+                        //noinspection IOResourceOpenedButNotSafelyClosed
                         context.getResponse().initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new BytesMessageInputStream(bmsg));
                     } else {
                         auditor.logAndAudit(AssertionMessages.JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE, jmsResponse.getClass().getName());

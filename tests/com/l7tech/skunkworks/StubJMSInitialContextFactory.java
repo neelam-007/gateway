@@ -3,6 +3,9 @@ package com.l7tech.skunkworks;
 import java.util.Hashtable;
 import java.util.Enumeration;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Collections;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.Serializable;
@@ -49,7 +52,7 @@ import javax.jms.MessageListener;
  * To build the JMS Stub:
  * ./build.sh compile-tests
  * pushd build/test-classes; jar cf ../../StubJMS.jar $(ls com/l7tech/skunkworks/StubJMSInitialContextFactory*); popd
- * cp StubJMS.jar /ssg/tomcat/webapps/ROOT/WEB-INF/lib/
+ * cp StubJMS.jar /ssg/lib/ext
  *
  * To configure the JMS Stub:
  * Direction: Outbound
@@ -535,6 +538,7 @@ public class StubJMSInitialContextFactory implements InitialContextFactory {
         private String messageText = "";
         private Destination replyTo;
         private String correlationID = "";
+        private Map<String,Object> properties = new HashMap();
 
         public long getBodyLength() throws JMSException {
             return messageText.length();
@@ -639,26 +643,32 @@ public class StubJMSInitialContextFactory implements InitialContextFactory {
         }
 
         public void clearProperties() throws JMSException {
+            properties.clear();
         }
 
         public boolean getBooleanProperty(String string) throws JMSException {
-            return false;
+            logger.info("Boolean property get '" + string + "'");
+            return (Boolean) properties.get(string);
         }
 
         public byte getByteProperty(String string) throws JMSException {
-            return 0;
+            logger.info("Byte property get '" + string + "'");
+            return (Byte) properties.get(string);
         }
 
         public double getDoubleProperty(String string) throws JMSException {
-            return 0;
+            logger.info("Double property get '" + string + "'");
+            return (Double) properties.get(string);
         }
 
         public float getFloatProperty(String string) throws JMSException {
-            return 0;
+            logger.info("Float property get '" + string + "'");
+            return (Float) properties.get(string);
         }
 
         public int getIntProperty(String string) throws JMSException {
-            return 0;
+            logger.info("Int property get '" + string + "'");
+            return (Integer) properties.get(string);
         }
 
         public String getJMSCorrelationID() throws JMSException {
@@ -706,42 +716,56 @@ public class StubJMSInitialContextFactory implements InitialContextFactory {
         }
 
         public long getLongProperty(String string) throws JMSException {
-            return 0;
+            logger.info("Long property get '" + string + "'");
+            return (Long) properties.get(string);
         }
 
         public Object getObjectProperty(String string) throws JMSException {
-            return null;
+            logger.info("Object property get '" + string + "'");
+            return properties.get(string);
         }
 
         public Enumeration getPropertyNames() throws JMSException {
-            return null;
+            return Collections.enumeration(properties.keySet());
         }
 
         public short getShortProperty(String string) throws JMSException {
-            return 0;
+            logger.info("Short property get '" + string + "'");
+            return (Short) properties.get(string);
         }
 
         public String getStringProperty(String string) throws JMSException {
-            return null;
+            logger.info("String property get '" + string + "'");
+            return (String) properties.get(string);
         }
 
         public boolean propertyExists(String string) throws JMSException {
-            return false;
+            return properties.containsKey(string);
         }
 
         public void setBooleanProperty(String string, boolean b) throws JMSException {
+            logger.info("Boolean property set '" + string + "' = '" + b + "'.");
+            properties.put(string,b);
         }
 
         public void setByteProperty(String string, byte b) throws JMSException {
+            logger.info("Byte property set '" + string + "' = '" + b + "'.");
+            properties.put(string,b);
         }
 
         public void setDoubleProperty(String string, double v) throws JMSException {
+            logger.info("Double property set '" + string + "' = '" + v + "'.");
+            properties.put(string,v);
         }
 
         public void setFloatProperty(String string, float v) throws JMSException {
+            logger.info("Float property set '" + string + "' = '" + v + "'.");
+            properties.put(string,v);
         }
 
         public void setIntProperty(String string, int i) throws JMSException {
+            logger.info("Int property set '" + string + "' = '" + i + "'.");
+            properties.put(string,i);
         }
 
         public void setJMSCorrelationID(String string) throws JMSException {
@@ -781,15 +805,23 @@ public class StubJMSInitialContextFactory implements InitialContextFactory {
         }
 
         public void setLongProperty(String string, long l) throws JMSException {
+            logger.info("Long property set '" + string + "' = '" + l + "'.");
+            properties.put(string,l);
         }
 
         public void setObjectProperty(String string, Object object) throws JMSException {
+            logger.info("Object property set '" + string + "' = '" + object + "'.");
+            properties.put(string,object);
         }
 
         public void setShortProperty(String string, short i) throws JMSException {
+            logger.info("Short property set '" + string + "' = '" + i + "'.");
+            properties.put(string,i);
         }
 
         public void setStringProperty(String string, String string1) throws JMSException {
+            logger.info("String property set '" + string + "' = '" + string1 + "'.");
+            properties.put(string,string1);
         }
 
         public String getText() throws JMSException {
