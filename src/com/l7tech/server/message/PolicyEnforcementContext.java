@@ -362,7 +362,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     }
 
     public Map<String, Object> getVariableMap(String[] names, Auditor auditor) {
-        Map<String, Object> vars = new HashMap<String, Object>();
+        Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
         for (String name : names) {
             try {
                 vars.put(name, getVariable(name));

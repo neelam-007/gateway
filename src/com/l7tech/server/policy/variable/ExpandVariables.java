@@ -72,12 +72,12 @@ public final class ExpandVariables {
     }});
 
     private static Object[] getAndFilter(Map vars, Syntax syntax, Audit audit, boolean strict) {
-        String matchingName = BuiltinVariables.getMatchingName(syntax.remainingName, vars.keySet());
+        String matchingName = BuiltinVariables.getMatchingName(syntax.remainingName.toLowerCase(), vars.keySet());
         if (matchingName == null) return null;
 
         Object got = vars.get(matchingName);
 
-        if (!matchingName.equals(syntax.remainingName)) {
+        if (!matchingName.toLowerCase().equals(syntax.remainingName.toLowerCase())) {
             // Get name suffix, it will be used to select a sub-value from the found object
             assert(syntax.remainingName.startsWith(matchingName));
             assert(syntax.remainingName.substring(matchingName.length(),1).equals("."));
