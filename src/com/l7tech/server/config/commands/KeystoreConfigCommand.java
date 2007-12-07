@@ -248,7 +248,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             }
             updateJavaSecurity(javaSecFile, newJavaSecFile, KeystoreConfigBean.DEFAULT_SECURITY_PROVIDERS);
             updateKeystoreProperties(keystorePropertiesFile, ksPassword);
-            updateSystemPropertiesFile(ksBean, systemPropertiesFile);
+            updateSystemPropertiesFile(systemPropertiesFile);
         } catch (Exception e) {
             String mess = "problem generating keys or keystore - skipping keystore configuration: ";
             logger.log(Level.SEVERE, mess + e.getMessage(), e);
@@ -298,7 +298,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             if (!cloningMode) makeLunaKeys(ksBean, caCertFile, sslCertFile, caKeyStoreFile, sslKeyStoreFile);
             updateJavaSecurity(javaSecFile, newJavaSecFile, LUNA_SECURITY_PROVIDERS);
             updateKeystoreProperties(keystorePropertiesFile, ksPassword);
-            updateSystemPropertiesFile(ksBean, systemPropertiesFile);
+            updateSystemPropertiesFile(systemPropertiesFile);
         } catch (Exception e) {
             String mess = "problem generating keys or keystore - skipping keystore configuration: ";
             logger.log(Level.SEVERE, mess + e.getMessage(), e);
@@ -343,9 +343,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         backupFiles(files, BACKUP_FILE_NAME);
         try {
             if (ksBean.isInitializeHSM()) {
-                doInitializeHsm(fullKsPassword, ksBean, ksDir, javaSecFile, newJavaSecFile, keystorePropertiesFile, tomcatServerConfigFile, sslKeyStoreFile, systemPropertiesFile);
+                doInitializeHsm(fullKsPassword, ksBean, ksDir, javaSecFile, newJavaSecFile, keystorePropertiesFile, systemPropertiesFile);
             } else {
-                doRestoreHsm(fullKsPassword, ksBean, ksDir, javaSecFile, newJavaSecFile, keystorePropertiesFile, tomcatServerConfigFile, sslKeyStoreFile, systemPropertiesFile);
+                doRestoreHsm(fullKsPassword, ksBean, ksDir, javaSecFile, newJavaSecFile, keystorePropertiesFile, systemPropertiesFile);
             }
         } catch (Exception e) {
             logger.severe(MessageFormat.format("There were errors while configuring the HSM. {0}", ExceptionUtils.getMessage(e)));
@@ -353,7 +353,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private void doInitializeHsm(char[] fullPassword, KeystoreConfigBean ksBean, String ksDir, File javaSecFile, File newJavaSecFile, File keystorePropertiesFile, File tomcatServerConfigFile, File sslKeyStoreFile, File systemPropertiesFile) throws Exception {
+    private void doInitializeHsm(char[] fullPassword, KeystoreConfigBean ksBean, String ksDir, File javaSecFile, File newJavaSecFile, File keystorePropertiesFile, File systemPropertiesFile) throws Exception {
         logger.info("Initializing HSM");
         try {
             //HSM Specific setup
@@ -375,7 +375,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
             //General Keystore Setup
             updateKeystoreProperties(keystorePropertiesFile, fullPassword);
-            updateSystemPropertiesFile(ksBean, systemPropertiesFile);
+            updateSystemPropertiesFile(systemPropertiesFile);
 
         } catch (ScaException e) {
             logger.severe("Error while initializing the SCA Manager: " + e.getMessage());
@@ -383,7 +383,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private void doRestoreHsm(char[] fullKsPassword, KeystoreConfigBean ksBean, String ksDir, File javaSecFile, File newJavaSecFile, File keystorePropertiesFile, File tomcatServerConfigFile, File sslKeyStoreFile, File systemPropertiesFile) throws Exception {
+    private void doRestoreHsm(char[] fullKsPassword, KeystoreConfigBean ksBean, String ksDir, File javaSecFile, File newJavaSecFile, File keystorePropertiesFile, File systemPropertiesFile) throws Exception {
         logger.info("Restoring HSM Backup");
         try {
             MyScaManager scaManager = getScaManager();
@@ -415,7 +415,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
             //General Keystore Setup
             updateKeystoreProperties(keystorePropertiesFile, fullKsPassword);
-            updateSystemPropertiesFile(ksBean, systemPropertiesFile);
+            updateSystemPropertiesFile(systemPropertiesFile);
         } catch (ScaException e) {
             logger.severe("Error while initializing the SCA Manager: " + e.getMessage());
             throw e;
@@ -850,7 +850,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         return success;
     }
 
-    private void updateSystemPropertiesFile(KeystoreConfigBean ksBean, File systemPropertiesFile) throws IOException, ConfigurationException {
+    private void updateSystemPropertiesFile(File systemPropertiesFile) throws IOException, ConfigurationException {
         PropertiesConfiguration systemProps = new PropertiesConfiguration();
         InputStream is = null;
         OutputStream os = null;
