@@ -19,8 +19,6 @@ import java.util.Map;
  */
 public abstract class BaseConfigurationBean implements ConfigurationBean {
 
-    protected Map affectedObjects;
-
     protected String elementName;
     protected String elementDescription;
     
@@ -33,7 +31,6 @@ public abstract class BaseConfigurationBean implements ConfigurationBean {
     }
 
     public BaseConfigurationBean(String name, String description) {
-        affectedObjects = new HashMap();
         elementName = name;
         elementDescription = description;
         explanations = new ArrayList<String>();

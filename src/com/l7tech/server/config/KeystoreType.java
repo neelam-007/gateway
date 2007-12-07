@@ -15,12 +15,19 @@ public enum KeystoreType {
     private String ksName;
     private String shortTypeName;
 
+    KeystoreType() {    
+    }
+
     KeystoreType(String ksName, String shortKeystoreTypeName) {
         this.ksName = ksName;
         this.shortTypeName = shortKeystoreTypeName;
     }
 
-    public String getName() {
+    public void setKsName(String ksName) {
+        this.ksName = ksName;
+    }
+
+    public String getKsName() {
         return ksName;
     }
 
@@ -28,7 +35,11 @@ public enum KeystoreType {
         return ksName;
     }
 
-    public String shortTypeName() {
+    public String getShortTypeName() {
         return shortTypeName;
+    }
+
+    public void setShortTypeName(String shortTypeName) {
+        this.shortTypeName = shortTypeName;
     }
 }

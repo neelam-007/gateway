@@ -1,5 +1,7 @@
 package com.l7tech.server.config.ui.console;
 
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.*;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
@@ -9,6 +11,8 @@ import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
@@ -28,7 +32,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
     private static final String DO_KEYSTORE_PROMPT = "2) I want to configure the keystore for this SSG\n";
     private static final String KEYSTORE_TITLE = "Set Up the SSG Keystore";
 
-    private KeystoreConfigBean keystoreBean;
+//    private KeystoreConfigBean keystoreBean;
 
     private Map<String, KeystoreType> ksTypeMap;
     private ResourceBundle resourceBundle;
@@ -44,7 +48,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
 
     private void init() {
         configBean = new KeystoreConfigBean();
-        keystoreBean = (KeystoreConfigBean) configBean;
+//        keystoreBean = (KeystoreConfigBean) configBean;
         configCommand = new KeystoreConfigCommand(configBean);
         ksTypeMap = new TreeMap<String,KeystoreType>();
         resourceBundle = ResourceBundle.getBundle("com.l7tech.server.config.resources.configwizard");
@@ -59,8 +63,8 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
             if (doKeystoreConfig) {
                 doKeystoreTypePrompts();
             }
-            keystoreBean.setHostname(getParentWizard().getHostname());
-            keystoreBean.setDbInformation(SharedWizardInfo.getInstance().getDbinfo());
+            ((KeystoreConfigBean)configBean).setHostname(getParentWizard().getHostname());
+            ((KeystoreConfigBean)configBean).setDbInformation(SharedWizardInfo.getInstance().getDbinfo());
             storeInput();
         } catch (IOException e) {
             e.printStackTrace();
@@ -90,9 +94,9 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         prompts.add("Please select the keystore type you wish to use: [1]");
 
         String input = getData(
-                prompts.toArray(new String[0]),
+                prompts.toArray(new String[prompts.size()]),
                 "1",
-                ksTypeMap.keySet().toArray(new String[]{}),
+                ksTypeMap.keySet().toArray(new String[ksTypeMap.keySet().size()]),
                 null
         );
 
@@ -102,8 +106,10 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
             ksType = KeystoreType.NO_KEYSTORE;
         }
 
+        KeystoreConfigBean keystoreBean = (KeystoreConfigBean) configBean;
         keystoreBean.setKeyStoreType(ksType);
         getParentWizard().setKeystoreType(ksType);
+        keystoreBean.setKeystoreTypeName(ksType.getShortTypeName());
 
         switch (ksType) {
             case DEFAULT_KEYSTORE_NAME:
@@ -134,6 +140,8 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                 "Please make a selection: [" + defaultValue + "] ",
             };
             String input = getData(prompts, defaultValue, new String[] {"1", "2"},null);
+
+            KeystoreConfigBean keystoreBean = (KeystoreConfigBean) configBean;
             keystoreBean.setInitializeHSM((input != null && "1".equals(input)));
             if (keystoreBean.isInitializeHSM()) {
                     askInitialiseHSMQuestions();
@@ -146,6 +154,8 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
 
     private boolean askRestoreHSMQuestions() throws IOException, WizardNavigationException {
         boolean success;
+
+        KeystoreConfigBean keystoreBean = (KeystoreConfigBean) configBean;
         keystoreBean.setShouldBackupMasterKey(false);
         String backupPassword = getMatchingPasswords(
                 "Enter the master key backup password: ",
@@ -173,6 +183,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         do {
             boolean shouldBackup = getConfirmationFromUser("Back Up Master Key to USB Drive After Initialization? ", "y");
 
+            KeystoreConfigBean keystoreBean = (KeystoreConfigBean) configBean;
             if (shouldBackup) {
                 keystoreBean.setShouldBackupMasterKey(true);
                 String backupPassword = getMatchingPasswords("Enter the password to protect the master key backup:", "Confirm the password to protect the master key backup:", 6);
@@ -194,7 +205,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         doKeystorePasswordPrompts(
                 "Set the HSM Password",
                 resourceBundle.getString("hsm.initialize.new.password.msg") + ": ",
-                keystoreBean.isInitializeHSM()?resourceBundle.getString("hsm.initialize.confirm.password.msg") + ": ":null);
+                ((KeystoreConfigBean)configBean).isInitializeHSM()?resourceBundle.getString("hsm.initialize.confirm.password.msg") + ": ":null);
     }
 
     private void askLunaKeystoreQuestions() throws IOException, WizardNavigationException {
@@ -247,6 +258,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
 
         Map installPaths = getValidLunaPaths(installPathPrompt, defaultInstallPath, jspPathPrompt, defaultJspPath);
 
+        KeystoreConfigBean keystoreBean = (KeystoreConfigBean) configBean;
         keystoreBean.setLunaInstallationPath((String) installPaths.get(installPathPrompt));
         keystoreBean.setLunaJspPath((String) installPaths.get(jspPathPrompt));
     }
@@ -260,6 +272,8 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
             "Please make a selection: [" + defaultValue + "] ",
         };
         String input = getData(prompts, defaultValue, new String[] {"1", "2"}, null);
+
+        KeystoreConfigBean keystoreBean = (KeystoreConfigBean) configBean;
         keystoreBean.setDoBothKeys( (input != null && "1".equals(input)));
         doKeystorePasswordPrompts("Keystore Password",
                                   "Enter the keystore password (must be a minimum of 6 characters): ",
@@ -274,6 +288,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                 KeyStoreConstants.PASSWORD_LENGTH
         );
 
+        KeystoreConfigBean keystoreBean = (KeystoreConfigBean) configBean;
         keystoreBean.setKsPassword(password.toCharArray());
     }
 
@@ -289,8 +304,9 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         String input = getData(prompts, defaultValue, new String[]{"1","2"}, null);
 
         shouldConfigure = input != null && input.trim().equals("2");
-        keystoreBean.setDoKeystoreConfig(shouldConfigure);
-        getParentWizard().setKeystoreType(KeystoreType.NO_KEYSTORE);
+
+        ((KeystoreConfigBean)configBean).setDoKeystoreConfig(shouldConfigure);
+//        getParentWizard().setKeystoreType(KeystoreType.NO_KEYSTORE);
 
         PartitionInformation pinfo = PartitionManager.getInstance().getActivePartition();
         boolean shouldDisable = true;
@@ -307,6 +323,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                     }, "", (String[]) null, null);
                     shouldDisable = true;
                 } else {
+                    getKeystoreInfoFromFileForStorage();
                     shouldDisable = false;
                 }
             }
@@ -324,7 +341,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
             try {
                 byte[] existingRawSharedKey = ka.getSharedKey(this);
                 if (existingRawSharedKey != null) {
-                    ((KeystoreConfigBean)configBean).setSharedKeyBytes(existingRawSharedKey);
+                    ksBean.setSharedKeyBytes(existingRawSharedKey);
                 }
                 ok = true;
             } catch (KeystoreActionsException e) {
@@ -348,17 +365,17 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
             passwd = getSecretData(prompt, "", null, null);
             List<String> typePrompts = new ArrayList<String>();
             typePrompts.add("-- Please provide the type for the existing keystore --" + getEolChar());
-            typePrompts.add("1) " + KeystoreType.DEFAULT_KEYSTORE_NAME.shortTypeName() + getEolChar());
-            typePrompts.add("2) " + KeystoreType.SCA6000_KEYSTORE_NAME.shortTypeName() + getEolChar());
-            typePrompts.add("3) " + KeystoreType.LUNA_KEYSTORE_NAME.shortTypeName() + getEolChar());
+            typePrompts.add("1) " + KeystoreType.DEFAULT_KEYSTORE_NAME.getShortTypeName() + getEolChar());
+            typePrompts.add("2) " + KeystoreType.SCA6000_KEYSTORE_NAME.getShortTypeName() + getEolChar());
+            typePrompts.add("3) " + KeystoreType.LUNA_KEYSTORE_NAME.getShortTypeName() + getEolChar());
             typePrompts.add("Please make a selection: [1]");
-            String which  = getData(typePrompts.toArray(new String[0]), "1", new String[] {"1","2","3"},null);
+            String which  = getData(typePrompts.toArray(new String[typePrompts.size()]), "1", new String[] {"1","2","3"},null);
             if ("1".equals(which))
-                type = KeystoreType.DEFAULT_KEYSTORE_NAME.shortTypeName();
+                type = KeystoreType.DEFAULT_KEYSTORE_NAME.getShortTypeName();
             else if ("2".equals(which))
-                type = KeystoreType.SCA6000_KEYSTORE_NAME.shortTypeName();
+                type = KeystoreType.SCA6000_KEYSTORE_NAME.getShortTypeName();
             else if ("3".equals(which))
-                type = KeystoreType.LUNA_KEYSTORE_NAME.shortTypeName();
+                type = KeystoreType.LUNA_KEYSTORE_NAME.getShortTypeName();
             else {
                 type = null;
             }
@@ -375,5 +392,27 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
 
     public void printKeystoreInfoMessage(String msg) {
         printText(msg + getEolChar());
+    }
+
+    public void getKeystoreInfoFromFileForStorage() {
+        FileInputStream fis = null;
+        try {
+            fis = new FileInputStream(osFunctions.getKeyStorePropertiesFile());
+            Properties props = new Properties();
+            props.load(fis);
+
+            KeystoreConfigBean keystoreBean = (KeystoreConfigBean)configBean;
+
+            String typeFromFile = props.getProperty(KeyStoreConstants.PROP_KS_TYPE);
+            keystoreBean.setKeystoreTypeName(typeFromFile);
+            char[] password = props.getProperty(KeyStoreConstants.PROP_CA_KS_PASS).toCharArray();
+            keystoreBean.setKsPassword(password);
+        } catch (FileNotFoundException e) {
+            logger.warning("There was an error while reading the existing keystore information from the partition. " + ExceptionUtils.getMessage(e));
+        } catch (IOException e) {
+            logger.warning("There was an error while reading the existing keystore information from the partition. " + ExceptionUtils.getMessage(e));
+        } finally {
+            ResourceUtils.closeQuietly(fis);
+        }
     }
 }

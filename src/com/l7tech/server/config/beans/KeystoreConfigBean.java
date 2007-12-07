@@ -3,11 +3,15 @@ package com.l7tech.server.config.beans;
 import com.l7tech.server.config.KeystoreType;
 import com.l7tech.server.config.db.DBInformation;
 
+import java.util.logging.Logger;
+
 /**
  * User: megery
  * Date: Aug 17, 2005
  */
 public class KeystoreConfigBean extends BaseConfigurationBean {
+    private static final Logger logger = Logger.getLogger(KeystoreConfigBean.class.getName());
+
     public static final String MASTERKEY_MANAGE_SCRIPT = "appliance/libexec/masterkey-manage.pl";
 
     private final static String NAME = "Keystore Configuration";
@@ -26,6 +30,7 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     private String lunaInstallationPath;
     private boolean doKeystoreConfig;
     private KeystoreType keyStoreType;
+    private String keystoreTypeName;
     private boolean initializeHSM;
 
     private byte[] clusterSharedKey;
@@ -53,6 +58,17 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
                 "com.sun.crypto.provider.SunJCE"
             };
 
+    public KeystoreConfigBean() {
+        super(NAME, DESCRIPTION);
+        init();
+    }
+
+    private void init() {
+    }
+
+    public void reset() {
+    }
+
     public KeystoreType getKeyStoreType() {
         return keyStoreType;
     }
@@ -61,16 +77,12 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
         this.keyStoreType = keyStoreType;
     }
 
-    public KeystoreConfigBean() {
-        super(NAME, DESCRIPTION);
-        init();
+    public String getKeystoreTypeName() {
+        return this.keystoreTypeName;
     }
 
-    private void init() {
-        setKeyStoreType(KeystoreType.DEFAULT_KEYSTORE_NAME);
-    }
-
-    public void reset() {
+    public void setKeystoreTypeName(String keyStoreTypeName) {
+        this.keystoreTypeName = keyStoreTypeName;
     }
 
     protected void populateExplanations() {
@@ -179,21 +191,20 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
         return sharedKeyData;
     }
 
-    public void setShouldBackupMasterKey(boolean b) {
-        shouldBackupMasterKey = b;
-    }
-
-
     public boolean isShouldBackupMasterKey() {
         return shouldBackupMasterKey;
     }
 
-    public void setMasterKeyBackupPassword(char[] backupPassword) {
-        this.masterKeyBackupPassword = backupPassword;
+    public void setShouldBackupMasterKey(boolean shouldBackupMasterKey) {
+        this.shouldBackupMasterKey = shouldBackupMasterKey;
     }
 
     public char[] getMasterKeyBackupPassword() {
         return masterKeyBackupPassword;
+    }
+
+    public void setMasterKeyBackupPassword(char[] masterKeyBackupPassword) {
+        this.masterKeyBackupPassword = masterKeyBackupPassword;
     }
 
     public DBInformation getDbInformation() {
@@ -203,4 +214,6 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     public void setDbInformation(DBInformation dbInformation) {
         this.dbInformation = dbInformation;
     }
+
+
 }

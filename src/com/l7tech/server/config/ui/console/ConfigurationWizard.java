@@ -2,6 +2,7 @@ package com.l7tech.server.config.ui.console;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.server.config.*;
 import com.l7tech.server.config.commands.ConfigurationCommand;
@@ -11,12 +12,13 @@ import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 import org.xml.sax.SAXException;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
+import java.io.*;
 import java.util.*;
 import java.util.logging.Logger;
+import java.security.SecureRandom;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * User: megery
@@ -44,13 +46,15 @@ public class ConfigurationWizard {
     private static final String L7TECH_CLASSNAME = "com.l7tech";
     private static final String LOGCONFIG_NAME = "configlogging.properties";
 
-    ConsoleWizardUtils wizardUtils = null;
+    private ConsoleWizardUtils wizardUtils = null;
 
     private ManualStepsManager manualStepsManager;
     private SharedWizardInfo sharedWizardInfo;
 
     boolean jumpToApply = false;
     private SilentConfigData silentConfigData;
+    private String configDataPassphrase;
+    private boolean shouldSaveConfigData;
 
     static {
         currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
@@ -144,11 +148,12 @@ public class ConfigurationWizard {
         hadFailures = false;
 
         SilentConfigData silentConfig = getSilentConfigData();
-        if (silentConfig != null) {
+        boolean isSilentMode = (silentConfig != null);
+        if (isSilentMode) {
             commands = silentConfig.getCommands();
             PartitionInformation pInfo = silentConfig.getPartitionInfo();
-            File f = new File(getOsFunctions().getPartitionBase() + pInfo.getPartitionId());
 
+            File f = new File(getOsFunctions().getPartitionBase() + pInfo.getPartitionId());
             if (!f.exists()) {
                 PartitionActions pa = new PartitionActions(getOsFunctions());
                 Exception ex = null;
@@ -169,6 +174,18 @@ public class ConfigurationWizard {
                     }
                 }
             }
+            //restore the keystore to the partition before running the commands
+            File keystoreDir = new File(pInfo.getOSSpecificFunctions().getKeystoreDir());
+            keystoreDir.mkdirs();
+
+            try {
+                writeFileBytes(silentConfig.getCaKeystore(), new File(keystoreDir, "ca.ks"));
+                writeFileBytes(silentConfig.getCaCert(), new File(keystoreDir, "ca.cer"));
+                writeFileBytes(silentConfig.getSslKeystore(), new File(keystoreDir, "ssl.ks"));
+                writeFileBytes(silentConfig.getSslCert(), new File(keystoreDir, "ssl.cer"));
+            } catch (IOException e) {
+                hadFailures = true;
+            }
         } else {
             if (additionalCommands != null)
                 commands.addAll(additionalCommands);
@@ -181,30 +198,75 @@ public class ConfigurationWizard {
 
         while (iterator.hasNext()) {
             ConfigurationCommand command = iterator.next();
-            boolean successful = command.execute();
+            boolean successful = false;
+            if (isSilentMode) successful = command.executeSilent();
+            else successful= command.execute();
+
             if (!successful) {
                 hadFailures = true;
             }
         }
 
-        saveConfigData();
+        try {
+            saveConfigData();
+        } catch (IOException e) {
+            hadFailures = true;
+        }
     }
 
-    private void saveConfigData() {
-        SilentConfigurator sc = new SilentConfigurator(osFunctions);
+    private void saveConfigData() throws IOException {
 
         ConfigurationType configType = SharedWizardInfo.getInstance().getConfigType();
         if (configType == ConfigurationType.CONFIG_CLUSTER) {
             ClusteringType clusterType = SharedWizardInfo.getInstance().getClusterType();
             if (clusterType == ClusteringType.CLUSTER_MASTER) {
+                logger.info("Saving configuration data to the database.");
+                PartitionInformation pInfo = PartitionManager.getInstance().getActivePartition();
+                byte[] sslKeystoreBytes = getFileBytes(pInfo, "ssl.ks");
+                byte[] sslCertBytes = getFileBytes(pInfo, "ssl.cer");
+                byte[] caKeystoreBytes = getFileBytes(pInfo, "ca.ks");
+                byte[] caCertBytes = getFileBytes(pInfo, "ca.cer");
+
                 SilentConfigData configData = new SilentConfigData();
                 configData.setCommands(commands);
                 configData.setDbInfo(sharedWizardInfo.getDbinfo());
                 configData.setPartitionInfo(PartitionManager.getInstance().getActivePartition());
-                configData.setSslKeystore(null);
-                configData.setCaKeystore(null);
-                sc.saveConfigToDb(sharedWizardInfo.getDbinfo(), "",configData);
+                configData.setSslKeystore(sslKeystoreBytes);
+                configData.setSslCert(sslCertBytes);
+                configData.setCaKeystore(caKeystoreBytes);
+                configData.setCaCert(caCertBytes);
+                SilentConfigurator sc = new SilentConfigurator(osFunctions);
+                sc.saveConfigToDb(sharedWizardInfo.getDbinfo(), "".toCharArray() ,configData);
             }
+        }
+    }
+
+    private byte[] getFileBytes(PartitionInformation pInfo, String fileName) throws IOException {
+        byte[] bytes = null;
+        File path = new File(pInfo.getOSSpecificFunctions().getKeystoreDir(), fileName);
+        if (path.isFile()) {
+            try {
+                bytes = HexUtils.slurpFile(path);
+                if (bytes.length == 0)
+                    logger.warning("While reading the config, the file \"" + path.getAbsolutePath() + "\" was found but is empty");
+            } catch (IOException e) {
+                logger.severe("Error while attempting to read the file \"" + path.getAbsolutePath() + "\" for config storage. " + ExceptionUtils.getMessage(e));
+                throw e;
+            }
+        }
+        return bytes;
+    }
+
+    private void writeFileBytes(byte[] bytes, File file) throws IOException {
+        if (file.exists()) {
+            logger.warning(file.getAbsolutePath() + " already exists. It will be overwritten");
+        }
+
+        try {
+            HexUtils.spewStream(bytes, new FileOutputStream(file));
+        } catch (IOException e) {
+            logger.severe("Error while attempting to save the file \"" + file.getAbsolutePath() + "\" for config storage. " + ExceptionUtils.getMessage(e));
+            throw e;
         }
     }
 
@@ -282,5 +344,14 @@ public class ConfigurationWizard {
 
     public SilentConfigData getSilentConfigData() {
         return silentConfigData;
+    }
+
+    public void setConfigDataPassword(String passphrase) {
+        this.configDataPassphrase = passphrase;
+    }
+
+    public boolean shouldSaveConfigData() {
+        return  SharedWizardInfo.getInstance().getConfigType() == ConfigurationType.CONFIG_CLUSTER &&
+                SharedWizardInfo.getInstance().getClusterType() == ClusteringType.CLUSTER_MASTER;
     }
 }

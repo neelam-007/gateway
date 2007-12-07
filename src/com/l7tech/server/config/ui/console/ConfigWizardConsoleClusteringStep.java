@@ -1,13 +1,20 @@
 package com.l7tech.server.config.ui.console;
 
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.config.*;
 import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.commands.ClusteringConfigCommand;
 import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
+import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.lang.StringUtils;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -46,6 +53,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
             if (continueInterview) {
                 doHostnamePrompt(getDefaultHostName());
             }
+            clusterBean.setPartitionInformation(PartitionManager.getInstance().getActivePartition());
             storeInput();
         } catch (IOException e) {
             e.printStackTrace();
@@ -142,11 +150,31 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
 
         SilentConfigurator silentConf = new SilentConfigurator(osFunctions);
         byte[] configBytes = silentConf.loadConfigFromDb(dbInfo);
+
+        String exceptionMessage = null;
         if (configBytes != null) {
             String passphrase = getSecretData(new String[]{
-                    "Retrieved configuration settings from the database. Please enter the passphrase to extract these settings: "},
+                    "Retrieved configuration settings from the database." + getEolChar(),
+                    "Please enter the passphrase to extract these settings: "},
                     null, null, null);
-            configData = silentConf.decryptConfigSettings(passphrase, configBytes);
+        try {
+                configData = silentConf.decryptConfigSettings(passphrase.toCharArray(), new String(configBytes, "UTF-8"));
+            } catch (IllegalBlockSizeException e) {
+                exceptionMessage = "there was an error while trying to extract the settings. " + ExceptionUtils.getMessage(e);
+            } catch (InvalidKeyException e) {
+                exceptionMessage = "there was an error while trying to extract the settings. " + ExceptionUtils.getMessage(e);
+            } catch (ParseException e) {
+                exceptionMessage = "there was an error while trying to extract the settings. " + ExceptionUtils.getMessage(e);
+            } catch (BadPaddingException e) {
+                exceptionMessage = "there was an error while trying to extract the settings. " + ExceptionUtils.getMessage(e);
+            } catch (InvalidAlgorithmParameterException e) {
+                exceptionMessage = "there was an error while trying to extract the settings. " + ExceptionUtils.getMessage(e);
+            } finally {
+                if (exceptionMessage != null) {
+                    logger.severe(exceptionMessage);
+                    configData = null;
+                }
+            }
         }
         return configData;
     }

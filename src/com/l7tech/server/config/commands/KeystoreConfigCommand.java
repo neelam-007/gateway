@@ -19,10 +19,6 @@ import com.l7tech.server.util.SetKeys;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang.StringUtils;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -54,11 +50,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
 
     private static final String PROPERTY_COMMENT = "This file was updated by the SSG configuration utility";
-
-    private static final String XML_KSFILE = "keystoreFile";
-    private static final String XML_KSPASS = "keystorePass";
-    private static final String XML_KSTYPE = "keystoreType";
-    private static final String XML_KSALIAS  = "keyAlias";
 
     private static final String LUNA_SYSTEM_CMU_PROPERTY = "lunaCmuPath";
 
@@ -96,21 +87,24 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     public boolean execute() {
         boolean success = true;
         KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
-        if (ksBean.isDoKeystoreConfig()) {
-            KeystoreType ksType = ksBean.getKeyStoreType();
+        if (ksBean.isDoKeystoreConfig() || isCloningMode()) {
+
+            KeystoreType ksType = getKeyStoreType();
             try {
                 switch(ksType) {
                     case DEFAULT_KEYSTORE_NAME:
                         doDefaultKeyConfig(ksBean);
+                        updateSharedKey(ksBean);
                         break;
                     case LUNA_KEYSTORE_NAME:
                         doLunaKeyConfig(ksBean);
+                        updateSharedKey(ksBean);
                         break;
                     case SCA6000_KEYSTORE_NAME:
                         doHSMConfig(ksBean);
+                        updateSharedKey(ksBean);
                         break;
                 }
-                updateSharedKey(ksBean);
             } catch (Exception e) {
                 success = false;
             }
@@ -125,6 +119,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
 
     private void updateSharedKey(KeystoreConfigBean ksBean) throws Exception {
+        if (cloningMode) return;
+
         byte[] sharedKeyData = null;
         sharedKeyData = ksBean.getSharedKeyData();
         logger.info("Updating the shared key if necessary");
@@ -134,7 +130,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             //get the new keystore
             KeystoreType type = ksBean.getKeyStoreType();
 
-            KeyStore newKs = KeyStore.getInstance(type.shortTypeName());
+            KeyStore newKs = KeyStore.getInstance(type.getShortTypeName());
             InputStream is = null;
             try {
                 is = new FileInputStream(new File(getOsFunctions().getKeystoreDir()+KeyStoreConstants.SSL_KEYSTORE_FILE));
@@ -245,7 +241,11 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         try {
             KeystoreActions ka = new KeystoreActions(getOsFunctions());
             ka.prepareJvmForNewKeystoreType(KeystoreType.DEFAULT_KEYSTORE_NAME);
-            makeDefaultKeys(doBothKeys, ksBean, ksDir, ksPassword);
+            if (!cloningMode) {
+                makeDefaultKeys(doBothKeys, ksBean, ksDir, ksPassword);
+            } else {
+                logger.info("The config wizard is running in cluster cloning mode and will not generate new keys. The existing cluster keys will be used");
+            }
             updateJavaSecurity(javaSecFile, newJavaSecFile, KeystoreConfigBean.DEFAULT_SECURITY_PROVIDERS);
             updateKeystoreProperties(keystorePropertiesFile, ksPassword);
             updateSystemPropertiesFile(ksBean, systemPropertiesFile);
@@ -295,7 +295,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             setLunaSystemProps(ksBean);
             copyLunaJars(ksBean);
             ka.prepareJvmForNewKeystoreType(KeystoreType.LUNA_KEYSTORE_NAME);
-            makeLunaKeys(ksBean, caCertFile, sslCertFile, caKeyStoreFile, sslKeyStoreFile);
+            if (!cloningMode) makeLunaKeys(ksBean, caCertFile, sslCertFile, caKeyStoreFile, sslKeyStoreFile);
             updateJavaSecurity(javaSecFile, newJavaSecFile, LUNA_SECURITY_PROVIDERS);
             updateKeystoreProperties(keystorePropertiesFile, ksPassword);
             updateSystemPropertiesFile(ksBean, systemPropertiesFile);
@@ -859,8 +859,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             systemProps.load(is);
             is.close();
             is = null;
+            KeystoreType ourType = getKeyStoreType();
 
-            switch (ksBean.getKeyStoreType()) {
+            switch (ourType) {
                 case LUNA_KEYSTORE_NAME:
                     systemProps.setProperty(PROPKEY_JCEPROVIDER, JceProvider.LUNA_ENGINE);
                     break;
@@ -868,6 +869,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                     systemProps.setProperty(PROPKEY_JCEPROVIDER, JceProvider.PKCS11_ENGINE);
                     break;
                 case DEFAULT_KEYSTORE_NAME:
+                    systemProps.setProperty(PROPKEY_JCEPROVIDER, JceProvider.BC_ENGINE);
+                    break;
+                default:
                     systemProps.setProperty(PROPKEY_JCEPROVIDER, JceProvider.BC_ENGINE);
                     break;
             }
@@ -1107,8 +1111,20 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
 
     private String getKsType() {
-        KeystoreType ksTypeFromBean = ((KeystoreConfigBean)configBean).getKeyStoreType();
-        return ksTypeFromBean.shortTypeName();
+        return ((KeystoreConfigBean)configBean).getKeystoreTypeName();
+    }
+
+    public KeystoreType getKeyStoreType() {
+        KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
+        String ksTypeName = ksBean.getKeystoreTypeName();
+        KeystoreType ourType = KeystoreType.UNDEFINED;
+        for (KeystoreType keystoreType : KeystoreType.values()) {
+            if (keystoreType.getShortTypeName().equals(ksTypeName)) {
+                ourType = keystoreType;
+                break;
+            }
+        }
+        return ourType;
     }
 
     private class MyScaManager extends ScaManager {

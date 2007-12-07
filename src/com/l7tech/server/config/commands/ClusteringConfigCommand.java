@@ -2,11 +2,12 @@ package com.l7tech.server.config.commands;
 
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.server.config.ClusteringType;
 import com.l7tech.server.config.ConfigurationType;
+import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.beans.ConfigurationBean;
+import com.l7tech.server.partition.PartitionInformation;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang.StringUtils;
@@ -55,13 +56,15 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
     public boolean execute() {
         boolean success = true;
         ClusteringConfigBean clusterBean = (ClusteringConfigBean) configBean;
+        PartitionInformation pinfo = clusterBean.getPartitionInformation();
 
         ConfigurationType confType = clusterBean.getConfigType();
 
         boolean configureCluster = confType != ConfigurationType.CONFIG_STANDALONE;
 
-        File clusterHostNameFile = configureCluster? new File(getOsFunctions().getClusterHostFile()):null;
-        File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
+        OSSpecificFunctions osf = pinfo.getOSSpecificFunctions();
+        File clusterHostNameFile = configureCluster? new File(osf.getClusterHostFile()):null;
+        File systemPropertiesFile = new File(osf.getSsgSystemPropertiesFile());
 
         File[] files = new File[]
         {   clusterHostNameFile,
@@ -93,8 +96,10 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
     private void updateSystemPropertiesFile(String hostname, File systemPropertiesFile) throws IOException {
         OutputStream fos = null;
         try {
+            ClusteringConfigBean clusterBean = (ClusteringConfigBean) configBean;
+            OSSpecificFunctions osf = clusterBean.getPartitionInformation().getOSSpecificFunctions();
             PropertiesConfiguration props = PropertyHelper.mergeProperties(systemPropertiesFile,
-                    new File(systemPropertiesFile.getAbsolutePath() + "." + getOsFunctions().getUpgradedNewFileExtension()),
+                    new File(systemPropertiesFile.getAbsolutePath() + "." + osf.getUpgradedNewFileExtension()),
                     true, true);
 
             props.setProperty(PROP_RMI_HOSTNAME, hostname);

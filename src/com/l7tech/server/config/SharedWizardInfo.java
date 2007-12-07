@@ -10,7 +10,7 @@ import com.l7tech.server.config.db.DBInformation;
 public class SharedWizardInfo {
     private ClusteringType clusterType = ClusteringType.UNDEFINED;
     private ConfigurationType configType = ConfigurationType.UNDEFINED;
-    private KeystoreType ksType = KeystoreType.UNDEFINED;
+    private KeystoreType keystoreType = KeystoreType.UNDEFINED;
     private DBInformation dbinfo;
     private String hostname;
 
@@ -37,11 +37,11 @@ public class SharedWizardInfo {
     }
 
     public KeystoreType getKeystoreType() {
-        return ksType;
+        return keystoreType;
     }
 
     public void setKeystoreType(KeystoreType ksType) {
-        this.ksType = ksType;
+        this.keystoreType = ksType;
     }
 
     public DBInformation getDbinfo() {

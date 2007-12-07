@@ -28,6 +28,7 @@ public abstract class BaseConfigurationCommand implements ConfigurationCommand {
     DateFormat formatter;
 
     private Date currentTime;
+    protected boolean cloningMode = false;
 
     protected BaseConfigurationCommand(ConfigurationBean bean) {
         this();
@@ -84,7 +85,12 @@ public abstract class BaseConfigurationCommand implements ConfigurationCommand {
     protected OSSpecificFunctions getOsFunctions() {
         return PartitionManager.getInstance().getActivePartition().getOSSpecificFunctions();
     }
-    
+
+    public boolean executeSilent() {
+        cloningMode = true;
+        return execute();
+    }
+
     public String[] getActions() {
         return (configBean != null)?configBean.explain():null;
     }
@@ -95,5 +101,13 @@ public abstract class BaseConfigurationCommand implements ConfigurationCommand {
 
     public void setConfigBean(ConfigurationBean configBean) {
         this.configBean = configBean;
+    }
+
+    public boolean isCloningMode() {
+        return cloningMode;
+    }
+
+    public void setCloningMode(boolean cloningMode) {
+        this.cloningMode = cloningMode;
     }
 }

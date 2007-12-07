@@ -89,7 +89,7 @@ public class SharedKeyGetter {
             existingSslKeystore = KeyStore.getInstance(ksType);
             InputStream is = null;
             try {
-                if (KeystoreType.SCA6000_KEYSTORE_NAME.shortTypeName().equals(ksType)) {
+                if (KeystoreType.SCA6000_KEYSTORE_NAME.getShortTypeName().equals(ksType)) {
                     is = null;
                 } else {
                     is = new FileInputStream(keystoreFile);
@@ -158,11 +158,11 @@ public class SharedKeyGetter {
 
     private KeystoreType getKeystoreType(String ksType) {
         KeystoreType whichKeystoreType = KeystoreType.DEFAULT_KEYSTORE_NAME;
-        if (KeystoreType.SCA6000_KEYSTORE_NAME.shortTypeName().equals(ksType)) {
+        if (KeystoreType.SCA6000_KEYSTORE_NAME.getShortTypeName().equals(ksType)) {
             whichKeystoreType = KeystoreType.SCA6000_KEYSTORE_NAME;
-        } else if (KeystoreType.DEFAULT_KEYSTORE_NAME.shortTypeName().equals(ksType)) {
+        } else if (KeystoreType.DEFAULT_KEYSTORE_NAME.getShortTypeName().equals(ksType)) {
             whichKeystoreType = KeystoreType.DEFAULT_KEYSTORE_NAME;
-        } else if (KeystoreType.LUNA_KEYSTORE_NAME.shortTypeName().equals(ksType)) {
+        } else if (KeystoreType.LUNA_KEYSTORE_NAME.getShortTypeName().equals(ksType)) {
             whichKeystoreType = KeystoreType.LUNA_KEYSTORE_NAME;
         }
         return whichKeystoreType;

@@ -3,6 +3,8 @@ package com.l7tech.server.config.beans;
 import com.l7tech.server.config.ClusteringType;
 import com.l7tech.server.config.ConfigurationType;
 import com.l7tech.server.config.SharedWizardInfo;
+import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.lang.StringUtils;
 
 import java.net.InetAddress;
@@ -19,6 +21,7 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
     private String localHostName;
     private ClusteringType clusterType;
     private ConfigurationType configType;
+    private PartitionInformation partitionInformation;
 
     private final static String NAME = "Clustering Configuration";
     private final static String DESCRIPTION = "Configures the cluster properties for an SSG";
@@ -62,20 +65,25 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
     }
 
     public void reset() {
-        isNewHostName = false;
-        clusterHostname = "";
-        localHostName  = "";
-        clusterType = ClusteringType.CLUSTER_MASTER;
+//        isNewHostName = false;
+//        clusterHostname = "";
+//        localHostName  = "";
+//        clusterType = ClusteringType.CLUSTER_MASTER;
     }
 
     public String getClusterHostname() {
-        if (StringUtils.isEmpty(this.clusterHostname))
-            setClusterHostname(getOsFunctions().getClusterHostName());
-
-        return this.clusterHostname;
+        return clusterHostname;
     }
 
+//    public String getClusterHostname() {
+//        if (StringUtils.isEmpty(this.clusterHostname))
+//            setClusterHostname(getPartitionInformation().getOSSpecificFunctions().getClusterHostName());
+//
+//        return this.clusterHostname;
+//    }
+
     public void setClusterHostname(String clusterHostname) {
+
         this.clusterHostname = clusterHostname;
     }
 
@@ -109,5 +117,14 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
 
     public void setConfigType(ConfigurationType configType) {
         this.configType = configType;
+    }
+
+    public PartitionInformation getPartitionInformation() {
+        if (partitionInformation == null) partitionInformation = PartitionManager.getInstance().getActivePartition();
+        return partitionInformation;
+    }
+
+    public void setPartitionInformation(PartitionInformation partitionInformation) {
+        this.partitionInformation = partitionInformation;
     }
 }

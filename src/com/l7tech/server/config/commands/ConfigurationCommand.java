@@ -11,6 +11,7 @@ import com.l7tech.server.config.beans.ConfigurationBean;
  */
 public interface ConfigurationCommand {
     public boolean execute();
+    public boolean executeSilent();
     String[] getActions();
     public ConfigurationBean getConfigBean();
     public void setConfigBean(ConfigurationBean configBean);
