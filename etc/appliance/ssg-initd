@@ -17,6 +17,7 @@ tries=3
 count=0
 
 USER=$(whoami)
+export LOGNAME=$USER
 PARTITION_BASE="/ssg/etc/conf/partitions/"
 PARTITION_CONTROL="/ssg/bin/partitionControl.sh"
 SINGLE_PARTITION=""
@@ -111,7 +112,7 @@ stop_ssg() {
         if [ ${?} -eq 0 ] ; then
             count=$((count + 1))
             if [ "$count" -ge "$tries" ]; then
-                (sh "${PARTITION_CONTROL}" "stop -force" "${which_partition}" &> /dev/null)    
+                (sh "${PARTITION_CONTROL}" "stop -force" "${which_partition}" &> /dev/null)
                 RETVAL=$?
                 # sleep ensures TCP cleanup if process was killed
                 sleep 5;
