@@ -109,7 +109,7 @@ class SoapFacet extends MessageFacet {
                 List els = SoapUtil.getSecurityElements(document);
                 if (els != null && !els.isEmpty()) hasSecurityNode = true;
                 payloadNs = SoapUtil.getPayloadNames(document);
-                return new SoapInfo(true, soapAction, payloadNs, hasSecurityNode);
+                return new SoapInfo(true, soapAction, payloadNs != null ? payloadNs : EMPTY_QNAMES, hasSecurityNode);
             } catch (InvalidDocumentFormatException e) {
                 throw new SAXException(e);
             }
