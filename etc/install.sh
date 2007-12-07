@@ -222,10 +222,45 @@ configure_jvm_options() {
 -Xmx"${MEM}"m
 EOM"
         fi
+
+        grep "com.l7tech.cluster.macAddress" ${SSG_ROOT}/etc/profile.d/jvmoptions
+        if [ $? -eq 0 ] ; then
+            echo "A MAC address has already been specified for this gateway."
+            echo -n "Would you like to specify a new MAC address to be used to identify the gateway? [n]"
+            read DOIT
+            if [ -z "${DOIT}" ] ; then
+                DOIT="n"
+            fi
+            if [ "${DOIT}" == "y" ] ; then
+                MACADDR=""
+                while [ -z "${MACADDR}" ] ; do
+                    echo -n "What MAC address should be used to identify the gateway?: ";
+                    read MACADDR;
+                done
+                su ssgconfig -c "cp ${SSG_ROOT}/etc/profile.d/jvmoptions ${SSG_ROOT}/etc/profile.d/jvmoptions.old && \
+                cat ${SSG_ROOT}/etc/profile.d/jvmoptions.old | sed "s/com.l7tech.cluster.macAddress=[^ ]*/com.l7tech.cluster.macAddress=${MACADDR}/" > ${SSG_ROOT}/etc/profile.d/jvmoptions && \
+                rm ${SSG_ROOT}/etc/profile.d/jvmoptions.old"
+            fi
+        else
+            echo -n "Would you like to specify the MAC address that will be used to identify the gateway? [y]"
+            read DOIT
+            if [ -z "${DOIT}" ] ; then
+                DOIT="y"
+            fi
+            if [ "${DOIT}" == "y" ] ; then
+                MACADDR=""
+                while [ -z "${MACADDR}" ] ; do
+                    echo -n "What MAC address should be used to identify the gateway?: ";
+                    read MACADDR;
+                done
+                su ssgconfig -c "echo -Dcom.l7tech.cluster.macAddress=\"$MACADDR\" >> ${SSG_ROOT}/etc/profile.d/jvmoptions"
+            fi
+        fi
     fi
 }
 
 check_user
+echo ""
 configure_java_home
 configure_jvm_options
 exit 0
