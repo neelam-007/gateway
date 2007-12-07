@@ -233,11 +233,6 @@ public class ExpandVariablesTest extends TestCase {
         assertEquals("123", status);
     }
 
-    public void testStuff() throws Exception {
-        Matcher mat = Syntax.regexPattern.matcher("${foo}blahblah${bar}");
-        System.out.println(mat.replaceAll(""));
-    }
-
     private Map<String, Object> makeVars(Message foo) {
         Map<String, Object> vars = new HashMap<String, Object>();
         vars.put("foo", foo);
