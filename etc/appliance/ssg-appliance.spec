@@ -112,7 +112,6 @@ chmod 711 %{buildroot}/ssg/appliance/libexec/*
 
 # Ssg bin
 %dir /ssg/appliance/bin
-%attr(0755,gateway,gateway) /ssg/appliance/bin/iptables*
 %attr(0755,gateway,gateway) /ssg/appliance/bin/*.pl
 %attr(0755,gateway,gateway) /ssg/appliance/bin/*.sh
 
