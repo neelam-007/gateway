@@ -157,6 +157,7 @@ public class WspConstants {
         new WspEnumTypeMapping(HtmlFormDataLocation.class, "fieldLocation"),
         new WspEnumTypeMapping(CodeInjectionProtectionType.class, "protectionType"),
         new WspEnumTypeMapping(DataType.class, "variableDataType"),
+        new WspEnumTypeMapping(LineBreak.class, "lineBreak"),
 
         // Container types
         new ArrayTypeMapping(new Object[0], "arrayValue"),

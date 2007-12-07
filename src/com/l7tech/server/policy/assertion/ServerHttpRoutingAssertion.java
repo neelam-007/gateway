@@ -26,7 +26,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.KeystoreUtils;
@@ -36,6 +35,7 @@ import com.l7tech.server.event.PostRoutingEvent;
 import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.xmlsec.ServerResponseWssSignature;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.server.util.IdentityBindingHttpClientFactory;
 import com.l7tech.service.PublishedService;
@@ -335,7 +335,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     }
 
     private GenericHttpClient.GenericHttpMethod methodFromRequest(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams) {
-        if (assertion.getRequestMsgSrc() == null) {
+        if (assertion.getRequestMsgSrc() == null) { // This means use the default request.
             if (context.getRequest().isHttpRequest()) {
                 HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
                 // Check the request method
@@ -359,7 +359,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 logger.info("assuming http method for downstream service (POST) because " +
                             "there is no incoming http method to base this on");
             }
-        } else {
+        } else { // This means use a context variable.
             logger.info("assuming http method for downstream service (POST) when request message source is a context variable");
         }
         return GenericHttpClient.POST;

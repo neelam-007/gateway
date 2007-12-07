@@ -8,6 +8,7 @@ import com.l7tech.common.gui.util.PauseListener;
 import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.LineBreak;
 import com.l7tech.policy.assertion.SetVariableAssertion;
 import com.l7tech.policy.variable.*;
 
@@ -37,9 +38,9 @@ public class SetVariableAssertionDialog extends JDialog {
         public String toString() { return _dataType.getName(); }
     }
 
-    final ImageIcon BLANK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Transparent16.png"));
-    final ImageIcon OK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Check16.png"));
-    final ImageIcon WARNING_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Warning16.png"));
+    private final ImageIcon BLANK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Transparent16.png"));
+    private final ImageIcon OK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Check16.png"));
+    private final ImageIcon WARNING_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Warning16.png"));
 
     private JPanel _mainPanel;
     private JTextField _variableNameTextField;
@@ -47,7 +48,10 @@ public class SetVariableAssertionDialog extends JDialog {
     private JComboBox _dataTypeComboBox;
     private JTextField _contentTypeTextField;
     private JLabel _contentTypeStatusLabel;
-    private JTextArea _expressionTextField;
+    private JTextArea _expressionTextArea;
+    private JRadioButton _crlfRadioButton;
+    private JRadioButton _crRadioButton;
+    private JRadioButton _lfRadioButton;
     private JLabel _expressionStatusLabel;
     private JTextArea _expressionStatusTextArea;
     private JScrollPane _expressionStatusScrollPane;
@@ -109,7 +113,7 @@ public class SetVariableAssertionDialog extends JDialog {
                 },
                 500);
         TextComponentPauseListenerManager.registerPauseListener(
-                _expressionTextField,
+                _expressionTextArea,
                 new PauseListener() {
                     public void textEntryPaused(JTextComponent component, long msecs) {
                         validateFields();
@@ -131,32 +135,75 @@ public class SetVariableAssertionDialog extends JDialog {
         _okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 assertion.setVariableToSet(_variableNameTextField.getText());
+
                 final DataType dataType = getSelectedDataType();
                 assertion.setDataType(dataType);
+
                 if (dataType == DataType.MESSAGE) {
                     assertion.setContentType(_contentTypeTextField.getText());
                 } else {
                     assertion.setContentType(null);
                 }
-                assertion.setExpression(_expressionTextField.getText());
+
+                LineBreak lineBreak = null;
+                if (_crlfRadioButton.isSelected()) {
+                    lineBreak = LineBreak.CRLF;
+                } else if (_lfRadioButton.isSelected()) {
+                    lineBreak = LineBreak.LF;
+                } else if (_crRadioButton.isSelected()) {
+                    lineBreak = LineBreak.CR;
+                }
+                assertion.setLineBreak(lineBreak);
+
+                String expression = _expressionTextArea.getText();
+                expression = expression.replace("\r\n", "\n").replace('\r', '\n').replace("\n", lineBreak.getCharacters()); // TODO optimize
+                assertion.expression(expression);
+
                 _assertionModified = true;
                 dispose();
             }
         });
 
+        //
         // Sets dialog to assertion data.
+        //
+
         _variableNameTextField.setText(assertion.getVariableToSet());
         selectDataType(assertion.getDataType());
         _contentTypeTextField.setText(assertion.getContentType());
-        _expressionTextField.setText(assertion.getExpression());
+
+        // JTextArea likes all line break to be LF.
+        String expression = assertion.expression();
+        if (expression != null) {
+            final boolean hasCRLF = expression.indexOf("\r\n") != -1;
+            if (hasCRLF) {
+                expression = expression.replace("\r\n", "\n");
+            }
+            final boolean hasCR = expression.indexOf('\r') != -1;
+            if (hasCR) {
+                expression = expression.replace('\r', '\n');
+            }
+        }
+        _expressionTextArea.setText(expression);
+
+        if (assertion.getLineBreak() == LineBreak.LF) {
+            _lfRadioButton.doClick();
+        } else if (assertion.getLineBreak() == LineBreak.CR) {
+            _crRadioButton.doClick();
+        } else {
+             // Defaults to CR-LF.
+            _crlfRadioButton.doClick();
+        }
+
         validateFields();
 
         add(_mainPanel);
     }
 
     /**
-     * Set which item is selected in the data type combobox.
+     * Sets which data type is selected in {@link #_dataTypeComboBox}.
      * @param dataType  the data type to select
+     * @throws RuntimeException if <code>dataType</code> is not avaiable in the combo box
      */
     private void selectDataType(final DataType dataType) {
         if (dataType == null) return;
@@ -200,7 +247,7 @@ public class SetVariableAssertionDialog extends JDialog {
     private void validateFields() {
         final String variableName = _variableNameTextField.getText();
         final String contentType = _contentTypeTextField.getText();
-        final String expression = _expressionTextField.getText();
+        final String expression = _expressionTextArea.getText();
 
         boolean ok = true;
 

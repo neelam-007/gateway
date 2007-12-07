@@ -1,5 +1,6 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.policy.variable.*;
 
 /**
@@ -13,7 +14,8 @@ import com.l7tech.policy.variable.*;
 public class SetVariableAssertion extends Assertion implements SetsVariables, UsesVariables {
     private String _variableToSet;
     private DataType _dataType;
-    private String _expression;
+    private String _base64Expression;   // Base64-encoded to workaround serializer not turning CR, LF into entity characters
+    private LineBreak _lineBreak;
 
     /** Used only if {@link #_dataType} == {@link DataType#MESSAGE}. */
     private String _contentType;
@@ -59,12 +61,32 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
         return _contentType;
     }
 
-    public String getExpression() {
-        return _expression;
+    public String getBase64Expression() {
+        return _base64Expression;
     }
 
-    public void setExpression(String expression) {
-        _expression = expression;
+    public void setBase64Expression(String base64Expression) {
+        _base64Expression = base64Expression;
+    }
+
+    public String expression() {
+        try {
+            return new String(HexUtils.decodeBase64(_base64Expression, true), "UTF-8");
+        } catch (Exception e) {
+            return _base64Expression;
+        }
+    }
+
+    public void expression(String expression) {
+        setBase64Expression(HexUtils.encodeBase64(HexUtils.encodeUtf8(expression), true));
+    }
+
+    public LineBreak getLineBreak() {
+        return _lineBreak;
+    }
+
+    public void setLineBreak(LineBreak lineBreak) {
+        _lineBreak = lineBreak;
     }
 
     public VariableMetadata[] getVariablesSet() {
@@ -73,8 +95,8 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
     }
 
     public String[] getVariablesUsed() {
-        if (_expression == null) return new String[0];
-        return Syntax.getReferencedNames(_expression);
+        if (_base64Expression == null) return new String[0];
+        return Syntax.getReferencedNames(_base64Expression);
     }
 
     private VariableMetadata getMetadata() {
