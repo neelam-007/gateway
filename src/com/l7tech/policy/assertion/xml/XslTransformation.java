@@ -4,7 +4,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesResourceInfo;
 import com.l7tech.policy.assertion.UsesVariables;
@@ -103,7 +103,7 @@ public class XslTransformation extends Assertion implements UsesVariables, UsesR
 
         if (resourceInfo instanceof SingleUrlResourceInfo) {
             SingleUrlResourceInfo suri = (SingleUrlResourceInfo) resourceInfo;
-            return ExpandVariables.getReferencedNames(suri.getUrl());
+            return Syntax.getReferencedNames(suri.getUrl());
         } else if (!(resourceInfo instanceof StaticResourceInfo)) {
             // Try again later, in case the stylesheet hasn't been set yet
             return new String[0];

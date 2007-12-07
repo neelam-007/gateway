@@ -22,8 +22,8 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
-import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
@@ -156,11 +156,11 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
 
                     for (int i = 0; i < vars.length; i++) {
                         String name = vars[i].getName();
-                        sb.append(ExpandVariables.SYNTAX_PREFIX)
+                        sb.append(Syntax.SYNTAX_PREFIX)
                             .append("<b>")
                             .append(name)
                             .append("</b>")
-                            .append(ExpandVariables.SYNTAX_SUFFIX);
+                            .append(Syntax.SYNTAX_SUFFIX);
                         if (i < vars.length-1) sb.append(", ");
                     }
                 }

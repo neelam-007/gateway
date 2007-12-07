@@ -6,7 +6,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.Syntax;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -30,7 +30,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     private boolean hardLimit = false;
 
     public String[] getVariablesUsed() {
-        return ExpandVariables.getReferencedNames(getCounterName());
+        return Syntax.getReferencedNames(getCounterName());
     }
 
     /**

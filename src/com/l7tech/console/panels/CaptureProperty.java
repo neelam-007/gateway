@@ -8,7 +8,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.cluster.ClusterPropertyDescriptor;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.gui.util.DocumentSizeFilter;
 import com.l7tech.common.gui.util.Utilities;
@@ -176,8 +176,7 @@ public class CaptureProperty extends JDialog {
     }
 
     private boolean hasContextVariables(String s) {
-        ExpandVariables.getReferencedNames(s);
-        String[] res = ExpandVariables.getReferencedNames(s);
+        String[] res = Syntax.getReferencedNames(s);
         return res != null && res.length > 0;
     }
 

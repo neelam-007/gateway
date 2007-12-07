@@ -1,7 +1,7 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.Syntax;
 import static com.l7tech.policy.assertion.AssertionMetadata.SHORT_NAME;
 import static com.l7tech.policy.assertion.AssertionMetadata.LONG_NAME;
 import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_NAME;
@@ -69,7 +69,7 @@ public class HardcodedResponseAssertion extends RoutingAssertion implements Uses
     }
 
     public String[] getVariablesUsed() {
-        return ExpandVariables.getReferencedNames(responseBodyString() + responseContentType);
+        return Syntax.getReferencedNames(responseBodyString() + responseContentType);
     }
 
     public String getBase64ResponseBody() {

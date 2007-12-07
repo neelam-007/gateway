@@ -11,7 +11,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;

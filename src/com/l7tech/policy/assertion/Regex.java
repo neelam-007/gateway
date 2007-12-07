@@ -5,7 +5,7 @@
  */
 package com.l7tech.policy.assertion;
 
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.Syntax;
 
 /**
  * @author emil
@@ -151,6 +151,6 @@ public class Regex extends Assertion implements UsesVariables {
         if (replacement == null)
             return new String[0];
 
-        return ExpandVariables.getReferencedNames(replacement);
+        return Syntax.getReferencedNames(replacement);
     }
 }

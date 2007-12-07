@@ -1,13 +1,13 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.audit.Audit;
 import com.l7tech.common.gui.util.PauseListener;
 import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.common.gui.widgets.SquigglyTextArea;
-import com.l7tech.common.audit.Audit;
 import com.l7tech.console.event.BeanEditSupport;
 import com.l7tech.console.util.LoggerAudit;
 import com.l7tech.policy.assertion.Regex;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -18,7 +18,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -151,7 +153,7 @@ public class RegexDialog extends JDialog {
                     StringBuffer sb = new StringBuffer();
 
                     while (matcher.find()) {
-                        matcher.appendReplacement(sb, ExpandVariables.process(replaceText, Collections.EMPTY_MAP, auditor));
+                        matcher.appendReplacement(sb, Syntax.regexPattern.matcher(replaceText).replaceAll(""));
                         highlights.add(new int[] {sb.length() - replaceText.length(), replaceText.length()});
                     }
                     matcher.appendTail(sb);

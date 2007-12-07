@@ -9,9 +9,9 @@ package com.l7tech.policy.assertion.sla;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.SetsVariables;
-import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.Syntax;
 
 /**
  * An assertion that enforce the number of requests that can be made to a particular resource per time unit.
@@ -179,7 +179,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
 
     public String[] getVariablesUsed() {
         if (counterName == null) return new String[0];
-        return ExpandVariables.getReferencedNames(counterName);
+        return Syntax.getReferencedNames(counterName);
     }
 
     public VariableMetadata[] getVariablesSet() {

@@ -26,7 +26,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.KeystoreUtils;

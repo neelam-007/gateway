@@ -3,7 +3,7 @@ package com.l7tech.policy.assertion.xml;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesResourceInfo;
 import com.l7tech.policy.assertion.UsesVariables;
@@ -69,7 +69,7 @@ public class SchemaValidation extends Assertion implements UsesResourceInfo, Use
     public String[] getVariablesUsed() {
         if (resourceInfo.getType() == AssertionResourceType.SINGLE_URL) {
             SingleUrlResourceInfo suri = (SingleUrlResourceInfo) resourceInfo;
-            return ExpandVariables.getReferencedNames(suri.getUrl());
+            return Syntax.getReferencedNames(suri.getUrl());
         }
         return new String[0];
     }

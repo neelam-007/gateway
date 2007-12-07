@@ -44,10 +44,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.policy.variable.PolicyVariableUtils;
-import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.*;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
@@ -201,7 +198,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
             for (String variableName: predecessorVariableNames) {
                 if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
-                    final MsgSrcComboBoxItem item = new MsgSrcComboBoxItem(variableName, "Context Variable: " + ExpandVariables.SYNTAX_PREFIX + variableName + ExpandVariables.SYNTAX_SUFFIX);
+                    final MsgSrcComboBoxItem item = new MsgSrcComboBoxItem(variableName, "Context Variable: " + Syntax.SYNTAX_PREFIX + variableName + Syntax.SYNTAX_SUFFIX);
                     xmlMsgSrcComboBox.addItem(item);
                     if (variableName.equals(ass.getXmlMsgSrc())) {
                         xmlMsgSrcComboBox.setSelectedItem(item);

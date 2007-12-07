@@ -8,7 +8,7 @@ import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.policy.assertion.HttpPassthroughRule;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerBridgeRoutingAssertion;
 

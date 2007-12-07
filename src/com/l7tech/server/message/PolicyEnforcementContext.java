@@ -6,9 +6,7 @@ package com.l7tech.server.message;
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.RequestId;
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.server.audit.AuditContext;
 import com.l7tech.common.audit.AuditDetail;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
@@ -22,8 +20,11 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.RequestIdGenerator;
+import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthCache;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
@@ -81,6 +82,16 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private long routingTotalTime;
     private AssertionStatus policyoutcome;
     private static ThreadLocal<PolicyEnforcementContext> instanceHolder = new ThreadLocal<PolicyEnforcementContext>();
+
+    private static class VariableInfo {
+        private final Object value;
+        private final VariableMetadata meta;
+
+        private VariableInfo(Object value, VariableMetadata meta) {
+            this.value = value;
+            this.meta = meta;
+        }
+    }
 
     public PolicyEnforcementContext(Message request, Message response) {
         super(request, response);

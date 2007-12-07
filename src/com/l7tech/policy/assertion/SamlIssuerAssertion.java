@@ -13,8 +13,8 @@ import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
 import com.l7tech.policy.validator.SamlIssuerAssertionValidator;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.Java5EnumSetTypeMapping;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
@@ -145,7 +145,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements SetsVari
 
     private void collectVars(Set<String> varNames, String s) {
         if (s == null || s.length() == 0) return;
-        String[] vars = ExpandVariables.getReferencedNames(s);
+        String[] vars = Syntax.getReferencedNames(s);
         varNames.addAll(Arrays.asList(vars));
     }
 

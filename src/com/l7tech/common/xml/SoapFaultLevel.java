@@ -1,6 +1,6 @@
 package com.l7tech.common.xml;
 
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.Syntax;
 
 import java.io.Serializable;
 
@@ -62,7 +62,7 @@ public class SoapFaultLevel implements Serializable {
     public void setFaultTemplate(String faultTemplate) {
         this.faultTemplate = faultTemplate;
         if (faultTemplate != null) {
-            variablesUsed = ExpandVariables.getReferencedNames(faultTemplate);
+            variablesUsed = Syntax.getReferencedNames(faultTemplate);
         } else {
             variablesUsed = new String[0];
         }

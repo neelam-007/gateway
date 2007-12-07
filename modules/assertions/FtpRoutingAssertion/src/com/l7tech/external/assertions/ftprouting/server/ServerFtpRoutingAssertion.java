@@ -23,7 +23,8 @@ import com.l7tech.external.assertions.ftprouting.FtpSecurity;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
@@ -251,7 +252,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
     }
 
     private String expandVariables(PolicyEnforcementContext context, String pattern) {
-        final String[] variablesUsed = ExpandVariables.getReferencedNames(pattern);
+        final String[] variablesUsed = Syntax.getReferencedNames(pattern);
         final Map<String, Object> vars = context.getVariableMap(variablesUsed, _auditor);
         return ExpandVariables.process(pattern, vars, _auditor);
     }

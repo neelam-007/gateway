@@ -36,8 +36,7 @@ public class AttributeConfig extends NamedEntityImp {
     }
 
     /**
-     * A short, unique and unambiguous name for this attribute, for use in
-     * {@link com.l7tech.policy.variable.ExpandVariables} expressions.  Required.
+     * A short, unique and unambiguous name for this attribute, for use in templates.  Required.
      * @return the variable name.
      */
     public synchronized String getVariableName() {
@@ -47,7 +46,7 @@ public class AttributeConfig extends NamedEntityImp {
 
     /**
      * A short, unique and unambiguous name for this attribute, for use in
-     * {@link com.l7tech.policy.variable.ExpandVariables} expressions.  Required.
+     * {@link com.l7tech.server.policy.variable.ExpandVariables} expressions.  Required.
      * @param variableName the variable name
      */
     public synchronized void setVariableName(String variableName) {

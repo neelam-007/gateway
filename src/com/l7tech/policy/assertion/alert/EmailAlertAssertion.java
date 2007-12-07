@@ -6,7 +6,7 @@ package com.l7tech.policy.assertion.alert;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesVariables;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.common.util.HexUtils;
 
 import java.io.IOException;
@@ -110,6 +110,6 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     }
 
     public String[] getVariablesUsed() {
-        return ExpandVariables.getReferencedNames(this.messageString());
+        return Syntax.getReferencedNames(this.messageString());
     }
 }

@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.common.mime;
@@ -17,12 +15,21 @@ import java.util.*;
  * Encapsulates a collection of MimeHeaders, as might appear at the start of a MIME multipart body.
  */
 public class MimeHeaders {
-    private final Map headers = new TreeMap(String.CASE_INSENSITIVE_ORDER);
-    private final List headerOrder = new ArrayList();
+    private final Map<String, MimeHeader> headers;
+    private final List<MimeHeader> headerOrder;
 
     private int serializedLength = -1;  // size in bytes of serialized form, or -1 if not currently known.
 
     MimeHeaders() {
+        headers = new TreeMap<String, MimeHeader>(String.CASE_INSENSITIVE_ORDER);
+        headerOrder = new ArrayList<MimeHeader>();
+    }
+
+    public MimeHeaders(Map<String, MimeHeader> headers) {
+        Map<String, MimeHeader> newheaders = new TreeMap<String, MimeHeader>(String.CASE_INSENSITIVE_ORDER);
+        newheaders.putAll(headers);
+        this.headers = Collections.unmodifiableMap(newheaders);
+        this.headerOrder = Collections.unmodifiableList(new ArrayList<MimeHeader>(headers.values()));
     }
 
     /**
@@ -52,7 +59,7 @@ public class MimeHeaders {
         headers.put(name, header);
         boolean preexisting = false;
         for (int i = 0; i < headerOrder.size(); ++i) {
-            MimeHeader h = (MimeHeader)headerOrder.get(i);
+            MimeHeader h = headerOrder.get(i);
             if (h.getName().equalsIgnoreCase(name)) {
                 headerOrder.set(i, header);
                 preexisting = true;
@@ -70,7 +77,11 @@ public class MimeHeaders {
      * @return the MimeHeader with the specified name, or null if it did not appear in the message.
      */
     public MimeHeader get(String name) {
-        return (MimeHeader)headers.get(name);
+        return headers.get(name);
+    }
+
+    public MimeHeader get(int i) {
+        return headerOrder.get(i);
     }
 
     /**
@@ -139,8 +150,7 @@ public class MimeHeaders {
         if (serializedLength >= 0)
             return serializedLength;
         int len = 0;
-        for (Iterator i = headerOrder.iterator(); i.hasNext();) {
-            MimeHeader header = (MimeHeader) i.next();
+        for (MimeHeader header : headerOrder) {
             len += header.getSerializedLength();
         }
         len += MimeHeader.CRLF.length;
@@ -172,8 +182,7 @@ public class MimeHeaders {
      * @throws IOException if the underlying OutputStream cannot be written to.
      */
     public void write(OutputStream os) throws IOException {
-        for (Iterator i = headerOrder.iterator(); i.hasNext();) {
-            MimeHeader h = (MimeHeader) i.next();
+        for (MimeHeader h : headerOrder) {
             h.write(os);
         }
         os.write(MimeHeader.CRLF);

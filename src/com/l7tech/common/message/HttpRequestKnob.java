@@ -18,7 +18,7 @@ import java.util.Map;
  *
  * Note that in keeping with the Java Servlet API, requests allow headers to be read but not set.
  */
-public interface HttpRequestKnob extends TcpKnob, HasSoapAction {
+public interface HttpRequestKnob extends TcpKnob, HasSoapAction, HasHeaders {
     /**
      * @return the array of {@link HttpCookie}s that were found in this request. Never null, but may be empty.
      */
@@ -65,13 +65,6 @@ public interface HttpRequestKnob extends TcpKnob, HasSoapAction {
      * @return an array of the names of all the headers in the request, or an empty array if there are none. Never null.
      */
     String[] getHeaderNames();
-
-    /**
-     * @param name the name of the header whose values should be retrieved. Must not be null.
-     * @return an array containing all the values of the specified header, which will be empty if the specified header is not
-     *         present in the request. Never null.
-     */
-    String[] getHeaderValues(String name);
 
     /**
      * Get the client certificate that was presented along with this request, if any.

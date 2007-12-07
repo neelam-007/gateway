@@ -9,7 +9,7 @@ import com.l7tech.common.urlcache.UrlResolver;
 import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.policy.ServerPolicyException;
 
 import java.io.IOException;

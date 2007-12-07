@@ -6,7 +6,9 @@ package com.l7tech.policy.variable;
 import com.l7tech.common.util.EnumTranslator;
 import org.w3c.dom.Element;
 
+import java.io.InputStream;
 import java.io.ObjectStreamException;
+import java.io.Reader;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -32,6 +34,7 @@ public final class DataType implements Serializable {
             Short.TYPE, Short.class,
             BigInteger.class }
     );
+    
     public static final DataType DECIMAL = new DataType("decimal", "Decimal Number", new Class[] { BigDecimal.class });
     public static final DataType FLOAT = new DataType("float", "Floating Point Number", new Class[] { BigDecimal.class, Float.TYPE, Float.class, Double.TYPE, Double.class});
     public static final DataType ELEMENT = new DataType("xml", "XML Element", new Class[] { Element.class });
@@ -39,9 +42,11 @@ public final class DataType implements Serializable {
     public static final DataType BINARY = new DataType("binary", "Binary", new Class[] { byte[].class, String.class });
     public static final DataType DATE_TIME = new DataType("dateTime", "Date/Time", new Class[] { Date.class, Calendar.class, Long.TYPE, Long.class });
     public static final DataType MESSAGE = new DataType("message", "Message", new Class[] { Object.class /* Message.class would have bring in lots of dependencies to Layer 7 API. */ });
+    public static final DataType BLOB = new DataType("blob", "BLOB", new Class[] { InputStream.class });
+    public static final DataType CLOB = new DataType("clob", "CLOB", new Class[] { Reader.class });
     public static final DataType UNKNOWN = new DataType("other", "Unknown/Other", new Class[] { Object.class });
 
-    public static final DataType[] VALUES = new DataType[] { STRING, CERTIFICATE, INTEGER, DECIMAL, FLOAT, ELEMENT, BOOLEAN, BINARY, DATE_TIME, MESSAGE, UNKNOWN };
+    public static final DataType[] VALUES = new DataType[] { STRING, CERTIFICATE, INTEGER, DECIMAL, FLOAT, ELEMENT, BOOLEAN, BINARY, DATE_TIME, MESSAGE, BLOB, CLOB, UNKNOWN };
 
     private final String shortName;
     private final String name;

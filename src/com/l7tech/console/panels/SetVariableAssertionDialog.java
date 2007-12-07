@@ -254,7 +254,7 @@ public class SetVariableAssertionDialog extends JDialog {
 
         // Expression. Blank is OK.
         final StringBuilder expressionStatus = new StringBuilder();
-        final String[] names = ExpandVariables.getReferencedNames(expression);
+        final String[] names = Syntax.getReferencedNames(expression);
         for (String name : names) {
             final VariableMetadata meta = BuiltinVariables.getMetadata(name);
             if (meta == null && !_predecessorVariables.contains(name)) {

@@ -1,6 +1,6 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.Syntax;
 
 import java.util.logging.Level;
 
@@ -35,6 +35,6 @@ public class AuditDetailAssertion extends Assertion implements UsesVariables {
     }
 
     public String[] getVariablesUsed() {
-        return ExpandVariables.getReferencedNames(detail);
+        return Syntax.getReferencedNames(detail);
     }
 }

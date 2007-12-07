@@ -10,7 +10,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.Syntax;
 
 /**
  * An assertion that sends an SNMP trap.
@@ -128,7 +128,7 @@ public class SnmpTrapAssertion extends Assertion implements UsesVariables {
     }
 
     public String[] getVariablesUsed() {
-        return ExpandVariables.getReferencedNames(errorMessage);
+        return Syntax.getReferencedNames(errorMessage);
     }
 
     public AssertionMetadata meta() {

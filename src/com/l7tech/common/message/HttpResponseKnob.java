@@ -11,7 +11,7 @@ import com.l7tech.common.http.HttpCookie;
 /**
  * Information about a response to be sent via HTTP.
  */
-public interface HttpResponseKnob extends MessageKnob {
+public interface HttpResponseKnob extends MessageKnob, HasHeaders {
     /**
      * Adds the specified {@link HttpCookie} to the response
      * @param cookie the {@link HttpCookie} to be added. Must not be null.
@@ -45,13 +45,6 @@ public interface HttpResponseKnob extends MessageKnob {
      * @param value the value to add. Must not be null.
      */
     void addHeader(String name, String value);
-
-    /**
-     * Get the values for an http header to be returned
-     * @param name name of the header
-     * @return an array of header values, never null
-     */
-    String[] getHeaderValues(String name);
 
     /**
      * Add a WWW-Authenticate: challenge value to this response.  The actual challenge will not be sent unless

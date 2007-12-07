@@ -22,7 +22,7 @@ import static com.l7tech.policy.assertion.SamlIssuerAssertion.DecorationType.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.audit.Auditor;

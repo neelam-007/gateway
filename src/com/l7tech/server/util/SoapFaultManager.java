@@ -7,7 +7,7 @@ import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.wsp.TypeMappingUtils;
 import com.l7tech.policy.wsp.WspConstants;

@@ -6,6 +6,7 @@ package com.l7tech.policy.variable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Lists built-in system variables and their metadata
@@ -50,7 +51,7 @@ public class BuiltinVariables {
     }
 
     public static boolean isPredefined(String name) {
-        return getMetadata(name, metadataPresetByName) != null;
+        return getMatchingName(name, metadataPresetByName.keySet()) != null;
     }
 
     public static boolean isSettable(String name) {
@@ -123,19 +124,19 @@ public class BuiltinVariables {
     }
 
     public static VariableMetadata getMetadata(String name) {
-        return getMetadata(name, metadataByName);
+        String newname = getMatchingName(name, metadataByName.keySet());
+        if (newname == null) return null;
+        return (VariableMetadata) metadataByName.get(newname);
     }
 
-    private static VariableMetadata getMetadata(String name, Map map) {
+    public static String getMatchingName(String name, Set names) {
         final String lname = name.toLowerCase();
-        VariableMetadata var = (VariableMetadata)map.get(lname);
-        if (var != null) return var;
+        if (names.contains(lname)) return lname;
 
         int pos = lname.length();
         do {
             String tryname = lname.substring(0, pos);
-            var = (VariableMetadata)map.get(tryname);
-            if (var != null) return var;
+            if (names.contains(tryname)) return tryname;
             pos = lname.lastIndexOf(".", pos-1);
         } while (pos > 0);
 

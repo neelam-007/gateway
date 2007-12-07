@@ -4,7 +4,7 @@
 package com.l7tech.common.gui.widgets;
 
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.Syntax;
 
 import java.net.InetAddress;
 import java.net.MalformedURLException;
@@ -25,7 +25,7 @@ public class UrlPanel extends TextEntryPanel {
     protected String getSemanticError(String model) {
         if (model == null || model.length() == 0) return null;
         // if the URL contains context variable, you just can't check semantic
-        String[] tmp = ExpandVariables.getReferencedNames(model);
+        String[] tmp = Syntax.getReferencedNames(model);
         if (tmp != null && tmp.length > 0) {
             return null;
         }
@@ -46,7 +46,7 @@ public class UrlPanel extends TextEntryPanel {
     protected String getSyntaxError(String model) {
         if (model == null || model.length() == 0) return null;
         // if the URL contains context variable, you just can't check syntax
-        String[] tmp = ExpandVariables.getReferencedNames(model);
+        String[] tmp = Syntax.getReferencedNames(model);
         if (tmp != null && tmp.length > 0) {
             return null;
         }

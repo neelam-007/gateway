@@ -296,7 +296,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
         for (String variableName: predecessorVariableNames) {
             if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
-                final MsgSrcComboBoxItem item = new MsgSrcComboBoxItem(variableName, displayFormat.format(new Object[]{ExpandVariables.SYNTAX_PREFIX, variableName, ExpandVariables.SYNTAX_SUFFIX}));
+                final MsgSrcComboBoxItem item = new MsgSrcComboBoxItem(variableName, displayFormat.format(new Object[]{Syntax.SYNTAX_PREFIX, variableName, Syntax.SYNTAX_SUFFIX}));
                 reqMsgSrcComboBox.addItem(item);
                 if (variableName.equals(assertion.getRequestMsgSrc())) {
                     reqMsgSrcComboBox.setSelectedItem(item);

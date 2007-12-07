@@ -9,7 +9,8 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SetVariableAssertion;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
@@ -29,7 +30,7 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
     public ServerSetVariableAssertion(SetVariableAssertion assertion, ApplicationContext spring) {
         super(assertion);
         auditor = new Auditor(this, spring, logger);
-        varsUsed = ExpandVariables.getReferencedNames(assertion.getExpression());
+        varsUsed = Syntax.getReferencedNames(assertion.getExpression());
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {

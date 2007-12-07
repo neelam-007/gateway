@@ -8,7 +8,7 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.*;
 
 import java.util.Arrays;
@@ -44,7 +44,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
                 if (rv != null) sb.append(rv);
             }
         }
-        return ExpandVariables.getReferencedNames(sb.toString());
+        return Syntax.getReferencedNames(sb.toString());
     }
 
     public ComparisonAssertion() {

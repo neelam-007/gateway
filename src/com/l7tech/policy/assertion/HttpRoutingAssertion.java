@@ -6,8 +6,8 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.Syntax;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
@@ -313,7 +313,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         if (!StringUtils.isEmpty(ntlmHost)) tmp.append(ntlmHost);
         if (!StringUtils.isEmpty(realm)) tmp.append(realm);
 
-        if (requestMsgSrc != null) tmp.append(ExpandVariables.SYNTAX_PREFIX).append(requestMsgSrc).append(ExpandVariables.SYNTAX_SUFFIX);
+        if (requestMsgSrc != null) tmp.append(Syntax.SYNTAX_PREFIX).append(requestMsgSrc).append(Syntax.SYNTAX_SUFFIX);
 
         HttpPassthroughRuleSet[] ruleset = {responseHeaderRules, requestHeaderRules, requestParamRules};
         for (int i = 0; i < ruleset.length; i++) {
@@ -325,7 +325,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
                 }
             }
         }
-        return ExpandVariables.getReferencedNames(tmp.toString());
+        return Syntax.getReferencedNames(tmp.toString());
     }
 
     public VariableMetadata[] getVariablesSet() {
