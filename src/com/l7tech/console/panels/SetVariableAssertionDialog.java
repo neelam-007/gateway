@@ -7,6 +7,7 @@ import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.PauseListener;
 import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.util.TextUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.LineBreak;
 import com.l7tech.policy.assertion.SetVariableAssertion;
@@ -155,8 +156,8 @@ public class SetVariableAssertionDialog extends JDialog {
                 }
                 assertion.setLineBreak(lineBreak);
 
-                String expression = _expressionTextArea.getText();
-                expression = expression.replace("\r\n", "\n").replace('\r', '\n').replace("\n", lineBreak.getCharacters()); // TODO optimize
+                final String expression = TextUtils.convertLineBreaks(_expressionTextArea.getText(), lineBreak.getCharacters());
+                    // Conversion necessary? Can a CR be pasted into a JTextArea and returned by getText()?
                 assertion.setExpression(expression);
 
                 _assertionModified = true;
@@ -173,17 +174,7 @@ public class SetVariableAssertionDialog extends JDialog {
         _contentTypeTextField.setText(assertion.getContentType());
 
         // JTextArea likes all line break to be LF.
-        String expression = assertion.expression();
-        if (expression != null) {
-            final boolean hasCRLF = expression.indexOf("\r\n") != -1;
-            if (hasCRLF) {
-                expression = expression.replace("\r\n", "\n");
-            }
-            final boolean hasCR = expression.indexOf('\r') != -1;
-            if (hasCR) {
-                expression = expression.replace('\r', '\n');
-            }
-        }
+        final String expression = TextUtils.convertLineBreaks(assertion.expression(), "\n");
         _expressionTextArea.setText(expression);
 
         if (assertion.getLineBreak() == LineBreak.LF) {

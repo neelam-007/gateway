@@ -233,4 +233,97 @@ public class TextUtils {
             }
         }
     }
+
+    /**
+     * Convert all line breaks in a string to the same kind of line break.
+     * This method uses a single pass processing and will not create any new string
+     * unless absolutely necessary.
+     *
+     * @param text          string with possible line breaks
+     * @param lineBreak     must be one of: "\r", "\n", or "\r\n"
+     * @return converted string; <code>text</code> is returned if no conversion needed
+     * @since SecureSpan 4.3
+     */
+    public static String convertLineBreaks(final String text, final String lineBreak) {
+        if (text == null || text.length() == 0) return text;
+
+        final boolean toCR = "\r".equals(lineBreak);
+        final boolean toLF = "\n".equals(lineBreak);
+        final boolean toCRLF = "\r\n".equals(lineBreak);
+        if (!(toCR || toLF || toCRLF)) throw new IllegalArgumentException("lineBreak not one of \"\\r\", \"\\n\", or \"\\r\\n\"");
+
+        StringBuilder converted = null; // Delays construction until absolutely necessary.
+        boolean wasCR = false;
+        final int sLength = text.length();
+        for (int i = 0; i < sLength; ++i) {
+            final char c = text.charAt(i);
+            if (c == '\r') { // --------------------- strict CR or CR in a CR-LF
+                // Delays handling of this CR until we see the next character.
+                wasCR = true;
+            } else if (c == '\n') {
+                if (wasCR) { // ---------------------------------- LF in a CR-LF
+                    if (toCRLF) {
+                        // pass through
+                        if (converted != null) converted.append('\r').append(c);
+                    } else {
+                        // convert
+                        if (converted == null) {
+                            converted = new StringBuilder();
+                            converted.append(text, 0, i - 1);
+                        }
+                        converted.append(lineBreak);
+                    }
+                } else { // ------------------------------------------ strict LF
+                    if (toLF) {
+                        // pass through
+                        if (converted != null) converted.append(c);
+                    } else {
+                        // convert
+                        if (converted == null) {
+                            converted = new StringBuilder();
+                            converted.append(text, 0, i);
+                        }
+                        converted.append(lineBreak);
+                    }
+                }
+                wasCR = false;
+            } else { // --------------------------------------------- other char
+                // First, handles any previous strict CR.
+                if (wasCR) {
+                    if (toCR) {
+                        // pass through
+                        if (converted != null) converted.append('\r');
+                    } else {
+                        // convert
+                        if (converted == null) {
+                            converted = new StringBuilder();
+                            converted.append(text, 0, i - 1);
+                        }
+                        converted.append(lineBreak);
+                    }
+                }
+
+                // Second, passes through this character.
+                if (converted != null) {
+                    converted.append(c);
+                }
+                wasCR = false;
+            }
+        }
+
+        // Handles any trailing CR.
+        if (wasCR) {
+            if (toCR) {
+                if (converted != null) converted.append('\r');
+            } else {
+                if (converted == null) {
+                    converted = new StringBuilder();
+                    converted.append(text, 0, text.length() - 1);
+                }
+                converted.append(lineBreak);
+            }
+        }
+
+        return converted == null? text : converted.toString();
+    }
 }

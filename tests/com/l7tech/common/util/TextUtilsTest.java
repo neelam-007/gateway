@@ -116,4 +116,43 @@ public class TextUtilsTest extends TestCase {
         assertEquals("Last 4 lines", last4Line, TextUtils.tail(text, 4));
         assertEquals("Last 5 lines", last4Line, TextUtils.tail(text, 5));
     }
+
+    public void testConvertLineBreaks() {
+        final String CR = "\r";
+        final String LF = "\n";
+        final String CRLF = "\r\n";
+
+        final String noLineBreak = "123456";
+        assertTrue("No line break - should return same String object", noLineBreak == TextUtils.convertLineBreaks(noLineBreak, CR));
+        assertTrue("No line break - should return same String object", noLineBreak == TextUtils.convertLineBreaks(noLineBreak, LF));
+        assertTrue("No line break - should return same String object", noLineBreak == TextUtils.convertLineBreaks(noLineBreak, CRLF));
+
+        final String crOnly = "1\r2\r3\r";
+        final String lfOnly = "1\n2\n3\n";
+        final String crlfOnly = "1\r\n2\r\n3\r\n";
+
+        assertTrue("CR to CR - should return same String object", crOnly == TextUtils.convertLineBreaks(crOnly, CR));
+        assertEquals("CR to LF", lfOnly, TextUtils.convertLineBreaks(crOnly, LF));
+        assertEquals("CR to CR-LF", crlfOnly, TextUtils.convertLineBreaks(crOnly, CRLF));
+
+        assertEquals("LF to CR", crOnly, TextUtils.convertLineBreaks(lfOnly, CR));
+        assertTrue("LF to LF - should return same String object", lfOnly == TextUtils.convertLineBreaks(lfOnly, LF));
+        assertEquals("LF to CR-LF", crlfOnly, TextUtils.convertLineBreaks(lfOnly, CRLF));
+
+        assertEquals("CR-LF to CR", crOnly, TextUtils.convertLineBreaks(crlfOnly, CR));
+        assertEquals("CR-LF to LF", lfOnly, TextUtils.convertLineBreaks(crlfOnly, LF));
+        assertTrue("CR-LF to CR-LF - should return same String object", crlfOnly == TextUtils.convertLineBreaks(crlfOnly, CRLF));
+
+        final String mixed = "1\r2\n3\r\n4";
+        assertEquals("mixed to CR", "1\r2\r3\r4", TextUtils.convertLineBreaks(mixed, CR));
+        assertEquals("mixed to LF", "1\n2\n3\n4", TextUtils.convertLineBreaks(mixed, LF));
+        assertEquals("mixed to CR-LF", "1\r\n2\r\n3\r\n4", TextUtils.convertLineBreaks(mixed, CRLF));
+
+        final String mixedWithTrailingCR = mixed + "\r";
+        assertEquals("mixed to CR", "1\r2\r3\r4\r", TextUtils.convertLineBreaks(mixedWithTrailingCR, CR));
+        final String mixedWithTrailingLF = mixed + "\n";
+        assertEquals("mixed to LF", "1\n2\n3\n4\n", TextUtils.convertLineBreaks(mixedWithTrailingLF, LF));
+        final String mixedWithTrailingCRLF = mixed + "\r\n";
+        assertEquals("mixed to CR-LF", "1\r\n2\r\n3\r\n4\r\n", TextUtils.convertLineBreaks(mixedWithTrailingCRLF, CRLF));
+    }
 }
