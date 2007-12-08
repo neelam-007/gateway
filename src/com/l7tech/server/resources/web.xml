@@ -205,6 +205,16 @@
         <servlet-class>com.l7tech.server.admin.SSGLoginFormServlet</servlet-class>
     </servlet>
 
+    <servlet>
+        <servlet-name>fileDownloadServlet</servlet-name>
+        <servlet-class>com.l7tech.server.FileDownloadServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>fileDownloadServlet</servlet-name>
+        <url-pattern>/ssg/webadmin/filedownload</url-pattern>
+    </servlet-mapping>
+
     <servlet-mapping>
         <servlet-name>admin</servlet-name>
         <url-pattern>/ssg/manager/*</url-pattern>
