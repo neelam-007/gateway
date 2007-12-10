@@ -27,5 +27,5 @@ public class GatewayRuntimeException extends RuntimeAdminException {
 
     //- PRIVATE
 
-    private static final String MESSAGE = "An unexpected error occurred on the SecureSpan Gateway, please contact your gateway administrator.";
+    private static final String MESSAGE = "The SecureSpan Gateway error (eg, DB failure, etc.) occurred, please contact your gateway administrator.";
 }

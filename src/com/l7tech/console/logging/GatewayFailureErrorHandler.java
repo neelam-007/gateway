@@ -32,7 +32,7 @@ public class GatewayFailureErrorHandler implements ErrorHandler {
             if (topParent != null) {
                 topParent.repaint();
             }
-            DialogDisplayer.showMessageDialog(topParent, "Error", ex.getMessage(), null);
+            DialogDisplayer.showMessageDialog(topParent, null, ex.getMessage(), null);
         } else {
             // pass to next handle in the handle chain
             event.handle();
