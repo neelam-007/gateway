@@ -12,7 +12,7 @@ import com.l7tech.common.mime.MimeHeaders;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.IteratorEnumeration;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.server.DefaultStashManagerFactory;
+import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -227,7 +227,7 @@ public class ExpandVariablesTest extends TestCase {
     }
 
     public void testRequestBodyNotText() throws Exception {
-        Message foo = new Message(DefaultStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream(TINY_BODY.getBytes("UTF-8")));
+        Message foo = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream(TINY_BODY.getBytes("UTF-8")));
         try {
             ExpandVariables.process("${foo.mainPart}", makeVars(foo), audit, true);
             fail("Expected IAE for non-text mainPart");
@@ -249,7 +249,7 @@ public class ExpandVariablesTest extends TestCase {
     }
 
     private Message makeTinyRequest() throws NoSuchPartException, IOException {
-        Message foo = new Message(DefaultStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(TINY_BODY.getBytes("UTF-8")));
+        Message foo = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(TINY_BODY.getBytes("UTF-8")));
         Map<String, MimeHeader> headers = new HashMap<String, MimeHeader>();
         headers.put("Content-Type", ContentTypeHeader.OCTET_STREAM_DEFAULT);
 
