@@ -352,6 +352,7 @@ public class SinkManager
             }
         }
 
+        addConsoleSink( sinks );
         processOldTrafficLoggerConfig( sinks );
         updateTrafficLoggingEnabledState( sinks );
 
@@ -380,6 +381,27 @@ public class SinkManager
             }
             trafficLogger.setEnabled( foundTrafficSink );
         }
+    }
+
+    /**
+     * Add a configured console message sink to the sink list.
+     *
+     * Set a threshold based on the audit detail threshold.
+     */
+    private void addConsoleSink( final List<MessageSink> sinks ) {
+        SinkConfiguration.SeverityThreshold threshold = SinkConfiguration.SeverityThreshold.INFO;
+        String thresholdConfig = serverConfig.getPropertyCached( ServerConfig.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD );
+        if ( thresholdConfig != null ) {
+            threshold = toSeverityThreshold( thresholdConfig, threshold );    
+        }
+
+        SinkConfiguration configuration = new SinkConfiguration();
+        configuration.setName( "console" );
+        configuration.setSeverity( threshold );
+        configuration.setCategories( SinkConfiguration.CATEGORY_AUDITS );
+        configuration.setType( SinkConfiguration.SinkType.FILE ); // it's fileish ...
+        MessageSink sink = new ConsoleMessageSink( configuration );
+        sinks.add( sink );        
     }
 
     /**
@@ -438,6 +460,7 @@ public class SinkManager
 
                 SinkConfiguration configuration = new SinkConfiguration();
                 configuration.setName( name );
+                configuration.setType( SinkConfiguration.SinkType.FILE );
                 configuration.setSeverity( SinkConfiguration.SeverityThreshold.INFO );
                 configuration.setCategories( SinkConfiguration.CATEGORY_TRAFFIC_LOGS );
                 configuration.setProperty( SinkConfiguration.PROP_FILE_MAX_SIZE, limit );
@@ -582,6 +605,22 @@ public class SinkManager
         }
 
         return valid;
+    }
+
+    /**
+     * Convert the given level/severity string to a SeverityThreshold if possible 
+     */
+    private SinkConfiguration.SeverityThreshold toSeverityThreshold( final String value,
+                                                                     final SinkConfiguration.SeverityThreshold defaultValue ) {
+        SinkConfiguration.SeverityThreshold threshold = defaultValue;
+
+        try {
+            threshold = SinkConfiguration.SeverityThreshold.valueOf( value );
+        } catch ( IllegalArgumentException iae ) {
+            // use the default
+        }
+
+        return threshold;
     }
 
     /**
