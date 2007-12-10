@@ -663,6 +663,7 @@ public class ClusterStatusPanel extends JPanel {
         }
 
         getStatusRefreshTimer().stop();
+        cancelled.set(true);
     }
 
     /**
