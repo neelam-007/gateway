@@ -13,7 +13,6 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.server.util.ManagedTimer;
 
 /**
  * @author: ghuang
@@ -100,6 +99,13 @@ public class FileDownloadServlet extends HttpServlet {
         synchronized (fileMap) {
             fileInfo = (FileInfo) fileMap.get(key);
         }
+
+        // Check if the file exists or not.
+        if (fileInfo == null) {
+            resp.sendError(404, "Not such file exists.");
+            return;
+        }
+
         // Set response
         resp.reset();
         resp.addHeader("Content-Disposition", "attachment; filename=\"" + fileInfo.fileName + "\"");

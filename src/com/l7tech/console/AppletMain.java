@@ -397,6 +397,11 @@ public class AppletMain extends JApplet implements SheetHolder {
                 GenericHttpRequestParams params = new GenericHttpRequestParams(url);
                 params.setContentType(ContentTypeHeader.TEXT_DEFAULT);
                 SimpleHttpClient.SimpleHttpResponse response = sClient.post(params, fileContent.getBytes("UTF-8"));
+                // Check for a 200 response code (on POST)
+                if (response.getStatus() != 200) {
+                    DialogDisplayer.showMessageDialog(AppletMain.this, null, "The report cannot be saved.  Try it again.", null);
+                    return;
+                }
                 String key = new String(response.getBytes());
 
                 // Downloading the report
