@@ -93,8 +93,6 @@
             <exclude name="**/ant-*.jar"/>
 
             <exclude name="**/jaxrpc.jar"/>
-
-            <exclude name="**/0500-wsdl4j_1.6.2.jar"/>
         </fileset>
     </path>
 
@@ -584,7 +582,6 @@
         <include name="**/jta.jar"/>
         <include name="**/odmg.jar"/>
         <include name="**/concurrent-1.3.4.jar"/>
-        <include name="**/qname.jar"/>
         <include name="**/log4j-1.2.14.jar"/>
         <include name="**/slf4j-*.jar"/>
 
@@ -793,6 +790,14 @@
             description="Run an individual unit test. (e.g. ./build.sh test-one -Dtest=com.l7tech.MyTest)"
             depends="clean.test, dev, summary"
             if="test">
+        <!-- Can be used to debug any classpath issues with tests -->
+        <!--
+        <pathconvert property="test.classpath.text" targetos="unix" pathsep="${line.separator}">
+            <path refid="project.test.classpath"/>
+        </pathconvert>
+        <echo level="info">Using test classpath: ${line.separator}${test.classpath.text}</echo>
+        -->
+
         <junit printsummary="yes" haltonfailure="yes" fork="off">
             <classpath>
                 <path refid="project.test.classpath"/>
@@ -802,7 +807,7 @@
             <formatter type="plain"/>
             <sysproperty key="src.root" value="${src.root}"/>
 
-            <test name="${test}" haltonfailure="no" fork="yes"/>
+            <test name="${test}" haltonfailure="yes" fork="yes"/>
         </junit>
     </target>
 
@@ -950,6 +955,7 @@
             <test name="com.l7tech.server.log.syslog.SyslogManagerTest" haltonfailure="no"/>
             <test name="com.l7tech.policy.variable.VariableMetadataTest" haltonfailure="no"/>
             <test name="com.l7tech.policy.ExpandVariablesTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.admin.AdminWebServiceTest" haltonfailure="no"/>
 
             <!--
               Add possibly-slow intensive nightly tests here **

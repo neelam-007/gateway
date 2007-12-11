@@ -1,7 +1,10 @@
 package com.l7tech.server.admin.ws;
 
+import javax.xml.namespace.QName;
+
 import org.codehaus.xfire.aegis.MessageReader;
 import org.codehaus.xfire.aegis.MessageWriter;
+import org.codehaus.xfire.aegis.type.Type;
 import org.codehaus.xfire.MessageContext;
 import org.codehaus.xfire.fault.XFireFault;
 
@@ -12,7 +15,7 @@ import com.l7tech.common.policy.Policy;
  *
  * @author Steve Jones
  */
-public class PolicyType extends org.codehaus.xfire.aegis.type.Type {
+public class PolicyType extends Type {
 
     /**
      * Not implemented
@@ -31,5 +34,12 @@ public class PolicyType extends org.codehaus.xfire.aegis.type.Type {
         Policy policy = (Policy) object;
 
         messageWriter.writeValue(policy.getXml());
+    }
+
+    /**
+     * Policy is an XML string 
+     */
+    public QName getSchemaType() {
+        return new QName("http://www.w3.org/2001/XMLSchema", "string");
     }
 }
