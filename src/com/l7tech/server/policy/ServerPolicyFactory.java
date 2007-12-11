@@ -21,12 +21,17 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.Callable;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.text.MessageFormat;
 
 /**
  * This is for getting a tree of ServerAssertion objects from the corresponding Assertion objects (data).
  * @author alex
  */
 public class ServerPolicyFactory implements ApplicationContextAware {
+    protected static final Logger logger = Logger.getLogger(ServerPolicyFactory.class.getName());
+
     private final AssertionLicense licenseManager;
     private ApplicationContext applicationContext;
     private static ThreadLocal<LinkedList<Boolean>> licenseEnforcement = new ThreadLocal<LinkedList<Boolean>>() {
@@ -135,6 +140,14 @@ public class ServerPolicyFactory implements ApplicationContextAware {
 
             if (!ServerAssertion.class.isAssignableFrom(specificAssertionClass))
                 throw new ServerPolicyException(genericAssertion, productClassname + " is not a ServerAssertion");
+
+            if (logger.isLoggable(Level.FINE))
+                logger.log(Level.FINE,
+                           MessageFormat.format("Instantiating server assertion of type {0} for assertion {1} ordinal: {2} in policy OID: {3}",
+                                                specificAssertionClass.getClass().getName(),
+                                                genericAssertionClass.getName(),
+                                                genericAssertion.getOrdinal(),
+                                                genericAssertion.getOwnerPolicyOid()));
 
             Constructor ctor = ConstructorInvocation.findMatchingConstructor(specificAssertionClass, new Class[] {genericAssertionClass, ApplicationContext.class});
             if (ctor != null)
