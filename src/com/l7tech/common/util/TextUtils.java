@@ -267,10 +267,7 @@ public class TextUtils {
                         if (converted != null) converted.append('\r').append(c);
                     } else {
                         // convert
-                        if (converted == null) {
-                            converted = new StringBuilder();
-                            converted.append(text, 0, i - 1);
-                        }
+                        if (converted == null) converted = new StringBuilder().append(text, 0, i - 1);
                         converted.append(lineBreak);
                     }
                 } else { // ------------------------------------------ strict LF
@@ -279,10 +276,7 @@ public class TextUtils {
                         if (converted != null) converted.append(c);
                     } else {
                         // convert
-                        if (converted == null) {
-                            converted = new StringBuilder();
-                            converted.append(text, 0, i);
-                        }
+                        if (converted == null) converted = new StringBuilder().append(text, 0, i);
                         converted.append(lineBreak);
                     }
                 }
@@ -295,10 +289,7 @@ public class TextUtils {
                         if (converted != null) converted.append('\r');
                     } else {
                         // convert
-                        if (converted == null) {
-                            converted = new StringBuilder();
-                            converted.append(text, 0, i - 1);
-                        }
+                        if (converted == null) converted = new StringBuilder().append(text, 0, i - 1);
                         converted.append(lineBreak);
                     }
                 }
@@ -316,10 +307,7 @@ public class TextUtils {
             if (toCR) {
                 if (converted != null) converted.append('\r');
             } else {
-                if (converted == null) {
-                    converted = new StringBuilder();
-                    converted.append(text, 0, text.length() - 1);
-                }
+                if (converted == null) converted = new StringBuilder().append(text, 0, text.length() - 1);
                 converted.append(lineBreak);
             }
         }

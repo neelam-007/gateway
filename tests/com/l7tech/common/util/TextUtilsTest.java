@@ -122,6 +122,11 @@ public class TextUtilsTest extends TestCase {
         final String LF = "\n";
         final String CRLF = "\r\n";
 
+        assertEquals("null - should return null", null, TextUtils.convertLineBreaks(null, CR));
+
+        final String empty = "";
+        assertTrue("empty - should return same String object", empty == TextUtils.convertLineBreaks(empty, CR));
+
         final String noLineBreak = "123456";
         assertTrue("No line break - should return same String object", noLineBreak == TextUtils.convertLineBreaks(noLineBreak, CR));
         assertTrue("No line break - should return same String object", noLineBreak == TextUtils.convertLineBreaks(noLineBreak, LF));
