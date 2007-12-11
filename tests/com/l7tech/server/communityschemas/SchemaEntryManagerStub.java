@@ -14,7 +14,7 @@ import java.util.Collections;
 /**
  * @author mike
  */
-public class SchemaEntryManagerStub extends EntityManagerStub<SchemaEntry> implements SchemaEntryManager {
+public class SchemaEntryManagerStub extends EntityManagerStub<SchemaEntry,EntityHeader> implements SchemaEntryManager {
     public Collection<SchemaEntry> findByTNS(String tns) throws FindException {
         return Collections.emptySet();
     }

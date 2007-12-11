@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
-public class ServiceManagerStub extends EntityManagerStub<PublishedService> implements ServiceManager, InitializingBean {
+public class ServiceManagerStub extends EntityManagerStub<PublishedService,ServiceHeader> implements ServiceManager, InitializingBean {
     private static Logger logger = Logger.getLogger(ServiceManagerStub.class.getName());
     private ServiceCache serviceCache;
     private final PolicyManager policyManager;
@@ -164,4 +164,7 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService> impl
         }
     }
 
+    protected ServiceHeader header(PublishedService entity) {
+        return new ServiceHeader( entity );
+    }
 }

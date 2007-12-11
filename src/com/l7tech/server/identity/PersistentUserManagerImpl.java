@@ -311,8 +311,9 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         return EntityType.USER;
     }
 
-    protected IdentityHeader newHeader(String id, String name) {
-        return new IdentityHeader(getProviderOid(), id, EntityType.USER, name, null);
+    @Override
+    protected IdentityHeader newHeader(UT entity) {
+        return new IdentityHeader(getProviderOid(), entity.getId(), EntityType.USER, entity.getName(), null);
     }
 
     /**

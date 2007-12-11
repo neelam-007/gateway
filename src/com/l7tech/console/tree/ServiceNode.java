@@ -8,8 +8,8 @@ import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ServiceHeader;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -40,14 +40,10 @@ public class ServiceNode extends PolicyEntityNode {
      * @param e the EntityHeader instance, must represent published service
      * @throws IllegalArgumentException thrown if unexpected type
      */
-    public ServiceNode(EntityHeader e)
+    public ServiceNode(ServiceHeader e)
       throws IllegalArgumentException {
         super(e);
-        try {
-            setAllowsChildren(getPublishedService().isSoap());
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        setAllowsChildren(e.isSoap());
     }
 
     public PublishedService getPublishedService() throws FindException {
@@ -72,8 +68,8 @@ public class ServiceNode extends PolicyEntityNode {
      * @return the published service.  Never null.
      */
     public PublishedService refreshPublishedService() throws FindException {
-        EntityHeader eh = getEntityHeader();
-        svc = Registry.getDefault().getServiceManager().findServiceByID(eh.getStrId());
+        ServiceHeader serviceHeader = getHeader();
+        svc = Registry.getDefault().getServiceManager().findServiceByID(serviceHeader.getStrId());
         // throw something if null, the service may have been deleted
         if (svc == null) {
             TopComponents creg = TopComponents.getInstance();
@@ -89,11 +85,11 @@ public class ServiceNode extends PolicyEntityNode {
                     }
                 }
             }
-            throw new FindException("The service '"+eh.getName()+"' does not exist any more.");
+            throw new FindException("The service '"+serviceHeader.getName()+"' does not exist any more.");
         }
-        EntityHeader newEh = new EntityHeader(svc.getId(), eh.getType(), svc.getName(), svc.getName());
+        ServiceHeader newEh = new ServiceHeader(svc);
         setUserObject(newEh);
-        firePropertyChange(this, "UserObject", eh, newEh);
+        firePropertyChange(this, "UserObject", serviceHeader, newEh);
         return svc;
     }
 
@@ -114,22 +110,9 @@ public class ServiceNode extends PolicyEntityNode {
     public Action[] getActions() {
         final Collection<Action> actions = new ArrayList<Action>();
 
-        PublishedService ps;
-        try {
-            ps = getPublishedService();
-        } catch (Exception e) {
-            log.log(Level.WARNING, "Error retrieving service", e);
-            return new Action[0];
-        }
-
-        if (ps == null) {
-            log.warning("Cannot retrieve service");
-            return new Action[0];
-        }
-
         actions.add(new EditPolicyAction(this));
         actions.add(new EditServiceProperties(this));
-        if (svc.isSoap() && !TopComponents.getInstance().isApplet()) actions.add(new PublishPolicyToUDDIRegistry(this));
+        if (getHeader().isSoap() && !TopComponents.getInstance().isApplet()) actions.add(new PublishPolicyToUDDIRegistry(this));
         actions.add(new DeleteServiceAction(this));
         actions.add(new PolicyRevisionsAction(this));
 
@@ -186,18 +169,7 @@ public class ServiceNode extends PolicyEntityNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        String nodeName = getEntityName();
-        try {
-            PublishedService ps = getPublishedService();
-            if (ps != null) {
-                nodeName = ps.displayName();
-            }
-        } catch (Exception e) {
-            ErrorManager.getDefault().
-              notify(Level.SEVERE, e,
-                "Error accessing service id=" + getEntityHeader().getOid());
-        }
-        return nodeName;
+        return getHeader().getDisplayName();
     }
 
     protected String getEntityName() {
@@ -210,21 +182,26 @@ public class ServiceNode extends PolicyEntityNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        if (svc == null) {
+        ServiceHeader header = getHeader();
+        if (header == null) {
             return "com/l7tech/console/resources/services_disabled16.png";
         }
-        else if (svc.isDisabled()) {
-            if (svc == null || !svc.isSoap()) {
+        else if (header.isDisabled()) {
+            if (header == null || !header.isSoap()) {
                 return "com/l7tech/console/resources/xmlObject_disabled16.png";
             } else {
                 return "com/l7tech/console/resources/services_disabled16.png";
             }
         } else {
-            if(svc.isSoap()) {
+            if(header.isSoap()) {
                 return "com/l7tech/console/resources/services16.png";
             } else {
                 return "com/l7tech/console/resources/xmlObject16.gif";
             }
         }
+    }
+
+    private ServiceHeader getHeader() {
+        return (ServiceHeader) getEntityHeader();
     }
 }

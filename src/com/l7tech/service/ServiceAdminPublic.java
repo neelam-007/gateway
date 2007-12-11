@@ -7,8 +7,8 @@ package com.l7tech.service;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.common.security.rbac.MethodStereotype;
 import com.l7tech.common.security.rbac.Secured;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ServiceHeader;
 import com.l7tech.admin.Administrative;
 
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
@@ -35,7 +35,7 @@ public interface ServiceAdminPublic {
     @Secured(stereotype=MethodStereotype.FIND_HEADERS)
     @Transactional(readOnly=true)
     @Administrative(licensed=false)            
-    EntityHeader[] findAllPublishedServices() throws FindException;
+    ServiceHeader[] findAllPublishedServices() throws FindException;
 
     /**
      * Retrieve a specified published service given its service ID.

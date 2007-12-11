@@ -6,6 +6,8 @@ import com.l7tech.objectmodel.EntityManagerStub;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.EntityHeader;
+
 import org.springframework.beans.factory.InitializingBean;
 
 import java.util.Arrays;
@@ -18,7 +20,7 @@ import java.util.Map;
  * @version 14-Dec-2004
  */
 public class TestIdentityProviderConfigManager
-        extends EntityManagerStub<IdentityProviderConfig>
+        extends EntityManagerStub<IdentityProviderConfig, EntityHeader>
         implements IdentityProviderConfigManager, InitializingBean
 {
     private IdentityProviderFactory identityProviderFactory;

@@ -14,8 +14,7 @@ import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.registry.RegistryStub;
 import com.l7tech.identity.StubDataStore;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ServiceHeader;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.service.PublishedService;
 
@@ -46,8 +45,8 @@ public class SchemaValidationPropertiesDialogTest {
             throw new RuntimeException("Emtpy Stub DataStore");
         }
         PublishedService svc = (PublishedService)services.iterator().next();
-        EntityHeader eh = new EntityHeader(Long.toString(svc.getOid()), EntityType.SERVICE, svc.getName(), "This is a test service");
-        ServiceNode sn = new ServiceNode(eh);
+        ServiceHeader sh = new ServiceHeader(svc);
+        ServiceNode sn = new ServiceNode(sh);
 
         PublishedService ps = sn.getPublishedService();
         ps.setWsdlXml(TestDocuments.getTestDocumentAsXml(TestDocuments.WSDL_DOC_LITERAL));

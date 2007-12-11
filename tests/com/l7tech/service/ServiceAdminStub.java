@@ -144,7 +144,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      *
      * @return A <code>Collection</code> of EntityHeader objects.
      */
-    public EntityHeader[] findAllPublishedServices() throws FindException {
+    public ServiceHeader[] findAllPublishedServices() throws FindException {
         Collection res = serviceManager.findAllHeaders();
         return collectionToHeaderArray(res);
     }
@@ -156,7 +156,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      *
      * @return A <code>Collection</code> of EntityHeader objects.
      */
-    public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize) {
+    public ServiceHeader[] findAllPublishedServicesByOffset(int offset, int windowSize) {
         throw new RuntimeException("Not Implemented");
     }
 
@@ -245,14 +245,14 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return Long.parseLong(serviceID);
     }
 
-    private EntityHeader[] collectionToHeaderArray(Collection input) {
-        if (input == null) return new EntityHeader[0];
-        EntityHeader[] output = new EntityHeader[input.size()];
+    private ServiceHeader[] collectionToHeaderArray(Collection input) {
+        if (input == null) return new ServiceHeader[0];
+        ServiceHeader[] output = new ServiceHeader[input.size()];
         int count = 0;
         java.util.Iterator i = input.iterator();
         while (i.hasNext()) {
             try {
-                output[count] = (EntityHeader)i.next();
+                output[count] = (ServiceHeader)i.next();
             } catch (ClassCastException e) {
                 throw new RuntimeException("Collection contained something other than a EntityHeader", e);
             }

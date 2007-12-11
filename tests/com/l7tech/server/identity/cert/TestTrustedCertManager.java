@@ -18,7 +18,7 @@ import java.util.List;
  * @author emil
  * @version Dec 15, 2004
  */
-public class TestTrustedCertManager extends EntityManagerStub<TrustedCert> implements TrustedCertManager {
+public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,EntityHeader> implements TrustedCertManager {
     public TrustedCert findBySubjectDn(String dn) throws FindException {
         throw new RuntimeException("Not implemented");
     }

@@ -8,22 +8,22 @@ import java.util.*;
 /**
  * Stub Entity Manager
  */
-public abstract class EntityManagerStub<ET extends PersistentEntity> implements EntityManager<ET, EntityHeader> {
+public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends EntityHeader> implements EntityManager<ET, EH> {
     protected final Map<Long, ET> entities;
-    protected final Map<Long, EntityHeader> headers;
+    protected final Map<Long, EH> headers;
     
     private long nextOid;
 
     public EntityManagerStub() {
         this.entities = new HashMap<Long, ET>();
-        this.headers = new HashMap<Long, EntityHeader>();
+        this.headers = new HashMap<Long, EH>();
         this.nextOid = 1;
     }
 
     public EntityManagerStub(ET[] entities) {
         long maxOid = 0;
         Map<Long, ET> es = new HashMap<Long, ET>();
-        Map<Long, EntityHeader> hs = new HashMap<Long, EntityHeader>();
+        Map<Long, EH> hs = new HashMap<Long, EH>();
         for (ET entity : entities) {
             es.put(entity.getOid(), entity);
             hs.put(entity.getOid(), header(entity));
@@ -49,17 +49,17 @@ public abstract class EntityManagerStub<ET extends PersistentEntity> implements 
         headers.put(entity.getOid(), header(entity));
     }
 
-    private EntityHeader header(ET entity) {
-        return new EntityHeader(entity.getId(), getEntityType(), name(entity), null);
+    protected EH header(ET entity) {
+        return (EH) new EntityHeader(entity.getId(), getEntityType(), name(entity), null);
     }
 
-    public synchronized Collection<EntityHeader> findAllHeaders() throws FindException {
+    public synchronized Collection<EH> findAllHeaders() throws FindException {
         return Collections.unmodifiableCollection(headers.values());
     }
 
-    public synchronized Collection<EntityHeader> findAllHeaders(int offset, int limit) throws FindException {
-        EntityHeader[] dest = new EntityHeader[limit];
-        EntityHeader[] all = headers.values().toArray(new EntityHeader[0]);
+    public synchronized Collection<EH> findAllHeaders(int offset, int limit) throws FindException {
+        EH[] dest = (EH[])  new EntityHeader[limit];
+        EH[] all = (EH[]) headers.values().toArray(new EntityHeader[limit]);
         System.arraycopy(all, offset, dest, 0, limit);
         return Arrays.asList(dest);
     }
@@ -91,11 +91,10 @@ public abstract class EntityManagerStub<ET extends PersistentEntity> implements 
 
     public synchronized long save(ET entity) throws SaveException {
         long oid = nextOid++;
+        entity.setOid(oid);
 
         entities.put(oid, entity);
-        headers.put(oid, new EntityHeader(Long.toString(oid), getEntityType(), name(entity), null));
-
-        entity.setOid(oid);
+        headers.put(oid, header(entity));
 
         return oid;
     }

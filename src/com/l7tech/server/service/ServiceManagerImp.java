@@ -40,7 +40,7 @@ import java.util.regex.Pattern;
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public class ServiceManagerImp
-        extends HibernateEntityManager<PublishedService, EntityHeader>
+        extends HibernateEntityManager<PublishedService, ServiceHeader>
         implements ServiceManager, ApplicationContextAware
 {
     private static final Logger logger = Logger.getLogger(ServiceManagerImp.class.getName());
@@ -59,6 +59,11 @@ public class ServiceManagerImp
         this.roleManager = roleManager;
         this.policyCache = policyCache;
         this.resolutionManager = resolutionManager;
+    }
+
+    @Override
+    protected ServiceHeader newHeader(PublishedService entity) {
+        return new ServiceHeader( entity );   
     }
 
     @Transactional(propagation=SUPPORTS)

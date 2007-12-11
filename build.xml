@@ -1870,6 +1870,7 @@
                 <include name="com/l7tech/objectmodel/EntityType.class"/>
                 <include name="com/l7tech/objectmodel/ReadOnlyEntityManager.class"/>
                 <include name="com/l7tech/objectmodel/EntityManager.class"/>
+                <include name="com/l7tech/objectmodel/ServiceHeader.class"/>
                 <include name="com/l7tech/objectmodel/ObjectPermission.class"/>
                 <include name="com/l7tech/objectmodel/AnonymousEntityReference.class"/>
                 <include name="com/l7tech/objectmodel/PersistentEntity.class"/>

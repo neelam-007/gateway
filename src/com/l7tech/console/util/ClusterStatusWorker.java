@@ -9,9 +9,8 @@ import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.cluster.ServiceUsage;
 import com.l7tech.common.gui.util.SwingWorker;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.service.PublishedService;
+import com.l7tech.objectmodel.ServiceHeader;
 import com.l7tech.service.ServiceAdmin;
 
 import java.util.Date;
@@ -167,31 +166,17 @@ public class ClusterStatusWorker extends SwingWorker {
                 return null;
             }
 
-            com.l7tech.objectmodel.EntityHeader[] entityHeaders = null;
-
             // create the statistics list
             try {
-                entityHeaders = serviceManager.findAllPublishedServices();
+                ServiceHeader[] entityHeaders = serviceManager.findAllPublishedServices();
 
-                EntityHeader header = null;
-                for (int i = 0; i < entityHeaders.length; i++) {
+                for ( ServiceHeader header : entityHeaders ) {
+                    ServiceUsage su = new ServiceUsage();
+                    su.setServiceid(header.getOid());
+                    su.setName(header.getDisplayName());
 
-                    header = entityHeaders[i];
-                    if (header.getType().toString().equals(com.l7tech.objectmodel.EntityType.SERVICE.toString())) {
-
-                        ServiceUsage su = new ServiceUsage();
-                        su.setServiceid(header.getOid());
-                        final PublishedService ps = serviceManager.findServiceByID(Long.toString(header.getOid()));
-                        if (ps != null) {
-                            su.setName(ps.displayName());
-                        } else {
-                            su.setName(header.getName());
-                        }
-
-                        // add the stats to the list
-                        statsList.put(new Long(su.getServiceid()), su);
-                    }
-
+                    // add the stats to the list
+                    statsList.put(new Long(su.getServiceid()), su);
                 }
             } catch (FindException e) {
                 logger.log(Level.WARNING, "Unable to find all published services from server", e);

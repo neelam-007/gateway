@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ServiceHeader;
 
 import java.util.Enumeration;
 
@@ -39,7 +40,7 @@ public class TreeNodeFactory {
         } else if (EntityType.USER.equals(entity.getType())) {
             return new UserNode(entity);
         } else if (EntityType.SERVICE.equals(entity.getType())) {
-            return new ServiceNode(entity);
+            return new ServiceNode((ServiceHeader)entity);
         } else if (EntityType.POLICY.equals(entity.getType())) {
             return new PolicyEntityNode(entity);
         }

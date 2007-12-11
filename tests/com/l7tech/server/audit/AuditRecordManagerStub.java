@@ -16,7 +16,7 @@ import java.util.Collection;
  * @author emil
  * @version Feb 17, 2005
  */
-public class AuditRecordManagerStub extends EntityManagerStub<AuditRecord> implements AuditRecordManager {
+public class AuditRecordManagerStub extends EntityManagerStub<AuditRecord,EntityHeader> implements AuditRecordManager {
     public Collection<AuditRecord> find(AuditSearchCriteria criteria) throws FindException {
         throw new UnsupportedOperationException();
     }

@@ -5,8 +5,8 @@ import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.util.JaasUtils;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ServiceHeader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.ManagedTimer;
@@ -433,8 +433,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             // gateway is starting or cleared during the previous call to {@link #disable()}.
             try {
                 synchronized (_serviceMetricsMapLock) {
-                    Collection<EntityHeader> serviceHeaders = _serviceManager.findAllHeaders();
-                    for (EntityHeader service : serviceHeaders) {
+                    Collection<ServiceHeader> serviceHeaders = _serviceManager.findAllHeaders();
+                    for (ServiceHeader service : serviceHeaders) {
                         final Long oid = new Long(service.getOid());
                         ServiceMetrics serviceMetrics = new ServiceMetrics(service.getOid(), _clusterNodeId, _fineBinInterval, _flusherQueue);
                          _serviceMetricsMap.put(oid, serviceMetrics);

@@ -9,17 +9,19 @@
     <property name="disabled" mappedName="tns:disabled"/>
     <property name="name" mappedName="tns:name"/>
     <property name="oid" mappedName="tns:oid"/>
-    <property name="policyXml" mappedName="tns:policyXml"/>
     <property name="routingUri" mappedName="tns:routingUri"/>
     <property name="soap" mappedName="tns:soap"/>
     <property name="version" mappedName="tns:version"/>
     <property name="wsdlUrl" mappedName="tns:wsdlUrl"/>
 
     <!-- Properties not published. -->
+    <property name="policy" ignore="true"/>
     <property name="wsdlXml" ignore="true"/>
     <property name="loadTime" ignore="true"/>
     <property name="httpMethods" ignore="true"/>
     <property name="httpMethodNames" ignore="true"/>
+    <property name="multipart" ignore="true"/>
+    <property name="laxResolution" ignore="true"/>
 
   </mapping>
 </mappings>

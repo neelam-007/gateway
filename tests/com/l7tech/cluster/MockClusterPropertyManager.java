@@ -9,7 +9,7 @@ import com.l7tech.objectmodel.*;
  * @version $Revision$
  */
 public class MockClusterPropertyManager
-        extends EntityManagerStub<ClusterProperty>
+        extends EntityManagerStub<ClusterProperty,EntityHeader>
         implements ClusterPropertyManager
 {
     public String getProperty(String key) throws FindException {

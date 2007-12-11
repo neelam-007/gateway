@@ -23,7 +23,7 @@ import java.util.Collection;
  * and service policies.
  *
  * @see PublishedService
- * @see EntityHeader
+ * @see ServiceHeader
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods {
@@ -47,13 +47,13 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods {
      * {@link #findAllPublishedServices()} that allows fetching the result in chunks, perhaps to reduce
      * latency.
      *
-     * @return array of {@link EntityHeader}s for requested subset of {@link PublishedService}s May be empty but never null.
+     * @return array of {@link ServiceHeader}s for requested subset of {@link PublishedService}s May be empty but never null.
      * @throws FindException   if there was a problem accessing the requested information.
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_HEADERS)
     @Administrative(licensed=false)
-    EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize) throws FindException;
+    ServiceHeader[] findAllPublishedServicesByOffset(int offset, int windowSize) throws FindException;
 
     /**
      * Store the specified new or existing published service. If the specified {@link PublishedService} contains a

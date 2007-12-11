@@ -15,7 +15,6 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.MetricsBin;
 import com.l7tech.service.MetricsSummaryBin;
-import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
@@ -286,7 +285,6 @@ public class ServiceMetricsPanel extends JPanel {
 
     private EntityHeader[] findAllPublishedServices() throws FindException {
         final EntityHeader[] result = getServiceAdmin().findAllPublishedServices();
-        updateServiceNames(result);
         Arrays.sort(result, new Comparator<EntityHeader>() {
             public int compare(EntityHeader eh1, EntityHeader eh2) {
                 String name1 = eh1.getName();
@@ -665,21 +663,4 @@ public class ServiceMetricsPanel extends JPanel {
         }
         return _serviceAdmin;
     }
-
-    /**
-     * Use service display name (includes distinguishing information).
-     *
-     * @param headers   published services
-     * @throws FindException if there was a problem accessing the requested information
-     */
-    private void updateServiceNames(EntityHeader[] headers)
-            throws FindException {
-        for (EntityHeader header : headers) {
-            final PublishedService ps = getServiceAdmin().findServiceByID(header.getStrId());
-            if (ps != null) {
-                header.setName(ps.displayName());
-            }
-        }
-    }
-
 }

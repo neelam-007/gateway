@@ -69,7 +69,7 @@ import java.beans.PropertyDescriptor;
  * @noinspection OverloadedMethodsWithSameNumberOfParameters
  */
 public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
-    private static final EntityHeader[] EMPTY_ENTITY_HEADER_ARRAY = new EntityHeader[0];
+    private static final ServiceHeader[] EMPTY_ENTITY_HEADER_ARRAY = new ServiceHeader[0];
 
     private SSLContext sslContext;
 
@@ -192,14 +192,14 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         return serviceDocumentManager.findByServiceId(oid);
     }
 
-    public EntityHeader[] findAllPublishedServices() throws FindException {
-        Collection<EntityHeader> res = serviceManager.findAllHeaders();
+    public ServiceHeader[] findAllPublishedServices() throws FindException {
+        Collection<ServiceHeader> res = serviceManager.findAllHeaders();
         return collectionToHeaderArray(res);
     }
 
-    public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize)
+    public ServiceHeader[] findAllPublishedServicesByOffset(int offset, int windowSize)
                     throws FindException {
-            Collection<EntityHeader> res = serviceManager.findAllHeaders(offset, windowSize);
+            Collection<ServiceHeader> res = serviceManager.findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
     }
 
@@ -389,11 +389,11 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     // PRIVATES
     // ************************************************
 
-    private EntityHeader[] collectionToHeaderArray(Collection<EntityHeader> input) {
+    private ServiceHeader[] collectionToHeaderArray(Collection<ServiceHeader> input) {
         if (input == null) return EMPTY_ENTITY_HEADER_ARRAY;
-        EntityHeader[] output = new EntityHeader[input.size()];
+        ServiceHeader[] output = new ServiceHeader[input.size()];
         int count = 0;
-        for (EntityHeader in : input) {
+        for (ServiceHeader in : input) {
             try {
                 output[count] = in;
             } catch (ClassCastException e) {

@@ -14,7 +14,7 @@ import java.util.HashSet;
 /**
  * @author alex
 */
-public class PolicyManagerStub extends EntityManagerStub<Policy> implements PolicyManager {
+public class PolicyManagerStub extends EntityManagerStub<Policy,EntityHeader> implements PolicyManager {
     public PolicyManagerStub(Policy[] entities) {
         super(entities);
     }

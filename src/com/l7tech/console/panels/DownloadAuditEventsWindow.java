@@ -12,7 +12,6 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.jcalendar.TimeRangePicker;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
@@ -67,6 +66,7 @@ public class DownloadAuditEventsWindow extends JFrame {
     private JProgressBar progressBar;
     private JButton downloadButton;
     private JButton cancelOrCloseButton;
+    private JScrollPane serviceScrollPane;
 
     /** Life cycle states of this window. */
     private enum State {
@@ -83,17 +83,10 @@ public class DownloadAuditEventsWindow extends JFrame {
     private static final Logger logger = Logger.getLogger(DownloadAuditEventsWindow.class.getName());
     private static final String WINDOW_TITLE_BASE = "Download Audit Events";
 
-    /** Combo box item to represent all published services selected. */
-    private static final EntityHeader ALL_PUBLISHED_SERVICES = new EntityHeader() {
-        @Override
-        public String toString() {
-            return "All";
-        }
-    };
-
     /** The current window. Not exactly a singleton because it can be
         re-instantiated many times. */
-    private static DownloadAuditEventsWindow instance;
+    private static DownloadAuditEventsWindow instance = null;
+    private static final Object instanceLock = new Object();
 
     private com.l7tech.common.gui.util.SwingWorker downloadWorker;
 
@@ -108,11 +101,17 @@ public class DownloadAuditEventsWindow extends JFrame {
      *
      * @return the audit download window
      */
-    public static synchronized DownloadAuditEventsWindow getInstance() {
-        if (instance == null) {
-            instance = new DownloadAuditEventsWindow();
+    public static DownloadAuditEventsWindow getInstance() {
+        synchronized ( instanceLock ) {
+            DownloadAuditEventsWindow currentInstance = instance;
+
+            if ( currentInstance == null ) {
+                currentInstance = new DownloadAuditEventsWindow();
+                instance = currentInstance;
+            }
+
+            return currentInstance;
         }
-        return instance;
     }
 
     /**
@@ -175,7 +174,7 @@ public class DownloadAuditEventsWindow extends JFrame {
         enableOrDisableComponents();
 
         getContentPane().add(mainPanel);
-        pack();
+        setSize(620, 400);
         Utilities.centerOnScreen(this);
         setVisible(true);
     }
@@ -188,14 +187,6 @@ public class DownloadAuditEventsWindow extends JFrame {
         try {
             final ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
             final EntityHeader[] publishedServices = serviceAdmin.findAllPublishedServices();
-
-            // Uses the more descriptive name (including URI) for display.
-            for (EntityHeader service : publishedServices) {
-                final PublishedService ps = serviceAdmin.findServiceByID(service.getStrId());
-                if (ps != null) {
-                    service.setName(ps.displayName());
-                }
-            }
 
             // Sorts alphabetically by name.
             Arrays.sort(publishedServices, new Comparator<EntityHeader>() {
@@ -453,7 +444,9 @@ public class DownloadAuditEventsWindow extends JFrame {
 
     @Override
     public void dispose() {
-        instance = null;    // Let the next call to getInstance() instantiate afresh.
+        synchronized ( instanceLock ) {
+            instance = null;    // Let the next call to getInstance() instantiate afresh.
+        }
         super.dispose();
     }
 }

@@ -11,7 +11,7 @@ import java.util.Collection;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public interface EntitiesCollection {
+public interface EntitiesCollection<HT extends EntityHeader> {
     /**
      * The general methods contract is to return the next List of elements
      * in the context.
@@ -25,5 +25,5 @@ public interface EntitiesCollection {
      *                   The original cause/exception is encapsulated as inner
      *                   Throwable.
      */
-    Collection<EntityHeader> getNextBatch() throws RuntimeException;
+    Collection<HT> getNextBatch() throws RuntimeException;
 }

@@ -3,15 +3,15 @@
  */
 package com.l7tech.server.service;
 
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.ServiceHeader;
 import com.l7tech.service.PublishedService;
 
 /**
  * Service API. Get instance of this through the Locator class.
  */
-public interface ServiceManager extends EntityManager<PublishedService, EntityHeader> {
+public interface ServiceManager extends EntityManager<PublishedService, ServiceHeader> {
     /**
      * Get what the server sees at that url.
      * Meant to be used by admin console entity.

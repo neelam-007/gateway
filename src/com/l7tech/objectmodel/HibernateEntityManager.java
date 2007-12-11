@@ -265,12 +265,8 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     public Collection<HT> findAllHeaders() throws FindException {
         Collection<ET> entities = findAll();
         List<HT> headers = new ArrayList<HT>();
-        for (Object entity1 : entities) {
-            PersistentEntity entity = (PersistentEntity) entity1;
-            String name = null;
-            if (entity instanceof NamedEntity) name = ((NamedEntity) entity).getName();
-            if (name == null) name = "";
-            headers.add(newHeader(entity.getId(), name));
+        for (ET entity : entities) {
+            headers.add(newHeader(entity));
         }
         return Collections.unmodifiableList(headers);
     }
@@ -289,7 +285,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
         List<HT> headers = new ArrayList<HT>(entities.size());
         for (ET entity : entities) {
-            headers.add(newHeader(entity.getId(), entity instanceof NamedEntity ? ((NamedEntity)entity).getName() : null));
+            headers.add(newHeader(entity));
         }
         return headers;
     }
@@ -298,13 +294,20 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * Override this method to customize how EntityHeaders get created
      * (if {@link HT} is a subclass of {@link EntityHeader} it's mandatory)
      *
-     * @param id the Entity ID
-     * @param name the Entity name, or null if unknown
+     * @param entity the PersistentEntity
      * @return a new EntityHeader based on the provided Entity ID and name 
      */
-    protected HT newHeader(String id, String name) {
+    protected HT newHeader(ET entity) {
+        String name = null;
+        if (entity instanceof NamedEntity) name = ((NamedEntity) entity).getName();
+        if (name == null) name = "";
+
         //noinspection unchecked
-        return (HT) new EntityHeader(id, getEntityType(), name, EMPTY_STRING);
+        return (HT) new EntityHeader(
+                entity.getId(),
+                getEntityType(),
+                name,
+                EMPTY_STRING);
     }
 
     /**
