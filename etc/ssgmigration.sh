@@ -14,16 +14,16 @@ fi
 # set the current working directory to where this script lives
 cd `dirname $0`
 
-# assume we're running from SSG_ROOT/migration and deduct SSG_ROOT from there
+# assume we're running from SSG_ROOT/migration and deduce SSG_ROOT from there
 pushd .. > /dev/null
 SSG_ROOT=`pwd`
 popd > /dev/null
 
-# assume location of the jdk
-JAVA_HOME=${SSG_ROOT}/jdk
+# This will set the location of the jdk into SSG_JAVA_HOME.
+. ${SSG_ROOT}/etc/profile
 
 if [ "$1" == "cfgdeamon" ]; then
-    ${JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SSGMigration.jar $*
+    ${SSG_JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SSGMigration.jar $*
     chown ${SSG_USER} ${SSG_ROOT}/migration/*
     chmod 666 *.log*
     exit
@@ -32,9 +32,9 @@ fi
 # This must be run as ssgconfig
 if [ $UID -eq 0 ]; then
     # invoke flasher as ssgconfig
-    su ssgconfig -c "${JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SSGMigration.jar $*"
+    su ssgconfig -c "${SSG_JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SSGMigration.jar $*"
 elif [ "$USER" == "ssgconfig" ]; then
-    ${JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SSGMigration.jar $*
+    ${SSG_JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SSGMigration.jar $*
 else
 	echo "Must be ssgconfig to invoke ssgmigration.sh"
 fi
