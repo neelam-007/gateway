@@ -936,11 +936,15 @@ public class WsdlComposer {
         }
 
         private void insertTypes(Types sourceTypes, Types workingTypes, Definition workingWsdl) throws WSDLException, IOException, SAXException {
+            Definition emptyDefinition = wsdlFactory.newDefinition();
             for (Object obj : sourceTypes.getExtensibilityElements()) {
                 ExtensibilityElement sourceExtElement = (ExtensibilityElement) obj;
                 ExtensionSerializer serializer = extensionRegistry.querySerializer(sourceExtElement.getClass(), sourceExtElement.getElementType());
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                serializer.marshall(sourceExtElement.getClass(), sourceExtElement.getElementType(), sourceExtElement, new PrintWriter(baos, true), workingWsdl, extensionRegistry);
+
+                //pass an empty definition, as this means all namespaces will have to be declared in the fragment
+                //noinspection IOResourceOpenedButNotSafelyClosed
+                serializer.marshall(sourceExtElement.getClass(), sourceExtElement.getElementType(), sourceExtElement, new PrintWriter(baos, true), emptyDefinition, extensionRegistry);
 
                 byte[] bytes = baos.toByteArray();
                 Document doc  = XmlUtil.parse(new ByteArrayInputStream(bytes));
