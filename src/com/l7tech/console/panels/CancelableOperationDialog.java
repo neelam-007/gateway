@@ -12,6 +12,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.concurrent.Callable;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Simple "Please Wait.." dialog.
@@ -103,5 +105,39 @@ public class CancelableOperationDialog extends JDialog {
 
     public boolean wasCancelled() {
         return wasCancel;
+    }
+
+    /**
+     * Synchronously run the specified callable in a background thread, putting up a modal Cancel... dialog and returning
+     * control to the user if the thread runs for longer than msBeforeDlg milliseconds.
+     * <p/>
+     * If the user cancels the dialog this will interrupt the background thread.  The callable may throw
+     * InterruptedException to signal that this has occurred.
+     * <p/>
+     * This method must be called on the Swing event queue thread.
+     * <p/>
+     * This method makes use of {@link Utilities#doWithDelayedCancelDialog(java.util.concurrent.Callable, javax.swing.JDialog, long)}.
+     *
+     * @param callable      some work that may safely be done in a new thread.  Required.
+     * @param dialogTitle   the title to display for the cancel dialog, if one is put up.  Required
+     * @param dialogMessage the message to display inside the cancel dialog, if one is put up.  Required
+     * @param msBeforeDlg  number of milliseconds to wait (blocking the event queue) before
+     *                                            putting up the cancel dialog.  If less than one, defaults to 500ms.
+     * @return the result of the callable.  May be null if the callable may return null.
+     * @throws InterruptedException if the task was canceled by the user, or the Swing thread was interrupted
+     * @throws java.lang.reflect.InvocationTargetException if the callable terminated with any exception other than InterruptedException
+     */
+    public static <T> T doWithDelayedCancelDialog(final Callable<T> callable, String dialogTitle, String dialogMessage, long msBeforeDlg)
+            throws InterruptedException, InvocationTargetException
+    {
+        final JProgressBar progressBar = new JProgressBar();
+        progressBar.setIndeterminate(true);
+        final CancelableOperationDialog cancelDialog =
+                new CancelableOperationDialog(null, dialogTitle, dialogMessage, progressBar);
+        cancelDialog.pack();
+        cancelDialog.setModal(true);
+        Utilities.centerOnScreen(cancelDialog);
+
+        return Utilities.doWithDelayedCancelDialog(callable, cancelDialog, msBeforeDlg);
     }
 }

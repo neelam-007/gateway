@@ -62,11 +62,15 @@ public class AssertionModule implements Closeable {
      * </pre>
      *
      * @param resourcepath  the path to look for, ie "com/l7tech/console/panels/resources/RateLimitAssertionPropertiesDialog.form".  Required.
+     * @param hidePrivateLibraries  true if the resource bytes will be sent back to a remote client, and so any classes from nested jarfiles
+     *                              matching patterns listed in the .AAR manifest's "Private-Libraries:" header should not be loadable.
+     *                              <p/>
+     *                              false if all resource bytes should be loadable, even those from private nested jarfiles.
      * @return the bytes of the specified resource, or null if no matching resource was found.
      * @throws IOException if there was an error reading the resource
      */
-    public byte[] getResourceBytes(String resourcepath) throws IOException {
-        return classLoader.getResourceBytes(resourcepath);
+    public byte[] getResourceBytes(String resourcepath, boolean hidePrivateLibraries) throws IOException {
+        return classLoader.getResourceBytes(resourcepath, hidePrivateLibraries);
     }
 
     /**

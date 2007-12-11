@@ -74,7 +74,7 @@ public class CustomAssertionsRegistrarImpl
         Set<AssertionModule> mods = assertionRegistry.getLoadedModules();
         for (AssertionModule mod : mods) {
             try {
-                byte[] resourceBytes = mod.getResourceBytes(path);
+                byte[] resourceBytes = mod.getResourceBytes(path, true);
                 if (resourceBytes != null)
                     return resourceBytes;
             } catch (IOException e) {

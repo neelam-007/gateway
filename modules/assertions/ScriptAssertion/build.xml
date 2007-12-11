@@ -10,6 +10,7 @@
     <property name="moduleName" value="ScriptAssertion"/>
     <property name="assertionList" value="com.l7tech.external.assertions.script.${moduleName}"/>
     <property name="build.classes" location="build/classes"/>
+    <property name="privateLibraries" value="bsf*.jar js.jar"/>
 
 
     <import file="../assertion-build.xml"/>

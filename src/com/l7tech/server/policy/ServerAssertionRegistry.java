@@ -39,11 +39,16 @@ import java.lang.reflect.Modifier;
 /**
  * The Gateway's AssertionRegistry, which extends the default registry with the ability to look for
  * modular ServerConfig properties in the new assertions and register them with ServerConfig.
+ * @noinspection ContinueStatement,ContinueStatement
  */
 public class ServerAssertionRegistry extends AssertionRegistry implements DisposableBean {
+    /** @noinspection FieldNameHidesFieldInSuperclass*/
     protected static final Logger logger = Logger.getLogger(ServerAssertionRegistry.class.getName());
+    public static final String MANIFEST_HDR_ASSERTION_LIST = "ModularAssertion-List";
+    public static final String MANIFEST_HDR_PRIVATE_LIBRARIES = "ModularAssertion-Private-Libraries";
     private static final Pattern PATTERN_WHITESPACE = Pattern.compile("\\s+");
     private static final String DISABLED_SUFFIX = ".disabled".toLowerCase();
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     // Install the default getters that are specific to the Gateway
     private static final AtomicBoolean gatewayMetadataDefaultsInstalled = new AtomicBoolean(false);
@@ -118,7 +123,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
     }
 
     /** Scan modular assertions for new cluster properties. */
-    private synchronized void checkForNewClusterProperties() {
+    private synchronized void scanForNewClusterProperties() {
         Map<String,String> namesToDesc =  serverConfig.getClusterPropertyNames();
         Set<String> knownNames = namesToDesc.keySet();
 
@@ -140,7 +145,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
                 logger.info("Dynamically registering cluster property " + clusterPropertyName);
             }
         }
-        if (!toAdd.isEmpty()) serverConfig.registerServerConfigProperties(toAdd.toArray(new String[][] {}));
+        if (!toAdd.isEmpty()) serverConfig.registerServerConfigProperties(toAdd.toArray(new String[toAdd.size()][]));
     }
 
     private synchronized boolean scanModularAssertions() {
@@ -157,7 +162,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
 
         File dir = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_MODULAR_ASSERTIONS_DIRECTORY, "/ssg/modules/assertions", false).getAbsoluteFile();
         long dirLastModified = dir.lastModified();
-        if (!scanNeeded && dir.equals(lastScannedDir) && (dirLastModified == lastScannedDirModTime) && failModTimes.isEmpty()) {
+        if (!isScanNeeded(dir, dirLastModified)) {
             // No files added/removed since last scan, and no failures to retry
             return false;
         }
@@ -169,6 +174,14 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
         } finally {
             scanNeeded = false;
         }
+    }
+
+    private boolean isScanNeeded(File dir, long dirLastModified) {
+        //noinspection OverlyComplexBooleanExpression
+        return scanNeeded ||
+               !dir.equals(lastScannedDir) ||
+               (dirLastModified != lastScannedDirModTime) ||
+               !failModTimes.isEmpty();
     }
 
     private boolean scanModularAssertionsImpl(File dir, long dirLastModified, String extsList) {
@@ -191,6 +204,83 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
         for (File jar : jars) jarnames.add(jar.getName());
 
         // Check for disabled modules
+        final Set<String> disabled = findDisabledModules(jars, jarnames);
+
+        // Check for removed modules
+        if (unregisterRemovedModules(jarnames)) changesMade = true;
+
+        // check for removed failed modules
+        cleanRemovedFailedModules(jarnames);
+
+        // Check for new or changed modules
+        if (registerNewOrChangedModules(jars, disabled)) changesMade = true;
+
+        scanNeeded = false;
+        return changesMade;
+    }
+
+    private boolean registerNewOrChangedModules(Collection<File> jars, Set<String> disabled) {
+        boolean changesMade = false;
+        for (File file : jars) {
+            String filename = file.getName();
+
+            // Ignore disabled flags
+            if (disabled.contains(filename))
+                continue;
+
+            long lastModified = file.lastModified();
+            try {
+                AssertionModule previousVersion = loadedModules.get(filename);
+                if (previousVersion == null) {
+                    if (new Long(lastModified).equals(failModTimes.get(filename))) {
+                        if (logger.isLoggable(Level.FINE))
+                        logger.fine("Ignoring module file " + filename + " since its modification time hasn't changed since the last time it failed to load successfully");
+                        continue;
+                    }
+                } else {
+                    if (previousVersion.getJarfileModifiedTime() == lastModified)
+                        continue;
+                }
+
+                // A loaded module has changed since the last time we looked at it -- unload it and reload it
+                logger.info("Checking assertion module with updated timestamp: " + filename);
+
+                changesMade = true;
+                registerModule(file);
+
+            } catch (Throwable e) {
+                logger.log(Level.SEVERE, "Unable to load modular assertion jarfile (ignoring it until it changes) " + filename + ": " + ExceptionUtils.getMessage(e), e);
+                failModTimes.put(filename, lastModified);
+            }
+        }
+        return changesMade;
+    }
+
+    private void cleanRemovedFailedModules(Set<String> jarnames) {
+        Set<String> failedNames = failModTimes.keySet();
+        for (String failedName : failedNames) {
+            if (!jarnames.contains(failedName)) {
+                logger.info("Forgetting about failed module that has been removed or disabled: " + failedName);
+                failModTimes.remove(failedName);
+            }
+        }
+    }
+
+    private boolean unregisterRemovedModules(Set<String> jarnames) {
+        boolean changesMade = false;
+        Collection<AssertionModule> modules = new ArrayList<AssertionModule>(loadedModules.values());
+        for (AssertionModule module : modules) {
+            String name = module.getName();
+            if (!jarnames.contains(name)) {
+                logger.info("Unregistering assertion module that has been removed or disabled: " + name);
+                changesMade = true;
+                unregisterModule(name);
+            }
+        }
+        return changesMade;
+    }
+
+    private static Set<String> findDisabledModules(Collection<File> jars, Set<String> jarnames) {
         final Set<String> disabled = new HashSet<String>();
         final Iterator<File> it = jars.iterator();
         while (it.hasNext()) {
@@ -205,62 +295,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
                 disabled.add(modname);
             }
         }
-
-        // Check for removed modules
-        Collection<AssertionModule> modules = new ArrayList<AssertionModule>(loadedModules.values());
-        for (AssertionModule module : modules) {
-            String name = module.getName();
-            if (!jarnames.contains(name)) {
-                logger.info("Unregistering assertion module that has been removed or disabled: " + name);
-                changesMade = true;
-                unregisterModule(name);
-            }
-        }
-
-        // check for removed failed modules
-        Set<String> failedNames = failModTimes.keySet();
-        for (String failedName : failedNames) {
-            if (!jarnames.contains(failedName)) {
-                logger.info("Forgetting about failed module that has been removed or disabled: " + failedName);
-                failModTimes.remove(failedName);
-            }
-        }
-
-        // Check for new or changed modules
-        for (File file : jars) {
-            String filename = file.getName();
-
-            // Ignore disabled flags
-            if (disabled.contains(filename))
-                continue;
-
-            long lastModified = file.lastModified();
-            try {
-                AssertionModule previousVersion = loadedModules.get(filename);
-                if (previousVersion != null) {
-                    if (previousVersion.getJarfileModifiedTime() == lastModified)
-                        continue;
-
-                    // A loaded module has changed since the last time we looked at it -- unload it and reload it
-                    logger.info("Checking assertion module with updated timestamp: " + filename);
-
-                } else if (new Long(lastModified).equals(failModTimes.get(filename))) {
-                    if (logger.isLoggable(Level.FINE))
-                    logger.fine("Ignoring module file " + filename + " since its modification time hasn't changed since the last time it failed to load successfully");
-                    continue;
-                }
-
-                changesMade = true;
-                registerModule(file);
-
-            } catch (Throwable e) {
-                logger.log(Level.SEVERE, "Unable to load modular assertion jarfile (ignoring it until it changes) " + filename + ": " + ExceptionUtils.getMessage(e), e);
-                failModTimes.put(filename, lastModified);
-            }
-        }
-
-        scanNeeded = false;
-        return changesMade;
+        return disabled;
     }
 
 
@@ -274,7 +309,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
             if (!scanNeeded)
                 return;
             scanModularAssertions();
-            checkForNewClusterProperties();
+            scanForNewClusterProperties();
         }
     }
 
@@ -307,7 +342,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
         }
 
         File[] jars = dir.listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
+            public boolean accept(File d, String name) {
                 String lcname = name.toLowerCase();
 
                 for (int i = 0; i < exts.length; ++i)
@@ -342,7 +377,8 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
         AssertionModule previousVersion = loadedModules.get(filename);
 
         try {
-            // TODO XXX some annoying race conditions here if the file is changed in between getting timestamp <-> getting sha1 <-> loading jar.. doctor's answer for now
+            // TODO XXX some annoying race conditions here if the file is changed in between getting timestamp <-> getting sha1 <-> loading jar..
+            // doctor's answer for now, until we find a way to get all the info from a FileDescriptor instead of a File
             long modifiedTime = file.lastModified();
             String sha1 = getFileSha1(file);
 
@@ -355,12 +391,15 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
 
             Manifest manifest = jar.getManifest();
             Attributes attr = manifest.getMainAttributes();
-            String assertionNamesStr = attr.getValue("ModularAssertion-List");
-            String[] assertionClassnames = assertionNamesStr == null ? new String[0] : assertionNamesStr.split("\\s+");
+            String assertionNamesStr = attr.getValue(MANIFEST_HDR_ASSERTION_LIST);
+            String[] assertionClassnames = assertionNamesStr == null ? EMPTY_STRING_ARRAY : assertionNamesStr.split("\\s+");
             if (assertionClassnames.length < 1) {
                 logger.log(Level.WARNING, "Modular assertionNames jarfile contains no modular assertions (ignoring it) " + file.getAbsolutePath());
                 return;
             }
+
+            String privateLibsStr = attr.getValue(MANIFEST_HDR_PRIVATE_LIBRARIES);
+            Pattern[] privateLibPatterns = getPrivateLibPatterns(privateLibsStr); 
 
             // Save set of exported packages so we can quickly trace future classlaoder queries to the correct module
             Set<String> packages = new HashSet<String>();
@@ -373,7 +412,9 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
                 if (name.startsWith("AAR-INF/lib/") && name.toLowerCase().endsWith(".jar")) {
                     // Preload nested jar file, and record the packages it offers
                     logger.info("Preloading nested JAR file " + name + " from module " + filename);
-                    NestedZipFile nestedZipFile = new NestedZipFile(jar, name);
+                    boolean priv = isPrivateLib(privateLibPatterns, name);
+                    if (priv) logger.fine("Marking nested jarfile " + name + " as private");
+                    NestedZipFile nestedZipFile = new NestedZipFile(jar, name, priv);
                     nestedJarfiles.add(nestedZipFile);
                     for (String dir : nestedZipFile.getDirectories()) {
                         if (dir == null || !dir.contains("/"))
@@ -407,6 +448,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
                 }
             }
 
+            //noinspection ClassLoaderInstantiation
             AssertionModuleClassLoader assloader = new AssertionModuleClassLoader(filename, file.toURI().toURL(), getClass().getClassLoader(), nestedJarfiles);
             Set<Assertion> protos = new HashSet<Assertion>();
             for (String assertionClassname : assertionClassnames) {
@@ -439,7 +481,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
                 for (Assertion proto : protos) {
                     gatherClusterProps(proto.meta());
                 }
-                checkForNewClusterProperties();
+                scanForNewClusterProperties();
 
                 // Set up class loader delegates first, in case any of the initialization listeners needs them in place
                 for (Assertion proto : protos) {
@@ -459,7 +501,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
 
                 for (Assertion proto : protos) {
                     String adjective = previousVersion == null ? "newly-registered" : "just-upgraded";
-                    logger.info("Registering dynamic assertion " + proto.getClass().getName() + " from " + adjective + " module " + filename + " (module SHA-1 " + sha1 + ")");
+                    logger.info("Registering dynamic assertion " + proto.getClass().getName() + " from " + adjective + " module " + filename + " (module SHA-1 " + sha1 + ')');
                     registerAssertion(proto.getClass());
                 }
             } finally {
@@ -481,7 +523,22 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
         }
     }
 
-    private boolean classExists(ClassLoader classLoader, String classname) {
+    private static boolean isPrivateLib(Pattern[] privateLibPatterns, String name) {
+        for (Pattern pattern : privateLibPatterns)
+            if (pattern.matcher(name).matches())
+                return true;
+        return false;
+    }
+
+    private static Pattern[] getPrivateLibPatterns(String privateLibsStr) {
+        String[] patStrs = privateLibsStr == null ? EMPTY_STRING_ARRAY : privateLibsStr.split("\\s+");
+        Pattern[] pats = new Pattern[patStrs.length];
+        for (int i = 0; i < patStrs.length; i++)
+            pats[i] = Pattern.compile("^(?:.*/)?" + TextUtils.globToRegex(patStrs[i]) + '$', Pattern.CASE_INSENSITIVE);
+        return pats;
+    }
+
+    private static boolean classExists(ClassLoader classLoader, String classname) {
         try {
             return classLoader.loadClass(classname) != null;
         } catch (Exception e) {
@@ -585,11 +642,13 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
     static String getFileSha1(File file) throws IOException {
         FileInputStream fis = null;
         try {
+            //noinspection IOResourceOpenedButNotSafelyClosed
             fis = new FileInputStream(file);
             MessageDigest digest = MessageDigest.getInstance("SHA-1");
             digest.reset();
             byte[] buf = new byte[8192];
             int got;
+            //noinspection NestedAssignment
             while ((got = fis.read(buf)) > 0)
                 digest.update(buf, 0, got);
             return HexUtils.hexDump(digest.digest());
@@ -621,12 +680,12 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
     public void afterPropertiesSet() throws Exception {
         super.afterPropertiesSet();
         scanModularAssertions();
-        checkForNewClusterProperties();
+        scanForNewClusterProperties();
         long rescanMillis = serverConfig.getLongProperty(ServerConfig.PARAM_MODULAR_ASSERTIONS_RESCAN_MILLIS, 4523);
         scanTimerTask = new TimerTask() {
             public void run() {
                 scanModularAssertions();
-                checkForNewClusterProperties();
+                scanForNewClusterProperties();
             }
         };
         Background.scheduleRepeated(scanTimerTask, rescanMillis, rescanMillis);

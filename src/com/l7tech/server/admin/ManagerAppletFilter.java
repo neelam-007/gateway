@@ -476,7 +476,7 @@ public class ManagerAppletFilter implements Filter {
 
 
         for (AssertionModule module : possibleModules) {
-            byte[] data = module.getResourceBytes(filePath);
+            byte[] data = module.getResourceBytes(filePath, true);
             if (data != null) {
                 handled = true;
                 auditor.logAndAudit(ServiceMessages.APPLET_AUTH_MODULE_CLASS_DL, filePath, module.getName());

@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 
 /**
  * A URLClassloader that keeps track of loaded classes so they can be notified when it is time to unload them.
+ * @noinspection CustomClassloader
  */
 class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
     protected static final Logger logger = Logger.getLogger(AssertionModuleClassLoader.class.getName());
@@ -66,11 +67,11 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
         Class<?> found = null;
         try {
             if (!name.startsWith("com.l7tech.") && !name.startsWith("java."))
-                found = findClassFromNestedJars(name);
+                found = findClassFromNestedJars(name, false);
             if (found == null)
                 found = super.findClass(name);
         } catch (ClassNotFoundException e) {
-            found = findClassFromNestedJars(name);
+            found = findClassFromNestedJars(name, false);
             if (found == null)
                 found = findClassFromDelegates(name);
             if (found == null)
@@ -80,9 +81,9 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
         return found;
     }
 
-    private Class findClassFromNestedJars(String name) {
+    private Class findClassFromNestedJars(String name, boolean hidePrivate) {
         String path = name.replace('.', '/').concat(".class");
-        byte[] bytecode = getResourceBytesFromNestedJars(path);
+        byte[] bytecode = getResourceBytesFromNestedJars(path, hidePrivate);
         if (bytecode == null)
             return null;
         return defineClass(name, bytecode, 0, bytecode.length);
@@ -104,13 +105,17 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
      * class loaders.
      *
      * @param path  the path, ie "com/l7tech/console/panels/resources/RateLimitAssertionPropertiesDialog.form".  Required.
+     * @param hidePrivateLibraries  true if the resource bytes will be sent back to a remote client, and so any classes from nested jarfiles
+     *                              matching patterns listed in the .AAR manifest's "Private-Libraries:" header should not be loadable.
+     *                              <p/>
+     *                              false if all resource bytes should be loadable, even those from private nested jarfiles.
      * @return the requested resource bytes, or null if the resource was not found.
      * @throws IOException if there is an error reading the resource
      */
-    byte[] getResourceBytes(final String path) throws IOException {
+    byte[] getResourceBytes(final String path, boolean hidePrivateLibraries) throws IOException {
         URL url = super.findResource(path);
         if (url == null) {
-            byte[] found = getResourceBytesFromNestedJars(path);
+            byte[] found = getResourceBytesFromNestedJars(path, hidePrivateLibraries);
             if (found == null)
                 found = getResourceBytesFromDelegates(path);
             return found;
@@ -124,15 +129,17 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
         }
     }
 
-    private byte[] getResourceBytesFromNestedJars(String path) {
+    private byte[] getResourceBytesFromNestedJars(String path, boolean hidePrivateLibraries) {
         for (NestedZipFile nested : nestedJarFiles.keySet()) {
-            try {
-                byte[] bytes = nested.getFile(path);
-                if (bytes != null)
-                    return bytes;
-            } catch (IOException e) {
-                logger.log(Level.SEVERE, "Unable to read resource from nested jar file " + nested.getEntryName() + " in module " +
-                                         moduleName + ": " + ExceptionUtils.getMessage(e), e);
+            if (!hidePrivateLibraries || !nested.isPrivateLibrary()) {
+                try {
+                    byte[] bytes = nested.getFile(path);
+                    if (bytes != null)
+                        return bytes;
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE, "Unable to read resource from nested jar file " + nested.getEntryName() + " in module " +
+                                             moduleName + ": " + ExceptionUtils.getMessage(e), e);
+                }
             }
         }
         return null;
@@ -192,7 +199,7 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
 
     private URL makeResourceUrl(NestedZipFile nested, String name, final byte[] bytes) {
         try {
-            return new URL(NR_PROTO, null, -1, moduleName + "!" + nested.getEntryName() + "!" + name, new URLStreamHandler() {
+            return new URL(NR_PROTO, null, -1, moduleName + '!' + nested.getEntryName() + '!' + name, new URLStreamHandler() {
                 protected URLConnection openConnection(URL url) throws IOException {
                     return new URLConnection(url) {
                         public void connect() throws IOException { }
@@ -270,57 +277,6 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
     /** @param registry registry to use for locating modules when resolving assnmod: URLs. */
     public static void setRegistry(ServerAssertionRegistry registry) {
         AssertionModuleClassLoader.registry = registry;
-    }
-
-    private NestedZipFile getNestedJarFile(String nestedJarPath) {
-        for (NestedZipFile nested : nestedJarFiles.keySet()) {
-            if (nestedJarPath.equals(nested.getEntryName()))
-                return nested;
-        }
-        return null;
-    }
-
-    /**
-     * Find a resource by looking up the module, nested jarfile, and urlpath.
-     *
-     * @param urlpath the url path in the format "moduleName!nestedJarPath!resourcePath".
-     *                For example: "SnmpQuery-3.7.0.jar!AAR-INF/lib/snmp4j.jar!org/snmp4j/smi/OctetString.class"
-     * @return an InputStream that will produce the requested resource. Never null.
-     * @throws FileNotFoundException if the module, nested jar, or resource could not be found
-     * @throws IOException if the module, nested jar, or resource could not be read
-     * @noinspection UnusedDeclaration  // TODO remove this method if it turns out not to be needed
-     *                                     Need to test the ability to use getResource() to get a working URL
-     *                                     to a resource inside a jar nested inside this AAR file.  If it doesn't
-     *                                     work, or if a globally-visible URL is needed, this method might be
-     *                                     needed again (along with the globally-visible Handler inner class).
-     */
-    private static InputStream getInputStreamForGlobalPath(String urlpath) throws IOException {
-        ServerAssertionRegistry registry = getRegistry();
-        if (registry == null)
-            throw new IOException("No registry defined");
-
-        String[] components = urlpath.split("\\!");
-        if (components.length > 3)
-            throw new IOException("Too many !'s in " + NR_PROTO + ": URL");
-
-        String moduleName = components[0];
-        String nestedJarPath = components[1];
-        String resourcePath = components[2];
-
-        AssertionModule module = registry.getModule(moduleName);
-        if (module == null)
-            throw new FileNotFoundException("No such loaded module: " + moduleName);
-
-        AssertionModuleClassLoader loader = module.getModuleClassLoader();
-        NestedZipFile nestedJar = loader.getNestedJarFile(nestedJarPath);
-        if (nestedJar == null)
-            throw new FileNotFoundException("No such nested Jar path: " + nestedJarPath);
-
-        byte[] bytes = loader.getResourceBytes(resourcePath);
-        if (bytes == null)
-            throw new FileNotFoundException("No such resource path: " + resourcePath);
-
-        return new ByteArrayInputStream(bytes);
     }
 
     public void close() throws IOException {

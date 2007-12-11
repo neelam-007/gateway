@@ -2,18 +2,19 @@ package com.l7tech.server.policy;
 
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ResourceUtils;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Closeable;
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipFile;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 /**
  * Holds all files preloaded from a zip file, possibly because it is a jar file nested inside another
@@ -39,15 +40,19 @@ class NestedZipFile implements Closeable {
     /** Directory of files present in the nested zip.  Map of path to size of file in bytes. */
     private final Map<String, Long> files;
 
+    /** True if this library should be flagged as private. */
+    private final boolean privateLibrary;
+
     /**
      * Create a PreloadedZipFile by loading all resources from the specified input stream.
      * This will immediately load all resources from the jar into datastructures within a new NestedJarInfo instance.
      *
      * @param parent the parent zip file from which the nested zip is to be read.  Required.
      * @param entryName path of the zip file being preloaded, relative to root of parent, ie "AAR-INF/lib/foo.jar".  Required.
+     * @param privateLibrary if true, this zip should be flagged as private, so classes in it shouldn't be disclosed outside the Gateway
      * @throws java.io.IOException  if there is a problem loading resources from the specified jar stream.
      */
-    public NestedZipFile(ZipFile parent, String entryName) throws IOException {
+    public NestedZipFile(ZipFile parent, String entryName, boolean privateLibrary) throws IOException {
         if (parent == null || entryName == null) throw new NullPointerException();
         this.parent = parent;
         this.entryName = entryName;
@@ -61,13 +66,14 @@ class NestedZipFile implements Closeable {
         if (compressedIn == null)
             throw new IOException("null InputStream for nested zipfile entry: " + entryName + " in zip file: " + parent.getName()); // can't happen
 
-        Set<String> directories = new HashSet<String>();
-        Map<String, Long> files = new HashMap<String, Long>();
+        Set<String> d = new HashSet<String>();
+        Map<String, Long> f = new HashMap<String, Long>();
 
-        scanNestedZip(null, directories, files);
+        scanNestedZip(null, d, f);
 
-        this.directories = Collections.unmodifiableSet(directories);
-        this.files = Collections.unmodifiableMap(files);
+        this.directories = Collections.unmodifiableSet(d);
+        this.files = Collections.unmodifiableMap(f);
+        this.privateLibrary = privateLibrary;
     }
 
     /**
@@ -89,31 +95,37 @@ class NestedZipFile implements Closeable {
         if (compressedIn == null)
             throw new IOException("null InputStream for nested zipfile entry: " + entryName + " in zip file: " + parent.getName()); // can't happen
 
-        ZipInputStream zipIn = new ZipInputStream(compressedIn);
-
         byte[] wantedFileBytes = null;
+        ZipInputStream zipIn = null;
+        try {
+            //noinspection IOResourceOpenedButNotSafelyClosed
+            zipIn = new ZipInputStream(compressedIn);
 
-        ZipEntry entry;
-        while((entry = zipIn.getNextEntry()) != null) {
-            if (entry.isDirectory()) {
-                if (recordDirectories != null)
-                    recordDirectories.add(entry.getName());
-                continue;
+            ZipEntry entry;
+            //noinspection NestedAssignment
+            while((entry = zipIn.getNextEntry()) != null) {
+                if (entry.isDirectory()) {
+                    if (recordDirectories != null)
+                        recordDirectories.add(entry.getName());
+                    continue;
+                }
+
+                if (recordFiles != null)
+                    recordFiles.put(entry.getName(), entry.getSize());
+
+                BufferPoolByteArrayOutputStream bout = new BufferPoolByteArrayOutputStream();
+                try {
+                    HexUtils.copyStream(zipIn, bout);
+                    byte[] fileBytes = bout.toByteArray();
+                    cachedFileBytes.put(entry.getName(), new SoftReference<byte[]>(fileBytes));
+                    if (wantedFile != null && wantedFile.equals(entry.getName()))
+                        wantedFileBytes = fileBytes;
+                } finally {
+                    bout.close();
+                }
             }
-
-            if (recordFiles != null)
-                recordFiles.put(entry.getName(), entry.getSize());
-
-            BufferPoolByteArrayOutputStream bout = new BufferPoolByteArrayOutputStream();
-            try {
-                HexUtils.copyStream(zipIn, bout);
-                byte[] fileBytes = bout.toByteArray();
-                cachedFileBytes.put(entry.getName(), new SoftReference<byte[]>(fileBytes));
-                if (wantedFile != null && wantedFile.equals(entry.getName()))
-                    wantedFileBytes = fileBytes;
-            } finally {
-                bout.close();
-            }
+        } finally {
+            ResourceUtils.closeQuietly(zipIn);
         }
 
         return wantedFileBytes;
@@ -175,5 +187,9 @@ class NestedZipFile implements Closeable {
 
     public void close() throws IOException {
         cachedFileBytes.clear();
+    }
+
+    public boolean isPrivateLibrary() {
+        return privateLibrary;
     }
 }

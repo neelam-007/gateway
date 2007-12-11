@@ -160,4 +160,11 @@ public class TextUtilsTest extends TestCase {
         final String mixedWithTrailingCRLF = mixed + "\r\n";
         assertEquals("mixed to CR-LF", "1\r\n2\r\n3\r\n4\r\n", TextUtils.convertLineBreaks(mixedWithTrailingCRLF, CRLF));
     }
+    
+    public void testGlobToRegexp() {
+        assertEquals("", TextUtils.globToRegex(""));
+        assertEquals("adze1290ADZE", TextUtils.globToRegex("adze1290ADZE"));
+        assertEquals("foo.*blah.\\.jar", TextUtils.globToRegex("foo*blah?.jar"));
+        assertEquals("snarf\\$gobble\\_blarf\\`22", TextUtils.globToRegex("snarf$gobble_blarf`22"));
+    }
 }

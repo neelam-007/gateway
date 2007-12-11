@@ -207,6 +207,7 @@
         <copy todir="build/AAR-INF/lib" flatten="true">
             <fileset dir="." includes="lib/*.jar"/>
         </copy>
+        <property name="privateLibraries" value=""/>
         <jar destfile="build/${moduleName}-${build.version}.${moduleFileExtension}" duplicate="fail">
             <manifest>
                 <attribute name="Specification-Title" value="ModularAssertion"/>
@@ -218,6 +219,9 @@
                 <attribute name="Implementation-Vendor" value="Layer 7 Technologies"/>
                 <attribute name="Implementation-Vendor-Id" value="com.l7tech"/>
                 <attribute name="ModularAssertion-List" value="${assertionList}"/>
+
+                <!-- space-separated list of filename patterns, with simple * and ? support, ie:  "foov?-L7*.jar blatch*.jar" -->
+                <attribute name="ModularAssertion-Private-Libraries" value="${privateLibraries}"/>
             </manifest>
             <fileset dir="build/classes" excludes="**/*.form"/>
             <fileset dir="build" includes="AAR-INF/**/*"/>

@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.script;
 
 import com.l7tech.common.util.EnumTranslator;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
@@ -10,10 +9,10 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.logging.Logger;
-import java.io.UnsupportedEncodingException;
-import java.io.IOException;
 
 /**
  * An assertion that holds some script that is invoked on every request. 
@@ -25,15 +24,13 @@ public class ScriptAssertion extends Assertion {
         JAVASCRIPT("javascript", "ECMAScript",
                    "var request = policyContext.getRequest();\n" +
                    "var response = policyContext.getResponse();\n" +
-                   "\n" +
+                   '\n' +
                    "if (!request.isXml()) {\n" +
                    "    false;\n" +
                    "} else {\n" +
                    "    response.initialize(Packages.com.l7tech.common.util.XmlUtil.stringToDocument(\"<someXml/>\"));\n" +
                    "    true;\n" +
-                   "}"),
-        RUBY("ruby", "JRuby",
-             "example script goes here");
+                   '}');
 
         protected final String bsfLanguageName;
         protected final String guiLabel;
@@ -83,7 +80,12 @@ public class ScriptAssertion extends Assertion {
 
     public String decodeScript() {
         try {
-            return scriptBase64 == null ? null : (scriptBase64.length() < 1 ? "" : new String(HexUtils.decodeBase64(scriptBase64), "UTF-8"));
+            if (scriptBase64 == null)
+                return null;
+            if (scriptBase64.length() < 1)
+                return "";
+            else
+                return new String(HexUtils.decodeBase64(scriptBase64), "UTF-8");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

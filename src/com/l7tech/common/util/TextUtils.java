@@ -173,6 +173,36 @@ public class TextUtils {
     }
 
     /**
+     * Converts a simple glob pattern match, as used by MS-DOS and Unix shells, into a compiled
+     * regular expression that matches the same filenames.
+     *
+     * @param glob a filename that may contain an asterisk to match any sequence of characters or a question
+     *             mark to match a single character.  Required.
+     * @return a ready-to-compile regular expression that will match the specified glob when tested with .matches().
+     */
+    public static String globToRegex(CharSequence glob) {
+        StringBuilder sb = new StringBuilder(glob.length() * 3 / 2);
+        int len = glob.length();
+        for (int i = 0; i < len; ++i) {
+            char c = glob.charAt(i);
+            switch (c) {
+            case '*':
+                sb.append(".*");
+                break;
+            case '?':
+                sb.append('.');
+                break;
+            default:
+                if (!Character.isLetterOrDigit(c))
+                    sb.append('\\');
+                sb.append(c);
+                break;
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
      * Extracts trailing lines of text. This will handle Unix, Mac and Windows
      * line endings. Any trailing line ending is trimmed from the result and
      * is not counted as one line.
