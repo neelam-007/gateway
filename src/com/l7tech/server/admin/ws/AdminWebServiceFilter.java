@@ -156,11 +156,7 @@ public class AdminWebServiceFilter implements Filter {
         HttpServletResponse httpServletResponse = (HttpServletResponse)servletResponse;
         if("get".equalsIgnoreCase(httpServletRequest.getMethod())) {
             if ("wsdl".equalsIgnoreCase(httpServletRequest.getQueryString())) {
-                try {
-                    filterChain.doFilter(servletRequest, servletResponse);
-                } catch (RuntimeException re) {
-                    throw new ServletException(re);
-                }
+                filterChain.doFilter(servletRequest, servletResponse);
                 return;
             }
             else { // only allow GET for WSDL

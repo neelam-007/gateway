@@ -431,7 +431,7 @@
         <location>/ssg/error</location>
     </error-page>
     <error-page>
-        <exception-type>java.lang.Throwable</exception-type>
+        <exception-type>java.lang.Exception</exception-type>
         <location>/ssg/error</location>
     </error-page>
 
