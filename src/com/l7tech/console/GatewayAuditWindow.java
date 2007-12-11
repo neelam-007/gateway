@@ -147,7 +147,11 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
 
         pack();
 
-        if(!startConnected) getLogPane().onDisconnect();
+        if (startConnected) {
+            getLogPane().setControlsExpanded(true);
+        } else {
+            getLogPane().onDisconnect();
+        }
     }
 
     /**
