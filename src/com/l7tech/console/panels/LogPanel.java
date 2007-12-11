@@ -49,6 +49,12 @@ import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.Element;
+import org.apache.xml.serialize.XMLSerializer;
+import org.apache.xml.serialize.OutputFormat;
+
 /**
  * A panel for displaying either logs or audit events.
  */
@@ -741,11 +747,46 @@ public class LogPanel extends JPanel {
 
     private String reformat(String xml) {
         try {
-            xml = XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(xml));
+            boolean omitXmlDeclaration = !xml.startsWith("<?xml");
+            Document node = XmlUtil.stringToDocument(xml);
+            xml = nodeToFormattedString(node, node.getXmlEncoding(), omitXmlDeclaration);
         } catch (Exception e) {
             xml = "Can't reformat XML: " + e.toString();
         }
         return xml;
+    }
+
+    /**
+     * Reformat a node (here it is a document) to a string using specified encoding and the setting of
+     * omitting xml declaration.  The method is similar to the method nodeToString in {@link XmlUtil}
+     * @param node
+     * @param encoding
+     * @param omitXmlDeclaration
+     * @return a formatted string
+     * @throws IOException
+     */
+    private String nodeToFormattedString(Node node, String encoding, boolean omitXmlDeclaration) throws IOException {
+        final StringWriter writer = new StringWriter(1024);
+        try {
+            XMLSerializer ser = new XMLSerializer();
+            OutputFormat format = new OutputFormat();
+            format.setIndent(4);
+            format.setEncoding(encoding);
+            format.setOmitXMLDeclaration(omitXmlDeclaration);
+            ser.setOutputFormat(format);
+            ser.setOutputCharStream(writer);
+
+            if (node instanceof Document)
+                ser.serialize((Document)node);
+            else if (node instanceof Element)
+                ser.serialize((Element)node);
+            else
+                throw new IllegalArgumentException("Node must be either a Document or an Element");
+
+            return writer.toString();
+        } finally {
+            writer.close();
+        }
     }
 
     private String nonull(String s, String n) {
