@@ -8,14 +8,15 @@
     <property name="baseURI" mappedName="tns:baseURI"/>
     <property name="disabled" mappedName="tns:disabled"/>
     <property name="name" mappedName="tns:name"/>
+    <property name="id" mappedName="tns:id"/>
     <property name="oid" mappedName="tns:oid"/>
+    <property name="policy" type="com.l7tech.server.admin.ws.PolicyType" mappedName="tns:policyXml"/>
     <property name="routingUri" mappedName="tns:routingUri"/>
     <property name="soap" mappedName="tns:soap"/>
     <property name="version" mappedName="tns:version"/>
     <property name="wsdlUrl" mappedName="tns:wsdlUrl"/>
 
     <!-- Properties not published. -->
-    <property name="policy" ignore="true"/>
     <property name="wsdlXml" ignore="true"/>
     <property name="loadTime" ignore="true"/>
     <property name="httpMethods" ignore="true"/>
