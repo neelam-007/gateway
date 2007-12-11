@@ -797,7 +797,7 @@ public class WsspWriter {
                         targetElement.setAttribute(XMLConstants.XMLNS_ATTRIBUTE, namesp);
                     }
                     else {
-                        targetElement.setAttribute(XMLConstants.XMLNS_ATTRIBUTE + ":" + prefix, namesp);
+                        targetElement.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, XMLConstants.XMLNS_ATTRIBUTE + ":" + prefix, namesp);
                     }
                 }
             }
