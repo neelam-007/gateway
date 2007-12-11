@@ -67,6 +67,9 @@ public class ContainerManagedObject {
                     for (ServiceManagedObject smo : serviceMOs) {
                         if (smo.getServiceID() == service.getOid()) {
                             alreadyManaged = true;
+                            // If any property of the published service has changed, the service MO needs to be updated.
+                            // But comparing each property value is time consuming; so just replaces it without testing.
+                            smo.setPublishedService(service);
                             break;
                         }
                     }

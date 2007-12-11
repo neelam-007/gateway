@@ -45,6 +45,17 @@ public class ServiceManagedObject {
         return service.getOid();
     }
 
+    public PublishedService getPublishedService() {
+        return service;
+    }
+
+    /**
+     * Provided for use when properties of the published service have changed.
+     */
+    public void setPublishedService(PublishedService service) {
+        this.service = service;
+    }
+
     public String respondTo(WSMFService.RequestContext context) {
         WSMFMethod methodInvoked = context.method;
 

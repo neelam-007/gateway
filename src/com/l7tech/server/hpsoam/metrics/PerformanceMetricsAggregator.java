@@ -157,8 +157,9 @@ public class PerformanceMetricsAggregator implements TrafficMonitor {
             return emptyResponse();
         }
 
+        StringBuilder logMsg = null;
         if (logger.isLoggable(Level.FINE)) {
-            logger.fine("requested window " + windowIndexRequested);
+            logMsg = new StringBuilder("Received request for window " + windowIndexRequested + "; responding with windows:");
         }
 
         StringBuffer output = new StringBuffer();
@@ -172,6 +173,7 @@ public class PerformanceMetricsAggregator implements TrafficMonitor {
         output.append("            <perf:PerformanceWindowList>\n");
         for (PerfWindow pw : performanceWindows) {
             if (pw.getWindowIndex() >= windowIndexRequested) {
+                if (logger.isLoggable(Level.FINE)) logMsg.append(" ").append(pw.getWindowIndex());
                 output.append("                <perf:PerformanceWindow>\n");
                 output.append("                    <perf:WindowIndex>" + pw.getWindowIndex() + "</perf:WindowIndex>\n");
                 output.append("                    <perf:StartOfWindow>" + ISO8601Date.format(new Date(pw.getWindowStart())) + "</perf:StartOfWindow>\n");
@@ -212,6 +214,7 @@ public class PerformanceMetricsAggregator implements TrafficMonitor {
         output.append("        </Wsee:GetResponse>\n");
         output.append("    </soapenv:Body>\n");
         output.append("</soapenv:Envelope>");
+        if (logger.isLoggable(Level.FINE)) { logger.fine(logMsg.toString()); }
         return output.toString();
     }
 
