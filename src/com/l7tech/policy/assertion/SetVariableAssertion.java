@@ -13,11 +13,32 @@ import com.l7tech.policy.variable.*;
  */
 public class SetVariableAssertion extends Assertion implements SetsVariables, UsesVariables {
     private String _variableToSet;
-    private DataType _dataType;
-    private String _base64Expression;   // Base64-encoded to workaround serializer not turning CR, LF into entity characters
-    private LineBreak _lineBreak;
 
-    /** Used only if {@link #_dataType} == {@link DataType#MESSAGE}. */
+    /**
+     * This field is introducted in 4.3.
+     * Defaults to {@link DataType#STRING} for pre-4.3 compatibility.
+     * @since SecureSpan 4.3
+     */
+    private DataType _dataType = DataType.STRING;
+
+    /**
+     * This field replaces expression since 4.3.
+     * @since SecureSpan 4.3
+     */
+    private String _base64Expression;   // Base64-encoded to workaround serializer not turning CR, LF into entity characters
+
+    /**
+     * This field is introducted in 4.3.
+     * Defaults to {@link LineBreak#CRLF} for pre-4.3 compatibility.
+     * @since SecureSpan 4.3
+     */
+    private LineBreak _lineBreak = LineBreak.CRLF;
+
+    /**
+     * Used only if {@link #_dataType} == {@link DataType#MESSAGE}.
+     * This field is introducted in 4.3.
+     * @since SecureSpan 4.3
+     */
     private String _contentType;
 
     private transient VariableMetadata _meta;   // just for caching
@@ -77,6 +98,10 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
         }
     }
 
+    /**
+     * Only use when deserializing pre-4.3 policy XML.
+     * @param expression not encoded in Base64
+     */
     public void setExpression(String expression) {
         setBase64Expression(HexUtils.encodeBase64(HexUtils.encodeUtf8(expression), true));
     }
