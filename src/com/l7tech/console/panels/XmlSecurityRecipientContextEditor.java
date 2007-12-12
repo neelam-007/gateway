@@ -14,11 +14,11 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.TextUtils;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.event.WizardEvent;
-import com.l7tech.console.MainWindow;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -159,8 +159,12 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                             return false;
                         } else if (xmlSecRecipientsFromOtherAssertions.containsValue(maybeNewCert)) {
                             String dn = maybeNewCert.getSubjectDN().getName();
-                            JOptionPane.showMessageDialog(assignCertButton, "The cert " + dn +
-                                                                            " is already associated to an actor.");
+                            String msg = "The cert " + dn + " is already associated to an actor.";
+                            // Preset the max columns of the output message
+                            int maxcol = 80;
+                            // Figure out how many lines there are if using the above maxcol
+                            int maxline = msg.length() / maxcol + (msg.length() % maxcol > 0? 1 : 0);
+                            JOptionPane.showMessageDialog(assignCertButton, TextUtils.wrapString(msg, maxcol, maxline, "\n"));
                             return false;
                         }
                         return true;
