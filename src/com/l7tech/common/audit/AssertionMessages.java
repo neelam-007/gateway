@@ -358,7 +358,7 @@ public class AssertionMessages extends Messages {
 
     // Email and SNMP alerts
     public static final M EMAILALERT_MESSAGE_SENT = m(6700, Level.INFO, "Email message sent");
-    public static final M EMAILALERT_BAD_TO_ADDR  = m(6701, Level.WARNING, "Bad destination email address");
+    public static final M EMAILALERT_BAD_TO_ADDR  = m(6701, Level.WARNING, "Bad destination email address(es)");
     public static final M EMAILALERT_BAD_FROM_ADDR= m(6702, Level.WARNING, "Bad source email address");
     public static final M SNMP_BAD_TRAP_OID       = m(6703, Level.WARNING, "The OID ending with zero is reserved for the message field: Using .1 for the trap OID instead");
 

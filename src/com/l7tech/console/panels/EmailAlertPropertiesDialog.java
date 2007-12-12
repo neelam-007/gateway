@@ -25,7 +25,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
     public static final String TITLE = "Email Alert Properties";
     private final InputValidator validator = new InputValidator(this, TITLE);
     private JPanel mainPanel;
-    private JTextField addressField;
+    private JTextField toAddressesField;
     private JTextField fromAddressField;
     private JTextField hostField;
     private JTextField portField;
@@ -33,22 +33,41 @@ public class EmailAlertPropertiesDialog extends JDialog {
     private JTextArea messageField;
     private JButton okButton;
     private JButton cancelButton;
+    private JTextField ccAddressesField;
+    private JTextField bccAddressesField;
 
     private final EmailAlertAssertion assertion;
     private boolean confirmed = false;
 
+    /**
+     * Creates a new EmailAlertPropertiesDialog object backed by the provided EmailAlertAssertion object.
+     *
+     * @param owner The window that owns this dialog
+     * @param ass The backing EmailAlertAssertion object
+     * @throws HeadlessException
+     */
     public EmailAlertPropertiesDialog(Dialog owner, EmailAlertAssertion ass) throws HeadlessException {
         super(owner, TITLE, true);
         this.assertion = ass;
         initialize();
     }
 
+    /**
+     * Creates a new EmailAlertPropertiesDialog object backed by the provided EmailAlertAssertion object.
+     *
+     * @param owner The window that owns this dialog
+     * @param ass The backing EmailAlertAssertion object
+     * @throws HeadlessException
+     */
     public EmailAlertPropertiesDialog(Frame owner, EmailAlertAssertion ass) throws HeadlessException {
         super(owner, TITLE, true);
         this.assertion = ass;
         initialize();
     }
 
+    /**
+     * Initializes this dialog and sets the fields to the values from the EmailAlertAssertion object.
+     */
     private void initialize() {
         setContentPane(mainPanel);
 
@@ -78,39 +97,54 @@ public class EmailAlertPropertiesDialog extends JDialog {
 
         okButton.setEnabled(false);
         final DocumentListener dl = new DocumentListener() {
-                    public void changedUpdate(DocumentEvent e) { updateEnableDisableState(); }
-                    public void insertUpdate(DocumentEvent e) { updateEnableDisableState(); }
-                    public void removeUpdate(DocumentEvent e) { updateEnableDisableState(); }
-                };
+            public void changedUpdate(DocumentEvent e) { updateEnableDisableState(); }
+            public void insertUpdate(DocumentEvent e) { updateEnableDisableState(); }
+            public void removeUpdate(DocumentEvent e) { updateEnableDisableState(); }
+        };
         hostField.getDocument().addDocumentListener(dl);
-        addressField.getDocument().addDocumentListener(dl);
+        toAddressesField.getDocument().addDocumentListener(dl);
         portField.getDocument().addDocumentListener(dl);
         fromAddressField.getDocument().addDocumentListener(dl);
         subjectField.getDocument().addDocumentListener(dl);
         messageField.getDocument().addDocumentListener(dl);
     }
 
+    /**
+     * Sets the fields to the values from the EmailAlertAssertion object.
+     */
     private void modelToView() {
         hostField.setText(assertion.getSmtpHost());
-        portField.setText(Integer.toString(assertion.getSmtpPort()));
-        addressField.setText(assertion.getTargetEmailAddress());
+        toAddressesField.setText(assertion.getTargetEmailAddress());
+        ccAddressesField.setText(assertion.getTargetCCEmailAddress());
+        bccAddressesField.setText(assertion.getTargetBCCEmailAddress());
         subjectField.setText(assertion.getSubject());
         messageField.setText(assertion.messageString());
         fromAddressField.setText(assertion.getSourceEmailAddress());
+        portField.setText(Integer.toString(assertion.getSmtpPort()));
     }
 
+    /**
+     * Sets the EmailAlertAssertion properties to the values from the fields in this dialog.
+     */
     private void viewToModel() {
         assertion.setSmtpHost(hostField.getText());
         assertion.setSmtpPort(safeParseInt(portField.getText(), EmailAlertAssertion.DEFAULT_PORT));
-        assertion.setTargetEmailAddress(addressField.getText());
+        assertion.setTargetEmailAddress(toAddressesField.getText());
+        assertion.setTargetCCEmailAddress(ccAddressesField.getText());
+        assertion.setTargetBCCEmailAddress(bccAddressesField.getText());
         assertion.setSubject(subjectField.getText());
         assertion.messageString(messageField.getText());
         assertion.setSourceEmailAddress(fromAddressField.getText());
     }
 
+    /**
+     * If the authentication combo box is set to none, then the username and password fields are disabled,
+     * otherwise they are enabled. If all of the necessary fields have values, then the OK button is
+     * enabled, otherwise it is diabled.
+     */
     private void updateEnableDisableState() {
         boolean ok = true;
-        if (addressField.getText().length() < 1) ok = false;
+        if (toAddressesField.getText().length() < 1) ok = false;
         if (hostField.getText().length() < 1) ok = false;
         if (fromAddressField.getText().length() < 1) ok = false;
         if (!isValidInt(portField.getText())) ok = false;
@@ -145,6 +179,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
         Frame f = new JFrame();
         f.setVisible(true);
         EmailAlertAssertion ass = new EmailAlertAssertion();
+        ass.setSmtpPort(27);
         EmailAlertPropertiesDialog d = new EmailAlertPropertiesDialog(f, ass);
         d.setVisible(true);
         d.dispose();

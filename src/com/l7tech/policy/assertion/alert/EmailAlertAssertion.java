@@ -4,12 +4,18 @@
 
 package com.l7tech.policy.assertion.alert;
 
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.common.util.HexUtils;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
+import com.l7tech.policy.wsp.TypeMapping;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * An assertion that sends an email base64message.
@@ -22,6 +28,8 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     public static final String DEFAULT_FROM = "L7SSG@NOMAILBOX";
 
     private String targetEmailAddress = "";
+    private String targetCCEmailAddress = "";
+    private String targetBCCEmailAddress = "";
     private String sourceEmailAddress = DEFAULT_FROM;
     private String smtpHost = DEFAULT_HOST;
     private int smtpPort = DEFAULT_PORT;
@@ -49,6 +57,24 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     public void setTargetEmailAddress(String targetEmailAddress) {
         if (targetEmailAddress == null) throw new NullPointerException();
         this.targetEmailAddress = targetEmailAddress;
+    }
+
+    public String getTargetCCEmailAddress() {
+        return targetCCEmailAddress;
+    }
+
+    public void setTargetCCEmailAddress(String targetCCEmailAddress) {
+        if (targetCCEmailAddress == null) throw new NullPointerException();
+        this.targetCCEmailAddress = targetCCEmailAddress;
+    }
+
+    public String getTargetBCCEmailAddress() {
+        return targetBCCEmailAddress;
+    }
+
+    public void setTargetBCCEmailAddress(String targetBCCEmailAddress) {
+        if (targetBCCEmailAddress == null) throw new NullPointerException();
+        this.targetBCCEmailAddress = targetBCCEmailAddress;
     }
 
     public String getSmtpHost() {

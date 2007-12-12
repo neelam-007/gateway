@@ -529,7 +529,7 @@
 
         <include name="**/activation.jar"/>
         <include name="**/mailapi-1.4.jar"/>
-        <include name="**/smtp-1.3.2.jar"/>
+        <include name="**/smtp-1.4.jar"/>
         <include name="**/whirlycache-1.0.1.jar"/>
         <include name="**/policy-1.0.jar"/>
         <include name="**/commons-collections-3.2.jar"/>
@@ -1107,7 +1107,7 @@
             <classpath>
                 <fileset dir="lib">
                     <include name="mailapi-1.4.jar"/>
-                    <include name="smtp-1.3.2.jar"/>
+                    <include name="smtp-1.4.jar"/>
                     <include name="xercesImpl.jar"/>
                     <include name="commons-lang-2.3.jar"/>
                     <include name="test/japex-1.1.jar"/>
