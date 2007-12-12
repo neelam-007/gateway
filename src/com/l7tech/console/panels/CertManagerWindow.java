@@ -182,7 +182,7 @@ public class CertManagerWindow extends JDialog {
     /**
      * Load the certs from the database
      */
-    private void loadTrustedCerts() {
+    public void loadTrustedCerts() {
         java.util.List<TrustedCert> certList;
         try {
             certList = getTrustedCertAdmin().findAllCerts();

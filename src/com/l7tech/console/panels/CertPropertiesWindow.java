@@ -84,6 +84,7 @@ public class CertPropertiesWindow extends JDialog {
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertPropertiesWindow.class.getName());
 
+    private Dialog owner;
 
     /**
      * Constructor
@@ -118,6 +119,7 @@ public class CertPropertiesWindow extends JDialog {
      */
     public CertPropertiesWindow(Dialog owner, TrustedCert tc, boolean editable, boolean options, Collection<RevocationCheckPolicy> policies) {
         super(owner, resources.getString("cert.properties.dialog.title"), true);
+        this.owner = owner;
         this.trustedCert = tc;
         this.revocationCheckPolicies = policies;
 
@@ -232,6 +234,10 @@ public class CertPropertiesWindow extends JDialog {
                     // save the cert
                     getTrustedCertAdmin().saveCert(tc);
 
+                    // Update the trusted certs in the owner windsow
+                    if (owner instanceof CertManagerWindow) {
+                        ((CertManagerWindow)owner).loadTrustedCerts();
+                    }
                 } catch (SaveException e) {
                     logger.warning("Unable to save the trusted certificate in server");
                     JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.save.error"),
