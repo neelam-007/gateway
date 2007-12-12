@@ -25,14 +25,34 @@ public abstract class DateTranslator {
         if (timeOffset == 0)
             return source;
         final Date result = new Date(source.getTime() + timeOffset);
+        log(source.getTime(), result);
+        return result;
+    }
+
+    /**
+     * Translate a date from the source clock into the destination clock.
+     *
+     * @param source the source date.
+     * @return the translated date.  Never null.
+     */
+    public Date translate(long source) {
+        final long timeOffset = getOffset();
+        if (timeOffset == 0)
+            return new Date(source);
+        final Date result = new Date(source + timeOffset);
         log(source, result);
         return result;
     }
 
     protected abstract long getOffset();
 
-    /** Do any logging of a converstion.  This method does nothing.  Subclasses can take some action if they wish. */
-    protected void log(Date source, Date result) {
+    /**
+     * Do any logging of a converstion.  This method does nothing.  Subclasses can take some action if they wish.
+     *
+     * @param source  the input date
+     * @param result  the resulting output date
+     */
+    protected void log(long source, Date result) {
         // Take no action by default
     }
 }

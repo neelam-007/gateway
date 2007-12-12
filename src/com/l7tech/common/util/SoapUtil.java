@@ -530,7 +530,7 @@ public class SoapUtil {
      * @param doc  the Document to examine.
      * @return a Map of wsu:Id String to Element.  May be empty, but never null.
      */
-    public static Map getElementByWsuIdMap(Document doc) throws InvalidDocumentFormatException {
+    public static Map<String, Element> getElementByWsuIdMap(Document doc) throws InvalidDocumentFormatException {
         Map<String, Element> map = new HashMap<String, Element>();
         NodeList elements = doc.getElementsByTagName("*");
         for (int i = 0; i < elements.getLength(); i++) {
@@ -1621,6 +1621,33 @@ public class SoapUtil {
         }
 
         return operationQNames;
+    }
+
+    /**
+     * Get the value of the mustUnderstand global attribute for the specified element.
+     *
+     * @param element the element to examine.  Usually this would be an immediate child of a SOAP Header element.  Required.
+     * @return the value of a mustUnderstand attribute (supposed to be either "1" or "0"), or null if no such attribute was found.
+     * @throws InvalidDocumentFormatException if there is more than one recognized mustUnderstand attribute
+     * but the values do not all exactly match
+     */
+    public static String getMustUnderstandAttributeValue(Element element) throws InvalidDocumentFormatException {
+        String value = null;
+        NamedNodeMap attrs = element.getAttributes();
+        int len = attrs.getLength();
+        for (int i = 0; i < len; i++) {
+            Node attr = attrs.item(i);            
+            if ("mustUnderstand".equals(attr.getLocalName()) || "mustUnderstand".equals(attr.getNodeName())) {
+                final String nodeValue = attr.getNodeValue();
+                if (value != null) {
+                    // If we see more than one, they must all match up
+                    if (!value.equals(nodeValue))
+                        throw new InvalidDocumentFormatException("Element has more than one mustUnderstand attribute and their values do not exactly match");
+                }
+                value = nodeValue;
+            }
+        }
+        return value;
     }
 
     private interface OperationSearchContext {

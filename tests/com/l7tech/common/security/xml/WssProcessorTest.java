@@ -25,11 +25,12 @@ import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Random;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -117,8 +118,8 @@ public class WssProcessorTest extends TestCase {
 
         WssTimestamp timestamp = result.getTimestamp();
         if (timestamp != null) {
-            log.info("Timestamp created = " + timestamp.getCreated().asDate());
-            log.info("Timestamp expires = " + timestamp.getExpires().asDate());
+            log.info("Timestamp created = " + new Date(timestamp.getCreated().asTime()));
+            log.info("Timestamp expires = " + new Date(timestamp.getExpires().asTime()));
         } else
             log.info("No timestamp was found.");
 
@@ -520,5 +521,144 @@ public class WssProcessorTest extends TestCase {
 
         Element l7sec = SoapUtil.getSecurityElement(gotDoc, SecurityActor.L7ACTOR.getValue());
         assertNull(l7sec);
+    }
+
+    private static interface Configurer {
+        boolean configure(Document placeOrder, Element blarg) throws IOException;
+    }
+
+    public void testBug2157RejectSoapHeaders() throws Exception {
+        final String blargns = "http://example.com/ns/blargle";
+
+        List<Configurer> tests = new ArrayList<Configurer>(Arrays.asList(
+                new Configurer() {
+                    public boolean configure(Document placeOrder, Element blarg) throws IOException {
+                        // Simple attrs with no namespace prefixes are recognized (apparently allowed by SOAP 1.1)
+                        blarg.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:blarg", blargns);
+                        blarg.setAttribute("mustUnderstand", "1");
+                        blarg.setAttribute("actor", SoapUtil.ACTOR_VALUE_NEXT);
+                        return true;
+                    }
+                },
+                new Configurer() {
+                    public boolean configure(Document placeOrder, Element blarg) throws IOException {
+                        // An actor with a SOAP namepsace URI is recognized and rejected
+                        blarg.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:blarg", blargns);
+                        final String soapns = SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE;
+                        blarg.getOwnerDocument().getDocumentElement().setAttribute("xmlns:soapenv", soapns);
+                        blarg.setAttributeNS(soapns, "soapenv:mustUnderstand", "1");
+                        blarg.setAttributeNS(soapns, "soapenv:actor", SoapUtil.ACTOR_VALUE_NEXT);
+                        return true;
+                    }
+                },
+                new Configurer() {
+                    public boolean configure(Document placeOrder, Element blarg) throws IOException {
+                        // A role (SOAP 1.2) is recognized and rejected
+                        blarg.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:blarg", blargns);
+                        final String soapns = SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE;
+                        blarg.getOwnerDocument().getDocumentElement().setAttribute("xmlns:soapenv", soapns);
+                        blarg.setAttributeNS(soapns, "soapenv:mustUnderstand", "true");
+                        blarg.setAttributeNS(soapns, "soapenv:role", SoapUtil.ROLE_VALUE_NEXT);
+                        return true;
+                    }
+                },
+                new Configurer() {
+                    public boolean configure(Document placeOrder, Element blarg) throws IOException {
+                        // Same as #1 but with SecureSpan actor
+                        blarg.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:blarg", blargns);
+                        blarg.setAttribute("mustUnderstand", "1");
+                        blarg.setAttribute("actor", "SecureSpan");
+                        return true;
+                    }
+                },
+                new Configurer() {
+                    public boolean configure(Document placeOrder, Element blarg) throws IOException {
+                        // Same as #2 but with SecureSpan actor
+                        blarg.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:blarg", blargns);
+                        final String soapns = SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE;
+                        blarg.getOwnerDocument().getDocumentElement().setAttribute("xmlns:soapenv", soapns);
+                        blarg.setAttributeNS(soapns, "soapenv:mustUnderstand", "1");
+                        blarg.setAttributeNS(soapns, "soapenv:actor", "SecureSpan");
+                        return true;
+                    }
+                },
+                new Configurer() {
+                    public boolean configure(Document placeOrder, Element blarg) throws IOException {
+                        // Same as #3 but with SecureSpan role
+                        blarg.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:blarg", blargns);
+                        final String soapns = SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE;
+                        blarg.getOwnerDocument().getDocumentElement().setAttribute("xmlns:soapenv", soapns);
+                        blarg.setAttributeNS(soapns, "soapenv:mustUnderstand", "true");
+                        blarg.setAttributeNS(soapns, "soapenv:role", "SecureSpan");
+                        return true;
+                    }
+                },
+                new Configurer() {
+                    public boolean configure(Document placeOrder, Element blarg) throws IOException {
+                        // Not rejected for mustUndestand=false
+                        blarg.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:blarg", blargns);
+                        blarg.setAttribute("mustUnderstand", "false");
+                        blarg.setAttribute("actor", "SecureSpan");
+                        return false;
+                    }
+                },
+                new Configurer() {
+                    public boolean configure(Document placeOrder, Element blarg) throws IOException {
+                        // Not rejected for no mustUnderstand
+                        blarg.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:blarg", blargns);
+                        blarg.setAttribute("actor", "SecureSpan");
+                        return false;
+                    }
+                },
+                new Configurer() {
+                    public boolean configure(Document placeOrder, Element blarg) throws IOException {
+                        // Not rejected for no actor
+                        blarg.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:blarg", blargns);
+                        final String soapns = SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE;
+                        blarg.getOwnerDocument().getDocumentElement().setAttribute("xmlns:soapenv", soapns);
+                        blarg.setAttributeNS(soapns, "soapenv:mustUnderstand", "1");
+                        return false;
+                    }
+                },
+                new Configurer() {
+                    public boolean configure(Document placeOrder, Element blarg) throws IOException {
+                        // Not rejected for empty role
+                        blarg.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:blarg", blargns);
+                        final String soapns = SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE;
+                        blarg.getOwnerDocument().getDocumentElement().setAttribute("xmlns:soapenv", soapns);
+                        blarg.setAttributeNS(soapns, "soapenv:mustUnderstand", "true");
+                        blarg.setAttributeNS(soapns, "soapenv:role", "");
+                        return false;
+                    }
+                }
+        ));
+
+        for (Configurer test : tests) {
+            Document placeOrder = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+            Element security = SoapUtil.getOrMakeSecurityElement(placeOrder);
+            Element header = (Element)security.getParentNode();
+            header.removeChild(security);
+            final Element blarg = header.getOwnerDocument().createElementNS(blargns, "blarg:blargle");
+            header.appendChild(blarg);
+            boolean shouldReject = test.configure(placeOrder, blarg);
+
+            {
+                WssProcessorImpl processor = new WssProcessorImpl(new Message(placeOrder));
+                processor.setRejectOnMustUnderstand(false);
+                processor.processMessage();
+            }
+
+            try {
+                WssProcessorImpl processor = new WssProcessorImpl(new Message(placeOrder));
+                processor.setRejectOnMustUnderstand(shouldReject);
+                processor.processMessage();
+                if (shouldReject)
+                    fail("failed to reject message with mustUnderstand=1");
+            } catch (InvalidDocumentFormatException e) {
+                if (!shouldReject)
+                    fail("rejected a document that should have passed");
+                assertTrue(e.getMessage().contains("mustUnderstand"));
+            }
+        }
     }
 }

@@ -89,11 +89,11 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
         }
 
         final String createdIsoString = createdTimestamp.asIsoString().trim();
-        final long created = createdTimestamp.asDate().getTime();
+        final long created = createdTimestamp.asTime();
         final long now = System.currentTimeMillis();
         long expires;
         if (timestamp.getExpires() != null) {
-            expires = timestamp.getExpires().asDate().getTime();
+            expires = timestamp.getExpires().asTime();
         } else {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NO_EXPIRES_ELEMENT, String.valueOf(DEFAULT_EXPIRY_TIME));
             expires = created + DEFAULT_EXPIRY_TIME;

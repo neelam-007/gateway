@@ -576,8 +576,9 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
 
             if (isSoap && hasSecurity) {
-                WssProcessor trogdor = new WssProcessorImpl(); // no need for locator
-                ((WssProcessorImpl)trogdor).setSignedAttachmentSizeLimit(signedAttachmentMaxSize.get());
+                WssProcessorImpl trogdor = new WssProcessorImpl(); // no need for locator
+                trogdor.setSignedAttachmentSizeLimit(signedAttachmentMaxSize.get());
+                trogdor.setRejectOnMustUnderstand(serverConfig.getBooleanProperty(ServerConfig.PARAM_SOAP_REJECT_MUST_UNDERSTAND, true));
                 try {
                     final Message request = context.getRequest();
                     final SecurityKnob reqSec = request.getSecurityKnob();

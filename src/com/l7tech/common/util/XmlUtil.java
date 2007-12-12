@@ -1161,6 +1161,24 @@ public class XmlUtil {
         return sw.toString();
     }
 
+    /**
+     * Invokes the specified visitor on all immediate child elements of the specified element.
+     *
+     * @param element the element whose child elements to visit.  Required.
+     * @param visitor a visitor to invoke on each immediate child element.  Required.
+     */
+    public static void visitChildElements(Element element, Functions.UnaryVoid<Element> visitor) {
+        NodeList kids = element.getChildNodes();
+        if (kids == null) return;
+        int len = kids.getLength();
+        if (len < 1) return;
+        for (int i = 0; i < len; ++i) {
+            Node kid = kids.item(i);
+            if (kid instanceof Element)
+                visitor.call((Element)kid);
+        }
+    }
+
     public static class BadSchemaException extends Exception {
         public BadSchemaException(String s){super(s);}
         public BadSchemaException(Throwable e){super(e.getMessage(), e);}

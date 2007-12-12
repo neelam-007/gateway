@@ -94,9 +94,9 @@ public class SsgRuntime {
             return -getTimeOffset();
         }
 
-        protected void log(Date source, Date result) {
+        protected void log(long source, Date result) {
             if (log.isLoggable(Level.FINE))
-                log.fine("Translating date from SSG clock " + source + " to local clock " + result);
+                log.fine("Translating date from SSG clock " + new Date(source) + " to local clock " + result);
         }
     };
 

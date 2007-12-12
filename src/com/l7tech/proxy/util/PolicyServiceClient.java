@@ -229,7 +229,7 @@ public class PolicyServiceClient {
         if (signedResponseRequired && !timestampSigned)
                 throw new InvalidDocumentFormatException("Policy server response did not include a signed timestamp, but our request required a signed response.");
         if (outTimestampCreated != null && outTimestampCreated.length > 0 && timestamp != null && timestamp.getCreated() != null) {
-            outTimestampCreated[0] = timestamp.getCreated().asDate();
+            outTimestampCreated[0] = new Date(timestamp.getCreated().asTime());
             if (outTimestampCreatedWasSigned != null && outTimestampCreatedWasSigned.length > 0)
                 outTimestampCreatedWasSigned[0] = timestampSigned;
         }        

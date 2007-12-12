@@ -14,7 +14,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
 /**
@@ -38,15 +37,17 @@ public interface WssProcessor {
      * @throws GeneralSecurityException if there is a problem with a key or certificate
      * @throws com.l7tech.common.security.xml.processor.ProcessorException in case of some other problem
      * @throws BadSecurityContextException if the message contains a WS-SecureConversation SecurityContextToken, but the securityContextFinder has no record of that session.
-     * @throws SAXException if the first part's content type is not text/xml.
-     * @throws SAXException if the XML in the first part's InputStream is not well formed
-     * @throws IOException if there is a problem reading XML from the first part's InputStream
-     * @throws IOException if there is a problem reading from or writing to a stash
+     * @throws SAXException if the first part's content type is not text/xml; or,
+     *                      if the XML in the first part's InputStream is not well formed
+     * @throws IOException if there is a problem reading XML from the first part's InputStream; or,
+     *                     if there is a problem reading from or writing to a stash
      * @throws IllegalStateException if the Message has not yet been initialized
+     * @throws UnexpectedKeyInfoException if the message has a KeyInfo that doesn't match the expected value.  Note that
+     *                                    this must be caught before ProcessorException.
      */
     ProcessorResult undecorateMessage(Message message,
                                       X509Certificate senderCertificate,
                                       SecurityContextFinder securityContextFinder,
                                       SecurityTokenResolver securityTokenResolver)
-            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException, UnexpectedKeyInfoException;
+            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException;
 }

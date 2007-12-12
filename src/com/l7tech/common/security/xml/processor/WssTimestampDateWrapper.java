@@ -6,11 +6,10 @@
 
 package com.l7tech.common.security.xml.processor;
 
+import com.l7tech.common.util.ISO8601Date;
 import org.w3c.dom.Element;
 
 import java.util.Date;
-
-import com.l7tech.common.util.ISO8601Date;
 
 /**
  * @author mike
@@ -30,8 +29,8 @@ public class WssTimestampDateWrapper implements WssTimestampDate {
         this.dateOverride = dateOverride;
     }
 
-    public Date asDate() {
-        return dateOverride != null ? dateOverride : delegate.asDate();
+    public long asTime() {
+        return dateOverride != null ? dateOverride.getTime() : delegate.asTime();
     }
 
     public String asIsoString() {

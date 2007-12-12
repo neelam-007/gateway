@@ -82,7 +82,7 @@ public class ServerRequestWssTimestamp extends AbstractServerAssertion implement
             return AssertionStatus.BAD_REQUEST;
         }
 
-        long created = createdEl.asDate().getTime();
+        long created = createdEl.asTime();
         if (created - createdFutureFuzz > now) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_CREATED_FUTURE);
             return AssertionStatus.BAD_REQUEST;
@@ -91,7 +91,7 @@ public class ServerRequestWssTimestamp extends AbstractServerAssertion implement
         WssTimestampDate expiresEl = wssTimestamp.getExpires();
         long expires;
         if (expiresEl != null) {
-            expires = expiresEl.asDate().getTime();
+            expires = expiresEl.asTime();
         } else {
             expires = created + assertion.getMaxExpiryMilliseconds();  // Expires is optional according to BSP 1.0
         }

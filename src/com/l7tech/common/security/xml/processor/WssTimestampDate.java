@@ -8,12 +8,10 @@ package com.l7tech.common.security.xml.processor;
 
 import com.l7tech.common.security.token.ParsedElement;
 
-import java.util.Date;
-
 /**
  * @author mike
  */
 public interface WssTimestampDate extends ParsedElement {
-    Date asDate();
+    long asTime();
     String asIsoString();
 }
