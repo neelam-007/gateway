@@ -12,7 +12,6 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
 
 /**
  * @author alex
@@ -26,8 +25,8 @@ public class AuthenticationAssertionPolicyNode extends IdentityAssertionTreeNode
                     assertion.setIdentityProviderOid(entityHeader.getOid());
                     provName = null; // Reset cached name
                     PolicyTree tree = (PolicyTree) TopComponents.getInstance().getComponent(PolicyTree.NAME);
-                    DefaultTreeModel dtm = (DefaultTreeModel) tree.getModel();
-                    dtm.nodeChanged(AuthenticationAssertionPolicyNode.this);
+                    PolicyTreeModel dtm = (PolicyTreeModel) tree.getModel();
+                    dtm.assertionTreeNodeChanged(AuthenticationAssertionPolicyNode.this);
                 }
             });
         }
