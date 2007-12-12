@@ -37,6 +37,7 @@ public class AuthenticationAssertion extends IdentityAssertion {
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+        meta.put(AssertionMetadata.LONG_NAME, "Authenticate requestor credentials using a selected Identity Provider");        
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/user16.png");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddAuthenticationAssertionAdvice");

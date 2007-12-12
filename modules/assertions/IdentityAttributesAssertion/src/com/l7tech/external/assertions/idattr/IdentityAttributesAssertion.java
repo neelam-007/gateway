@@ -69,7 +69,7 @@ public class IdentityAttributesAssertion extends Assertion implements UsesVariab
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Identity Attributes");
-        meta.put(AssertionMetadata.LONG_NAME, "");
+        meta.put(AssertionMetadata.LONG_NAME, "Set Context Variables based on attributes of the authenticated user");
 
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.idattr.console.IdentityAttributesAssertionDialog");
 
