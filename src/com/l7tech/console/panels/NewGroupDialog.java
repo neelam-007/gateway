@@ -59,7 +59,9 @@ public class NewGroupDialog extends JDialog {
         this.parent = parent;
         this.ipc = ipc;
         this.group = new GroupBean();
-        this.group.setProviderId(ipc.getOid());
+        if (ipc != null) {
+            this.group.setProviderId(ipc.getOid());
+        }
         initResources();
         initComponents();
         pack();
