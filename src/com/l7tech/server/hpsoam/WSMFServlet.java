@@ -47,9 +47,14 @@ public class WSMFServlet extends AuthenticatableHttpServlet {
     private RoleManager roleManager;
     private WSMFService service;
 
-    // Implements {@link AuthenticatableHttpServlet#getFeature}.
+    @Override
     protected String getFeature() {
         return GatewayFeatureSets.SERVICE_MESSAGEPROCESSOR;
+    }
+
+    @Override
+    protected boolean isCleartextAllowed() {
+        return false;
     }
 
     // Implements {@link AuthenticatableHttpServlet#getRequiredEndpoint}.
