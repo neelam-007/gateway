@@ -1,6 +1,5 @@
 package com.l7tech.server.log;
 
-import java.io.PrintStream;
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -76,9 +75,6 @@ public class JdkLogConfig {
             // a system property.
             JdkLoggerConfigurator.configure("com.l7tech.logging", "ssglog.properties", "ssglog.properties", !isJdkInit, !isJdkInit);
         }
-
-        // set level to config to enable logging during startup (before any cluster property is read)
-        Logger.getLogger("com.l7tech").setLevel(Level.CONFIG);
     }
 
     /**
@@ -86,8 +82,8 @@ public class JdkLogConfig {
      */
     private static void captureSystemStreams() {
         //noinspection IOResourceOpenedButNotSafelyClosed
-        System.setOut(new PrintStream(new LoggingOutputStream(Logger.getLogger("STDOUT"), Level.INFO)));
+        System.setOut(new LoggingPrintStream(Logger.getLogger("STDOUT"), Level.INFO));
         //noinspection IOResourceOpenedButNotSafelyClosed
-        System.setErr(new PrintStream(new LoggingOutputStream(Logger.getLogger("STDERR"), Level.WARNING)));
+        System.setErr(new LoggingPrintStream(Logger.getLogger("STDERR"), Level.WARNING));
     }
 }

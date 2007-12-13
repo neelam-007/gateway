@@ -36,14 +36,10 @@ public class StartupHandler extends Handler {
     public static final String SYSPROP_LOG_TO_CONSOLE = StartupHandler.class.getName() + ".logToConsole";
 
     public StartupHandler() throws IOException {
-        File startupLog = getStartupLogFile();
-
-        if ( logToConsole ||
-             !startupLog.getParentFile().exists() ||
-             !startupLog.getParentFile().canWrite())  {
+        if ( logToConsole )  {
             delegate = new ConsoleHandler();
         } else {
-            String filepath = startupLog.getAbsolutePath();
+            String filepath = getStartupLogFile().getAbsolutePath();
             delegate =  new FileHandler( filepath, LOG_LIMIT, LOG_COUNT, LOG_APPEND);
         }
     }

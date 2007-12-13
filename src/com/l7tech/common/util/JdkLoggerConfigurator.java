@@ -13,7 +13,7 @@ import java.util.Properties;
 import java.util.Collections;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Handler;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -36,6 +36,8 @@ public class JdkLoggerConfigurator {
             new AtomicBoolean(Boolean.getBoolean("com.l7tech.logging.appendservicename"));
     private static AtomicBoolean debugState =
             new AtomicBoolean(Boolean.getBoolean("com.l7tech.logging.debug"));
+    private static AtomicReference<Properties> nonDefaultProperties =
+            new AtomicReference();
 
     /**
      * this class cannot be instantiated
@@ -180,16 +182,19 @@ public class JdkLoggerConfigurator {
     }
 
     /**
-     * Add the log handler programatically
+     * Get the Properties set from the non-defaults configuration file.
      *
-     * @param handler
+     * @return The properties, may be empty but not null
      */
-    public static void addHandler(Handler handler) {
-        if (handler == null) {
-            throw new IllegalArgumentException();
+    public static Properties getNonDefaultProperties() {
+        Properties properties = new Properties();
+
+        Properties nonDefaultProps = nonDefaultProperties.get();
+        if ( nonDefaultProps != null ) {
+            properties.putAll( nonDefaultProps );
         }
-        Logger rootLogger = Logger.getLogger("");
-        rootLogger.addHandler(handler);
+
+        return properties;
     }
 
     /**
@@ -254,6 +259,21 @@ public class JdkLoggerConfigurator {
             ResourceUtils.closeQuietly( fullIn );
             ResourceUtils.closeQuietly( defaultsIn );
             ResourceUtils.closeQuietly( configIn );
+        }
+
+        // save for review later
+        if ( config != null ) {
+            configIn = null;
+            try {
+                configIn = config.openStream();
+
+                Properties props = new Properties();
+                props.load( configIn );
+                nonDefaultProperties.set( props );
+            } finally {
+                ResourceUtils.closeQuietly( configIn );
+            }
+
         }
 
         return readConfigUrl;

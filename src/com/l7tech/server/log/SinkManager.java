@@ -3,6 +3,7 @@ package com.l7tech.server.log;
 import com.l7tech.common.log.SinkConfiguration;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.ValidationUtils;
+import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.HibernateEntityManager;
 import com.l7tech.objectmodel.FindException;
@@ -243,15 +244,16 @@ public class SinkManager
             if (oldValue != null)
                 oldProps.load(new StringReader(oldValue));
 
-            // get manager
-            LogManager manager = LogManager.getLogManager();
+            // get locally configured levels, these should
+            // not be overridden
+            Properties properties = JdkLoggerConfigurator.getNonDefaultProperties();
 
             // set configured levels
             for ( Map.Entry<Object,Object> property : levelProps.entrySet() ) {
                 String key = (String) property.getKey();
                 String value = (String) property.getValue();
 
-                if ( key.endsWith(".level") && manager.getProperty(key)==null) {
+                if ( key.endsWith(".level") && properties.getProperty(key)==null) {
                     String name = key.substring(0, key.length()-6);
                     try {
                         Level configLevel = Level.parse(value);
@@ -265,16 +267,28 @@ public class SinkManager
                 }
             }
 
-            // clear removed levels (so parent level is used)
+            // reset removed levels (so parent or original config level is used)
+            LogManager manager = LogManager.getLogManager();
             for ( Object KeyObj : oldProps.keySet() ) {
                 String key = (String) KeyObj;
 
                 if ( key.endsWith(".level") &&
-                        manager.getProperty(key)==null &&
-                        levelProps.getProperty(key)==null) {
+                        levelProps.getProperty(key)==null ) {
                     String name = key.substring(0, key.length()-6);
                     Logger configLogger = Logger.getLogger(name);
-                    configLogger.setLevel(null);
+                    boolean levelSet = false;
+                    String levelStr = manager.getProperty(key);
+                    if ( levelStr != null ) {
+                        try {
+                            configLogger.setLevel( Level.parse(levelStr) );
+                            levelSet = true;
+                        } catch (IllegalArgumentException iae) {
+                            // ignore invalid level from logging config file                            
+                        }
+                    }
+                    if (!levelSet) {
+                        configLogger.setLevel(null);
+                    }
                 }
             }
         } catch (IOException ioe) {
