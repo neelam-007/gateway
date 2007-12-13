@@ -19,6 +19,7 @@ import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.WsdlUtils;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -49,6 +50,7 @@ import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.ConnectException;
 
 /**
  * The <code>PublishServiceAction</code> action invokes the pubish
@@ -239,12 +241,13 @@ public class CreateServiceWsdlAction extends SecureAction {
                         } else {
                             logger.info("Service publication aborted.");
                         }
-                    } else {
+                    } else if (ExceptionUtils.causedBy(e, ConnectException.class)) {
+                        log.log(Level.WARNING, "the connection to the SecureSpan Gateway is lost.", e);
+                        ErrorManager.getDefault().notify(Level.WARNING, e, "");
+                    }
+                    else {
                         log.log(Level.WARNING, "error saving service", e);
-                        DialogDisplayer.showMessageDialog(w,
-                          "Unable to save the service '" + service.getName() + "'\n",
-                          "Error",
-                          JOptionPane.ERROR_MESSAGE, null);
+                        DialogDisplayer.showMessageDialog(w, null, "Unable to save the service '" + service.getName() + "'\n", null);
                     }
                 }
             }
