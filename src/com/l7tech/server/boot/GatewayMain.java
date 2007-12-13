@@ -9,6 +9,7 @@ public class GatewayMain {
     public static void main(String[] args) {
         try {
             new GatewayBoot().runUntilShutdown();
+            System.exit(0); // force exit even if there are non-daemon threads created by mistake (Bug #4384)
         } catch (Throwable e) {
             e.printStackTrace(System.err);
             System.err.println("\n\n\n**** Unable to start the server: " + ExceptionUtils.getMessage(e) + "\n\n\n");
