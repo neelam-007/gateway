@@ -186,6 +186,13 @@ public class SinkManager
         installConnectionListener();
         rebuildLogSinks();
 
+        // close all on shutdown
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
+            public void run() {
+                dispatchingSink.close();    
+            }
+        }));
+
         // Log a message to both startup and regular logs
         logger.info("Redirecting logging to configured log sinks.");
         StartupHandler.notifyStarted();
