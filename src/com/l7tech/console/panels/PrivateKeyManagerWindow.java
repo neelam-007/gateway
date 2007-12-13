@@ -13,6 +13,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.SaveException;
 
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.ConnectException;
 
 /**
  * Window for managing private key entries (certificate chains with private keys) in the Gateway.
@@ -91,7 +93,7 @@ public class PrivateKeyManagerWindow extends JDialog {
     private PermissionFlags flags;
     private KeyTable keyTable = null;
     private Component showingInScrollPane = null;
-
+    private boolean validPrivateKeyManagerWindow;
 
     public PrivateKeyManagerWindow(JDialog owner) {
         super(owner, resources.getString("keydialog.title"), true);
@@ -390,6 +392,7 @@ public class PrivateKeyManagerWindow extends JDialog {
      * if the Gateway is currently performing a generate keypair operation for us.
      */
     private List<KeyTableRow> loadPrivateKeys() {
+        validPrivateKeyManagerWindow = true;
         if (isKeypairJobActive()) {
             String mess = "        Gateway is generating a new key pair (may take up to several minutes)...";
             if (keypairJobViewportView == null) {
@@ -446,13 +449,26 @@ public class PrivateKeyManagerWindow extends JDialog {
             return keyList;
 
         } catch (Exception e) {
-            String msg = "Unable to load private keys: " + ExceptionUtils.getMessage(e);
-            logger.log(Level.WARNING, msg, e);
-            JOptionPane.showMessageDialog(PrivateKeyManagerWindow.this, msg,
-                                          "Unable to load private keys",
-                                          JOptionPane.ERROR_MESSAGE);
+            validPrivateKeyManagerWindow = false;
+            if (ExceptionUtils.causedBy(e, ConnectException.class)) {
+                logger.log(Level.WARNING, "the connection to the SecureSpan Gateway is lost.", e);
+                ErrorManager.getDefault().notify(Level.WARNING, e, "");
+            } else {
+                String msg = "Unable to load private keys";
+                String logMsg = msg + ": "  + ExceptionUtils.getMessage(e);
+                logger.log(Level.WARNING, logMsg , e);
+                DialogDisplayer.showMessageDialog(PrivateKeyManagerWindow.this, null, msg, e);
+            }
             return Collections.emptyList();
         }
+    }
+
+    /**
+     * Get info about if the server is unavailable.
+     * @return true if the SSG is unavailable.
+     */
+    public boolean encounterServerUnavailable() {
+        return !validPrivateKeyManagerWindow;
     }
 
     /**

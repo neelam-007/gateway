@@ -48,11 +48,15 @@ public class ManagePrivateKeysAction extends SecureAction {
      * This is the method which should be called programmatically.
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
+     * Note: if the SSM encounters the server is unavailable,
+     * then it is not allowed to show a private-key-manager window.
      */
     protected void performAction() {
         PrivateKeyManagerWindow pkmw = new PrivateKeyManagerWindow(TopComponents.getInstance().getTopParent());
-        pkmw.pack();
-        Utilities.centerOnScreen(pkmw);
-        DialogDisplayer.display(pkmw);
+        if (! pkmw.encounterServerUnavailable()) {
+            pkmw.pack();
+            Utilities.centerOnScreen(pkmw);
+            DialogDisplayer.display(pkmw);
+        }
     }
 }
