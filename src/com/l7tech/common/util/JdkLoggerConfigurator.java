@@ -122,7 +122,7 @@ public class JdkLoggerConfigurator {
 
                 final File file = new File(configCandidate);
                 if (file.exists()) {
-                    if  ( readConfiguration(logManager, probeDef, file.toURI().toURL()) ) {
+                    if  ( readConfiguration(logManager, probeDef, file.toURI().toURL(), false) ) {
                         configFound = true;
                         probeFile = file;
                         break;
@@ -130,7 +130,7 @@ public class JdkLoggerConfigurator {
                 }
 
                 URL resource = cl.getResource(configCandidate);
-                if ( readConfiguration(logManager, probeDef, resource) ) {
+                if ( readConfiguration(logManager, probeDef, resource, false) ) {
                     configFound = true;
                     probeFile = new File(resource.getPath());
                     break;
@@ -203,7 +203,8 @@ public class JdkLoggerConfigurator {
      */
     private static boolean readConfiguration(final LogManager logManager,
                                              final URL configDefs,
-                                             final URL config) throws IOException {
+                                             final URL config,
+                                             final boolean resetLevels) throws IOException {
         boolean readConfigUrl = false;
 
         InputStream defaultsIn = null;
@@ -235,10 +236,12 @@ public class JdkLoggerConfigurator {
                 Properties loggerProps = new Properties();
                 loggerProps.load(bais);
 
-                for (String propertyName : (Collection<String>) Collections.list(loggerProps.propertyNames())) {
-                    if (propertyName.endsWith(".level")) {
-                        String loggerName = propertyName.substring(0, propertyName.length()-6);
-                        Logger.getLogger(loggerName);
+                if ( resetLevels ) {
+                    for (String propertyName : (Collection<String>) Collections.list(loggerProps.propertyNames())) {
+                        if (propertyName.endsWith(".level")) {
+                            String loggerName = propertyName.substring(0, propertyName.length()-6);
+                            Logger.getLogger(loggerName);
+                        }
                     }
                 }
 
@@ -331,7 +334,7 @@ public class JdkLoggerConfigurator {
                       (lastModified != prevModified)) {
                         InputStream in = null;
                         try {
-                            readConfiguration(logManager, defaultsUrl, file.toURI().toURL());
+                            readConfiguration(logManager, defaultsUrl, file.toURI().toURL(), true);
                             interval = getInterval();
                             logger.log(Level.CONFIG,
                                        "logging config file reread complete, new interval is {0} secs",
