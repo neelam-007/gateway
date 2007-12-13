@@ -130,7 +130,11 @@ public class EditPolicyAction extends NodeAction {
             PolicyEditorPanel.PolicyEditorSubject subject = new PolicyEditorPanel.PolicyEditorSubject() {
                 public PolicyEntityNode getPolicyNode() {return policyNode;}
                 public Assertion getRootAssertion() {
-                    return assertion;
+                    try {
+                        return policyNode.getPolicy().getAssertion();
+                    } catch (Exception e) {
+                        throw new RuntimeException("Unable to load policy", e); // Doctor, it hurts when I do this!
+                    }
                 }
                 public String getName() {
                     return policyNode.getName();
