@@ -135,8 +135,10 @@ public class ConfigurationWizard {
         }
 
         if (hadFailures) System.exit(1);
-
-        System.exit(0);
+        else {
+            logger.info("Configuration Completed.");
+            System.exit(0);
+        }
     }
 
     private void applyConfiguration() {
