@@ -6,8 +6,8 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
@@ -300,8 +300,10 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.setNtlmHost(source.getNtlmHost());
         this.setConnectionTimeout(source.getConnectionTimeout());
         this.setTimeout(source.getTimeout());
+        this.setRequestMsgSrc(source.getRequestMsgSrc());
         this.setRequestHeaderRules(source.getRequestHeaderRules());
         this.setRequestParamRules(source.getRequestParamRules());
+        this.setResponseMsgDest(source.getResponseMsgDest());
         this.setResponseHeaderRules(source.getResponseHeaderRules());
     }
 

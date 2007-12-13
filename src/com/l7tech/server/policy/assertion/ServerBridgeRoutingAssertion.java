@@ -13,6 +13,7 @@ import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
+import com.l7tech.common.message.AbstractHttpResponseKnob;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
@@ -28,6 +29,7 @@ import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.NullRequestInterceptor;
@@ -174,7 +176,11 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             try {
                 PublishedService service = context.getService();
                 url = getProtectedServiceUrl(service);
-                if(!context.getRequest().isSoap()) {
+
+                // Obtains the request message source.
+                final Message requestMsg = getRequestMessage(context);
+
+                if(!requestMsg.isSoap()) {
                     auditor.logAndAudit(AssertionMessages.BRIDGEROUTE_REQUEST_NOT_SOAP);
                     return AssertionStatus.FAILED;
                 }
@@ -189,18 +195,18 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 }
 
                 try {
-                    final HttpRequestKnob httpRequestKnob = (HttpRequestKnob) context.getRequest().getKnob(HttpRequestKnob.class);
+                    final HttpRequestKnob httpRequestKnob = (HttpRequestKnob) requestMsg.getKnob(HttpRequestKnob.class);
 
                     Map vars = null;
 
                     // TODO support non-SOAP messaging with SSB api
                     String soapAction = "\"\"";
-                    QName[] names = context.getRequest().getSoapKnob().getPayloadNames();
+                    QName[] names = requestMsg.getSoapKnob().getPayloadNames();
                     // TODO decide what to do if there are multiple payload namespace URIs
                     String nsUri = names == null || names.length < 1 ? null : names[0].getNamespaceURI();
 
                     // TODO support SOAP-with-attachments with SSB api
-                    if (context.getRequest().getMimeKnob().isMultipart())
+                    if (requestMsg.getMimeKnob().isMultipart())
                         auditor.logAndAudit(AssertionMessages.BRIDGEROUTE_NO_ATTACHMENTS);
 
                     final URL origUrl;
@@ -216,10 +222,22 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     }
 
                     PolicyAttachmentKey pak = new PolicyAttachmentKey(nsUri, soapAction, origUrl.getPath());
-                    Message bridgeRequest = context.getRequest(); // TODO see if it is unsafe to reuse this
+                    Message bridgeRequest = requestMsg; // TODO see if it is unsafe to reuse this
 
-                    // The response will need to be re-initialized
-                    Message bridgeResponse = context.getResponse(); // TODO see if it is unsafe to reuse this
+                    // Determines the response message destination.
+                    Message bridgeResponse = null;
+                    if (assertion.getResponseMsgDest() == null) {
+                        // The response will need to be re-initialized
+                        bridgeResponse = context.getResponse(); // TODO see if it is unsafe to reuse this
+                    } else {
+                        bridgeResponse = new Message();
+                        bridgeResponse.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
+                            public void addCookie(HttpCookie cookie) {
+                                // TODO what to do with the cookie?
+                            }
+                        });
+                        context.setVariable(assertion.getResponseMsgDest(), bridgeResponse);
+                    }
 
                     HeaderHolder hh = new HeaderHolder();
                     PolicyApplicationContext pac = newPolicyApplicationContext(context, bridgeRequest, bridgeResponse, pak, origUrl, hh);
@@ -232,7 +250,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     else
                         auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS, url.getPath(), String.valueOf(status));
 
-                    HttpResponseKnob httpResponseKnob = (HttpResponseKnob) context.getResponse().getKnob(HttpResponseKnob.class);
+                    HttpResponseKnob httpResponseKnob = (HttpResponseKnob) bridgeResponse.getKnob(HttpResponseKnob.class);
                     if (httpResponseKnob != null) {
                         HttpForwardingRuleEnforcer.handleResponseHeaders(httpResponseKnob, auditor, hh,
                                                                          data.getResponseHeaderRules(), vars,
@@ -540,6 +558,39 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 return newRRLSimpleHttpClient(context, super.getHttpClient(), context.getRoutingResultListener(), hh);
             }
         };
+    }
+
+    /**
+     * @param context   the PEC
+     * @return a request message object as configured by this assertion
+     */
+    private Message getRequestMessage(final PolicyEnforcementContext context) {
+        Message msg = null;
+        if (assertion.getRequestMsgSrc() == null) {
+            msg = context.getRequest();
+        } else {
+            final String variableName = assertion.getRequestMsgSrc();
+            try {
+                final Object requestSrc = context.getVariable(variableName);
+                if (!(requestSrc instanceof Message)) {
+                    // Should never happen.
+                    throw new RuntimeException("Request message source (\"" + variableName +
+                            "\") is a context variable of the wrong type (expected=" + Message.class + ", actual=" + requestSrc.getClass() + ").");
+                }
+                msg = (Message)requestSrc;
+
+                // Inherits the HttpRequestKnob from the default request.
+                final HttpRequestKnob defaultHRK = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+                if (defaultHRK != null) {
+                    msg.attachHttpRequestKnob(defaultHRK);
+                }
+            } catch (NoSuchVariableException e) {
+                // Should never happen.
+                throw new RuntimeException("Request message source is a non-existent context variable (\"" + variableName + "\").");
+            }
+        }
+
+        return msg;
     }
 
     /*

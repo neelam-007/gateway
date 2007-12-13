@@ -138,6 +138,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
     private final Policy policy;
     private final Wsdl wsdl;
+    private Assertion assertionToUseInSearchForPredecessorVariables;
 
     /**
      * Creates new form ServicePanel
@@ -185,6 +186,17 @@ public class HttpRoutingAssertionDialog extends JDialog {
      */
     public void removePolicyListener(PolicyListener listener) {
         listenerList.remove(PolicyListener.class, listener);
+    }
+
+    /**
+     * Workaround for use by {@link BridgeRoutingAssertionPropertiesDialog}.
+     *
+     * @param a     the surrogate assertion
+     * @since SecureSpan 4.3; because the new request message source needs predecessor context variables
+     */
+    public void setAssertionToUseInSearchForPredecessorVariables(Assertion a) {
+        assertionToUseInSearchForPredecessorVariables = a;
+        populateReqMsgSrcComboBox();
     }
 
     /**
@@ -289,20 +301,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
             }
         });
 
-        // Populates request message source combo box, and selects according to assertion.
-        reqMsgSrcComboBox.addItem(new MsgSrcComboBoxItem(null, resources.getString("request.msgSrc.default.text")));
-        final MessageFormat displayFormat = new MessageFormat(resources.getString("request.msgSrc.contextVariable.format"));
-        final Map<String, VariableMetadata> predecessorVariables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion);
-        final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
-        for (String variableName: predecessorVariableNames) {
-            if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
-                final MsgSrcComboBoxItem item = new MsgSrcComboBoxItem(variableName, displayFormat.format(new Object[]{Syntax.SYNTAX_PREFIX, variableName, Syntax.SYNTAX_SUFFIX}));
-                reqMsgSrcComboBox.addItem(item);
-                if (variableName.equals(assertion.getRequestMsgSrc())) {
-                    reqMsgSrcComboBox.setSelectedItem(item);
-                }
-            }
-        }
+        populateReqMsgSrcComboBox();
 
         resMsgDestVariableRadioButton.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
@@ -321,6 +320,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
                     }
                 },
                 500);
+        clearResMsgDestVariableStatus();
         final String resMsgDest = assertion.getResponseMsgDest();
         if (resMsgDest == null) {
             resMsgDestDefaultRadioButton.doClick();
@@ -342,6 +342,34 @@ public class HttpRoutingAssertionDialog extends JDialog {
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
         getRootPane().setDefaultButton(okButton);
         Utilities.setEscKeyStrokeDisposes(this);
+    }
+
+    private Map<String, VariableMetadata> getVariablesSetByPredecessors() {
+        if (assertionToUseInSearchForPredecessorVariables == null) {
+            return PolicyVariableUtils.getVariablesSetByPredecessors(assertion);
+        } else {
+            return PolicyVariableUtils.getVariablesSetByPredecessors(assertionToUseInSearchForPredecessorVariables);
+        }
+    }
+
+    /**
+     * Populates request message source combo box, and sets selection according to assertion.
+     */
+    private void populateReqMsgSrcComboBox() {
+        reqMsgSrcComboBox.removeAllItems();
+        reqMsgSrcComboBox.addItem(new MsgSrcComboBoxItem(null, resources.getString("request.msgSrc.default.text")));
+        final MessageFormat displayFormat = new MessageFormat(resources.getString("request.msgSrc.contextVariable.format"));
+        final Map<String, VariableMetadata> predecessorVariables = getVariablesSetByPredecessors();
+        final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
+        for (String variableName: predecessorVariableNames) {
+            if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
+                final MsgSrcComboBoxItem item = new MsgSrcComboBoxItem(variableName, displayFormat.format(new Object[]{Syntax.SYNTAX_PREFIX, variableName, Syntax.SYNTAX_SUFFIX}));
+                reqMsgSrcComboBox.addItem(item);
+                if (variableName.equals(assertion.getRequestMsgSrc())) {
+                    reqMsgSrcComboBox.setSelectedItem(item);
+                }
+            }
+        }
     }
 
     private void initializeHttpRulesTabs() {
@@ -727,7 +755,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
                     }
                 }
 
-                final Set<String> predecessorVariables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
+                final Set<String> predecessorVariables = getVariablesSetByPredecessors().keySet();
                 if (predecessorVariables.contains(variableName)) {
                     resMsgDestVariableStatusLabel.setIcon(INFO_ICON);
                     resMsgDestVariableStatusLabel.setText(resources.getString("response.msgDest.variable.status.overwrite"));

@@ -72,6 +72,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
                 }
 
                 final HttpRoutingAssertionDialog httpDialog = new HttpRoutingAssertionDialog(owner, editingCopy, policy, wsdl);
+                httpDialog.setAssertionToUseInSearchForPredecessorVariables(assertion);
                 httpDialog.setModal(true);
                 httpDialog.pack();
 

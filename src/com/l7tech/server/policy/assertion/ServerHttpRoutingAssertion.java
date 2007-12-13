@@ -374,27 +374,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             // Set the HTTP version 1.0 for not accepting the chunked Transfer Encoding
             // todo: check if we need to support HTTP 1.1.
 
-            // Serialize the request
-            MimeKnob reqMime_ = null;
-            if (assertion.getRequestMsgSrc() == null) {
-                reqMime_ = context.getRequest().getMimeKnob();
-            } else {
-                final String variableName = assertion.getRequestMsgSrc();
-                try {
-                    final Object requestSrc = context.getVariable(variableName);
-                    if (!(requestSrc instanceof Message)) {
-                        // Should never happen.
-                        throw new RuntimeException("Request message source (\"" + variableName +
-                                "\") is a context variable of the wrong type (expected=" + Message.class + ", actual=" + requestSrc.getClass() + ").");
-                    }
-                    final Message requestMsg = (Message)requestSrc;
-                    reqMime_ = requestMsg.getMimeKnob();
-                } catch (NoSuchVariableException e) {
-                    // Should never happen.
-                    throw new RuntimeException("Request message source is a non-existent context variable (\"" + variableName + "\").");
-                }
-            }
-            final MimeKnob reqMime = reqMime_;
+            final MimeKnob reqMime = getRequestMessage(context).getMimeKnob();
 
             // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
             final long contentLength = reqMime.getContentLength();
@@ -578,6 +558,39 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
 
         return AssertionStatus.FAILED;
+    }
+
+    /**
+     * @param context   the PEC
+     * @return a request message object as configured by this assertion
+     */
+    protected Message getRequestMessage(final PolicyEnforcementContext context) {
+        Message msg = null;
+        if (assertion.getRequestMsgSrc() == null) {
+            msg = context.getRequest();
+        } else {
+            final String variableName = assertion.getRequestMsgSrc();
+            try {
+                final Object requestSrc = context.getVariable(variableName);
+                if (!(requestSrc instanceof Message)) {
+                    // Should never happen.
+                    throw new RuntimeException("Request message source (\"" + variableName +
+                            "\") is a context variable of the wrong type (expected=" + Message.class + ", actual=" + requestSrc.getClass() + ").");
+                }
+                msg = (Message)requestSrc;
+
+                // Inherits the HttpRequestKnob from the default request.
+                final HttpRequestKnob defaultHRK = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+                if (defaultHRK != null) {
+                    msg.attachHttpRequestKnob(defaultHRK);
+                }
+            } catch (NoSuchVariableException e) {
+                // Should never happen.
+                throw new RuntimeException("Request message source is a non-existent context variable (\"" + variableName + "\").");
+            }
+        }
+
+        return msg;
     }
 
     /**
