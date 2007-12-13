@@ -184,6 +184,10 @@ public class SinkManager
         installLogConfigurationListener();
         installConnectionListener();
         rebuildLogSinks();
+
+        // Log a message to both startup and regular logs
+        logger.info("Redirecting logging to configured log sinks.");
+        StartupHandler.notifyStarted();
     }
 
     //- PRIVATE
@@ -217,7 +221,7 @@ public class SinkManager
         String value = LogManager.getLogManager().getProperty(TRAFFIC_LOGGER_NAME + ".useParentHandlers");
         if ( value != null ) {
             trafficLogger.setUseParentHandlers( Boolean.valueOf(value) );
-        }        
+        }
     }
 
     /**

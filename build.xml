@@ -1477,18 +1477,6 @@
                 </tokenfilter>
             </filterchain>
         </copy>
-        <!-- include a copy of ssglog.properties that outputs to the console at CONFIG level -->
-        <copy todir="${deploy.dir}/etc/conf/partitions/default_">
-            <fileset dir="${src.root}/etc">
-                <include name="ssglog.properties"/>
-            </fileset>
-            <filterchain>
-                <tokenfilter>
-                    <replaceregex pattern="(?&lt;=^[ ]{0,32}handlers[ ]{0,32}=)[ 0-9\._\-,a-zA-Z]{0,1024}$" replace=" java.util.logging.ConsoleHandler"/>
-                    <replaceregex pattern="(?&lt;=^[ ]{0,32}java.util.logging.ConsoleHandler.level[ ]{0,32}=)[ 0-9\._\-,a-zA-Z]{0,1024}$" replace=" CONFIG"/>
-                </tokenfilter>
-            </filterchain>
-        </copy>
         <copy todir="${deploy.dir}/etc/ldapTemplates" preservelastmodified="true">
             <fileset dir="${src.root}/etc/ldapTemplates"/>
         </copy>

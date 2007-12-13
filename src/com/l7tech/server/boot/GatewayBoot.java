@@ -3,6 +3,9 @@ package com.l7tech.server.boot;
 import com.l7tech.server.BootProcess;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.log.JdkLogConfig;
+import com.l7tech.common.BuildInfo;
+
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.File;
@@ -23,6 +26,10 @@ public class GatewayBoot {
     private ClassPathXmlApplicationContext applicationContext;
     private ServerConfig serverConfig;
 
+    static {
+        JdkLogConfig.configureLogging();
+    }
+
     /**
      * Create a Gateway instance but do not initialize or start it.
      * Set the com.l7tech.server.partitionName system property if the partition name is other than "default_".
@@ -35,6 +42,8 @@ public class GatewayBoot {
             // Already started
             return;
         }
+
+        logger.info("Starting " + BuildInfo.getLongBuildString());
 
         // This thread is responsible for attempting to start the server, and for clearing "running" flag if it fails
         boolean itworked = false;

@@ -7,7 +7,6 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.common.Component;
 import com.l7tech.common.audit.BootMessages;
 import com.l7tech.common.security.JceProvider;
-import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.Service;
 import com.l7tech.common.util.ShutdownExceptionHandler;
@@ -42,23 +41,8 @@ public class BootProcess
     extends ApplicationObjectSupport
     implements DisposableBean, InitializingBean
 {
-    private static final Logger logger;
+    private static final Logger logger = Logger.getLogger(BootProcess.class.getName());
     private boolean wasStarted = false;
-
-    static {
-        ServerConfig serverConfig = ServerConfig.getInstance();
-        String logConfigurationPath = serverConfig.getPropertyCached("configDirectory") + File.separator + "ssglog.properties";
-
-        if ( new File(logConfigurationPath).exists() ) {
-            JdkLoggerConfigurator.configure("com.l7tech.logging", "ssglog.properties", logConfigurationPath, true);
-        } else {
-            // specify "ssglog.properties" twice since the non-default one can be overridden by
-            // a system property.
-            JdkLoggerConfigurator.configure("com.l7tech.logging", "ssglog.properties", "ssglog.properties", true);
-        }
-
-        logger = Logger.getLogger(BootProcess.class.getName());
-    }
 
     /**
      * Constructor for bean usage via subclassing.

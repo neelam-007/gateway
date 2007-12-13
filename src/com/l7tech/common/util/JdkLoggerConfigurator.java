@@ -31,7 +31,6 @@ import java.util.logging.Logger;
  * @version 23-Apr-2004
  */
 public class JdkLoggerConfigurator {
-    private static final Logger logger = Logger.getLogger(JdkLoggerConfigurator.class.getName());
     private static Probe probe;
     private static AtomicBoolean serviceNameAppenderState =
             new AtomicBoolean(Boolean.getBoolean("com.l7tech.logging.appendservicename"));
@@ -54,7 +53,7 @@ public class JdkLoggerConfigurator {
      * @param shippedLoggingProperties the logging.properties to use if no locally-customized file is found,
      */
     public static synchronized void configure(String classname, String shippedLoggingProperties) {
-        configure(classname, null, shippedLoggingProperties, false);
+        configure(classname, null, shippedLoggingProperties, false, true);
     }
 
     /**
@@ -68,7 +67,7 @@ public class JdkLoggerConfigurator {
      * @param reloading                whether to start the configuration reloading thread
      */
     public static synchronized void configure(String classname, String shippedLoggingProperties, boolean reloading) {
-        configure(classname, null, shippedLoggingProperties, reloading);
+        configure(classname, null, shippedLoggingProperties, reloading, true);
     }
 
     /**
@@ -81,8 +80,13 @@ public class JdkLoggerConfigurator {
      * @param shippedDefaults          path or file for default log properties (these are overridden by those in shippedLoggingProperties)
      * @param shippedLoggingProperties the logging.properties to use if no locally-customized file is found
      * @param reloading                whether to start the configuration reloading thread
+     * @param redirectOtherFrameworks  true to redirect other logging frameworks to JUL (should not be used during initial JDK config)
      */
-    public static synchronized void configure(String classname, String shippedDefaults, String shippedLoggingProperties, boolean reloading) {
+    public static synchronized void configure(final String classname,
+                                              final String shippedDefaults,
+                                              final String shippedLoggingProperties,
+                                              final boolean reloading,
+                                              final boolean redirectOtherFrameworks) {
         try {
             System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
             String cf = SyspropUtil.getProperty("java.util.logging.config.file");
@@ -91,7 +95,9 @@ public class JdkLoggerConfigurator {
                 configCandidates.add(cf);
             }
             configCandidates.add("logging.properties");
-            configCandidates.add(shippedLoggingProperties);
+            if ( shippedLoggingProperties != null ) {
+                configCandidates.add(shippedLoggingProperties);
+            }
 
             boolean configFound = false;
             String configCandidate = null;
@@ -131,21 +137,21 @@ public class JdkLoggerConfigurator {
                 }
             }
 
-            Logger logger = Logger.getLogger(classname);
-            if ( probeDef!=null || configFound ) {
-                updateState();
-
-                if ( probeDef!=null) {
-                    if ( configFound ) {
-                        logger.config("Logging initialized from '"+configCandidate+"', with defaults from '"+probeDef+"'");
+            if ( classname != null ) {
+                Logger logger = Logger.getLogger(classname);
+                if ( probeDef!=null || configFound ) {
+                    if ( probeDef!=null) {
+                        if ( configFound ) {
+                            logger.config("Logging initialized from '"+configCandidate+"', with defaults from '"+probeDef+"'");
+                        } else {
+                            logger.config("Logging initialized with defaults from '"+probeDef+"'");
+                        }
                     } else {
-                        logger.config("Logging initialized with defaults from '"+probeDef+"'");
+                        logger.config("Logging initialized from '" + configCandidate + "'");
                     }
                 } else {
-                    logger.config("Logging initialized from '" + configCandidate + "'");
+                    logger.warning("No logging configuration found " + configCandidates);
                 }
-            } else {
-                logger.warning("No logging configuration found " + configCandidates);
             }
 
             if (reloading && probeFile != null) {
@@ -154,7 +160,8 @@ public class JdkLoggerConfigurator {
                     try {
                         probe.join();
                     } catch (InterruptedException e) {
-                        logger.log(Level.FINEST, "Unexpected Probe thread interrupt", e);
+                        Thread.currentThread().interrupt();
+                        return;
                     }
                     probe = null;
                 }
@@ -167,7 +174,9 @@ public class JdkLoggerConfigurator {
             e.printStackTrace(System.err);
         }
 
-        setupLog4j();
+        if ( redirectOtherFrameworks ) {
+            setupLog4j();
+        }
     }
 
     /**
@@ -236,6 +245,7 @@ public class JdkLoggerConfigurator {
                 // load configuration
                 bais = new ByteArrayInputStream(configBytes);
                 logManager.readConfiguration(bais);
+                updateState(loggerProps);
             }
         } finally {
             ResourceUtils.closeQuietly( fullIn );
@@ -255,7 +265,8 @@ public class JdkLoggerConfigurator {
             Class configClass = Class.forName("com.l7tech.common.util.Log4jJdkLogAppender");
             java.lang.reflect.Method configMethod = configClass.getMethod("init", new Class[0]);
             configMethod.invoke(null);
-            logger.log(Level.INFO, "Redirected Log4j logging to JDK logging.");
+            // get logger here since we don't want this to occur on class load
+            Logger.getLogger(JdkLoggerConfigurator.class.getName()).log(Level.INFO, "Redirected Log4j logging to JDK logging.");
         }
         catch(NoClassDefFoundError ncdfe) {
             // then we won't configure it ...            
@@ -325,7 +336,6 @@ public class JdkLoggerConfigurator {
                             logger.log(Level.CONFIG,
                                        "logging config file reread complete, new interval is {0} secs",
                                        new Long(interval));
-                            updateState();
                         } catch (Throwable t) {
                             logger.log(Level.WARNING,
                               "exception reading logging config file",
@@ -369,14 +379,13 @@ public class JdkLoggerConfigurator {
         return interval;
     }
 
-    private static void updateState() {
-        readServiceNameSufficeAppenderState();
-        readDebugState();
+    private static void updateState(final Properties properties) {
+        readServiceNameSufficeAppenderState(properties);
+        readDebugState(properties);
     }
 
-    private static void readServiceNameSufficeAppenderState() {
-        LogManager logManager = LogManager.getLogManager();
-        String val = logManager.getProperty("com.l7tech.logging.appendservicename");
+    private static void readServiceNameSufficeAppenderState(final Properties properties) {
+        String val = properties.getProperty("com.l7tech.logging.appendservicename");
         if (val != null)
             serviceNameAppenderState.set(Boolean.parseBoolean(val));
     }
@@ -385,9 +394,8 @@ public class JdkLoggerConfigurator {
         return serviceNameAppenderState.get();
     }
 
-    private static void readDebugState() {
-        LogManager logManager = LogManager.getLogManager();
-        String val = logManager.getProperty("com.l7tech.logging.debug");
+    private static void readDebugState(final Properties properties) {
+        String val = properties.getProperty("com.l7tech.logging.debug");
         if (val != null)
             debugState.set(Boolean.parseBoolean(val));
     }
