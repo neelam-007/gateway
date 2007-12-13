@@ -322,6 +322,14 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                             getEolChar(),
                     }, "", (String[]) null, null);
                     shouldDisable = true;
+                } else if (!new File(osFunctions.getKeystoreDir(), KeyStoreConstants.SSL_KEYSTORE_FILE).exists()) {
+                    getData(new String[] {
+                            getEolChar(),
+                            "Warning: The partition you are configuring does not have a keystore. \nThis partition will not be able to start without a keystore." + getEolChar(),
+                            "Press Enter To Continue" + getEolChar(),
+                            getEolChar(),
+                    }, "", (String[]) null, null);
+                    shouldDisable = true;
                 } else {
                     getKeystoreInfoFromFileForStorage();
                     shouldDisable = false;
