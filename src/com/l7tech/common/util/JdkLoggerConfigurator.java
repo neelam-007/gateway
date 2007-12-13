@@ -304,6 +304,8 @@ public class JdkLoggerConfigurator {
             this.interval = interval;
             this.loggerName = loggerName;
             this.prevModified = this.file.lastModified();
+            setName("LoggerConfigProbe");
+            setDaemon(true);
         }
 
         public void run() {

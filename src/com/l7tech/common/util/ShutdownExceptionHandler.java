@@ -64,7 +64,10 @@ public class ShutdownExceptionHandler implements Thread.UncaughtExceptionHandler
 
     private ShutdownExceptionHandler() {
         logger.info("Registering for shutdown notification.");
-        Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook()));
+        final Thread hook = new Thread(new ShutdownHook());
+        hook.setName("ShutdownExceptionHandlerHook");
+        hook.setDaemon(true);
+        Runtime.getRuntime().addShutdownHook(hook);
     }
 
     private static final class InstanceHolder {
