@@ -9,6 +9,7 @@ Vendor: Layer 7 Technologies
 Packager: Layer 7 Technologies, <support@layer7tech.com>
 source0: ssg.tar.gz
 buildroot: %{_builddir}/%{name}-%{version}
+Prefix: /ssg
 
 # Prevents rpm build from erroring and halting
 #%undefine       __check_files
@@ -49,6 +50,7 @@ rm %{buildroot}/ssg/migration/cfg/grandmaster_flash
 # Group writable config files
 %dir /ssg/etc
 %config(noreplace) /ssg/etc/conf
+%attr(0775,gateway,gateway) /ssg/etc/conf/partitions/*
 %attr(0755,gateway,gateway) /ssg/etc/profile
 
 # Group writeable directories and files
@@ -74,19 +76,24 @@ rm %{buildroot}/ssg/migration/cfg/grandmaster_flash
 /ssg/var
 
 #Config Wizard
+%defattr(755,gateway,gateway,0664)
 %dir /ssg/configwizard
 /ssg/configwizard/lib
 /ssg/configwizard/*.jar
 /ssg/configwizard/*.properties
-%attr(0755,gateway,gateway) /ssg/configwizard/*.sh
+/ssg/configwizard/*.sh
+#needed so we can write files in the dir (like logs)
+%attr(0775,gateway,gateway) /ssg/configwizard
 
 # Group writable for migration stuff
+%defattr(755,gateway,gateway,0664)
 %dir /ssg/migration
-/ssg/migration/cfg
 /ssg/migration/lib
-/ssg/migration/*.properties
 /ssg/migration/*.jar
-%attr(0755,gateway,gateway) /ssg/migration/*.sh
+/ssg/migration/*.properties
+/ssg/migration/*.sh
+%attr(0775,gateway,gateway) /ssg/migration
+%attr(0775,gateway,gateway) /ssg/migration/cfg
 
 %pre
 if [ `grep ^gateway: /etc/group` ]; then
@@ -110,17 +117,6 @@ else
 fi
 
 %post
-
-#chown some files that may have been written as root in a previous install so that this, and future rpms can write them
-/bin/chown -Rf gateway.gateway /ssg
-chmod -f 775 /ssg/configwizard
-chmod -f 664 /ssg/configwizard/*
-chmod -f 775 /ssg/configwizard/*.sh
-chmod -f 775 /ssg/configwizard/lib
-chmod -fR 775 /ssg/etc/keys  2&>/dev/null
-
-chmod -Rf 775 /ssg/etc/conf
-chmod -Rf 775 /ssg/migration
 
 # After above item has executed, on first install only 
 # we need to set password for ssgconfig and pre-expire it

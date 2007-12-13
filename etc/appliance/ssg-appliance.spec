@@ -77,7 +77,6 @@ rm -f %{buildroot}/ssg/bin/my.ini
 rm -f %{buildroot}/ssg/bin/tarari-initd
 
 chmod 755 %{buildroot}/etc/init.d/*
-#chmod 755 %{buildroot}/etc/profile.d/*.sh
 chmod 755 %{buildroot}/ssg/appliance/libexec
 chmod 711 %{buildroot}/ssg/appliance/libexec/*
 
@@ -88,8 +87,6 @@ chmod 711 %{buildroot}/ssg/appliance/libexec/*
 /etc/init.d/ssgsysconfig
 /etc/init.d/ssg-dbstatus
 /etc/init.d/tcp_tune
-/ssg/appliance/libexec/*
-%attr(0755,gateway,gateway) /ssg/appliance/pkcs11.cfg
 
 %config(noreplace) /etc/sysconfig/iptables
 %defattr(0644,root,root)
@@ -100,15 +97,10 @@ chmod 711 %{buildroot}/ssg/appliance/libexec/*
 # Main tree, owned by gateway
 %defattr(0644,gateway,gateway,0755)
 %dir /ssg
-
-# Group writable config files
-#%dir /ssg/etc
-#%config(noreplace) /ssg/etc/conf
-
-# Group writeable directories and files
-
-# The main Gateway jar
-#/ssg/Gateway.jar
+/ssg/appliance
+/ssg/appliance/pkcs11.cfg
+%attr(0755,root,root) /ssg/appliance/libexec
+%attr(0755,root,root) /ssg/appliance/libexec/*
 
 # Ssg bin
 %dir /ssg/appliance/bin
@@ -137,9 +129,12 @@ chmod 711 %{buildroot}/ssg/appliance/libexec/*
 %attr(0755,gateway,gateway) /ssg/jdk/jre/bin
 /ssg/jdk/jre/lib
 %config(noreplace) /ssg/jdk/jre/lib/security/java.security
+%attr(0775,gateway,gateway) /ssg/jdk/jre/lib/security/
+
 /ssg/jdk/lib
 
 #System Config Wizard
+%defattr(0755,gateway,gateway,0664)
 %dir /ssg/sysconfigwizard
 %dir /ssg/sysconfigwizard/configfiles
 /ssg/sysconfigwizard/lib
@@ -147,6 +142,8 @@ chmod 711 %{buildroot}/ssg/appliance/libexec/*
 /ssg/sysconfigwizard/*.properties
 # this script does not need to be executable
 /ssg/sysconfigwizard/ssg_sys_config.pl
+%attr(0775,gateway,gateway) /ssg/sysconfigwizard/
+%attr(0775,gateway,gateway) /ssg/sysconfigwizard/configfiles
 %attr(0755,gateway,gateway) /ssg/sysconfigwizard/*.sh
 
 %attr(0664,ssgconfig,gateway) /home/ssgconfig/.bashrc
@@ -181,26 +178,26 @@ fi
 
 SSGCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
 if [ -n "${SSGCONFIGENTRY}" ]; then
-    echo -n ""
-    #user already exists in the sudoers file
-else
-    #the ssgconfig user is allowed to reboot the system, even when not at the console
-    echo "ssgconfig  ALL = NOPASSWD: /sbin/reboot" >> /etc/sudoers
-    #the ssgconfig user is allowed to run the sca stuff without having to enter a password
-    echo "ssgconfig    ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
-    echo "ssgconfig    ALL = NOPASSWD: /ssg/appliance/libexec/" >> /etc/sudoers
-    echo "ssgconfig    ALL = NOPASSWD: /opt/sun/sca6000/sbin/scadiag" >> /etc/sudoers
+    #user already exists in the sudoers file but since the paths have changed we'll remove everything and reset
+    perl -pi.bak -e 's/^ssgconfig.*$//gs' /etc/sudoers
 fi
+
+#the ssgconfig user is allowed to reboot the system, even when not at the console
+echo "ssgconfig  ALL = NOPASSWD: /sbin/reboot" >> /etc/sudoers
+#the ssgconfig user is allowed to run the sca stuff without having to enter a password
+echo "ssgconfig    ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
+echo "ssgconfig    ALL = NOPASSWD: /ssg/appliance/libexec/" >> /etc/sudoers
+echo "ssgconfig    ALL = NOPASSWD: /opt/sun/sca6000/sbin/scadiag" >> /etc/sudoers
 
 GATEWAYCONFIGENTRY=`grep ^gateway /etc/sudoers`
 if [ -n "${GATEWAYCONFIGENTRY}" ]; then
-    echo -n ""
-    #user already exists in the sudoers file
-else
-    #the gateway user is allowed to run the sca stuff without having to enter a password
-    echo "gateway    ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
-    echo "gateway    ALL = NOPASSWD: /ssg/appliance/libexec/" >> /etc/sudoers
+    #user already exists in the sudoers file but since the paths have changed we'll remove everything and reset
+    perl -pi.bak -e 's/^gateway.*$//gs' /etc/sudoers
 fi
+
+#the gateway user is allowed to run the sca stuff without having to enter a password
+echo "gateway    ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
+echo "gateway    ALL = NOPASSWD: /ssg/appliance/libexec/" >> /etc/sudoers
 
 #modify java.sh to use the appliance jdk
 cat > /ssg/etc/profile.d/java.sh <<-EOF
@@ -282,20 +279,6 @@ if [ ${?} -ne 0 ]; then
     /sbin/chkconfig --add ssg-dbstatus
 fi
 
-#chown some files that may have been written as root in a previous install so that this, and future rpms can write them
-
-chmod -f 775 /ssg/sysconfigwizard
-chmod -f 664 /ssg/sysconfigwizard/*
-chmod -f 775 /ssg/sysconfigwizard/lib
-chmod -f 775 /ssg/sysconfigwizard/configfiles
-chmod -f 775 /ssg/sysconfigwizard/*.sh
-
-chmod -Rf 775 /ssg/jdk/jre/lib/security/
-/bin/chown -R root.root /ssg/appliance/libexec
-
-#migrate the structure to the new partitioning scheme using the configuration wizard
-#/ssg/configwizard/ssgconfig.sh -partitionMigrate &>/dev/null
-
 # After above item has executed, on first install only
 # we need to set password for ssgconfig and pre-expire it
 # $1 equals what for first install?
@@ -306,13 +289,13 @@ if [ "$1" = "0" ] ; then
     SSGCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
     if [ -n "${SSGCONFIGENTRY}" ]; then
         #remove the sudoers entry for ssgconfig
-        perl -pi.bak -e 's/^ssgconfig.*$//g' /etc/sudoers
+        perl -pi.bak -e 's/^ssgconfig.*$//gs' /etc/sudoers
     fi
 
     GATEWAYENTRY=`grep ^gateway /etc/sudoers`
     if [ -n "${GATEWAYENTRY}" ]; then
         #remove the sudoers entry for gateway
-        perl -pi.bak -e 's/^gateway.*$//g' /etc/sudoers
+        perl -pi.bak -e 's/^gateway.*$//gs' /etc/sudoers
     fi
 
     gettys=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
