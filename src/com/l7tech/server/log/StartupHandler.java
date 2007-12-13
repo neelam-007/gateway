@@ -51,6 +51,13 @@ public class StartupHandler extends Handler {
         enabled.set(false);
     }
 
+    /**
+     * 
+     */
+    public boolean isConsole() {
+        return logToConsole;
+    }
+
     @Override
     public void close() throws SecurityException {
         delegate.close();

@@ -59,6 +59,11 @@ public class ConsoleMessageSink extends MessageSinkSupport {
             if ( handler instanceof ConsoleHandler) {
                 consoleHandler = handler;
                 break;
+            } else if ( handler instanceof StartupHandler ) {
+                StartupHandler sh = (StartupHandler) handler;
+                if ( sh.isConsole() ) {
+                    consoleHandler = handler;
+                }
             }
         }
 
