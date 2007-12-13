@@ -37,8 +37,8 @@ public class SavePolicyAction extends PolicyNodeAction {
 
     private String getShortDesc() {
         return activateAsWell
-               ? "Save the policy and make this version of it active"
-               : "Save the policy but do not activate this version of it yet";
+               ? "Save the policy and make this version active"
+               : "Save the policy but do not activate this version yet";
     }
 
     public boolean isActivateAsWell() {
