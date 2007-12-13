@@ -16,7 +16,7 @@ then
 else
         default_java_opts="$default_java_opts -Djava.rmi.server.hostname=`hostname`"
 fi
-
+default_java_opts="$default_java_opts -Dcom.l7tech.server.home=${SSG_HOME}"
 SSG_JAVA_OPTS="$SSG_JAVA_OPTS $default_java_opts";
 
 ALL_PARTITIONS=`ls ${SSG_HOME}/etc/conf/partitions/ | grep -v template_`
