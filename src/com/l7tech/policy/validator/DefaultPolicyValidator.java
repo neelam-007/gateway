@@ -5,18 +5,15 @@ import com.l7tech.common.policy.PolicyType;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.WsdlUtil;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ReadOnlyEntityManager;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
-import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -80,7 +77,6 @@ public class DefaultPolicyValidator extends PolicyValidator {
 
         // paths that have the pattern "OR, Comment" should be ignored completly (bugzilla #2449)
         for (Assertion assertion: path) {
-//            assertion = dereferenceInclude(assertion, r);
             if (assertion instanceof CommentAssertion) {
                 if (assertion.getParent() instanceof OneOrMoreAssertion) {
                     // if the parent OR has something else than comments as children, the this path should be ignored
@@ -104,7 +100,6 @@ public class DefaultPolicyValidator extends PolicyValidator {
 
         PathValidator pv = new PathValidator(ap, r, wsdl, soap, assertionLicense);
         for (Assertion assertion : path) {
-//            assertion = dereferenceInclude(assertion, r);
             if (assertion instanceof CommentAssertion) continue;
             pv.validate(assertion);
         }
@@ -123,7 +118,6 @@ public class DefaultPolicyValidator extends PolicyValidator {
         // last assertion should be last non-comment assertion
         Assertion lastAssertion = ap.lastAssertion();
         for (int i = path.length-1; i >= 0; i--) {
-//            Assertion ass = dereferenceInclude(path[i], r);
             Assertion ass = path[i];
             if (!(ass instanceof CommentAssertion)) {
                 lastAssertion = ass;
@@ -151,29 +145,6 @@ public class DefaultPolicyValidator extends PolicyValidator {
               " This service may be exposed to public access.", null));
         }
     }
-
-    private Assertion dereferenceInclude(final Assertion assertion, final PolicyValidatorResult r) {
-        if (!(assertion instanceof Include)) return assertion;
-
-        Include include = (Include) assertion;
-        try {
-            Policy policy = policyFinder.findByPrimaryKey(include.getPolicyOid());
-            if (policy == null) {
-                r.addError(new PolicyValidatorResult.Error(assertion.getOwnerPolicyOid(), assertion.getOrdinal(), -1, "Include Assertion refers to Policy #" + include.getOwnerPolicyOid() + " (" + include.getPolicyName() + "), which no longer exists", null));
-                return include;
-            } else {
-                try {
-                    return policy.getAssertion();
-                } catch (IOException e) {
-                    r.addError(new PolicyValidatorResult.Error(assertion.getOwnerPolicyOid(), assertion.getOrdinal(), -1, "Include Assertion refers to Policy #" + include.getOwnerPolicyOid() + " (" + include.getPolicyName() + "), which cannot be parsed", e));
-                    return include;
-                }
-            }
-        } catch (FindException e) {
-            throw new RuntimeException("Unable to load included policy #" + include.getPolicyOid() + " (" + include.getPolicyName() + ")");
-        }
-    }
-
 
     /**
      * The implementations are invoked after the regular (sequential)

@@ -172,8 +172,6 @@ public class PolicyValidatorResult implements Serializable {
             result = (policyOid != null ? policyOid.hashCode() : 0);
             result = 31 * result + assertionOrdinal;
             result = 31 * result + (message != null ? message.hashCode() : 0);
-            result = 31 * result + (throwable != null ? throwable.hashCode() : 0);
-            result = 31 * result + assertionPathOrder;
             return result;
         }
     }
