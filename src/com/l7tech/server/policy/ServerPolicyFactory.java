@@ -144,7 +144,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
             if (logger.isLoggable(Level.FINE))
                 logger.log(Level.FINE,
                            MessageFormat.format("Instantiating server assertion of type {0} for assertion {1} ordinal: {2} in policy OID: {3}",
-                                                specificAssertionClass.getClass().getName(),
+                                                specificAssertionClass.getName(),
                                                 genericAssertionClass.getName(),
                                                 genericAssertion.getOrdinal(),
                                                 genericAssertion.getOwnerPolicyOid()));
