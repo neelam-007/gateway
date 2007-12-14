@@ -159,8 +159,8 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     }
 
     public void dispose() {
-        serviceMetricsPanel.dispose();
-        clusterStatusPanel.dispose();
+        if (serviceMetricsPanel != null) serviceMetricsPanel.dispose();
+        if (clusterStatusPanel != null) clusterStatusPanel.dispose();
         super.dispose();
     }
 
