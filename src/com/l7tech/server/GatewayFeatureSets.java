@@ -37,7 +37,7 @@ import java.text.MessageFormat;
 
 /**
  * Master list of Feature Sets for the SSG, hard-baked into the code so it will be obfuscated.
- * @noinspection JavaDoc
+ * @noinspection JavaDoc,StaticMethodNamingConvention,OverloadedMethodsWithSameNumberOfParameters,OverloadedVarargsMethod,OverlyCoupledClass
  */
 public class GatewayFeatureSets {
     private static final Logger logger = Logger.getLogger(GatewayFeatureSets.class.getName());
@@ -489,6 +489,10 @@ public class GatewayFeatureSets {
             fs(modularAssertions),
             fs(uiFw),
             fs(experimental));
+
+        fsp("set:Profile:PolicyIntegrationPoint", "SecureSpan Policy Integration Point",
+            "Same as SecureSpan Gateway.",
+            fs(PROFILE_ALL));
 
         fsp("set:Profile:Federal", "SecureSpan Federal",
             "Exactly the same features as SecureSpan Gateway, but XML VPN Client software is not bundled.",

@@ -170,6 +170,7 @@ public final class License implements Serializable {
                         name = name.substring(setproflen);
                         if (name.equals("Accel")) name = "Acceleration";
                         else if (name.equals("IPS")) name = "XML IPS";
+                        else if (name.equals("PolicyIntegrationPoint")) name ="Policy Integration Point";
                         sb.append(name);
                     } else
                         sb.append(name);
