@@ -130,7 +130,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private PublishServiceAction publishServiceAction = null;
     private PublishNonSoapServiceAction publishNonSoapServiceAction = null;
     private CreateServiceWsdlAction createServiceAction = null;
-    private NewPolicyAction newPolicyAction;
+    private CreatePolicyAction createPolicyAction;
     private ViewGatewayAuditsAction viewGatewayAuditsWindowAction;
     private ViewAuditsOrLogsFromFileAction auditOrLogFromFileAction;
     private ManageJmsEndpointsAction manageJmsEndpointsAction = null;
@@ -582,12 +582,12 @@ public class MainWindow extends JFrame implements SheetHolder {
         return saveOnlyMenuItem;
     }
 
-    private BaseAction getNewAction() {
-        if (newPolicyAction == null) {
-            newPolicyAction = new NewPolicyAction();
-            newPolicyAction.setEnabled(false);
+    private BaseAction getCreatePolicyAction() {
+        if (createPolicyAction == null) {
+            createPolicyAction = new CreatePolicyAction();
+            createPolicyAction.setEnabled(false);
         }
-        return newPolicyAction;
+        return createPolicyAction;
     }
 
     private JMenu getEditMenu() {
@@ -638,6 +638,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             menu.add(getPublishServiceAction());
             menu.add(getCreateServiceAction());
+            menu.add(getCreatePolicyAction());
             menu.add(getPublishNonSoapServiceAction());
             menu.addSeparator();
 
@@ -1189,7 +1190,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private void toggleConnectedMenus(boolean connected) {
         getFindAction().setEnabled(connected);
         getDisconnectAction().setEnabled(connected);
-        getNewAction().setEnabled(connected);
+        getCreatePolicyAction().setEnabled(connected);
         getConnectAction().setEnabled(!connected);
         // these are enabled if connected AND a service is selected in the tree
         if (!connected) {
