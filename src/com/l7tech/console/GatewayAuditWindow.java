@@ -493,7 +493,9 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
     }
 
     public void dispose() {
-        getLogPane().getLogsRefreshTimer().stop();
+        if (logPane != null) {
+            logPane.getLogsRefreshTimer().stop();
+        }
         super.dispose();
     }
 
