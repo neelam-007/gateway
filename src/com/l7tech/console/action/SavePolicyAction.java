@@ -3,13 +3,16 @@
  */
 package com.l7tech.console.action;
 
-import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.policy.Policy;
-import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.console.tree.PolicyEntityNode;
+import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 
@@ -101,16 +104,21 @@ public class SavePolicyAction extends PolicyNodeAction {
             }
             if (policyNode instanceof ServiceNode) {
                 final PublishedService svc = ((ServiceNode) policyNode).getPublishedService();
-                svc.getPolicy().setXml(xml);
-                Registry.getDefault().getServiceManager().savePublishedService(svc, activateAsWell);
+                updatePolicyXml(svc.getPolicy().getOid(), xml, activateAsWell);
             } else {
                 Policy policy = policyNode.getPolicy();
-                policy.setXml(xml);
-                Registry.getDefault().getPolicyAdmin().savePolicy(policy, activateAsWell);
+                updatePolicyXml(policy.getOid(), xml, activateAsWell);
             }
             policyNode.clearCachedEntities();
         } catch (Exception e) {
             throw new RuntimeException("Error saving service and policy",e);
         }
+    }
+
+    private static void updatePolicyXml(long policyOid, String xml, boolean activateAsWell) throws FindException, SaveException, PolicyAssertionException {
+        Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(policyOid);
+        if (policy == null) throw new SaveException("Unable to save policy -- this policy no longer exists");
+        policy.setXml(xml);
+        Registry.getDefault().getPolicyAdmin().savePolicy(policy, activateAsWell);
     }
 }
