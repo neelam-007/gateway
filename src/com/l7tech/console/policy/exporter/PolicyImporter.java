@@ -1,6 +1,7 @@
 package com.l7tech.console.policy.exporter;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
@@ -12,6 +13,7 @@ import org.xml.sax.SAXException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,14 +40,19 @@ public class PolicyImporter {
         String name = input.getPath();
         // Read XML document from this
         Document readDoc = null;
+        InputStream in = null;
         try {
-            readDoc = XmlUtil.parse(new FileInputStream(input));
+            //noinspection IOResourceOpenedButNotSafelyClosed
+            in = new FileInputStream(input);
+            readDoc = XmlUtil.parse(in);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Could not read xml document from " + name, e);
             throw new InvalidPolicyStreamException(e);
         } catch (SAXException e) {
             logger.log(Level.WARNING, "Could not read xml document from " + name, e);
             throw new InvalidPolicyStreamException(e);
+        } finally {
+            ResourceUtils.closeQuietly(in);
         }
         // Import policy references first
         Element referencesEl = XmlUtil.findFirstChildElementByName(readDoc.getDocumentElement(),

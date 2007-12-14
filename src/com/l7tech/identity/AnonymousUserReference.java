@@ -14,6 +14,7 @@ public class AnonymousUserReference extends AnonymousEntityReference implements 
     public AnonymousUserReference(String uniqueId, long providerOid, String name) {
         super(User.class, uniqueId, name);
         this.userBean = new UserBean(providerOid, null);
+        this.userBean.setUniqueIdentifier(uniqueId);
     }
 
     public long getProviderId() {

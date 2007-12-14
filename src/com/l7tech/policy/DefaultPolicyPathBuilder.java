@@ -7,11 +7,15 @@ import com.l7tech.objectmodel.ReadOnlyEntityManager;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionTranslator;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.wsp.WspWriter;
 
 import java.util.*;
 import java.util.logging.Level;
+import java.io.IOException;
 
 /**
  * Default policy path builder. The class builds assertion paths from
@@ -36,6 +40,7 @@ import java.util.logging.Level;
  */
 public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
     private final AssertionTranslator translator;
+    private final AssertionTranslator translatorWriteable;
 
     /**
      * Protected constructor, the class cannot be instantiated
@@ -43,7 +48,27 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      */
     protected DefaultPolicyPathBuilder(final ReadOnlyEntityManager<Policy, EntityHeader> policyFinder) {
         this.translator = new IncludeAssertionDereferenceTranslator(policyFinder);
+        this.translatorWriteable = new IncludeAssertionDereferenceTranslator(policyFinder, false);
     }
+
+    /**
+     * Put includes inline
+     */
+    public Assertion inlineIncludes(final Assertion assertion) throws  PolicyAssertionException, InterruptedException {
+        final Assertion rootWithIncludes;
+
+        if ( Assertion.contains(assertion, Include.class) ) {
+            try {
+                rootWithIncludes = translate(WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(assertion)), translatorWriteable);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            rootWithIncludes = assertion;
+        }
+
+        return rootWithIncludes;
+    }    
 
     /**
      * Generate the policy path result (policy assertion paths for
@@ -53,8 +78,8 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      *                  path for.
      * @return the result of the build
      */
-    public PolicyPathResult generate(Assertion assertion) throws InterruptedException, PolicyAssertionException {
-        Set paths = generatePaths(assertion);
+    public PolicyPathResult generate(Assertion assertion, boolean processIncludes) throws InterruptedException, PolicyAssertionException {
+        Set paths = generatePaths(assertion,processIncludes);
         int pathOrder = 0;
         for (Iterator iterator = paths.iterator(); iterator.hasNext(); pathOrder++) {
             AssertionPath path = (AssertionPath)iterator.next();
@@ -72,9 +97,11 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      *
      * @param assertion the root assertion
      */
-    private Set generatePaths(Assertion assertion) throws InterruptedException, PolicyAssertionException {
+    private Set generatePaths(Assertion assertion, boolean processIncludes) throws InterruptedException, PolicyAssertionException {
         Set assertionPaths = new LinkedHashSet();
-        Iterator preorder = assertion.preorderIterator(translator);
+        Iterator preorder = processIncludes ?
+                assertion.preorderIterator(translator) :
+                assertion.preorderIterator();
         final AssertionPath initPath = new AssertionPath(new Assertion[]{(Assertion)preorder.next()});
         assertionPaths.add(initPath);
         pathStack.push(initPath);
@@ -221,6 +248,26 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
         return assertionPaths;
     }
 
+    /**
+     * Run the given translator on the given assertion and all children.
+     */
+    private Assertion translate(final Assertion assertion, final AssertionTranslator translator) throws PolicyAssertionException {
+        Assertion translated = translator.translate( assertion );
+
+        if ( translated instanceof CompositeAssertion) {
+            CompositeAssertion ca = (CompositeAssertion) translated;
+
+            for ( int c=0; c<ca.getChildren().size(); c++ ) {
+                Assertion childAssertion = (Assertion) ca.getChildren().get(c);
+                Assertion transAssertion = translate(childAssertion, translator);
+                if ( childAssertion != transAssertion ) {
+                    ca.replaceChild( childAssertion, transAssertion );
+                }
+            }
+        }
+
+        return translated;
+    }
 
     /**
      * default assertion path result holder

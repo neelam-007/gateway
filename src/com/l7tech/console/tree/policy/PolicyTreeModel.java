@@ -12,6 +12,7 @@ import com.l7tech.console.tree.policy.advice.PolicyValidatorAdvice;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.ext.Category;
@@ -86,8 +87,11 @@ public class PolicyTreeModel extends DefaultTreeModel {
      * @param root the assertion root
      */
     public static PolicyTreeModel identityModel(Assertion root) throws InterruptedException, PolicyAssertionException {
-        Set paths = IdentityPath.getPaths(root, Registry.getDefault().getPolicyPathBuilderFactory());
-        return new PolicyTreeModel(new IdentityViewRootNode(paths, root));
+        PolicyPathBuilderFactory factory = Registry.getDefault().getPolicyPathBuilderFactory();
+        Assertion rootWithIncludes = factory.makePathBuilder().inlineIncludes(root);
+
+        Set paths = IdentityPath.getPaths(rootWithIncludes, factory);
+        return new PolicyTreeModel(new IdentityViewRootNode(paths, rootWithIncludes));
     }
 
     /**

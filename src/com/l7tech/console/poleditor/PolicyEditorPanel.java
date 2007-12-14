@@ -13,6 +13,7 @@ import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.ContainerVetoException;
@@ -78,6 +79,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     private JTextPane messagesTextPane;
     private AssertionTreeNode rootAssertion;
+    private AssertionTreeNode identityRootAssertion; // null unless currently displaying identity view
     private PolicyTree policyTree;
     private PolicyEditToolBar policyEditorToolbar;
     private JSplitPane splitPane;
@@ -228,7 +230,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * @return result, or null if it was canceled
      */
     private PolicyValidatorResult validatePolicy(boolean displayResult) {
-        final Assertion assertion = rootAssertion.asAssertion();
+        final Assertion assertion = getCurrentRoot().asAssertion();
         final boolean soap;
         final Wsdl wsdl;
         try {
@@ -380,6 +382,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         getSplitPane().setName(subjectName);
     }
 
+    private AssertionTreeNode getCurrentRoot() {
+        return identityRootAssertion != null ? identityRootAssertion : rootAssertion;
+    }
+
     /**
      * Render the policy into the editor
      *
@@ -415,14 +421,17 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             policyTreeModel = model;
         }
 
-        rootAssertion = (AssertionTreeNode)policyTreeModel.getRoot();
-        ((AbstractTreeNode)rootAssertion.getRoot()).addCookie(new AbstractTreeNode.NodeCookie(subject.getPolicyNode()));
+        AssertionTreeNode newRootAssertion = (AssertionTreeNode)policyTreeModel.getRoot();
+        ((AbstractTreeNode) newRootAssertion.getRoot()).addCookie(new AbstractTreeNode.NodeCookie(subject.getPolicyNode()));
         //rootAssertion.addCookie(new AbstractTreeNode.NodeCookie(subject.getServiceNode()));
 
         policyTree.setModel(policyTreeModel);
         if (identityView) {
+            identityRootAssertion = newRootAssertion;
             pt.unregisterPolicyTree(policyTree);
         } else {
+            rootAssertion = newRootAssertion;
+            identityRootAssertion = null;
             pt.registerPolicyTree(policyTree);
         }
 
@@ -619,7 +628,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * @return the policy xml that was validated, or null if validation canceled
      */
     private String fullValidate() {
-        final Assertion assertion = rootAssertion.asAssertion();
+        final Assertion assertion = getCurrentRoot().asAssertion();
         final String policyXml = WspWriter.getPolicyXml(assertion);
         final Wsdl wsdl;
         final boolean soap;
@@ -687,7 +696,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         if (result == null)
             return null;
 
-        ((DefaultTreeModel)policyTree.getModel()).nodeChanged(rootAssertion);
+        ((DefaultTreeModel)policyTree.getModel()).nodeChanged(getCurrentRoot());
         return policyXml;
     }
 
@@ -715,12 +724,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * @param r the policy validation result
      */
     void displayPolicyValidateResult(PolicyValidatorResult r) {
-        for (Enumeration en = rootAssertion.preorderEnumeration(); en.hasMoreElements();) {
+        for (Enumeration en = getCurrentRoot().preorderEnumeration(); en.hasMoreElements();) {
             AssertionTreeNode an = (AssertionTreeNode)en.nextElement();
             an.setValidatorMessages(r.messages(an.asAssertion()));
         }
         if (!validating) {
-               ((DefaultTreeModel)policyTree.getModel()).nodeChanged(rootAssertion);
+               ((DefaultTreeModel)policyTree.getModel()).nodeChanged(getCurrentRoot());
            }
            overWriteMessageArea("");
         for (PolicyValidatorResult.Error pe : r.getErrors()) {
@@ -778,7 +787,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      */
     private String getValidateMessageIntro(PolicyValidatorResult.Message pe) {
         String msg;
-        Assertion assertion = rootAssertion.asAssertion().getAssertionWithOrdinal(pe.getAssertionOrdinal());
+        Assertion assertion = getCurrentRoot().asAssertion().getAssertionWithOrdinal(pe.getAssertionOrdinal());
         if (assertion != null) {
             msg = "Assertion: " +
               "<a href=\"file://assertion#" +
@@ -895,7 +904,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
               if (f == null) return;
               try {
                   int hashcode = Integer.parseInt(f);
-                  for (Enumeration en = rootAssertion.preorderEnumeration();
+                  for (Enumeration en = getCurrentRoot().preorderEnumeration();
                        en.hasMoreElements();) {
                       AssertionTreeNode an = (AssertionTreeNode)en.nextElement();
                       if (an.asAssertion().hashCode() == hashcode) {
@@ -1108,9 +1117,15 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     // do policy to xml
                     Document policydoc = XmlUtil.stringToDocument(WspWriter.getPolicyXml(rootAssertion));
                     // write xml to file
-                    FileOutputStream fos = new FileOutputStream(policyFile);
-                    XmlUtil.nodeToFormattedOutputStream(policydoc, fos);
-                    fos.flush();
+                    FileOutputStream fos = null;
+                    try {
+                        //noinspection IOResourceOpenedButNotSafelyClosed
+                        fos = new FileOutputStream(policyFile);
+                        XmlUtil.nodeToFormattedOutputStream(policydoc, fos);
+                        fos.flush();
+                    } finally {
+                        ResourceUtils.closeQuietly(fos);
+                    }
                 }
             };
         }

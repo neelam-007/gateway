@@ -132,7 +132,7 @@ public class IdentityPath {
         }
         IdentityPath ipath = new IdentityPath(identity);
         PolicyPathBuilder pb = pathBuilderFactory.makePathBuilder();
-        PolicyPathResult ppr = pb.generate(root);
+        PolicyPathResult ppr = pb.generate(root, false);
         outer:
         for (AssertionPath assertionPath : ppr.paths()) {
             Assertion[] path = assertionPath.getPath();
@@ -166,7 +166,7 @@ public class IdentityPath {
         User anon = new AnonymousUserReference(null, IdentityProviderConfig.DEFAULT_OID, ANONYMOUS);
         IdentityPath ipath = new IdentityPath(anon);
         PolicyPathBuilder pb = pathBuilderFactory.makePathBuilder();
-        PolicyPathResult ppr = pb.generate(root);
+        PolicyPathResult ppr = pb.generate(root, false);
         outer:
         for (AssertionPath assertionPath : ppr.paths()) {
             Assertion[] path = assertionPath.getPath();
@@ -198,7 +198,7 @@ public class IdentityPath {
     private static IdentityPath customAccessControlPaths(Assertion root, PolicyPathBuilderFactory policyPathBuilderFactory) throws InterruptedException, PolicyAssertionException {
         final StringBuffer sb = new StringBuffer(CUSTOM_ACCESS_CONTROL);
         PolicyPathBuilder pb = policyPathBuilderFactory.makePathBuilder();
-        PolicyPathResult ppr = pb.generate(root);
+        PolicyPathResult ppr = pb.generate(root, false);
         final Set<AssertionPath> paths = new HashSet<AssertionPath>();
         for (AssertionPath assertionPath : ppr.paths()) {
             Assertion[] path = assertionPath.getPath();
