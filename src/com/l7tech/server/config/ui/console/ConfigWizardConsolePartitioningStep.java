@@ -27,7 +27,7 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
     private static final Logger logger = Logger.getLogger(ConfigWizardConsolePartitioningStep.class.getName());
 
     private static final String TITLE = "Select A Partition";
-    private static final String STEP_INFO = "This step lets you create or set up a connection to the SSG database";
+    private static final String STEP_INFO = "This step lets you select or manage SecureSpan Gateway partitions";
     private static final String HEADER_SELECT_PARTITION = "-- Select The Partition To Configure --" + getEolChar();
     private static final String HEADER_ADD_PARTITION = "-- Add A New Partition --" + getEolChar();
     private static final String HEADER_DELETE_PARTITION = "-- Select a Partition To Delete (the default_ partition cannot be deleted)--" + getEolChar();
