@@ -6,6 +6,8 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.XmlUtil;
+
 import org.w3c.dom.Element;
 
 import java.lang.reflect.Constructor;
@@ -76,10 +78,38 @@ public class BasicTypeMapping implements TypeMapping {
             elm.setAttribute(externalName + "Null", "null");
         } else {
             String stringValue = objectToString(object.target);
-            elm.setAttribute(externalName, stringValue);
+
+            if ( serializeAsAttribute( stringValue ) ) {
+                elm.setAttribute(externalName, stringValue);
+            } else {
+                elm.setAttribute(externalName + "Reference", "inline");
+                elm.appendChild(container.getOwnerDocument().createCDATASection(stringValue));
+            }
+
             populateElement(wspWriter, elm, object); // hook for more complex types
         }
         return elm;
+    }
+
+    /**
+     * Should the value be serialized as an attribute value.
+     *
+     * <p>This implementation checks if the value contains information that
+     * would be lost if serialized as an attribute.</p>
+     *
+     * @param value The value to be saved.
+     * @return true if an attribute should be used
+     */
+    protected boolean serializeAsAttribute(String value) {
+        boolean asAttr = true;
+
+        if ( value != null ) {
+            if ( value.indexOf('\r')>=0 || value.indexOf('\n')>=0 ) {
+                asAttr = false;
+            }
+        }
+
+        return asAttr;
     }
 
     /**
@@ -124,10 +154,10 @@ public class BasicTypeMapping implements TypeMapping {
 
     public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
         try {
-            return doThaw(source, visitor, false);
+            return doThaw(source, visitor);
         } catch (InvalidPolicyStreamException e) {
             try {
-                return doThaw(visitor.invalidElement(source, e), visitor, true);
+                return doThaw(visitor.invalidElement(source, e), visitor);
             } catch (NotNamedFormatException e1) {
                 // Can't replace with UnknownAssertion, as it's an attribute in the middle of some other assertion
                 throw new InvalidPolicyStreamException(ExceptionUtils.getMessage(e), e);
@@ -140,7 +170,7 @@ public class BasicTypeMapping implements TypeMapping {
         return null;
     }
 
-    private TypedReference doThaw(Element source, WspVisitor visitor, boolean recursing)
+    private TypedReference doThaw(Element source, WspVisitor visitor)
             throws InvalidPolicyStreamException
     {
         if (TypeMappingUtils.findTypeName(source) == null)
@@ -154,7 +184,7 @@ public class BasicTypeMapping implements TypeMapping {
 
     protected TypedReference doThawNamed(Element source, WspVisitor visitor, boolean recursing) throws InvalidPolicyStreamException {
         String typeName = TypeMappingUtils.findTypeName(source);
-        String value = source.getAttribute(typeName);        
+        String value = source.getAttribute(typeName);
 
         if (typeName.endsWith("Null") && typeName.length() > 4) {
             typeName = typeName.substring(0, typeName.length() - 4);
@@ -164,6 +194,9 @@ public class BasicTypeMapping implements TypeMapping {
                 if (recursing) throw e;
                 return doThawNamed(visitor.invalidElement(source, e), visitor, true);
             }
+        } else if ( typeName.endsWith("Reference") && typeName.length() > 9 ) {
+            typeName = typeName.substring(0, typeName.length() - 9);
+            value = XmlUtil.getTextValue(source);
         }
 
         return doThawNamedNotNull(source, visitor, recursing, typeName, value);
@@ -223,6 +256,7 @@ public class BasicTypeMapping implements TypeMapping {
         if (stringConstructor == null)
             throw new InvalidPolicyStreamException("No stringToObject defined for TypeMapping for class " + clazz);
         try {
+            //noinspection RedundantArrayCreation
             return stringConstructor.newInstance(new Object[]{value});
         } catch (Exception e) {
             throw new InvalidPolicyStreamException("Unable to convert string into " + clazz, e);

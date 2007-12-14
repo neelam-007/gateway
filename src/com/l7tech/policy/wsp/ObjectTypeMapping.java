@@ -70,6 +70,8 @@ class ObjectTypeMapping extends BasicTypeMapping {
         if (typeName.endsWith("Null") && typeName.length() > 4) {
             typeName = typeName.substring(0, typeName.length() - 4);
             isNull = true;
+        } else if (typeName.endsWith("Reference") && typeName.length() > 9) {
+            typeName = typeName.substring(0, typeName.length() - 9);
         }
 
         if (externalName.equals(typeName)) {
