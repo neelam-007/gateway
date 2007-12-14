@@ -5,6 +5,7 @@ import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,6 +17,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.ConnectException;
 
 
 /**
@@ -550,6 +552,10 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 log.log(Level.WARNING, "cannot retrieve templates", e);
                 templates = new LdapIdentityProviderConfig[0];
             } catch (Exception e) {
+                if (ExceptionUtils.causedBy(e, ConnectException.class)) {
+                    log.log(Level.WARNING, "the connection to the SecureSpan Gateway is lost during getting identity provider types.", e);
+                    throw new RuntimeException(e);
+                }
                 log.log(Level.WARNING, "cannot retrieve templates", e);
                 templates = new LdapIdentityProviderConfig[0];
             }
