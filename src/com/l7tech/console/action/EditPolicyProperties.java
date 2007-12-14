@@ -19,6 +19,8 @@ import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -105,8 +107,12 @@ public class EditPolicyProperties extends PolicyNodeAction {
                 if (dlg.wasOKed()) {
                     try {
                         Registry.getDefault().getPolicyAdmin().savePolicy(policy);
-                    } catch (Exception e) {
-                        String msg = "Error while saving policy due to improper policy properties.";
+                    } catch (SaveException e) {
+                        String msg = "Error while updating policy due to improper policy properties.";
+                        logger.log(Level.INFO, msg, e);
+                        DialogDisplayer.showMessageDialog(mw, null, msg, null);
+                    } catch (PolicyAssertionException e) {
+                        String msg = "Error while changing policy properties since there is a problem with the policy.";
                         logger.log(Level.INFO, msg, e);
                         DialogDisplayer.showMessageDialog(mw, null, msg, null);
                     }

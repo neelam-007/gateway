@@ -6,10 +6,12 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.widgets.OkCancelDialog;
 import com.l7tech.common.gui.widgets.ValidatedPanel;
 import com.l7tech.common.gui.util.RunOnChangeListener;
+import com.l7tech.common.gui.util.DocumentSizeFilter;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyType;
 
 import javax.swing.*;
+import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
@@ -57,6 +59,9 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         }
 
         typeCombo.setModel(new DefaultComboBoxModel(types.toArray(new PolicyType[0])));
+
+        // The max length of a policy name is 255. 
+        ((AbstractDocument)nameField.getDocument()).setDocumentFilter(new DocumentSizeFilter(255));
 
         nameField.setEditable(nameField.isEditable() && canUpdate);
         soapCheckbox.setEnabled(soapCheckbox.isEnabled() && canUpdate);
