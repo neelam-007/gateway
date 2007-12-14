@@ -106,11 +106,9 @@ public class EditPolicyProperties extends PolicyNodeAction {
                     try {
                         Registry.getDefault().getPolicyAdmin().savePolicy(policy);
                     } catch (Exception e) {
-                        String msg = "Error while changing policy properties";
+                        String msg = "Error while saving policy due to improper policy properties.";
                         logger.log(Level.INFO, msg, e);
-                        String errorMessage = e.getMessage();
-                        if (errorMessage != null) msg += ":\n" + errorMessage;
-                        JOptionPane.showMessageDialog(mw, msg);
+                        DialogDisplayer.showMessageDialog(mw, null, msg, null);
                     }
                     resultCallback.call(true);
                     return;
