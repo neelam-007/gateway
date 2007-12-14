@@ -64,9 +64,9 @@ public class TransportAdminImpl implements TransportAdmin {
         return oid == currentConnection;
     }
 
-    public long saveSsgConnector(SsgConnector connector) throws SaveException, UpdateException {
+    public long saveSsgConnector(SsgConnector connector) throws SaveException, UpdateException, CurrentAdminConnectionException {
         if (isCurrentAdminConnection(connector.getOid()))
-            throw new UpdateException("Unable to modify connector for current admin connection");
+            throw new CurrentAdminConnectionException("Unable to modify connector for current admin connection");
         if (connector.getOid() == SsgConnector.DEFAULT_OID) {
             return connectorManager.save(connector);
         } else {
@@ -75,9 +75,9 @@ public class TransportAdminImpl implements TransportAdmin {
         }
     }
 
-    public void deleteSsgConnector(long oid) throws DeleteException, FindException {
+    public void deleteSsgConnector(long oid) throws DeleteException, FindException, CurrentAdminConnectionException {
         if (isCurrentAdminConnection(oid))
-            throw new DeleteException("Unable to delete connector for current admin connection");
+            throw new CurrentAdminConnectionException("Unable to delete connector for current admin connection");
         connectorManager.delete(oid);
     }
 

@@ -138,6 +138,8 @@ public class SsgConnectorManagerWindow extends JDialog {
             showErrorMessage("Remove Failed", "Failed to remove listen port: " + ExceptionUtils.getMessage(e), e);
         } catch (FindException e) {
             showErrorMessage("Remove Failed", "Failed to remove listen port: " + ExceptionUtils.getMessage(e), e);
+        } catch (TransportAdmin.CurrentAdminConnectionException e) {
+            showErrorMessage("Remove Failed", "Unable to remove the listen port for the current admin connection.", null);
         }
     }
 
@@ -181,6 +183,8 @@ public class SsgConnectorManagerWindow extends JDialog {
                         showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), e, reedit);
                     } catch (UpdateException e) {
                         showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), e, reedit);
+                    } catch (TransportAdmin.CurrentAdminConnectionException e) {
+                        showErrorMessage("Save Failed", "Unable to modify the listen port for the current admin connection.", null);
                     }
                 }
             }

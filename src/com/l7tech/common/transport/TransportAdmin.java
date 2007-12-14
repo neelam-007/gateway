@@ -48,6 +48,16 @@ public interface TransportAdmin {
     SsgConnector findSsgConnectorByPrimaryKey(long oid) throws FindException;
 
     /**
+     * Exception thrown when an attempt is made to update or delete the admin connection
+     * over which the update or delete request itself arrived.
+     */
+    public static class CurrentAdminConnectionException extends Exception {
+        public CurrentAdminConnectionException(String message) {
+            super(message);
+        }
+    }
+
+    /**
      * Store the specified new or existing SsgConnector. If the specified {@link SsgConnector} contains a
      * unique object ID that already exists, this will replace the objects current configuration with the new configuration.
      * Otherwise, a new object will be created.
@@ -58,11 +68,11 @@ public interface TransportAdmin {
      * @param connector  the connector to save.  Required.
      * @return the unique object ID that was updated or created.
      * @throws SaveException   if the requested information could not be saved
-     * @throws UpdateException if the specified SsgConnector owns the current admin connection, or
-     *                         if the requested information could not be updated for some other reason
+     * @throws UpdateException if the requested information could not be updated for some other reason
+     * @throws CurrentAdminConnectionException if the specified SsgConnector owns the current admin connection
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
-    long saveSsgConnector(SsgConnector connector) throws SaveException, UpdateException;
+    long saveSsgConnector(SsgConnector connector) throws SaveException, UpdateException, CurrentAdminConnectionException;
 
     /**
      * Delete a specific SsgConnector instance identified by its primary key.
@@ -71,12 +81,12 @@ public interface TransportAdmin {
      * the admin connection you are currently using to access this API.
      *
      * @param oid the object ID of the SsgConnector instance to delete.  Required.
-     * @throws DeleteException if the specified SsgConnector owns the current admin connection, or
-     *                         if there is some other problem deleting the object
+     * @throws DeleteException if there is some other problem deleting the object
      * @throws FindException if the object cannot be found
+     * @throws CurrentAdminConnectionException if the specified SsgConnector owns the current admin connection
      */
     @Secured(stereotype=DELETE_BY_ID)
-    void deleteSsgConnector(long oid) throws DeleteException, FindException;
+    void deleteSsgConnector(long oid) throws DeleteException, FindException, CurrentAdminConnectionException;
 
     /**
      * Get the names of all cipher suites available on this system.
