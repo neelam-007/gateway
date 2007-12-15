@@ -45,10 +45,10 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.wsdl.WSDLException;
+import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringReader;
-import java.lang.reflect.InvocationTargetException;
 import java.net.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -57,7 +57,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.beans.PropertyDescriptor;
 
 /**
  * Server side implementation of the ServiceAdmin admin api.
@@ -245,17 +244,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     public long savePublishedService(PublishedService service)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException
     {
-        return savePublishedService(service, true);
-    }
-
-    public long savePublishedService(PublishedService service, boolean activateAsWell)
-            throws UpdateException, SaveException, VersionException, PolicyAssertionException
-    {
         if (service.getPolicy() != null && isDefaultOid(service) != isDefaultOid(service.getPolicy()))
             throw new SaveException("Unable to save new service with existing policy, or to update existing service with new policy");
-
-        if (!activateAsWell)
-            return saveWithoutActivating(service);
 
         long oid;
 
@@ -273,61 +263,6 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
             serviceManager.addManageServiceRole(service);
         }
         return oid;
-    }
-
-    private long saveWithoutActivating(PublishedService newService) throws SaveException, UpdateException {
-        assert newService != null;
-        assert newService.getPolicy() != null;
-        assert isDefaultOid(newService) == isDefaultOid(newService.getPolicy());
-
-        Policy newPolicy = newService.getPolicy();
-
-        if (isDefaultOid(newService)) {
-            // Save new service without activating its policy
-            String newXml = newPolicy.getXml();
-            newPolicy.disable();
-            long oid = serviceManager.save(newService);
-            long poid = newService.getPolicy().getOid();
-            assert poid != Policy.DEFAULT_OID;
-            serviceManager.addManageServiceRole(newService);
-            checkpointPolicy(makeCopyWithDifferentXml(newPolicy, newXml), false, true);
-            return oid;
-        }
-
-        try {
-            // Save updated service without activating its policy or changing the enable/disable state of the currently-in-effect policy
-            PublishedService curService = serviceManager.findByPrimaryKey(newService.getOid());
-            if (curService == null)
-                throw new FindException("No existing published service found with OID=" + newService.getOid());
-            Policy curPolicy = curService.getPolicy();
-            if (curPolicy == null)
-                throw new UpdateException("Existing published service OID=" + newService.getOid() + " does not have a corresponding Policy"); // shouldn't be possible
-
-            BeanUtils.copyProperties(newPolicy, curPolicy, OMIT_VERSION_AND_XML);
-            curPolicy.setXml(curPolicy.getXml() + ' '); // leave policy semantics unchanged but bump the version number
-            curService.setPolicy(curPolicy);
-            serviceManager.update(curService);
-            checkpointPolicy(makeCopyWithDifferentXml(curPolicy, newPolicy.getXml()), false, false);
-            return newService.getOid();
-        } catch (FindException e) {
-            throw new UpdateException(e);
-        } catch (InvocationTargetException e) {
-            throw new UpdateException("Unabel to copy Policy properties: " + ExceptionUtils.getMessage(e), e);
-        } catch (IllegalAccessException e) {
-            throw new UpdateException("Unabel to copy Policy properties: " + ExceptionUtils.getMessage(e), e);
-        }
-    }
-
-    private static Policy makeCopyWithDifferentXml(Policy policy, String revisionXml) throws SaveException {
-        try {
-            Policy toCheckpoint = new Policy(policy.getType(), policy.getName(), revisionXml, policy.isSoap());
-            BeanUtils.copyProperties(policy, toCheckpoint, OMIT_XML);
-            return toCheckpoint;
-        } catch (InvocationTargetException e) {
-            throw new SaveException("Unable to copy Policy properties", e); // can't happen
-        } catch (IllegalAccessException e) {
-            throw new SaveException("Unable to copy Policy properties", e); // can't happen
-        }
     }
 
     /**

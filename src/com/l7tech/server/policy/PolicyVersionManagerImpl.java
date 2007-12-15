@@ -95,16 +95,19 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         AdminInfo adminInfo = AdminInfo.find();
         PolicyVersion ver = snapshot(newPolicy, adminInfo, activated, newEntity);
         final long versionOid = save(ver);
-
-        deleteStaleRevisions(policyOid, versionOid);
+        ver.setOid(versionOid);
 
         if (activated) {
             // Deactivate all previous versions
             deactivateVersions(policyOid, versionOid);
         }
+
+        deleteStaleRevisions(policyOid, ver);
     }
 
-    private void deleteStaleRevisions(final long policyOid, long versionOid) throws FindException, DeleteException {
+    private void deleteStaleRevisions(final long policyOid, final PolicyVersion justSaved) throws FindException, DeleteException {
+        final long justSavedOid = justSaved.getOid();
+
         // Delete oldest anonymous revisions if we have exceeded MAX_REVISIONS
         // Revisions that have been assigned a name won't be deleted
         int numToKeep = serverConfig.getIntProperty(ServerConfig.PARAM_POLICY_VERSIONING_MAX_REVISIONS, 20);
@@ -113,18 +116,28 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         // Don't count revisions against the limit if they have been assigned names
         revisions = Functions.grep(revisions, new Functions.Unary<Boolean,PolicyVersion>() {
             public Boolean call(PolicyVersion policyVersion) {
-                return policyVersion.getPolicyOid() == policyOid && policyVersion.getName() != null && policyVersion.getName().length() > 0;
+                boolean inactive = !policyVersion.isActive();
+                boolean notTheOneWeJustSaved = policyVersion.getOid() != justSavedOid;
+                boolean belongsToOurPolicy = policyVersion.getPolicyOid() == policyOid;
+                boolean nameIsEmpty = isNameEmpty(policyVersion);
+
+                // Candidates for deletion are inactive, anonymous, and not the one we just saved
+                return inactive && belongsToOurPolicy && notTheOneWeJustSaved && nameIsEmpty;
             }
         });
         Collections.sort(revisions, new Comparator<PolicyVersion>() {
             public int compare(PolicyVersion o1, PolicyVersion o2) {
-                return new Long(o2.getOrdinal()).compareTo(o1.getOrdinal());
+                return new Long(o1.getOrdinal()).compareTo(o2.getOrdinal());
             }
         });
         int num = revisions.size();
+
+        if (!justSaved.isActive() && isNameEmpty(justSaved))
+            num++; // We won't try to delete the one we just saved, but if it would otherwise be a deletion candidate, it still uses up a slot
+
         if (num > numToKeep) {
             for (PolicyVersion revision : revisions) {
-                if (num > numToKeep && revision.getPolicyOid() == policyOid && revision.getOid() != versionOid) {
+                if (num > numToKeep && revision.getPolicyOid() == policyOid && revision.getOid() != justSavedOid) {
                     delete(revision);
                     num--;
                     if (num <= numToKeep)
@@ -132,6 +145,10 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
                 }
             }
         }
+    }
+
+    private static boolean isNameEmpty(PolicyVersion policyVersion) {
+        return policyVersion.getName() == null || policyVersion.getName().length() < 1;
     }
 
     @Transactional(propagation=Propagation.SUPPORTS)

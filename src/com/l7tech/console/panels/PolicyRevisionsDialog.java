@@ -5,7 +5,6 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.TableUtil;
 import static com.l7tech.common.gui.util.TableUtil.column;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyVersion;
 import com.l7tech.common.util.BeanUtils;
 import com.l7tech.common.util.ExceptionUtils;
@@ -17,8 +16,6 @@ import com.l7tech.console.tree.policy.LeafAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.Assertion;
@@ -55,6 +52,7 @@ public class PolicyRevisionsDialog extends JDialog {
     private JButton clearActiveButton;
     private JButton setCommentButton;
 
+    private final PolicyEntityNode policyNode;
     private final long policyOid;
     private final DateFormat dateFormat = DateFormat.getInstance();
 
@@ -73,14 +71,16 @@ public class PolicyRevisionsDialog extends JDialog {
     /** Index of the "Act." table column in the table model. */
     private static final int COLUMN_IDX_ACTIVE = 0;
 
-    public PolicyRevisionsDialog(Frame owner, long policyOid) {
+    public PolicyRevisionsDialog(Frame owner, PolicyEntityNode policyNode, long policyOid) {
         super(owner);
+        this.policyNode = policyNode;
         this.policyOid = policyOid;
         initialize();
     }
 
-    public PolicyRevisionsDialog(Dialog owner, long policyOid) {
+    public PolicyRevisionsDialog(Dialog owner, PolicyEntityNode policyNode, long policyOid) {
         super(owner);
+        this.policyNode = policyNode;
         this.policyOid = policyOid;
         initialize();
     }
@@ -165,24 +165,13 @@ public class PolicyRevisionsDialog extends JDialog {
             Pair<Integer, PolicyVersion> info = getSelectedPolicyVersion();
             if (info == null)
                 return;
-            PolicyEntityNode node = makeEditablePolicyEntityNode(info.right);
-            EditPolicyAction editAction = new EditPolicyAction(node);
+            policyNode.getPolicy().setXml(info.right.getXml());
+            EditPolicyAction editAction = new EditPolicyAction(policyNode);
             dispose();
             editAction.actionPerformed(evt);
         } catch (FindException e) {
             showErrorMessage("Unable to Edit Version", "Unable to start a new edit from this version: " + ExceptionUtils.getMessage(e), e);
         }
-    }
-
-    /* @return a PolicyEntityNode representing the specified revision of this policy. */
-    private PolicyEntityNode makeEditablePolicyEntityNode(final PolicyVersion version) throws FindException {
-        return new PolicyEntityNode(new EntityHeader(Long.toString(policyOid), EntityType.POLICY, null, null)) {
-            public Policy refreshPolicy() throws FindException {
-                super.refreshPolicy();
-                policy.setXml(version.getXml());
-                return policy;
-            }
-        };
     }
 
     private void doSetActive() {
@@ -192,6 +181,7 @@ public class PolicyRevisionsDialog extends JDialog {
 
         try {
             Registry.getDefault().getPolicyAdmin().setActivePolicyVersion(policyOid, info.right.getOid());
+            policyNode.clearCachedEntities();
 
             for (Integer row : tableModel.findRows(IS_ACTIVE)) {
                 tableModel.getRowObject(row).setActive(false);
@@ -220,6 +210,7 @@ public class PolicyRevisionsDialog extends JDialog {
                     return;
                 try {
                     Registry.getDefault().getPolicyAdmin().clearActivePolicyVersion(policyOid);
+                    policyNode.clearCachedEntities();
 
                     for (Integer row : tableModel.findRows(IS_ACTIVE)) {
                         tableModel.getRowObject(row).setActive(false);
