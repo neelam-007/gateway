@@ -842,7 +842,14 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     ssg.setLocalEndpoint(ssg.makeDefaultLocalEndpoint());
                 }
 
-                ssg.resetRuntime();
+                // Reset the runtime, but preserve the existing cached password and policy cache
+                {
+                    char[] cached = ssg.getRuntime().getCachedPassword();
+                    PolicyManager policyCache = ssg.getRuntime().getPolicyManager();
+                    ssg.resetRuntime();
+                    ssg.getRuntime().setCachedPassword(cached);
+                    ssg.getRuntime().setPolicyManager(policyCache);
+                }
             }
         } catch (MalformedURLException e) {
             JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
