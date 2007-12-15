@@ -14,7 +14,7 @@ import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ServiceHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
@@ -181,13 +181,10 @@ public class PublishServiceWizard extends Wizard {
                 WspWriter.writePolicy(new TrueAssertion(), bo); // means no policy
             }
             long oid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(saBundle.getService(), saBundle.getServiceDocuments());
+            saBundle.service.setOid(oid);
             Registry.getDefault().getSecurityProvider().refreshPermissionCache();
-            
-            EntityHeader header = new EntityHeader();
-            header.setType(EntityType.SERVICE);
-            header.setName(saBundle.service.getName());
-            header.setOid(oid);
-            PublishServiceWizard.this.notify(header);
+
+            PublishServiceWizard.this.notify(new ServiceHeader(saBundle.service));
         } catch (Exception e) {
             if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
                 logger.log(Level.WARNING, "Cannot publish service as is (duplicate)");
