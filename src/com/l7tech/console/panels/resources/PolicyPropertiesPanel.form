@@ -41,6 +41,7 @@
         </constraints>
         <properties>
           <enabled value="false"/>
+          <visible value="false"/>
         </properties>
       </component>
       <component id="ca56f" class="javax.swing.JLabel">
@@ -50,6 +51,7 @@
         <properties>
           <labelFor value="b5870"/>
           <text resource-bundle="com/l7tech/console/resources/PolicyPropertiesPanel" key="typeLabel.text"/>
+          <visible value="false"/>
         </properties>
       </component>
     </children>
