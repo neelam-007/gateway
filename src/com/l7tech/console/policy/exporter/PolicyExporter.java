@@ -11,8 +11,6 @@ import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspWriter;
@@ -91,7 +89,7 @@ public class PolicyExporter {
     private void appendRelatedReferences(Assertion assertion, Collection<ExternalReference> refs) {
         ExternalReference ref = null;
         // create the appropriate reference if applicable
-        if (assertion instanceof SpecificUser || assertion instanceof MemberOfGroup) {
+        if (assertion instanceof IdentityAssertion) {
             IdentityAssertion idassertion = (IdentityAssertion)assertion;
             ref = new IdProviderReference(idassertion.getIdentityProviderOid());
         } else if (assertion instanceof JmsRoutingAssertion) {
