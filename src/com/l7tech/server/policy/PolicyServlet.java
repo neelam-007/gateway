@@ -219,7 +219,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                         }
 
                         public String getVersion() {
-                            return Integer.toString(targetService.getVersion());
+                            return Integer.toString(targetService.getPolicy().getVersion());
                         }
                     };
                 } catch (IOException e) {

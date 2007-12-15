@@ -229,7 +229,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                         try {
                             long reqPolicyId = Long.parseLong(requestorVersion.substring(0, indexofbar));
                             long reqPolicyVer = Long.parseLong(requestorVersion.substring(indexofbar + 1));
-                            if (reqPolicyVer != service.getVersion() || reqPolicyId != service.getOid()) {
+                            if (reqPolicyVer != service.getPolicy().getVersion() || reqPolicyId != service.getOid()) {
                                 auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_INVALID, requestorVersion, String.valueOf(service.getOid()), String.valueOf(service.getVersion()));
                                 wrongPolicyVersion = true;
                             }
