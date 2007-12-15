@@ -491,6 +491,11 @@ public class SsgRuntime {
         }
     }
 
+    /** Notify that this SsgRuntime instance is about to be thrown away. */
+    void close() {
+        resetSslContext();
+    }
+
     /** Flush SSL context and cached certificates. */
     public void resetSslContext()
     {
@@ -511,15 +516,6 @@ public class SsgRuntime {
             httpConnectionManager = null; // bugzilla #1808
         }
         ssg.fireSsgEvent(SsgEvent.createSslResetEvent(ssg)); // bug #2540
-    }
-
-    /**
-     * Called after SSG properties are edited
-     */
-    public void reset() {
-        promptForUsernameAndPassword(true);
-        numTimesLogonDialogCanceled = 0;
-        resetSslContext();
     }
 
     /** Transient cached certificate for quicker access; only for use by SsgKeystoreManager. */

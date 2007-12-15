@@ -842,7 +842,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     ssg.setLocalEndpoint(ssg.makeDefaultLocalEndpoint());
                 }
 
-                ssg.getRuntime().reset();
+                ssg.resetRuntime();
             }
         } catch (MalformedURLException e) {
             JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),

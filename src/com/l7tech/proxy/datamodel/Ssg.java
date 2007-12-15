@@ -281,6 +281,21 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
         return "gateway" + getId();
     }
 
+    /**
+     * Throw away the current SsgRuntime and any state cached within it and create a new one.
+     * The intent is to reset this Ssg bean as though it had been saved to disk and reloaded into
+     * a new Bridge process.
+     * <p/>
+     * This clears the SSL context, the password prompting, and everything else stored in the runtime.
+     */
+    public void resetRuntime() {
+        synchronized (this) {
+            runtime.close();
+            runtime = new SsgRuntime(this);
+        }
+        fireSsgEvent(SsgEvent.createSslResetEvent(this)); // bug #2540
+    }
+
     public void setLocalEndpoint(String localEndpoint) {
         if (localEndpoint == null)
             localEndpoint = makeDefaultLocalEndpoint();
