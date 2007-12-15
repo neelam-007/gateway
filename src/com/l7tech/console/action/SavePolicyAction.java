@@ -105,6 +105,7 @@ public class SavePolicyAction extends PolicyNodeAction {
             if (policyNode instanceof ServiceNode) {
                 final PublishedService svc = ((ServiceNode) policyNode).getPublishedService();
                 if (activateAsWell) {
+                    svc.getPolicy().setXml(xml);
                     Registry.getDefault().getServiceManager().savePublishedService(svc);
                 } else {
                     updatePolicyXml(svc.getPolicy().getOid(), xml, activateAsWell);
