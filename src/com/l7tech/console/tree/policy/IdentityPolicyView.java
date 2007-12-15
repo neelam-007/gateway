@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
@@ -56,6 +57,9 @@ public class IdentityPolicyView extends JDialog {
                 output = su.getUserUid();
             }
             return output;
+        } else if (ida instanceof AuthenticationAssertion) {
+            AuthenticationAssertion aa = (AuthenticationAssertion) ida;
+            return "Authenticated";
         }
         throw new IllegalArgumentException("Don't know how to handle class " + ida.getClass());
     }

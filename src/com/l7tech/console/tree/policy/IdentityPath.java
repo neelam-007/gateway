@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 
 import java.security.Principal;
 import java.util.*;
@@ -51,6 +52,7 @@ public class IdentityPath {
 
     /** the anonymous path label */
     public static final String ANONYMOUS = "Anonymous";
+    public static final String AUTHENTICATED = "Authenticate against";
     public static final String CUSTOM_ACCESS_CONTROL = "Custom Access Control:";
 
     /**
@@ -348,6 +350,7 @@ public class IdentityPath {
      */
     private static boolean isIdentity(Object assertion) {
         return
+          assertion instanceof AuthenticationAssertion ||
           assertion instanceof SpecificUser ||
           assertion instanceof MemberOfGroup;
     }
@@ -373,7 +376,10 @@ public class IdentityPath {
      * @return whether the assertion is an identity
      */
     public static Identity extractIdentity(Object assertion) {
-        if (assertion instanceof SpecificUser) {
+        if (assertion instanceof AuthenticationAssertion) {
+            AuthenticationAssertion aa = ((AuthenticationAssertion)assertion);
+            return new AnonymousUserReference(null, aa.getIdentityProviderOid(), AUTHENTICATED);
+        } else if (assertion instanceof SpecificUser) {
             SpecificUser su = ((SpecificUser)assertion);
             String name = su.getUserName();
             if (name == null) name = su.getUserLogin();
