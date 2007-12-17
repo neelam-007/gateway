@@ -119,5 +119,6 @@ public class Advices {
                 put(HtmlFormDataAssertion.class, ary(HtmlFormDataAssertionAdvice.class));
                 put(CodeInjectionProtectionAssertion.class, ary(CodeInjectionProtectionAssertionAdvice.class));
                 put(SimpleXpathAssertion.class, ary(AddXPathAssertionAdvice.class));
+                put(SamlIssuerAssertion.class, ary(AddSamlIssuerAssertionAdvice.class));
             }};
 }

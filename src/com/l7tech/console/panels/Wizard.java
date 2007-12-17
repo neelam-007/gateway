@@ -35,6 +35,7 @@ public class Wizard extends JDialog {
     private boolean wasCanceled = false;
     private boolean enableBackButton = true;
     private boolean showDescription;
+    private boolean wizardFinished = false;
 
     private JPanel mainPanel;
     private JPanel stepLabelsPanel;
@@ -395,6 +396,7 @@ public class Wizard extends JDialog {
         }
         dispose();
         fireWizardFinished();
+        wizardFinished = true;
     }
 
     /**
@@ -615,6 +617,10 @@ public class Wizard extends JDialog {
     public void setEnableBackButton(boolean enableBackButton) {
         this.enableBackButton = enableBackButton;
         getButtonBack().setEnabled(enableBackButton);
+    }
+
+    public boolean isWizardFinished() {
+        return wizardFinished;
     }
 
     /**
