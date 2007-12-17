@@ -1,9 +1,6 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.identity;
 
 import com.l7tech.identity.cert.ClientCertManager;
@@ -244,10 +241,6 @@ public class TestIdentityProvider implements IdentityProvider {
         }
 
         public void deleteAll(long ipoid) {
-            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
-        }
-
-        public String saveUser(User user) throws SaveException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
