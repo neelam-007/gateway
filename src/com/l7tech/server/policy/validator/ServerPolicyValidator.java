@@ -14,6 +14,7 @@ import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.User;
+import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.fed.VirtualGroup;
@@ -80,6 +81,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
     private static final int ID_FIP_NOCERT = 7; // 2 & there is no certificate available to authenticate with
     private static final int ID_SAMLONLY_NOCERT = 8; // 3 & there is no certificate available to authenticate with
     private static final int ID_X509ONLY_NOCERT = 9; // 4 & there is no certificate available to authenticate with
+    private static final int ID_ERROR = 10; // Error on ID provider
 
     private static final Logger logger = Logger.getLogger(ServerPolicyValidator.class.getName());
 
@@ -213,6 +215,12 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                               null));
                         }
                     }
+                    break;
+                case ID_ERROR:
+                    r.addWarning(new PolicyValidatorResult.Warning(a,
+                      ap,
+                      "This identity cannot be validated at this time (identity provider error)",
+                      null));
                     break;
             }
         } else if (a.isCredentialSource()) {
@@ -486,6 +494,11 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                     }
                 } else if (identityAssertion instanceof AuthenticationAssertion) {
                     idexists = true; // We don't care who you are
+                    try {
+                        prov.test(true);
+                    } catch (InvalidIdProviderCfgException iipce) {
+                        throw new FindException("Error testing provider.", iipce);
+                    }
                 } else {
                     throw new RuntimeException("Type not supported " + identityAssertion.getClass().getName());
                 }
@@ -516,7 +529,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                 idAssertionStatusCache.put(identityAssertion, output);
             } catch (FindException e) {
                 logger.log(Level.WARNING, "problem retrieving identity", e);
-                output = ID_NOT_EXIST;
+                output = ID_ERROR;
                 idAssertionStatusCache.put(identityAssertion, output);
             }
         }

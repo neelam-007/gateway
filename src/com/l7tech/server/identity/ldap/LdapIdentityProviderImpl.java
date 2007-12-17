@@ -535,7 +535,7 @@ public class LdapIdentityProviderImpl
         throw new CommunicationException("Could not establish context on any of the ldap urls.");
     }
 
-    public void test() throws InvalidIdProviderCfgException {
+    public void test(final boolean quick) throws InvalidIdProviderCfgException {
         DirContext context = null;
         try {
             // make sure we can connect
@@ -554,6 +554,9 @@ public class LdapIdentityProviderImpl
                 }
                 throw new InvalidIdProviderCfgException(msg, e);
             }
+
+            // That's all for a quick test
+            if ( quick ) return;
 
             String filter;
             SearchControls sc = new SearchControls();

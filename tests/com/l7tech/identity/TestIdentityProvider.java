@@ -90,7 +90,7 @@ public class TestIdentityProvider implements IdentityProvider {
         return "myrealm";
     }
 
-    public void test() throws InvalidIdProviderCfgException {
+    public void test(boolean fast) throws InvalidIdProviderCfgException {
     }
 
     public void preSaveClientCert(User user, X509Certificate[] certChain) throws ClientCertManager.VetoSave {

@@ -52,7 +52,7 @@ public class IdProvConfManagerServer
     public void test(IdentityProviderConfig identityProviderConfig)
       throws InvalidIdProviderCfgException {
         IdentityProvider provider = identityProviderFactory.makeProvider(identityProviderConfig);
-        provider.test();
+        provider.test(false);
     }
 
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {

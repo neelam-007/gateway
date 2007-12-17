@@ -98,7 +98,7 @@ public class FederatedIdentityProviderImpl
         return HttpDigest.REALM;
     }
 
-    public void test() {
+    public void test(boolean quick) {
         // TODO
     }
 

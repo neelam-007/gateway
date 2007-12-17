@@ -56,7 +56,13 @@ public interface IdentityProvider<UT extends User, GT extends Group, UMT extends
 
     String getAuthRealm();
 
-    void test() throws InvalidIdProviderCfgException;
+    /**
+     * Test this identity provider.
+     *
+     * @param fast True for a quick test, false for a full test
+     * @throws InvalidIdProviderCfgException
+     */
+    void test(boolean fast) throws InvalidIdProviderCfgException;
 
     /**
      * Allows an IdentityProvider to veto the saving of a client cert. Currently only used by

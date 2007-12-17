@@ -145,7 +145,7 @@ public class InternalIdentityProviderImpl
         return HttpDigest.REALM;
     }
 
-    public void test() {
+    public void test(boolean quick) {
     }
 
     public void preSaveClientCert(InternalUser user, X509Certificate[] certChain ) throws ClientCertManager.VetoSave {
