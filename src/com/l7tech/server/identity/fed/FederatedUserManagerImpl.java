@@ -133,6 +133,11 @@ public class FederatedUserManagerImpl
         }
     }
 
+    @Override
+    protected void addFindByNameCriteria(Criteria crit) {
+        crit.add(Restrictions.eq("providerId", getProviderOid()));
+    }
+
     protected String getNameFieldname() {
         return "name";
     }

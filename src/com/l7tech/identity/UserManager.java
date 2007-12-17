@@ -41,12 +41,6 @@ public interface UserManager<UT extends User> {
     void deleteAll(long ipoid) throws DeleteException, FindException;
 
     /**
-     * Saves a new user.
-     * @return the unique identifier of the user
-     */
-    String saveUser(UT user ) throws SaveException;
-
-    /**
      * Updates an existing user.
      */
     void update(UT user) throws UpdateException, FindException;

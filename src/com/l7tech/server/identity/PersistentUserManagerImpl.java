@@ -222,11 +222,6 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     }
 
     @Secured(operation=OperationType.CREATE)
-    public String saveUser(UT user) throws SaveException {
-        return save(user, null);
-    }
-
-    @Secured(operation=OperationType.CREATE)
     public String save(UT user, Set<IdentityHeader> groupHeaders) throws SaveException {
         UT imp = cast(user);
         imp.setProviderId(identityProvider.getConfig().getOid());
@@ -363,6 +358,19 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
             logger.log(Level.FINE, "could not revoke cert for user " + originalUser.getLogin() +
               " perhaps this user had no existing cert", e);
         }
+    }
+
+    @Override
+    protected Map<String, Object> getUniqueAttributeMap(UT entity) {
+        Map<String, Object> attrs = new HashMap<String, Object>();
+        attrs.put("providerId", entity.getProviderId());
+        attrs.put("name", entity.getName());
+        return attrs;
+    }
+
+    @Override
+    protected UniqueType getUniqueType() {
+        return UniqueType.OTHER;
     }
 
     /**

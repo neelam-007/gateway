@@ -598,6 +598,19 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
 
     }
 
+    @Override
+    protected Map<String, Object> getUniqueAttributeMap(GT entity) {
+        Map<String, Object> attrs = new HashMap<String, Object>();
+        attrs.put("providerId", entity.getProviderId());
+        attrs.put("name", entity.getName());
+        return attrs;
+    }
+
+    @Override
+    protected UniqueType getUniqueType() {
+        return UniqueType.OTHER;
+    }
+
     public EntityType getEntityType() {
         return EntityType.GROUP;
     }

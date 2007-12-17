@@ -455,6 +455,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(getImpClass());
+                    addFindByNameCriteria(crit);
                     crit.add(Restrictions.eq(F_NAME, name));
                     return crit.uniqueResult();
                 }
@@ -462,6 +463,12 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         } catch (HibernateException e) {
             throw new FindException("Couldn't find unique entity", e);
         }
+    }
+
+    /**
+     * Override to update the criteria used by findByUniqueName() before it's executed
+     */
+    protected void addFindByNameCriteria(Criteria crit) {
     }
 
     /**

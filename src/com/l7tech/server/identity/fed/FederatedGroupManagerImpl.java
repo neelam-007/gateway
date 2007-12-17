@@ -71,6 +71,11 @@ public class FederatedGroupManagerImpl
             throw new NoTrustedCertsSaveException("Virtual groups cannot be created in a Federated Identity Provider with no Trusted Certificates");
     }
 
+    @Override
+    protected void addFindByNameCriteria(Criteria crit) {
+        crit.add(Restrictions.eq("providerId", getProviderOid()));
+    }
+
     protected void addFindAllCriteria( Criteria allHeadersCriteria ) {
         allHeadersCriteria.add(Restrictions.eq("providerId", new Long(getProviderOid())));
     }

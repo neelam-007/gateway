@@ -181,13 +181,6 @@ public class LdapUserManagerImpl implements LdapUserManager {
     /**
      * throws UnsupportedOperationException
      */
-    public String saveUser(LdapUser user) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * throws UnsupportedOperationException
-     */
     public void update(LdapUser user) {
         throw new UnsupportedOperationException();
     }
