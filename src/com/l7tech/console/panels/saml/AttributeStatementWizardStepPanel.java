@@ -7,6 +7,7 @@ import com.l7tech.console.beaneditor.BeanAdapter;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
+import com.l7tech.common.security.saml.SamlConstants;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -25,6 +26,7 @@ import java.util.Collection;
  * @version Jan 20, 2005
  */
 public class AttributeStatementWizardStepPanel extends WizardStepPanel {
+    private static final String DEFAULT_NAME_FORMAT = SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED;
     private JPanel mainPanel;
     private JLabel titleLabel;
     private boolean showTitleLabel;
@@ -103,7 +105,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
             SamlAttributeStatement.Attribute att = new SamlAttributeStatement.Attribute(
                     toString(attributesTableModel.getValueAt(i, 0)),
                     toString(attributesTableModel.getValueAt(i, 1)),
-                    toString(attributesTableModel.getValueAt(i, 2)),
+                    fromDisplayNameFormat(attributesTableModel.getValueAt(i, 2)),
                     isAny ? null : value,
                     isAny, Boolean.TRUE.equals(attributesTableModel.getValueAt(i,4)));
             attributes.add(att);
@@ -139,7 +141,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
             attributesTableModel.addRow(new Object[]{
                     att.getName(),
                     att.getNamespace(),
-                    att.getNameFormat(),
+                    toDisplayNameFormat(att.getNameFormat(), samlVersion),
                     att.isAnyValue() ? ANY : att.getValue(),
                     att.isRepeatIfMulti()});
         }
@@ -191,7 +193,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                 final SamlAttributeStatement.Attribute attribute = new SamlAttributeStatement.Attribute();
                 attribute.setName(AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 0)));
                 attribute.setNamespace(AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 1)));
-                attribute.setNameFormat(AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 2)));
+                attribute.setNameFormat(AttributeStatementWizardStepPanel.fromDisplayNameFormat(attributesTableModel.getValueAt(row, 2)));
                 attribute.setRepeatIfMulti(Boolean.TRUE.equals(attributesTableModel.getValueAt(row, 4)));
                 String value = AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 3));
                 if (ANY.equals(value)) {
@@ -212,7 +214,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                     public void onEditAccepted(Object source, Object bean) {
                         attributesTableModel.setValueAt(attribute.getName(), row, 0);
                         attributesTableModel.setValueAt(attribute.getNamespace(), row, 1);
-                        attributesTableModel.setValueAt(attribute.getNameFormat(), row, 2);
+                        attributesTableModel.setValueAt(toDisplayNameFormat(attribute.getNameFormat(), samlVersion), row, 2);
                         attributesTableModel.setValueAt(attribute.isAnyValue() ? ANY : attribute.getValue(), row, 3);
                         attributesTableModel.setValueAt(attribute.isRepeatIfMulti(), row, 4);
                         notifyListeners();
@@ -236,7 +238,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                         attributesTableModel.addRow(new Object[] {
                                 attribute.getName(),
                                 attribute.getNamespace(),
-                                attribute.getNameFormat(),
+                                toDisplayNameFormat(attribute.getNameFormat(), samlVersion),
                                 attribute.isAnyValue() ? ANY : attribute.getValue(),
                                 attribute.isRepeatIfMulti()
                         });
@@ -291,5 +293,34 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         }
 
         return stringValue;
+    }
+
+    /**
+     * Convert to display name format (display default)
+     */
+    private static String toDisplayNameFormat( final String nameFormat, final int samlVersion ) {
+        String defaultNameFormat = DEFAULT_NAME_FORMAT;
+
+        if ( nameFormat != null ) {
+            defaultNameFormat = nameFormat;
+        } else if ( samlVersion < 2 ) {
+            defaultNameFormat = null;        
+        }
+
+        return defaultNameFormat;
+    }
+
+    /**
+     * Convert from display name format (use null for default)
+     */
+    private static String fromDisplayNameFormat( final Object displayNameFormat ) {
+        String nameFormat = null;
+
+        if ( displayNameFormat != null &&
+             !DEFAULT_NAME_FORMAT.equals( displayNameFormat ) ) {
+            nameFormat = displayNameFormat.toString();
+        }
+
+        return nameFormat;
     }
 }
