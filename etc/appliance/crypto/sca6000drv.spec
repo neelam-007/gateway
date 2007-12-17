@@ -36,7 +36,7 @@ tar -xzf /tmp/sca6000drv.tgz
 
 
 %post
-chkconfig sca on
+
 %preun
 
 %changelog
