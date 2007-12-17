@@ -21,7 +21,6 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
     private final Font boldFont;
     private final Font plainFont;
     private final Font italicFont;
-    private final Color defaultForeground;
 
     private boolean validated = true;
     /**
@@ -32,7 +31,6 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
         boldFont = l.getFont().deriveFont(Font.BOLD);
         plainFont = l.getFont().deriveFont(Font.PLAIN);
         italicFont = l.getFont().deriveFont(Font.ITALIC);
-        defaultForeground = l.getForeground();
     }
 
     /**
@@ -60,7 +58,7 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
             setForeground(Color.GRAY);
             setFont(italicFont);
         } else {
-            setForeground(defaultForeground);
+            setForeground( sel ? getTextSelectionColor() : getTextNonSelectionColor() );
             setFont(isRoutingAssertionNode(node) ? boldFont : plainFont);
         }
 
