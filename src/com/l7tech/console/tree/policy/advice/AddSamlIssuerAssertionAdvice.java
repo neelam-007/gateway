@@ -17,10 +17,11 @@ public class AddSamlIssuerAssertionAdvice implements Advice {
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof SamlIssuerAssertion)) {
             throw new IllegalArgumentException();
         }
-        SamlIssuerAssertion subject = (SamlIssuerAssertion)assertions[0];
-        SamlIssuerAssertionPropertiesEditor editor = new SamlIssuerAssertionPropertiesEditor();
-        editor.setData(subject);
-        final Wizard wizard = (Wizard)editor.getDialog();
+
+        final SamlIssuerAssertionPropertiesEditor propertiesEditor = new SamlIssuerAssertionPropertiesEditor();
+        SamlIssuerAssertion assertion = (SamlIssuerAssertion)assertions[0];
+        propertiesEditor.setData(assertion);
+        Wizard wizard = (Wizard)propertiesEditor.getDialog();
 
         // show the wizard
         wizard.pack();
@@ -28,7 +29,7 @@ public class AddSamlIssuerAssertionAdvice implements Advice {
         DialogDisplayer.display(wizard, new Runnable() {
             public void run() {
                 // check that user finished the wizard
-                if (wizard.isWizardFinished())
+                if (propertiesEditor.isConfirmed())
                     pc.proceed();
             }
         });
