@@ -28,16 +28,9 @@ cd %{buildroot}
 tar -xzf /tmp/sca6000drv.tgz
 
 %build
-# Add in the chkconfig items so we can use the redhat tools on the
-# appliance
-# need chkconfig, description, processname lines
-sed -i '5i # chkconfig: - 95 05 \
-# description: Startup SCA6000 card support driver and daemon\
-# processname: scakiod' %{buildroot}/etc/init.d/sca
 
 %files
 %defattr(-,root,root)
-/etc/init.d/sca*
 /opt
 %pre
 
