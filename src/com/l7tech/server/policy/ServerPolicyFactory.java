@@ -1,8 +1,6 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.policy;
 
 import com.l7tech.common.LicenseException;
@@ -27,7 +25,6 @@ import java.text.MessageFormat;
 
 /**
  * This is for getting a tree of ServerAssertion objects from the corresponding Assertion objects (data).
- * @author alex
  */
 public class ServerPolicyFactory implements ApplicationContextAware {
     protected static final Logger logger = Logger.getLogger(ServerPolicyFactory.class.getName());
@@ -147,7 +144,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
                                                 specificAssertionClass.getName(),
                                                 genericAssertionClass.getName(),
                                                 genericAssertion.getOrdinal(),
-                                                genericAssertion.getOwnerPolicyOid()));
+                                                genericAssertion.ownerPolicyOid()));
 
             Constructor ctor = ConstructorInvocation.findMatchingConstructor(specificAssertionClass, new Class[] {genericAssertionClass, ApplicationContext.class});
             if (ctor != null)

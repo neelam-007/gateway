@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.common.gui.util.ClipboardActions;
@@ -50,8 +53,6 @@ import java.util.logging.Logger;
 
 /**
  * Class PolicyTree is the extended <code>JTree</code> with addtional
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class PolicyTree extends JTree implements DragSourceListener,
   DragGestureListener, Autoscroll, TreeModelListener, Refreshable {
@@ -1163,7 +1164,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     return false;
                 }
 
-                ass.setOwnerPolicyOid(policyTree.getPolicyEditorPanel().getPolicyNode().getPolicy().getOid());
+                ass.ownerPolicyOid(policyTree.getPolicyEditorPanel().getPolicyNode().getPolicy().getOid());
 
                 // Now we have an assertion tree to import into this location in the policy tree.
                 return policyTree.importAssertion(ass);

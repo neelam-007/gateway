@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -223,11 +222,11 @@ public abstract class Assertion implements Cloneable, Serializable {
         return fullClass.substring(fullClass.lastIndexOf('.') + 1);
     }
 
-    public Long getOwnerPolicyOid() {
+    public Long ownerPolicyOid() {
         return ownerPolicyOid;
     }
 
-    public void setOwnerPolicyOid(Long ownerPolicyOid) {
+    public void ownerPolicyOid(Long ownerPolicyOid) {
         if (ownerPolicyOid == -1) ownerPolicyOid = null;
         this.ownerPolicyOid = ownerPolicyOid;
     }

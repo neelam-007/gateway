@@ -1,8 +1,6 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.policy.assertion.composite;
 
 import com.l7tech.policy.assertion.Assertion;
@@ -192,11 +190,11 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         return toIndentedString(0);
     }
 
-    public void setOwnerPolicyOid(final Long policyOid) {
-        super.setOwnerPolicyOid(policyOid);
+    public void ownerPolicyOid(final Long policyOid) {
+        super.ownerPolicyOid(policyOid);
         for (Iterator i = children.iterator(); i.hasNext();) {
             Assertion ass = (Assertion) i.next();
-            ass.setOwnerPolicyOid(policyOid);
+            ass.ownerPolicyOid(policyOid);
         }
     }
 }

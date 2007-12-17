@@ -108,7 +108,7 @@ public class PolicyValidatorResult implements Serializable {
      * @return the list of assertion messages
      */
     public List<Message> messages(Assertion a) {
-        List<Message> messages = assertionMessages.get(new Pair<Long, Integer>(a.getOwnerPolicyOid(), a.getOrdinal()));
+        List<Message> messages = assertionMessages.get(new Pair<Long, Integer>(a.ownerPolicyOid(), a.getOrdinal()));
         if (messages !=null) {
             return messages;
         }
@@ -182,7 +182,7 @@ public class PolicyValidatorResult implements Serializable {
         }
 
         public Error(Assertion error, AssertionPath ap, String message, Throwable throwable) {
-            super(error.getOwnerPolicyOid(), error.getOrdinal(), ap == null ? 0 : ap.getPathOrder(), message, throwable);
+            super(error.ownerPolicyOid(), error.getOrdinal(), ap == null ? 0 : ap.getPathOrder(), message, throwable);
         }
     }
 
@@ -192,7 +192,7 @@ public class PolicyValidatorResult implements Serializable {
         }
 
         public Warning(Assertion warning, AssertionPath ap, String message, Throwable throwable) {
-            super(warning.getOwnerPolicyOid(), warning.getOrdinal(), ap == null ? 0 : ap.getPathOrder(), message, throwable);
+            super(warning.ownerPolicyOid(), warning.getOrdinal(), ap == null ? 0 : ap.getPathOrder(), message, throwable);
         }
     }
 }

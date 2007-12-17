@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.common.policy;
 
@@ -60,7 +60,7 @@ public class Policy extends NamedEntityImp {
 
         if (assertion == null) {
             assertion = WspReader.getDefault().parsePermissively(xml);
-            assertion.setOwnerPolicyOid(getOid());
+            assertion.ownerPolicyOid(getOid());
             updatePolicyHints(assertion);
         }
 
@@ -80,7 +80,7 @@ public class Policy extends NamedEntityImp {
                 wssInPolicy = true;
             }
         }
-        rootAssertion.setOwnerPolicyOid(getOid());
+        rootAssertion.ownerPolicyOid(getOid());
     }
 
     /**
