@@ -228,6 +228,19 @@ public interface IdentityAdmin {
       throws FindException;
 
     /**
+     * Search for a {@link Group} by its name.
+     *
+     * @param idProvCfgId  the unique object ID of the {@link IdentityProviderConfig} in which to search.
+     * @param name  The group name.  See {@link Group#getName}
+     * @return the requested {@link Group}, or null if no group with that name was found in this ID provider
+     * @throws FindException   if there was a problem accessing the requested information
+     */
+    @Transactional(readOnly=true)
+    @Secured(types=GROUP, stereotype=FIND_ENTITY_BY_ATTRIBUTE)
+    Group findGroupByName(long idProvCfgId, String name)
+      throws FindException;
+
+    /**
      * Delete a {@link Group} by its unique identifier.
      *
      * @param idProvCfgId   the unique object ID of the {@link IdentityProviderConfig} in which to search

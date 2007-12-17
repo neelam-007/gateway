@@ -142,6 +142,10 @@ public class IdentityAdminStub implements IdentityAdmin {
         return (Group)groups.get(groupId);
     }
 
+    public Group findGroupByName(long idProvCfgId, String name) throws FindException {
+        return null;
+    }
+
     public void deleteGroup(long idProvCfgId, String groupId) throws DeleteException, ObjectNotFoundException {
         final StubDataStore store = StubDataStore.defaultStore();
         Map groups = store.getGroups();

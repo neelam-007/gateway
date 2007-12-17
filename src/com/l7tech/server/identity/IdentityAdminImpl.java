@@ -298,6 +298,17 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         return groupManager.findByPrimaryKey(groupId);
     }
 
+    public Group findGroupByName(long cfgid, String name) throws FindException {
+        IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
+        if (provider == null) {
+            logger.warning("Identity Provider #" + cfgid + " does not exist");
+            return null;
+        }
+        GroupManager groupManager = provider.getGroupManager();
+
+        return groupManager.findByName(name);
+    }
+
     public void deleteGroup(long cfgid, String groupId)
       throws DeleteException, ObjectNotFoundException {
         try {

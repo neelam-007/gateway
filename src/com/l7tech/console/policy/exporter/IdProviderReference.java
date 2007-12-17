@@ -8,6 +8,7 @@ import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -21,9 +22,7 @@ import org.w3c.dom.Text;
 import javax.swing.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Map;
-import java.util.Set;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -154,8 +153,7 @@ public class IdProviderReference extends ExternalReference {
         if (configOnThisSystem != null && configOnThisSystem.getName().equals(getProviderName())) {
             // PERFECT MATCH!
             logger.fine("The id provider reference found the same provider locally.");
-            localizeType = LocaliseAction.REPLACE;
-            locallyMatchingProviderId = getProviderId();
+            setLocalizeReplace( getProviderId() );
             return true;
         }
         // 2. Look for same properties. If that exists, => record corresponding match.
@@ -193,8 +191,7 @@ public class IdProviderReference extends ExternalReference {
                 }
                 if (equalsProps(localProps, getIdProviderConfProps())) {
                     // WE GOT A MATCH!
-                    localizeType = LocaliseAction.REPLACE;
-                    locallyMatchingProviderId = configOnThisSystem.getOid();
+                    setLocalizeReplace( configOnThisSystem.getOid() );
                     logger.fine("the provider was matched using the config's properties.");
                     return true;
                 } else {
@@ -255,43 +252,6 @@ public class IdProviderReference extends ExternalReference {
         return props1.equalsIgnoreCase(props2);
     }
 
-    private boolean mapEquals(Map map1, Map map2) {
-        if (map1 == null) return map2 == null;
-        if (map2 == null) return false;
-        // make sure that all objects in map1 are also in map2 and their values are the same
-        Set keys = map1.keySet();
-        for (Object key : keys) {
-            Object val1 = map1.get(key);
-            Object val2 = map2.get(key);
-            // either a map or a string
-            if (val1 instanceof Map) {
-                if (!mapEquals((Map) val1, (Map) val2)) return false;
-            } else if (val1 instanceof Object[] && val2 instanceof Object[]) {
-                if (!Arrays.equals((Object[]) val1, (Object[]) val2)) return false;
-            } else if (val1 instanceof long[] && val2 instanceof long[]) {
-                if (!Arrays.equals((long[]) val1, (long[]) val2)) return false;
-            } else if (val1 instanceof boolean[] && val2 instanceof boolean[]) {
-                if (!Arrays.equals((boolean[]) val1, (boolean[]) val2)) return false;
-            } else if (val1 instanceof byte[] && val2 instanceof byte[]) {
-                if (!Arrays.equals((byte[]) val1, (byte[]) val2)) return false;
-            } else if (val1 instanceof char[] && val2 instanceof char[]) {
-                if (!Arrays.equals((char[]) val1, (char[]) val2)) return false;
-            } else if (val1 instanceof double[] && val2 instanceof double[]) {
-                if (!Arrays.equals((double[]) val1, (double[]) val2)) return false;
-            } else if (val1 instanceof float[] && val2 instanceof float[]) {
-                if (!Arrays.equals((float[]) val1, (float[]) val2)) return false;
-            } else if (val1 instanceof int[] && val2 instanceof int[]) {
-                if (!Arrays.equals((int[]) val1, (int[]) val2)) return false;
-            } else if (val1 instanceof short[] && val2 instanceof short[]) {
-                if (!Arrays.equals((short[]) val1, (short[]) val2)) return false;
-            } else if (!val1.equals(val2)) {
-                logger.info("Mismatch on properties " + key + "" + val1 + "" + val2);
-                return false;
-            }
-        }
-        return true;
-    }
-
     /**
      * return false if the localized assertion should be deleted from the tree
      */
@@ -301,9 +261,11 @@ public class IdProviderReference extends ExternalReference {
                 IdentityAssertion idass = (IdentityAssertion)assertionToLocalize;
                 if (idass.getIdentityProviderOid() == providerId) {
                     if (localizeType == LocaliseAction.REPLACE) {
-                        idass.setIdentityProviderOid(locallyMatchingProviderId);
-                        logger.info("The provider id of the imported id assertion has been changed " +
-                                    "from " + providerId + " to " + locallyMatchingProviderId);
+                        if ( locallyMatchingProviderId != providerId ) {
+                            idass.setIdentityProviderOid(locallyMatchingProviderId);
+                            logger.info("The provider id of the imported id assertion has been changed " +
+                                        "from " + providerId + " to " + locallyMatchingProviderId);
+                        }
                         localizeLoginOrId(idass);
                     } else if (localizeType == LocaliseAction.DELETE) {
                         logger.info("Deleted this assertin from the tree.");
@@ -354,8 +316,33 @@ public class IdProviderReference extends ExternalReference {
                     }
                 }
             } else if (a instanceof MemberOfGroup) {
-                // Ensure no FindException.  TODO do we care whether the group exists?
-                idAdmin.findGroupByID(providerId, ((MemberOfGroup)a).getGroupId());
+                MemberOfGroup mog = (MemberOfGroup) a;
+                Group groupFromId = idAdmin.findGroupByID(providerId, mog.getGroupId());
+                if ( groupFromId != null ) {
+                    if (groupFromId.getName() != null && !groupFromId.getName().equals(mog.getGroupName())) {
+                        String oldName = mog.getGroupName();
+                        mog.setGroupName(groupFromId.getName());
+                        logger.info("The group name was changed from " + oldName + " to " + groupFromId.getName());
+                    }
+                } else {
+                    Group groupFromName = idAdmin.findGroupByName(providerId, mog.getGroupName());
+                    if (groupFromName != null) {
+                        logger.info("Changing " + mog.getGroupName() + "'s id from " +
+                                    mog.getGroupId() + " to " + groupFromName.getId());
+                        mog.setGroupId(groupFromName.getId());
+                    } else {
+                        // group not found for id or name
+                        String groupRef = mog.getGroupName();
+                        if (groupRef == null || groupRef.length() < 1) {
+                            groupRef = mog.getGroupId();
+                        }
+                        String msg = "The group \"" + groupRef + "\" does not exist on\n" +
+                                     "the target SecureSpan Gateway. You should remove\n" +
+                                     "or replace the identity assertion from the policy.";
+                        logger.warning(msg);
+                        JOptionPane.showMessageDialog(null, msg, "Unresolved identity", JOptionPane.WARNING_MESSAGE);
+                    }
+                }
             }
         } catch (FindException e) {
             logger.log(Level.WARNING, "problem getting identity", e);
@@ -427,7 +414,7 @@ public class IdProviderReference extends ExternalReference {
      * assertions as is).
      */
     public void setLocalizeIgnore() {
-        localizeType = LocaliseAction.REPLACE;
+        localizeType = LocaliseAction.IGNORE;
     }
 
     /**
