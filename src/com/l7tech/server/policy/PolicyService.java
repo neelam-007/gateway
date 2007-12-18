@@ -97,7 +97,7 @@ public class PolicyService extends ApplicationObjectSupport {
     };
 
     public interface ServiceInfo {
-        Assertion getPolicy();
+        Assertion getPolicy() throws PolicyAssertionException;
 
         String getVersion();
     }
@@ -109,10 +109,10 @@ public class PolicyService extends ApplicationObjectSupport {
         ServiceInfo getPolicy(String serviceId);
     }
 
-    public PolicyService(PrivateKey privateServerKey, 
-                         X509Certificate serverCert, 
-                         ServerPolicyFactory policyFactory, 
-                         FilterManager filterManager, 
+    public PolicyService(PrivateKey privateServerKey,
+                         X509Certificate serverCert,
+                         ServerPolicyFactory policyFactory,
+                         FilterManager filterManager,
                          SecurityTokenResolver securityTokenResolver,
                          PolicyPathBuilderFactory policyPathBuilderFactory)
     {

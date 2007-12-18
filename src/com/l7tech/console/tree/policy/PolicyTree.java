@@ -1041,7 +1041,11 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         AssertionTreeNode parent =
           (AssertionTreeNode)pathParent.getLastPathComponent();
-        CompositeAssertion ca = (CompositeAssertion)parent.asAssertion();
+
+        final Assertion pass = parent.asAssertion();
+        if (!(pass instanceof CompositeAssertion)) return;
+
+        CompositeAssertion ca = (CompositeAssertion) pass;
 
         java.util.List<Assertion> newChildren = new ArrayList<Assertion>();
         Enumeration en = parent.children();

@@ -2,16 +2,15 @@ package com.l7tech.server.policy;
 
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.LicenseException;
-import com.l7tech.common.transport.SsgConnector;
-import com.l7tech.server.audit.AuditContext;
-import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.HttpServletResponseKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.CertificateCheckInfo;
 import com.l7tech.common.util.XmlUtil;
@@ -22,6 +21,8 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.PolicyPathBuilder;
+import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -31,12 +32,13 @@ import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.system.PolicyServiceEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.policy.filter.FilteringException;
+import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.service.PublishedService;
 import org.springframework.beans.BeansException;
@@ -76,12 +78,14 @@ import java.util.logging.Level;
  * Date: Jun 11, 2003
  */
 public class PolicyServlet extends AuthenticatableHttpServlet {
+    private static final String DEFAULT_CONTENT_TYPE = XmlUtil.TEXT_XML + "; charset=utf-8";
+
     private AuditContext auditContext;
     private SoapFaultManager soapFaultManager;
     private byte[] serverCertificate;
     private ServerConfig serverConfig;
     private ClusterPropertyManager clusterPropertyManager;
-    private static final String DEFAULT_CONTENT_TYPE = XmlUtil.TEXT_XML + "; charset=utf-8";
+    private PolicyPathBuilder policyPathBuilder;
 
     /** A serviceoid request that comes in via this URI should be served a compatibility-mode policy. */
     private static final String PRE32_DISCO_URI = "disco.modulator";
@@ -96,11 +100,11 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             serverCertificate = ku.readSSLCert();
             serverConfig = (ServerConfig)applicationContext.getBean("serverConfig");
             clusterPropertyManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
-        }
-        catch (BeansException be) {
+            PolicyPathBuilderFactory pathBuilderFactory = (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory");
+            policyPathBuilder = pathBuilderFactory.makePathBuilder();
+        } catch (BeansException be) {
             throw new ServletException(be);
-        }
-        catch (IOException e) {
+        }catch (IOException e) {
             throw new ServletException(e);
         }
     }
@@ -212,10 +216,19 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                     final PublishedService targetService = resolveService(Long.parseLong(serviceId));
                     if (targetService == null) throw new IllegalStateException("Service not found ("+serviceId+")"); // caught by us in doGet and doPost
 
-                    final Assertion policy = targetService.getPolicy().getAssertion();
+                    final Assertion servicePolicy = targetService.getPolicy().getAssertion();
+
                     return new PolicyService.ServiceInfo() {
-                        public Assertion getPolicy() {
-                            return policy;
+                        private Assertion inlinedIncludesPolicy = null;
+                        public synchronized Assertion getPolicy() throws PolicyAssertionException {
+                            if (inlinedIncludesPolicy == null) {
+                                try {
+                                    inlinedIncludesPolicy = Assertion.simplify(policyPathBuilder.inlineIncludes(servicePolicy), true);
+                                } catch (InterruptedException e) {
+                                    throw new RuntimeException(e); // Not possible on server side (hopefully)
+                                }
+                            }
+                            return inlinedIncludesPolicy;
                         }
 
                         public String getVersion() {
