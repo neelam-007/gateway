@@ -5,6 +5,7 @@ package com.l7tech.policy.variable;
 
 import com.l7tech.common.audit.Audit;
 import com.l7tech.common.audit.CommonMessages;
+import com.l7tech.server.ServerConfig;
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -30,10 +31,8 @@ public abstract class Syntax {
     }
 
     public static void badVariable(String msg, boolean strict, Audit audit) {
-        if (strict)
-            throw new IllegalArgumentException(msg);
-        else
-            audit.logAndAudit(CommonMessages.TEMPLATE_UNSUPPORTED_VARIABLE, msg);
+        audit.logAndAudit(CommonMessages.TEMPLATE_UNSUPPORTED_VARIABLE, msg);
+        if (strict) throw new IllegalArgumentException(msg);
     }
 
     private static interface Formatter {
@@ -90,9 +89,15 @@ public abstract class Syntax {
                     return new MultivalueArraySubscriptSyntax(rawName.substring(0, lbpos), subscript);
                 } else throw new IllegalArgumentException("']' expected but not found");
             } else {
-                return new MultivalueDelimiterSyntax(rawName, DEFAULT_DELIMITER);
+                return new MultivalueDelimiterSyntax(rawName, defaultDelimiter());
             }
         }
+    }
+
+    private static String defaultDelimiter() {
+        String delim = ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_TEMPLATE_MULTIVALUE_DELIMITER);
+        if (delim != null) return delim;
+        return DEFAULT_DELIMITER;
     }
 
     public static final Formatter DEFAULT_FORMATTER = new Formatter() {
@@ -108,11 +113,8 @@ public abstract class Syntax {
             }
 
             if (!ok) {
-                if (strict) {
-                    throw new IllegalArgumentException(MessageFormat.format(CommonMessages.TEMPLATE_SUSPICIOUS_TOSTRING.getMessage(), syntax.remainingName, o.getClass().getName()));
-                } else {
-                    audit.logAndAudit(CommonMessages.TEMPLATE_SUSPICIOUS_TOSTRING, syntax.remainingName, o.getClass().getName());
-                }
+                audit.logAndAudit(CommonMessages.TEMPLATE_SUSPICIOUS_TOSTRING, syntax.remainingName, o.getClass().getName());
+                if (strict) throw new IllegalArgumentException(MessageFormat.format(CommonMessages.TEMPLATE_SUSPICIOUS_TOSTRING.getMessage(), syntax.remainingName, o.getClass().getName()));
             }
             return o.toString();
         }
@@ -153,12 +155,11 @@ public abstract class Syntax {
 
         public Object[] filter(Object[] values, Audit audit, boolean strict) {
             if (subscript > values.length-1) {
-                if (strict) {
+                audit.logAndAudit(CommonMessages.TEMPLATE_SUBSCRIPT_OUTOFRANGE, Integer.toString(subscript), remainingName, Integer.toString(values.length));
+                if (strict)
                     throw new IllegalArgumentException(MessageFormat.format(CommonMessages.TEMPLATE_SUBSCRIPT_OUTOFRANGE.getMessage(), Integer.toString(subscript), remainingName, Integer.toString(values.length)));
-                } else {
-                    audit.logAndAudit(CommonMessages.TEMPLATE_SUBSCRIPT_OUTOFRANGE, Integer.toString(subscript), remainingName, Integer.toString(values.length));
+                else
                     return null;
-                }
             }
             return new Object[] { values[subscript] };
         }

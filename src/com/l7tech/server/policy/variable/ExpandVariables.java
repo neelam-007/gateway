@@ -6,6 +6,7 @@ package com.l7tech.server.policy.variable;
 import com.l7tech.common.audit.Audit;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.server.ServerConfig;
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -22,7 +23,11 @@ import java.util.regex.Matcher;
  */
 public final class ExpandVariables {
     public static Object processSingleVariableAsObject(final String expr, final Map vars, final Audit audit) {
-        return processSingleVariableAsObject(expr, vars, audit, false);
+        return processSingleVariableAsObject(expr, vars, audit, strict());
+    }
+
+    private static boolean strict() {
+        return "true".equals(ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_TEMPLATE_STRICTMODE));
     }
 
     public static Object processSingleVariableAsObject(final String expr, final Map vars, final Audit audit, final boolean strict) {
@@ -73,7 +78,10 @@ public final class ExpandVariables {
 
     private static Object[] getAndFilter(Map vars, Syntax syntax, Audit audit, boolean strict) {
         String matchingName = BuiltinVariables.getMatchingName(syntax.remainingName.toLowerCase(), vars.keySet());
-        if (matchingName == null) return null;
+        if (matchingName == null) {
+            Syntax.badVariable(syntax.remainingName, strict, audit);
+            return null;
+        }
 
         Object got = vars.get(matchingName);
 
@@ -106,7 +114,7 @@ public final class ExpandVariables {
     }
 
     public static String process(String s, Map vars, Audit audit) {
-        return process(s, vars, audit, false);
+        return process(s, vars, audit, strict());
     }
 
     /**

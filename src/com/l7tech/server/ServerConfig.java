@@ -127,6 +127,9 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_POLICY_VALIDATION_MAX_CONCURRENCY = "serverPolicyValidation.maxConcurrency";
     public static final String PARAM_POLICY_VERSIONING_MAX_REVISIONS = "policyVersioningMaxRevisions";
 
+    public static final String PARAM_TEMPLATE_STRICTMODE = "template.strictMode";
+    public static final String PARAM_TEMPLATE_MULTIVALUE_DELIMITER = "template.defaultMultivalueDelimiter";
+
     public static final String PARAM_SOAP_REJECT_MUST_UNDERSTAND = "soapRejectMustUnderstand";
 
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
@@ -328,10 +331,25 @@ public class ServerConfig implements ClusterPropertyListener {
             value = defaultValue;
         }
 
+        if (value != null && value.length() >= 2) {
+            value = unquote(value);
+        }
+
         if (value != null && "true".equalsIgnoreCase(isSetSystemProperty)) {
             System.setProperty(systemPropertyName, value);
         }
 
+        return value;
+    }
+
+    private String unquote(String value) {
+        // Remove surrounding quotes
+        final int len = value.length();
+        final char fc = value.charAt(0);
+        final char lc = value.charAt(len -1);
+        if ((fc == '"' && lc == '"') || (fc == '\'' && lc == '\'')) {
+            value = value.substring(1, len-1);
+        }
         return value;
     }
 
