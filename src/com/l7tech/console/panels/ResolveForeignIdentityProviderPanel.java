@@ -11,6 +11,7 @@ import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -146,13 +147,14 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
      */
     private void onCreateIdProvider() {
         // update the list once the provide is created
-        EntityListener updateProviderListCallback = new EntityListener() {
+        final EntityListener updateProviderListCallback = new EntityListener() {
             public void entityAdded(EntityEvent ev) {
                 populateIdProviders(unresolvedRef.getIdProviderTypeVal());
                 resetProvList();
                 if (providerSelector.getModel().getSize() > 0) {
                     manualResolvRadio.setSelected(true);
                     providerSelector.setEnabled(true);
+                    providerSelector.setSelectedItem(((EntityHeader)ev.getEntity()).getName());
                 }
             }
             public void entityUpdated(EntityEvent ev) {}
@@ -167,6 +169,29 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
             NewFederatedIdentityProviderAction action = new NewFederatedIdentityProviderAction(null);
             action.addEntityListener(updateProviderListCallback);
             action.invoke();
+        } else {
+            DialogDisplayer.showInputDialog(this,
+                    "Select type:",
+                    "Select Identity Provider Type",
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    new Object[] { IdentityProviderType.FEDERATED.description(), IdentityProviderType.LDAP.description() },
+                    "",
+                    new DialogDisplayer.InputListener(){
+                        public void reportResult(Object option) {
+                            if ( option != null ) {
+                                if ( IdentityProviderType.FEDERATED.description().equals(option) ) {
+                                    NewFederatedIdentityProviderAction action = new NewFederatedIdentityProviderAction(null);
+                                    action.addEntityListener(updateProviderListCallback);
+                                    action.invoke();
+                                } else {
+                                    NewLdapProviderAction action = new NewLdapProviderAction(null);
+                                    action.addEntityListener(updateProviderListCallback);
+                                    action.invoke();
+                                }
+                            }
+                        }
+                    });
         }
 
     }
