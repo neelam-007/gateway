@@ -30,14 +30,25 @@ fi
 cd ${SSG_HOME}
 
 if [ "$1" = "start" ] ; then
-    shift
-
-
+   shift
    if [ ! -z "$GATEWAY_SHUTDOWN" ]; then
        rm -f $GATEWAY_SHUTDOWN
    fi
 
-    ${SSG_JAVA_HOME}/bin/java -Djava.ext.dirs="${SSG_JAVA_HOME}/jre/lib/ext:${SSG_HOME}/lib/ext" $JAVA_OPTS -jar Gateway.jar "$@" &
+    #enable logging of stdout/stderr using JDK logging as well as the standard SSG logging facilities
+    ${SSG_JAVA_HOME}/bin/java -Djava.ext.dirs="${SSG_JAVA_HOME}/jre/lib/ext:${SSG_HOME}/lib/ext" -Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig $JAVA_OPTS -jar Gateway.jar "$@" &
+
+    if [ ! -z "$GATEWAY_PID" ]; then
+        echo $! > $GATEWAY_PID
+    fi
+
+elif [ "$1" = "run" ] ; then
+   shift
+   if [ ! -z "$GATEWAY_SHUTDOWN" ]; then
+       rm -f $GATEWAY_SHUTDOWN
+   fi
+
+    ${SSG_JAVA_HOME}/bin/java -Djava.ext.dirs="${SSG_JAVA_HOME}/jre/lib/ext:${SSG_HOME}/lib/ext" $JAVA_OPTS -jar Gateway.jar "$@"
 
     if [ ! -z "$GATEWAY_PID" ]; then
         echo $! > $GATEWAY_PID
