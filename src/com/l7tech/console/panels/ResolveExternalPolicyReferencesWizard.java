@@ -1,8 +1,11 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.policy.exporter.*;
+import com.l7tech.console.action.Actions;
 
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 /**
  * This wizard lets the administrator resolve external conflicts from a policy
@@ -49,8 +52,15 @@ public class ResolveExternalPolicyReferencesWizard extends Wizard {
         }
         return new ResolveExternalPolicyReferencesWizard(parent, firstPanel);
     }
+    
     public ResolveExternalPolicyReferencesWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
         setTitle("Resolve External Dependencies Wizard");
+
+        getButtonHelp().addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Actions.invokeHelp(ResolveExternalPolicyReferencesWizard.this);
+            }
+        });
     }
 }
