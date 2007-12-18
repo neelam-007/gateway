@@ -3523,6 +3523,8 @@
             </fileset>
             <fileset dir="${build.installer}">
                 <include name="*/win32/*Installer.exe"/>
+                <include name="Manager-*.tar.gz"/>
+                <include name="Client-*.tar.gz"/>
             </fileset>
         </move>
     </target>
