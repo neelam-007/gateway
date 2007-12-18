@@ -48,7 +48,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
     }
 
     public String getStepLabel() {
-        return "Unresolved provider " + unresolvedRef.getProviderName();
+        return "Unresolved provider " + getProviderNameForDisplay();
     }
 
     public boolean canFinish() {
@@ -73,12 +73,26 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         return true;
     }
 
+    private String getProviderNameForDisplay() {
+        String name = unresolvedRef.getProviderName();
+
+        if ( name == null ) {
+            name = "Unknown";            
+        }
+
+        return name;
+    }
+
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
         // show the details of the foreign provider
-        foreignProviderName.setText(unresolvedRef.getProviderName());
-        foreignProviderType.setText(IdentityProviderType.fromVal(unresolvedRef.getIdProviderTypeVal()).description());
+        foreignProviderName.setText(getProviderNameForDisplay());
+        try {
+            foreignProviderType.setText(IdentityProviderType.fromVal(unresolvedRef.getIdProviderTypeVal()).description());
+        } catch (IllegalArgumentException iae) {
+            foreignProviderType.setText("Unknown");
+        }
 
         // make radio buttons sane
         ButtonGroup actionRadios = new ButtonGroup();
@@ -200,7 +214,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         for (EntityHeader entityHeader : providerHeaders) {
             try {
                 IdentityProviderConfig ipc = admin.findIdentityProviderConfigByID(entityHeader.getOid());
-                if (ipc != null && ipc.getTypeVal() == requiredProviderType) {
+                if (ipc != null && (requiredProviderType == 0 || ipc.getTypeVal() == requiredProviderType) ) {
                     idprovidermodel.addElement(entityHeader.getName());
                 }
             } catch (Exception e) {

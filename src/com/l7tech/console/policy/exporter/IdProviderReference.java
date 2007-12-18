@@ -107,22 +107,26 @@ public class IdProviderReference extends ExternalReference {
         Text txt = XmlUtil.createTextNode(referencesParentElement, Long.toString(providerId));
         oidEl.appendChild(txt);
         refEl.appendChild(oidEl);
-        Element nameEl = referencesParentElement.getOwnerDocument().createElement(NAME_EL_NAME);
-        txt = XmlUtil.createTextNode(referencesParentElement, providerName);
-        nameEl.appendChild(txt);
-        refEl.appendChild(nameEl);
-        Element propsEl = referencesParentElement.getOwnerDocument().createElement(PROPS_EL_NAME);
-        if (idProviderConfProps != null) {
+        if ( providerName != null ) { 
+            Element nameEl = referencesParentElement.getOwnerDocument().createElement(NAME_EL_NAME);
+            txt = XmlUtil.createTextNode(referencesParentElement, providerName);
+            nameEl.appendChild(txt);
+            refEl.appendChild(nameEl);
+        }
+        if ( idProviderConfProps != null ) {
+            Element propsEl = referencesParentElement.getOwnerDocument().createElement(PROPS_EL_NAME);
             // base 64 the props
             String encoded = HexUtils.encodeBase64(HexUtils.encodeUtf8(idProviderConfProps));
             txt = XmlUtil.createTextNode(referencesParentElement, encoded);
             propsEl.appendChild(txt);
+            refEl.appendChild(propsEl);
         }
-        refEl.appendChild(propsEl);
-        Element typeEl = referencesParentElement.getOwnerDocument().createElement(TYPEVAL_EL_NAME);
-        txt = XmlUtil.createTextNode(referencesParentElement, Integer.toString(idProviderTypeVal));
-        typeEl.appendChild(txt);
-        refEl.appendChild(typeEl);
+        if ( idProviderTypeVal > 0 ) {
+            Element typeEl = referencesParentElement.getOwnerDocument().createElement(TYPEVAL_EL_NAME);
+            txt = XmlUtil.createTextNode(referencesParentElement, Integer.toString(idProviderTypeVal));
+            typeEl.appendChild(txt);
+            refEl.appendChild(typeEl);
+        }
     }
 
     /**
@@ -150,7 +154,7 @@ public class IdProviderReference extends ExternalReference {
         } catch (RuntimeException e) {
             logger.log(Level.WARNING, "error getting id provider config", e);
         }
-        if (configOnThisSystem != null && configOnThisSystem.getName().equals(getProviderName())) {
+        if (configOnThisSystem != null && (configOnThisSystem.getName().equals(getProviderName()) || getProviderName()==null)) {
             // PERFECT MATCH!
             logger.fine("The id provider reference found the same provider locally.");
             setLocalizeReplace( getProviderId() );
