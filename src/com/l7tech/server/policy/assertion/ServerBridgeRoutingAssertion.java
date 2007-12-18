@@ -147,9 +147,9 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         if (hardcodedPolicy != null)
             ssg.getRuntime().setPolicyManager(new StaticPolicyManager(hardcodedPolicy));
 
-        initSSGPorts(url);
+        initSSGPorts(assertion, url);
         ssg.setSsgFile(url.getFile());
-        ssg.setUseSslByDefault(true); // TODO make this fully configurable
+        ssg.setUseSslByDefault(assertion.isUseSslByDefault());
 
         messageProcessor = new MessageProcessor();
     }
@@ -397,13 +397,11 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         };
     }
 
-    private void initSSGPorts(URL url) {
+    private void initSSGPorts(BridgeRoutingAssertion assertion, URL url) {
         int port = url.getPort();
         int normalPort;
         int sslPort;
 
-        // TODO make ports fully configurable
-        // TODO move this heuristic elsewhere
         if ("https".equalsIgnoreCase(url.getProtocol())) {
             sslPort = port;
             normalPort = port - 443 + 80;
@@ -415,6 +413,9 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             if (sslPort < 0 || sslPort > 65535)
                 sslPort = 443;
         }
+
+        if (assertion.getHttpPort() > 0) normalPort = assertion.getHttpPort();
+        if (assertion.getHttpsPort() > 0) sslPort = assertion.getHttpsPort();
 
         ssg.setSsgPort(normalPort);
         ssg.setSslPort(sslPort);

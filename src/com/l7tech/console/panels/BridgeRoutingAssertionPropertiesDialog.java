@@ -3,7 +3,10 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.NumberField;
+import com.l7tech.common.gui.widgets.SquigglyTextField;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.InputValidator;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.util.XmlUtil;
@@ -24,6 +27,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.EventListener;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,16 +50,22 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
     private JLabel xmlMessages;
     private JList serverCertList;
     private JButton newServerCertButton;
+    private JCheckBox useSslByDefaultCheckBox;
+    private JCheckBox overridePortsCheckBox;
+    private SquigglyTextField httpPortTextField;
+    private SquigglyTextField httpsPortTextField;
 
     private final BridgeRoutingAssertion assertion; // live copy of assertion -- do not write to it until Ok pressed
     private BridgeRoutingAssertion lastRoutingProperties = null; // copy last confirmed by HTTP dialog; all except policy XML is up-to-date
 
     private final EventListenerList listenerList = new EventListenerList();
+    private InputValidator inputValidator;
 
     public BridgeRoutingAssertionPropertiesDialog(final Frame owner, BridgeRoutingAssertion a, final Policy policy, final Wsdl wsdl) {
         super(owner, true);
         setTitle("Bridge Routing Assertion Properties");
         this.assertion = a;
+        inputValidator = new InputValidator(this, "Bridge Routing Assertion Properties");
 
         setContentPane(rootPanel);
 
@@ -88,7 +98,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
 
         Utilities.equalizeButtonSizes(new AbstractButton[] { buttonOk, buttonCancel });
 
-        buttonOk.addActionListener(new ActionListener() {
+        inputValidator.attachToButton(buttonOk, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 copyViewToModel();
                 fireEventAssertionChanged(assertion);
@@ -108,11 +118,11 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
             }
         };
 
-        rbPolicyAutoDisco.addActionListener(updateEnableStates);
-        rbPolicyManual.addActionListener(updateEnableStates);
+        tcpPort(httpPortTextField);
+        tcpPort(httpsPortTextField);
 
-        rbServerCertAuto.addActionListener(updateEnableStates);
-        rbServerCertManual.addActionListener(updateEnableStates);
+        for (AbstractButton b : Arrays.asList(rbPolicyAutoDisco, rbPolicyManual, rbServerCertAuto, rbServerCertManual, overridePortsCheckBox))
+            b.addActionListener(updateEnableStates);
 
         Utilities.enableGrayOnDisabled(serverCertList);
 
@@ -160,6 +170,16 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         return (BridgeRoutingAssertion)WspReader.getDefault().parseStrictly(WspWriter.getPolicyXml(assertion));
     }
 
+    /** @param tc a JTextComponent to configure as holding a TCP port. */
+    private void tcpPort(JTextComponent tc) {
+        Utilities.enableGrayOnDisabled(tc);
+        Utilities.attachDefaultContextMenu(tc);
+        Utilities.attachClipboardKeyboardShortcuts(tc);
+        Utilities.enableSelectAllOnFocus(tc);
+        tc.setDocument(new NumberField(5));
+        inputValidator.constrainTextFieldToNumberRange("HTTP(S) port", tc, 1, 65535);
+    }
+
     /** Update the GUI state to reflect the policy assertion settings. */
     private void copyModelToView() {
         // Update GUI state
@@ -167,6 +187,14 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         rbPolicyAutoDisco.setSelected(policyXml == null);
         rbPolicyManual.setSelected(policyXml != null);
         policyXmlText.setText(policyXml != null ? policyXml : "");
+
+        final int httpPort = assertion.getHttpPort();
+        final int httpsPort = assertion.getHttpsPort();
+        httpPortTextField.setText(String.valueOf(httpPort));
+        httpsPortTextField.setText(String.valueOf(httpsPort));
+        overridePortsCheckBox.setSelected(httpPort > 0 || httpsPort > 0);
+
+        useSslByDefaultCheckBox.setSelected(assertion.isUseSslByDefault());
 
         // TODO String serverCert = assertion.getServerCertBase64();
         // TODO rbServerCertAuto.setSelected(serverCert == null);
@@ -186,6 +214,16 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         else
             assertion.setPolicyXml(null);
 
+        if (overridePortsCheckBox.isSelected()) {
+            assertion.setHttpPort(Integer.parseInt(httpPortTextField.getText()));
+            assertion.setHttpsPort(Integer.parseInt(httpsPortTextField.getText()));
+        } else {
+            assertion.setHttpPort(0);
+            assertion.setHttpsPort(0);
+        }
+
+        assertion.setUseSslByDefault(useSslByDefaultCheckBox.isSelected());
+
         // TODO if (rbServerCertManual.isSelected())
 // TODO             assertion.setServerCertBase64(serverCertText.getText());
 // TODO         else
@@ -194,6 +232,9 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
 
     private void updateEnableStates() {
         policyXmlText.setEnabled(rbPolicyManual.isSelected());
+        boolean customPorts = overridePortsCheckBox.isSelected();
+        httpPortTextField.setEnabled(customPorts);
+        httpsPortTextField.setEnabled(customPorts);
     }
 
     public void addPolicyListener(PolicyListener listener) {

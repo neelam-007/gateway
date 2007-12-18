@@ -56,6 +56,73 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion {
         this.serverCertificateOid = serverCertificateOid;
     }
 
+    /**
+     * Check if SSL should be used when downloading policies, and when sending the initial request when
+     * no policy has been configured for a request.
+     *
+     * @return true if SSL will be used for policy downloads and initial requests that miss the policy cache
+     */
+    public boolean isUseSslByDefault() {
+        return useSslByDefault;
+    }
+
+    /**
+     * Set whether SSL should be used when downloading policies, and when sending the initial request
+     * when no policy has been configured for a request.
+     *
+     * @param useSslByDefault true if SSL should be used for policy downloads and initial requests that miss the policy cache
+     */
+    public void setUseSslByDefault(boolean useSslByDefault) {
+        this.useSslByDefault = useSslByDefault;
+    }
+
+    /**
+     * Get the custom HTTP port, if any.
+     * If no custom HTTP port is set the BRA will choose a default HTTP port based on the protected service
+     * URL.
+     *
+     * @return the custom HTTP port, or zero to use the default value.
+     */
+    public int getHttpPort() {
+        return httpPort;
+    }
+
+    /**
+     * Set or clear the custom HTTP port.
+     * If no custom HTTP port is set the BRA will choose a default HTTP port based on the protected service
+     * URL.
+     *
+     * @param httpPort the custom HTTP port, or zero to use the default value.
+     */
+    public void setHttpPort(int httpPort) {
+        this.httpPort = httpPort;
+    }
+
+    /**
+     * Get the custom HTTPS port, if any.
+     * If no custom HTTPS port is set the BRA will choose a default HTTPS port based on the protected service
+     * URL.
+     *
+     * @return the custom HTTPS port, or zero to use the default value.
+     */
+    public int getHttpsPort() {
+        return httpsPort;
+    }
+
+    /**
+     * Set or clear the custom HTTPS port.
+     * If no custom HTTPS port is set the BRA will choose a default HTTPS port based on the protected service
+     * URL.
+     *
+     * @param httpsPort the custom HTTPS port, or zero to use the default value.
+     */
+    public void setHttpsPort(int httpsPort) {
+        this.httpsPort = httpsPort;
+    }
+
     protected String policyXml = null;
     protected Long serverCertificateOid = null;
+    protected boolean useSslByDefault = true;
+    protected int httpPort = 0;
+    protected int httpsPort = 0;
 }
