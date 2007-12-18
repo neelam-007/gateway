@@ -18,6 +18,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import javax.swing.*;
+import javax.swing.event.TableModelListener;
+import javax.swing.event.TableModelEvent;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
@@ -200,11 +202,19 @@ public class IdentityAttributesAssertionDialog extends JDialog implements Assert
             }
         });
 
+        tableModel.addTableModelListener(new TableModelListener(){
+            public void tableChanged(TableModelEvent e) {
+                enableButtons();
+            }
+        });
+
         attributeTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 enableButtons();
             }
         });
+
+        Utilities.setDoubleClickAction(attributeTable, editButton);
 
         enableButtons();
         
