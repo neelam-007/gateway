@@ -1,9 +1,6 @@
 package com.l7tech.server.config;
 
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.FileUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.*;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
@@ -18,6 +15,8 @@ import org.xml.sax.SAXException;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.net.SocketException;
+import java.net.NetworkInterface;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -178,6 +177,11 @@ public class PartitionActions {
             PropertiesConfiguration props = new PropertiesConfiguration();
             props.load(fis);
             props.setProperty(PartitionInformation.SYSTEM_PROP_PARTITIONNAME, pInfo.getPartitionId());
+            String macAddress = getMacAddressForFirstInterface(pInfo);
+
+            if (StringUtils.isNotEmpty(macAddress)) {
+                props.setProperty(PartitionInformation.SYSTEM_PROP_MACADDRESS, Utilities.getFormattedMac(macAddress));
+            }
             fos = new FileOutputStream(systemPropertiesFile);
             props.save(fos, "iso-8859-1");
         } catch (IOException ioe) {
@@ -194,6 +198,38 @@ public class PartitionActions {
             ResourceUtils.closeQuietly(fis);
             ResourceUtils.closeQuietly(fos);
         }
+    }
+
+    private static String getMacAddressForFirstInterface(PartitionInformation pInfo) {
+        File applianceDir = new File(pInfo.getOSSpecificFunctions().getSsgInstallRoot(), "appliance");
+        //we don't need to detect the mac here if this is an appliance since it will "just work" properly as is
+        if (applianceDir.exists())
+            return null;
+
+        String macAddress = null;
+        try {
+            Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
+            NetworkInterface firstNic = null;
+            while (nics.hasMoreElements()) {
+                NetworkInterface nic =  nics.nextElement();
+                String thisName = nic.getDisplayName();
+                if (thisName.equals("eth0")) {
+                    return null;
+                }
+
+                if (firstNic == null) {
+                    firstNic = nic;
+                } else if (thisName.compareTo(firstNic.getDisplayName()) < 0) {
+                    firstNic = nic;
+                }
+            }
+
+            //firstNic should now contain eth0, or the interface with the alphabetically lowest name.
+            return HexUtils.hexDump(firstNic.getHardwareAddress()).toUpperCase();
+        } catch (SocketException e) {
+            logger.warning("There was an error while trying to enumerate the network interfacess for this machine. " + ExceptionUtils.getMessage(e));
+        }
+        return null;
     }
 
     /**

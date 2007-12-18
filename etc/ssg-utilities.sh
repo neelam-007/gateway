@@ -13,6 +13,18 @@ ensure_JDK() {
 check_user() {
   USER=${LOGNAME}
   if [ "$USER" != "ssgconfig" ] && [ "$USER" != "root" ] ; then
-      echo "This utility needs to be run as the ssgconfig user. If prompted, please enter the ssgconfig login password."
+      echo "This utility needs to be run as the ssgconfig user."
+      echo "If prompted, please enter the ssgconfig login password."
   fi
+}
+
+do_command_as_user() {
+    WHICHUSER=$1
+    WHICHCOMMAND=$2
+   
+    echo ""
+    if [ "${LOGNAME}" != root ] ; then
+        echo "Please enter the password for ${WHICHUSER}"
+    fi
+    su ${WHICHUSER} -c "${WHICHCOMMAND}"
 }

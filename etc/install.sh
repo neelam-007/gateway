@@ -58,7 +58,7 @@ public class CryptoStrengthProbe {
         Cipher aes = Cipher.getInstance("AES/CBC/PKCS5Padding");
         int blocksize = aes.getBlockSize();
 
-        byte[] mpBytes = "my very extrememly long pass phrase no really it's huge".getBytes("UTF-8");
+        byte[] mpBytes = "my very extremely long pass phrase".getBytes("UTF-8");
 
         byte[] saltBytes = new byte[blocksize];
         new SecureRandom().nextBytes(saltBytes);
@@ -179,18 +179,20 @@ get_java_location() {
 }
 
 store_java_location() {
-    su ssgconfig -c "cat >${SSG_ROOT}/etc/profile.d/java.sh <<-EOF
-SSG_JAVA_HOME="${MY_JAVA_HOME}"
-export SSG_JAVA_HOME
-EOF"
+    MY_JAVAHOME_COMMAND="sed -e s@SSG_JAVA_HOME=.*@SSG_JAVA_HOME=${MY_JAVA_HOME}@ ${SSG_ROOT}/etc/profile.d/java.sh > ${SSG_ROOT}/etc/profile.d/java.sh.temp && mv ${SSG_ROOT}/etc/profile.d/java.sh.temp ${SSG_ROOT}/etc/profile.d/java.sh"
 }
+
 configure_java_home() {
+    echo "----------------------------------------------------"
+    echo "           Configuration of Java Home               "
+    echo "----------------------------------------------------"
     DOIT="n"
     if [ -z "${SSG_JAVA_HOME}" ] || [ ! -e ${SSG_JAVA_HOME} ] ; then
         echo "The SecureSpan Gateway requires Java ${expected_java_version} to be installed."
         DOIT="y"
     else
-        echo -n "The gateway is currently configured to use \"${SSG_JAVA_HOME}\" for Java. Would you like to configure a new Java location? [y] "
+        echo "The gateway is currently configured to use \"${SSG_JAVA_HOME}\" for Java."
+        echo -n "Would you like to configure a new Java location? [y] "
         read DOIT
         if [ -z "$DOIT" ] ; then
             DOIT="y"
@@ -203,64 +205,78 @@ configure_java_home() {
     fi
 }
 
-configure_jvm_options() {
-    if [ ! -e ${SSG_ROOT}/appliance ] ; then
-        echo -n "Would you like to configure the Java options (such as memory usage) for the gateway? [y]"
+configure_memory() {
+    echo "----------------------------------------------------"
+    echo "           Configuration of Java Options            "
+    echo "----------------------------------------------------"
+    echo -n "Would you like to configure the Java options (such as memory usage) for the gateway? [y]"
+    read DOIT
+    if [ -z "${DOIT}" ] ; then
+        DOIT="y"
+    fi
+
+    MY_MEM_COMMAND=""
+    if [ "${DOIT}" == "y" ] ; then
+        HOWMUCHMEM=""
+        while [ -z "${HOWMUCHMEM}" ] ; do
+            echo "How much memory should be allocated to each gateway partition?"
+            echo -n "(Please answer in megabytes): ";
+            read HOWMUCHMEM;
+        done
+        FOUND=`grep "\-Xmx" ${SSG_ROOT}/etc/profile.d/jvmoptions`
+	    if [ -n "${FOUND}" ] ; then
+		    SEDCMD="sed -e 's/-Xmx.*/-Xmx${HOWMUCHMEM}m/g' ${SSG_ROOT}/etc/profile.d/jvmoptions > ${SSG_ROOT}/etc/profile.d/jvmoptions.memtemp && mv ${SSG_ROOT}/etc/profile.d/jvmoptions.memtemp ${SSG_ROOT}/etc/profile.d/jvmoptions"
+	    else
+		    SEDCMD="echo '-Xmx${HOWMUCHMEM}m' >> ${SSG_ROOT}/etc/profile.d/jvmoptions"
+	    fi
+        MY_MEM_COMMAND="${SEDCMD}"
+    fi
+}
+
+save_all() {
+    MYMSG=""
+    MYCOMMAND=""
+    if [ -n "${MY_JAVAHOME_COMMAND}" ] ; then
+        MYCOMMAND="${MY_JAVAHOME_COMMAND}"
+        MYMSG="    adding ${MY_JAVA_HOME} to ${SSG_ROOT}/etc/profile.d/java.sh\n"
+    fi
+
+    if [ -n "${MY_MEM_COMMAND}" ] ; then
+        if [ -n "${MYCOMMAND}" ] ; then
+            MYCOMMAND="${MYCOMMAND} && ${MY_MEM_COMMAND}"
+        else
+            MYCOMMAND="${MY_MEM_COMMAND}"
+        fi
+        MYMSG="${MYMSG}    adding -Xmx${HOWMUCHMEM}m to ${SSG_ROOT}/etc/profile.d/jvmoptions\n"
+    fi
+
+    if [ -n "${MYMSG}" ] && [ -n "${MYCOMMAND}" ]; then
+        echo -e "This script is about to perform the following: \n${MYMSG}"
+        echo -n "Proceed?: [n]"
         read DOIT
-        if [ -z "${DOIT}" ] ; then
-            DOIT="y"
-        fi
+        [ -z "${DOIT}" ] && DOIT="n"
 
-        if [ "${DOIT}" == "y" ] ; then
-            MEM=""
-            while [ -z "${MEM}" ] ; do
-                echo -n "How much memory should be allocated to each gateway partition? (Please answer in megabytes): ";
-                read MEM;
-            done
-
-        su ssgconfig -c "cat >${SSG_ROOT}/etc/profile.d/jvmoptions <<-EOM
--Xmx"${MEM}"m
-EOM"
-        fi
-
-        grep "com.l7tech.cluster.macAddress" ${SSG_ROOT}/etc/profile.d/jvmoptions
-        if [ $? -eq 0 ] ; then
-            echo "A MAC address has already been specified for this gateway."
-            echo -n "Would you like to specify a new MAC address to be used to identify the gateway? [n]"
-            read DOIT
-            if [ -z "${DOIT}" ] ; then
-                DOIT="n"
-            fi
-            if [ "${DOIT}" == "y" ] ; then
-                MACADDR=""
-                while [ -z "${MACADDR}" ] ; do
-                    echo -n "What MAC address should be used to identify the gateway?: ";
-                    read MACADDR;
-                done
-                su ssgconfig -c "cp ${SSG_ROOT}/etc/profile.d/jvmoptions ${SSG_ROOT}/etc/profile.d/jvmoptions.old && \
-                cat ${SSG_ROOT}/etc/profile.d/jvmoptions.old | sed "s/com.l7tech.cluster.macAddress=[^ ]*/com.l7tech.cluster.macAddress=${MACADDR}/" > ${SSG_ROOT}/etc/profile.d/jvmoptions && \
-                rm ${SSG_ROOT}/etc/profile.d/jvmoptions.old"
+        if [ ! "${DOIT}" == "n" ] ; then
+            do_command_as_user "ssgconfig" "${MYCOMMAND}"
+            if [ "${?}" == "0" ]; then
+                echo "The configuration was successful."
+            else
+                echo "The Configuration was unsuccessful. Please re-run this script"
             fi
         else
-            echo -n "Would you like to specify the MAC address that will be used to identify the gateway? [y]"
-            read DOIT
-            if [ -z "${DOIT}" ] ; then
-                DOIT="y"
-            fi
-            if [ "${DOIT}" == "y" ] ; then
-                MACADDR=""
-                while [ -z "${MACADDR}" ] ; do
-                    echo -n "What MAC address should be used to identify the gateway?: ";
-                    read MACADDR;
-                done
-                su ssgconfig -c "echo -Dcom.l7tech.cluster.macAddress=\"$MACADDR\" >> ${SSG_ROOT}/etc/profile.d/jvmoptions"
-            fi
+            echo "The configuration will not be changed."
         fi
     fi
 }
 
+echo ""
 check_user
 echo ""
 configure_java_home
-configure_jvm_options
+echo ""
+if [ ! -e ${SSG_ROOT}/appliance ] ; then
+    configure_memory
+fi
+echo ""
+save_all
 exit 0

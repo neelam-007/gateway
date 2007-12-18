@@ -1,2 +1,2 @@
-SSG_JAVA_HOME="/ssg/jdk"
+SSG_JAVA_HOME=
 export SSG_JAVA_HOME

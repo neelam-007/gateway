@@ -107,10 +107,9 @@ chmod 711 %{buildroot}/ssg/appliance/libexec/*
 %attr(0755,gateway,gateway) /ssg/appliance/bin/*.pl
 %attr(0755,gateway,gateway) /ssg/appliance/bin/*.sh
 
-%dir /ssg/etc/profile.d
-%defattr(0775,gateway,gateway)
-/ssg/etc/profile.d/appliancedefs.sh
-/ssg/etc/profile.d/tarari.sh
+%attr(0775,gateway,gateway) %dir /ssg/etc/profile.d
+%attr(0775,gateway,gateway) /ssg/etc/profile.d/appliancedefs.sh
+%attr(0775,gateway,gateway) /ssg/etc/profile.d/tarari.sh
 
 # JDK
 %dir /ssg/jdk
@@ -199,12 +198,6 @@ fi
 echo "gateway    ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
 echo "gateway    ALL = NOPASSWD: /ssg/appliance/libexec/" >> /etc/sudoers
 
-#modify java.sh to use the appliance jdk
-cat > /ssg/etc/profile.d/java.sh <<-EOF
-SSG_JAVA_HOME="/ssg/jdk"
-export SSG_JAVA_HOME
-EOF
-
 rebootparam=`grep kernel.panic /etc/sysctl.conf`
 
 if [ "$rebootparam" ]; then
@@ -256,6 +249,13 @@ fi
 
 
 %post
+
+#modify java.sh to use the appliance jdk
+cat > /ssg/etc/profile.d/java.sh <<-EOF
+SSG_JAVA_HOME="/ssg/jdk"
+export SSG_JAVA_HOME
+EOF
+
 # Change issue. This may move to a layer7-release file
 
 echo "Layer 7 SecureSpan(tm) Gateway v4.3" >/etc/issue

@@ -3,6 +3,7 @@ package com.l7tech.server.config.systemconfig;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.server.config.ui.console.ConfigurationWizard;
 import com.l7tech.server.config.ui.console.ConsoleWizardUtils;
+import com.l7tech.server.config.Utilities;
 
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -53,7 +54,7 @@ public class SystemConfigurationWizard extends ConfigurationWizard {
             byte[] hardwareAdress = networkConfig.getHardwareAddress();
             if (hardwareAdress != null) {
                 String mac = HexUtils.hexDump(networkConfig.getHardwareAddress()).toUpperCase();
-                utils.printText("\tHardware Address (MAC): " + getFormattedMac(mac));
+                utils.printText("\tHardware Address (MAC): " + Utilities.getFormattedMac(mac) + ConsoleWizardUtils.EOL_CHAR);
             }
             utils.printText("\tAddresses:" + ConsoleWizardUtils.EOL_CHAR);
             List<InterfaceAddress> interfaceAddresses   = networkConfig.getInterfaceAddresses();
@@ -65,24 +66,5 @@ public class SystemConfigurationWizard extends ConfigurationWizard {
         } catch (SocketException e) {
             utils.printText("Error while determining the interface information for this machine:" + e.getMessage() + ConsoleWizardUtils.EOL_CHAR);
         }
-    }
-
-    private String getFormattedMac(String mac) {
-        String formattedMac = mac;
-        //format the mac with colons
-        Pattern macPattern = Pattern.compile("(\\w\\w)(\\w\\w)(\\w\\w)(\\w\\w)(\\w\\w)(\\w\\w)");
-        Matcher macMatcher = macPattern.matcher(mac);
-
-        if (macMatcher.matches()) {
-            formattedMac = MessageFormat.format("{0}:{1}:{2}:{3}:{4}:{5}",
-                macMatcher.group(1),
-                macMatcher.group(2),
-                macMatcher.group(3),
-                macMatcher.group(4),
-                macMatcher.group(5),
-                macMatcher.group(6));
-        }
-        formattedMac += ConsoleWizardUtils.EOL_CHAR;
-        return formattedMac;
     }
 }

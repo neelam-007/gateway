@@ -31,13 +31,14 @@ public class PartitionInformation{
     public static final String ENABLED_FILE = "enabled";
 
     public static final String SYSTEM_PROP_PARTITIONNAME = "com.l7tech.server.partitionName";
+    public static final String SYSTEM_PROP_MACADDRESS = "com.l7tech.cluster.macAddress";
 
     private String partitionId;
     private String oldPartitionId;
     boolean isNewPartition = false;
     boolean isEnabled = false;
     private boolean shouldDisable = false;
-    
+
     private List<HttpEndpointHolder> httpEndpointsList;
     private List<FtpEndpointHolder> ftpEndpointsList;
     private List<OtherEndpointHolder> otherEndpointsList;
