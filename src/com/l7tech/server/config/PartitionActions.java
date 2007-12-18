@@ -211,7 +211,9 @@ public class PartitionActions {
             Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
             NetworkInterface firstNic = null;
             while (nics.hasMoreElements()) {
+
                 NetworkInterface nic =  nics.nextElement();
+                if (nic.isLoopback()) continue;
                 String thisName = nic.getDisplayName();
                 if (thisName.equals("eth0")) {
                     return null;
