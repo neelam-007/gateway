@@ -12,6 +12,7 @@ import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.rbac.Role;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.JaasUtils;
+import com.l7tech.common.policy.PolicyDeletionForbiddenException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.system.ServiceCacheEvent;
@@ -131,7 +132,19 @@ public class ServiceManagerImp
     }
 
     public void delete(PublishedService service) throws DeleteException {
+        if (!policyCache.findUsages(service.getPolicy().getOid()).isEmpty()) {
+            // Assertion failure--there should be no dependencies *to* service policies
+            throw new IllegalStateException("Deletion of a service policy was vetoed by the PolicyCache");
+        }
+
         super.delete(service);
+
+        try {
+            policyCache.remove(service.getPolicy().getOid());
+        } catch (PolicyDeletionForbiddenException e) {
+            throw new IllegalStateException("Deletion of a service policy was vetoed by the PolicyCache", e);
+        }
+
         resolutionManager.deleteResolutionParameters(service.getOid());
         logger.info("Deleted service " + service.getName() + " #" + service.getOid());
         spring.publishEvent(new ServiceCacheEvent.Deleted(service));
