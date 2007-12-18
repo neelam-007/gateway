@@ -627,6 +627,8 @@ public class MetricsChartPanel extends ChartPanel {
         setInitialDelay(100);           // Makes tool tip respond fast.
         setDismissDelay(Integer.MAX_VALUE); // Makes tool tip display indefinitely.
         setReshowDelay(100);
+        setMaximumDrawWidth(1920);
+        setMaximumDrawHeight(1200);
 
         // Adds custom pop-up context menu; replacing the default inherited from {@link ChartPanel}.
         _showAuditsItem = new JMenuItem();  // Name to be customized based on time period selected.
