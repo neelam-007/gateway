@@ -121,8 +121,8 @@ public class PolicyRevisionsDialog extends JDialog {
         });
 
         setActiveButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                doSetActive();
+            public void actionPerformed(ActionEvent evt) {
+                doSetActive(evt);
             }
         });
 
@@ -165,8 +165,10 @@ public class PolicyRevisionsDialog extends JDialog {
             Pair<Integer, PolicyVersion> info = getSelectedPolicyVersion();
             if (info == null)
                 return;
-            policyNode.getPolicy().setXml(info.right.getXml());
-            EditPolicyAction editAction = new EditPolicyAction(policyNode);
+            PolicyVersion version = info.right;
+            policyNode.clearCachedEntities();
+            policyNode.getPolicy().setXml(version.getXml());
+            EditPolicyAction editAction = new EditPolicyAction(policyNode, true, version);
             dispose();
             editAction.actionPerformed(evt);
         } catch (FindException e) {
@@ -174,7 +176,7 @@ public class PolicyRevisionsDialog extends JDialog {
         }
     }
 
-    private void doSetActive() {
+    private void doSetActive(ActionEvent evt) {
         Pair<Integer, PolicyVersion> info = getSelectedPolicyVersion();
         if (info == null)
             return;
@@ -190,6 +192,8 @@ public class PolicyRevisionsDialog extends JDialog {
 
             info.right.setActive(true);
             tableModel.fireTableRowsUpdated(info.left, info.left);
+
+            doEdit(evt);
         } catch (Exception e) {
             showErrorMessage("Unable to Set Active Version", "Unable to set active version: " + ExceptionUtils.getMessage(e), e);
         }
@@ -255,6 +259,7 @@ public class PolicyRevisionsDialog extends JDialog {
         }
     }
 
+    /** @return a Pair of the version OID and the version for the currently selected row */
     private Pair<Integer, PolicyVersion> getSelectedPolicyVersion() {
         int row = versionTable.getSelectedRow();
         if (row < COLUMN_IDX_ACTIVE) return null;

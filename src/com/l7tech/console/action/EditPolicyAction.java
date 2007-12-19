@@ -37,6 +37,7 @@ import java.util.logging.Level;
 public class EditPolicyAction extends NodeAction {
     private final boolean validate;
     private final boolean service;
+    private final PolicyVersion policyVersion;
 
     /**
      * default constructor. invoke the policy validate if
@@ -49,6 +50,14 @@ public class EditPolicyAction extends NodeAction {
         super(node);
         validate = b;
         service = node instanceof ServiceNode;
+        this.policyVersion = null;
+    }
+
+    public EditPolicyAction(PolicyEntityNode node, boolean validate, PolicyVersion version) {
+        super(node);
+        this.validate = validate;
+        service = node instanceof ServiceNode;
+        this.policyVersion = version;
     }
 
     /**
@@ -64,7 +73,7 @@ public class EditPolicyAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Policy Assertions";
+        return "Active Policy Assertions";
     }
 
     /**
@@ -98,7 +107,8 @@ public class EditPolicyAction extends NodeAction {
             // it makes sure the user will see the updated policy if the policy is saved
             wpanel.clearWorkspace();
 
-            policyNode.clearCachedEntities();
+            if (policyVersion == null)
+                policyNode.clearCachedEntities();
             TopComponents topComponents = TopComponents.getInstance();
             topComponents.unregisterComponent(PolicyTree.NAME);
             PolicyTree policyTree = (PolicyTree)topComponents.getPolicyTree();
@@ -119,6 +129,10 @@ public class EditPolicyAction extends NodeAction {
                 } else {
                     assertion = policy.getAssertion();
                 }
+                if (policyVersion != null) {
+                    policy.setVersionOrdinal(policyVersion.getOrdinal());
+                    policy.setVersionActive(policyVersion.isActive());
+                }
             } catch (IOException e) {
                 log.log(Level.SEVERE, "cannot get service or policy", e);
                 throw new RuntimeException(e);
@@ -129,16 +143,35 @@ public class EditPolicyAction extends NodeAction {
 
             PolicyEditorPanel.PolicyEditorSubject subject = new PolicyEditorPanel.PolicyEditorSubject() {
                 public PolicyEntityNode getPolicyNode() {return policyNode;}
+
+                private Policy getPolicy() {
+                    try {
+                        return policyNode.getPolicy();
+                    } catch (Exception e) {
+                        throw new RuntimeException("Unable to load policy", e);
+                    }
+                }
+
                 public Assertion getRootAssertion() {
                     try {
-                        return policyNode.getPolicy().getAssertion();
+                        return getPolicy().getAssertion();
                     } catch (Exception e) {
                         throw new RuntimeException("Unable to load policy", e); // Doctor, it hurts when I do this!
                     }
                 }
+
                 public String getName() {
                     return policyNode.getName();
                 }
+
+                public long getVersionNumber() {
+                    return getPolicy().getVersionOrdinal();
+                }
+
+                public boolean isActive() {
+                    return getPolicy().isVersionActive();
+                }
+
                 public void addPropertyChangeListener(PropertyChangeListener servicePropertyChangeListener) {
                     policyNode.addPropertyChangeListener(servicePropertyChangeListener);
                 }

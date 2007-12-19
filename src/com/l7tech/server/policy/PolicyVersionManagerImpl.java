@@ -5,18 +5,13 @@ package com.l7tech.server.policy;
 
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyVersion;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.AdminInfo;
-import com.l7tech.server.event.PolicyCheckpointEvent;
-import com.l7tech.server.util.ApplicationEventProxy;
 import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Propagation;
@@ -25,18 +20,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Gateway's production implementation of {@link PolicyVersionManager}.
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersion, EntityHeader> implements PolicyVersionManager {
-    /** @noinspection FieldNameHidesFieldInSuperclass*/
-    private static final Logger logger = Logger.getLogger(PolicyVersionManagerImpl.class.getName());
-
-    /** @noinspection FieldCanBeLocal */ // IntelliJ bug
     private final ServerConfig serverConfig;
 
     public PolicyVersionManagerImpl(ServerConfig serverConfig) {
@@ -78,16 +67,8 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         return findMatching(map);
     }
 
-    /**
-     * Examine the specified policy and record a new PolicyVersion if necessary.
-     *
-     * @param newPolicy a possibly-mutated policy that has not yet been committed to the database.
-     * @param activated if true, the newly saved revision should be marked as the active revision for this policy.
-     * @param newEntity if true, this is a new Policy entity being created
-     * @throws ObjectModelException if there is a problem finding or updating information from the database
-     */
     @Transactional(propagation=Propagation.SUPPORTS)
-    private void checkpointPolicy(Policy newPolicy, boolean activated, boolean newEntity) throws ObjectModelException {
+    public PolicyVersion checkpointPolicy(Policy newPolicy, boolean activated, boolean newEntity) throws ObjectModelException {
         final long policyOid = newPolicy.getOid();
         if (policyOid == Policy.DEFAULT_OID)
             throw new IllegalArgumentException("Unable to checkpoint policy without a valid OID");
@@ -103,6 +84,7 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         }
 
         deleteStaleRevisions(policyOid, ver);
+        return ver;
     }
 
     private void deleteStaleRevisions(final long policyOid, final PolicyVersion justSaved) throws FindException, DeleteException {
@@ -175,6 +157,18 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         }
     }
 
+    public PolicyVersion findActiveVersionForPolicy(long policyOid) throws FindException {
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("policyOid", policyOid);
+        map.put("active", Boolean.TRUE);
+        List<PolicyVersion> found = findMatching(map);
+        if (found == null || found.isEmpty())
+            return null;
+        if (found.size() > 1)
+            throw new FindException("Found more than one active PolicyVersion with policy_oid=" + policyOid); // can't happen
+        return found.iterator().next();
+    }
+
     private static PolicyVersion snapshot(Policy policy, AdminInfo adminInfo, boolean activated, boolean newEntity) {
         long policyOid = policy.getOid();
         PolicyVersion ver = new PolicyVersion();
@@ -194,27 +188,5 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         ver.setUserProviderOid(adminInfo.identityProviderOid);
         ver.setXml(policy.getXml());
         return ver;
-    }
-
-    // We don't just implement ApplicationListener in the outer class because this causes all
-    // calls to onApplicationEvent to go through the transaction interceptor, and onApplicationEvent will be 
-    // called several times per message being processed.
-    private ApplicationListener listener = new ApplicationListener() {
-        public void onApplicationEvent(ApplicationEvent event) {
-            if (event instanceof PolicyCheckpointEvent) {
-                PolicyCheckpointEvent pce = (PolicyCheckpointEvent)event;
-                Policy policy = pce.getPolicyBeingSaved();
-                try {
-                    checkpointPolicy(policy, pce.isActivated(), pce.isNewEntity());
-                } catch (ObjectModelException e) {
-                    logger.log(Level.WARNING, "Unable to checkpoint policy oid " + policy.getOid() + ": " + ExceptionUtils.getMessage(e), e);
-                    throw new RuntimeException(e); // Must rethrow to ensure transaction rolled back
-                }
-            }
-        }
-    };
-
-    public void setApplicationEventProxy(ApplicationEventProxy proxy) {
-        proxy.addApplicationListener(listener);
     }
 }

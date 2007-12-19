@@ -4,10 +4,14 @@ import com.l7tech.common.AsyncAdminMethodsImpl;
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyType;
+import com.l7tech.common.policy.PolicyVersion;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.common.uddi.UDDIRegistryInfo;
 import com.l7tech.common.uddi.WsdlInfo;
-import com.l7tech.common.util.*;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.Resolver;
+import com.l7tech.common.util.ResolvingComparator;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionLicense;
@@ -17,7 +21,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.event.PolicyCheckpointEvent;
+import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.uddi.UddiAgent;
 import com.l7tech.server.service.uddi.UddiAgentException;
@@ -37,15 +41,11 @@ import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.wsdl.WSDLException;
-import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringReader;
@@ -54,7 +54,6 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,7 +66,7 @@ import java.util.logging.Logger;
  * Date: Jun 6, 2003
  * @noinspection OverloadedMethodsWithSameNumberOfParameters
  */
-public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
+public final class ServiceAdminImpl implements ServiceAdmin {
     private static final ServiceHeader[] EMPTY_ENTITY_HEADER_ARRAY = new ServiceHeader[0];
 
     private SSLContext sslContext;
@@ -84,15 +83,11 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     private final RoleManager roleManager;
     private final WspReader wspReader;
     private final UDDITemplateManager uddiTemplateManager;
+    private final PolicyVersionManager policyVersionManager;
 
     private final AsyncAdminMethodsImpl asyncSupport = new AsyncAdminMethodsImpl();
     private final BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
     private final ExecutorService validatorExecutor;
-
-    private ApplicationContext applicationContext;
-    
-    private static final Set<PropertyDescriptor> OMIT_VERSION_AND_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "version", "xml");
-    private static final Set<PropertyDescriptor> OMIT_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "xml");
 
     public ServiceAdminImpl(AssertionLicense licenseManager,
                             RegistryPublicationManager registryPublicationManager,
@@ -106,6 +101,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
                             RoleManager roleManager,
                             WspReader wspReader,
                             UDDITemplateManager uddiTemplateManager,
+                            PolicyVersionManager policyVersionManager,
                             ServerConfig serverConfig) {
         this.licenseManager = licenseManager;
         this.registryPublicationManager = registryPublicationManager;
@@ -119,6 +115,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         this.roleManager = roleManager;
         this.wspReader = wspReader;
         this.uddiTemplateManager = uddiTemplateManager;
+        this.policyVersionManager = policyVersionManager;
 
         int maxConcurrency = serverConfig.getIntProperty(ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 15);
         validatorExecutor = new ThreadPoolExecutor(1, maxConcurrency, 5 * 60, TimeUnit.SECONDS, validatorQueue);
@@ -182,6 +179,12 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         PublishedService service = serviceManager.findByPrimaryKey(oid);
         if (service != null) {
             logger.finest("Returning service id " + oid + ", version " + service.getVersion());
+            Policy policy = service.getPolicy();
+            PolicyVersion policyVersion = policyVersionManager.findActiveVersionForPolicy(policy.getOid());
+            if (policyVersion != null) {
+                policy.setVersionOrdinal(policyVersion.getOrdinal());
+                policy.setVersionActive(true);
+            }
         }
         return service;
     }
@@ -230,8 +233,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         return entity.getOid() == PersistentEntity.DEFAULT_OID;
     }
 
-    private void checkpointPolicy(Policy toCheckpoint, boolean activate, boolean newEntity) {
-        applicationContext.publishEvent(new PolicyCheckpointEvent(this, toCheckpoint, activate, newEntity));
+    private void checkpointPolicy(Policy toCheckpoint, boolean activate, boolean newEntity) throws ObjectModelException {
+        policyVersionManager.checkpointPolicy(toCheckpoint, activate, newEntity);
     }
 
     /**
@@ -249,18 +252,26 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
 
         long oid;
 
-        if (service.getOid() > 0) {
-            // UPDATING EXISTING SERVICE
-            oid = service.getOid();
-            logger.fine("Updating PublishedService: " + oid);
-            serviceManager.update(service);
-            checkpointPolicy(service.getPolicy(), true, false);
-        } else {
-            // SAVING NEW SERVICE
-            logger.fine("Saving new PublishedService");
-            oid = serviceManager.save(service);
-            checkpointPolicy(service.getPolicy(), true, true);
-            serviceManager.addManageServiceRole(service);
+        try {
+            if (service.getOid() > 0) {
+                // UPDATING EXISTING SERVICE
+                oid = service.getOid();
+                logger.fine("Updating PublishedService: " + oid);
+                serviceManager.update(service);
+                checkpointPolicy(service.getPolicy(), true, false);
+            } else {
+                // SAVING NEW SERVICE
+                logger.fine("Saving new PublishedService");
+                oid = serviceManager.save(service);
+                checkpointPolicy(service.getPolicy(), true, true);
+                serviceManager.addManageServiceRole(service);
+            }
+        } catch (UpdateException e) {
+            throw e;
+        } catch (SaveException e) {
+            throw e;
+        } catch (ObjectModelException e) {
+            throw new SaveException(e);
         }
         return oid;
     }
@@ -533,9 +544,5 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
 
     public <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId) throws UnknownJobException, JobStillActiveException {
         return asyncSupport.getJobResult(jobId);
-    }
-
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
     }
 }

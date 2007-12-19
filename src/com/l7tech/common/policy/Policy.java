@@ -31,6 +31,9 @@ public class Policy extends NamedEntityImp {
     private boolean wssInPolicy;
     private boolean soap;
 
+    private long versionOrdinal;   // Not persisted -- filled in by admin layer
+    private boolean versionActive; // Not persisted -- filled in by admin layer
+
     private transient Assertion assertion;
     private static final AllAssertion DISABLED_POLICY = new AllAssertion(Arrays.asList(new CommentAssertion("Policy disabled"), new FalseAssertion()));
     private static final String DISABLED_POLICY_XML = WspWriter.getPolicyXml(DISABLED_POLICY).trim();
@@ -159,6 +162,53 @@ public class Policy extends NamedEntityImp {
         if (xml != null ? !xml.equals(policy.xml) : policy.xml != null) return false;
 
         return true;
+    }
+
+    /**
+     * The version ordinal, or zero if one is not set.
+     * This is used for display purposes only.  It is not persisted to the database;
+     * instead it is filled in when policies are returned by the admin layer.
+     *
+     * @return the version ordinal, or zero if not set.
+     */
+    public long getVersionOrdinal() {
+        return versionOrdinal;
+    }
+
+    /**
+     * The version ordinal, or zero if one is not set.
+     * This is used for display purposes only.  It is not persisted to the database;
+     * instead it is filled in by the admin layer when a single policy is returned and
+     * by the SSM UI as needed.
+     *
+     * @param versionOrdinal the version ordinal, or zero to clear it.
+     */
+    public void setVersionOrdinal(long versionOrdinal) {
+        this.versionOrdinal = versionOrdinal;
+    }
+
+    /**
+     * Check the "Version Active" flag for this policy.
+     * This is used for display purposes only.  It is not persisted to the database;
+     * instead it is filled in by the admin layer when a single policy is returned and
+     * by the SSM UI as needed.
+     *
+     * @return the "Version Active" flag
+     */
+    public boolean isVersionActive() {
+        return versionActive;
+    }
+
+    /**
+     * Set a "Version Active" flag for this policy.
+     * This is used for display purposes only.  It is not persisted to the database;
+     * instead it is filled in by the admin layer when a single policy is returned and
+     * by the SSM UI as needed.
+     *  
+     * @param active the new state of the VersionActive flag
+     */
+    public void setVersionActive(boolean active) {
+        this.versionActive = active;
     }
 
     public int hashCode() {

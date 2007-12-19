@@ -4,11 +4,16 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.policy.Policy;
+import com.l7tech.common.policy.PolicyVersion;
 import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.util.Pair;
+import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.assertion.Assertion;
@@ -102,28 +107,43 @@ public class SavePolicyAction extends PolicyNodeAction {
             if (policyNode == null) {
                 throw new IllegalArgumentException("No edited policy or service specified");
             }
+            final long newVersionOrdinal;
             if (policyNode instanceof ServiceNode) {
                 final PublishedService svc = ((ServiceNode) policyNode).getPublishedService();
                 if (activateAsWell) {
+                    // TODO remove this branch and just call updatePolicyXml() as soon as the Gateway is fixed to notice
+                    // policy changes that occur without going through ServiceAdminImpl.
                     svc.getPolicy().setXml(xml);
                     Registry.getDefault().getServiceManager().savePublishedService(svc);
+                    PolicyVersion policyVersion = Registry.getDefault().getPolicyAdmin().findActivePolicyVersionForPolicy(svc.getPolicy().getOid());
+                    newVersionOrdinal = policyVersion == null ? 0 : policyVersion.getOrdinal();
                 } else {
-                    updatePolicyXml(svc.getPolicy().getOid(), xml, activateAsWell);
+                    newVersionOrdinal = updatePolicyXml(svc.getPolicy().getOid(), xml, activateAsWell);
                 }
             } else {
                 Policy policy = policyNode.getPolicy();
-                updatePolicyXml(policy.getOid(), xml, activateAsWell);
+                newVersionOrdinal = updatePolicyXml(policy.getOid(), xml, activateAsWell);
             }
             policyNode.clearCachedEntities();
+
+            WorkSpacePanel workspace = TopComponents.getInstance().getCurrentWorkspace();
+            if (workspace.getComponent() instanceof PolicyEditorPanel) {
+                PolicyEditorPanel pep = (PolicyEditorPanel)workspace.getComponent();
+                pep.setOverrideVersionNumber(newVersionOrdinal);
+                pep.setOverrideVersionActive(activateAsWell);
+                pep.updateHeadings();
+            }
+
         } catch (Exception e) {
             throw new RuntimeException("Error saving service and policy",e);
         }
     }
 
-    private static void updatePolicyXml(long policyOid, String xml, boolean activateAsWell) throws FindException, SaveException, PolicyAssertionException {
+    private static long updatePolicyXml(long policyOid, String xml, boolean activateAsWell) throws FindException, SaveException, PolicyAssertionException {
         Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(policyOid);
         if (policy == null) throw new SaveException("Unable to save policy -- this policy no longer exists");
         policy.setXml(xml);
-        Registry.getDefault().getPolicyAdmin().savePolicy(policy, activateAsWell);
+        Pair<Long,Long> policyOidAndVersionOrdinal = Registry.getDefault().getPolicyAdmin().savePolicy(policy, activateAsWell);
+        return policyOidAndVersionOrdinal.right;
     }
 }

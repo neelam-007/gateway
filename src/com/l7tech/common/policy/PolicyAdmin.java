@@ -8,6 +8,7 @@ import com.l7tech.common.security.rbac.MethodStereotype;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
 import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.rbac.Secured;
+import com.l7tech.common.util.Pair;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
@@ -82,11 +83,11 @@ public interface PolicyAdmin {
      *                       but will not take effect.
      *                       (<b>NOTE:</b> Any other changes to the Policy bean, aside from policy XML, will
      *                       ALWAYS take effect immediately.)
-     * @return the OID of the policy that was saved.
+     * @return a Pair of (OID of the policy that was saved, version ordinal that was assigned to this policy XML)
      * @throws PolicyAssertionException if there is a problem with the policy
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
-    long savePolicy(Policy policy, boolean activateAsWell) throws PolicyAssertionException, SaveException;
+    Pair<Long,Long> savePolicy(Policy policy, boolean activateAsWell) throws PolicyAssertionException, SaveException;
 
     @Secured(stereotype = MethodStereotype.FIND_HEADERS)
     Set<Policy> findUsages(long oid) throws FindException;
@@ -142,6 +143,16 @@ public interface PolicyAdmin {
      */
     @Secured(stereotype=SET_PROPERTY_BY_ID, relevantArg=0)
     void setActivePolicyVersion(long policyOid, long versionOid) throws FindException, UpdateException;
+
+    /**
+     * Get the active PolicyVersionfor the specified policy.
+     *
+     * @param policyOid the OID of the Policy whose active version to look up.
+     * @return the PolicyVersion that is active for this Policy, or null if no active version was found for the specified policy OID.
+     * @throws FindException if there is a problem looking up the requested information
+     */
+    @Secured(stereotype=GET_PROPERTY_BY_ID, relevantArg=0)
+    PolicyVersion findActivePolicyVersionForPolicy(long policyOid) throws FindException;
 
     /**
      * Clear the active version for the specified policy.

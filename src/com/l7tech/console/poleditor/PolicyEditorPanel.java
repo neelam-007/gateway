@@ -101,6 +101,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private final SsmPreferences preferences = TopComponents.getInstance().getPreferences();
     private final boolean enableUddi;
     private final PolicyValidator policyValidator;
+    private Long overrideVersionNumber = null;
+    private Boolean overrideVersionActive = null;
 
     public interface PolicyEditorSubject {
         /**
@@ -119,6 +121,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
          * @return the name of either the published service or the policy. never null
          */
         String getName();
+
+        /** @return the last checkpointed version number for the policy XML. */
+        long getVersionNumber();
+
+        /** @return true if the current version number is the active version of the policy XML. */
+        boolean isActive();
 
         void addPropertyChangeListener(PropertyChangeListener policyPropertyChangeListener);
 
@@ -376,10 +384,38 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         subjectName = newName;
     }
 
+    public long getVersionNumber() {
+        if (overrideVersionNumber != null) return overrideVersionNumber;
+        return subject.getVersionNumber();
+    }
+
+    public boolean isVersionActive() {
+        if (overrideVersionActive != null) return overrideVersionActive;
+        return subject.isActive();
+    }
+
+    public void setOverrideVersionActive(boolean overrideVersionActive) {
+        this.overrideVersionActive = overrideVersionActive;
+    }
+
+    public void setOverrideVersionNumber(long overrideVersionNumber) {
+        this.overrideVersionNumber = overrideVersionNumber;
+    }
+
+    public String getDisplayName() {
+        long versionNum = getVersionNumber();
+        String activeStr = isVersionActive() ? "active" : "inactive";
+        if (versionNum < 1)
+            return subjectName + " (" + activeStr + ')';
+        else
+            return subjectName + " (v" + versionNum + ", " + activeStr + ')';
+    }
+
     /** updates the policy name, tab name etc */
     public void updateHeadings() {
-        setName(subjectName);
-        getSplitPane().setName(subjectName);
+        String displayName = getDisplayName();
+        setName(displayName);
+        getSplitPane().setName(displayName);
     }
 
     private AssertionTreeNode getCurrentRoot() {
