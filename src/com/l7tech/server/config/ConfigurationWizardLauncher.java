@@ -43,17 +43,22 @@ public class ConfigurationWizardLauncher {
         }
 
         if (PARTITION_UPGRADE.equalsIgnoreCase(launchType)) {
-            PartitionManager.doMigration();
-        } else if (EXPORT_SHARED_KEY.equalsIgnoreCase(launchType)) {
-            SharedKeyGetter.main(newArgs);
-        } else if (CHANGE_MASTER_PASSPHRASE.equalsIgnoreCase(launchType)) {
-            MasterPassphraseChanger.main(newArgs);
-        } else if (null == launchType || "".equals(launchType) || CONSOLE_MODE.equalsIgnoreCase(launchType)) {
-            ConsoleConfigWizardLauncher.launch(newArgs);
+            //if they have asked for partitionMigrate explicitly, we've give them just that.
+            PartitionManager.doMigration(false);
         } else {
-            System.out.println("invalid argument: " + launchType);
-            System.out.println(usage());
-            System.exit(1);
+            //otherwise we'll migrate and then do what they ask.
+            PartitionManager.doMigration(true);
+            if (EXPORT_SHARED_KEY.equalsIgnoreCase(launchType)) {
+                SharedKeyGetter.main(newArgs);
+            } else if (CHANGE_MASTER_PASSPHRASE.equalsIgnoreCase(launchType)) {
+                MasterPassphraseChanger.main(newArgs);
+            } else if (null == launchType || "".equals(launchType) || CONSOLE_MODE.equalsIgnoreCase(launchType)) {
+                ConsoleConfigWizardLauncher.launch(newArgs);
+            } else {
+                System.out.println("invalid argument: " + launchType);
+                System.out.println(usage());
+                System.exit(1);
+            }
         }
     }
 

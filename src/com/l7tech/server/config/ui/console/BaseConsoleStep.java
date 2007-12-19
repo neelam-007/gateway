@@ -50,7 +50,7 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
         if (osFunctions == null) {
             PartitionInformation pi = PartitionManager.getInstance().getActivePartition();
             if (pi == null) {
-                PartitionManager.doMigration();
+                PartitionManager.doMigration(true);
                 pi = PartitionManager.getInstance().getActivePartition();
             }
             osFunctions = pi.getOSSpecificFunctions();

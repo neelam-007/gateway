@@ -24,9 +24,8 @@ launch_wizard(){
 	check_options
 	#check if we're root
 	if [ "$USER" != "ssgconfig" ]; then
-        su ssgconfig -c "${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar -partitionMigrate &>/dev/null && ${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*"
+        do_command_as_user ssgconfig "${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*"
     else
-        su ssgconfig -c "${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar -partitionMigrate &>/dev/null"
         ${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*
     fi
 }
@@ -36,8 +35,7 @@ launchtype=${1}
 check_user
 
 if [ "${launchtype}z" == "-exportsharedkeyz" ] || [ "${launchtype}z" == "-changeMasterPassphrasez" ]; then
-    su ssgconfig -c "${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar -partitionMigrate &>/dev/null"
-    ${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*
+    do_command_as_user ssgconfig "${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*"
 else
     launch_wizard "${launchtype}"
 fi

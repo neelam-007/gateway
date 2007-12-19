@@ -256,6 +256,7 @@ SSG_JAVA_HOME="/ssg/jdk"
 export SSG_JAVA_HOME
 EOF
 
+/ssg/configwizard/ssgconfig.sh -partitionMigrate &> /dev/null
 # Change issue. This may move to a layer7-release file
 
 echo "Layer 7 SecureSpan(tm) Gateway v4.3" >/etc/issue

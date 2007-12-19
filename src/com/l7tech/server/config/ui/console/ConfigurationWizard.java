@@ -37,10 +37,10 @@ public class ConfigurationWizard {
     private boolean hadFailures;
     static String currentVersion = null;
 
-    private static final String COMMONS_LOGGING_PROP = "org.apache.commons.logging.Log";
-    private static final String COMMONS_LOGGING_JDK14_LOGGER = "org.apache.commons.logging.impl.Jdk14Logger";
-    private static final String L7TECH_CLASSNAME = "com.l7tech";
-    private static final String LOGCONFIG_NAME = "configlogging.properties";
+    public static final String COMMONS_LOGGING_PROP = "org.apache.commons.logging.Log";
+    public static final String COMMONS_LOGGING_JDK14_LOGGER = "org.apache.commons.logging.impl.Jdk14Logger";
+    public static final String L7TECH_CLASSNAME = "com.l7tech";
+    public static final String LOGCONFIG_NAME = "configlogging.properties";
 
     private ConsoleWizardUtils wizardUtils = null;
 

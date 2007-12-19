@@ -1,7 +1,9 @@
 package com.l7tech.server.partition;
 
 import com.l7tech.common.util.FileUtils;
+import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.server.config.*;
+import com.l7tech.server.config.ui.console.ConfigurationWizard;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -134,7 +136,12 @@ public class PartitionManager {
         partitions.remove(partitionName);
     }
 
-    public static void doMigration() {
+    public static void doMigration(boolean configLogging) {
+        if (configLogging) {
+            System.setProperty(ConfigurationWizard.COMMONS_LOGGING_PROP, ConfigurationWizard.COMMONS_LOGGING_JDK14_LOGGER);
+            JdkLoggerConfigurator.configure(ConfigurationWizard.L7TECH_CLASSNAME, ConfigurationWizard.LOGCONFIG_NAME);
+        }
+        
         OSSpecificFunctions osf = OSDetector.getOSSpecificFunctions("");
         File oldSsgConfigDirectory = new File(osf.getSsgInstallRoot() + "etc/conf");
         File oldKeystoreDirectory = new File(osf.getSsgInstallRoot() + "etc/keys");
@@ -169,21 +176,21 @@ public class PartitionManager {
                 originalFiles.add(new File(osf.getOriginalPartitionControlScriptName()));
 
             if (!partitionsBaseDir.exists()) {
-                System.out.println("Creating Partition Root Directory");
+                logger.info("Creating Partition Root Directory");
                 if (!partitionsBaseDir.mkdir()) {
                     throw new PartitionException("COULD NOT CREATE PARTITION ROOT DIRECTORY - Please check file permissions and re-run this tool.");
                 }
             }
 
             if (!templatePartitionDir.exists()) {
-                System.out.println("Creating Template Partition Directory");
+                logger.info("Creating Template Partition Directory");
                 if (!templatePartitionDir.mkdir()) {
                     throw new PartitionException("COULD NOT CREATE THE PARTITION TEMPLATE DIRECTORY. New partitions cannot be created without the partition template. Please check file permissions and re-run this tool.");
                 }
             }
 
             if (!defaultPartitionDir.exists()) {
-                System.out.println("Creating Default Partition Directory");
+                logger.info("Creating Default Partition Directory");
                 if (!defaultPartitionDir.mkdir()) {
                     throw new PartitionException("COULD NOT CREATE THE DEFAULT PARTITION. The SSG will not run without a default partition. Please check file permissions and re-run this tool.");
                 }
@@ -192,7 +199,7 @@ public class PartitionManager {
             PartitionActions pa = new PartitionActions(osf);
             List<String> fileNames = new ArrayList<String>();
             if (templatePartitionDir.listFiles().length <= 1) {
-                System.out.println("Copying original configuration files to the template partition.");
+                logger.info("Copying original configuration files to the template partition.");
                 try {
                     copyConfigurations(originalFiles, templatePartitionDir);
                     for (File originalFile : originalFiles) {
@@ -201,15 +208,15 @@ public class PartitionManager {
                     pa.setUnixFilePermissions(fileNames.toArray(new String[fileNames.size()]), "775", templatePartitionDir, osf);
 
                 } catch (IOException e) {
-                    System.out.println("Error while creating the template partition: " + e.getMessage());
+                    logger.severe("Error while creating the template partition: " + e.getMessage());
                     System.exit(1);
                 } catch (InterruptedException e) {
-                    System.out.println("Error while setting the file permissions for the template partition: " + e.getMessage());
+                    logger.severe("Error while setting the file permissions for the template partition: " + e.getMessage());
                 }
             }
 
             if (defaultPartitionDir.listFiles().length == 0) {
-                System.out.println("Copying configuration files to the default partition.");
+                logger.info("Copying configuration files to the default partition.");
                 try {
                     // copy template configuration
                     List<File> templateFiles = new ArrayList<File>();
@@ -245,28 +252,26 @@ public class PartitionManager {
                     pa.setUnixFilePermissions(new String[]{s}, "775", defaultPartitionDir, osf);
 
                 } catch (IOException e) {
-                    System.out.println("Error while creating the default partition: " + e.getMessage());
+                    logger.severe("Error while creating the default partition: " + e.getMessage());
                     System.exit(1);
                 } catch (InterruptedException e) {
-                    System.out.println("Error while setting the file permissions for the template partition: " + e.getMessage());
+                    logger.severe("Error while setting the file permissions for the template partition: " + e.getMessage());
                 }
             } else {
-                System.out.println("the default partition does not need to be migrated");
+                logger.info("the default partition does not need to be migrated");
             }
             removeOriginalConfigurations(deletableOriginalFiles);
             copyNewTemplateFilesToPartitions(templatePartitionDir, partitionsBaseDir);
             updatePartitionConfigsWithNewChanges(templatePartitionDir, partitionsBaseDir);
 
         } catch (PartitionException pe) {
-            System.out.println(pe.getMessage());
+            logger.severe(pe.getMessage());
             System.exit(1);
         } catch (IOException e) {
-            System.out.println("Error while copying new files into the destination partitions");
-            System.out.println(e.getMessage());
+            logger.severe("Error while copying new files into the destination partitions: "+ e.getMessage());
             System.exit(1);
         } catch (SAXException e) {
-            System.out.println("Error while modifying new files in the partitions");
-            System.out.println(e.getMessage());
+            logger.severe("Error while modifying new files in the partitions: " + e.getMessage());
             System.exit(1);
         }
     }
@@ -341,7 +346,7 @@ public class PartitionManager {
     private static void copyConfigurations(List<File> filesToCopy, File destinationDir, String backupExtn) throws IOException {
         if (!destinationDir.exists()) {
             if(!destinationDir.mkdir())
-                System.out.println("Error while creating directory '"+destinationDir.getAbsolutePath()+"'.");
+                logger.severe("Error while creating directory '"+destinationDir.getAbsolutePath()+"'.");
         }        
 
         for (File currentFile : filesToCopy) {
@@ -359,7 +364,7 @@ public class PartitionManager {
                         File targetFile = new File(destinationDir, currentFile.getName());
                         File backupFile = new File(destinationDir, currentFile.getName() + "." + backupExtn);
                         if (!targetFile.renameTo(backupFile))
-                            System.out.println("Could not create backup for file '"+newFile.getAbsolutePath()+"'.");
+                            logger.severe("Could not create backup for file '"+newFile.getAbsolutePath()+"'.");
                     } else {
                         continue;
                     }
