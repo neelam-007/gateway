@@ -36,7 +36,7 @@ public final class ExpandVariables {
         if (matcher.matches()) {
             final String rawName = matcher.group(1);
             // TODO allow recursive syntax someday (i.e. ${foo[0]|DELIM} if foo is multi-dimensional)
-            final Syntax syntax = Syntax.parse(rawName);
+            final Syntax syntax = Syntax.parse(rawName, defaultDelimiter());
             final Object[] newVals = getAndFilter(vars, syntax, audit, strict);
             if (newVals == null || newVals.length == 0) return null;
             // TODO is it OK to return both an array and a single value for the same variable?
@@ -45,6 +45,12 @@ public final class ExpandVariables {
         } else {
             return process(expr, vars, audit, strict);
         }
+    }
+
+    public static String defaultDelimiter() {
+        String delim = ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_TEMPLATE_MULTIVALUE_DELIMITER);
+        if (delim != null) return delim;
+        return Syntax.DEFAULT_MV_DELIMITER;
     }
 
     static interface Selector {
@@ -139,7 +145,7 @@ public final class ExpandVariables {
                 throw new IllegalStateException("Expecting 1 matching group, received: "+matchingCount);
             }
 
-            final Syntax syntax = Syntax.parse(matcher.group(1));
+            final Syntax syntax = Syntax.parse(matcher.group(1), defaultDelimiter());
             Object[] newVals = getAndFilter(vars, syntax, audit, strict);
             String replacement;
             if (newVals == null || newVals.length == 0) {

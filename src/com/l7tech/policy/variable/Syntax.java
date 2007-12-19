@@ -5,7 +5,6 @@ package com.l7tech.policy.variable;
 
 import com.l7tech.common.audit.Audit;
 import com.l7tech.common.audit.CommonMessages;
-import com.l7tech.server.ServerConfig;
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -16,7 +15,7 @@ import java.util.regex.Pattern;
  * @author alex
 */
 public abstract class Syntax {
-    private static final String DEFAULT_DELIMITER = ", ";
+    public static final String DEFAULT_MV_DELIMITER = ", ";
 
     public final String remainingName;
     public static final String SYNTAX_PREFIX = "${";
@@ -80,13 +79,13 @@ public abstract class Syntax {
                 throw new IllegalStateException("Expecting 1 matching group, received: "+count);
             }
             String var = matcher.group(1);
-            vars.add(Syntax.parse(var).remainingName);
+            vars.add(Syntax.parse(var, DEFAULT_MV_DELIMITER).remainingName);
         }
         return (String[]) vars.toArray(new String[0]);
     }
 
     // TODO find out how to move this into Syntax subclasses
-    public static Syntax parse(String rawName) {
+    public static Syntax parse(String rawName, final String delimiter) {
         int ppos = rawName.indexOf("|");
         if (ppos == 0) throw new IllegalArgumentException("Variable names must not start with '|'");
         if (ppos > 0) {
@@ -110,15 +109,9 @@ public abstract class Syntax {
                     return new MultivalueArraySubscriptSyntax(rawName.substring(0, lbpos), subscript);
                 } else throw new IllegalArgumentException("']' expected but not found");
             } else {
-                return new MultivalueDelimiterSyntax(rawName, defaultDelimiter());
+                return new MultivalueDelimiterSyntax(rawName, delimiter);
             }
         }
-    }
-
-    private static String defaultDelimiter() {
-        String delim = ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_TEMPLATE_MULTIVALUE_DELIMITER);
-        if (delim != null) return delim;
-        return DEFAULT_DELIMITER;
     }
 
     public static final Formatter DEFAULT_FORMATTER = new Formatter() {
