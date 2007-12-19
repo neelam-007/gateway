@@ -63,7 +63,13 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
         boolean configureCluster = confType != ConfigurationType.CONFIG_STANDALONE;
 
         OSSpecificFunctions osf = pinfo.getOSSpecificFunctions();
-        File clusterHostNameFile = configureCluster? new File(osf.getClusterHostFile()):null;
+        File clusterHostNameFile = null;
+
+        boolean hasDifferentName = !StringUtils.equalsIgnoreCase(clusterBean.getClusterHostname(),clusterBean.getLocalHostName());
+
+        if (configureCluster || hasDifferentName)
+            clusterHostNameFile = new File(osf.getClusterHostFile());
+
         File systemPropertiesFile = new File(osf.getSsgSystemPropertiesFile());
 
         File[] files = new File[]
@@ -78,7 +84,7 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
         String hostname = clusterBean.getClusterHostname();
         try {
             updateSystemPropertiesFile(hostname, systemPropertiesFile);
-            if (configureCluster) {
+            if (configureCluster || hasDifferentName) {
                 try {
                     writeClusterHostname(clusterHostNameFile, hostname);
                     success = true;
