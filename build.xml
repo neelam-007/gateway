@@ -1092,11 +1092,11 @@
             <arg value="-note=You can change benchmark list in &lt;code>UneasyRooster/build.xml&lt;/code> Ant target &lt;code>test.perf.trend&lt;/code>."/>
             <arg value="-note=Also see &lt;a href=&quot;../regression/index.html&quot;>Regression Report&lt;/a>"/>
             <arg value="-verbose"/>
-            <arg value="Performance Trend Report"/>
-            <arg value="${test.perf.trend.dir}"/>
-            <arg value="${test.perf.reports.dir}?today?-10D"/> <!-- any Japex test report from last 10 days -->
-            <!-- add specific Japex test reports here, e.g.,
-                 <arg value="${test.perf.reports.dir}/4.2 release.xml"/> -->
+            <arg value="Performance Trend Report"/>             <!-- title -->
+            <arg value="${test.perf.trend.dir}"/>               <!-- outputDir -->
+            <arg value="${test.perf.reports.dir}?today?-14D"/>  <!-- reportDir, include any Japex test report from last 14 days -->
+            <!-- Add specific Japex test reports here. -->
+            <arg value="${test.perf.reports.dir}/4.2_final.xml"/>
         </java>
         <echo level="info">Performance trend complete.</echo>
     </target>
@@ -1122,14 +1122,14 @@
             <arg value="-note=See also &lt;a href=&quot;../trend/index.html&quot;>Trend Report&lt;/a>."/>
             <arg value="-note=You can change threshold, benchmark list and e-mail recipients in &lt;code>UneasyRooster/build.xml&lt;/code> Ant target &lt;code>test.perf.regression&lt;/code>."/>
             <arg value="-verbose"/>
-            <arg value="Performance Regression Report"/>
-            <arg value="${test.perf.regression.dir}"/>
-            <arg value="${test.perf.from}"/>
-            <arg value="${test.perf.to}"/>
-            <arg line="2 below avg"/>  <!-- 2% below average -->
-            <arg value="${test.perf.reports.dir}?today?-10D"/> <!-- any Japex test report from last 10 days -->
-            <!-- add specific Japex test reports here, e.g.,
-                 <arg value="${test.perf.reports.dir}/4.2 release.xml"/> -->
+            <arg value="Performance Regression Report"/>        <!-- title -->
+            <arg value="${test.perf.regression.dir}"/>          <!-- outputDir -->
+            <arg value="${test.perf.from}"/>                    <!-- sender -->
+            <arg value="${test.perf.to}"/>                      <!-- toList -->
+            <arg line="5 below avg"/>                           <!-- Highlight any 5% below average of benchmarks. -->
+            <arg value="${test.perf.reports.dir}?today?-14D"/>  <!-- reportDir, include any Japex test report from last 14 days -->
+            <!-- Add specific Japex test reports here, e.g.,
+                 <arg value="${test.perf.reports.dir}/4.2_final.xml"/> -->
         </java>
         <echo level="info">Performance regression complete.</echo>
     </target>

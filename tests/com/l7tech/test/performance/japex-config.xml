@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testSuite name="Performance" xmlns="http://www.sun.com/japex/testSuite">
 
-    <!-- See javadoc of com.sun.japex.Constants and com.l7tech.test.performance.Constants
-         for description of parameters. -->
+    <!--
+        See https://japex.dev.java.net/docs/manual.html and javadoc of com.sun.japex.Constants
+        for description of japex.* parameters.
+        See javadoc of com.l7tech.test.performance.Constants for description of layer7.* parameters.
+    -->
 
     <param name="japex.classPath" value="${src.root}/lib/*.jar"/>
     <param name="japex.classPath" value="${src.root}/lib/crypto/bc/*.jar"/>
@@ -14,8 +17,8 @@
     <param name="japex.resultUnit" value="tps"/>        <!-- must be tps -->
     <param name="japex.warmupsPerDriver" value="0"/>    <!-- must be 0 -->
     <param name="japex.runsPerDriver" value="1"/>       <!-- must be 1 -->
-    <param name="japex.warmupTime" value="30"/>         <!-- 30 seconds -->
-    <param name="japex.runTime" value="60"/>            <!-- 60 seconds -->
+    <param name="japex.warmupTime" value="30"/>         <!-- 30 seconds; in format ((HH:)?MM:)S?S -->
+    <param name="japex.runTime" value="60"/>            <!-- 60 seconds; in format ((HH:)?MM:)S?S -->
 
     <param name= "layer7.name" value="${layer7.name}"/>
     <param name= "layer7.version" value="${layer7.version}"/>
