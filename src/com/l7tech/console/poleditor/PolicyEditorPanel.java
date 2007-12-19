@@ -621,6 +621,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             };
         }
+        // Set the mnemonic and accelerator key
+        validateAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_V);
+        validateAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_V, ActionEvent.ALT_MASK));
         return validateAction;
     }
 
@@ -1103,6 +1106,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             };
         }
+        // Set the mnemonic and accelerator key
+        exportPolicyAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_E);
+        exportPolicyAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_E, ActionEvent.ALT_MASK));
         return exportPolicyAction;
     }
 
@@ -1191,6 +1197,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 // TODO import in not connected mode
             }
         }
+        // Set the mnemonic and accelerator key
+        importPolicyAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_I);
+        importPolicyAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_I, ActionEvent.ALT_MASK));
         return importPolicyAction;
     }
 }
