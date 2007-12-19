@@ -11,6 +11,7 @@ import com.l7tech.common.audit.AuditDetail;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
+import com.l7tech.common.util.Pair;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultLevel;
@@ -19,10 +20,7 @@ import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.policy.variable.BuiltinVariables;
-import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.policy.variable.*;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.identity.AuthCache;
@@ -82,16 +80,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private long routingTotalTime;
     private AssertionStatus policyoutcome;
     private static ThreadLocal<PolicyEnforcementContext> instanceHolder = new ThreadLocal<PolicyEnforcementContext>();
-
-    private static class VariableInfo {
-        private final Object value;
-        private final VariableMetadata meta;
-
-        private VariableInfo(Object value, VariableMetadata meta) {
-            this.value = value;
-            this.meta = meta;
-        }
-    }
 
     public PolicyEnforcementContext(Message request, Message response) {
         super(request, response);
@@ -338,22 +326,19 @@ public class PolicyEnforcementContext extends ProcessingContext {
     }
 
     /**
-     * Get the value of a context variable.
-     *  
+     * Get the value of a context variable if it's set, otherwise throw.
+     *
      * @param name the name of the variable to get, ie "requestXpath.result".  Required.
      * @return  the Object representing the value of the specified variable.  Never null.
      * @throws NoSuchVariableException  if no value is set for the specified variable
      */
     public Object getVariable(String name) throws NoSuchVariableException {
-        Object value;
+        final Object value;
+
         if (BuiltinVariables.isSupported(name)) {
-            try {
-                value = ServerVariables.get(name, this);
-            } catch (NoSuchVariableException e) {
-                throw new RuntimeException("Variable '" + name + "' is supposedly supported, but doesn't exist", e);
-            }
+            value = ServerVariables.get(name, this);
         } else {
-            value = variables.get(name.toLowerCase());
+            value = variables.get(name);
         }
 
         if (value == null) throw new NoSuchVariableException(name);
@@ -361,11 +346,40 @@ public class PolicyEnforcementContext extends ProcessingContext {
         return value;
     }
 
+    /**
+     * Get the value of a context variable, with name resolution
+     *  
+     * @param inName the name of the variable to get, ie "requestXpath.result".  Required.
+     * @return  the Object representing the value of the specified variable.  Never null.
+     * @throws NoSuchVariableException  if no value is set for the specified variable
+     */
+    private Pair<String, Object> getVariableWithNameLookup(String inName) throws NoSuchVariableException {
+        String outName = inName;
+        final Object value;
+
+        if (BuiltinVariables.isSupported(inName)) {
+            value = ServerVariables.get(inName, this);
+        } else {
+            String mname = Syntax.getMatchingName(inName, variables.keySet());
+            if (mname != null) {
+                outName = mname;
+                value = variables.get(mname.toLowerCase());
+            } else {
+                value = null;
+            }
+        }
+
+        if (value == null) throw new NoSuchVariableException(inName);
+
+        return new Pair<String, Object>(outName, value);
+    }
+
     public Map<String, Object> getVariableMap(String[] names, Audit auditor) {
         Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
         for (String name : names) {
             try {
-                vars.put(name, getVariable(name));
+                final Pair<String, Object> tuple = getVariableWithNameLookup(name);
+                vars.put(tuple.left, tuple.right);
             } catch (NoSuchVariableException e) {
                 auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, name);
             }

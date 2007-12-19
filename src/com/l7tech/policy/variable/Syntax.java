@@ -35,6 +35,27 @@ public abstract class Syntax {
         if (strict) throw new IllegalArgumentException(msg);
     }
 
+    /**
+     * Finds the longest period-delimited subname of the provided name that matches at least one of the known names
+     * in the provided Set, or null if no match can be found.
+     * @param name the full name to search for
+     * @param names the set of names to search within
+     * @return the longest subset of the provided Name that matches one of the Set members, or null if no match is found 
+     */
+    public static String getMatchingName(String name, Set names) {
+        final String lname = name.toLowerCase();
+        if (names.contains(lname)) return lname;
+
+        int pos = lname.length();
+        do {
+            String tryname = lname.substring(0, pos);
+            if (names.contains(tryname)) return tryname;
+            pos = lname.lastIndexOf(".", pos-1);
+        } while (pos > 0);
+
+        return null;
+    }
+
     private static interface Formatter {
         String format(Syntax syntax, Object o, Audit audit, boolean strict);
     }

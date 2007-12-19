@@ -5,7 +5,6 @@ package com.l7tech.server.policy.variable;
 
 import com.l7tech.common.audit.Audit;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.server.ServerConfig;
 
 import java.text.MessageFormat;
@@ -77,7 +76,7 @@ public final class ExpandVariables {
     }});
 
     private static Object[] getAndFilter(Map vars, Syntax syntax, Audit audit, boolean strict) {
-        String matchingName = BuiltinVariables.getMatchingName(syntax.remainingName.toLowerCase(), vars.keySet());
+        String matchingName = Syntax.getMatchingName(syntax.remainingName.toLowerCase(), vars.keySet());
         if (matchingName == null) {
             Syntax.badVariable(syntax.remainingName, strict, audit);
             return null;

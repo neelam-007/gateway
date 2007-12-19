@@ -187,6 +187,16 @@ public class ExpandVariablesTest extends TestCase {
         assertEquals(paramValue, "bar");
     }
 
+    public void testMessageVariable() throws Exception {
+        final Message foo = makeTinyRequest();
+        PolicyEnforcementContext pec = new PolicyEnforcementContext(new Message(), new Message());
+        pec.setVariable("foo", foo);
+
+        final Map<String, Object> vars = pec.getVariableMap(new String[]{"foo.mainPart"}, audit);
+        String bodytext = ExpandVariables.process("${foo.mainPart}", vars, audit, true);
+        assertEquals(bodytext, TINY_BODY);
+    }
+
     public void testStrictNonexistentHeader() throws Exception {
         Message foo = makeTinyRequest();
 

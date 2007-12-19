@@ -1,12 +1,11 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
  */
 package com.l7tech.policy.variable;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Lists built-in system variables and their metadata
@@ -51,7 +50,7 @@ public class BuiltinVariables {
     }
 
     public static boolean isPredefined(String name) {
-        return getMatchingName(name, metadataPresetByName.keySet()) != null;
+        return Syntax.getMatchingName(name, metadataPresetByName.keySet()) != null;
     }
 
     public static boolean isSettable(String name) {
@@ -124,23 +123,9 @@ public class BuiltinVariables {
     }
 
     public static VariableMetadata getMetadata(String name) {
-        String newname = getMatchingName(name, metadataByName.keySet());
+        String newname = Syntax.getMatchingName(name, metadataByName.keySet());
         if (newname == null) return null;
         return (VariableMetadata) metadataByName.get(newname);
-    }
-
-    public static String getMatchingName(String name, Set names) {
-        final String lname = name.toLowerCase();
-        if (names.contains(lname)) return lname;
-
-        int pos = lname.length();
-        do {
-            String tryname = lname.substring(0, pos);
-            if (names.contains(tryname)) return tryname;
-            pos = lname.lastIndexOf(".", pos-1);
-        } while (pos > 0);
-
-        return null;
     }
 
     private static final String[] SINGLEOBJECT = {
