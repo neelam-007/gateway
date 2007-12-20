@@ -85,7 +85,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
     }
 
     protected SsgConnector.Endpoint getRequiredEndpoint() {
-        return SsgConnector.Endpoint.PING;
+        return SsgConnector.Endpoint.ADMIN_APPLET;
     }
 
     /** Overrided to indicate we allow HTTP Basic without SSL. */

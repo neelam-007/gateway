@@ -74,17 +74,17 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         /** The HTTP-based SNMP query service. */
         SNMPQUERY,
 
-        /** The Gateway status (Ping) servlet. */
-        PING,
-
         /** The Gateway backup service. */
         BACKUP,
 
         /** Agent web service for HP SOA Manager. */
         HPSOAM,
 
-        /** All built-in servlets other than the first three.  This includes POLICYDISCO, STS, PASSWD etc. */
-        OTHER_SERVLETS(POLICYDISCO, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY, PING, BACKUP, HPSOAM);
+        /**
+         * All built-in servlets other than the first three.  This includes POLICYDISCO, STS, PASSWD etc.
+         * This does NOT include the PingServlet since this is considered part of web based administration.
+         */
+        OTHER_SERVLETS(POLICYDISCO, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY, BACKUP, HPSOAM);
 
         private Endpoint[] enabledKids;
         private Set<Endpoint> enabledSet;
@@ -114,8 +114,13 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         public static EnumSet<Endpoint> parseCommaList(String commaDelimitedList) {
             String[] names = PATTERN_WS_COMMA_WS.split(commaDelimitedList);
             EnumSet<Endpoint> ret = EnumSet.noneOf(Endpoint.class);
-            for (String name : names)
-                ret.add(Endpoint.valueOf(name));
+            for (String name : names) {
+                try {
+                    ret.add(Endpoint.valueOf(name));
+                } catch (IllegalArgumentException iae) {
+                    logger.log(Level.WARNING, "Ignoring unrecognized endpoint name: " + name);
+                }
+            }
             return ret;
         }
 
