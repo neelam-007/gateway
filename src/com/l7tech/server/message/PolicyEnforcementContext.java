@@ -64,7 +64,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private Set<AssertionStatus> seenAssertionStatus = new HashSet<AssertionStatus>();
     private AuditContext auditContext = null;
     private SoapFaultManager soapFaultManager = null;
-    private final Map<String,Object> variables = new HashMap<String, Object>();
+    private final Map<String,Object> variables = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
     private int authSuccessCacheTime = AuthCache.SUCCESS_CACHE_TIME;
     private int authFailureCacheTime = AuthCache.FAILURE_CACHE_TIME;
     private PolicyContextCache cache;
@@ -321,7 +321,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
                 throw new RuntimeException("Variable '" + name + "' is supposedly supported, but doesn't exist", e);
             }
         } else {
-            variables.put(name.toLowerCase(), value);
+            variables.put(name, value);
         }
     }
 
@@ -363,7 +363,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
             String mname = Syntax.getMatchingName(inName, variables.keySet());
             if (mname != null) {
                 outName = mname;
-                value = variables.get(mname.toLowerCase());
+                value = variables.get(mname);
             } else {
                 value = null;
             }

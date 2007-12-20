@@ -85,12 +85,14 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         if (q == null || q.length() == 0) {
             queryParams = Collections.emptyMap();
         } else {
-            queryParams = Collections.unmodifiableMap(ParameterizedString.parseQueryString(q, true)); // TODO configurable strictness?
+            final TreeMap<String, String[]> newmap = new TreeMap<String, String[]>(String.CASE_INSENSITIVE_ORDER);
+            newmap.putAll(ParameterizedString.parseQueryString(q, true));
+            this.queryParams = Collections.unmodifiableMap(newmap);
         }
 
         // Check for PUT or POST; otherwise there can't be body params
         int len = request.getContentLength();
-        if (len > MAX_FORM_POST) throw new IOException(MessageFormat.format("Request too long (Content-Type = {0} bytes)", Integer.valueOf(len)));
+        if (len > MAX_FORM_POST) throw new IOException(MessageFormat.format("Request too long (Content-Length = {0} bytes)", Integer.valueOf(len)));
         if (len == -1 || !("POST".equals(request.getMethod()) || "PUT".equals(request.getMethod()))) {
             nobody();
             return;
@@ -106,7 +108,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         String enc = ctype.getEncoding();
         byte[] buf = HexUtils.slurpStream(request.getInputStream());
         String blob = new String(buf, enc);
-        requestBodyParams = new HashMap();
+        requestBodyParams = new TreeMap<String, String[]>(String.CASE_INSENSITIVE_ORDER);
         ParameterizedString.parseParameterString(requestBodyParams, blob, true);
 
         if (queryParams.isEmpty() && requestBodyParams.isEmpty()) {
@@ -116,7 +118,8 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         }
 
         // Combines queryParams and requestBodyParams into allParams.
-        Map<String, String[]> allParams = new HashMap<String, String[]>(queryParams);
+        Map<String, String[]> allParams = new TreeMap<String, String[]>(String.CASE_INSENSITIVE_ORDER);
+        allParams.putAll(queryParams);
         for (String name : requestBodyParams.keySet()) {
             String[] bodyValues = requestBodyParams.get(name);
             String[] queryValues = queryParams.get(name);

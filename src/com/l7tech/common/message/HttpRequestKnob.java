@@ -84,6 +84,9 @@ public interface HttpRequestKnob extends TcpKnob, HasSoapAction, HasHeaders {
 
     String getParameter(String name) throws IOException;
 
+    /**
+     * @return a Map&lt;String,String[]&gt;
+     */
     Map getParameterMap() throws IOException;
 
     String[] getParameterValues(String s) throws IOException;

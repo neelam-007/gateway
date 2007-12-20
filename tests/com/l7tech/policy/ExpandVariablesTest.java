@@ -187,6 +187,36 @@ public class ExpandVariablesTest extends TestCase {
         assertEquals(paramValue, "bar");
     }
 
+    public void testRequestHttpParamCaseInsensitivity() throws Exception {
+        PolicyEnforcementContext pec = new PolicyEnforcementContext(makeTinyRequest(), new Message());
+
+        final Map<String, Object> vars = pec.getVariableMap(new String[]{"request.http.parameter.Foo"}, audit);
+        String paramValue = ExpandVariables.process("${request.http.parameter.fOO}", vars, audit, true);
+        assertEquals(paramValue, "bar");
+    }
+
+    public void testRequestHttpParamCaseInsensitivity2() throws Exception {
+        PolicyEnforcementContext pec = new PolicyEnforcementContext(makeTinyRequest(), new Message());
+
+        final Map<String, Object> vars = pec.getVariableMap(new String[]{"request.http.parameter.Foo"}, audit);
+        String paramValue = ExpandVariables.process("${request.HttP.paRAMeter.fOO}", vars, audit, true);
+        assertEquals(paramValue, "bar");
+
+        paramValue = ExpandVariables.process("${REQuest.httP.paRAMeter.fOO}", vars, audit, true);
+        assertEquals(paramValue, "bar");
+    }
+
+    public void testRequestHttpParamCasePreservation() throws Exception {
+        final Enumeration<String> en = makeTinyRequest().getHttpRequestKnob().getParameterNames();
+        String badname = null;
+        while (en.hasMoreElements()) {
+            String val = en.nextElement();
+            if ("BaZ".equals(val)) return;
+            if ("baz".equalsIgnoreCase(val)) badname = val;
+        }
+        fail("Expected to find original case, found " + badname);
+    }
+
     public void testMessageVariable() throws Exception {
         final Message foo = makeTinyRequest();
         PolicyEnforcementContext pec = new PolicyEnforcementContext(new Message(), new Message());
@@ -194,6 +224,16 @@ public class ExpandVariablesTest extends TestCase {
 
         final Map<String, Object> vars = pec.getVariableMap(new String[]{"foo.mainPart"}, audit);
         String bodytext = ExpandVariables.process("${foo.mainPart}", vars, audit, true);
+        assertEquals(bodytext, TINY_BODY);
+    }
+
+    public void testMessageVariableCaseInsensitive() throws Exception {
+        final Message foo = makeTinyRequest();
+        PolicyEnforcementContext pec = new PolicyEnforcementContext(new Message(), new Message());
+        pec.setVariable("fOo", foo);
+
+        final Map<String, Object> vars = pec.getVariableMap(new String[]{"fOO.mainPart"}, audit);
+        String bodytext = ExpandVariables.process("${foO.mainPart}", vars, audit, true);
         assertEquals(bodytext, TINY_BODY);
     }
 
@@ -265,7 +305,7 @@ public class ExpandVariablesTest extends TestCase {
 
         Map<String, String[]> params = new HashMap<String, String[]>();
         params.put("foo", new String[] { "bar" });
-        params.put("baz", new String[] { "quux", "xyzzy"});
+        params.put("BaZ", new String[] { "quux", "xyzzy"});
         foo.attachHttpRequestKnob(new HttpRequestKnobAdapter("/foo", params, new MimeHeaders(headers)));
         return foo;
     }
@@ -298,7 +338,9 @@ public class ExpandVariablesTest extends TestCase {
         private HttpRequestKnobAdapter(String uri, Map<String, String[]> params, MimeHeaders headers) {
             this.uri = uri;
             this.headers = headers;
-            this.params = params;
+            final TreeMap<String, String[]> newmap = new TreeMap<String, String[]>(String.CASE_INSENSITIVE_ORDER);
+            newmap.putAll(params);
+            this.params = Collections.unmodifiableMap(newmap);
         }
 
         public HttpCookie[] getCookies() {
