@@ -458,18 +458,17 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             status = routedResponse.getStatus();
 
             // Determines the routed response destination.
-            Message routedResponseDestination = null;
-            final String variableToSaveResponse = assertion.getResponseMsgDest();
-            if (variableToSaveResponse == null) {
-                routedResponseDestination = context.getResponse();
-            } else {
+            Message routedResponseDestination = context.getResponse();
+            boolean routedResponseDestinationIsContextVariable = false;
+            if (assertion.getResponseMsgDest() != null) {
+                routedResponseDestinationIsContextVariable = true;
                 routedResponseDestination = new Message();
                 routedResponseDestination.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
                     public void addCookie(HttpCookie cookie) {
                         // TODO what to do with the cookie?
                     }
                 });
-                context.setVariable(variableToSaveResponse, routedResponseDestination);
+                context.setVariable(assertion.getResponseMsgDest(), routedResponseDestination);
             }
 
             boolean readOk = readResponse(context, routedResponse, routedResponseDestination);
@@ -498,9 +497,15 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if (readOk && httpResponseKnob != null) {
                 httpResponseKnob.setStatus(status);
 
-                HttpForwardingRuleEnforcer.handleResponseHeaders(routedResponse, httpResponseKnob, auditor,
-                                                                 data.getResponseHeaderRules(), context,
-                                                                 routedRequestParams, vars, varNames);
+                HttpForwardingRuleEnforcer.handleResponseHeaders(routedResponse,
+                                                                 httpResponseKnob,
+                                                                 auditor,
+                                                                 data.getResponseHeaderRules(),
+                                                                 routedResponseDestinationIsContextVariable,
+                                                                 context,
+                                                                 routedRequestParams,
+                                                                 vars,
+                                                                 varNames);
             }
             if (data.isPassthroughHttpAuthentication()) {
                 boolean passed = false;

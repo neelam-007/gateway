@@ -1,21 +1,21 @@
 package com.l7tech.server.util;
 
-import com.l7tech.common.http.*;
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.common.http.*;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.policy.assertion.HttpPassthroughRule;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
-import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerBridgeRoutingAssertion;
+import com.l7tech.server.policy.variable.ExpandVariables;
 
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.io.IOException;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class handles the runtime enforcement of the forwarding rules
@@ -330,21 +330,26 @@ public class HttpForwardingRuleEnforcer {
      * @param targetForResponseHeaders the response message to put the headers into
      * @param context the pec
      * @param rules http rules dictating what headers should be forwarded and under which conditions
+     * @param passThroughSpecialHeaders whether to pass through headers in the list {@link HttpPassthroughRuleSet#HEADERS_NOT_TO_IMPLICITELY_FORWARD}
      * @param auditor for runtime auditing
      * @param routedRequestParams httpclientproperty
      * @param vars pre-populated map of context variables (pec.getVariableMap) or null
      * @param varNames the context variables used by the calling assertion used to populate vars if null
      */
     public static void handleResponseHeaders(GenericHttpResponse sourceOfResponseHeaders,
-                                             HttpResponseKnob targetForResponseHeaders, Auditor auditor,
-                                             HttpPassthroughRuleSet rules, PolicyEnforcementContext context,
-                                             GenericHttpRequestParams routedRequestParams, Map vars,
+                                             HttpResponseKnob targetForResponseHeaders,
+                                             Auditor auditor,
+                                             HttpPassthroughRuleSet rules,
+                                             boolean passThroughSpecialHeaders,
+                                             PolicyEnforcementContext context,
+                                             GenericHttpRequestParams routedRequestParams,
+                                             Map vars,
                                              String[] varNames) {
         boolean passIncomingCookies = false;
         if (rules.isForwardAll()) {
             HttpHeader[] responseHeaders = sourceOfResponseHeaders.getHeaders().toArray();
             for (HttpHeader h : responseHeaders) {
-                if (headerShouldBeIgnored(h.getName())) {
+                if (!passThroughSpecialHeaders && headerShouldBeIgnored(h.getName())) {
                     logger.fine("ignoring header " + h.getName() + " with value " + h.getFullValue());
                 } else if (HttpConstants.HEADER_SET_COOKIE.equals(h.getName())) {
                     // special cookie handling happens outside this loop (see below)
@@ -354,6 +359,15 @@ public class HttpForwardingRuleEnforcer {
             }
             passIncomingCookies = true;
         } else {
+            if (passThroughSpecialHeaders) {
+                HttpHeader[] responseHeaders = sourceOfResponseHeaders.getHeaders().toArray();
+                for (HttpHeader h : responseHeaders) {
+                    if (headerShouldBeIgnored(h.getName())) {
+                        targetForResponseHeaders.addHeader(h.getName(), h.getFullValue());
+                    }
+                }
+            }
+
             for (int i = 0; i < rules.getRules().length; i++) {
                 HttpPassthroughRule rule = rules.getRules()[i];
                 if (rule.isUsesCustomizedValue()) {
