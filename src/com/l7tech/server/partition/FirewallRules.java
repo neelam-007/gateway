@@ -247,6 +247,9 @@ public class FirewallRules {
             PartitionInformation pi = partitionManager.getPartition(partitionName);
             try {
                 ppis.add(getInfoForPartition(pi));
+            } catch (FileNotFoundException e) {
+                // This is a valid state if called from within the configurator
+                logger.log(Level.FINE, "Unable to read firewall information for partition " + partitionName + ": " + ExceptionUtils.getMessage(e));
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Unable to read firewall information for partition " + partitionName + ": " + ExceptionUtils.getMessage(e));
             }
