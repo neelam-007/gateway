@@ -129,7 +129,7 @@ echo
 cd ../pkgbuild/
 echo Bundling into a single file
 #No prompting which packet if the package is qualified at the end of the line
-pkgtrans -s `pwd` ../L7TECHssg.pkg L7TECHssg >> ../pktrans.log 2>&1
+pkgtrans -s `pwd` ../L7TECHssg-$version.pkg L7TECHssg >> ../pktrans.log 2>&1
 echo Done
 echo
 
