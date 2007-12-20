@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.PolicyValidatorResult;
 
 import javax.swing.tree.TreeNode;
 import java.util.*;
@@ -24,6 +25,7 @@ import java.util.logging.Logger;
  * Time: 2:49:00 PM<br/>
  */
 public abstract class IdentityAssertionTreeNode<AT extends IdentityAssertion> extends LeafAssertionTreeNode<AT> {
+
     public IdentityAssertionTreeNode(AT idass) {
         super(idass);
         assertion = idass;
@@ -64,29 +66,16 @@ public abstract class IdentityAssertionTreeNode<AT extends IdentityAssertion> ex
      *
      * @param messages the validator messages
      */
-    public void setValidatorMessages(Collection messages) {
+    @Override
+    public void setValidatorMessages(Collection<PolicyValidatorResult.Message> messages) {
         if (!PolicyTree.isIdentityView(this)) {
             super.setValidatorMessages(messages);
             return;
         }
-        // identity view
-        AssertionTreeNode previous = (AssertionTreeNode)getPreviousSibling();
-        AssertionTreeNode next = (AssertionTreeNode)getNextSibling();
-        AssertionTreeNode parent = (AssertionTreeNode)getParent();
-        if (previous != null) {
-            mergeMessages(previous, messages);
-        } else if (next != null) {
-            mergeMessages(next, messages);
-        } else if (parent != null) {
-            AssertionTreeNode p = parent;
-            while (p != null) {
-                if (isDisiplayable(p)) {
-                    mergeMessages(p, messages);
-                    break;
-                }
-                p = (AssertionTreeNode)p.getParent();
-            }
-        }
+
+        setValidatorMessages(messages, null);
+        setValidatorMessages(messages, Boolean.TRUE);
+        setValidatorMessages(messages, Boolean.FALSE);
     }
 
     private boolean isDisiplayable(AssertionTreeNode p) {
@@ -99,7 +88,7 @@ public abstract class IdentityAssertionTreeNode<AT extends IdentityAssertion> ex
         IdentityPolicyTreeNode in = (IdentityPolicyTreeNode)path[1];
 
         if (p instanceof OneOrMoreAssertionTreeNode) {
-            List pathAssertions = new ArrayList();
+            List<Assertion> pathAssertions = new ArrayList<Assertion>();
             CompositeAssertion ca = (CompositeAssertion)p.asAssertion();
             //noinspection ForLoopReplaceableByForEach
             for (Iterator iterator = ca.getChildren().iterator(); iterator.hasNext();) {
@@ -119,14 +108,44 @@ public abstract class IdentityAssertionTreeNode<AT extends IdentityAssertion> ex
      * @param receiver the receiver node
      * @param messages the messages
      */
-    private void mergeMessages(AssertionTreeNode receiver, Collection messages) {
-        Set newMessages = new HashSet();
+    private void mergeMessages(AssertionTreeNode receiver, Collection<PolicyValidatorResult.Message> messages, Boolean direction) {
+        Set<PolicyValidatorResult.Message> newMessages = new HashSet<PolicyValidatorResult.Message>();
         newMessages.addAll(messages);
         newMessages.addAll(receiver.getAllValidatorMessages());
-        receiver.setValidatorMessages(newMessages);
+        if ( receiver instanceof IdentityAssertionTreeNode ) {
+            ((IdentityAssertionTreeNode)receiver).setValidatorMessages(newMessages, direction);
+        } else {
+            receiver.setValidatorMessages(newMessages);
+        }
     }
 
-    static final Logger log = Logger.getLogger(IdentityAssertionTreeNode.class.getName());
+    private void setValidatorMessages(Collection<PolicyValidatorResult.Message> messages, Boolean direction) {
+        if ( direction == null ) {
+            AssertionTreeNode parent = (AssertionTreeNode)getParent();
+            if (parent != null) {
+                AssertionTreeNode p = parent;
+                while (p != null) {
+                    if (isDisiplayable(p)) {
+                        mergeMessages(p, messages, null);
+                        break;
+                    }
+                    p = (AssertionTreeNode)p.getParent();
+                }
+            }
+        } else if ( direction ) {
+            AssertionTreeNode previous = (AssertionTreeNode)getPreviousSibling();
+            if (previous != null) {
+                mergeMessages(previous, messages, Boolean.TRUE);
+            }
+        } else {
+            AssertionTreeNode next = (AssertionTreeNode)getNextSibling();
+            if (next != null) {
+                mergeMessages(next, messages, Boolean.FALSE);
+            }
+        }
+    }
+
+    private static final Logger log = Logger.getLogger(IdentityAssertionTreeNode.class.getName());
     protected AT assertion;
     protected String provName = null;
     public static final String NA = "provider not available";
