@@ -68,6 +68,15 @@ table.bluewhite th {
 	color: white;
 }
 
+table.bluewhite th.outlierCandidate {
+    background-color: #207ABC;
+}
+
+table.bluewhite th.outlierCheckbox {
+    background-color: #207ABC;
+    text-align: center;
+}
+
 table.bluewhite th.stats {
     background-color: #008000;
 }
