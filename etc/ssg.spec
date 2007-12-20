@@ -65,7 +65,7 @@ rm %{buildroot}/ssg/migration/cfg/grandmaster_flash
 %dir /ssg/etc/profile.d
 %attr(0775,gateway,gateway) /ssg/etc/profile.d/
 %config(noreplace) %attr(0775,gateway,gateway) /ssg/etc/profile.d/java.sh
-%attr(0775,gateway,gateway) /ssg/etc/profile.d/jvmoptions
+%config(noreplace) %attr(0775,gateway,gateway) /ssg/etc/profile.d/jvmoptions
 
 # Other stuff
 /ssg/etc/ldapTemplates
