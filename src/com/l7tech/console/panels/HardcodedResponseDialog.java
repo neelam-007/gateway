@@ -6,6 +6,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.HardcodedResponseAssertion;
+import com.l7tech.policy.variable.Syntax;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
@@ -42,6 +43,7 @@ public class HardcodedResponseDialog extends JDialog implements AssertionPropert
         httpStatus.setDocument(new NumberField(String.valueOf(Long.MAX_VALUE).length()));
 
         validator.constrainTextFieldToNumberRange("HTTP status", httpStatus, 1, Integer.MAX_VALUE);
+        validator.addRule( getVariableValidationRule() );
         Utilities.equalizeButtonSizes(new AbstractButton[]{okButton, cancelButton});
 
         validator.attachToButton(okButton, new ActionListener() {
@@ -149,5 +151,21 @@ public class HardcodedResponseDialog extends JDialog implements AssertionPropert
 
     public HardcodedResponseAssertion getData(HardcodedResponseAssertion assertion) {
         return getAssertion();
+    }
+
+    private InputValidator.ValidationRule getVariableValidationRule() {
+        return new InputValidator.ValidationRule(){
+            public String getValidationError() {
+                String error = null;
+
+                try {
+                    Syntax.getReferencedNames( responseBody.getText() );
+                } catch (IllegalArgumentException iae) {
+                    error = "Error with template variable '"+ iae.getMessage() +"'.";
+                }
+
+                return error;
+            }
+       };        
     }
 }

@@ -4,7 +4,6 @@ import org.springframework.jdbc.*;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.orm.hibernate3.HibernateSystemException;
 
-import java.lang.reflect.Method;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.List;
@@ -32,7 +31,10 @@ public class UnsupportedExceptionsThrowsAdvice extends ThrowsAdviceSupport {
             "com.mysql.jdbc.RowDataDynamic$OperationNotSupportedException",
     };
 
+    @SuppressWarnings( { "deprecation" } )
     private static final Class[] REQUIRED_BLACKLIST = new Class[] {
+            // our own server side exceptions
+            com.l7tech.server.policy.ServerPolicyException.class,
             // spring jdbc errors
             BadSqlGrammarException.class,
             CannotGetJdbcConnectionException.class,
@@ -56,10 +58,7 @@ public class UnsupportedExceptionsThrowsAdvice extends ThrowsAdviceSupport {
 
     private static Class[] blacklist;
 
-    public void afterThrowing(final Method method,
-                              final Object[] args,
-                              final Object target,
-                              final Throwable throwable) throws Throwable {
+    public void afterThrowing(final Throwable throwable) throws Throwable {
         Throwable t = replaceIfNotSupported(throwable);
         if (t != null) {
             throw t;
@@ -82,7 +81,7 @@ public class UnsupportedExceptionsThrowsAdvice extends ThrowsAdviceSupport {
         Class[] list = blacklist;
 
         if (list == null) {
-            List<Class> allListed = new ArrayList();
+            List<Class> allListed = new ArrayList<Class>();
             allListed.addAll(Arrays.asList(REQUIRED_BLACKLIST));
 
             for (String className : OPTIONAL_BLACKLIST) {

@@ -483,13 +483,18 @@ class PathValidator {
 
         if (a instanceof UsesVariables) {
             UsesVariables ua = (UsesVariables)a;
-            final String[] vars = ua.getVariablesUsed();
-            for (String var : vars) {
-                if (!(BuiltinVariables.isPredefined(var) || seenVariable(var.toLowerCase()))) {
-                    result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                                                                        "This assertion refers to the variable '" + var + "', which is neither predefined " +
-                                                                        "nor set in the policy so far.", null));
+            try {
+                final String[] vars = ua.getVariablesUsed();
+                for (String var : vars) {
+                    if (!(BuiltinVariables.isPredefined(var) || seenVariable(var.toLowerCase()))) {
+                        result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                                                                            "This assertion refers to the variable '" + var + "', which is neither predefined " +
+                                                                            "nor set in the policy so far.", null));
+                    }
                 }
+            } catch (IllegalArgumentException iae) {
+                result.addError(new PolicyValidatorResult.Error(a, assertionPath,
+                  "This assertion uses invalid variable syntax.", null));
             }
         }
     }
