@@ -606,12 +606,7 @@ public class WssRoundTripTest extends TestCase {
             org.apache.xmlbeans.XmlOptions xo = new org.apache.xmlbeans.XmlOptions();
             xo.setErrorListener(errors);
             if (!assertion.validate(xo)) {
-                // TODO remove this when bug 3935 is fixed
-                if (SamlConstants.NS_SAML2.equals(element.getNamespaceURI())) {
-                    log.warning("Ignoring SAML v2.0 validation errors: " + errors);
-                    continue;
-                }
-
+                // Bug 3935 is finally fixed
                 throw new RuntimeException("Invalid assertion: " + errors);
             }
         }

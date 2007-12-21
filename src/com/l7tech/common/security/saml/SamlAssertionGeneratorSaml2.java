@@ -4,6 +4,7 @@ import com.l7tech.common.security.xml.KeyInfoDetails;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.NamespaceFactory;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlString;
@@ -64,70 +65,22 @@ public class SamlAssertionGeneratorSaml2 {
             as.setAuthnInstant(authenticationStatement.getAuthenticationInstant());
 
             String authenticationMethod = authenticationStatement.getAuthenticationMethod();
-            XmlObject authnContextDecl = null;
             if (SamlConstants.PASSWORD_AUTHENTICATION.equals(authenticationMethod) ||
                 SamlConstants.AUTHENTICATION_SAML2_PASSWORD.equals(authenticationMethod)) {
                 authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_PASSWORD;
-
-                x0AcClassesPassword.oasisNamesTcSAML2.AuthnContextDeclarationBaseType passwdContextDecl =
-                        x0AcClassesPassword.oasisNamesTcSAML2.AuthnContextDeclarationBaseType.Factory.newInstance();
-
-                x0AcClassesPassword.oasisNamesTcSAML2.AuthnMethodBaseType authnMethod =
-                        passwdContextDecl.addNewAuthnMethod();
-
-                x0AcClassesPassword.oasisNamesTcSAML2.AuthenticatorBaseType abt = authnMethod.addNewAuthenticator();
-                x0AcClassesPassword.oasisNamesTcSAML2.PasswordType pt = abt.addNewRestrictedPassword();
-                x0AcClassesPassword.oasisNamesTcSAML2.LengthType lt = pt.addNewLength();
-                lt.setMin(BigInteger.valueOf(3));
-
-                authnContextDecl = passwdContextDecl;
-            }
-            else if (SamlConstants.XML_DSIG_AUTHENTICATION.equals(authenticationMethod) ||
+            } else if (SamlConstants.XML_DSIG_AUTHENTICATION.equals(authenticationMethod) ||
                 SamlConstants.AUTHENTICATION_SAML2_XMLDSIG.equals(authenticationMethod)) {
                 authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_XMLDSIG;
-
-                x0AcClassesXMLDSig.oasisNamesTcSAML2.AuthnContextDeclarationBaseType digSigContextDecl =
-                        x0AcClassesXMLDSig.oasisNamesTcSAML2.AuthnContextDeclarationBaseType.Factory.newInstance();
-
-                x0AcClassesXMLDSig.oasisNamesTcSAML2.AuthnMethodBaseType authnMethod =
-                        digSigContextDecl.addNewAuthnMethod();
-
-                x0AcClassesXMLDSig.oasisNamesTcSAML2.AuthenticatorBaseType abt = authnMethod.addNewAuthenticator();
-                XmlString kv = XmlString.Factory.newInstance();
-                kv.setStringValue(SamlConstants.AUTHENTICATION_SAML2_X509);
-                abt.addNewDigSig().setKeyValidation(kv);
-
-                authnContextDecl = digSigContextDecl;
-            }
-            else if (SamlConstants.SSL_TLS_CERTIFICATE_AUTHENTICATION.equals(authenticationMethod) ||
+            }else if (SamlConstants.SSL_TLS_CERTIFICATE_AUTHENTICATION.equals(authenticationMethod) ||
                 SamlConstants.AUTHENTICATION_SAML2_TLS_CERT.equals(authenticationMethod)) {
                 authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_TLS_CERT;
-
-                x0AcClassesTLSClient.oasisNamesTcSAML2.AuthnContextDeclarationBaseType tlsContextDecl =
-                        x0AcClassesTLSClient.oasisNamesTcSAML2.AuthnContextDeclarationBaseType.Factory.newInstance();
-
-                x0AcClassesTLSClient.oasisNamesTcSAML2.AuthnMethodBaseType authnMethod =
-                        tlsContextDecl.addNewAuthnMethod();
-
-                x0AcClassesTLSClient.oasisNamesTcSAML2.AuthenticatorBaseType abt = authnMethod.addNewAuthenticator();
-                XmlString kv = XmlString.Factory.newInstance();
-                kv.setStringValue(SamlConstants.AUTHENTICATION_SAML2_X509);
-                abt.addNewDigSig().setKeyValidation(kv);
-
-                x0AcClassesTLSClient.oasisNamesTcSAML2.AuthenticatorTransportProtocolType atpt =
-                        authnMethod.addNewAuthenticatorTransportProtocol();
-                atpt.addNewSSL();
-
-                authnContextDecl = tlsContextDecl;
-            }
-            else if (SamlConstants.UNSPECIFIED_AUTHENTICATION.equals(authenticationMethod)) {
+            } else if (SamlConstants.UNSPECIFIED_AUTHENTICATION.equals(authenticationMethod)) {
                 authenticationMethod = SamlConstants.AUTHENTICATION_SAML2_UNSPECIFIED;
             }
 
             if (authenticationMethod != null) {
                 AuthnContextType act = as.addNewAuthnContext();
                 act.setAuthnContextClassRef(authenticationMethod);
-                if (authnContextDecl != null) act.setAuthnContextDecl(authnContextDecl);
             }
 
             InetAddress clientAddress = options.getClientAddress();
@@ -303,42 +256,6 @@ public class SamlAssertionGeneratorSaml2 {
         return document;
     }
 
-    /**
-     * NOTE: Only required for Statements, not known types
-     *
-     * Ensure that any statements have the required xsi:type information.
-     * /
-    private Document fixTypes(Document document) {
-        Element documentElement = document.getDocumentElement();
-
-        // Add XSI Namespace
-        documentElement.setAttributeNS(
-                XMLConstants.XMLNS_ATTRIBUTE_NS_URI,
-                XMLConstants.XMLNS_ATTRIBUTE + ":xsi",
-                XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI);
-
-        // Add any xsi:type attributes.
-        String[] statementElements = {"AuthnStatement", "AuthzDecisionStatement", "AttributeStatement"};
-        for (int i = 0; i < statementElements.length; i++) {
-            String statementElementName = statementElements[i];
-            NodeList statementNodes = document.getElementsByTagNameNS(SamlConstants.NS_SAML2, statementElementName);
-            if (statementNodes != null) {
-                for (int n=0; n<statementNodes.getLength(); n++) {
-                    Element statementElement = (Element) statementNodes.item(n);
-                    statementElement.setAttributeNS(
-                            XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI,
-                            "xsi:type",
-                            SamlConstants.NS_SAML_PREFIX + ":" + statementElementName + "Type");
-                }
-            }
-        }
-
-        return document;
-    }
-
-    /**
-     * WARNING - This only works when you know that the prefix is not already in use.
-     */
     private void fixPrefixes(Element element, String prefix, String namespace) {
         // fix any ns decls on this element
         NamedNodeMap attributes = element.getAttributes();
@@ -355,6 +272,17 @@ public class SamlAssertionGeneratorSaml2 {
         // fix prefix for this element
         if (namespace.equals(element.getNamespaceURI())) {
             element.setPrefix(prefix);
+        }
+
+        String saml2Prefix = XmlUtil.findActivePrefixForNamespace(element, SamlConstants.NS_SAML2);
+        if (saml2Prefix == null) throw new IllegalStateException("Unable to find saml2 prefix");
+
+        // fix xsi:type
+        if ( "SubjectConfirmationData".equals( element.getLocalName() ) && SamlConstants.NS_SAML2.equals( element.getNamespaceURI() )) {
+            element.setAttributeNS(
+                    XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI,
+                    "xsi:type",
+                    saml2Prefix + ":KeyInfoConfirmationDataType");
         }
 
         // fix children

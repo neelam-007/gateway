@@ -150,10 +150,12 @@ public final class SamlAssertionV2 extends SamlAssertion {
                 SubjectConfirmationDataType subjectConfirmationData = subjectConfirmations[0].getSubjectConfirmationData();
 
                 if (confirmationMethod == HOLDER_OF_KEY) {
-                    if (subjectConfirmationData != null &&
-                        ((Element)subjectConfirmationData.getDomNode()).getAttributeNS(XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI, "type")
-                                .equals("urn:KeyInfoConfirmationDataType")) {
+                    final Element subjConfData = (Element) subjectConfirmationData.getDomNode();
+                    final String xsiType = subjConfData.getAttributeNS(XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI, "type");
+                    final String saml2Prefix = XmlUtil.findActivePrefixForNamespace(subjConfData, SamlConstants.NS_SAML2);
+                    if (saml2Prefix == null) throw new IllegalStateException("Unable to find a saml2 prefix in scope");
 
+                    if (subjectConfirmationData != null && (saml2Prefix + ":KeyInfoConfirmationDataType").equals(xsiType)) {
                         if(logger.isLoggable(Level.FINE))
                             logger.fine("Processing KeyInfo confirmation.");
 
