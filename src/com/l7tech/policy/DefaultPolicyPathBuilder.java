@@ -40,15 +40,13 @@ import java.io.IOException;
  */
 public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
     private final AssertionTranslator translator;
-    private final AssertionTranslator translatorWriteable;
 
     /**
      * Protected constructor, the class cannot be instantiated
      * directly
      */
     protected DefaultPolicyPathBuilder(final ReadOnlyEntityManager<Policy, EntityHeader> policyFinder) {
-        this.translator = new IncludeAssertionDereferenceTranslator(policyFinder);
-        this.translatorWriteable = new IncludeAssertionDereferenceTranslator(policyFinder, false);
+        this.translator = new IncludeAssertionDereferenceTranslator(policyFinder, false);
     }
 
     /**
@@ -59,7 +57,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
 
         if ( Assertion.contains(assertion, Include.class) ) {
             try {
-                rootWithIncludes = translate(WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(assertion)), translatorWriteable);
+                rootWithIncludes = translate(WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(assertion)), translator);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

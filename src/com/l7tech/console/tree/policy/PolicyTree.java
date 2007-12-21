@@ -1168,17 +1168,13 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     return false;
                 }
 
-                ass.ownerPolicyOid(policyTree.getPolicyEditorPanel().getPolicyNode().getPolicy().getOid());
-
                 // Now we have an assertion tree to import into this location in the policy tree.
                 return policyTree.importAssertion(ass);
 
             } catch (IOException e) {
                 log.log(Level.FINE, "Paste rejected: " + ExceptionUtils.getMessage(e), e);
                 return false;
-            } catch (FindException e) {
-                throw new RuntimeException(e); // Can't happen I think
-            }
+            } 
         }
 
         protected void exportDone(JComponent source, Transferable data, int action) {

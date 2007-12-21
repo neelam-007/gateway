@@ -42,7 +42,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
      * Creates a new instance of PolicyTreeModel with root set
      * to the node represnting the root assertion.
      * 
-     * @param root 
+     * @param root The root assertion for the policy
      */
     public PolicyTreeModel(Assertion root) {
         super(AssertionTreeNodeFactory.asTreeNode(root));
@@ -64,7 +64,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
      * to the abstract tree node. This is a protected constructor
      * that is used for models such as identity viewl.
      * 
-     * @param root 
+     * @param root The root tree node
      */
     protected PolicyTreeModel(AbstractTreeNode root) {
         super(root);
@@ -276,14 +276,6 @@ public class PolicyTreeModel extends DefaultTreeModel {
     }
 
     /**
-     * Invoke this to insert newChild at location index in parents children with
-     * advice support.
-     */
-    private void insertNodeIntoAdvised(MutableTreeNode newChild, MutableTreeNode parent, int index) {
-        super.insertNodeInto(newChild, parent, index);
-    }
-
-    /**
      * Invoke this to move (after remove node) to insert newChild at location index in parents
      * children without advice support. Will trigger only the validation advice
      */
@@ -343,7 +335,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
 
         public void proceed() {
             if (advices == null || this.adviceIndex == advices.length) {
-                treeModel.insertNodeIntoAdvised(newChild, parent, childLocation);
+                treeModel.rawInsertNodeInto(newChild, parent, childLocation);
             } else
                 this.advices[this.adviceIndex++].proceed(this);
         }

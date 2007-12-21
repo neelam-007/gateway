@@ -204,7 +204,7 @@ public abstract class Assertion implements Cloneable, Serializable {
             ll.addFirst(node);
             node = node.getParent();
         }
-        return (Assertion[])ll.toArray(new Assertion[]{});
+        return (Assertion[])ll.toArray(new Assertion[ll.size()]);
 
     }
 
@@ -223,11 +223,20 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
 
     public Long ownerPolicyOid() {
-        return ownerPolicyOid;
+        Long oid = ownerPolicyOid;
+
+        if ( oid == null ) {
+            Assertion parent = getParent();
+            if ( parent != null ) {
+                oid = parent.ownerPolicyOid();
+            }
+        }
+
+        return oid;
     }
 
     public void ownerPolicyOid(Long ownerPolicyOid) {
-        if (ownerPolicyOid == -1) ownerPolicyOid = null;
+        if (ownerPolicyOid != null && ownerPolicyOid == -1) ownerPolicyOid = null;
         this.ownerPolicyOid = ownerPolicyOid;
     }
 

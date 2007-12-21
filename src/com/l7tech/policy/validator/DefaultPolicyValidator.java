@@ -59,7 +59,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 }
             }
 
-            r.addWarning(new PolicyValidatorResult.Warning(lastAssertion.ownerPolicyOid(), lastAssertion.getOrdinal(), 0, "Assertions that use XPaths may not work as expected with RPC services.", null));
+            r.addWarning(new PolicyValidatorResult.Warning(lastAssertion, 0, "Assertions that use XPaths may not work as expected with RPC services.", null));
         }
 
         return r;

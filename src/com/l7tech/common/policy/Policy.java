@@ -83,7 +83,6 @@ public class Policy extends NamedEntityImp {
                 wssInPolicy = true;
             }
         }
-        rootAssertion.ownerPolicyOid(getOid());
     }
 
     /**

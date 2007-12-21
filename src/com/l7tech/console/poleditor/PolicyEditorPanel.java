@@ -58,9 +58,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
-import java.util.Enumeration;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -226,8 +224,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     protected static final Callable<PolicyValidatorResult> NO_VAL_CALLBACK = new Callable<PolicyValidatorResult>() {
         public PolicyValidatorResult call() throws Exception {
             PolicyValidatorResult output = new PolicyValidatorResult();
-            output.addWarning(new PolicyValidatorResult.Warning(0L, 0, 0, "Policy validation feedback has " +
-                                                                      "been disabled in the Preferences", null));
+            output.addWarning(new PolicyValidatorResult.Warning( Collections.<Integer>emptyList(), -1, 0,
+                    "Policy validation feedback has been disabled in the Preferences", null));
             return output;
         }
     };
@@ -262,7 +260,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 	final Policy policy = getPolicyNode().getPolicy();
 	                if (policy == null) {
     	                PolicyValidatorResult r = new PolicyValidatorResult();
-                    	r.addError(new PolicyValidatorResult.Error(null, -1, -1, "Policy could not be loaded", null));
+                    	r.addError(new PolicyValidatorResult.Error(Collections.<Integer>emptyList(), -1, -1, "Policy could not be loaded", null));
                     	return r;
                 	}
                     return policyValidator.validate(assertion, policy.getType(), wsdl, soap, licenseManager);
@@ -420,6 +418,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     private AssertionTreeNode getCurrentRoot() {
         return identityRootAssertion != null ? identityRootAssertion : rootAssertion;
+    }
+
+    private boolean isIdentityView() {
+        return identityRootAssertion != null;
     }
 
     /**
@@ -765,12 +767,17 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     void displayPolicyValidateResult(PolicyValidatorResult r) {
         for (Enumeration en = getCurrentRoot().preorderEnumeration(); en.hasMoreElements();) {
             AssertionTreeNode an = (AssertionTreeNode)en.nextElement();
-            an.setValidatorMessages(r.messages(an.asAssertion()));
+            if ( isIdentityView() ) {
+                int ordinal = an.asAssertion().getOrdinal();
+                an.setValidatorMessages(r.messages(ordinal));
+            } else {
+                an.setValidatorMessages(r.messages(an.asAssertionIndexPath()));
+            }
         }
         if (!validating) {
-               ((DefaultTreeModel)policyTree.getModel()).nodeChanged(getCurrentRoot());
-           }
-           overWriteMessageArea("");
+            ((DefaultTreeModel)policyTree.getModel()).nodeChanged(getCurrentRoot());
+        }
+        overWriteMessageArea("");
         for (PolicyValidatorResult.Error pe : r.getErrors()) {
             appendToMessageArea(MessageFormat.format("{0}</a> Error: {1}", getValidateMessageIntro(pe), pe.getMessage()));
         }
@@ -821,21 +828,44 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     /**
      * get the validator result message intro
      *
-     * @param pe
      * @return the string as a message
      */
     private String getValidateMessageIntro(PolicyValidatorResult.Message pe) {
         String msg;
-        Assertion assertion = getCurrentRoot().asAssertion().getAssertionWithOrdinal(pe.getAssertionOrdinal());
+        Assertion assertion = null;
+
+        if (isIdentityView()) {
+            assertion = getCurrentRoot().asAssertion().getAssertionWithOrdinal(pe.getAssertionOrdinal());
+        } else {
+            AssertionTreeNode atn = getCurrentRoot().getAssertionByIndexPath(pe.getAssertionIndexPath());
+            if ( atn != null ) {
+                assertion = atn.asAssertion();
+            }
+        }
+
         if (assertion != null) {
-            msg = "Assertion: " +
-              "<a href=\"file://assertion#" +
-              assertion.hashCode() + "\">" +
-              Descriptions.getDescription(assertion).getShortDescription() + "</a>";
+            msg = MessageFormat.format( "Assertion: <a href=\"file://assertion#{0}\">{1}</a>",
+                    pathString(pe.getAssertionOrdinal(), pe.getAssertionIndexPath()),
+                    Descriptions.getDescription(assertion).getShortDescription());
         } else {
             msg = ""; // supplied message (non single assertion related)
         }
         return msg;
+    }
+
+    /**
+     * Build a csv string starting with the ordinal and ending with the index path
+     */
+    private String pathString( final int ordinal, final java.util.List<Integer> path ) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append( ordinal );
+        for ( Integer index : path ) {
+            builder.append(',');
+            builder.append(index);
+        }
+
+        return builder.toString();
     }
 
 
@@ -942,17 +972,31 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
               String f = uri.getFragment();
               if (f == null) return;
               try {
-                  int hashcode = Integer.parseInt(f);
-                  for (Enumeration en = getCurrentRoot().preorderEnumeration();
-                       en.hasMoreElements();) {
-                      AssertionTreeNode an = (AssertionTreeNode)en.nextElement();
-                      if (an.asAssertion().hashCode() == hashcode) {
-                          TreePath p = new TreePath(an.getPath());
-                          if (!policyTree.hasBeenExpanded(p) || !policyTree.isExpanded(p)) {
-                              policyTree.expandPath(p);
+                  java.util.List<Integer> path = new ArrayList<Integer>();
+                  StringTokenizer strtok = new StringTokenizer(f, ",");
+                  while (strtok.hasMoreTokens()) {
+                      path.add( Integer.parseInt( strtok.nextToken() ) );
+                  }
+
+                  AssertionTreeNode an = null;
+                  if ( isIdentityView() ) {
+                      for (Enumeration en = getCurrentRoot().preorderEnumeration();  en.hasMoreElements();) {
+                          AssertionTreeNode atn = (AssertionTreeNode) en.nextElement();
+                          if (atn.asAssertion().getOrdinal() == path.get(0)) {
+                              an = atn;
+                              break;
                           }
-                          policyTree.setSelectionPath(p);
                       }
+                  } else {
+                      an = getCurrentRoot().getAssertionByIndexPath( path.subList( 1, path.size() ) );
+                  }
+
+                  if ( an != null ) {
+                      TreePath p = new TreePath(an.getPath());
+                      if (!policyTree.hasBeenExpanded(p) || !policyTree.isExpanded(p)) {
+                          policyTree.expandPath(p);
+                      }
+                      policyTree.setSelectionPath(p);
                   }
               } catch (NumberFormatException ex) {
                   ex.printStackTrace();

@@ -124,6 +124,16 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * contains.
      */
     public int getChildCount() {
+        checkInitChildren();
+        return super.getChildCount();
+    }
+
+    public Enumeration children() {
+        checkInitChildren();
+        return super.children();
+    }
+
+    private void checkInitChildren() {
         if (!hasLoadedChildren) {
             if (getAllowsChildren()) {
                 loadChildren();
@@ -131,9 +141,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
                 filterChildren();
             }
         }
-        return super.getChildCount();
     }
-
 
     /**
      * @return the TreeNode in this node's child array at the specified

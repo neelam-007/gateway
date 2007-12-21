@@ -1,7 +1,7 @@
 package com.l7tech.policy;
 
-import com.l7tech.common.util.Pair;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import java.util.*;
 import java.io.Serializable;
@@ -17,7 +17,7 @@ public class PolicyValidatorResult implements Serializable {
     private List<Warning> warnings = new ArrayList<Warning>();
 
     
-    private Map<Pair<Long, Integer>,List<Message>> assertionMessages = new HashMap<Pair<Long, Integer>,List<Message>>();
+    private Map<Collection<Integer>,List<Message>> assertionMessages = new HashMap<Collection<Integer>,List<Message>>();
 
     /**
      * Returns the number of the errors that were collected
@@ -76,11 +76,10 @@ public class PolicyValidatorResult implements Serializable {
      */
     public void addError(Error err) {
         errors.add(err);
-        final Pair<Long, Integer> assertion = new Pair<Long, Integer>(err.getPolicyOid(), err.getAssertionOrdinal());
-        List<Message> list = assertionMessages.get(assertion);
+        List<Message> list = assertionMessages.get(err.getAssertionIndexPath());
         if (list == null) {
             list = new ArrayList<Message>();
-            assertionMessages.put(assertion, list);
+            assertionMessages.put(err.getAssertionIndexPath(), list);
         }
         list.add(err);
     }
@@ -92,53 +91,112 @@ public class PolicyValidatorResult implements Serializable {
      */
     public void addWarning(Warning w) {
         warnings.add(w);
-        final Pair<Long, Integer> assertion = new Pair<Long, Integer>(w.getPolicyOid(), w.getAssertionOrdinal());
-        List<Message> list = assertionMessages.get(assertion);
+        List<Message> list = assertionMessages.get(w.getAssertionIndexPath());
         if (list == null) {
             list = new ArrayList<Message>();
-            assertionMessages.put(assertion, list);
+            assertionMessages.put(w.getAssertionIndexPath(), list);
         }
         list.add(w);
     }
 
     /**
      * Retrieve the list of messages for a given assertion.
+     *
      * @param a the assertion or <b>null</b> for messages that do not belong
      *          to a particular assertion
      * @return the list of assertion messages
      */
     public List<Message> messages(Assertion a) {
-        List<Message> messages = assertionMessages.get(new Pair<Long, Integer>(a.ownerPolicyOid(), a.getOrdinal()));
+        return messages( buildIndexPath(a));
+    }
+
+    /**
+     * Retrieve the list of messages for a given assertion by ordinal.
+     *
+     * @param assertionOrdinal the assertion or <b>null</b> for messages that do not belong
+     *          to a particular assertion
+     * @return the list of assertion messages
+     */
+    public List<Message> messages(int assertionOrdinal) {
+        List<Message> messages = null;
+
+        for ( List<Message> messageList : assertionMessages.values() ) {
+            if ( !messageList.isEmpty() ) {
+                Message first = messageList.get( 0 );
+                if ( first.getAssertionOrdinal() == assertionOrdinal ) {
+                    messages = messageList;
+                    break;
+                }
+            }
+        }
+
+        if ( messages != null ) {
+            return messages;
+        }
+
+        return Collections.emptyList();
+    }
+
+    /**
+     * Retrieve the list of messages for a given assertion.
+     *
+     * @param assertionIndexPath the assertion index path
+     * @return the list of assertion messages
+     */
+    public List<Message> messages(List<Integer> assertionIndexPath) {
+        List<Message> messages = assertionMessages.get(assertionIndexPath);
         if (messages !=null) {
             return messages;
         }
         return Collections.emptyList();
     }
+
+    private static List<Integer> buildIndexPath(final Assertion assertion) {
+        List<Integer> ords = new ArrayList<Integer>();
+
+        Assertion current = assertion;
+        while( current != null ) {
+            Assertion parent = current.getParent();
+            if (parent != null) {
+                ords.add( ((CompositeAssertion)parent).getChildren().indexOf( current ) );
+            }
+            current = parent;
+        }
+
+        Collections.reverse(ords);
+
+        return ords;
+    }
+    
     /**
      * The class represents the policy validation result
      */
     public static class Message implements Serializable {
-        private final Long policyOid;
-        private final int assertionOrdinal;
+        private final int ordinal;
+        private final List<Integer> assertionIndexPath;
         private final String message;
         private final Throwable throwable;
         private final int assertionPathOrder;
 
-        Message(Long policyOid, int errorAssertionOrdinal, int apOrder, String message, Throwable throwable) {
+        Message(Collection<Integer> assertionIndexPath, int ordinal, int apOrder, String message, Throwable throwable) {
             if (message == null) throw new IllegalArgumentException();
-            this.policyOid = policyOid;
-            this.assertionOrdinal = errorAssertionOrdinal;
+            this.ordinal = ordinal;
+            this.assertionIndexPath = new ArrayList<Integer>( assertionIndexPath );
             this.message = message;
             this.throwable = throwable;
             this.assertionPathOrder = apOrder;
         }
 
-        public Long getPolicyOid() {
-            return policyOid;
+        Message(Assertion assertion, int apOrder, String message, Throwable throwable) {
+            this( buildIndexPath(assertion), assertion.getOrdinal(), apOrder, message, throwable);
+        }
+
+        public List<Integer> getAssertionIndexPath() {
+            return Collections.unmodifiableList( assertionIndexPath );
         }
 
         public int getAssertionOrdinal() {
-            return assertionOrdinal;
+            return ordinal;
         }
 
         public String getMessage() {
@@ -160,39 +218,47 @@ public class PolicyValidatorResult implements Serializable {
 
             Message message1 = (Message) o;
 
-            if (assertionOrdinal != message1.assertionOrdinal) return false;
+            if (ordinal != message1.ordinal) return false;
+            if (!assertionIndexPath.equals( message1.assertionIndexPath )) return false;
             if (message != null ? !message.equals(message1.message) : message1.message != null) return false;
-            if (policyOid != null ? !policyOid.equals(message1.policyOid) : message1.policyOid != null) return false;
 
             return true;
         }
 
         public int hashCode() {
             int result;
-            result = (policyOid != null ? policyOid.hashCode() : 0);
-            result = 31 * result + assertionOrdinal;
+            result = ordinal * 17;
+            result = 31 * result + assertionIndexPath.hashCode();
             result = 31 * result + (message != null ? message.hashCode() : 0);
             return result;
         }
     }
 
     public static class Error extends Message implements Serializable {
-        public Error(Long policyOid, int errorAssertionOrdinal, int apOrder, String message, Throwable throwable) {
-            super(policyOid, errorAssertionOrdinal, apOrder, message, throwable);
+        public Error(List<Integer> errorAssertionIndexPath, int ordinal, int apOrder, String message, Throwable throwable) {
+            super(errorAssertionIndexPath, ordinal, apOrder, message, throwable);
+        }
+
+        public Error(Assertion error,int apOrder, String message, Throwable throwable) {
+            super(error, apOrder, message, throwable);
         }
 
         public Error(Assertion error, AssertionPath ap, String message, Throwable throwable) {
-            super(error.ownerPolicyOid(), error.getOrdinal(), ap == null ? 0 : ap.getPathOrder(), message, throwable);
+            super(error, ap == null ? 0 : ap.getPathOrder(), message, throwable);
         }
     }
 
     public static class Warning extends Message implements Serializable {
-        public Warning(Long policyOid, int warningAssertionOrdinal, int apOrder, String message, Throwable throwable) {
-            super(policyOid, warningAssertionOrdinal, apOrder, message, throwable);
+        public Warning(List<Integer> warningAssertionIndexPath, int ordinal, int apOrder, String message, Throwable throwable) {
+            super(warningAssertionIndexPath, ordinal, apOrder, message, throwable);
+        }
+
+        public Warning(Assertion warning,int apOrder, String message, Throwable throwable) {
+            super(warning, apOrder, message, throwable);
         }
 
         public Warning(Assertion warning, AssertionPath ap, String message, Throwable throwable) {
-            super(warning.ownerPolicyOid(), warning.getOrdinal(), ap == null ? 0 : ap.getPathOrder(), message, throwable);
+            super(warning, ap == null ? 0 : ap.getPathOrder(), message, throwable);
         }
     }
 }

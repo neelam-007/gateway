@@ -71,6 +71,55 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     }
 
     /**
+     * Get the assertion index path for this treen node.
+     *
+     * <p>This is the index of the child assertion at each level
+     * of the tree.</p>
+     *
+     * @return The list of integers (empty for root)
+     */
+    public final List<Integer> asAssertionIndexPath() {
+        List<Integer> ordinals = new ArrayList<Integer>();
+
+        TreeNode node = this;
+        while ( node != null ) {
+            TreeNode parent = node.getParent();
+            if ( parent != null )
+                ordinals.add( parent.getIndex( node ));
+            node = parent;
+        }
+
+        Collections.reverse( ordinals );
+
+        return ordinals;
+    }
+
+    /**
+     * Get a descendent tree node by index path.
+     *
+     * @param indexPath the list of child indexes
+     * @return the tree node or null if not found
+     */
+    public final AssertionTreeNode getAssertionByIndexPath(List<Integer> indexPath) {
+        AssertionTreeNode assertion = null;
+
+        if ( indexPath.isEmpty() ) {
+            assertion = this;
+        } else {
+            int index = indexPath.get( 0 );
+            if ( index >=0 && index < getChildCount() ) {
+                TreeNode child = getChildAt( index );
+                if ( child instanceof AssertionTreeNode ) {
+                    AssertionTreeNode atnChild = (AssertionTreeNode) child;
+                    assertion = atnChild.getAssertionByIndexPath( indexPath.subList( 1, indexPath.size() ));
+                }
+            }
+        }
+
+        return assertion;
+    }
+
+    /**
      * @return the node name that is displayed
      */
     abstract public String getName();
@@ -222,7 +271,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             if (parent instanceof CompositeAssertionTreeNode) {
                 ca = (CompositeAssertionTreeNode) parent;
             } else {
-                if (isDescendantOfInclude()) return list.toArray(new Action[0]);
+                if (isDescendantOfInclude()) return list.toArray(new Action[list.size()]);
                 throw new IllegalStateException("Assertion parent is neither an Include nor a Composite");
             }
         }
@@ -268,7 +317,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             list.add(vp);
         */
 
-        return list.toArray(new Action[]{});
+        return list.toArray(new Action[list.size()]);
     }
 
     public boolean isDescendantOfInclude() {
@@ -343,8 +392,6 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     /**
      * assign the policy template.
      * todo: find a better place for this
-     *
-     * @param templateNode
      */
     private void assignPolicyTemplate(PolicyTemplateNode templateNode) {
         PolicyEntityNode policyNode = getPolicyNodeCookie();
