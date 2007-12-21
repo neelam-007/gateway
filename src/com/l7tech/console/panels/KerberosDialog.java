@@ -47,6 +47,7 @@ public class KerberosDialog extends JDialog {
     private JLabel validLabel;
     private JLabel summaryLabel;
     private JLabel encryptionTypesLabel;
+    private JLabel errorMessageLabel;
 
     private void init() {
         setTitle("Kerberos Configuration");
@@ -85,8 +86,9 @@ public class KerberosDialog extends JDialog {
                 kerberosAdmin.getPrincipal();
                 valid = true;
             }
-            catch(Exception e) {
-                // ignore
+            catch(KerberosException e) {
+                errorMessageLabel.setVisible( true );
+                errorMessageLabel.setText( e.getMessage() );
             }
 
             Keytab keytab = null;

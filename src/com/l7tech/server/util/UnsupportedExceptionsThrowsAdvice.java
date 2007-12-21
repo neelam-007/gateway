@@ -35,6 +35,8 @@ public class UnsupportedExceptionsThrowsAdvice extends ThrowsAdviceSupport {
     private static final Class[] REQUIRED_BLACKLIST = new Class[] {
             // our own server side exceptions
             com.l7tech.server.policy.ServerPolicyException.class,
+            // java internals
+            sun.security.krb5.KrbException.class,
             // spring jdbc errors
             BadSqlGrammarException.class,
             CannotGetJdbcConnectionException.class,

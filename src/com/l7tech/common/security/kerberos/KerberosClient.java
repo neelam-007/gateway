@@ -29,6 +29,7 @@ import org.ietf.jgss.Oid;
 import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.KrbApReq;
 import com.l7tech.common.util.SyspropUtil;
+import com.l7tech.common.util.ExceptionUtils;
 
 /**
  * Represents a client of the kerberos key distribution center.
@@ -408,13 +409,13 @@ public class KerberosClient {
             }
         }
         catch(SecurityException se) {
-            throw new KerberosConfigException("Kerberos configuration error.", se);
+            throw new KerberosConfigException("Kerberos configuration error '"+ ExceptionUtils.getMessage(se)+"'.", se);
         }
         catch(LoginException le) {
-            throw new KerberosException("Could not login", le);
+            throw new KerberosException("Could not login '"+ ExceptionUtils.getMessage(le)+"'.", le);
         }
         catch(PrivilegedActionException pae) {
-            throw new KerberosException("Error getting principal.", pae.getCause());
+            throw new KerberosException("Error getting principal '"+ ExceptionUtils.getMessage(pae.getCause())+"'.", pae.getCause());
         }
 
         if (aPrincipal != null) {
@@ -546,7 +547,7 @@ public class KerberosClient {
                     Callback callback = callbacks[i];
                     if(callback instanceof NameCallback) {
                         NameCallback nameCallback = (NameCallback) callback;
-                        nameCallback.setName(servicePrincipalName); //conv from GSS to kerberos name
+                        nameCallback.setName(servicePrincipalName);
                         if (logger.isLoggable(Level.FINE))
                             logger.log(Level.FINE, "Using kerberos SPN '" + nameCallback.getName() + "'.");
                     }

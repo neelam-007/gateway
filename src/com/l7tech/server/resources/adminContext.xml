@@ -235,7 +235,7 @@
     </bean>
 
     <!-- kerberos admin servant -->
-    <bean id="kerberosAdmin" class="com.l7tech.common.security.kerberos.KerberosAdminImpl"/>
+    <bean id="kerberosAdmin_UNSECURED" class="com.l7tech.common.security.kerberos.KerberosAdminImpl"/>
 
     <!-- trusted cert admin servant -->
     <bean id="clusterStatusAdmin_UNSECURED" class="com.l7tech.cluster.ClusterStatusAdminImp">

@@ -1,5 +1,8 @@
 package com.l7tech.common.security.kerberos;
 
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.security.rbac.Secured;
+
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
@@ -12,6 +15,7 @@ import java.util.logging.Level;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
+@Secured
 public class KerberosAdminImpl implements KerberosAdmin {
 
     //- PUBLIC
@@ -22,12 +26,20 @@ public class KerberosAdminImpl implements KerberosAdmin {
         }
         catch(KerberosException ke) {
             logger.log(Level.WARNING, "Kerberos keytab is invalid", ke);
-            throw ke;
+            throw new KerberosException(ke.getMessage());
         }
     }
 
     public String getPrincipal() throws KerberosException {
-        return KerberosClient.getKerberosAcceptPrincipal();
+        try {
+            return KerberosClient.getKerberosAcceptPrincipal();
+        } catch(KerberosException ke) {
+            // Not really an error, since this is usually a configuration problem.
+            // Note that we still throw the exception back to the caller so
+            // the admin knows what happened
+            logger.log(Level.INFO, "Kerberos error getting principal", ExceptionUtils.getDebugException(ke));
+            throw new KerberosException(ke.getMessage());
+        }
     }
 
     public Map getConfiguration() {

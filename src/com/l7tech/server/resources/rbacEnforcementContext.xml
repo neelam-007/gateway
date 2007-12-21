@@ -92,4 +92,9 @@
         <property name="target" ref="logSinkAdmin_UNSECURED"/>
         <property name="proxyInterfaces" value="com.l7tech.common.log.LogSinkAdmin"/>
     </bean>
+
+    <bean id="kerberosAdmin" parent="rbacIntercepted">
+        <property name="target" ref="kerberosAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.common.security.kerberos.KerberosAdmin"/>
+    </bean>
 </beans>
