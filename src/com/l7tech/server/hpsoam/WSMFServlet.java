@@ -54,7 +54,7 @@ public class WSMFServlet extends AuthenticatableHttpServlet {
 
     @Override
     protected boolean isCleartextAllowed() {
-        return false;
+        return true;
     }
 
     // Implements {@link AuthenticatableHttpServlet#getRequiredEndpoint}.
