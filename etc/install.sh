@@ -8,7 +8,7 @@ popd > /dev/null
 
 . ${SSG_ROOT}/etc/profile
 
-expected_java_version="1.6.0_02"
+expected_java_version="1.6"
 MY_JAVA_HOME=""
 result=""
 cryptoOk=0
@@ -132,7 +132,7 @@ check_java_version() {
 		fi
 	fi
 
-	javaver=`${binpath} -version 2>&1 | awk -F\" '/version/ {print $2}'`;
+	javaver=`${binpath} -version 2>&1 | awk -F\" '/version/ {print $2}' | awk -F\. '{print $1"."$2}'`;
 	echo "Found Java ${javaver} at ${binpath}"
 
 	if [ "${javaver}" != ${expected_java_version} ]; then
