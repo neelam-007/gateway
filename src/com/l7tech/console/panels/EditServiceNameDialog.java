@@ -6,6 +6,7 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ServiceHeader;
 import com.l7tech.service.PublishedService;
 import com.l7tech.common.gui.util.Utilities;
 
@@ -248,11 +249,7 @@ public class EditServiceNameDialog extends JDialog {
             Registry.getDefault().getServiceManager().savePublishedService(service);
             dispose();
             if (listener !=null) {
-                EntityHeader eh = new EntityHeader();
-                eh.setOid(service.getOid());
-                eh.setName(service.getName());
-                eh.setType(EntityType.SERVICE);
-                listener.entityUpdated(new EntityEvent(this, eh));
+                listener.entityUpdated(new EntityEvent(this, new ServiceHeader(service) ));
             }
         } catch (Exception e) {
             ErrorManager.getDefault().notify(Level.WARNING, e,"There was an system error saving the service" );
