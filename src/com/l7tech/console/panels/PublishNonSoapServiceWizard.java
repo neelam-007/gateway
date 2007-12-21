@@ -14,6 +14,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ServiceHeader;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
@@ -78,11 +79,8 @@ public class PublishNonSoapServiceWizard extends Wizard {
             long oid = Registry.getDefault().getServiceManager().savePublishedService(service);
             Registry.getDefault().getSecurityProvider().refreshPermissionCache();
 
-            EntityHeader header = new EntityHeader();
-            header.setType(EntityType.SERVICE);
-            header.setName(service.getName());
-            header.setOid(oid);
-            PublishNonSoapServiceWizard.this.notify(header);
+            service.setOid(oid);
+            PublishNonSoapServiceWizard.this.notify(new ServiceHeader(service));
         } catch (Exception e) {
             if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
                 JOptionPane.showMessageDialog(this,

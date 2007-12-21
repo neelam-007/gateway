@@ -23,6 +23,7 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ServiceHeader;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -214,11 +215,8 @@ public class CreateServiceWsdlAction extends SecureAction {
                         oid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(service, sourceDocs);
 
                     Registry.getDefault().getSecurityProvider().refreshPermissionCache();
-                    EntityHeader header = new EntityHeader();
-                    header.setType(EntityType.SERVICE);
-                    header.setName(service.getName());
-                    header.setOid(oid);
-                    serviceAdded(header);
+                    service.setOid(oid);
+                    serviceAdded( new ServiceHeader(service) );
                 } catch (Exception e) {
                     Frame w = TopComponents.getInstance().getTopParent();
                     if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
