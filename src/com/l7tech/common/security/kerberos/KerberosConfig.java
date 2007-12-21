@@ -87,7 +87,7 @@ class KerberosConfig {
         }
     }
     static String getKeytabPrincipal() throws KerberosException {
-        String principal = null;
+        String principal;
 
         Keytab keytab = getKeytab(false);
         String[] names = keytab.getKeyName();
@@ -215,6 +215,8 @@ class KerberosConfig {
 
             loginConfigFile.delete();
             if (!loginConfigFile.exists()) {
+                loginConfigFile.getParentFile().mkdirs();
+
                 InputStream in = null;
                 OutputStream out = null;
                 try {
@@ -231,7 +233,7 @@ class KerberosConfig {
                 }
             }
 
-            String principal = null;
+            String principal;
             String realm = null;
             try {
                 principal = new KerberosClient().getKerberosInitPrincipal();
@@ -270,7 +272,7 @@ class KerberosConfig {
         try {
             out = new FileOutputStream(file);
             out.write(MessageFormat.format(LOGIN_CONFIG_TEMPLATE,
-                    new Object[]{keytabFile.getAbsolutePath()}).replace("\n", ls).getBytes("UTF-8"));
+                    keytabFile.getAbsolutePath()).replace("\n", ls).getBytes("UTF-8"));
         }
         catch(IOException ioe) {
             logger.log(Level.SEVERE, "Error writing Kerberos login configuration.", ioe);
@@ -314,7 +316,7 @@ class KerberosConfig {
             if (file.exists()) file.delete();
             out = new FileOutputStream(file);
             out.write(MessageFormat.format(KRB5_CONF_TEMPLATE,
-                    new Object[]{ucRealm, lcRealm, kdcIp, encTypesTkt, encTypesTgs}).replace("\n", ls).getBytes("UTF-8"));
+                    ucRealm, lcRealm, kdcIp, encTypesTkt, encTypesTgs).replace("\n", ls).getBytes("UTF-8"));
         }
         catch(IOException ioe) {
             logger.log(Level.WARNING, "Error writing Kerberos login configuration.", ioe);

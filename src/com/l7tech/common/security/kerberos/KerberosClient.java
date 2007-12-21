@@ -3,7 +3,6 @@ package com.l7tech.common.security.kerberos;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.Principal;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
@@ -140,7 +139,7 @@ public class KerberosClient {
      * @throws KerberosException on error
      */
     public KerberosServiceTicket getKerberosServiceTicket(final String servicePrincipalName) throws KerberosException {
-        KerberosServiceTicket ticket = null;
+        KerberosServiceTicket ticket;
         try {
             LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_INIT, kerberosSubject);
             try {
@@ -153,7 +152,7 @@ public class KerberosClient {
             }
 
             ticket = (KerberosServiceTicket) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
-                public Object run() throws Exception {
+                public KerberosServiceTicket run() throws Exception {
                     Oid kerberos5Oid = getKerberos5Oid();
                     GSSManager manager = GSSManager.getInstance();
 
@@ -166,7 +165,7 @@ public class KerberosClient {
                         if (logger.isLoggable(Level.FINE))
                             logger.log(Level.FINE, "GSS name is '"+gssPrincipal+"'/'"+serviceName.canonicalize(kerberos5Oid)+"'.");
 
-                        context = manager.createContext(serviceName, kerberos5Oid, credential, KERBEROS_LIFETIME.intValue());
+                        context = manager.createContext(serviceName, kerberos5Oid, credential, KERBEROS_LIFETIME);
                         context.requestMutualAuth(false);
                         context.requestConf(true);
 
@@ -215,7 +214,7 @@ public class KerberosClient {
      * @throws KerberosException on error
      */
     public KerberosServiceTicket getKerberosServiceTicket(final String servicePrincipalName, final KerberosGSSAPReqTicket gssAPReqTicket) throws KerberosException {
-        KerberosServiceTicket ticket = null;
+        KerberosServiceTicket ticket;
         try {
             if (!KerberosConfig.hasKeytab()) {
                 throw new KerberosConfigException("No Keytab (Kerberos not configured)");
@@ -224,7 +223,7 @@ public class KerberosClient {
             LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_ACCEPT, kerberosSubject, getServerCallbackHandler(servicePrincipalName));
             loginContext.login();
             ticket = (KerberosServiceTicket) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
-                public Object run() throws Exception {
+                public KerberosServiceTicket run() throws Exception {
                     Oid kerberos5Oid = getKerberos5Oid();
                     GSSManager manager = GSSManager.getInstance();
                     GSSCredential scred = null;
@@ -240,7 +239,7 @@ public class KerberosClient {
                         byte[] apReqBytes = new sun.security.util.DerValue(gssAPReqTicket.getTicketBody()).toByteArray();
                         KerberosKey[] keys = getKeys(kerberosSubject.getPrivateCredentials());
                         KrbApReq apReq = new KrbApReq(apReqBytes, toEncryptionKey(keys));
-                        EncryptionKey sessionKey = (EncryptionKey) apReq.getCreds().getSessionKey();
+                        EncryptionKey sessionKey = apReq.getCreds().getSessionKey();
                         EncryptionKey subKey = apReq.getSubKey();
 
                         byte[] keyBytes = (subKey==null ? sessionKey : subKey).getBytes();
@@ -288,7 +287,7 @@ public class KerberosClient {
      * @throws KerberosException on error
      */
     public String getKerberosInitPrincipal() throws KerberosException {
-        String name = null;
+        String name;
         try {
             LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_INIT, kerberosSubject);
             try {
@@ -301,11 +300,10 @@ public class KerberosClient {
             }
 
             name = (String) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
-                public Object run() throws Exception {
+                public String run() throws Exception {
                     String name = null;
-                    for (Iterator princIter=kerberosSubject.getPrincipals().iterator(); princIter.hasNext();) {
-                        Principal principal = (Principal) princIter.next();
-                        if (principal instanceof KerberosPrincipal) {
+                    for( Principal principal : kerberosSubject.getPrincipals() ) {
+                        if( principal instanceof KerberosPrincipal ) {
                             name = principal.getName();
                             break;
                         }
@@ -376,7 +374,7 @@ public class KerberosClient {
                 LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_ACCEPT, kerberosSubject, getServerCallbackHandler(spn));
                 loginContext.login();
                 aPrincipal = (String) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
-                    public Object run() throws Exception {
+                    public String run() throws Exception {
                         String name = null;
 
                         try {
@@ -386,9 +384,8 @@ public class KerberosClient {
                             throw new KerberosException("No kerberos key in private credentials.");
                         }
 
-                        for (Iterator princIter=kerberosSubject.getPrincipals().iterator(); princIter.hasNext();) {
-                            Principal principal = (Principal) princIter.next();
-                            if (principal instanceof KerberosPrincipal) {
+                        for( Principal principal : kerberosSubject.getPrincipals() ) {
+                            if( principal instanceof KerberosPrincipal ) {
                                 name = principal.getName();
                                 break;
                             }
@@ -465,8 +462,8 @@ public class KerberosClient {
     private static final String LOGIN_CONTEXT_ACCEPT = "com.l7tech.common.security.kerberos.accept";
 
     private static final String KERBEROS_LIFETIME_PROPERTY = "com.l7tech.common.security.kerberos.lifetime";
-    private static final Integer KERBEROS_LIFETIME_DEFAULT = new Integer(60 * 15); // seconds
-    private static final Integer KERBEROS_LIFETIME = SyspropUtil.getInteger(KERBEROS_LIFETIME_PROPERTY, KERBEROS_LIFETIME_DEFAULT.intValue());
+    private static final Integer KERBEROS_LIFETIME_DEFAULT = 60 * 15; // seconds
+    private static final Integer KERBEROS_LIFETIME = SyspropUtil.getInteger(KERBEROS_LIFETIME_PROPERTY, KERBEROS_LIFETIME_DEFAULT);
 
     private static Oid kerb5Oid;
     private static String acceptPrincipal;
@@ -484,21 +481,20 @@ public class KerberosClient {
     private KerberosTicket getTicket(Set info, GSSName service, GSSManager manager) throws IllegalStateException {
         KerberosTicket ticket = null;
 
-        for (Iterator iterator = info.iterator(); iterator.hasNext();) {
-            Object o = iterator.next();
-            if(o instanceof KerberosTicket) {
+        for( Object o : info ) {
+            if( o instanceof KerberosTicket ) {
                 KerberosTicket currTicket = (KerberosTicket) o;
 
                 try {
-                    GSSName ticketServicePrincialName = manager.createName(currTicket.getServer().getName(), GSSName.NT_USER_NAME);
+                    GSSName ticketServicePrincialName = manager.createName( currTicket.getServer().getName(), GSSName.NT_USER_NAME );
 
-                    if(service.equals(ticketServicePrincialName)) {
+                    if( service.equals( ticketServicePrincialName ) ) {
                         ticket = currTicket;
                         break;
                     }
                 }
-                catch(GSSException gsse) {
-                    logger.log(Level.WARNING, "Error checking kerberos ticket '"+currTicket+"'", gsse);
+                catch( GSSException gsse ) {
+                    logger.log( Level.WARNING, "Error checking kerberos ticket '" + currTicket + "'", gsse );
                 }
             }
         }
@@ -512,16 +508,15 @@ public class KerberosClient {
      *
      */
     private static KerberosKey[] getKeys(Set creds) throws IllegalStateException {
-        List keys = new ArrayList();
+        List<KerberosKey> keys = new ArrayList<KerberosKey>();
 
-        for (Iterator iterator = creds.iterator(); iterator.hasNext();) {
-            Object o = iterator.next();
-            if(o instanceof KerberosKey) keys.add((KerberosKey) o);
+        for( Object o : creds ) {
+            if( o instanceof KerberosKey ) keys.add( (KerberosKey) o );
         }
 
         if (keys.isEmpty()) throw new IllegalStateException("Private Kerberos key not found!");
 
-        return (KerberosKey[]) keys.toArray(new KerberosKey[keys.size()]);
+        return keys.toArray(new KerberosKey[keys.size()]);
     }
 
     /**
@@ -543,13 +538,12 @@ public class KerberosClient {
     private static CallbackHandler getServerCallbackHandler(final String servicePrincipalName) {
         return new CallbackHandler() {
             public void handle(Callback[] callbacks) {
-                for (int i = 0; i < callbacks.length; i++) {
-                    Callback callback = callbacks[i];
-                    if(callback instanceof NameCallback) {
+                for( Callback callback : callbacks ) {
+                    if( callback instanceof NameCallback ) {
                         NameCallback nameCallback = (NameCallback) callback;
-                        nameCallback.setName(servicePrincipalName);
-                        if (logger.isLoggable(Level.FINE))
-                            logger.log(Level.FINE, "Using kerberos SPN '" + nameCallback.getName() + "'.");
+                        nameCallback.setName( servicePrincipalName );
+                        if( logger.isLoggable( Level.FINE ) )
+                            logger.log( Level.FINE, "Using kerberos SPN '" + nameCallback.getName() + "'." );
                     }
                 }
             }

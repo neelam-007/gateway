@@ -42,10 +42,10 @@ public class KerberosAdminImpl implements KerberosAdmin {
         }
     }
 
-    public Map getConfiguration() {
+    public Map<String,String> getConfiguration() {
         new KerberosClient(); // To ensure kerberos is initialized.
 
-        Map configMap = new HashMap();
+        Map<String,String> configMap = new HashMap<String,String>();
 
         String kdc = KerberosUtils.getKerberosKdc();
         String realm = KerberosUtils.getKerberosRealm();

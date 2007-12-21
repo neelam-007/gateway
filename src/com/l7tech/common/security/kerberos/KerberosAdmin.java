@@ -52,5 +52,5 @@ public interface KerberosAdmin  {
      *
      * @return The configuration map (could be empty but should not be NULL)
      */
-    public Map getConfiguration();
+    public Map<String,String> getConfiguration();
 }

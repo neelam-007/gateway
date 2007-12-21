@@ -13,7 +13,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosKey;
@@ -142,7 +141,7 @@ public class Keytab implements Serializable {
      */
     public Keytab(File keytabFile) throws IOException, KerberosException {
         if (keytabFile == null) throw new IllegalArgumentException("keytabFile must not be null");
-        keyData = new ArrayList();
+        keyData = new ArrayList<KeyData>();
         InputStream in = null;
         try {
             in = new FileInputStream(keytabFile);
@@ -162,7 +161,7 @@ public class Keytab implements Serializable {
      */
     public Keytab(byte[] keytabBytes) throws KerberosException {
         if (keytabBytes == null) throw new IllegalArgumentException("keytabBytes must not be null");
-        keyData = new ArrayList();
+        keyData = new ArrayList<KeyData>();
         init(keytabBytes);
     }
 
@@ -179,7 +178,7 @@ public class Keytab implements Serializable {
      */
     public Keytab(File keytabFile, String principal, String password, boolean desOnly) throws KerberosException {
         if (keytabFile == null) throw new IllegalArgumentException("keytabFile must not be null");
-        keyData = new ArrayList();
+        keyData = new ArrayList<KeyData>();
 
         networkOrder = true;        
         versionMajor = 5;
@@ -267,7 +266,7 @@ public class Keytab implements Serializable {
         long timestamp = 0;
 
         if (!keyData.isEmpty()) {
-            timestamp = ((KeyData)keyData.get(0)).timestamp;
+            timestamp = keyData.get(0).timestamp;
         }
 
         return timestamp;
@@ -282,7 +281,7 @@ public class Keytab implements Serializable {
         long version = 0;
 
         if (!keyData.isEmpty()) {
-            version = ((KeyData)keyData.get(0)).version;
+            version = keyData.get(0).version;
         }
 
         return version;
@@ -294,25 +293,23 @@ public class Keytab implements Serializable {
      * @return The key types
      */
     public String[] getKeyTypes() {
-        List types = new ArrayList();
+        List<String> types = new ArrayList<String>();
 
-        for (Iterator keyDataIter=keyData.iterator(); keyDataIter.hasNext(); ) {
-            KeyData keyData = (KeyData) keyDataIter.next();
+        for( KeyData keyDataEntry : keyData ) {
             try {
-                String typeDesc = KerberosConstants.ETYPE_NAMES[keyData.type];
-                if (typeDesc != null) {
-                    types.add(typeDesc);
-                }
-                else {
-                    types.add("unknown ["+keyData.type+"]");
+                String typeDesc = KerberosConstants.ETYPE_NAMES[keyDataEntry.type];
+                if( typeDesc != null ) {
+                    types.add( typeDesc );
+                } else {
+                    types.add( "unknown [" + keyDataEntry.type + "]" );
                 }
             }
-            catch(ArrayIndexOutOfBoundsException aioobe) {
-                types.add("unknown ["+keyData.type+"]");
+            catch( ArrayIndexOutOfBoundsException aioobe ) {
+                types.add( "unknown [" + keyDataEntry.type + "]" );
             }
         }
 
-        return (String[]) types.toArray(new String[types.size()]);
+        return types.toArray(new String[types.size()]);
     }
 
     /**
@@ -354,7 +351,7 @@ public class Keytab implements Serializable {
     private int versionMinor;
     private String keyRealm;
     private String[] keyName;
-    private final List keyData;
+    private final List<KeyData> keyData;
 
     /**
      * 
@@ -383,7 +380,7 @@ public class Keytab implements Serializable {
                 byte[] partBytes = part.getBytes("UTF-8");
                 int length = partBytes.length;
                 entry.write((length>>8)&0xFF);
-                entry.write((length>>0)&0xFF);
+                entry.write(length&0xFF);
                 entry.write(partBytes);
             }
 
@@ -398,7 +395,7 @@ public class Keytab implements Serializable {
             entry.write((time>>>24)&0xFF);
             entry.write((time>>>16)&0xFF);
             entry.write((time>>> 8)&0xFF);
-            entry.write((time>>> 0)&0xFF);
+            entry.write(time&0xFF);
 
             // vno
             entry.write(1);
@@ -411,14 +408,14 @@ public class Keytab implements Serializable {
             KerberosKey key = new KerberosKey(principal, password.toCharArray(), algorithm);
             byte[] keyBytes = key.getEncoded();
             entry.write((keyBytes.length>>8)&0xFF);
-            entry.write((keyBytes.length>>0)&0xFF);
+            entry.write(keyBytes.length&0xFF);
             entry.write(keyBytes);
 
             byte[] entryData = entry.toByteArray();
             baos.write(0);
             baos.write(0);
             baos.write((entryData.length>>8)&0xFF);
-            baos.write((entryData.length>>0)&0xFF);
+            baos.write(entryData.length&0xFF);
             baos.write(entryData);
         }
 
@@ -446,7 +443,7 @@ public class Keytab implements Serializable {
         if (versionMinor != 1 &&
             versionMinor != 2) throw new KerberosException("Minor version '"+versionMinor+"' not known.");
 
-        int currentOffset = 2;
+        int currentOffset;
         int nextEntryOffset = 2;
         while (nextEntryOffset < data.length) {
             currentOffset = nextEntryOffset;
@@ -599,8 +596,8 @@ public class Keytab implements Serializable {
         if (keyRealm != null) {
             if (keyName.length > 0) {
                 boolean nameValid = true;
-                for (int n=0; n<keyName.length; n++) {
-                    if (keyName[n] == null) {
+                for( String aKeyName : keyName ) {
+                    if( aKeyName == null ) {
                         nameValid = false;
                         break;
                     }
@@ -621,7 +618,7 @@ public class Keytab implements Serializable {
     private int readUnsignedChar(byte[] data, int offset) {
         if(data.length < (offset+1)) throw new IllegalArgumentException("Not enough data to read short!");
 
-        return (data[offset+0]&0xFF);
+        return (data[offset]&0xFF);
     }
 
     /**
@@ -632,9 +629,9 @@ public class Keytab implements Serializable {
 
         if (networkOrder)
             return (data[offset+1]&0xFF)
-                | ((data[offset+0]&0xFF) <<  8);
+                | ((data[offset]&0xFF) <<  8);
         else
-            return (data[offset+0]&0xFF)
+            return (data[offset]&0xFF)
                 | ((data[offset+1]&0xFF) <<  8);
     }
 
@@ -648,9 +645,9 @@ public class Keytab implements Serializable {
             return (data[offset+3]&0xFFL)
                 | ((data[offset+2]&0xFFL) <<  8)
                 | ((data[offset+1]&0xFFL) << 16)
-                | ((data[offset+0]&0xFFL) << 24);
+                | ((data[offset]&0xFFL) << 24);
         else
-            return (data[offset+0]&0xFFL)
+            return (data[offset]&0xFFL)
                 | ((data[offset+1]&0xFFL) <<  8)
                 | ((data[offset+2]&0xFFL) << 16)
                 | ((data[offset+3]&0xFFL) << 24);
