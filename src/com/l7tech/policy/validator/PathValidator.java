@@ -1,7 +1,7 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.util.Functions;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -26,6 +26,7 @@ import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.validator.DefaultPolicyValidator.DeferredValidate;
 import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.WspReader;
 
@@ -755,7 +756,13 @@ class PathValidator {
 
     private boolean seenVariable(String var) {
         Boolean cur = seenVariables.get(var);
-        return cur != null && cur;
+        if (cur == null) {
+            // Try matching as a prefix.
+            String prefix = Syntax.getMatchingName(var, seenVariables.keySet());
+            return prefix != null && seenVariables.get(prefix);
+        } else {
+            return cur;
+        }
     }
 
     private void setSeenVariable(String var) {
