@@ -427,7 +427,7 @@ class SsgPoliciesPanel extends JPanel {
                             // TODO filter out assertions that aren't implemented by the SSB
                             Policy newPolicy = new Policy(rootAssertion, null);
                             PolicyAttachmentKeyDialog pakDlg = new PolicyAttachmentKeyDialog(Gui.getInstance().getFrame(),
-                                                                                             "Import Policy: Policy Attachment Key",
+                                                                                             "Import Policy: Policy Resolution",
                                                                                              true, isConfigOnly());
                             PolicyAttachmentKey oldPak = getSelectedPolicy();
                             if (oldPak != null) {
@@ -557,7 +557,7 @@ class SsgPoliciesPanel extends JPanel {
                     Policy policy = policyCache.getPolicy(pak);
                     if (policy == null) return;
                     PolicyAttachmentKeyDialog pakDlg = new PolicyAttachmentKeyDialog(Gui.getInstance().getFrame(),
-                                                                                     "Configure Policy Attachment Key",
+                                                                                     "Configure Policy Resolution",
                                                                                      true, isConfigOnly());
                     pakDlg.setPolicyAttachmentKey(pak);
                     Utilities.centerOnScreen(pakDlg);
