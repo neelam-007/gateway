@@ -207,6 +207,7 @@ public class ConfigurationWizard {
         try {
             saveConfigData();
         } catch (IOException e) {
+            logger.severe("There was an error while saving the configuration to the database: " + ExceptionUtils.getMessage(e));
             hadFailures = true;
         }
     }

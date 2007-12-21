@@ -23,6 +23,7 @@ import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * User: megery
@@ -58,6 +59,7 @@ public class EndpointConfigCommand extends BaseConfigurationCommand{
             updateRmiPortClusterProperty(pinfo, realRmiPort);
             generateFirewallFile(pinfo, realRmiPort);
         } catch (Exception e) {
+            logger.log(Level.SEVERE,"An error occurred during endpoint configuration. " + ExceptionUtils.getMessage(e), e);
             success = false;
         }
         return success;

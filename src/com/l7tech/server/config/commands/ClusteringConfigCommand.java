@@ -2,6 +2,7 @@ package com.l7tech.server.config.commands;
 
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.config.ConfigurationType;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PropertyHelper;
@@ -15,6 +16,7 @@ import org.apache.commons.lang.StringUtils;
 import java.io.*;
 import java.util.Date;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * User: megery
@@ -84,16 +86,19 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
         String hostname = clusterBean.getClusterHostname();
         try {
             updateSystemPropertiesFile(hostname, systemPropertiesFile);
-            if (configureCluster || hasDifferentName) {
-                try {
-                    writeClusterHostname(clusterHostNameFile, hostname);
-                    success = true;
-                } catch (IOException e) {
-                    success = false;
-                }
-            }
         } catch (IOException e) {
+            logger.log(Level.SEVERE,"There was an error while trying to update the system properties. " + ExceptionUtils.getMessage(e), e);
             success = false;
+        }
+
+        if (success && (configureCluster || hasDifferentName)) {
+           try {
+                writeClusterHostname(clusterHostNameFile, hostname);
+                success = true;
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "There was an error while trying to write the cluster hostname file. " + ExceptionUtils.getMessage(e),e);
+                success = false;
+            }
         }
 
         return success;

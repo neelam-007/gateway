@@ -50,6 +50,7 @@ rm %{buildroot}/ssg/migration/cfg/grandmaster_flash
 # Group writable config files
 %dir /ssg/etc
 %config(noreplace) /ssg/etc/conf
+%attr(0775,gateway,gateway) /ssg/etc/conf/partitions/
 %attr(0775,gateway,gateway) /ssg/etc/conf/partitions/*
 %attr(0755,gateway,gateway) /ssg/etc/profile
 

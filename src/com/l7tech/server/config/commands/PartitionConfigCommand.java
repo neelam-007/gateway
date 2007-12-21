@@ -5,9 +5,12 @@ import com.l7tech.server.config.PartitionActions;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.PartitionConfigBean;
 import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.common.util.ExceptionUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * User: megery
@@ -16,6 +19,8 @@ import java.io.IOException;
  */
 public class PartitionConfigCommand extends BaseConfigurationCommand{
 
+    private static final Logger logger = Logger.getLogger(PartitionConfigCommand.class.getName());
+    
     public PartitionConfigCommand() {
         super();
     }
@@ -33,6 +38,7 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
             updateStartupScripts(pInfo);
             enablePartitionForStartup(pInfo);
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "An error occurred during partition configuration. " + ExceptionUtils.getMessage(e), e);
             success = false;
         }
         return success;

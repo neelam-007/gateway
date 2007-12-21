@@ -203,19 +203,23 @@ public class PartitionActions {
     private static String getMacAddressForFirstInterface(PartitionInformation pInfo) {
         File applianceDir = new File(pInfo.getOSSpecificFunctions().getSsgInstallRoot(), "appliance");
         //we don't need to detect the mac here if this is an appliance since it will "just work" properly as is
-        if (applianceDir.exists())
+        if (applianceDir.exists()) {
+            logger.fine("This is an appliance so no need to find the mac address");
             return null;
+        }
 
         String macAddress = null;
         try {
             Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
             NetworkInterface firstNic = null;
             while (nics.hasMoreElements()) {
-
                 NetworkInterface nic =  nics.nextElement();
                 if (nic.isLoopback()) continue;
+                if (nic.getHardwareAddress() == null) continue;
+
                 String thisName = nic.getDisplayName();
                 if (thisName.equals("eth0")) {
+                    logger.fine("This machine has an interface named eth0 so we don't need to find a MAC address");
                     return null;
                 }
 
@@ -225,11 +229,12 @@ public class PartitionActions {
                     firstNic = nic;
                 }
             }
-
             //firstNic should now contain eth0, or the interface with the alphabetically lowest name.
+            logger.info("The interface that will be used to determine the MAC address is " + firstNic.getDisplayName());
+            logger.info("The MAC address that will be used for cluster identification is is " + HexUtils.hexDump(firstNic.getHardwareAddress()));
             return HexUtils.hexDump(firstNic.getHardwareAddress()).toUpperCase();
         } catch (SocketException e) {
-            logger.warning("There was an error while trying to enumerate the network interfacess for this machine. " + ExceptionUtils.getMessage(e));
+            logger.severe("There was an error while trying to enumerate the network interfacess for this machine. " + ExceptionUtils.getMessage(e));
         }
         return null;
     }

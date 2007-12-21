@@ -3,6 +3,7 @@ package com.l7tech.server.config.commands;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.PasswordPropertyCrypto;
 import com.l7tech.server.config.beans.ConfigurationBean;
@@ -20,6 +21,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.text.ParseException;
@@ -102,8 +104,10 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
             updateDbConfigFile(dbConfigFile);
             success = true;
         } catch (IOException e) {
+            logger.log(Level.SEVERE,"An error occurred while updating the database configuration. " + ExceptionUtils.getMessage(e),e);
             success = false;
         } catch (ParseException e) {
+            logger.log(Level.SEVERE,"An error occurred while updating the database configuration. " + ExceptionUtils.getMessage(e),e);
             success = false;
         }
 

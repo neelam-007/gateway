@@ -106,6 +106,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                         break;
                 }
             } catch (Exception e) {
+                logger.log(Level.SEVERE,"An error occurred during keystore configuration. " + ExceptionUtils.getMessage(e),e);
                 success = false;
             }
         } else {

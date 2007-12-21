@@ -2,6 +2,7 @@ package com.l7tech.server.config.commands;
 
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import org.apache.commons.configuration.ConfigurationException;
@@ -10,6 +11,7 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import java.io.*;
 import java.util.Date;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * User: megery
@@ -36,6 +38,7 @@ public class RmiConfigCommand extends BaseConfigurationCommand {
         try {
             updateSystemPropertiesFile(systemPropertiesFile);
         } catch (IOException e) {
+            logger.log(Level.SEVERE,"An error occurred while updating the RMI system properties. " + ExceptionUtils.getMessage(e),e);
             success = false;
         }
 
