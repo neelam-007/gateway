@@ -94,11 +94,13 @@ public class SamlAssertionV1 extends SamlAssertion {
                     // Extract subject certificate
                     SubjectStatementAbstractType subjectStatement = (SubjectStatementAbstractType)statementAbstractType;
                     subject = subjectStatement.getSubject();
-                    NameIdentifierType nameIdentifier = subject.getNameIdentifier();
-                    if (nameIdentifier != null) {
-                        this.nameIdentifierFormat = nameIdentifier.getFormat();
-                        this.nameQualifier = nameIdentifier.getNameQualifier();
-                        this.nameIdentifierValue = nameIdentifier.getStringValue();
+                    if ( subject != null ) {
+                        NameIdentifierType nameIdentifier = subject.getNameIdentifier();
+                        if (nameIdentifier != null) {
+                            this.nameIdentifierFormat = nameIdentifier.getFormat();
+                            this.nameQualifier = nameIdentifier.getNameQualifier();
+                            this.nameIdentifierValue = nameIdentifier.getStringValue();
+                        }
                     }
                     if (statementAbstractType instanceof AuthenticationStatementType) {
                         AuthenticationStatementType authenticationStatementType = (AuthenticationStatementType)statementAbstractType;
