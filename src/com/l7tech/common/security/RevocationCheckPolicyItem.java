@@ -55,7 +55,7 @@ public class RevocationCheckPolicyItem implements Serializable {
      * Create an uninitialized RevocationCheckPolicyItem
      */
     public RevocationCheckPolicyItem() {
-        trustedSigners = new ArrayList();
+        trustedSigners = new ArrayList<Long>();
     }
 
     /**
@@ -118,7 +118,7 @@ public class RevocationCheckPolicyItem implements Serializable {
      * @return The list of Signers (will not be null)
      */
     public List<Long> getTrustedSigners() {
-        return new ArrayList(trustedSigners);
+        return new ArrayList<Long>(trustedSigners);
     }
 
     /**
@@ -128,9 +128,9 @@ public class RevocationCheckPolicyItem implements Serializable {
      */
     public void setTrustedSigners(List<Long> trustedSigners) {
         if (trustedSigners == null) {
-            this.trustedSigners = new ArrayList();
+            this.trustedSigners = new ArrayList<Long>();
         } else {
-            this.trustedSigners = new ArrayList(trustedSigners);
+            this.trustedSigners = new ArrayList<Long>(trustedSigners);
         }
     }
 
@@ -143,12 +143,10 @@ public class RevocationCheckPolicyItem implements Serializable {
 
         RevocationCheckPolicyItem that = (RevocationCheckPolicyItem) o;
 
-        if (allowIssuerSignature != that.allowIssuerSignature) return false;
-        if (!trustedSigners.equals(that.trustedSigners)) return false;
-        if (type != that.type) return false;
-        if (url != null ? !url.equals(that.url) : that.url != null) return false;
-
-        return true;
+        return allowIssuerSignature == that.allowIssuerSignature &&
+                trustedSigners.equals( that.trustedSigners ) &&
+                type == that.type &&
+                !( url != null ? !url.equals( that.url ) : that.url != null );
     }
 
     /**

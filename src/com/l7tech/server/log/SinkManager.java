@@ -342,7 +342,7 @@ public class SinkManager
      * Attach the configured sinks.
      */
     private void rebuildLogSinks() {
-        List<MessageSink> sinks = new ArrayList();
+        List<MessageSink> sinks = new ArrayList<MessageSink>();
 
         // close old first (so file handle released, etc)
         // this could be removed if we this is not desired behaviour
@@ -504,7 +504,7 @@ public class SinkManager
      * Load sink configurations 
      */
     private Collection<SinkConfiguration> loadSinkConfigurations() {
-        Collection<SinkConfiguration> sinkConfigurations = Collections.EMPTY_LIST;
+        Collection<SinkConfiguration> sinkConfigurations = Collections.emptyList();
 
         try {
             sinkConfigurations = this.findAll();
@@ -522,7 +522,7 @@ public class SinkManager
      * Validate a SinkConfiguration
      */
     private boolean isValid( final SinkConfiguration configuration ) {
-        boolean valid = true;
+        boolean valid;
 
         // validate base configuration
         String name = configuration.getName();
@@ -621,12 +621,13 @@ public class SinkManager
      * Check if the given string is a recognised SyslogProtocol value.
      */
     private boolean isValidProtocol( final String protocol ) {
-        boolean valid = false;
+        boolean valid;
 
         try {
             SyslogProtocol.valueOf( protocol );
             valid = true;
         } catch ( IllegalArgumentException iae ) {
+            valid = false; 
         }
 
         return valid;

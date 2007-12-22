@@ -25,7 +25,7 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
      * Create an uninitialized instance. 
      */
     public RevocationCheckPolicy() {
-        revocationCheckItems = Collections.unmodifiableList(new ArrayList());
+        revocationCheckItems = Collections.emptyList();
     }
 
     /**
@@ -74,15 +74,16 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
         revocationCheckPolicyXml = null;
 
         if ( revocationCheckItems == null ) {
-            this.revocationCheckItems = Collections.unmodifiableList(new ArrayList());            
+            this.revocationCheckItems = Collections.emptyList();
         } else {
-            this.revocationCheckItems = Collections.unmodifiableList(new ArrayList(revocationCheckItems));
+            this.revocationCheckItems = Collections.unmodifiableList(new ArrayList<RevocationCheckPolicyItem>(revocationCheckItems));
         }
     }
 
     /**
      * Value based equality check.
      */
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -90,16 +91,16 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
 
         RevocationCheckPolicy that = (RevocationCheckPolicy) o;
 
-        if (defaultPolicy != that.defaultPolicy) return false;
-        if (defaultSuccess != that.defaultSuccess) return false;
-        if (!revocationCheckItems.equals(that.revocationCheckItems)) return false;
+        return defaultPolicy == that.defaultPolicy &&
+                defaultSuccess == that.defaultSuccess &&
+                revocationCheckItems.equals( that.revocationCheckItems );
 
-        return true;
     }
 
     /**
      * Value based hashcode.
      */
+    @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + revocationCheckItems.hashCode();
@@ -113,7 +114,8 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
      * 
      * @return an equal but distinct copy
      */
-    public RevocationCheckPolicy clone() {
+    @Override
+    public final RevocationCheckPolicy clone() {
         try {
             RevocationCheckPolicy cloned = (RevocationCheckPolicy) super.clone();
 
@@ -138,7 +140,7 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
             BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
             try {
                 XMLEncoder xe = new XMLEncoder(new NonCloseableOutputStream(baos));
-                xe.writeObject(new ArrayList(policyItems));
+                xe.writeObject(new ArrayList<RevocationCheckPolicyItem>(policyItems));
                 xe.close();
                 revocationCheckPolicyXml = baos.toString(PROPERTIES_ENCODING);
             } catch (UnsupportedEncodingException e) {
