@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.SwingWorker;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.DocumentSizeFilter;
 import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.common.uddi.UDDIRegistryInfo;
 import com.l7tech.common.util.ArrayUtils;
@@ -17,6 +18,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
+import javax.swing.text.AbstractDocument;
 import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -60,6 +62,7 @@ public class SearchWsdlDialog extends JDialog {
     private static final String UDDI_TYPE = "UDDI.TYPE";
     private static final String UDDI_URL = "UDDI.URL";
     private static final String UDDI_ACCOUNT_NAME = "UDDI.ACCOUNT.NAME";
+    private static final int MAX_SERVICE_NAME_LENGTH = 255;
 
     public SearchWsdlDialog(JDialog parent) throws FindException {
         super(parent, resources.getString("window.title"), true);
@@ -97,7 +100,26 @@ public class SearchWsdlDialog extends JDialog {
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
+        // The default-service-name-filter option is "Contains", so the valid max length of the search input
+        // is MAX_SERVICE_NAME_LENGTH - 2, since there are two '%'s at the begin and the end respectively.
+        ((AbstractDocument)serviceNameSearchPattern.getDocument()).setDocumentFilter(new DocumentSizeFilter(MAX_SERVICE_NAME_LENGTH - 2));
         serviceNameFilterOptionComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { CONTAINS, EQUALS }));
+        serviceNameFilterOptionComboBox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                JComboBox cb = (JComboBox)actionEvent.getSource();
+                String filterName = (String)cb.getSelectedItem();
+                int validMaxLen = MAX_SERVICE_NAME_LENGTH;
+                if (CONTAINS.equals(filterName)) {
+                    // since there are two '%' in the search input: the first % locates at the begin and the second % locates the end.
+                    validMaxLen = MAX_SERVICE_NAME_LENGTH - 2;
+                    // Check if keeping the search string when swapping the two filter options
+                    if (serviceNameSearchPattern.getText().length() > validMaxLen) {
+                        serviceNameSearchPattern.setText("");
+                    }
+                }
+                ((AbstractDocument)serviceNameSearchPattern.getDocument()).setDocumentFilter(new DocumentSizeFilter(validMaxLen));
+            }
+        });
 
         ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
         if (serviceAdmin == null) throw new RuntimeException("Service Admin reference not found");
