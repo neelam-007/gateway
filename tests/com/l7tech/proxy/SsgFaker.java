@@ -1,26 +1,23 @@
 package com.l7tech.proxy;
 
-import org.apache.axis.AxisEngine;
-import org.apache.axis.encoding.Base64;
-import org.apache.axis.encoding.DeserializationContextImpl;
-import org.apache.axis.message.SOAPBody;
-import org.apache.axis.message.SOAPEnvelope;
-import org.apache.axis.message.SOAPHandler;
-import org.apache.axis.message.SOAPHeader;
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.security.SingleCertX509KeyManager;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TestDocuments;
 import org.mortbay.http.*;
 import org.mortbay.http.handler.AbstractHttpHandler;
 import org.mortbay.util.MultiException;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
-import javax.net.ssl.*;
-import javax.xml.soap.SOAPException;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.xml.soap.SOAPConstants;
+import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.Socket;
-import java.net.URL;
-import java.security.*;
-import java.security.cert.CertificateException;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 import java.util.logging.Level;
@@ -29,13 +26,10 @@ import java.util.logging.Logger;
 /**
  * A "test" Ssg that can be controlled programmatically.  Used to test the Client Proxy.
  * Implements a simple echo server.
- * User: mike
- * Date: Jun 5, 2003
- * Time: 11:17:24 AM
  */
-public class SsgFaker {
+public class SsgFaker implements Closeable {
     private static final Logger log = Logger.getLogger(SsgFaker.class.getName());
-    private static final String CERT_PATH = "com/l7tech/proxy/resources/selfsigned.ks";
+    public static final String PING_NS = "http://services.l7tech.com/soap/demos/Ping";
 
     private HttpServer httpServer;
     private int maxThreads = 4;
@@ -45,6 +39,7 @@ public class SsgFaker {
     private String ssgUrl = "http://localhost:" + localPort;
     private String sslUrl = "https://localhost:" + sslPort;
     private boolean destroyed = false;
+    private String wsdlProxyResponseBody = "";
 
     /**
      * Create an SsgFaker with default settings.
@@ -56,6 +51,7 @@ public class SsgFaker {
      * Start the test SSG.
      *
      * @return The SSG's soap URL.
+     * @throws Exception on error
      */
     public String start() throws Exception {
         try {
@@ -85,59 +81,25 @@ public class SsgFaker {
         httpServer.addListener(socketListener);
 
         // Set up SSL listener
-        SocketListener sslListener = new SocketListener() {
-            protected SSLServerSocketFactory createFactory()
-              throws Exception {
-                SSLContext sslc = SSLContext.getInstance("SSL");
-                final KeyStore ks = loadKeyStore();
-                final X509Certificate cert = (X509Certificate)ks.getCertificate("testcert");
-                final PrivateKey key = (PrivateKey)ks.getKey("testcert", new char[0]);
-
-                KeyManager km = new X509KeyManager() {
-                    public PrivateKey getPrivateKey(String s) {
-                        return key;
-                    }
-
-                    public X509Certificate[] getCertificateChain(String s) {
-                        return new X509Certificate[]{cert};
-                    }
-
-                    public String[] getClientAliases(String s, Principal[] principals) {
-                        return new String[]{"testcert"};
-                    }
-
-                    public String[] getServerAliases(String s, Principal[] principals) {
-                        return new String[]{"testcert"};
-                    }
-
-                    public String chooseServerAlias(String s, Principal[] principals, Socket socket) {
-                        return "testcert";
-                    }
-
-                    public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
-                        return "testcert";
-                    }
-                };
-
-                TrustManager tm = new X509TrustManager() {
-                    public X509Certificate[] getAcceptedIssuers() {
-                        return new X509Certificate[0];
-                    }
-
-                    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-                    }
-
-                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-                    }
-                };
-
-                sslc.init(new KeyManager[]{km}, new TrustManager[]{tm}, new SecureRandom());
-                return sslc.getServerSocketFactory();
+        final SSLContext ctx;
+        {
+            X509Certificate cert = TestDocuments.getDotNetServerCertificate();
+            PrivateKey key = TestDocuments.getDotNetServerPrivateKey();
+            SingleCertX509KeyManager km = new SingleCertX509KeyManager(new X509Certificate[]{cert}, key);
+            ctx = SSLContext.getInstance("SSL");
+            ctx.init(new KeyManager[] { km }, null, null);
+        }
+        SslListener sslListener = new SslListener() {
+            protected SSLServerSocketFactory createFactory() throws Exception {
+                return ctx.getServerSocketFactory();
             }
-        };
+        };        
         sslListener.setMaxThreads(maxThreads);
         sslListener.setMinThreads(minThreads);
         sslListener.setPort(sslPort);
+        sslListener.setConfidentialPort(sslPort);
+        sslListener.setConfidentialScheme("https");
+        sslListener.setDefaultScheme("https");
         httpServer.addListener(sslListener);
 
         try {
@@ -149,16 +111,6 @@ public class SsgFaker {
         log.info("SsgFaker started; listening for http connections on " + ssgUrl);
         log.info("SsgFaker listening for https connections on " + sslUrl);
         return ssgUrl;
-    }
-
-    private KeyStore loadKeyStore() throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException {
-        URL url = getClass().getClassLoader().getResource(CERT_PATH);
-        if (url == null)
-            throw new RuntimeException("Certificate is missing: " + CERT_PATH);
-        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-        InputStream is = url.openConnection().getInputStream();
-        ks.load(is, new char[0]);
-        return ks;
     }
 
     public String getSsgUrl() {
@@ -173,8 +125,6 @@ public class SsgFaker {
      * Stop the test SSG.
      */
     private synchronized void stop() {
-        if (destroyed)
-            throw new IllegalStateException("this SsgFaker is no more");
         try {
             log.info("SsgFaker shutting down");
             httpServer.stop(true);
@@ -194,31 +144,30 @@ public class SsgFaker {
         destroyed = true;
     }
 
+    public void close() {
+        destroy();
+    }
+
+    public static Document makePingRequest(String payload) throws IOException {
+        Document doc = XmlUtil.createEmptyDocument("Envelope", "soap", SOAPConstants.URI_NS_SOAP_ENVELOPE);
+        Element body = XmlUtil.createAndAppendElementNS(doc.getDocumentElement(), "Body", SOAPConstants.URI_NS_SOAP_ENVELOPE, "soap");
+        Element ping = XmlUtil.createAndAppendElementNS(body, "ping", PING_NS + "#ping", "p");
+        Element payloadEl = XmlUtil.createAndAppendElementNS(ping, "pingData", ping.getNamespaceURI(), ping.getPrefix());
+        payloadEl.appendChild(XmlUtil.createTextNode(payloadEl, payload));
+        return doc;
+    }
+
+    /** @noinspection SerializableNonStaticInnerClassWithoutSerialVersionUID,SerializableInnerClassWithNonSerializableOuterClass,NonStaticInnerClassInSecureContext */
     private class SsgFakerHandler extends AbstractHttpHandler {
         public void handle(String pathInContext,
                            String pathParams,
                            HttpRequest request,
                            HttpResponse response)
-          throws HttpException, IOException {
+          throws IOException
+        {
             log.info("SsgFakerHandler: incoming request: pathInContext=" + pathInContext);
 
-            //log.info("Got request: " + new String(HexUtils.slurpStream(request.getInputStream(), 16384)));
-
-            SOAPEnvelope requestEnvelope;
-            try {
-                requestEnvelope = new SOAPEnvelope(request.getInputStream());
-            } catch (SAXException e) {
-                log.log(Level.SEVERE, "SAX error", e);
-                throw new HttpException(400, "Couldn't parse SOAP envelope: " + e.getMessage());
-            }
-
-            boolean isBasicAuth = false;
-            String authHeader = request.getField("Authorization");
-            if (authHeader != null && "Basic ".equalsIgnoreCase(authHeader.substring(0, 6))) {
-                String authStuff = new String(Base64.decode(authHeader.substring(6)));
-                log.info("Found HTTP Basic auth stuff: " + authStuff);
-                isBasicAuth = true;
-            }
+            boolean isBasicAuth = isBasicAuth(request);
 
             Enumeration fields = request.getFieldNames();
             while (fields.hasMoreElements()) {
@@ -227,67 +176,102 @@ public class SsgFaker {
             }
 
             log.info("SsgFaker: request to path: " + pathInContext);
+
+            // Handle requests that do NOT require a request document
+            if (pathInContext.startsWith(SecureSpanConstants.WSDL_PROXY_FILE)) {
+                handleWsdlProxyRequest(response);
+                return;
+            } else if ("/soap/ssg/throwfault".equalsIgnoreCase(pathInContext)) {
+                handleThrowFault(response);
+                return;
+            }
+
+            // Get the request document
+            final Document requestEnvelope;
+            try {
+                requestEnvelope = XmlUtil.parse(request.getInputStream());
+            } catch (Exception e) {
+                log.log(Level.WARNING, "Unable to parse request", e);
+                throw new HttpException(400, "Couldn't parse SOAP envelope: " + e.getMessage());
+            }
+
+            // Handle requests that DO require a request document
             if ("/soap/ssg".equalsIgnoreCase(pathInContext)) {
                 handlerPing(requestEnvelope, response);
             } else if ("/soap/ssg/basicauth".equalsIgnoreCase(pathInContext)) {
-                if (!isBasicAuth) {
+                if (isBasicAuth) {
+                    handlerPing(requestEnvelope, response);
+                } else {
                     response.addField("WWW-Authenticate", "Basic realm=\"business\"");
                     response.setReason("Unauthorized");
                     response.addField("Content-Type", "text/html");
                     response.setStatus(401);
                     response.getOutputStream().write("<title>Uh oh</title>Uh oh".getBytes());
                     response.commit();
-                } else
-                    handlerPing(requestEnvelope, response);
-            } else if ("/soap/ssg/throwfault".equalsIgnoreCase(pathInContext)) {
-                response.setStatus(200);
-                response.addField("Content-Type", "text/xml");
-                response.getOutputStream().write(("<soapenv:Envelope" +
-                  " xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"" +
-                  " xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"" +
-                  " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
-                  " <soapenv:Body>\n" +
-                  "  <soapenv:Fault>\n" +
-                  "   <faultcode>soapenv:Server</faultcode>\n" +
-                  "   <faultstring>Assertion Falsified</faultstring>\n" +
-                  "   <faultactor></faultactor>\n" +
-                  "   <detail/>\n" +
-                  "  </soapenv:Fault>\n" +
-                  " </soapenv:Body>\n" +
-                  "</soapenv:Envelope>\n").getBytes());
-                response.commit();
-            } else
+                }
+            } else {
                 throw new HttpException(404, "No service with that URI in this SsgFaker");
+            }
         }
 
-        private void handlerPing(SOAPEnvelope requestEnvelope, HttpResponse response) throws IOException, HttpException {
-            String namespace = requestEnvelope.getNamespaceURI();
-
-            SOAPEnvelope responseEnvelope = new SOAPEnvelope();
-            responseEnvelope.setHeader(new SOAPHeader(namespace,
-              "",
-              requestEnvelope.getPrefix(),
-              new AttributesImpl(),
-              new DeserializationContextImpl(AxisEngine.getCurrentMessageContext(),
-                new SOAPHandler()),
-              requestEnvelope.getSOAPConstants()));
-
-            try {
-                responseEnvelope.setBody((SOAPBody)requestEnvelope.getBody());
-                ;
-            } catch (SOAPException e) {
-                log.log(Level.SEVERE, "SOAP eror", e);
-                throw new HttpException(400, "Internal error: " + e.getMessage());
+        private boolean isBasicAuth(HttpRequest request) throws IOException {
+            boolean isBasicAuth = false;
+            String authHeader = request.getField("Authorization");
+            if (authHeader != null && "Basic ".equalsIgnoreCase(authHeader.substring(0, 6))) {
+                String authStuff = new String(HexUtils.decodeBase64(authHeader.substring(6)));
+                log.info("Found HTTP Basic auth stuff: " + authStuff);
+                isBasicAuth = true;
             }
+            return isBasicAuth;
+        }
 
+        private void handlerPing(Document requestEnvelope, HttpResponse response) throws IOException {
             response.addField("Content-Type", "text/xml");
-            response.getOutputStream().write(responseEnvelope.toString().getBytes());
+            XmlUtil.nodeToOutputStream(requestEnvelope, response.getOutputStream());
             response.commit();
         }
     }
 
+    public String getWsdlProxyResponseBody() {
+        return wsdlProxyResponseBody;
+    }
+
+    public void setWsdlProxyResponseBody(String wsdlProxyResponseBody) {
+        if (wsdlProxyResponseBody == null) throw new NullPointerException();
+        this.wsdlProxyResponseBody = wsdlProxyResponseBody;
+    }
+
+    protected void handleWsdlProxyRequest(HttpResponse response) throws IOException {
+        response.setStatus(200);
+        response.addField("Content-Type", "text/xml");
+        response.getOutputStream().write(wsdlProxyResponseBody.getBytes());
+        response.commit();
+    }
+
+    protected static void handleThrowFault(HttpResponse response) throws IOException {
+        response.setStatus(200);
+        response.addField("Content-Type", "text/xml");
+        response.getOutputStream().write(("<soapenv:Envelope" +
+          " xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"" +
+          " xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"" +
+          " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+          " <soapenv:Body>\n" +
+          "  <soapenv:Fault>\n" +
+          "   <faultcode>soapenv:Server</faultcode>\n" +
+          "   <faultstring>Assertion Falsified</faultstring>\n" +
+          "   <faultactor></faultactor>\n" +
+          "   <detail/>\n" +
+          "  </soapenv:Fault>\n" +
+          " </soapenv:Body>\n" +
+          "</soapenv:Envelope>\n").getBytes());
+        response.commit();
+    }
+
     /**
-     * Fire up an SsgFaker for testing purposes.
+     * Fires up an SsgFaker for testing purposes.
+     * @param args ignored
+     * @throws Exception on error
+     * @noinspection UseOfSystemOutOrSystemErr
      */
     public static void main(String[] args) throws Exception {
         SsgFaker ssgFaker = new SsgFaker();
@@ -296,10 +280,7 @@ public class SsgFaker {
 
         Object forever = new Object();
         synchronized (forever) {
-            try {
-                forever.wait();
-            } catch (InterruptedException e) {
-            }
+            forever.wait();
         }
     }
 }

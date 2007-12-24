@@ -199,7 +199,7 @@
     -->
     <taskdef resource="net/sf/antcontrib/antcontrib.properties">
         <classpath>
-            <pathelement location="lib/ant-contrib.jar"/>
+            <pathelement location="lib/ant-contrib-1.0b3.jar"/>
         </classpath>
     </taskdef>
 
@@ -956,6 +956,7 @@
             <test name="com.l7tech.policy.variable.VariableMetadataTest" haltonfailure="no"/>
             <test name="com.l7tech.policy.ExpandVariablesTest" haltonfailure="no"/>
             <test name="com.l7tech.server.admin.AdminWebServiceTest" haltonfailure="no"/>
+            <test name="com.l7tech.proxy.BridgeWsdlProxyTest" haltonfailure="no"/>
 
             <!--
               Add possibly-slow intensive nightly tests here **
@@ -3226,9 +3227,9 @@
 
                 <exclude name="**/CVS/*"/>
                 <exclude name="**/ant.jar"/>
-                <exclude name="**/ant-contrib.jar"/>
+                <exclude name="**/ant-contrib-1.0b3.jar"/>
                 <exclude name="**/optional.jar"/>
-                <exclude name="**/*junit.jar"/>
+                <exclude name="**/*junit*.jar"/>
             </fileset>
         </copy>
 

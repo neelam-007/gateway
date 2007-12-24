@@ -1,6 +1,10 @@
 package com.l7tech.common.message;
 
-import com.l7tech.common.mime.*;
+import com.l7tech.common.io.IOExceptionThrowingInputStream;
+import com.l7tech.common.mime.ByteArrayStashManager;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.MimeBodyTest;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -8,15 +12,17 @@ import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.tarari.GlobalTarariContextImpl;
+import com.l7tech.test.BugNumber;
 import com.tarari.xml.XmlSource;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import static org.junit.Assert.*;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -25,24 +31,10 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class KnobblyMessageTest extends TestCase {
+public class KnobblyMessageTest {
     private static final Logger logger = Logger.getLogger(KnobblyMessageTest.class.getName());
 
-    /**
-     * test <code>KnobblyMessageTest</code> constructor
-     */
-    public KnobblyMessageTest(String name) {
-        super(name);
-    }
-
-    /**
-     * create the <code>TestSuite</code> for the
-     * KnobblyMessageTest <code>TestCase</code>
-     */
-    public static Test suite() {
-        return new TestSuite(KnobblyMessageTest.class);
-    }
-
+    @Test
     public void testFacetlessMessage() {
         Message msg = new Message();
         assertNull(msg.getKnob(MimeKnob.class));
@@ -57,6 +49,7 @@ public class KnobblyMessageTest extends TestCase {
         }
     }
 
+    @Test
     public void testGetMimeKnobSinglepart() throws Exception {
         Message msg = new Message();
         final String bodyString = "blah \u9281 blah \000 blah";
@@ -87,6 +80,7 @@ public class KnobblyMessageTest extends TestCase {
         }
     }
 
+    @Test
     public void testGetMimePartMultipart() throws Exception {
         Message msg = new Message(new ByteArrayStashManager(),
                                   ContentTypeHeader.parseValue(MimeBodyTest.MESS_CONTENT_TYPE),
@@ -124,6 +118,7 @@ public class KnobblyMessageTest extends TestCase {
         assertEquals(MimeBodyTest.MESS_PAYLOAD_NS, msg.getSoapKnob().getPayloadNames()[0].getNamespaceURI());
     }
 
+    @Test
     public void testGetXmlKnob() throws Exception {
         Message msg = new Message(new ByteArrayStashManager(),
                                   ContentTypeHeader.XML_DEFAULT,
@@ -143,6 +138,8 @@ public class KnobblyMessageTest extends TestCase {
         }
     }
 
+    @Test
+    @BugNumber(2198)
     public void test2198Anomaly() throws Exception {
         String initial = "<getquote>MSFT</getquote>";
         String newMsg = "<getquote>L7</getquote>";
@@ -171,6 +168,7 @@ public class KnobblyMessageTest extends TestCase {
         assertEquals(output, newMsg);
     }
 
+    @Test
     public void testCombinedDomAndByteOperations() throws Exception {
         final String xml = "<foobarbaz/>";
         Message msg = new Message(XmlUtil.stringToDocument(xml));
@@ -206,6 +204,7 @@ public class KnobblyMessageTest extends TestCase {
         assertEquals(new String(bb1b), xmlDocFooBar);
     }
 
+    @Test
     public void testModifiedDomWithIteratedPartInfoStream() throws Exception {
         Message msg = new Message();
         msg.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, TestDocuments.getTestDocumentURL(TestDocuments.PLACEORDER_CLEARTEXT).openStream());
@@ -224,6 +223,7 @@ public class KnobblyMessageTest extends TestCase {
         assertEquals(mutatedStr, streamedStr);
     }
 
+    @Test
     public void testModifiedDomWithPartInfoStream() throws Exception {
         Message msg = new Message();
         msg.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, TestDocuments.getTestDocumentURL(TestDocuments.PLACEORDER_CLEARTEXT).openStream());
@@ -242,6 +242,7 @@ public class KnobblyMessageTest extends TestCase {
         assertEquals(mutatedStr, streamedStr);
     }
 
+    @Test
     public void testDomCommitDelayedUntilPartInfoBytesUsed() throws Exception {
         Message msg = new Message();
         msg.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, TestDocuments.getTestDocumentURL(TestDocuments.PLACEORDER_CLEARTEXT).openStream());
@@ -285,6 +286,7 @@ public class KnobblyMessageTest extends TestCase {
         assertFalse(mutatedStr.equalsIgnoreCase(streamedStr));
     }
 
+    @Test
     public void testGetSoapKnob() throws Exception {
         Message msg = new Message();
         assertNull(msg.getKnob(MimeKnob.class));
@@ -334,6 +336,8 @@ public class KnobblyMessageTest extends TestCase {
         assertNotNull(msg.getMimeKnob());
     }
 
+    @Test
+    @BugNumber(3559)
     public void testBug3559TarariIsSoap() throws Exception {
         Message msg = new Message();
 
@@ -361,11 +365,29 @@ public class KnobblyMessageTest extends TestCase {
         }
     }
 
-    /**
-     * Test <code>KnobblyMessageTest</code> main.
-     */
-    public static void main(String[] args) throws
-            Throwable {
-        junit.textui.TestRunner.run(suite());
+    private static class Bug4542ReproStashManager extends ByteArrayStashManager {
+        boolean closed = false;
+        public void close() {
+            try {
+                super.close();
+            } finally {
+                closed = true;
+            }
+        }
+    }
+
+    @Ignore("Not yet fixed")
+    @Test
+    @BugNumber(4542)
+    public void testBug4542LeakedStashManager() throws Exception {
+        Message msg = new Message();
+        Bug4542ReproStashManager sm = new Bug4542ReproStashManager();
+        try {
+            msg.initialize(sm, ContentTypeHeader.parseValue("multipart/related; boundary=iaintsendingthis"), new IOExceptionThrowingInputStream(new IOException("nope")));
+            fail("expected IOException was not thrown");
+        } catch (IOException e) {
+            // Ok
+            assertTrue("StashManager should have been closed when MimeBody constructor failed", sm.closed);
+        }
     }
 }

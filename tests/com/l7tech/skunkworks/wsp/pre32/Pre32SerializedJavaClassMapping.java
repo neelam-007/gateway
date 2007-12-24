@@ -1,8 +1,8 @@
 package com.l7tech.skunkworks.wsp.pre32;
 
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.UnknownAssertion;
-import org.apache.axis.encoding.Base64;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -89,7 +89,7 @@ class Pre32SerializedJavaClassMapping extends Pre32BeanTypeMapping {
         ObjectOutputStream oos = new ObjectOutputStream(bos);
         oos.writeObject(obj);
         byte[] bytes = bos.toByteArray();
-        String encodedString = Base64.encode(bytes);
+        String encodedString = HexUtils.encodeBase64(bytes);
         oos.close();
         bos.close();
         return encodedString;
@@ -99,7 +99,7 @@ class Pre32SerializedJavaClassMapping extends Pre32BeanTypeMapping {
      * Recreates the object from the base64 encoded String
      */
     private Object base64ToObject(String str) throws IOException, ClassNotFoundException {
-        ByteArrayInputStream bis = new ByteArrayInputStream(Base64.decode(str));
+        ByteArrayInputStream bis = new ByteArrayInputStream(HexUtils.decodeBase64(str));
         ObjectInputStream ois = new ObjectInputStream(bis);
 
         Object obj = (Object)ois.readObject();

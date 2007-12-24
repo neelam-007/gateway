@@ -16,8 +16,10 @@ set CLASSPATH=%SRC_ROOT%\lib\ant-nodeps.jar;%CLASSPATH%
 set CLASSPATH=%SRC_ROOT%\lib\xercesImpl.jar;%CLASSPATH%
 set CLASSPATH=%SRC_ROOT%\lib\xml-apis.jar;%CLASSPATH%
 set CLASSPATH=%SRC_ROOT%\lib\junit.jar;%CLASSPATH%
+set CLASSPATH=%SRC_ROOT%\lib\tools\junit-4.4.jar;%CLASSPATH%
+set CLASSPATH=%SRC_ROOT%\lib\tools\ant-trax.jar;%CLASSPATH%
 set CLASSPATH=%SRC_ROOT%\lib\ant-junit.jar;%CLASSPATH%
-set CLASSPATH=%SRC_ROOT%\lib\ant-contrib.jar;%CLASSPATH%
+set CLASSPATH=%SRC_ROOT%\lib\ant-contrib-1.0b3.jar;%CLASSPATH%
 set CLASSPATH=%SRC_ROOT%\lib\xalan-2.5.2.jar;%CLASSPATH%
 rem echo %CLASSPATH%
 rem Execute ANT to perform the requested build target

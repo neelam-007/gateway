@@ -1,11 +1,12 @@
 package com.l7tech.server.config;
 
+import com.l7tech.common.BuildInfo;
 import com.l7tech.server.config.db.*;
 import com.l7tech.server.config.exceptions.UnsupportedOsException;
-import com.l7tech.common.BuildInfo;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import junit.textui.TestRunner;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -149,7 +150,7 @@ public class DBActionsTest extends TestCase {
     }
 
     public static void main(String[] args) {
-        junit.swingui.TestRunner.run (DBActionsTest.class);
+        TestRunner.run (DBActionsTest.class);
     }
 
 }

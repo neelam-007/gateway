@@ -167,11 +167,6 @@ public class RequestHandler extends AbstractHttpHandler {
     {
         log.info("Incoming request: " + httpRequest.getURI().getPath());
 
-        if (httpRequest.getMethod().compareToIgnoreCase("POST") != 0) {
-            handleNonPostMethod(httpRequest, httpResponse);
-            return;
-        }
-
         // Find endpoint, and see if this is a WSDL request
         String endpoint = httpRequest.getURI().getPath().substring(1); // skip leading slash
         boolean isWsdl = false;
@@ -184,6 +179,12 @@ public class RequestHandler extends AbstractHttpHandler {
             isWsdl = true;
         }
 
+        boolean nonPost = httpRequest.getMethod().compareToIgnoreCase("POST") != 0;
+        if (!isWsdl && nonPost) {
+            handleNonPostMethod(httpRequest, httpResponse);
+            return;
+        }
+
         String[] endpointIO = new String[]{endpoint};
         final Ssg ssg = getDesiredSsg(endpointIO);
         endpoint = endpointIO[0]; // use translated endpoint
@@ -192,6 +193,11 @@ public class RequestHandler extends AbstractHttpHandler {
 
         if (isWsdl) {
             handleWsdlRequest(httpRequest, httpResponse, ssg);
+            return;
+        }
+
+        if (nonPost) {
+            handleNonPostMethod(httpRequest, httpResponse);
             return;
         }
 

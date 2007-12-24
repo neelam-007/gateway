@@ -235,7 +235,7 @@ public interface AssertionMetadata {
     String POLICY_VALIDATOR_CLASSNAME = "policyValidatorClassname";
 
     /**
-     * Functions.Unary<Set<ValidatorFlag>,Assertion> instance.
+     * Functions.Unary< Set< ValidatorFlag >, Assertion > instance.
      *
      * <p>Allow an assertion to supply additional information on it's policy
      * preconditions or other validation aspects.</p>

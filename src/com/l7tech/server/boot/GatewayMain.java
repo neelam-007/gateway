@@ -4,6 +4,7 @@ import com.l7tech.common.util.ExceptionUtils;
 
 /**
  * An entry point that starts the Gateway server process and runs it until it is shut down.
+ * @noinspection UseOfSystemOutOrSystemErr,CallToSystemExit
  */
 public class GatewayMain {
     public static void main(String[] args) {
