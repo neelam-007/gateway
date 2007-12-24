@@ -10,6 +10,7 @@
     <param name="japex.classPath" value="${src.root}/lib/*.jar"/>
     <param name="japex.classPath" value="${src.root}/lib/crypto/bc/*.jar"/>
     <param name="japex.classPath" value="${src.root}/lib/tools/jdsl-1.0.jar"/>
+    <param name="japex.classPath" value="${src.root}/lib/tools/junit*.jar"/>
     <param name="japex.classPath" value="${src.root}/build/classes"/>
     <param name="japex.classPath" value="${src.root}/build/test-classes"/>
 
