@@ -170,6 +170,8 @@ public class NewFederatedUserDialog extends JDialog {
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     createThenEdit = true;
+                } else {
+                    createThenEdit = false;
                 }
             }
         });
