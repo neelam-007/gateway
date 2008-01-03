@@ -622,7 +622,6 @@ public class GenericUserPanel extends UserPanel {
                         InternalUser iu = (InternalUser) user;
                         DialogDisplayer.display(new PasswordDialog(TopComponents.getInstance().getTopParent(), userPanel,
                                 iu, passwordChangeListener));
-                        // Refresh the panel (since the Bridge's cert might have been revoked)
                     } else {
                         throw new IllegalStateException("Password can only be changed for Internal users");
                     }
