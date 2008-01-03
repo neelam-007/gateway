@@ -2,13 +2,13 @@ package com.l7tech.external.assertions.splitjoin;
 
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.service.PublishedService;
 
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -119,7 +119,7 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
             }
         }
 
-        public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
+        public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
             if (message != null)
                 result.addWarning((new PolicyValidatorResult.Warning(assertion, path, message, null)));
         }
