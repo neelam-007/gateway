@@ -33,7 +33,7 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep {
     private static final String HEADER_CONFIGURE_ENDPOINTS= "-- Configure Endpoints for the \"{0}\" Partition --" + getEolChar();
     public static final String TITLE = "Configure Endpoints";
     private List<SsgConnector> endpointsToAdd;
-//    private EndpointConfigBean endpointBean;
+    private EndpointConfigBean endpointBean;
 
     private static enum EndpointEnabledState {
         ENABLED("enabled"),
@@ -99,7 +99,7 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep {
     private void init() {
         osFunctions = parent.getOsFunctions();
         configBean = new EndpointConfigBean();
-//        endpointBean = (EndpointConfigBean) configBean;
+        endpointBean = (EndpointConfigBean) configBean;
         configCommand = new EndpointConfigCommand(configBean);
         endpointsToAdd = new ArrayList<SsgConnector>();
     }
@@ -141,7 +141,6 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep {
         PartitionInformation pinfo = PartitionManager.getInstance().getActivePartition();
         try {
             doConfigureEndpointsPrompts(pinfo, validated);
-            EndpointConfigBean endpointBean = (EndpointConfigBean) configBean;
             endpointBean.setEndpointsToAdd(endpointsToAdd);
             endpointBean.setPartitionInfo(pinfo);
         } catch (IOException e) {
@@ -159,7 +158,6 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep {
         List<String> promptList = new ArrayList<String>();
         DBInformation dbinfo = SharedWizardInfo.getInstance().getDbinfo();
         boolean finishedEndpointConfig;
-        EndpointConfigBean endpointBean = (EndpointConfigBean) configBean;
         endpointBean.setLegacyEndpoints(EndpointActions.getLegacyEndpoints(pinfo));
 
         do {

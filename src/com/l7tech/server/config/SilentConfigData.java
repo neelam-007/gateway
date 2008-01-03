@@ -21,8 +21,6 @@ public class SilentConfigData {
     private byte[] sslCert;
     private byte[] caCert;
 
-    private KeystoreType keystoreType;
-
     public Collection<ConfigurationCommand> getCommands() {
         return commands;
     }
@@ -77,13 +75,5 @@ public class SilentConfigData {
 
     public void setCaCert(byte[] caCert) {
         this.caCert = caCert;
-    }
-
-    public KeystoreType getKeystoreType() {
-        return keystoreType;
-    }
-
-    public void setKeystoreType(KeystoreType keystoreType) {
-        this.keystoreType = keystoreType;
     }
 }

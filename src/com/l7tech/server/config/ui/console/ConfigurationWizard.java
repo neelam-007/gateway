@@ -5,12 +5,9 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.server.config.*;
-import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.ConfigurationCommand;
-import com.l7tech.server.config.commands.KeystoreConfigCommand;
 import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
-import com.l7tech.server.config.exceptions.KeystoreActionsException;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 import org.xml.sax.SAXException;
@@ -151,19 +148,6 @@ public class ConfigurationWizard {
         boolean isSilentMode = (silentConfig != null);
         if (isSilentMode) {
             commands = silentConfig.getCommands();
-
-            KeystoreType ksType = silentConfig.getKeystoreType();
-            if (ksType == KeystoreType.SCA6000_KEYSTORE_NAME) {
-                char[] masterKeyPassword = getHsmMasterKeyPassword();
-                if (!prepareHsmRestore(masterKeyPassword, commands)) {
-                    logger.severe("Could not set the master key password for the new node. The configuration data is not valid. Exiting.");
-                    wizardUtils.printText("Could not set the master key password for the new node. The configuration data is not valid. "+ ConsoleWizardUtils.EOL_CHAR);
-                    wizardUtils.printText("The configuration cannot proceed and the wizard will now exit."+ ConsoleWizardUtils.EOL_CHAR);
-                    hadFailures = true;
-                    return;
-                }
-            }
-
             PartitionInformation pInfo = silentConfig.getPartitionInfo();
 
             File f = new File(getOsFunctions().getPartitionBase() + pInfo.getPartitionId());
@@ -228,23 +212,6 @@ public class ConfigurationWizard {
         }
     }
 
-    private boolean prepareHsmRestore(char[] masterKeyPassword, Collection<ConfigurationCommand> commands) {
-        for (ConfigurationCommand command : commands) {
-            if (command instanceof KeystoreConfigCommand) {
-                KeystoreConfigCommand keystoreConfigCommand = (KeystoreConfigCommand) command;
-                KeystoreConfigBean ksBean = (KeystoreConfigBean) keystoreConfigCommand.getConfigBean();
-
-                //set the master key password in the dataset so it gets picked up during configuration application.
-                ksBean.setMasterKeyBackupPassword(masterKeyPassword);
-                
-                //ensure that we don't try to initialize the HSM, we are doing a restore on subsequent nodes.
-                ksBean.setInitializeHSM(false);
-                return true;
-            }
-        }
-        return false;
-    }
-
     private void saveConfigData() throws IOException {
 
         ConfigurationType configType = SharedWizardInfo.getInstance().getConfigType();
@@ -262,8 +229,6 @@ public class ConfigurationWizard {
                 configData.setCommands(commands);
                 configData.setDbInfo(sharedWizardInfo.getDbinfo());
                 configData.setPartitionInfo(PartitionManager.getInstance().getActivePartition());
-
-                configData.setKeystoreType(sharedWizardInfo.getKeystoreType());
                 configData.setSslKeystore(sslKeystoreBytes);
                 configData.setSslCert(sslCertBytes);
                 configData.setCaKeystore(caKeystoreBytes);
@@ -390,39 +355,5 @@ public class ConfigurationWizard {
     public boolean shouldSaveConfigData() {
         return  SharedWizardInfo.getInstance().getConfigType() == ConfigurationType.CONFIG_CLUSTER &&
                 SharedWizardInfo.getInstance().getClusterType() == ClusteringType.CLUSTER_MASTER;
-    }
-
-    public char[] getHsmMasterKeyPassword() {
-        try {
-            wizardUtils.printText("This cluster uses the HSM for the SSG keystore.: " + ConsoleWizardUtils.EOL_CHAR);
-            boolean foundFob = false;
-            while (!foundFob) {
-                try {
-                    PartitionActions.probeForUSBFob(osFunctions);
-                    foundFob = true;
-                } catch (KeystoreActionsException e) {
-                    wizardUtils.printText("*** A supported USB backup device could not be found. ***" + ConsoleWizardUtils.EOL_CHAR + ConsoleWizardUtils.EOL_CHAR);
-                    wizardUtils.printText("");
-                    wizardUtils.getData(new String[] {"Please insert the USB backup device and press enter to continue: "}, "", true, (String[])null,null);
-                    foundFob = false;
-                }
-            }
-
-            wizardUtils.getData(
-                new String[] {
-                    ConsoleWizardUtils.EOL_CHAR,
-                    "Please enter the master key backup password: "
-                },
-                "",
-                true,
-                (String[]) null,
-                null);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (WizardNavigationException e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 }

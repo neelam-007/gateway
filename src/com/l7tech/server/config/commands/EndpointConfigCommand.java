@@ -32,6 +32,7 @@ import java.util.logging.Level;
  */
 public class EndpointConfigCommand extends BaseConfigurationCommand{
     private static final Logger logger = Logger.getLogger(EndpointConfigCommand.class.getName());
+    EndpointConfigBean endpointBean;
     private static final String CLUSTER_PORT_SYSPROP_KEY = "com.l7tech.server.clusterPort";
 
     public EndpointConfigCommand() {
@@ -40,11 +41,11 @@ public class EndpointConfigCommand extends BaseConfigurationCommand{
 
     public EndpointConfigCommand(ConfigurationBean bean) {
         super(bean);
+        endpointBean = (EndpointConfigBean) configBean;
     }
 
     public boolean execute() {
         boolean success = true;
-        EndpointConfigBean endpointBean = (EndpointConfigBean) configBean;
         try {
             PartitionInformation pinfo = endpointBean.getPartitionInfo();
             enableDbEndpointsIfNecessary();
@@ -114,7 +115,6 @@ public class EndpointConfigCommand extends BaseConfigurationCommand{
     }
 
     private void enableDbEndpointsIfNecessary() throws ClassNotFoundException, SQLException {
-        EndpointConfigBean endpointBean = (EndpointConfigBean) configBean;
         PartitionInformation pinfo = endpointBean.getPartitionInfo();
         DBInformation dbinfo = SharedWizardInfo.getInstance().getDbinfo();
 
