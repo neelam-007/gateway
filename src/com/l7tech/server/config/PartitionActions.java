@@ -2,9 +2,11 @@ package com.l7tech.server.config;
 
 import com.l7tech.common.util.*;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
+import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
+import com.l7tech.server.config.exceptions.KeystoreActionsException;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.configuration.ConfigurationException;
@@ -20,6 +22,7 @@ import java.net.NetworkInterface;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * User: megery
@@ -789,6 +792,23 @@ public class PartitionActions {
                     logger.warning("Error while enabling the \"" + pInfo.getPartitionId() + "\" partition. [" + e.getMessage());
                 }
             }
+        }
+    }
+
+    public static void probeForUSBFob(OSSpecificFunctions osFunctions) throws KeystoreActionsException {
+        String prober = osFunctions.getSsgInstallRoot() + KeystoreConfigBean.MASTERKEY_MANAGE_SCRIPT;
+        try {
+            ProcResult result = ProcUtils.exec(null, new File(prober), ProcUtils.args("probe"), null, true);
+            if (result.getExitStatus() == 0) {
+                //all is well, USB stick is there
+                logger.info("Detected a supported backup storage device.");
+            } else {
+                String message = "A supported backup storage device was not found.";
+                logger.warning(MessageFormat.format(message + " Return code = {0}, Message={1}", result.getExitStatus(), new String(result.getOutput())));
+                throw new KeystoreActionsException(message);
+            }
+        } catch (IOException e) {
+            throw new KeystoreActionsException("An error occurred while attempting to find a supported backup storage device: " + e.getMessage());
         }
     }
 }

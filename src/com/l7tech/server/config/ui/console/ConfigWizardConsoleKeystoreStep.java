@@ -32,8 +32,6 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
     private static final String DO_KEYSTORE_PROMPT = "2) I want to configure the keystore for this SSG\n";
     private static final String KEYSTORE_TITLE = "Set Up the SSG Keystore";
 
-//    private KeystoreConfigBean keystoreBean;
-
     private Map<String, KeystoreType> ksTypeMap;
     private ResourceBundle resourceBundle;
 
@@ -48,7 +46,6 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
 
     private void init() {
         configBean = new KeystoreConfigBean();
-//        keystoreBean = (KeystoreConfigBean) configBean;
         configCommand = new KeystoreConfigCommand(configBean);
         ksTypeMap = new TreeMap<String,KeystoreType>();
         resourceBundle = ResourceBundle.getBundle("com.l7tech.server.config.resources.configwizard");
@@ -294,7 +291,10 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
 
     private boolean askDoKeystorePrompts() throws IOException, WizardNavigationException {
         boolean shouldConfigure;
-        String defaultValue = "1";
+
+        File keystoreDir = new File(osFunctions.getKeystoreDir());
+
+        String defaultValue = keystoreDir.exists()?"1":"2";
         String [] prompts = new String[] {
             NO_KEYSTORE_PROMPT,
             DO_KEYSTORE_PROMPT,
