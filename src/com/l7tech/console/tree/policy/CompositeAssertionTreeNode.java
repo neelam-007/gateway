@@ -39,6 +39,7 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
      *
      * @param node the node to receive
      */
+    @Override
     public boolean receive(AbstractTreeNode node) {
         return receive(node, getChildCount());
     }
@@ -66,7 +67,7 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
         return true;
     }
 
-
+    @Override
     protected void loadChildren() {
         CompositeAssertion assertion = (CompositeAssertion)getUserObject();
         children = null;
@@ -80,13 +81,15 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
      * @param node the node to accept
      * @return always true
      */
+    @Override
     public boolean accept(AbstractTreeNode node) {
-        return super.accept(node) && node.isLeaf();
+        return super.accept(node);
     }
 
     /**
      * @return a string representation of the object.
      */
+    @Override
     public String toString() {
         return getUserObject().getClass().getName();
     }
@@ -96,6 +99,7 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
      *
      * @return true if the node can be deleted, false otherwise
      */
+    @Override
     public boolean canDelete() {
         return getParent() != null && super.canDelete();
     }
@@ -103,6 +107,7 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
     /**
      * specify this node image resource
      */
+    @Override
     protected String iconResource(boolean open) {
         if (open)
             return "com/l7tech/console/resources/folderOpen.gif";
@@ -116,11 +121,12 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
      *
      * @return actions appropriate to the node
      */
+    @Override
     public Action[] getActions() {
-        java.util.List list = new ArrayList();
+        java.util.List<Action> list = new ArrayList<Action>();
         list.addAll(Arrays.asList(super.getActions()));
         Action a = new AddIdentityAssertionAction(this);
         list.add(a);
-        return (Action[])list.toArray(new Action[]{});
+        return list.toArray(new Action[list.size()]);
     }
 }

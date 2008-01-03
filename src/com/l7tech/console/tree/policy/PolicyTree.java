@@ -407,8 +407,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
      * @return the popup menu
      */
     private JPopupMenu getPopupMenu(Action[] actions) {
-        if (actions == null || actions.length == 0)
-            return null;
         JPopupMenu pm = new JPopupMenu();
         boolean empty = true;
         for (final Action action : actions) {
@@ -428,7 +426,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
         // To prevent this confusing behavior, we'll just suppress the context menu Copy/Paste if
         // the system clipboard isn't accessible to our code.
         if (ClipboardActions.isSystemClipboardAvailable() && ClipboardActions.getGlobalCopyAction().isEnabled()) {
-            pm.add(new JPopupMenu.Separator());
+            if (!empty)
+                pm.add(new JPopupMenu.Separator());
             pm.add(ClipboardActions.getGlobalCopyAction());
             empty = false;
             if (ClipboardActions.getGlobalCopyAllAction().isEnabled())
@@ -887,7 +886,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     }
                     e.dropComplete(true);
                 } else {
-                    log.warning(target.getClass().getSimpleName() + " rejected drop");
+                    log.warning(path.getLastPathComponent().getClass().getSimpleName() + " rejected drop");
                     e.rejectDrop();
                 }
                 return;
