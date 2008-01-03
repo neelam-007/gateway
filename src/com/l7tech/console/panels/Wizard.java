@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
+import com.l7tech.console.action.Actions;
 import com.l7tech.common.gui.util.FontUtil;
 
 import javax.swing.*;
@@ -605,7 +606,30 @@ public class Wizard extends JDialog {
             buttonHelp = new JButton();
             buttonHelp.setText("Help");
         }
+        setF1HelpFunction();
         return buttonHelp;
+    }
+
+    /**
+     * Set F1 help function
+     */
+    private void setF1HelpFunction() {
+        KeyStroke accel = KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0);
+        String actionName = "showHelpTopics";
+        AbstractAction helpAction = new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                buttonHelp.doClick();
+            }
+        };
+
+        helpAction.putValue(Action.NAME, actionName);
+        helpAction.putValue(Action.ACCELERATOR_KEY, accel);
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(accel, actionName);
+        getRootPane().getActionMap().put(actionName, helpAction);
+        getLayeredPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(accel, actionName);
+        getLayeredPane().getActionMap().put(actionName, helpAction);
+        ((JComponent)getContentPane()).getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(accel, actionName);
+        ((JComponent)getContentPane()).getActionMap().put(actionName, helpAction);
     }
 
     public boolean isEnableBackButton() {
