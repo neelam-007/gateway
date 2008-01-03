@@ -778,6 +778,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
          */
         private void assertionDragOver(DropTargetDragEvent e) {
             boolean accept = true;
+            boolean isLastRow = false;
+
             Point pt = e.getLocation();
             TreePath path = getClosestPathForLocation(pt.x, pt.y);
             if (path != null) {
@@ -798,9 +800,12 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 } catch (UnsupportedFlavorException ufe) {
                     log.log(Level.WARNING, "Drag and drop error, '"+ExceptionUtils.getMessage( ufe )+"'", ExceptionUtils.getDebugException( ufe ));
                 }
+
+                int rowForPath = getRowForPath(path);
+                isLastRow = rowForPath==getRowCount()-1;
             }
 
-            if ( accept ) {
+            if ( accept || isLastRow ) {
                 e.acceptDrag( e.getDropAction() );
             } else {
                 e.rejectDrag();
@@ -853,8 +858,18 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         path = new TreePath(root);
                     }
                 }
-                AssertionTreeNode target = (AssertionTreeNode)path.getLastPathComponent();
-                if (target.accept(node)) {
+                AssertionTreeNode potentialTarget = (AssertionTreeNode) path.getLastPathComponent();
+                AssertionTreeNode target = null;
+                while ( potentialTarget != null ) {
+                    if ( potentialTarget.accept( node )) {
+                        target = potentialTarget;
+                        break;
+                    }
+
+                    potentialTarget = (AssertionTreeNode) potentialTarget.getParent();
+                }
+
+                if ( target != null ) {
                     e.acceptDrop(e.getDropAction());
                     if (dropAsFirstContainerChild) {
                         if (target instanceof CompositeAssertionTreeNode) {
