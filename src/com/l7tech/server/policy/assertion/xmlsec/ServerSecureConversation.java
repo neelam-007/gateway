@@ -69,7 +69,7 @@ public class ServerSecureConversation extends AbstractServerAssertion implements
         }
 
         if (wssResults == null) {
-            auditor.logAndAudit(AssertionMessages.SC_NO_WSS_LEVEL_SECURITY);
+            auditor.logAndAudit(AssertionMessages.REQUESTWSS_NO_SECURITY);
             context.setAuthenticationMissing();
             context.setRequestPolicyViolated();
             return AssertionStatus.FALSIFIED;

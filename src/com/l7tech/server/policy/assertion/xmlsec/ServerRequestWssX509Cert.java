@@ -59,7 +59,7 @@ public class ServerRequestWssX509Cert extends AbstractServerAssertion implements
             throw new CausedIOException(e);
         }
         if (wssResults == null) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_NO_WSS_LEVEL_SECURITY);
+            auditor.logAndAudit(AssertionMessages.REQUESTWSS_NO_SECURITY);
             context.setRequestPolicyViolated();
             context.setAuthenticationMissing();
             return AssertionStatus.FALSIFIED;

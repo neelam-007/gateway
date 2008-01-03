@@ -10,6 +10,9 @@ import java.util.logging.Level;
  */
 public class AssertionMessages extends Messages {
 
+    // Generic Assersion Message
+    public static final M REQUESTWSS_NO_SECURITY = m(4302, Level.INFO, "Request did not contain any WSS level security");
+
     // ServerHttpRoutingAssertion messages
     public static final M HTTPROUTE_SSL_INIT_FAILED         = m(4000, Level.WARNING, "Could not initialize SSL Context");
     public static final M HTTPROUTE_BEGIN                   = m(4001, Level.INFO, "Processing HTTP(S) Routing assertion");
@@ -79,7 +82,8 @@ public class AssertionMessages extends Messages {
     // ServerRequestWssOperation messages
     public static final M REQUESTWSS_NOT_FOR_US  = m(4300, Level.FINE, "Intended for another recipient; nothing to validate");
     public static final M REQUESTWSS_NONSOAP     = m(4301, Level.INFO, "Request not SOAP; cannot verify WS-Security contents");
-    public static final M REQUESTWSS_NO_SECURITY = m(4302, Level.INFO, "Request did not contain any WSS level security");
+    // Move the below message to the top "Generic Assersion Message"
+    //public static final M REQUESTWSS_NO_SECURITY = m(4302, Level.INFO, "Request did not contain any WSS level security");
 
     // ServerRequestSwAAssertion messages
     public static final M SWA_NOT_SOAP                    = m(4400, Level.WARNING, "Request not SOAP; cannot validate attachments");
@@ -117,7 +121,7 @@ public class AssertionMessages extends Messages {
 
     // ServerSecureConversation messages
     public static final M SC_REQUEST_NOT_SOAP                     = m(4600, Level.INFO, "Request not SOAP; unable to check for WS-SecureConversation token");
-    public static final M SC_NO_WSS_LEVEL_SECURITY                = m(4601, Level.INFO, "This request did not contain any WSS level security");
+    /** @deprecated */ public static final M _UNUSED_SC_NO_WSS_LEVEL_SECURITY = m(4601, Level.INFO, "This request did not contain any WSS level security");
     public static final M SC_NO_PROOF_OF_POSSESSION               = m(4602, Level.FINE, "Ignoring SecurityContextToken with no proof-of-possession");
     public static final M SC_TOKEN_INVALID                        = m(4603, Level.WARNING, "Request referred to a SecureConversation token unrecognized on this server; possible expired session - returning AUTH_FAILED");
     public static final M SC_SESSION_FOR_USER                     = m(4604, Level.FINE, "Secure Conversation session recognized for user {0}");
@@ -151,7 +155,7 @@ public class AssertionMessages extends Messages {
     // ServerRequestWssX509Cert messages
     public static final M REQUEST_WSS_X509_FOR_ANOTHER_USER       = m(4800, Level.FINE, "This is intended for another recipient; there is nothing to validate");
     public static final M REQUEST_WSS_X509_NON_SOAP               = m(4801, Level.INFO, "Request not SOAP; unable to check for WS-Security signature");
-    public static final M REQUEST_WSS_X509_NO_WSS_LEVEL_SECURITY  = m(4802, Level.INFO, "Request did not contain any WSS level security");
+    /** @deprecated */ public static final M _UNUSED_REQUEST_WSS_X509_NO_WSS_LEVEL_SECURITY  = m(4802, Level.INFO, "Request did not contain any WSS level security");
     public static final M REQUEST_WSS_X509_NO_TOKEN               = m(4803, Level.INFO, "No tokens were processed from this request; returning AUTH_REQUIRED");
     public static final M REQUEST_WSS_X509_TOO_MANY_VALID_SIG     = m(4804, Level.WARNING, true, false, "Request presented more than one valid signature from more than one client certificate");
     public static final M REQUEST_WSS_X509_CERT_LOADED            = m(4805, Level.FINE, "Certificate loaded as principal credential for CN:{0}");
@@ -159,7 +163,7 @@ public class AssertionMessages extends Messages {
 
     // ServerRequestWssReplayProtection messages
     public static final M REQUEST_WSS_REPLAY_NON_SOAP                       = m(4900, Level.INFO, "Request not SOAP; cannot check for replayed signed WS-Security message");
-    public static final M REQUEST_WSS_REPLAY_NO_WSS_LEVEL_SECURITY          = m(4901, Level.INFO, "This request did not contain any WSS level security");
+    /** @deprecated */ public static final M _UNUSED_REQUEST_WSS_REPLAY_NO_WSS_LEVEL_SECURITY = m(4901, Level.INFO, "This request did not contain any WSS level security");
     public static final M REQUEST_WSS_REPLAY_NO_TIMESTAMP                   = m(4902, Level.INFO, "Assertion has failed because no timestamp present in request");
     public static final M REQUEST_WSS_REPLAY_TIMESTAMP_NOT_SIGNED           = m(4903, Level.INFO, "Assertion has failed because no signed timestamp present in request");
     public static final M REQUEST_WSS_REPLAY_TIMESTAMP_NO_CREATED_ELEMENT   = m(4904, Level.INFO, "Timestamp in request has no Created element");
@@ -201,7 +205,7 @@ public class AssertionMessages extends Messages {
 
     // ServerResponseWssConfidentiality
     public static final M RESPONSE_WSS_CONF_REQUEST_NOT_SOAP                = m(5400, Level.INFO, "Request not SOAP; unable to check for WS-Security encrypted elements");
-    public static final M RESPONSE_WSS_CONF_NO_WSS_SECURITY                 = m(5401, Level.INFO, "Request did not contain any WSS level security");
+    /** @deprecated */ public static final M _UNUSED_RESPONSE_WSS_CONF_NO_WSS_SECURITY = m(5401, Level.INFO, "Request did not contain any WSS level security");
     public static final M RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN             = m(5402, Level.WARNING, true, false, "Request included more than one X509 security token whose key ownership was proven");
     public static final M RESPONSE_WSS_CONF_NO_CERT_OR_SC_TOKEN             = m(5403, Level.WARNING, "Unable to encrypt response; request did not include X509 token or SecureConversation");
     public static final M RESPONSE_WSS_CONF_RESPONSE_NOT_SOAP               = m(5404, Level.WARNING, false, true, "Response not SOAP; unable to encrypt response elements");
@@ -450,7 +454,7 @@ public class AssertionMessages extends Messages {
 
     // ServerRequestWssKerberos messages
     public static final M REQUEST_WSS_KERBEROS_NON_SOAP               = m(7401, Level.INFO, "Request not SOAP; unable to check for WS-Security Binary Security Token");
-    public static final M REQUEST_WSS_KERBEROS_NO_WSS_LEVEL_SECURITY  = m(7402, Level.INFO, "Request did not contain any WSS-level security");
+    /** @deprecated */ public static final M _UNUSED_REQUEST_WSS_KERBEROS_NO_WSS_LEVEL_SECURITY  = m(7402, Level.INFO, "Request did not contain any WSS-level security");
     public static final M REQUEST_WSS_KERBEROS_NO_TOKEN               = m(7403, Level.INFO, "No tokens were processed from this request: Returning AUTH_REQUIRED");
     public static final M REQUEST_WSS_KERBEROS_NO_TICKET              = m(7404, Level.INFO, "This assertion did not find a Kerberos Binary Security Token to use as credentials. Returning AUTH_REQUIRED.");
     public static final M REQUEST_WSS_KERBEROS_GOT_TICKET             = m(7405, Level.FINE, "Kerberos ticket processed, principal is:{0}");

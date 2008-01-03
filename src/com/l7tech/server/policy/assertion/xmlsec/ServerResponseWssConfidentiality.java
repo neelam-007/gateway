@@ -99,7 +99,7 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion<Re
             wssResult = context.getRequest().getSecurityKnob().getProcessorResult();
 
             if (wssResult == null) {
-                auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_NO_WSS_SECURITY);
+                auditor.logAndAudit(AssertionMessages.REQUESTWSS_NO_SECURITY);
                 context.setRequestPolicyViolated();
                 return AssertionStatus.FAILED;
             }

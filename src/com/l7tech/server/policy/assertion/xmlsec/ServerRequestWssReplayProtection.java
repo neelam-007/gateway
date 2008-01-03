@@ -58,7 +58,7 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
             }
             wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
             if (wssResults == null) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_WSS_LEVEL_SECURITY);
+                auditor.logAndAudit(AssertionMessages.REQUESTWSS_NO_SECURITY);
                 context.setRequestPolicyViolated();
                 context.setAuthenticationMissing();
                 return AssertionStatus.NOT_APPLICABLE;
