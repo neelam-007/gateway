@@ -436,7 +436,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 final char[] keystorePassword = ksBean.getKsPassword();
                 final char[] masterKeyBackupPassword = ksBean.getMasterKeyBackupPassword();
                 final String sudoCommand = SUDO_COMMAND;
-                final String masterKeyBackupScript = getOsFunctions().getSsgInstallRoot() + KeystoreConfigBean.MASTERKEY_MANAGE_SCRIPT;
+                final String masterKeyBackupScript = getOsFunctions().getSsgInstallRoot() + KeyStoreConstants.MASTERKEY_MANAGE_SCRIPT;
                 String[] args = ProcUtils.args(masterKeyBackupScript, "backup", String.valueOf(keystorePassword), MASTER_KEY_BACKUP_FILE_NAME, String.valueOf(masterKeyBackupPassword));
                 logger.info(MessageFormat.format("Executing {0} {1} {2} {3} {4} {5}",sudoCommand,masterKeyBackupScript, "backup", "<keystorePassword>", MASTER_KEY_BACKUP_FILE_NAME, "<masterKeyBackupPassword>"));
                 ProcResult result = null;
@@ -457,7 +457,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     private void initializeHSM(char[] keystorePassword) throws KeystoreActionsException {
         if (getOsFunctions().isUnix()) {
-            final String initializeScript = getOsFunctions().getSsgInstallRoot() + KeystoreConfigBean.MASTERKEY_MANAGE_SCRIPT;
+            final String initializeScript = getOsFunctions().getSsgInstallRoot() + KeyStoreConstants.MASTERKEY_MANAGE_SCRIPT;
             final String sudoCommand = SUDO_COMMAND;
             logger.info(MessageFormat.format("Executing {0} {1} {2} {3}", sudoCommand, initializeScript, "init", "<keystorePassword>"));
             String[] args = ProcUtils.args(initializeScript, "init", String.valueOf(keystorePassword));
@@ -495,7 +495,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         if (getOsFunctions().isUnix()) {
             logger.info("Attempting to restore the master key.");
             final String sudoCommand = SUDO_COMMAND;
-            final String restoreScript = getOsFunctions().getSsgInstallRoot() + KeystoreConfigBean.MASTERKEY_MANAGE_SCRIPT;
+            final String restoreScript = getOsFunctions().getSsgInstallRoot() + KeyStoreConstants.MASTERKEY_MANAGE_SCRIPT;
             String[] args = ProcUtils.args(restoreScript, "restore", String.valueOf(keystorePassword), MASTER_KEY_BACKUP_FILE_NAME, String.valueOf(backupPassword));
             logger.info(MessageFormat.format("Executing {0} {1} {2} {3} {4} {5}",sudoCommand, restoreScript, "restore", "<keystorePassword>", MASTER_KEY_BACKUP_FILE_NAME, "<backupPassword>"));
             ProcResult result = null;

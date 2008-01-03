@@ -1,13 +1,18 @@
 package com.l7tech.server.config;
 
-import com.l7tech.server.config.ui.console.*;
-import com.l7tech.server.config.commands.AppServerConfigCommand;
+import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.commands.LoggingConfigCommand;
 import com.l7tech.server.config.commands.RmiConfigCommand;
-import com.l7tech.server.config.commands.ConfigurationCommand;
+import com.l7tech.server.config.ui.console.*;
 
-import java.util.*;
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: megery
@@ -54,7 +59,7 @@ public class ConsoleConfigWizardLauncher {
             }
         }
 
-        consoleWizard = new ConfigurationWizard(wizardInput, wizardOutput);
+        consoleWizard = new SoftwareConfigWizard(wizardInput, wizardOutput);
         consoleWizard.setSteps(getSteps(consoleWizard));
         consoleWizard.setAdditionalCommands(getAdditionalCommands());
 

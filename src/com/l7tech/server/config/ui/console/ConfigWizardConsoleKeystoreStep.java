@@ -194,6 +194,19 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                     askAgain = true;
                 }
             } else {
+                ConfigurationType configType = SharedWizardInfo.getInstance().getConfigType();
+                if (configType == ConfigurationType.CONFIG_CLUSTER) {
+                    printText("You are configuring the first node in a cluster to use an HSM but are not backing up the master key." + getEolChar());
+                    printText("Subsequent nodes in the cluster will need the master key in order to join the cluster." + getEolChar());
+                    getData(
+                            new String[] {
+                                    "Please insert the USB Backup device in the and press Enter to continue: ",
+                            },
+                            "",
+                            (String[]) null,
+                            null
+                    );
+                }
                 keystoreBean.setShouldBackupMasterKey(false);
                 keystoreBean.setMasterKeyBackupPassword(null);
                 askAgain = false;
@@ -306,7 +319,6 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         shouldConfigure = input != null && input.trim().equals("2");
 
         ((KeystoreConfigBean)configBean).setDoKeystoreConfig(shouldConfigure);
-//        getParentWizard().setKeystoreType(KeystoreType.NO_KEYSTORE);
 
         PartitionInformation pinfo = PartitionManager.getInstance().getActivePartition();
         boolean shouldDisable = true;

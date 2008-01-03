@@ -29,4 +29,7 @@ public class KeyStoreConstants {
     public static final String SSL_ALIAS = "tomcat";
     public static final String SSL_DN_PREFIX = "cn=";
     public static final int SSL_VALIDITY_DAYS = 2 * 365;
+
+    public static final String MASTERKEY_MANAGE_SCRIPT = "appliance/libexec/masterkey-manage.pl";    
+
 }

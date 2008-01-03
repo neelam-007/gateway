@@ -12,8 +12,6 @@ import java.util.logging.Logger;
 public class KeystoreConfigBean extends BaseConfigurationBean {
     private static final Logger logger = Logger.getLogger(KeystoreConfigBean.class.getName());
 
-    public static final String MASTERKEY_MANAGE_SCRIPT = "appliance/libexec/masterkey-manage.pl";
-
     private final static String NAME = "Keystore Configuration";
     private final static String DESCRIPTION = "Configures the keystore for the SSG";
 

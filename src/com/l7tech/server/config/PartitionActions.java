@@ -758,25 +758,6 @@ public class PartitionActions {
         return null;
     }
 
-//    public static  Map<PartitionInformation.HttpEndpointType, Element> getHttpConnectorsByType(NodeList connectors) {
-//        Map<PartitionInformation.HttpEndpointType,Element> elementMap = new HashMap<PartitionInformation.HttpEndpointType, Element>();
-//        for (int i = 0; i < connectors.getLength(); i++) {
-//            Element connector = (Element) connectors.item(i);
-//            if (!StringUtils.equals(connector.getAttribute("secure"), "true")) {
-//                elementMap.put(PartitionInformation.HttpEndpointType.BASIC_HTTP, connector);
-//            } else if (StringUtils.equals(connector.getAttribute("secure"), "true") &&
-//                       StringUtils.equals(connector.getAttribute("clientAuth"), "want")) {
-//                elementMap.put(PartitionInformation.HttpEndpointType.SSL_HTTP, connector);
-//            } else if (StringUtils.equals(connector.getAttribute("secure"), "true") &&
-//                       !StringUtils.equals(connector.getAttribute("clientAuth"), "want")) {
-//                elementMap.put(PartitionInformation.HttpEndpointType.SSL_HTTP_NOCLIENTCERT, connector);
-//            }
-//        }
-//
-//        return elementMap;
-//    }
-
-
     public static void enablePartitionForStartup(PartitionInformation pInfo){
         OSSpecificFunctions osf = pInfo.getOSSpecificFunctions();
         if (osf.isUnix()) {
@@ -796,7 +777,7 @@ public class PartitionActions {
     }
 
     public static void probeForUSBFob(OSSpecificFunctions osFunctions) throws KeystoreActionsException {
-        String prober = osFunctions.getSsgInstallRoot() + KeystoreConfigBean.MASTERKEY_MANAGE_SCRIPT;
+        String prober = osFunctions.getSsgInstallRoot() + KeyStoreConstants.MASTERKEY_MANAGE_SCRIPT;
         try {
             ProcResult result = ProcUtils.exec(null, new File(prober), ProcUtils.args("probe"), null, true);
             if (result.getExitStatus() == 0) {
