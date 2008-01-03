@@ -97,7 +97,7 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
      * @return true if the node can be deleted, false otherwise
      */
     public boolean canDelete() {
-        return getParent() != null;
+        return getParent() != null && super.canDelete();
     }
 
     /**

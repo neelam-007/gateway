@@ -30,7 +30,7 @@ public class AuditAssertionPolicyNode extends LeafAssertionTreeNode<AuditAsserti
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
-        return new AuditAssertionPropertiesAction(this, isDescendantOfInclude());
+        return new AuditAssertionPropertiesAction(this, isDescendantOfInclude(true));
     }
 
 }

@@ -31,11 +31,6 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
     }
 
     @Override
-    public boolean canDelete() {
-        return true;
-    }
-
-    @Override
     protected void loadChildren() {
         Policy policy = getPolicy();
         if (policy == null) return;
@@ -78,6 +73,7 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
         return "com/l7tech/console/resources/folder.gif";
     }
 
+    @Override
     public boolean accept(AbstractTreeNode node) {
         // Can't drag into an Include (yet?)
         return false;

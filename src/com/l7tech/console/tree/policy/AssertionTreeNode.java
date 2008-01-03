@@ -66,6 +66,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     /**
      * @return the assertion this node represents
      */
+    @Override
     public final AT asAssertion() {
         return assertion;
     }
@@ -122,6 +123,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     /**
      * @return the node name that is displayed
      */
+    @Override
     abstract public String getName();
 
     /**
@@ -187,6 +189,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
      *
      * @return the tooltip text or null
      */
+    @Override
     public String getTooltipText() {
         List messages = getValidatorMessages();
         StringBuffer sb = new StringBuffer();
@@ -260,6 +263,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
      *
      * @return actions appropriate to the node
      */
+    @Override
     public Action[] getActions() {
         java.util.List<Action> list = new ArrayList<Action>();
         list.addAll(Arrays.asList(super.getActions()));
@@ -271,7 +275,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             if (parent instanceof CompositeAssertionTreeNode) {
                 ca = (CompositeAssertionTreeNode) parent;
             } else {
-                if (isDescendantOfInclude()) return list.toArray(new Action[list.size()]);
+                if (isDescendantOfInclude(true)) return list.toArray(new Action[list.size()]);
                 throw new IllegalStateException("Assertion parent is neither an Include nor a Composite");
             }
         }
@@ -320,21 +324,18 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         return list.toArray(new Action[list.size()]);
     }
 
-    public boolean isDescendantOfInclude() {
-        for (TreeNode ancestor : getPath()) {
-            if (ancestor instanceof IncludeAssertionPolicyNode) return true;
-        }
-        return false;
+    @Override
+    public boolean canDelete() {
+        return !isDescendantOfInclude(false);
     }
-
+    
     /**
      * Can the node move up in the assertion tree
      *
      * @return true if the node can move up, false otherwise
      */
     public boolean canMoveUp() {
-        return
-          getParent() != null && getPreviousSibling() != null;
+        return !isDescendantOfInclude(false) && getParent() != null && getPreviousSibling() != null;
     }
 
     /**
@@ -343,7 +344,16 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
      * @return true if the node can move up, false otherwise
      */
     public boolean canMoveDown() {
-        return getNextSibling() != null;
+        return !isDescendantOfInclude(false) && getNextSibling() != null;
+    }
+
+    /**
+     * Test if the node may be dragged.
+     *
+     * @return true if the node can be dragged, false otherwise
+     */
+    public boolean canDrag() {
+        return !isDescendantOfInclude(false);
     }
 
     /**
@@ -471,6 +481,15 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         return !checkForInclude(node);
     }
 
+    protected boolean isDescendantOfInclude(boolean includeSelf) {
+        for (TreeNode ancestor : getPath()) {
+            if (ancestor instanceof IncludeAssertionPolicyNode) {
+                return ancestor != this || includeSelf;
+            }
+        }
+        return false;
+    }
+
     protected boolean checkForInclude(AbstractTreeNode draggingNode) {
         Include include = null;
         if (draggingNode instanceof IncludeAssertionPaletteNode) {
@@ -492,7 +511,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             }
         }
 
-        return isDescendantOfInclude();
+        return isDescendantOfInclude(true);
     }
 }
 

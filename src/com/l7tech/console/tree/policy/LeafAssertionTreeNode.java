@@ -49,11 +49,6 @@ public abstract class LeafAssertionTreeNode<AT extends Assertion> extends Assert
         return news;
     }
 
-    @Override
-    public boolean canDelete() {
-        return true;
-    }
-
     /**
      * Receive the abstract tree node
      *
