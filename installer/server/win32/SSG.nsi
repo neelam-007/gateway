@@ -3,7 +3,7 @@
 ;based on Basic Example Script, which was Written by Joost Verburg
 
 !ifndef J2RE
-  !define J2RE "jdk1.6.0_2-windows-i586-p-redist"  ;Name of directory containing JRE to copy from
+  !define J2RE "jdk1.6.0_3-windows-i586-p-redist"  ;Name of directory containing JRE to copy from
 !endif
 !ifndef J2RE_DIR
   ;Windows mapped to drive X:
