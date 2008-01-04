@@ -15,6 +15,7 @@ import com.l7tech.console.util.HeavySsmPreferences;
 import com.l7tech.console.util.SplashScreen;
 import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.security.ManagerTrustProvider;
+import com.l7tech.console.logging.ErrorManager;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -42,10 +43,8 @@ public class Main {
 
     /**
      * run the application
-     *
-     * @param args
      */
-    public void run(String[] args) {
+    public void run() {
         try {
             setInitialEnvironment();
             final SplashScreen screen = new SplashScreen("/com/l7tech/console/resources/splash-screen.gif");
@@ -79,11 +78,7 @@ public class Main {
                 screen.dispose();
             }
         } catch (final Exception e) {
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    throw new RuntimeException("Startup Error", e);
-                }
-            });
+            ErrorManager.getDefault().notify( Level.WARNING, e, "Startup Error" );
         }
     }
 
@@ -188,15 +183,15 @@ public class Main {
         InputStream in = null;
         try {
             ClassLoader cl = getClass().getClassLoader();
-            for (int i = 0; i < res.length; i++) {
-                in = cl.getResourceAsStream(res[i]);
-                if (in == null) {
-                    System.err.println("Couldn't load " + res[i]);
+            for( String re : res ) {
+                in = cl.getResourceAsStream( re );
+                if( in == null ) {
+                    System.err.println( "Couldn't load " + re );
                     continue;
                 }
-                URL url = cl.getResource(res[i]);
-                String file = directory + File.separator + new File(url.getFile()).getName();
-                FileUtils.save(in, new File(file));
+                URL url = cl.getResource( re );
+                String file = directory + File.separator + new File( url.getFile() ).getName();
+                FileUtils.save( in, new File( file ) );
             }
         } finally {
             if (in != null) {
@@ -227,6 +222,6 @@ public class Main {
      * @param args an array of command-line arguments
      */
     public static void main(final String[] args) {
-        new Main().run(args);
+        new Main().run();
     }
 }

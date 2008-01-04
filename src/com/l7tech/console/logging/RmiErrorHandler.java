@@ -45,11 +45,12 @@ public class RmiErrorHandler implements ErrorHandler {
             TopComponents.getInstance().disconnectFromGateway();
         }
 
-        if (throwable instanceof RemoteException ||
-            throwable instanceof SocketException ||
-            throwable instanceof AccessControlException ||
-            throwable instanceof TimeoutRuntimeException ||
-            (throwable instanceof NoClassDefFoundError && TopComponents.getInstance().isApplet())) {
+        if (topParent != null &&
+            (throwable instanceof RemoteException ||
+             throwable instanceof SocketException ||
+             throwable instanceof AccessControlException ||
+             throwable instanceof TimeoutRuntimeException ||
+             (throwable instanceof NoClassDefFoundError && TopComponents.getInstance().isApplet()))) {
 
             Throwable t = e.getThrowable();
             String message = ERROR_MESSAGE;
@@ -66,7 +67,7 @@ public class RmiErrorHandler implements ErrorHandler {
                 message = "SecureSpan Gateway unavailable (Network issue or server stopped).";
                 t = null;
             }
-            if (topParent != null) topParent.repaint();
+            topParent.repaint();
             // if t = null, show message dialog, otherwise, show error dialog.
             DialogDisplayer.showMessageDialog(topParent, null, message, t);
         } else {
