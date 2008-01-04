@@ -129,12 +129,15 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
 
         this.lock.writeLock().lock();
         try {
-            final PolicyDependencyInfo pdi = dependencyCache.get(policy.getOid());
             final Set<Long> seenOids = new HashSet<Long>();
             final Map<Long, Integer> dependentVersions = new HashMap<Long, Integer>();
             findDependentPolicies(policy, seenOids, dependentVersions);
+
+            final PolicyDependencyInfo pdi = dependencyCache.get(policy.getOid());
             pdi.dependentVersions = Collections.unmodifiableMap(dependentVersions);
+
             updateUsedBy();
+            
             serverPolicyCache.remove(policy.getOid());
             serverPolicyCache.put(policy.getOid(), sass);
         } catch (FindException e) {
