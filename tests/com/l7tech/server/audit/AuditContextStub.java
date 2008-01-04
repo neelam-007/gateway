@@ -6,14 +6,10 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.common.audit.AuditDetail;
-import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditDetailMessage;
+import com.l7tech.common.audit.AuditRecord;
 
-import java.util.Collections;
-import java.util.Set;
-import java.util.Map;
-import java.util.List;
-import java.util.LinkedHashSet;
+import java.util.*;
 
 /**
  * An AuditContext stub implementation. Does absolutely nothing except manage minimal internal state.
@@ -36,6 +32,9 @@ public class AuditContextStub implements AuditContextStubInt {
 
     public void addDetail(AuditDetail detail, Object source, Throwable exception) {
         details.add(detail);
+    }
+
+    public void setUpdate(boolean update) {
     }
 
     public Set<AuditDetailMessage.Hint> getHints() {

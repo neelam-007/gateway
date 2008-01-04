@@ -179,7 +179,7 @@ public class AuditRecordManagerImpl
         }
 
         public void run() {
-            // Delete in blocks of 10000 audit events. Otherwise a single delete of millions
+            // Delete in batches of 10000 audit events. Otherwise a single delete of millions
             // will fail with socket timeout. (Bugzilla # 3687)
             //
             // Note that these other solutions were tried but did not work:
@@ -226,43 +226,38 @@ public class AuditRecordManagerImpl
         }
 
         private int deleteBatch(final AuditRecordHolder auditRecordHolder, final long maxTime, int totalDeleted) throws HibernateException, SQLException {
-            Session session = getSession();
+            final Session session = getSession();
+            int numDeleted;
+            PreparedStatement deleteStmt = null;
             try {
-                int numDeleted;
-                PreparedStatement deleteStmt = null;
-                try {
-                    Connection conn = session.connection();
-                    deleteStmt = conn.prepareStatement("DELETE FROM audit_main WHERE audit_level <> ? AND time < ? LIMIT 10000");
-                    deleteStmt.setString(1, Level.SEVERE.getName());
-                    deleteStmt.setLong(2, maxTime);
-                    numDeleted = deleteStmt.executeUpdate();
-                } finally {
-                    ResourceUtils.closeQuietly(deleteStmt);
-                }
-
-                if (auditRecordHolder.auditRecord == null) {
-                    // This is the first batch in this session, we need to create the audit message
-                    AuditPurgeEvent auditPurgeEvent = new AuditPurgeEvent(AuditRecordManagerImpl.this, numDeleted);
-                    applicationContext.publishEvent(auditPurgeEvent);
-                    auditRecordHolder.auditRecord = auditPurgeEvent.getSystemAuditRecord();
-                } else {
-                    // Second or subsequent batch, we need to update the count in the audit message
-                    if (numDeleted == 0) {
-                        // No need to update.
-                    } else {
-                        totalDeleted += numDeleted;
-                        final SystemAuditRecord rec = auditRecordHolder.auditRecord;
-                        rec.setAction(AuditPurgeEvent.buildAction(totalDeleted));
-                        rec.setMessage(AuditPurgeEvent.buildMessage(totalDeleted));
-                        rec.setMillis(System.currentTimeMillis());
-                        session.update(rec);
-                    }
-                }
-
-                return numDeleted;
+                final Connection conn = session.connection();
+                deleteStmt = conn.prepareStatement("DELETE FROM audit_main WHERE audit_level <> ? AND time < ? LIMIT 10000");
+                deleteStmt.setString(1, Level.SEVERE.getName());
+                deleteStmt.setLong(2, maxTime);
+                numDeleted = deleteStmt.executeUpdate();
             } finally {
-                if (session != null) releaseSession(session);
+                ResourceUtils.closeQuietly(deleteStmt);
+                releaseSession(session);
             }
+
+            final SystemAuditRecord rec = auditRecordHolder.auditRecord;
+            if (rec == null) {
+                // This is the first batch in this session, create a new audit record.
+                final AuditPurgeEvent auditPurgeEvent = new AuditPurgeEvent(AuditRecordManagerImpl.this, numDeleted);
+                applicationContext.publishEvent(auditPurgeEvent);
+                auditRecordHolder.auditRecord = auditPurgeEvent.getSystemAuditRecord(); // Retrieves the newly created audit record for passing into the next call.
+            } else {
+                // Second or subsequent batch, we need to update the audit record.
+                if (numDeleted == 0) {
+                    // No increment. No need to update.
+                } else {
+                    totalDeleted += numDeleted;
+                    final AuditPurgeEvent auditPurgeEvent = new AuditPurgeEvent(AuditRecordManagerImpl.this, rec, totalDeleted);    // creates an update event
+                    applicationContext.publishEvent(auditPurgeEvent);
+                }
+            }
+
+            return numDeleted;
         }
 
     }

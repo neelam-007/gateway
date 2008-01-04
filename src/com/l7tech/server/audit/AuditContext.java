@@ -3,13 +3,13 @@
  */
 package com.l7tech.server.audit;
 
-import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditDetail;
+import com.l7tech.common.audit.AuditRecord;
 
-import java.util.logging.Level;
-import java.util.Set;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Level;
 
 /**
  * Implementations hold the transient state of the audit system for the current
@@ -110,6 +110,13 @@ public interface AuditContext {
      * @param thrown the exception associated with the {@link com.l7tech.common.audit.AuditDetailEvent}.
      */
     void addDetail(AuditDetail detail, Object source, Throwable thrown);
+
+    /**
+     * Sets whether the current record (set by {@link #setCurrentRecord}) is an update to a previous audit record.
+     *
+     * @param update    true if updating; false if creating
+     */
+    void setUpdate(boolean update);
 
     /**
      * Get the currently acumulated hints.

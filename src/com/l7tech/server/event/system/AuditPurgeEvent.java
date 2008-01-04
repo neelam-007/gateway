@@ -20,13 +20,47 @@ public class AuditPurgeEvent extends SystemEvent {
     private static final String NAME = "Purged";
 
     private final int numDeleted;
+    /** Indicates if this purge event is to create a new record or update an existing record. */
+    private final boolean update;
     private SystemAuditRecord systemAuditRecord; // TODO surely there must be some better way
 
     //- PUBLIC
 
-    public AuditPurgeEvent( Object source, int numDeleted ) {
+    /**
+     * Constructs an event for creating a new audit purge record.
+     *
+     * @param source        the component that published the event
+     * @param numDeleted    the deleted count
+     */
+    public AuditPurgeEvent(Object source, int numDeleted) {
         super(source, COMPONENT, null, Level.INFO, buildMessage(numDeleted));
         this.numDeleted = numDeleted;
+        this.update = false;
+    }
+
+    /**
+     * Constructs an event for updating an existing audit purge record.
+     *
+     * @param source            the component that published the event
+     * @param recordToUpdate    the system audit record to be updated; supply the original record when calling, it will be updated upon exit
+     * @param numDeleted        the new deleted count
+     */
+    public AuditPurgeEvent(Object source, SystemAuditRecord recordToUpdate, int numDeleted) {
+        super(source, COMPONENT, null, Level.INFO, buildMessage(numDeleted));
+        this.numDeleted = numDeleted;
+        this.update = true;
+        recordToUpdate.setAction(buildAction(numDeleted));
+        recordToUpdate.setMessage(buildMessage(numDeleted));
+        recordToUpdate.setMillis(System.currentTimeMillis());
+        setSystemAuditRecord(recordToUpdate);
+    }
+
+    /**
+     * @return true if this event is to update an existing record;
+     *         false if this event is to create a new record
+     */
+    public boolean isUpdate() {
+        return update;
     }
 
     public String getAction() {

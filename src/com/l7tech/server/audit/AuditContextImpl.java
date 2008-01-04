@@ -4,20 +4,21 @@
 
 package com.l7tech.server.audit;
 
-import com.l7tech.common.audit.*;
 import com.l7tech.common.Component;
+import com.l7tech.common.audit.*;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.objectmodel.SaveException;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.ServerConfig;
 
 import javax.crypto.Cipher;
+import java.io.ByteArrayOutputStream;
+import java.security.MessageDigest;
+import java.security.PrivateKey;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.MessageDigest;
-import java.security.PrivateKey;
-import java.io.ByteArrayOutputStream;
 
 /**
  * Holds the transient state of the audit system for the current thread.
@@ -85,6 +86,9 @@ public class AuditContextImpl implements AuditContext {
         }
     }
 
+    public void setUpdate(boolean update) {
+        this.update = update;
+    }
 
     public void setKeystore(final KeystoreUtils keystore) {
         this.keystore = keystore;
@@ -205,12 +209,21 @@ public class AuditContextImpl implements AuditContext {
             currentRecord.setDetails(detailsToSave);
             listener.notifyRecordFlushed(currentRecord, false);
 
-            if ( isSignAudits() ) {
+            if (isSignAudits()) {
                 signRecord(currentRecord);
+            } else {
+                currentRecord.setSignature(null);   // in case of updating, remove any old signature
             }
-            auditRecordManager.save(currentRecord);
+
+            if (update) {
+                auditRecordManager.update(currentRecord);
+            } else {
+                auditRecordManager.save(currentRecord);
+            }
         } catch (SaveException e) {
             logger.log(Level.SEVERE, "Couldn't save audit records", e);
+        } catch (UpdateException e) {
+            logger.log(Level.SEVERE, "Couldn't update audit records", e);
         } finally {
             // Reinitialize in case this thread needs us again for a new request
             currentRecord = null;
@@ -421,6 +434,8 @@ public class AuditContextImpl implements AuditContext {
     private Boolean currentSignAuditSetting;
 
     private AuditRecord currentRecord;
+    /** Indicates if {@link #currentRecord} is to be inserted or updated. */
+    private boolean update;
     private Level highestLevelYetSeen = Level.ALL;
     private volatile int ordinal = 0;
 

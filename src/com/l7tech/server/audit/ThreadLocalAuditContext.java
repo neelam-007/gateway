@@ -1,16 +1,14 @@
 package com.l7tech.server.audit;
 
+import com.l7tech.common.audit.AuditDetail;
+import com.l7tech.common.audit.AuditRecord;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContext;
-import org.springframework.beans.BeansException;
-
-import com.l7tech.server.audit.AuditContext;
-import com.l7tech.common.audit.AuditDetail;
-import com.l7tech.common.audit.AuditRecord;
 
 /**
  * AuditContext implementation that delegates to a thread-local copy.
@@ -55,6 +53,10 @@ public class ThreadLocalAuditContext implements AuditContext, ApplicationContext
 
     public void setCurrentRecord(AuditRecord record) {
         threadLocalDelegate.get().setCurrentRecord(record);
+    }
+
+    public void setUpdate(boolean update) {
+        threadLocalDelegate.get().setUpdate(update);
     }
 
     //- PRIVATE
