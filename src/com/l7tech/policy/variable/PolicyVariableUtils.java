@@ -21,9 +21,12 @@ public final class PolicyVariableUtils {
             Assertion ass = (Assertion) i.next();
             if (ass instanceof SetsVariables) {
                 SetsVariables sv = (SetsVariables)ass;
-                for (int j = 0; j < sv.getVariablesSet().length; j++) {
-                    final VariableMetadata meta = sv.getVariablesSet()[j];
-                    vars.put(meta.getName(), meta);
+                for (VariableMetadata meta : sv.getVariablesSet()) {
+                    String name = meta.getName();
+                    if (vars.containsKey(name)) {
+                        vars.remove(name);  // So that case change in name will cause map key to be updated as well.
+                    }
+                    vars.put(name, meta);
                 }
             }
             if (ass == assertion) break; // Can't use variables of any subsequent assertion
@@ -33,15 +36,18 @@ public final class PolicyVariableUtils {
 
     public static Map<String, VariableMetadata> getVariablesSetByPredecessors(Assertion assertion) {
         Assertion ancestor = assertion.getPath()[0];
-        Map<String, VariableMetadata> vars = new TreeMap<String, VariableMetadata>();
+        Map<String, VariableMetadata> vars = new TreeMap<String, VariableMetadata>(String.CASE_INSENSITIVE_ORDER);
         for (Iterator i = ancestor.preorderIterator(); i.hasNext(); ) {
             Assertion ass = (Assertion) i.next();
             if (ass == assertion) break; // Can't use our own variables or those of any subsequent assertion
             if (ass instanceof SetsVariables) {
                 SetsVariables sv = (SetsVariables)ass;
-                for (int j = 0; j < sv.getVariablesSet().length; j++) {
-                    final VariableMetadata meta = sv.getVariablesSet()[j];
-                    vars.put(meta.getName(), meta);
+                for (VariableMetadata meta : sv.getVariablesSet()) {
+                    String name = meta.getName();
+                    if (vars.containsKey(name)) {
+                        vars.remove(name);  // So that case change in name will cause map key to be updated as well.
+                    }
+                    vars.put(name, meta);
                 }
             }
         }

@@ -20,7 +20,10 @@ import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.policy.variable.*;
+import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.identity.AuthCache;
@@ -308,6 +311,12 @@ public class PolicyEnforcementContext extends ProcessingContext {
     }
 
     /**
+     * Sets the value of a new or existing context variable.
+     * Note that context variable names are case-preserving upon storage, but
+     * case-insensitive upon lookup.
+     * If the name passed in is existing but with character case change, the new
+     * spelling will be adopted.
+     *
      * @param name the name of the variable to set.  if null, do nothing.
      * @param value may be null.
      * @throws VariableNotSettableException if the variable is known, but not settable.
@@ -321,6 +330,9 @@ public class PolicyEnforcementContext extends ProcessingContext {
                 throw new RuntimeException("Variable '" + name + "' is supposedly supported, but doesn't exist", e);
             }
         } else {
+            if (variables.containsKey(name)) {
+                variables.remove(name); // So that case change in name will cause map key to be updated as well.
+            }
             variables.put(name, value);
         }
     }
@@ -328,7 +340,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     /**
      * Get the value of a context variable if it's set, otherwise throw.
      *
-     * @param name the name of the variable to get, ie "requestXpath.result".  Required.
+     * @param name the name of the variable to get (case-insensitive), ie "requestXpath.result".  Required.
      * @return  the Object representing the value of the specified variable.  Never null.
      * @throws NoSuchVariableException  if no value is set for the specified variable
      */
@@ -349,7 +361,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     /**
      * Get the value of a context variable, with name resolution
      *  
-     * @param inName the name of the variable to get, ie "requestXpath.result".  Required.
+     * @param inName the name of the variable to get (case-insensitive), ie "requestXpath.result".  Required.
      * @return  the Object representing the value of the specified variable.  Never null.
      * @throws NoSuchVariableException  if no value is set for the specified variable
      */
