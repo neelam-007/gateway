@@ -16,6 +16,8 @@ import com.l7tech.console.tree.policy.LeafAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.Assertion;
@@ -223,6 +225,16 @@ public class PolicyRevisionsDialog extends JDialog {
 
                     versionTable.clearSelection();
                     showSelectedPolicyXml(true);
+
+                    // If currently this policy, make sure we don't misleadingly imply that it's active (Bug #4554)
+                    WorkSpacePanel workspace = TopComponents.getInstance().getCurrentWorkspace();
+                    if (workspace.getComponent() instanceof PolicyEditorPanel) {
+                        PolicyEditorPanel pep = (PolicyEditorPanel)workspace.getComponent();
+                        if (pep.getPolicyNode().getPolicy().getOid() == policyOid) {
+                            pep.setOverrideVersionActive(false);
+                            pep.updateHeadings();
+                        }
+                    }
                 } catch (Exception e) {
                     showErrorMessage("Unable to Clear Active Version", "Unable to clear active version: " + ExceptionUtils.getMessage(e), e);
                 }
