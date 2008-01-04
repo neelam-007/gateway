@@ -51,10 +51,10 @@ public abstract class PolicyNodeAction extends NodeAction {
                 ao = new AttemptedDeleteSpecific(type, entity);
                 break;
             case READ:
-                ao = new AttemptedReadSpecific(EntityType.SERVICE, entity.getId());
+                ao = new AttemptedReadSpecific(type, entity.getId());
                 break;
             case UPDATE:
-                ao = new AttemptedUpdate(EntityType.SERVICE, entity);
+                ao = new AttemptedUpdate(type, entity);
                 break;
             default:
                 throw new IllegalStateException("Unsupported operation: " + getOperation());

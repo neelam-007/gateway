@@ -86,7 +86,7 @@ public interface PolicyAdmin {
      * @return a Pair of (OID of the policy that was saved, version ordinal that was assigned to this policy XML)
      * @throws PolicyAssertionException if there is a problem with the policy
      */
-    @Secured(stereotype=SAVE_OR_UPDATE)
+    @Secured(stereotype=SAVE_OR_UPDATE, relevantArg=0)
     Pair<Long,Long> savePolicy(Policy policy, boolean activateAsWell) throws PolicyAssertionException, SaveException;
 
     @Secured(stereotype = MethodStereotype.FIND_HEADERS)
