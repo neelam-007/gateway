@@ -21,7 +21,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * Dialog for {@link com.l7tech.policy.assertion.SetVariableAssertion}.
@@ -61,7 +60,7 @@ public class SetVariableAssertionDialog extends JDialog {
     private JButton _okButton;
 
     private boolean _assertionModified;
-    private final Set<String> _predecessorVariables = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+    private final Set<String> _predecessorVariables;
     private Border _expressionStatusBorder;
 
     public SetVariableAssertionDialog(Frame owner, final SetVariableAssertion assertion) throws HeadlessException {
@@ -76,10 +75,9 @@ public class SetVariableAssertionDialog extends JDialog {
         clearContentTypeStatus();
         clearExpressionStatus();
 
-        _predecessorVariables.addAll(
-                contextAssertion==null ?
+        _predecessorVariables = contextAssertion==null ?
                 PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet() :
-                PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf(contextAssertion).keySet());
+                PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf(contextAssertion).keySet();
 
         // Populates data type combo box with supported data types.
         _dataTypeComboBox.addItem(new DataTypeComboBoxItem(DataType.STRING));
@@ -254,8 +252,12 @@ public class SetVariableAssertionDialog extends JDialog {
         } else {
             final VariableMetadata meta = BuiltinVariables.getMetadata(variableName);
             if (meta == null) {
+                if (Syntax.getMatchingName(variableName, _predecessorVariables) == null) {
+                    _variableNameStatusLabel.setText("OK");
+                } else {
+                    _variableNameStatusLabel.setText("OK (Overwrite)");
+                }
                 _variableNameStatusLabel.setIcon(OK_ICON);
-                _variableNameStatusLabel.setText("OK");
                 _dataTypeComboBox.setEnabled(true);
             } else {
                 if (meta.isSettable()) {
