@@ -76,9 +76,14 @@
         <property name="serviceInterface" value="com.l7tech.common.transport.TransportAdmin"/>
     </bean>
 
-    <bean id="policyAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
-        <property name="serviceUrl" value="https://securespangateway/ssg/manager/PolicyAdmin"/>
-        <property name="serviceInterface" value="com.l7tech.common.policy.PolicyAdmin"/>
+    <bean id="policyAdmin" class="com.l7tech.console.policy.InvalidatingPolicyAdmin">
+        <constructor-arg>
+            <bean parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+                <property name="serviceUrl" value="https://securespangateway/ssg/manager/PolicyAdmin"/>
+                <property name="serviceInterface" value="com.l7tech.common.policy.PolicyAdmin"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg ref="managerPolicyCache"/>
     </bean>
 
     <bean id="logSinkAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">

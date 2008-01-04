@@ -6,6 +6,8 @@ package com.l7tech.console.policy;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityInvalidationListener;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ReadOnlyEntityManager;
 
@@ -16,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author alex
  */
-public class ManagerPolicyCache implements ReadOnlyEntityManager<Policy, EntityHeader> {
+public class ManagerPolicyCache implements EntityInvalidationListener, ReadOnlyEntityManager<Policy, EntityHeader> {
     private final Map<Long, Policy> cache = new ConcurrentHashMap<Long, Policy>();
 
     public ManagerPolicyCache() {
@@ -41,5 +43,11 @@ public class ManagerPolicyCache implements ReadOnlyEntityManager<Policy, EntityH
 
     public Collection<EntityHeader> findAllHeaders(int offset, int windowSize) {
         throw new UnsupportedOperationException();
+    }
+
+    public void invalidate( final EntityHeader entityHeader ) {
+        if ( entityHeader.getType() == EntityType.POLICY ) {
+            cache.remove( entityHeader.getOid() );
+        }
     }
 }

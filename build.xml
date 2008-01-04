@@ -1870,6 +1870,7 @@
                 <include name="com/l7tech/objectmodel/ObjectPermission.class"/>
                 <include name="com/l7tech/objectmodel/AnonymousEntityReference.class"/>
                 <include name="com/l7tech/objectmodel/PersistentEntity.class"/>
+                <include name="com/l7tech/objectmodel/EntityInvalidationListener.class"/>
                 <include name="com/l7tech/objectmodel/imp/*"/>
                 <include name="com/l7tech/objectmodel/alert/**/*"/>
                 <include name="com/l7tech/policy/**/*"/>
