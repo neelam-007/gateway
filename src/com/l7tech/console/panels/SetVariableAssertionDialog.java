@@ -237,7 +237,7 @@ public class SetVariableAssertionDialog extends JDialog {
     /**
      * Validates values in various fields and sets the status labels as appropriate.
      */
-    private void validateFields() {
+    private synchronized void validateFields() {
         final String variableName = _variableNameTextField.getText();
         final String contentType = _contentTypeTextField.getText();
         final String expression = _expressionTextArea.getText();
