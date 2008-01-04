@@ -58,7 +58,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
             if (type.isShownInGui()) types.add(type);
         }
 
-        typeCombo.setModel(new DefaultComboBoxModel(types.toArray(new PolicyType[0])));
+        typeCombo.setModel(new DefaultComboBoxModel(types.toArray(new PolicyType[types.size()])));
 
         // The max length of a policy name is 255. 
         ((AbstractDocument)nameField.getDocument()).setDocumentFilter(new DocumentSizeFilter(255));
@@ -80,7 +80,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
 
     @Override
     protected String getSyntaxError(Object model) {
-        if (nameField.getText().length() > 0) return null;
+        if (nameField.getText().trim().length() > 0) return null;
         PolicyType type = (PolicyType) typeCombo.getSelectedItem();
         if (type == null) return resources.getString("typeRequiredError");
         if (type.getSupertype() == PolicyType.Supertype.FRAGMENT) return resources.getString("nameRequiredError");
@@ -92,7 +92,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
     }
 
     protected void doUpdateModel() {
-        policy.setName(nameField.getText());
+        policy.setName(nameField.getText().trim());
         policy.setSoap(soapCheckbox.isSelected());
         policy.setType((PolicyType)typeCombo.getSelectedItem());
     }

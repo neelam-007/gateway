@@ -37,14 +37,17 @@ public class CreatePolicyAction extends SecureAction {
         super(new AttemptedCreate(EntityType.POLICY), Include.class);
     }
 
+    @Override
     public String getName() {
         return "Create Policy";
     }
 
+    @Override
     public String getDescription() {
         return "Create a new Policy";
     }
 
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/xmlObject16.gif";
     }
