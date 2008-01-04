@@ -21,6 +21,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Dialog for {@link com.l7tech.policy.assertion.SetVariableAssertion}.
@@ -60,7 +61,7 @@ public class SetVariableAssertionDialog extends JDialog {
     private JButton _okButton;
 
     private boolean _assertionModified;
-    private final Set<String> _predecessorVariables;
+    private final Set<String> _predecessorVariables = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
     private Border _expressionStatusBorder;
 
     public SetVariableAssertionDialog(Frame owner, final SetVariableAssertion assertion) throws HeadlessException {
@@ -75,9 +76,10 @@ public class SetVariableAssertionDialog extends JDialog {
         clearContentTypeStatus();
         clearExpressionStatus();
 
-        _predecessorVariables = contextAssertion==null ?
+        _predecessorVariables.addAll(
+                contextAssertion==null ?
                 PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet() :
-                PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf(contextAssertion).keySet();
+                PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf(contextAssertion).keySet());
 
         // Populates data type combo box with supported data types.
         _dataTypeComboBox.addItem(new DataTypeComboBoxItem(DataType.STRING));
@@ -294,8 +296,8 @@ public class SetVariableAssertionDialog extends JDialog {
         final StringBuilder expressionStatus = new StringBuilder();
         final String[] names = Syntax.getReferencedNames(expression);
         for (String name : names) {
-            final VariableMetadata meta = BuiltinVariables.getMetadata(name);
-            if (meta == null && !_predecessorVariables.contains(name)) {
+            if (BuiltinVariables.getMetadata(name) == null &&
+                Syntax.getMatchingName(name, _predecessorVariables) == null) {
                 if (expressionStatus.length() > 0) expressionStatus.append("\n");
                 expressionStatus.append(name).append(": No such variable");
             }

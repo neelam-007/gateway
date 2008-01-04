@@ -121,7 +121,7 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
 
     public String[] getVariablesUsed() {
         if (_base64Expression == null) return new String[0];
-        return Syntax.getReferencedNames(_base64Expression);
+        return Syntax.getReferencedNames(expression());
     }
 
     private VariableMetadata getMetadata() {
