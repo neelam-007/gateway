@@ -1,7 +1,7 @@
 Summary: SCA 6000 Support for SecureSpan Gateway
 Name: SCA6000drv
 Version: 1.0
-Release: 4b
+Release: 4c
 Group: Applications/Internet
 License: GPL
 URL: http://www.layer7tech.com
@@ -32,14 +32,24 @@ tar -xzf /tmp/sca6000drv.tgz
 %files
 %defattr(-,root,root)
 /opt
+
 %pre
 
+if [ ! -e /etc/profile.d/scapath.sh ] ; then
+    echo 'PATH=$PATH:/opt/sun/sca6000/bin:/opt/sun/sca6000/sbin' > /etc/profile.d/scapath.sh
+fi
 
 %post
 
 %preun
 
+if [ -e /etc/profile.d/scapath.sh ] ; then
+    rm /etc/profile.d/scapath.sh
+fi
+
 %changelog
+* Thu Jan 3 2008 MJE
+- Added script in profile.d to append the sca binaries to the path.
 * Thu Jul 10 2007 JWT
 - Rebuild with better version number
 * Thu Jun 7 2007 JWT
