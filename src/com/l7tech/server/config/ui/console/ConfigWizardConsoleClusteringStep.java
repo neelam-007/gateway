@@ -6,6 +6,7 @@ import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.commands.ClusteringConfigCommand;
 import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
+import com.l7tech.server.config.exceptions.DatabaseConfigException;
 import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.lang.StringUtils;
 
@@ -120,8 +121,18 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
         if (configType == ConfigurationType.CONFIG_CLUSTER) {
             doClusteringPrompts();
             if (clusterBean.getClusterType() == ClusteringType.CLUSTER_CLONE) {
-                doCloningPrompts();
-                SilentConfigData configData = loadSettingsFromDb();
+                SilentConfigData configData = null;
+                do {
+                    doCloningPrompts();
+                    try {
+                        configData = loadSettingsFromDb();
+                    } catch (DatabaseConfigException e) {
+                        printText(getEolChar() +
+                                  "*** " + ExceptionUtils.getMessage(e) + " ***" +
+                                  getEolChar() +
+                                  getEolChar());
+                    }
+                } while (configData == null);
                 if (configData != null) {
                     if (shouldApplyNewSettings()) {
                         parent.setSilentConfigData(configData);
@@ -141,7 +152,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
                 "Would you like to apply this configuration?", "no");
     }
 
-    private SilentConfigData loadSettingsFromDb() throws IOException, WizardNavigationException {
+    private SilentConfigData loadSettingsFromDb() throws IOException, WizardNavigationException, DatabaseConfigException {
         SilentConfigData configData = null;
         DBInformation dbInfo = SharedWizardInfo.getInstance().getDbinfo();
         String msg = "Connecting to Database using " + dbInfo.getUsername() + "@" + dbInfo.getHostname() + "/" + dbInfo.getDbName();
@@ -152,6 +163,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
         byte[] configBytes = silentConf.loadConfigFromDb(dbInfo);
 
         String exceptionMessage = null;
+        if (configBytes == null)
         if (configBytes != null) {
             String passphrase = getSecretData(new String[]{
                     "Retrieved configuration settings from the database." + getEolChar(),

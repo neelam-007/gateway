@@ -196,19 +196,39 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
             } else {
                 ConfigurationType configType = SharedWizardInfo.getInstance().getConfigType();
                 if (configType == ConfigurationType.CONFIG_CLUSTER) {
-                    printText("You are configuring the first node in a cluster to use an HSM but are not backing up the master key." + getEolChar());
-                    printText("Subsequent nodes in the cluster will need the master key in order to join the cluster." + getEolChar());
-                    getData(
-                            new String[] {
-                                    "Please insert the USB Backup device in the and press Enter to continue: ",
-                            },
-                            "",
-                            (String[]) null,
-                            null
-                    );
+                    printText(getEolChar() + "You are configuring the first node in a cluster to use an HSM" + getEolChar() +
+                              "but are not backing up the master key." + getEolChar() + getEolChar());
+                    printText("Subsequent nodes in the cluster will need the master key in order" + getEolChar()  +
+                              "to join the cluster." + getEolChar() + getEolChar());
+
+                    boolean foundAFob = false;
+                    do {
+                        getData(
+                                new String[] {
+                                        "Please insert the USB Backup device and press Enter to continue: ",
+                                },
+                                "",
+                                (String[]) null,
+                                null
+                        );
+                        printText(getEolChar());
+                        KeystoreActions ka = new KeystoreActions(osFunctions);
+                        try {
+                            ka.probeUSBBackupDevice();
+                            foundAFob = true;
+                        } catch (KeystoreActionsException e) {
+                            printText("*** Cannot backup key: " + e.getMessage() + " ***" + getEolChar() + getEolChar());
+                            foundAFob = false;
+                        }
+                    } while (!foundAFob);
+
+                    String backupPassword = getMatchingPasswords("Enter the password to protect the master key backup:", "Confirm the password to protect the master key backup:", 6);
+                    keystoreBean.setMasterKeyBackupPassword(backupPassword.toCharArray());
+                    keystoreBean.setShouldBackupMasterKey(true);
+                } else {
+                    keystoreBean.setMasterKeyBackupPassword(null);
+                    keystoreBean.setShouldBackupMasterKey(false);
                 }
-                keystoreBean.setShouldBackupMasterKey(false);
-                keystoreBean.setMasterKeyBackupPassword(null);
                 askAgain = false;
             }
         } while (askAgain);

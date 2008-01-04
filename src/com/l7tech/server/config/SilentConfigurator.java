@@ -6,6 +6,7 @@ import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
+import com.l7tech.server.config.exceptions.DatabaseConfigException;
 import org.apache.commons.lang.StringUtils;
 
 import javax.crypto.Cipher;
@@ -42,7 +43,7 @@ public class SilentConfigurator {
         configPath = System.getProperty(SYS_PROP_CONFIGDATA_FILENAME,"");
     }
 
-    public byte[] loadConfigFromDb(DBInformation dbinfo) {
+    public byte[] loadConfigFromDb(DBInformation dbinfo) throws DatabaseConfigException {
         logger.info("Connecting to Database using " + dbinfo.getUsername() + "@" + dbinfo.getHostname() + "/" + dbinfo.getDbName());
         InputStream is;
 
@@ -59,14 +60,22 @@ public class SilentConfigurator {
                 ResultSet rs = null;
 
                 try {
-                    conn = dba.getConnection(dbinfo);
-                    stmt = conn.createStatement();
-                    rs = stmt.executeQuery("select configdata from config_data");
-                    while (rs.next()) {
-                      configBytes = rs.getBytes("configdata");
+                    try {
+                        conn = dba.getConnection(dbinfo);
+                    } catch (SQLException e) {
+                        logger.warning("Could not connect to the database using the information supplied.");
+                        throw new DatabaseConfigException("Could not connect to the database using the information supplied.");
                     }
-                } catch (SQLException e) {
-                    e.printStackTrace();
+                    try {
+                        stmt = conn.createStatement();
+                        rs = stmt.executeQuery("select configdata from config_data");
+                        while (rs.next()) {
+                          configBytes = rs.getBytes("configdata");
+                        }
+                    } catch (SQLException e) {
+                        logger.warning("There was an error while retrieving the configuration settings from the database. " + ExceptionUtils.getMessage(e));
+                        throw new DatabaseConfigException("There was an error while retrieving the configuration settings from the database. " + ExceptionUtils.getMessage(e));
+                    }
                 } finally {
                     ResourceUtils.closeQuietly(rs);
                     ResourceUtils.closeQuietly(stmt);

@@ -3,6 +3,8 @@ package com.l7tech.server.config.ui.console;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.server.config.*;
+import com.l7tech.server.config.exceptions.KeystoreActionsException;
+import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
@@ -37,10 +39,9 @@ public class SoftwareConfigWizard extends ConfigurationWizard {
 
             KeystoreType ksType = silentConfig.getKeystoreType();
             if (ksType == KeystoreType.SCA6000_KEYSTORE_NAME) {
-                char[] masterKeyPassword = getHsmMasterKeyPassword();
-                if (!prepareHsmRestore(masterKeyPassword, commands)) {
-                    logger.severe("Could not set the master key password for the new node. The configuration data is not valid. Exiting.");
-                    wizardUtils.printText("Could not set the master key password for the new node. The configuration data is not valid. "+ ConsoleWizardUtils.EOL_CHAR);
+                if (!prepareHsmRestore(commands)) {
+                    logger.severe("Could not prepare the configuration data for the new node. The configuration data is not valid. Exiting.");
+                    wizardUtils.printText("Could not prepare the configuration data for the new node. The configuration data is not valid. "+ ConsoleWizardUtils.EOL_CHAR);
                     wizardUtils.printText("The configuration cannot proceed and the wizard will now exit."+ ConsoleWizardUtils.EOL_CHAR);
                     hadFailures = true;
                     return;
@@ -111,21 +112,19 @@ public class SoftwareConfigWizard extends ConfigurationWizard {
         }
     }
 
-    private boolean prepareHsmRestore(char[] masterKeyPassword, Collection<ConfigurationCommand> commands) {
+    private boolean prepareHsmRestore(Collection<ConfigurationCommand> commands) {
+        boolean found = false;
         for (ConfigurationCommand command : commands) {
             if (command instanceof KeystoreConfigCommand) {
                 KeystoreConfigCommand keystoreConfigCommand = (KeystoreConfigCommand) command;
                 KeystoreConfigBean ksBean = (KeystoreConfigBean) keystoreConfigCommand.getConfigBean();
 
-                //set the master key password in the dataset so it gets picked up during configuration application.
-                ksBean.setMasterKeyBackupPassword(masterKeyPassword);
-
                 //ensure that we don't try to initialize the HSM, we are doing a restore on subsequent nodes.
                 ksBean.setInitializeHSM(false);
-                return true;
+                found = true;
             }
         }
-        return false;
+        return found;
     }
 
     private void saveConfigData() throws IOException {

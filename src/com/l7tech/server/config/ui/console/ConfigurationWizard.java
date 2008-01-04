@@ -249,38 +249,4 @@ public class ConfigurationWizard {
         return  SharedWizardInfo.getInstance().getConfigType() == ConfigurationType.CONFIG_CLUSTER &&
                 SharedWizardInfo.getInstance().getClusterType() == ClusteringType.CLUSTER_MASTER;
     }
-
-    public char[] getHsmMasterKeyPassword() {
-        try {
-            wizardUtils.printText("This cluster uses the HSM for the SSG keystore.: " + ConsoleWizardUtils.EOL_CHAR);
-            boolean foundFob = false;
-            while (!foundFob) {
-                try {
-                    PartitionActions.probeForUSBFob(osFunctions);
-                    foundFob = true;
-                } catch (KeystoreActionsException e) {
-                    wizardUtils.printText("*** A supported USB backup device could not be found. ***" + ConsoleWizardUtils.EOL_CHAR + ConsoleWizardUtils.EOL_CHAR);
-                    wizardUtils.printText("");
-                    wizardUtils.getData(new String[] {"Please insert the USB backup device and press enter to continue: "}, "", true, (String[])null,null);
-                    foundFob = false;
-                }
-            }
-
-            wizardUtils.getData(
-                new String[] {
-                    ConsoleWizardUtils.EOL_CHAR,
-                    "Please enter the master key backup password: "
-                },
-                "",
-                true,
-                (String[]) null,
-                null);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (WizardNavigationException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
 }
