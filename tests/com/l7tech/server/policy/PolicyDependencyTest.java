@@ -27,6 +27,7 @@ import junit.textui.TestRunner;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -160,7 +161,13 @@ public class PolicyDependencyTest extends TestCase {
     }
 
     public void testGrandchild() throws Exception {
-        setupPolicyCache(clonedGrandchildFinder);
+        PolicyCache cache = setupPolicyCache(clonedGrandchildFinder);
+        Map<Long, Integer> m = cache.getDependentVersions(2000L);
+        assertEquals(m.size(), 4);
+        assertTrue(m.containsKey(2000L));
+        assertTrue(m.containsKey(1234L));
+        assertTrue(m.containsKey(1001L));
+        assertTrue(m.containsKey(1002L));
     }
 
     public void testFailedDeletion() throws Exception {

@@ -11,6 +11,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.io.IOException;
 import java.util.Set;
+import java.util.Map;
 
 /**
  * @author alex
@@ -44,4 +45,9 @@ public interface PolicyCache {
      */
     Set<Policy> findUsages(long oid);
 
+    /**
+     * Gets the map of policy OID to version for the cached policy with the given OID.  May be null, if no policy with
+     * the given OID is in the cache.  Always includes the provided policy OID, mapped to its version.
+     */
+    Map<Long, Integer> getDependentVersions(long policyOid);
 }

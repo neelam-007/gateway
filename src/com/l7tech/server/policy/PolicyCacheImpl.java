@@ -8,6 +8,7 @@ import com.l7tech.common.policy.CircularPolicyException;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyDeletionForbiddenException;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.util.Pair;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
@@ -71,6 +72,18 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
         }
     }
 
+    public Map<Long, Integer> getDependentVersions(long policyOid) {
+        Lock read = lock.readLock();
+        try {
+            read.lock();
+            PolicyDependencyInfo pdi = dependencyCache.get(policyOid);
+            if (pdi == null) return null;
+            return pdi.dependentVersions;
+        } finally {
+            read.unlock();
+        }
+    }
+
     public ServerAssertion getServerPolicy(long policyOid)
             throws FindException, IOException, ServerPolicyException, LicenseException
     {
@@ -117,7 +130,10 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
         this.lock.writeLock().lock();
         try {
             final PolicyDependencyInfo pdi = dependencyCache.get(policy.getOid());
-            findDependentPolicies(policy, new HashSet<Long>());
+            final Set<Long> seenOids = new HashSet<Long>();
+            final Map<Long, Integer> dependentVersions = new HashMap<Long, Integer>();
+            findDependentPolicies(policy, seenOids, dependentVersions);
+            pdi.dependentVersions = Collections.unmodifiableMap(dependentVersions);
             updateUsedBy();
             serverPolicyCache.remove(policy.getOid());
             serverPolicyCache.put(policy.getOid(), sass);
@@ -216,7 +232,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
         lock.writeLock().lock();
         try {
             for (Policy policy : policyManager.findAll()) {
-                findDependentPolicies(policy, new HashSet<Long>());
+                findDependentPolicies(policy, new HashSet<Long>(), new HashMap<Long, Integer>());
             }
             updateUsedBy();
         } finally {
@@ -249,15 +265,19 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
      * @param thisPolicy the Policy to run the dependency check on
      * @param seenOids the Policy OIDs seen thus far in this policy stack, to detect cycles
      *        (always pass a new, mutable <code>{@link Set}&lt;{@link Long}&gt;)
+     * @param dependentVersions the OIDs and versions of policies seen thus far in this path through the policy tree, to
+     *                          track dependencies. (always pass a new, mutable <code>{@link java.util.Map}&lt;Long, Integer&gt;)
      * @throws IOException if this policy, or one of its descendants, could not be parsed
      * @throws FindException if one of this policy's descendants could not be loaded
      */
     private void findDependentPolicies(final Policy thisPolicy,
-                                       final Set<Long> seenOids)
+                                       final Set<Long> seenOids,
+                                       final Map<Long, Integer> dependentVersions)
             throws IOException, FindException
     {
         logger.log(Level.FINE, "Processing Policy #{0} ({1})", new Object[] { thisPolicy.getOid(), thisPolicy.getName() });
         seenOids.add(thisPolicy.getOid());
+        dependentVersions.put(thisPolicy.getOid(), thisPolicy.getVersion());
 
         PolicyCacheImpl.PolicyDependencyInfo thisInfo = dependencyCache.get(thisPolicy.getOid());
         if (thisInfo == null) {
@@ -294,10 +314,11 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
             } else {
                 includedPolicy = includedInfo.policy;
             }
-            findDependentPolicies(includedPolicy, seenOids);
+            findDependentPolicies(includedPolicy, seenOids, dependentVersions);
             seenOids.remove(includedOid);
             thisInfo.uses.add(includedInfo.policy.getOid());
             includedInfo.usedBy.add(thisPolicy.getOid());
+            thisInfo.dependentVersions = Collections.unmodifiableMap(dependentVersions);
         }
     }
 
@@ -306,8 +327,21 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
         private final Set<Long> uses = new HashSet<Long>();
         private final Set<Long> usedBy = new HashSet<Long>();
 
+        private Map<Long, Integer> dependentVersions;
+
         private PolicyDependencyInfo(Policy policy) {
             this.policy = policy;
+        }
+    }
+
+    /**
+     * Caller must hold read lock at a minimum (write lock is sufficient)
+     */
+    private void collectVersions(PolicyDependencyInfo info, List<Pair<Long,Integer>> versions) {
+        for (Long usedOid : info.uses) {
+            PolicyDependencyInfo usedPdi = dependencyCache.get(usedOid);
+            versions.add(new Pair<Long, Integer>(usedOid, usedPdi.policy.getVersion()));
+            collectVersions(usedPdi, versions);
         }
     }
 
