@@ -88,7 +88,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
      */
     public static PolicyTreeModel identityModel(Assertion root) throws InterruptedException, PolicyAssertionException {
         PolicyPathBuilderFactory factory = Registry.getDefault().getPolicyPathBuilderFactory();
-        Assertion rootWithIncludes = factory.makePathBuilder().inlineIncludes(root);
+        Assertion rootWithIncludes = factory.makePathBuilder().inlineIncludes(root, null);
 
         Set paths = IdentityPath.getPaths(rootWithIncludes, factory);
         return new PolicyTreeModel(new IdentityViewRootNode(paths, rootWithIncludes));

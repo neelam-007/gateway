@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.objectmodel.FindException;
 
+import javax.swing.tree.TreeNode;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.IOException;
@@ -27,6 +28,7 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
 
     private Policy policy;
     private boolean permissionDenied;
+    private boolean circularImport;
 
     public IncludeAssertionPolicyNode(Include assertion) {
         super(assertion);
@@ -55,6 +57,8 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
         if (policy == null) {
             if ( permissionDenied ) {
                 sb.append("Permission Denied");
+            } else if (circularImport) {
+                sb.append("Circular Import");                
             } else {
                 sb.append("Deleted");
             }
@@ -68,21 +72,6 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
         return sb.toString();
     }
 
-    private Policy getPolicy() {
-        if (policy == null) {
-            permissionDenied = false;
-            try {
-                policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(assertion.getPolicyOid());
-            } catch ( PermissionDeniedException pde ) {
-                logger.log(Level.WARNING, "Couldn't load included policy [permission denied]");                
-                permissionDenied = true;
-            } catch ( FindException e ) {
-                logger.log(Level.WARNING, "Couldn't load included policy", e);
-            }
-        }
-        return policy;
-    }
-
     @Override
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/folder.gif";
@@ -92,5 +81,44 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
     public boolean accept(AbstractTreeNode node) {
         // Can't drag into an Include (yet?)
         return false;
+    }
+
+    private Policy getPolicy() {
+        if (policy == null) {
+            permissionDenied = false;
+            circularImport = false;
+            if ( isParentPolicy(assertion.getPolicyOid()) ) {
+                circularImport = true;
+            } else {
+                try {
+                    policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(assertion.getPolicyOid());
+                } catch ( PermissionDeniedException pde ) {
+                    logger.log(Level.WARNING, "Couldn't load included policy [permission denied]");
+                    permissionDenied = true;
+                } catch ( FindException e ) {
+                    logger.log(Level.WARNING, "Couldn't load included policy", e);
+                }
+            }
+        }
+        return policy;
+    }
+
+    private boolean isParentPolicy( final Long policyOid ) {
+        boolean found = false;
+        TreeNode currentNode = getParent();
+
+        while ( currentNode != null ) {
+            if ( currentNode instanceof IncludeAssertionPolicyNode ) {
+                IncludeAssertionPolicyNode includeTreeNode = (IncludeAssertionPolicyNode) currentNode;
+                if ( includeTreeNode.asAssertion().getPolicyOid().equals( policyOid ) ) {
+                    found = true;
+                    break;
+                }
+            }
+
+            currentNode = currentNode.getParent();
+        }
+
+        return found;
     }
 }

@@ -4,6 +4,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 
 import java.util.logging.Logger;
+import java.util.Set;
 
 /**
  * A class for building policy assertion paths.
@@ -32,9 +33,10 @@ public abstract class PolicyPathBuilder {
      * <p>This will change the structure of the given tree if there are any includes.</p>
      *
      * @param assertion The assertion to modify
+     * @param includedOids Set of included policy oids (optional)
      * @return the modified assertion.
      */
-    public abstract Assertion inlineIncludes(Assertion assertion) throws InterruptedException, PolicyAssertionException;
+    public abstract Assertion inlineIncludes(Assertion assertion, Set<Long> includedOids) throws InterruptedException, PolicyAssertionException;
 
     /**
      * Generate the policy path result (policy assertion paths for

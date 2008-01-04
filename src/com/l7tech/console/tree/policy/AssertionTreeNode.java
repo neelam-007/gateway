@@ -502,9 +502,13 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         if (include != null) {
             try {
                 Policy thisPolicy = getPolicyNodeCookie().getPolicy();
-                if (thisPolicy.getType() == PolicyType.INCLUDE_FRAGMENT && thisPolicy.getOid() == include.getPolicyOid()) {
-                    logger.warning("Refusing to create circular reference to policy #" + thisPolicy.getOid() + ", not accepting drag of " + draggingNode.getClass().getSimpleName() + " into " + this.getClass().getSimpleName());
-                    return true;
+                if ( thisPolicy.getType() == PolicyType.INCLUDE_FRAGMENT && thisPolicy.getOid()>=0 ) {
+                    Set<Long> policyOids = new HashSet<Long>();
+                    Registry.getDefault().getPolicyPathBuilderFactory().makePathBuilder().inlineIncludes( include, policyOids );
+                    if ( policyOids.contains( thisPolicy.getOid() )) {
+                        logger.warning("Refusing to create circular reference to policy #" + thisPolicy.getOid() + ", not accepting drag of " + draggingNode.getClass().getSimpleName() + " into " + this.getClass().getSimpleName());
+                        return true;
+                    }
                 }
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Couldn't get current policy");

@@ -223,7 +223,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                         public synchronized Assertion getPolicy() throws PolicyAssertionException {
                             if (inlinedIncludesPolicy == null) {
                                 try {
-                                    inlinedIncludesPolicy = Assertion.simplify(policyPathBuilder.inlineIncludes(servicePolicy), true);
+                                    inlinedIncludesPolicy = Assertion.simplify(policyPathBuilder.inlineIncludes(servicePolicy, null), true);
                                 } catch (InterruptedException e) {
                                     throw new RuntimeException(e); // Not possible on server side (hopefully)
                                 }

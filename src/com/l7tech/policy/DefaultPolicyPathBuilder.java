@@ -39,23 +39,25 @@ import java.io.IOException;
  * @version 1.0
  */
 public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
-    private final AssertionTranslator translator;
+    private final ReadOnlyEntityManager<Policy, EntityHeader> policyFinder;
 
     /**
      * Protected constructor, the class cannot be instantiated
      * directly
      */
     protected DefaultPolicyPathBuilder(final ReadOnlyEntityManager<Policy, EntityHeader> policyFinder) {
-        this.translator = new IncludeAssertionDereferenceTranslator(policyFinder, false);
+        this.policyFinder = policyFinder;
     }
 
     /**
      * Put includes inline
      */
-    public Assertion inlineIncludes(final Assertion assertion) throws  PolicyAssertionException, InterruptedException {
+    public Assertion inlineIncludes(final Assertion assertion, final Set<Long> includedPolicyOids) throws  PolicyAssertionException, InterruptedException {
         final Assertion rootWithIncludes;
 
         if ( Assertion.contains(assertion, Include.class) ) {
+            Set<Long> oids = includedPolicyOids==null ? new HashSet<Long>() : includedPolicyOids;
+            final AssertionTranslator translator = new IncludeAssertionDereferenceTranslator(policyFinder, oids, false);
             try {
                 rootWithIncludes = translate(WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(assertion)), translator);
             } catch (IOException e) {
@@ -98,7 +100,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
     private Set generatePaths(Assertion assertion, boolean processIncludes) throws InterruptedException, PolicyAssertionException {
         Set assertionPaths = new LinkedHashSet();
         Iterator preorder = processIncludes ?
-                assertion.preorderIterator(translator) :
+                assertion.preorderIterator(new IncludeAssertionDereferenceTranslator(policyFinder, new HashSet<Long>(), false)) :
                 assertion.preorderIterator();
         final AssertionPath initPath = new AssertionPath(new Assertion[]{(Assertion)preorder.next()});
         assertionPaths.add(initPath);
