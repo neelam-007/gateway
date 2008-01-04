@@ -5,6 +5,8 @@ package com.l7tech.console.tree;
 
 import com.l7tech.admin.LicenseRuntimeException;
 import com.l7tech.common.policy.PolicyType;
+import com.l7tech.common.util.ResolvingComparator;
+import com.l7tech.common.util.Resolver;
 import com.l7tech.console.tree.policy.IncludeAssertionPaletteNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -16,6 +18,10 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.Collection;
 import java.util.Vector;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Comparator;
 import java.util.logging.Level;
 
 /**
@@ -55,7 +61,15 @@ public class PolicyFragmentsPaletteFolderNode extends AbstractPaletteFolderNode 
     protected void loadChildren() {
         try {
             Vector<IncludeAssertionPaletteNode> kids = new Vector<IncludeAssertionPaletteNode>();
-            Collection<EntityHeader> headers = Registry.getDefault().getPolicyAdmin().findPolicyHeadersByType(PolicyType.INCLUDE_FRAGMENT);
+            List<EntityHeader> headers = new ArrayList<EntityHeader>(Registry.getDefault().getPolicyAdmin().findPolicyHeadersByType(PolicyType.INCLUDE_FRAGMENT));
+            Resolver<EntityHeader, String> resolver = new Resolver<EntityHeader, String>(){
+                public String resolve( EntityHeader key ) {
+                    return key.getName();
+                }
+            };
+            //noinspection unchecked
+            Comparator<EntityHeader> comp = new ResolvingComparator(resolver, false);
+            Collections.sort( headers, comp );
             for (EntityHeader header : headers) {
                 kids.add(new IncludeAssertionPaletteNode(header));
             }
