@@ -18,6 +18,13 @@ public class AuditDetailAssertion extends Assertion implements UsesVariables {
     private String level = Level.INFO.toString();
     private String detail;
 
+    public AuditDetailAssertion() {
+    }
+
+    public AuditDetailAssertion(final String detail) {
+        setDetail(detail);
+    }
+
     public String getLevel() {
         return level;
     }

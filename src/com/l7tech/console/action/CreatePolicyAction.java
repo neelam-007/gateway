@@ -18,7 +18,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.CommentAssertion;
+import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 
@@ -67,7 +67,7 @@ public class CreatePolicyAction extends SecureAction {
                 Policy policy = dlg.getValue();
                 long oid;
                 try {
-                    String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(new CommentAssertion("Policy Fragment: " + policy.getName()))));
+                    String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(new AuditDetailAssertion("Policy Fragment: " + policy.getName()))));
                     policy.setXml( xml );
                     oid = Registry.getDefault().getPolicyAdmin().savePolicy(policy);
                 } catch (PolicyAssertionException e) {
