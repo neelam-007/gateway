@@ -16,9 +16,9 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.SaveException;
-import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 
@@ -27,6 +27,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.logging.Level;
 
 /**
@@ -54,7 +55,7 @@ public class CreatePolicyAction extends SecureAction {
 
     protected void performAction() {
         final Frame mw = TopComponents.getInstance().getTopParent();
-        String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(new FalseAssertion())));
+        String xml = WspWriter.getPolicyXml(new AllAssertion( Collections.EMPTY_LIST ));
         // canUpdate == true because this action would be disabled if we couldn't create policies
         final OkCancelDialog<Policy> dlg = PolicyPropertiesPanel.makeDialog(mw, new Policy(PolicyType.INCLUDE_FRAGMENT, null, xml, false), true);
         dlg.pack();
@@ -66,6 +67,8 @@ public class CreatePolicyAction extends SecureAction {
                 Policy policy = dlg.getValue();
                 long oid;
                 try {
+                    String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(new CommentAssertion("Policy Fragment: " + policy.getName()))));
+                    policy.setXml( xml );
                     oid = Registry.getDefault().getPolicyAdmin().savePolicy(policy);
                 } catch (PolicyAssertionException e) {
                     throw new RuntimeException("Couldn't save Policy", e);
