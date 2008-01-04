@@ -16,6 +16,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
@@ -65,33 +66,41 @@ public class CreatePolicyAction extends SecureAction {
                 if (!dlg.wasOKed()) return;
 
                 Policy policy = dlg.getValue();
-                long oid;
+                long oid = -1;
                 try {
                     String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(new AuditDetailAssertion("Policy Fragment: " + policy.getName()))));
                     policy.setXml( xml );
                     oid = Registry.getDefault().getPolicyAdmin().savePolicy(policy);
+                } catch ( DuplicateObjectException doe) {
+                    JOptionPane.showMessageDialog(mw,
+                          "Unable to save the policy '" + policy.getName() + "'.\n" +
+                          "The policy name is already used, please choose a different\n name and try again.",
+                          "Policy already exists",
+                          JOptionPane.ERROR_MESSAGE);
                 } catch (PolicyAssertionException e) {
                     throw new RuntimeException("Couldn't save Policy", e);
                 } catch (SaveException e) {
                     throw new RuntimeException("Couldn't save Policy", e);
                 }
 
-                JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
-                if (tree == null) {
-                    log.log(Level.WARNING, "Policy tree unreachable.");
-                    return;
-                }
-
-                PoliciesFolderNode root = TopComponents.getInstance().getPoliciesFolderNode();
-                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(new EntityHeader(Long.toString(oid), com.l7tech.objectmodel.EntityType.POLICY, policy.getName(), null));
-                model.insertNodeInto(sn, root, root.getInsertPosition(sn));
-                tree.setSelectionPath(new TreePath(sn.getPath()));
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        new EditPolicyAction((PolicyEntityNode)sn).invoke();
+                if ( oid > 0 ) {
+                    JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+                    if (tree == null) {
+                        log.log(Level.WARNING, "Policy tree unreachable.");
+                        return;
                     }
-                });
+
+                    PoliciesFolderNode root = TopComponents.getInstance().getPoliciesFolderNode();
+                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                    final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(new EntityHeader(Long.toString(oid), com.l7tech.objectmodel.EntityType.POLICY, policy.getName(), null));
+                    model.insertNodeInto(sn, root, root.getInsertPosition(sn));
+                    tree.setSelectionPath(new TreePath(sn.getPath()));
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            new EditPolicyAction((PolicyEntityNode)sn).invoke();
+                        }
+                    });
+                }
             }
         });
     }
