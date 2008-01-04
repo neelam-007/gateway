@@ -4,6 +4,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.gui.util.DialogDisplayer;
 
 import java.util.logging.Level;
+import java.awt.Frame;
 
 /**
  * <code>DefaultErrorHandler</code> is the generic error message handler
@@ -23,6 +24,9 @@ public class DefaultErrorHandler implements ErrorHandler {
         final Level level = e.getLevel();
         e.getLogger().log(level, message, throwable);
         Throwable t = (level.intValue() >= Level.WARNING.intValue()) ? throwable : null;
-        DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null, message, t);
+        Frame top = TopComponents.getInstance().getTopParent();
+        if ( top == null )
+            top = new Frame();
+        DialogDisplayer.showMessageDialog(top, null, message, t);
     }
 }

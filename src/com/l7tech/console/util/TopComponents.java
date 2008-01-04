@@ -2,6 +2,7 @@ package com.l7tech.console.util;
 
 import com.l7tech.common.gui.util.SheetHolder;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.SsmApplication;
 import com.l7tech.console.policy.ConsoleAssertionRegistry;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
@@ -112,7 +113,8 @@ public class TopComponents {
     }
 
     public ConsoleAssertionRegistry getAssertionRegistry() {
-        return (ConsoleAssertionRegistry)getApplicationContext().getBean("assertionRegistry", AssertionRegistry.class);
+        ApplicationContext context = getApplicationContext();
+        return context==null ? null : (ConsoleAssertionRegistry) context.getBean("assertionRegistry", AssertionRegistry.class);
     }
 
     public void setSSGCert(X509Certificate[] remoteConnectedCert) {
@@ -235,7 +237,9 @@ public class TopComponents {
      * @return  the ApplicationContext for which the current MainWindow was created.
      */
     public ApplicationContext getApplicationContext() {
-        return getMainWindow().getSsmApplication().getApplicationContext();
+        MainWindow window = getMainWindow();
+        SsmApplication ssmapp = window==null ? null : window.getSsmApplication();
+        return ssmapp==null ? null : ssmapp.getApplicationContext();
     }
 
     /**
@@ -324,7 +328,8 @@ public class TopComponents {
      * @return  True if the SSM is currently running as an applet.
      */
     public boolean isApplet() {
-        return getMainWindow().isApplet();
+        MainWindow mainWindow = getMainWindow();
+        return mainWindow != null && mainWindow.isApplet();
     }
 
     private final Map<String, WeakReference<Component>> componentsRegistry = new HashMap<String, WeakReference<Component>>();

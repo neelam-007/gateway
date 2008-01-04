@@ -70,6 +70,11 @@ public class ErrorManager {
      * @param args the pattern arguments, may be null
      */
     public void notify(final Level level, final Throwable t, final String message, final Object[] args) {
+        // log
+        if ( log.isLoggable( Level.FINE )) {
+            log.log( Level.FINE, "Handling error notification with message '"+message+"'.", t );
+        }
+
         // format if required
         String formattedMessage = message;
         if (message !=null && (args !=null && args.length > 0)) {
