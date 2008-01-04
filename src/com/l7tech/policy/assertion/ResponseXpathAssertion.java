@@ -26,7 +26,7 @@ import com.l7tech.policy.assertion.annotation.ProcessesResponse;
  * @version $Revision$
  */
 @ProcessesResponse
-public class ResponseXpathAssertion extends SimpleXpathAssertion {
+public class ResponseXpathAssertion extends SimpleXpathAssertion implements UsesVariables {
     public static final String DEFAULT_VAR_PREFIX = "responseXpath";
 
     protected String xmlMsgSrc;
@@ -65,5 +65,9 @@ public class ResponseXpathAssertion extends SimpleXpathAssertion {
      */
     public void setXmlMsgSrc(final String src) {
         xmlMsgSrc = src;
+    }
+
+    public String[] getVariablesUsed() {
+        return xmlMsgSrc == null ? new String[0] : new String[]{xmlMsgSrc};
     }
 }
