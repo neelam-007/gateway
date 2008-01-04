@@ -108,8 +108,8 @@ public class BuiltinVariables {
 
         new VariableMetadata("response.http.status", false, false, null, false, DataType.INTEGER),
         new VariableMetadata(BuiltinVariables.PREFIX_CLUSTER_PROPERTY, true, true, null, false),
-        new VariableMetadata("request.username", false, false, null, true),
-        new VariableMetadata("request.password", false, false, null, true),
+        new VariableMetadata("request.username", false, false, null, false),
+        new VariableMetadata("request.password", false, false, null, false),
     };
 
     static {
