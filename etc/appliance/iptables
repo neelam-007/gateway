@@ -1,3 +1,4 @@
+# Layer 7 supplied iptables config for the SecureSpan Gateway Appliance
 # /etc/sysconfig/iptables
 # Use iptables-singlenet for single address configurations
 #
