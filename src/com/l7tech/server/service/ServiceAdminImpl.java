@@ -1,6 +1,7 @@
 package com.l7tech.server.service;
 
 import com.l7tech.common.AsyncAdminMethodsImpl;
+import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyType;
@@ -21,6 +22,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.uddi.UddiAgent;
@@ -41,6 +43,9 @@ import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -66,7 +71,7 @@ import java.util.logging.Logger;
  * Date: Jun 6, 2003
  * @noinspection OverloadedMethodsWithSameNumberOfParameters
  */
-public final class ServiceAdminImpl implements ServiceAdmin {
+public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
     private static final ServiceHeader[] EMPTY_ENTITY_HEADER_ARRAY = new ServiceHeader[0];
 
     private SSLContext sslContext;
@@ -88,6 +93,7 @@ public final class ServiceAdminImpl implements ServiceAdmin {
     private final AsyncAdminMethodsImpl asyncSupport = new AsyncAdminMethodsImpl();
     private final BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
     private final ExecutorService validatorExecutor;
+    private Auditor auditor;
 
     public ServiceAdminImpl(AssertionLicense licenseManager,
                             RegistryPublicationManager registryPublicationManager,
@@ -233,8 +239,8 @@ public final class ServiceAdminImpl implements ServiceAdmin {
         return entity.getOid() == PersistentEntity.DEFAULT_OID;
     }
 
-    private void checkpointPolicy(Policy toCheckpoint, boolean activate, boolean newEntity) throws ObjectModelException {
-        policyVersionManager.checkpointPolicy(toCheckpoint, activate, newEntity);
+    private PolicyVersion checkpointPolicy(Policy toCheckpoint, boolean activate, boolean newEntity) throws ObjectModelException {
+        return policyVersionManager.checkpointPolicy(toCheckpoint, activate, newEntity);
     }
 
     /**
@@ -247,7 +253,8 @@ public final class ServiceAdminImpl implements ServiceAdmin {
     public long savePublishedService(PublishedService service)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException
     {
-        if (service.getPolicy() != null && isDefaultOid(service) != isDefaultOid(service.getPolicy()))
+        final Policy policy = service.getPolicy();
+        if (policy != null && isDefaultOid(service) != isDefaultOid(policy))
             throw new SaveException("Unable to save new service with existing policy, or to update existing service with new policy");
 
         long oid;
@@ -258,12 +265,15 @@ public final class ServiceAdminImpl implements ServiceAdmin {
                 oid = service.getOid();
                 logger.fine("Updating PublishedService: " + oid);
                 serviceManager.update(service);
-                checkpointPolicy(service.getPolicy(), true, false);
+                if (policy != null) {
+                    PolicyVersion ver = checkpointPolicy(policy, true, false);
+                    auditor.logAndAudit(SystemMessages.POLICY_VERSION_ACTIVATION, Long.toString(ver.getOrdinal()), Long.toString(policy.getOid()));
+                }
             } else {
                 // SAVING NEW SERVICE
                 logger.fine("Saving new PublishedService");
                 oid = serviceManager.save(service);
-                checkpointPolicy(service.getPolicy(), true, true);
+                if (policy != null) checkpointPolicy(policy, true, true);
                 serviceManager.addManageServiceRole(service);
             }
         } catch (UpdateException e) {
@@ -544,5 +554,9 @@ public final class ServiceAdminImpl implements ServiceAdmin {
 
     public <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId) throws UnknownJobException, JobStillActiveException {
         return asyncSupport.getJobResult(jobId);
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.auditor = new Auditor(this, applicationContext, logger);
     }
 }

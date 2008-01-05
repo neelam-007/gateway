@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.policy;
 
+import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.policy.*;
 import com.l7tech.common.security.rbac.MethodStereotype;
 import com.l7tech.common.security.rbac.Secured;
@@ -11,22 +12,30 @@ import com.l7tech.common.util.Functions.Unary;
 import static com.l7tech.common.util.Functions.map;
 import com.l7tech.common.util.Pair;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.security.rbac.RoleManager;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * @author alex
  */
-public class PolicyAdminImpl implements PolicyAdmin {
+public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
+    protected static final Logger logger = Logger.getLogger(PolicyAdminImpl.class.getName());
+
     private final PolicyManager policyManager;
     private final PolicyCache policyCache;
     private final PolicyVersionManager policyVersionManager;
     private final RoleManager roleManager;
+    private Auditor auditor;
 
     private static final Set<PropertyDescriptor> OMIT_VERSION_AND_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "version", "xml");
     private static final Set<PropertyDescriptor> OMIT_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "xml");
@@ -75,6 +84,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
             } else {
                 policyManager.update(policy);
                 long versionOrdinal = checkpointPolicy(policy, true, false).getOrdinal();
+                auditor.logAndAudit(SystemMessages.POLICY_VERSION_ACTIVATION, Long.toString(versionOrdinal), Long.toString(policy.getOid()));
                 return new Pair<Long,Long>(policy.getOid(), versionOrdinal);
             }
         } catch (SaveException e) {
@@ -190,5 +200,9 @@ public class PolicyAdminImpl implements PolicyAdmin {
         policy.disable();
         policyManager.update(policy);
         policyVersionManager.deactivateVersions(policyOid, PolicyVersion.DEFAULT_OID);
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.auditor = new Auditor(this, applicationContext, logger);
     }
 }

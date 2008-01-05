@@ -69,6 +69,9 @@ public class SystemMessages extends Messages {
     public static final M CERTVAL_OCSP_BAD_RESPONSE_STATUS    = m(2087, Level.WARNING, "Bad status in OCSP check for responder ''{0}'': {1}");
     public static final M CERTVAL_OCSP_RECURSION              = m(2088, Level.WARNING, "Circular OCSP check for responder ''{0}''");
 
+    // Policy versioning
+    public static final M POLICY_VERSION_ACTIVATION           = m(2090, Level.INFO, "Activating version {0} of policy {1}");
+
     public static final M AUTH_USER_DISABLED = m(2100, Level.INFO, "User {0} is disabled");
     public static final M AUTH_USER_LOCKED   = m(2101, Level.INFO, "User {0} is locked");
     public static final M AUTH_USER_EXPIRED  = m(2102, Level.INFO, "User {0} has expired");
