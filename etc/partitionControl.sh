@@ -84,7 +84,7 @@ do_control() {
             return 1
         fi
 
-        (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND}") <&- &
+        (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND}") <&- &>/dev/null &
     else
         (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND}")
     fi
