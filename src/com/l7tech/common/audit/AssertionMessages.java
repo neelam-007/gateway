@@ -418,8 +418,8 @@ public class AssertionMessages extends Messages {
     public static final M CODEINJECTIONPROTECTION_NOT_HTTP = m(7150, Level.FINE, "Request is not HTTP.");
     public static final M CODEINJECTIONPROTECTION_SKIP_RESPONSE_NOT_ROUTED = m(7151, Level.FINE, "No response body to checked because request has not been routed yet.");
     public static final M CODEINJECTIONPROTECTION_CANNOT_PARSE = m(7152, Level.WARNING, "Cannot parse {0} as {1}.");
-    public static final M CODEINJECTIONPROTECTION_DETECTED_PARAM = m(7153, Level.WARNING, "Code injection detected in {0} parameter \"{1}\": {2}");
-    public static final M CODEINJECTIONPROTECTION_DETECTED = m(7154, Level.WARNING, "Code injection detected in {0}: {1}");
+    public static final M CODEINJECTIONPROTECTION_DETECTED_PARAM = m(7153, Level.WARNING, "{3} detected in {0} parameter \"{1}\": {2}");
+    public static final M CODEINJECTIONPROTECTION_DETECTED = m(7154, Level.WARNING, "{2} detected in {0}: {1}");
 
     // SqlAttackAssertion
     public static final M SQLATTACK_UNRECOGNIZED_PROTECTION = m(7200, Level.WARNING, "Unrecognized protection name: {0}.  Assertion will always fail.");

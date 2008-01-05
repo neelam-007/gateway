@@ -9,7 +9,9 @@ import com.l7tech.policy.assertion.CodeInjectionProtectionType;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Enumeration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Properties dialog for the Code Injection Protection Assertion.
@@ -25,7 +27,7 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
     private JRadioButton _requestRadioButton;
     private JRadioButton _responseRadioButton;
     private JPanel _protectionsPanel;
-    private ButtonGroup _protectionButtons = new ButtonGroup();
+    private List<JCheckBox> _protectionCheckBoxes = new ArrayList<JCheckBox>();
     private JTextArea _descriptionText;
     private JButton _okButton;
     private JButton _cancelButton;
@@ -103,17 +105,18 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
                 }
             });
 
-        // Adds radio buttons for protection types available.
+        // Adds check boxes for protection types available.
         final GridBagConstraints c = new GridBagConstraints();
         c.gridx = 1;
         c.anchor = GridBagConstraints.WEST;
+        final List<CodeInjectionProtectionType> protectionsToApply = Arrays.asList(_assertion.getProtections());
         for (CodeInjectionProtectionType protection : CodeInjectionProtectionType.values()) {
-            final JRadioButton radioButton = new JRadioButton(protection.getDisplayName());
-            radioButton.setActionCommand(protection.getWspName());
-            radioButton.setSelected(protection == _assertion.getProtection());
-            radioButton.addMouseListener(new MouseAdapter() {
+            final JCheckBox checkbox = new JCheckBox(protection.getDisplayName());
+            checkbox.setActionCommand(protection.getWspName());
+            checkbox.setSelected(protectionsToApply.contains(protection));
+            checkbox.addMouseListener(new MouseAdapter() {
                 public void mouseEntered(MouseEvent e) {
-                    final String action = ((JRadioButton) e.getComponent()).getActionCommand();
+                    final String action = ((JCheckBox) e.getComponent()).getActionCommand();
                     final CodeInjectionProtectionType protection = CodeInjectionProtectionType.fromWspName(action);
                     _descriptionText.setText(protection.getDescription());
                 }
@@ -122,18 +125,13 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
                     _descriptionText.setText("");
                 }
             });
-            radioButton.addItemListener(new ItemListener() {
+            checkbox.addItemListener(new ItemListener() {
                 public void itemStateChanged(ItemEvent e) {
                     enableOkButton();
                 }
             });
-            _protectionsPanel.add(radioButton, c);
-            _protectionButtons.add(radioButton);
-        }
-
-        // Selects the first radio button as default if none selected yet.
-        if (_protectionButtons.getSelection() == null) {
-            _protectionButtons.getElements().nextElement().setSelected(true);
+            _protectionsPanel.add(checkbox, c);
+            _protectionCheckBoxes.add(checkbox);
         }
 
         _descriptionText.setMargin(new Insets(0, 10, 0, 10));
@@ -171,10 +169,16 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
         _assertion.setIncludeRequestBody(_requestRadioButton.isSelected() && _requestBodyCheckBox.isSelected());
         _assertion.setIncludeResponseBody(_responseRadioButton.isSelected());
 
-        final String name = _protectionButtons.getSelection().getActionCommand();
-        final CodeInjectionProtectionType protection = CodeInjectionProtectionType.fromWspName(name);
-        _assertion.setProtection(protection);
-        
+        final List<CodeInjectionProtectionType> protectionsToApply = new ArrayList<CodeInjectionProtectionType>();
+        for (JCheckBox checkBox : _protectionCheckBoxes) {
+            if (checkBox.isEnabled() && checkBox.isSelected()) {
+                final String name = checkBox.getActionCommand();
+                final CodeInjectionProtectionType protection = CodeInjectionProtectionType.fromWspName(name);
+                protectionsToApply.add(protection);
+            }
+        }
+        _assertion.setProtections(protectionsToApply.toArray(new CodeInjectionProtectionType[protectionsToApply.size()]));
+
         _modified = true;
         dispose();
     }
@@ -185,12 +189,11 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
     }
 
     private void enableProtectionRadioButtons() {
-        for (Enumeration<AbstractButton> i = _protectionButtons.getElements(); i.hasMoreElements();) {
-            final JRadioButton button = (JRadioButton) i.nextElement();
-            final String action = button.getActionCommand();
+        for (JCheckBox checkBox : _protectionCheckBoxes) {
+            final String action = checkBox.getActionCommand();
             final CodeInjectionProtectionType protection = CodeInjectionProtectionType.fromWspName(action);
-            button.setEnabled(   (_requestRadioButton.isSelected()  && protection.isApplicableToRequest())
-                              || (_responseRadioButton.isSelected() && protection.isApplicableToResponse()));
+            checkBox.setEnabled(   (_requestRadioButton.isSelected()  && protection.isApplicableToRequest())
+                                || (_responseRadioButton.isSelected() && protection.isApplicableToResponse()));
         }
     }
 
@@ -199,18 +202,20 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
      */
     private void enableOkButton() {
         boolean ok = false;
-        // Ensures a valid protection has been choosen.
-        for (Enumeration<AbstractButton> i = _protectionButtons.getElements(); i.hasMoreElements();) {
-            final JRadioButton button = (JRadioButton) i.nextElement();
-            if (button.isEnabled() && button.isSelected()) {
+
+        // Ensures at least one protection type has been selected.
+        for (JCheckBox checkBox : _protectionCheckBoxes) {
+            if (checkBox.isEnabled() && checkBox.isSelected()) {
                 ok = true;
                 break;
             }
         }
+
         // If applying to request messages, further ensures either URL or body is selected.
         if (_requestRadioButton.isSelected()) {
             ok &= _requestUrlCheckBox.isSelected() || _requestBodyCheckBox.isSelected();
         }
+
         _okButton.setEnabled(ok);
     }
 

@@ -4,7 +4,6 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
@@ -15,10 +14,8 @@ import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.PartIterator;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.CodeInjectionProtectionAssertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.*;
@@ -107,9 +104,10 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
         final Map<String, String[]> urlParams = httpServletRequestKnob.getQueryParameterMap();
         for (String urlParamName : urlParams.keySet()) {
             for (String urlParamValue : urlParams.get(urlParamName)) {
-                if (scan(urlParamValue, _assertion.getProtection().getPattern(), evidence)) {
+                final CodeInjectionProtectionType protectionViolated = scan(urlParamValue, _assertion.getProtections(), evidence);
+                if (protectionViolated != null) {
                     _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED_PARAM,
-                            "request URL", urlParamName, evidence.toString());
+                            "request URL", urlParamName, evidence.toString(), protectionViolated.getDisplayName());
                     return AssertionStatus.FALSIFIED;
                 }
             }
@@ -129,9 +127,10 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
             final Map<String, String[]> urlParams = httpServletRequestKnob.getRequestBodyParameterMap();
             for (String urlParamName : urlParams.keySet()) {
                 for (String urlParamValue : urlParams.get(urlParamName)) {
-                    if (scan(urlParamValue, _assertion.getProtection().getPattern(), evidence)) {
+                    final CodeInjectionProtectionType protectionViolated = scan(urlParamValue, _assertion.getProtections(), evidence);
+                    if (protectionViolated != null) {
                         _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED_PARAM,
-                                "request message body", urlParamName, evidence.toString());
+                                "request message body", urlParamName, evidence.toString(), protectionViolated.getDisplayName());
                         return AssertionStatus.FALSIFIED;
                     }
                 }
@@ -203,9 +202,10 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
                         final byte[] partBytes = HexUtils.slurpStream(partInfo.getInputStream(false));
                         final String partString = new String(partBytes, partContentType.getEncoding());
                         StringBuilder evidence = new StringBuilder();
-                        if (scan(partString, _assertion.getProtection().getPattern(), evidence)) {
+                        final CodeInjectionProtectionType protectionViolated = scan(partString, _assertion.getProtections(), evidence);
+                        if (protectionViolated != null) {
                             _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED,
-                                    where, evidence.toString());
+                                    where, evidence.toString(), protectionViolated.getDisplayName());
                             return AssertionStatus.FALSIFIED;
                         }
                     } catch (NoSuchPartException e) {
@@ -253,9 +253,10 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
             final byte[] bodyBytes = HexUtils.slurpStream(mimeKnob.getEntireMessageBodyAsInputStream());
             final String bodyString = new String(bodyBytes, encoding);
             final StringBuilder evidence = new StringBuilder();
-            if (scan(bodyString, _assertion.getProtection().getPattern(), evidence)) {
+            final CodeInjectionProtectionType protectionViolated = scan(bodyString, _assertion.getProtections(), evidence);
+            if (protectionViolated != null) {
                 _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED,
-                        where, evidence.toString());
+                        where, evidence.toString(), protectionViolated.getDisplayName());
                 return AssertionStatus.FALSIFIED;
             }
         } catch (NoSuchPartException e) {
@@ -297,7 +298,8 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
             case Node.ATTRIBUTE_NODE:
             case Node.CDATA_SECTION_NODE:
             case Node.TEXT_NODE:
-                if (scan(node.getNodeValue(), _assertion.getProtection().getPattern(), evidence)) {
+                final CodeInjectionProtectionType protectionViolated = scan(node.getNodeValue(), _assertion.getProtections(), evidence);
+                if (protectionViolated != null) {
                     String nodePath = node.getNodeName();
                     if (node.getParentNode() != null) {
                         nodePath = node.getParentNode().getNodeName() + "/" + node.getNodeName();
@@ -308,7 +310,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
                         }
                     }
                     _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED,
-                            where + " in XML node " + nodePath, evidence.toString());
+                            where + " in XML node " + nodePath, evidence.toString(), protectionViolated.getDisplayName());
                     return true;
                 }
                 break;
@@ -318,15 +320,43 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
     }
 
     /**
+     * Scans for code injection pattern.
+     *
+     * @param s             string to scan
+     * @param protections   protection types to apply
+     * @param evidence      for passing back snippet of string surrounding the
+     *                      first match (if found), for logging purpose
+     * @return the first protection type violated if found (<code>evidence</code> is then populated);
+     *         <code>null</code> if none found
+     */
+    private static CodeInjectionProtectionType scan(final String s, final CodeInjectionProtectionType[] protections, final StringBuilder evidence) {
+        CodeInjectionProtectionType protectionViolated = null;
+        int minIndex = -1;
+
+        for (CodeInjectionProtectionType protection : protections) {
+            final StringBuilder tmpEvidence = new StringBuilder();
+            final int index = scan(s, protection.getPattern(), tmpEvidence);
+            if (index != -1 && (minIndex == -1 || index < minIndex)) {
+                minIndex = index;
+                evidence.setLength(0);
+                evidence.append(tmpEvidence);
+                protectionViolated = protection;
+            }
+        }
+
+        return protectionViolated;
+    }
+
+    /**
      * Scans for a string pattern.
      *
      * @param s         string to scan
      * @param pattern   regular expression pattern to search for
      * @param evidence  for passing back snippet of string surrounding the first
-     *                  match, for logging purpose (if found)
-     * @return <code>true</code> if found; then <code>evidence</code> is populated
+     *                  (if found) match, for logging purpose
+     * @return starting character index if found (<code>evidence</code> is then populated); -1 if not found
      */
-    private static boolean scan(final String s, final Pattern pattern, final StringBuilder evidence) {
+    private static int scan(final String s, final Pattern pattern, final StringBuilder evidence) {
         final Matcher matcher = pattern.matcher(s);
         if (matcher.find()) {
             evidence.setLength(0);
@@ -347,9 +377,9 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
                 evidence.append("...");
             }
 
-            return true;
+            return matcher.start();
         } else {
-            return false;
+            return -1;
         }
     }
 }

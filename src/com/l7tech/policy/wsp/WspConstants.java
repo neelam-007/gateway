@@ -307,6 +307,7 @@ public class WspConstants {
         new BeanTypeMapping(HttpPassthroughRuleSet.class, "httpPassthroughRuleSet"),
         new BeanTypeMapping(HtmlFormDataAssertion.FieldSpec.class, "htmlFormFieldSpec"),
         new ArrayTypeMapping(new HtmlFormDataAssertion.FieldSpec[0], "htmlFormFieldSpecArray"),
+        new ArrayTypeMapping(new CodeInjectionProtectionType[0], "codeInjectionProtectionTypeArray"),
         new BeanTypeMapping(JmsMessagePropertyRule.class, "jmsMessagePropertyRule"),
         new ArrayTypeMapping(new JmsMessagePropertyRule[0], "jmsMessagePropertyRuleArray"),
         new BeanTypeMapping(JmsMessagePropertyRuleSet.class, "jmsMessagePropertyRuleSet"),

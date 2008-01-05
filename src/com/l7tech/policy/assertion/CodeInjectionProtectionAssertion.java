@@ -7,22 +7,25 @@ package com.l7tech.policy.assertion;
  * Provides threat protection against code injection attacks targeting web
  * applications.
  *
+ * <h2>Change History</h2>
+ * Before 4.3, only one protection type allowed. Since 4.3, one or more protection types allowed.
+ *
  * @author rmak
  * @since SecureSpan 3.7
  */
 public class CodeInjectionProtectionAssertion extends Assertion {
 
-    /** Whether to apply protection to request URL. */
+    /** Whether to apply protections to request URL. */
     private boolean _includeRequestUrl;
 
-    /** Whether to apply protection to request body. */
+    /** Whether to apply protections to request body. */
     private boolean _includeRequestBody;
 
-    /** Whether to apply protection to response body. */
+    /** Whether to apply protections to response body. */
     private boolean _includeResponseBody;
 
-    /** Type of protection. */
-    private CodeInjectionProtectionType _protection;
+    /** Protection types to apply. Replaces previous _protection since 4.3. */
+    private CodeInjectionProtectionType[] _protections = new CodeInjectionProtectionType[0];
 
     public boolean isIncludeRequestUrl() {
         return _includeRequestUrl;
@@ -48,11 +51,24 @@ public class CodeInjectionProtectionAssertion extends Assertion {
         _includeResponseBody = b;
     }
 
-    public CodeInjectionProtectionType getProtection() {
-        return _protection;
+    public void setProtection(final CodeInjectionProtectionType protection) {
+        _protections = new CodeInjectionProtectionType[]{protection};
     }
 
-    public void setProtection(final CodeInjectionProtectionType protection) {
-        _protection = protection;
+    /**
+     * @return protection types to apply; never null
+     */
+    public CodeInjectionProtectionType[] getProtections() {
+        return _protections;
+    }
+
+    /**
+     * @param protections   protection types to apply; must not be <code>null</code>
+     * @throws IllegalArgumentException if <code>protections</code> is <code>null</code>
+     */
+    public void setProtections(final CodeInjectionProtectionType[] protections) {
+        if (protections == null)
+            throw new IllegalArgumentException("protections array must not be null");
+        _protections = protections;
     }
 }
