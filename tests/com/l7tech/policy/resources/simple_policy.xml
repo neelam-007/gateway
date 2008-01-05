@@ -154,7 +154,9 @@
                 <L7p:HtmlFormDataAssertion>
                     <L7p:FieldSpecs htmlFormFieldSpecArray="included"/>
                 </L7p:HtmlFormDataAssertion>
-                <L7p:CodeInjectionProtectionAssertion/>
+                <L7p:CodeInjectionProtectionAssertion>
+                    <L7p:Protections codeInjectionProtectionTypeArray="included"/>
+                </L7p:CodeInjectionProtectionAssertion>
                 <L7p:Authentication/>
                 <L7p:WsiSamlAssertion/>
                 <L7p:SamlIssuer/>
