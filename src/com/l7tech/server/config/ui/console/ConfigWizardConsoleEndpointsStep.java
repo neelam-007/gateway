@@ -143,7 +143,7 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep {
             doConfigureEndpointsPrompts(pinfo, validated);
             EndpointConfigBean endpointBean = (EndpointConfigBean) configBean;
             endpointBean.setEndpointsToAdd(endpointsToAdd);
-            endpointBean.setPartitionInfo(pinfo);
+//            endpointBean.setPartitionInfo(pinfo);
         } catch (IOException e) {
             logger.severe(ExceptionUtils.getMessage(e));
         }

@@ -66,6 +66,12 @@ public class PartitionManager {
     }
 
     public void enumeratePartitions() {
+        String activePartitionName;
+        if (activePartition == null)
+            activePartitionName = PartitionInformation.DEFAULT_PARTITION_NAME;
+        else
+            activePartitionName = activePartition.getPartitionId();
+        
         partitions.clear();
         String partitionRoot = OSDetector.getOSSpecificFunctions().getPartitionBase();
 
@@ -83,6 +89,7 @@ public class PartitionManager {
                 }
             }
         }
+        activePartition = getPartition(activePartitionName);
     }
 
     public void addPartition(PartitionInformation pi) {
@@ -118,8 +125,6 @@ public class PartitionManager {
     public PartitionInformation getActivePartition() {
         if (activePartition == null) {
             enumeratePartitions();
-            //if there's no active partition then return the default one.
-            activePartition = getPartition(PartitionInformation.DEFAULT_PARTITION_NAME);
         }
         return activePartition;
     }

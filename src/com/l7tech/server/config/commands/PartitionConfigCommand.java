@@ -1,16 +1,14 @@
 package com.l7tech.server.config.commands;
 
-import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.config.PartitionActions;
 import com.l7tech.server.config.beans.ConfigurationBean;
-import com.l7tech.server.config.beans.PartitionConfigBean;
 import com.l7tech.server.partition.PartitionInformation;
-import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.server.partition.PartitionManager;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * User: megery
@@ -31,8 +29,7 @@ public class PartitionConfigCommand extends BaseConfigurationCommand{
 
     public boolean execute() {
         boolean success = true;
-        PartitionConfigBean partitionBean = (PartitionConfigBean) configBean;
-        PartitionInformation pInfo = partitionBean.getPartitionInfo();
+        PartitionInformation pInfo = PartitionManager.getInstance().getActivePartition();
         try {
             PartitionActions.updateSystemProperties(pInfo, true);
             updateStartupScripts(pInfo);

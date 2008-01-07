@@ -35,8 +35,8 @@ public class PartitionInformation{
 
     private String partitionId;
     private String oldPartitionId;
-    boolean isNewPartition = false;
-    boolean isEnabled = false;
+    private boolean isNewPartition = false;
+    private boolean isEnabled = false;
     private boolean shouldDisable = false;
 
     private List<HttpEndpointHolder> httpEndpointsList;
@@ -104,18 +104,6 @@ public class PartitionInformation{
         ftpEndpointsList = new ArrayList<FtpEndpointHolder>();
         otherEndpointsList = new ArrayList<OtherEndpointHolder>();
         osf = OSDetector.getOSSpecificFunctions(partitionName);
-    }
-
-    public PartitionInformation copy() {
-        PartitionInformation theCopy = new PartitionInformation(this.getPartitionId());
-        theCopy.setEnabled(this.isEnabled());
-        theCopy.setNewPartition(this.isNewPartition());
-        theCopy.setOriginalDom(this.getOriginalDom());
-        theCopy.setShouldDisable(this.isShouldDisable());
-        theCopy.setHttpEndpointsList(this.getHttpEndpoints());
-        theCopy.setFtpEndpointsList(this.getFtpEndpoints());
-        theCopy.setOtherEndpointsList(this.getOtherEndpoints());
-        return theCopy;
     }
 
     public Collection<SsgConnector> getConnectorsFromServerXml() {

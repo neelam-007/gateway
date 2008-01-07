@@ -3,8 +3,6 @@ package com.l7tech.server.config.beans;
 import com.l7tech.server.config.ClusteringType;
 import com.l7tech.server.config.ConfigurationType;
 import com.l7tech.server.config.SharedWizardInfo;
-import com.l7tech.server.partition.PartitionInformation;
-import com.l7tech.server.partition.PartitionManager;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -20,7 +18,6 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
     private String localHostName;
     private ClusteringType clusterType;
     private ConfigurationType configType;
-    private PartitionInformation partitionInformation;
 
     private final static String NAME = "Clustering Configuration";
     private final static String DESCRIPTION = "Configures the cluster properties for an SSG";
@@ -105,14 +102,5 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
 
     public void setConfigType(ConfigurationType configType) {
         this.configType = configType;
-    }
-
-    public PartitionInformation getPartitionInformation() {
-        if (partitionInformation == null) partitionInformation = PartitionManager.getInstance().getActivePartition();
-        return partitionInformation;
-    }
-
-    public void setPartitionInformation(PartitionInformation partitionInformation) {
-        this.partitionInformation = partitionInformation;
     }
 }

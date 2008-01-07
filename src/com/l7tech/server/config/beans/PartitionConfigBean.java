@@ -1,6 +1,7 @@
 package com.l7tech.server.config.beans;
 
 import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.server.partition.PartitionManager;
 
 import java.util.List;
 
@@ -14,7 +15,7 @@ public class PartitionConfigBean extends BaseConfigurationBean{
     private final static String DESCRIPTION = "Configures Gateway Partitions";
 
     private boolean isNewPartition;
-    PartitionInformation partitionInfo;
+//    PartitionInformation partitionInfo;
 
     public PartitionConfigBean() {
         super(NAME, DESCRIPTION);
@@ -27,8 +28,9 @@ public class PartitionConfigBean extends BaseConfigurationBean{
 
     protected void populateExplanations() {
         explanations.add(getName() + " - " + getDescription());
-        String partName = partitionInfo.getPartitionId();
-        List<PartitionInformation.EndpointHolder> endpoints = partitionInfo.getEndpoints();
+        PartitionInformation pInfo = PartitionManager.getInstance().getActivePartition();
+        String partName = pInfo.getPartitionId();
+        List<PartitionInformation.EndpointHolder> endpoints = pInfo.getEndpoints();
 
         explanations.add(insertTab + (isNewPartition?"Creating new partition \"" + partName + "\"":"Updating \"" + partName + "\" partition"));
 
@@ -45,11 +47,11 @@ public class PartitionConfigBean extends BaseConfigurationBean{
         }
     }
 
-    public PartitionInformation getPartitionInfo() {
-        return partitionInfo;
-    }
+//    public PartitionInformation getPartitionInfo() {
+//        return partitionInfo;
+//    }
 
-    public void setPartitionInfo(PartitionInformation partitionInfo) {
-        this.partitionInfo = partitionInfo;
-    }
+//    public void setPartitionInfo(PartitionInformation partitionInfo) {
+//        this.partitionInfo = partitionInfo;
+//    }
 }

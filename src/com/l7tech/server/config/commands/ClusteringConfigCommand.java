@@ -9,6 +9,7 @@ import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang.StringUtils;
@@ -58,7 +59,8 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
     public boolean execute() {
         boolean success = true;
         ClusteringConfigBean clusterBean = (ClusteringConfigBean) configBean;
-        PartitionInformation pinfo = clusterBean.getPartitionInformation();
+        PartitionInformation pinfo = PartitionManager.getInstance().getActivePartition();
+//        PartitionInformation pinfo = clusterBean.getPartitionInformation();
 
         ConfigurationType confType = clusterBean.getConfigType();
 
@@ -108,7 +110,8 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
         OutputStream fos = null;
         try {
             ClusteringConfigBean clusterBean = (ClusteringConfigBean) configBean;
-            OSSpecificFunctions osf = clusterBean.getPartitionInformation().getOSSpecificFunctions();
+            PartitionInformation pinfo = PartitionManager.getInstance().getActivePartition();
+            OSSpecificFunctions osf = pinfo.getOSSpecificFunctions();
             PropertiesConfiguration props = PropertyHelper.mergeProperties(systemPropertiesFile,
                     new File(systemPropertiesFile.getAbsolutePath() + "." + osf.getUpgradedNewFileExtension()),
                     true, true);

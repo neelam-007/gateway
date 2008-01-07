@@ -13,6 +13,7 @@ import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.db.SsgConnectorSql;
 import com.l7tech.server.partition.FirewallRules;
 import com.l7tech.server.partition.PartitionInformation;
+import com.l7tech.server.partition.PartitionManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,8 +23,8 @@ import java.sql.Statement;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * User: megery
@@ -46,7 +47,7 @@ public class EndpointConfigCommand extends BaseConfigurationCommand{
         boolean success = true;
         EndpointConfigBean endpointBean = (EndpointConfigBean) configBean;
         try {
-            PartitionInformation pinfo = endpointBean.getPartitionInfo();
+            PartitionInformation pinfo = PartitionManager.getInstance().getActivePartition();
             enableDbEndpointsIfNecessary();
             addEndpoints(endpointBean.getEndpointsToAdd(), "Error while adding new endpoints.");
             addEndpoints(endpointBean.getLegacyEndpoints(), "Error while adding legacy endpoints.");
@@ -114,8 +115,7 @@ public class EndpointConfigCommand extends BaseConfigurationCommand{
     }
 
     private void enableDbEndpointsIfNecessary() throws ClassNotFoundException, SQLException {
-        EndpointConfigBean endpointBean = (EndpointConfigBean) configBean;
-        PartitionInformation pinfo = endpointBean.getPartitionInfo();
+        PartitionInformation pinfo = PartitionManager.getInstance().getActivePartition();
         DBInformation dbinfo = SharedWizardInfo.getInstance().getDbinfo();
 
         if (isDefaultPartition(pinfo)) {

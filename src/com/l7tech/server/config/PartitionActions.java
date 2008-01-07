@@ -2,11 +2,10 @@ package com.l7tech.server.config;
 
 import com.l7tech.common.util.*;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
-import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
-import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
 import com.l7tech.server.config.exceptions.KeystoreActionsException;
+import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.configuration.ConfigurationException;
@@ -16,13 +15,13 @@ import org.xml.sax.SAXException;
 
 import java.io.*;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.net.SocketException;
 import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 
 /**
  * User: megery

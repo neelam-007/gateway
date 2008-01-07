@@ -3,8 +3,6 @@ package com.l7tech.server.config.ui.console;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.server.config.*;
-import com.l7tech.server.config.exceptions.KeystoreActionsException;
-import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
@@ -49,6 +47,7 @@ public class SoftwareConfigWizard extends ConfigurationWizard {
             }
 
             PartitionInformation pInfo = silentConfig.getPartitionInfo();
+            PartitionManager.getInstance().setActivePartition(pInfo);
 
             File f = new File(getOsFunctions().getPartitionBase() + pInfo.getPartitionId());
             if (!f.exists()) {
@@ -143,7 +142,7 @@ public class SoftwareConfigWizard extends ConfigurationWizard {
                 SilentConfigData configData = new SilentConfigData();
                 configData.setCommands(commands);
                 configData.setDbInfo(sharedWizardInfo.getDbinfo());
-                configData.setPartitionInfo(PartitionManager.getInstance().getActivePartition());
+                configData.setPartitionInfo(pInfo);
 
                 configData.setKeystoreType(sharedWizardInfo.getKeystoreType());
                 configData.setSslKeystore(sslKeystoreBytes);
@@ -173,6 +172,8 @@ public class SoftwareConfigWizard extends ConfigurationWizard {
     }
 
     private void writeFileBytes(byte[] bytes, File file) throws IOException {
+        if (bytes == null) return;
+
         if (file.exists()) {
             logger.warning(file.getAbsolutePath() + " already exists. It will be overwritten");
         }

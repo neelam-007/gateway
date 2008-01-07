@@ -54,7 +54,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
             if (continueInterview) {
                 doHostnamePrompt(getDefaultHostName());
             }
-            clusterBean.setPartitionInformation(PartitionManager.getInstance().getActivePartition());
+//            clusterBean.setPartitionInformation(PartitionManager.getInstance().getActivePartition());
             storeInput();
         } catch (IOException e) {
             e.printStackTrace();
@@ -163,7 +163,6 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
         byte[] configBytes = silentConf.loadConfigFromDb(dbInfo);
 
         String exceptionMessage = null;
-        if (configBytes == null)
         if (configBytes != null) {
             String passphrase = getSecretData(new String[]{
                     "Retrieved configuration settings from the database." + getEolChar(),
