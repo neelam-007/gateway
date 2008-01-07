@@ -1,6 +1,7 @@
 package com.l7tech.server.config.beans;
 
 import com.l7tech.server.config.PropertyHelper;
+import com.l7tech.server.config.SharedWizardInfo;
 import com.l7tech.server.config.db.DBInformation;
 import org.apache.commons.lang.StringUtils;
 
@@ -90,7 +91,26 @@ public class SsgDatabaseConfigBean extends BaseConfigurationBean {
     }
 
     public void setDbHostname(String hostname) {
-        dbInformation.setHostname(hostname);
+        dbInformation.setHostname(getNonLocalHostame(hostname, SharedWizardInfo.getInstance().getHostname()));
+    }
+
+    private String getNonLocalHostame(String dbHostname, String realHostname) {
+        if (dbHostname.equalsIgnoreCase("localhost")) {
+            return realHostname;
+        }
+
+        if (dbHostname.contains(",")) {
+            String[] hosts = dbHostname.split(",");
+            String returnMe = "";
+            for (int i = 0; i < hosts.length; i++) {
+                String host = hosts[i];
+                hosts[i]= getNonLocalHostame(host,realHostname);
+                returnMe += ((i == 0)?"":",") + hosts[i];
+            }
+            return returnMe;
+        }
+
+        return dbHostname;
     }
 
     public void setDbUsername(String username) {

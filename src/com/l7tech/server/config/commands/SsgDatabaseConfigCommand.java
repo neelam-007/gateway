@@ -2,10 +2,10 @@ package com.l7tech.server.config.commands;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.server.config.PropertyHelper;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.PasswordPropertyCrypto;
+import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.ui.console.ConfigurationWizard;
@@ -17,14 +17,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.text.ParseException;
 
 /**
  * User: megery

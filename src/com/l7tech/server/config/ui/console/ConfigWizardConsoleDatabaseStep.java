@@ -35,11 +35,6 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
 
     private static final String PROMPT_MAKE_NEW_DB = "1) Create a new SSG database" + getEolChar();
     private static final String PROMPT_USE_EXISTING_DB = "2) Connect to an existing SSG database" + getEolChar();
-//    private static final String PROMPT_DB_PASSWORD = "SSG Database user password: ";
-//    private static final String PROMPT_DB_USERNAME = "SSG Database username: ";
-//    private static final String PROMPT_DB_NAME = "Name of the SSG database: ";
-//
-//    private static final String PROMPT_DB_HOSTNAME = "Hostname: ";
 
     private static final String TITLE = "Set Up the SSG Database";
     private DBActions dbActions;
