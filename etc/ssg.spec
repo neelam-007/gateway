@@ -27,6 +27,8 @@ rm -fr %{buildroot}
 
 %build
 mkdir -p %{buildroot}/ssg/etc/profile.d/
+mkdir -p %{buildroot}/ssg/bin/samples
+
 mv %{buildroot}/ssg/bin/profile %{buildroot}/ssg/etc/
 mv %{buildroot}/ssg/bin/java.sh %{buildroot}/ssg/etc/profile.d/
 mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/ssg/etc/profile.d/

@@ -3675,6 +3675,7 @@
         <mkdir dir="${install.src.ldap}"/>
         <mkdir dir="${install.src.uddi}"/>
         <mkdir dir="${install.src.ssgonly.bin}"/>
+        <mkdir dir="${install.src.ssgonly.bin}/samples"/>
         <mkdir dir="${install.src.appliance.bin}"/>
         <mkdir dir="${install.src.appliance.libexec}"/>
         <mkdir dir="${install.src.conf}"/>
@@ -3801,9 +3802,16 @@
         </copy>
 
         <!--copy this in so that users have an example to use in case they are acually installing the "software mode" on a RedHat system-->
-        <copy todir="${install.src.ssgonly.bin}">
+        <copy todir="${install.src.ssgonly.bin}/samples">
             <fileset dir="${src.root}/etc/appliance/">
                 <include name="ssg-initd"/>
+            </fileset>
+        </copy>
+
+        <!--copy this in so that users have a sample my.cnf to refer to when configuring mysql in a software installation-->
+        <copy tofile="${install.src.ssgonly.bin}/samples/my.cnf.example">
+            <fileset dir="${src.root}/etc/db/mysql">
+                <include name="my.cnf"/>
             </fileset>
         </copy>
 
