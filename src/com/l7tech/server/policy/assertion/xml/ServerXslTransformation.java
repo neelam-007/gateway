@@ -4,42 +4,46 @@
 package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.common.urlcache.HttpObjectCache;
-import com.l7tech.common.urlcache.AbstractUrlObjectCache;
+import com.l7tech.common.http.GenericHttpClientFactory;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.TarariMessageContextFactory;
 import com.l7tech.common.message.XmlKnob;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
-import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.urlcache.AbstractUrlObjectCache;
+import com.l7tech.common.urlcache.HttpObjectCache;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.Functions;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.*;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
 import com.l7tech.common.xml.xpath.CompiledXpath;
+import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.common.xml.xpath.XpathResult;
 import com.l7tech.common.xml.xpath.XpathResultNodeSet;
-import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.common.xml.xslt.CompiledStylesheet;
+import com.l7tech.common.xml.xslt.StylesheetCompiler;
 import com.l7tech.common.xml.xslt.TransformInput;
 import com.l7tech.common.xml.xslt.TransformOutput;
-import com.l7tech.common.xml.xslt.StylesheetCompiler;
+import com.l7tech.policy.AssertionResourceInfo;
+import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.policy.AssertionResourceInfo;
-import com.l7tech.policy.MessageUrlResourceInfo;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.util.HttpClientFactory;
 import com.l7tech.server.util.res.ResourceGetter;
 import com.l7tech.server.util.res.ResourceObjectFactory;
 import com.l7tech.server.util.res.UrlFinder;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -100,14 +104,17 @@ public class ServerXslTransformation
     private final Auditor auditor;
     private final ResourceGetter<CompiledStylesheet> resourceGetter;
     private final boolean allowMessagesWithNoProcessingInstruction;
-    private final String[] varsUsed;
+    private final String[] urlVarsUsed;
 
-    public ServerXslTransformation(XslTransformation assertion, ApplicationContext springContext) throws ServerPolicyException {
+    public ServerXslTransformation(XslTransformation assertion, BeanFactory beanFactory) throws ServerPolicyException {
         super(assertion);
         if (assertion == null) throw new IllegalArgumentException("must provide assertion");
 
-        this.auditor = new Auditor(this, springContext, logger);
-        this.varsUsed = assertion.getVariablesUsed();
+        //noinspection ThisEscapedInObjectConstruction
+        this.auditor = beanFactory instanceof ApplicationContext
+                ? new Auditor(this, (ApplicationContext)beanFactory, logger)
+                : new LogOnlyAuditor(logger);
+        this.urlVarsUsed = assertion.getVariablesUsed();
 
         // Create ResourceGetter that will produce the XSLT for us, depending on assertion config
 
@@ -153,14 +160,14 @@ public class ServerXslTransformation
         allowMessagesWithNoProcessingInstruction = muri != null && muri.isAllowMessagesWithoutUrl();
 
         this.resourceGetter = ResourceGetter.createResourceGetter(
-                assertion, ri, resourceObjectfactory, urlFinder, getCache(springContext), auditor);
+                assertion, ri, resourceObjectfactory, urlFinder, getCache(beanFactory), auditor);
     }
 
-    private static synchronized HttpObjectCache<CompiledStylesheet> getCache(ApplicationContext spring) {
+    private static synchronized HttpObjectCache<CompiledStylesheet> getCache(BeanFactory spring) {
         if (httpObjectCache != null)
             return httpObjectCache;
 
-        HttpClientFactory clientFactory = (HttpClientFactory)spring.getBean("httpClientFactory");
+        GenericHttpClientFactory clientFactory = (GenericHttpClientFactory)spring.getBean("httpClientFactory");
         if (clientFactory == null) throw new IllegalStateException("No httpClientFactory bean");
 
         httpObjectCache = new HttpObjectCache<CompiledStylesheet>(
@@ -171,7 +178,7 @@ public class ServerXslTransformation
         return httpObjectCache;
     }
 
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // 1. Get document to transform
         final Message message;
         final boolean isrequest;
@@ -194,8 +201,7 @@ public class ServerXslTransformation
         }
 
         try {
-            Map vars = context.getVariableMap(varsUsed, auditor);
-            return doCheckRequest(message, isrequest, vars);
+            return doCheckRequest(message, isrequest, context);
         } catch (SAXException e) {
             auditor.logAndAudit(isrequest ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
             return AssertionStatus.BAD_REQUEST;
@@ -209,12 +215,23 @@ public class ServerXslTransformation
      */
     private AssertionStatus doCheckRequest(final Message message,
                                            boolean isrequest,
-                                           Map vars)
+                                           final PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException, SAXException
     {
 
         int whichMimePart = assertion.getWhichMimePart();
         if (whichMimePart <= 0) whichMimePart = 0;
+
+        Functions.Unary<Object, String> variableGetter = new Functions.Unary<Object, String>() {
+            public Object call(String varName) {
+                try {
+                    return context.getVariable(varName);
+                } catch (NoSuchVariableException e) {
+                    auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, varName);
+                    return null;
+                }
+            }
+        };
 
         final TransformInput transformInput;
         final TransformOutput transformOutput;
@@ -227,7 +244,7 @@ public class ServerXslTransformation
                 auditor.logAndAudit(isrequest ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
                 return AssertionStatus.BAD_REQUEST;
             }
-            transformInput = makeFirstPartTransformInput(xmlKnob, vars);
+            transformInput = makeFirstPartTransformInput(xmlKnob, variableGetter);
             transformOutput = new TransformOutput() {
                 public void setBytes(byte[] bytes) throws IOException {
                     message.getMimeKnob().getFirstPart().setBodyBytes(bytes);
@@ -243,7 +260,7 @@ public class ServerXslTransformation
                 return AssertionStatus.BAD_REQUEST;
             }
 
-            transformInput = makePartInfoTransformInput(partInfo, vars);
+            transformInput = makePartInfoTransformInput(partInfo, variableGetter);
             transformOutput = new TransformOutput() {
                 public void setBytes(byte[] bytes) throws IOException {
                     partInfo.setBodyBytes(bytes);
@@ -251,16 +268,19 @@ public class ServerXslTransformation
             };
         }
 
-        return transform(transformInput, transformOutput, isrequest);
+        // These variables are used ONLY for interpolation into a remote URL; variables used inside
+        // the stylesheet itself are fed in via the variableGetter inside TransformInput
+        Map urlVars = context.getVariableMap(urlVarsUsed, auditor);
+        return transform(transformInput, transformOutput, isrequest, urlVars);
     }
 
     //  Get a stylesheet from the resourceGetter and transform input into output
-    private AssertionStatus transform(TransformInput input, TransformOutput output, boolean isReq)
+    private AssertionStatus transform(TransformInput input, TransformOutput output, boolean isReq, Map urlVars)
             throws IOException, PolicyAssertionException
     {
         try {
             final ElementCursor ec = input.getElementCursor();
-            CompiledStylesheet resource = resourceGetter.getResource(ec, input.getVars());
+            CompiledStylesheet resource = resourceGetter.getResource(ec, urlVars);
 
             if (resource == null) {
                 if (allowMessagesWithNoProcessingInstruction) {
@@ -341,7 +361,7 @@ public class ServerXslTransformation
         }
         if (pxr != null) {
             XpathResultNodeSet pis = pxr.getNodeSet();
-            if (pis != null && pis.size() > 0) {
+            if (pis != null && !pis.isEmpty()) {
                 if (pis.size() != 1) {
                     auditor.logAndAudit(AssertionMessages.XSLT_MULTIPLE_PIS);
                     throw new InvalidDocumentFormatException();
@@ -362,7 +382,7 @@ public class ServerXslTransformation
      * @return the value of the href attribute, or null if this wasn't a valid text/xsl reference
      * @throws SAXException if the attribute list was not well formed
      */
-    private String extractHref(String attrlist) throws SAXException {
+    private static String extractHref(String attrlist) throws SAXException {
         try {
             String fakeXml = "<dummy " + attrlist + " />";
             SAXParser parser = piParser.newSAXParser();
@@ -402,12 +422,12 @@ public class ServerXslTransformation
         }
     }
 
-    private TransformInput makeFirstPartTransformInput(XmlKnob xmlKnob, Map vars) throws IOException, SAXException {
-        return new TransformInput(xmlKnob.getElementCursor(), vars);
+    private static TransformInput makeFirstPartTransformInput(XmlKnob xmlKnob, Functions.Unary<Object, String> variableGetter) throws IOException, SAXException {
+        return new TransformInput(xmlKnob.getElementCursor(), variableGetter);
     }
 
     // Builds a TarariMessageContext for the specified PartInfo, if possible, or returns null
-    private TarariMessageContext makeTarariMessageContext(PartInfo partInfo) throws IOException, SAXException {
+    private static TarariMessageContext makeTarariMessageContext(PartInfo partInfo) throws IOException, SAXException {
         TarariMessageContextFactory mcf = TarariLoader.getMessageContextFactory();
         if (mcf == null) return null;
         try {
@@ -426,13 +446,13 @@ public class ServerXslTransformation
      * This factory for TransformInput has the special case and slower code needed to do Tarari transformation
      * of a MIME part other than the first part.
      */
-    private TransformInput makePartInfoTransformInput(PartInfo partInfo, Map vars) throws IOException, SAXException {
+    private TransformInput makePartInfoTransformInput(PartInfo partInfo, Functions.Unary<Object, String> variableGetter) throws IOException, SAXException {
         TarariMessageContext tmc = makeTarariMessageContext(partInfo);
         if (tmc != null)
-            return new TransformInput(tmc.getElementCursor(), vars);
+            return new TransformInput(tmc.getElementCursor(), variableGetter);
 
         try {
-            return new TransformInput(new DomElementCursor(XmlUtil.parse(partInfo.getInputStream(false))), vars);
+            return new TransformInput(new DomElementCursor(XmlUtil.parse(partInfo.getInputStream(false))), variableGetter);
         } catch (NoSuchPartException e) {
             throw new RuntimeException(e); // can't happen -- we never destructively read MIME parts currently
         }

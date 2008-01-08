@@ -4,7 +4,6 @@
 package com.l7tech.external.assertions.echorouting.server;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -13,7 +12,9 @@ import com.l7tech.common.util.CausedIOException;
 import com.l7tech.external.assertions.echorouting.EchoRoutingAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
 import org.springframework.context.ApplicationContext;
@@ -63,6 +64,7 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion<EchoRouti
             response.initialize(stashManagerFactory.createStashManager(),
                                 cth,
                                 mimeKnob.getEntireMessageBodyAsInputStream());
+            context.setRoutingStatus(RoutingStatus.ROUTED);
             return AssertionStatus.NONE;
         } catch (NoSuchPartException nspe) {
             throw new CausedIOException("Unable copy request to response.", nspe);

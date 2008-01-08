@@ -1,16 +1,16 @@
 package com.l7tech.common.xml.xslt;
 
+import com.l7tech.common.util.Functions;
 import com.l7tech.common.xml.ElementCursor;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * Represents an input document for an XSL transformation using {@link CompiledStylesheet}.
  */
 public class TransformInput {
-    private final Map vars;
+    private final Functions.Unary<Object, String> variableGetter;
     private final ElementCursor elementCursor;
 
     /**
@@ -18,21 +18,31 @@ public class TransformInput {
      *
      * @param elementCursor ElementCursor open against the document to be transformed.  Required.
      *                      This can be either a DOM or Tarari ElementCursor.
-     * @param vars array of variables to make visible to the template code.  Required, but may be empty.
+     * @param variableGetter getter for variables to make visible to the template code, or null to offer none.
      */
-    public TransformInput(ElementCursor elementCursor, Map vars) {
-        if (vars == null || elementCursor == null) throw new NullPointerException();
-        this.vars = vars;
+    public TransformInput(ElementCursor elementCursor, Functions.Unary<Object, String> variableGetter) {
+        if (elementCursor == null) throw new NullPointerException();
+        this.variableGetter = variableGetter;
         this.elementCursor = elementCursor;
     }
 
     /**
-     * Get the variables that should be visible during the transformation.
+     * Get the value of the given named variable.
      *
-     * @return a Map of variable name to variable value.  May be empty but never null.
+     * @param variableName  the variable to look up.
+     * @return the result of getting this variable using our variableGetter, or null.
      */
-    public Map getVars() {
-        return vars;
+    public Object getVariableValue(String variableName) {
+        return variableGetter == null ? null : variableGetter.call(variableName);
+    }
+
+    /**
+     * Get a variable getter that will look up the values of named variables as needed by this TransformInput.
+     *
+     * @return a variable getter, or null if none is available.
+     */
+    public Functions.Unary<Object, String> getVariableGetter() {
+        return variableGetter;
     }
 
     /**

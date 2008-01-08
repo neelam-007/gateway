@@ -12,6 +12,7 @@ import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -23,8 +24,9 @@ import java.util.logging.Logger;
 public class CompiledStylesheet {
     protected static final Logger logger = Logger.getLogger(CompiledStylesheet.class.getName());
 
-    private TarariCompiledStylesheet tarariStylesheet;
-    private Templates softwareStylesheet;
+    private final TarariCompiledStylesheet tarariStylesheet;
+    private final Templates softwareStylesheet;
+    private final String[] varsUsed;
 
     /**
      * Produce a CompiledStylesheet using the specified software stylesheet and Tarari compiled stylesheet.
@@ -32,9 +34,10 @@ public class CompiledStylesheet {
      * @param softwareStylesheet  a software stylesheet to use when Tarari can't be used for whatever reason.  Required.
      * @param tarariStylesheet   a Tarari compiled stylesheet to use when possible, or null to always use software.
      */
-    CompiledStylesheet(Templates softwareStylesheet, TarariCompiledStylesheet tarariStylesheet) {
+    CompiledStylesheet(Templates softwareStylesheet, String[] varsUsed, TarariCompiledStylesheet tarariStylesheet) {
         this.tarariStylesheet = tarariStylesheet;
         this.softwareStylesheet = softwareStylesheet;
+        this.varsUsed = varsUsed;
         if (softwareStylesheet == null)
             throw new IllegalArgumentException("softwareStylesheet must be provided");
     }
@@ -73,7 +76,7 @@ public class CompiledStylesheet {
 
         BufferPoolByteArrayOutputStream os = new BufferPoolByteArrayOutputStream(4096);
         try {
-            tarariStylesheet.transform(tmc, os, t.getVars());
+            tarariStylesheet.transform(tmc, os, varsUsed, t.getVariableGetter());
             output.setBytes(os.toByteArray());
             logger.finest("Tarari xsl transformation completed");
         } finally {
@@ -97,7 +100,11 @@ public class CompiledStylesheet {
             Transformer transformer = softwareStylesheet.newTransformer();
             transformer.setURIResolver(XmlUtil.getSafeURIResolver());
             if (errorListener != null) transformer.setErrorListener(errorListener);
-            XmlUtil.softXSLTransform(doctotransform, sr, transformer, t.getVars());
+            for (String variableName : varsUsed) {
+                Object value = t.getVariableValue(variableName);
+                if (value != null) transformer.setParameter(variableName, value);
+            }
+            transformer.transform(new DOMSource(doctotransform), sr);
             output.setBytes(os.toByteArray());
             logger.finest("software xsl transformation completed");
         } finally {

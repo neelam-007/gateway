@@ -7,22 +7,21 @@ package com.l7tech.common.xml.tarari;
 
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.Functions;
 import com.tarari.xml.XmlParseException;
 import com.tarari.xml.XmlResult;
 import com.tarari.xml.XmlSource;
 import com.tarari.xml.rax.RaxDocument;
 import com.tarari.xml.xslt11.Stylesheet;
 import com.tarari.xml.xslt11.parser.XsltParseException;
-import org.xml.sax.SAXException;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.text.ParseException;
-import java.util.Map;
-import java.util.Iterator;
 
 /**
  * Implementation of {@link TarariCompiledStylesheet}.  Unlike its parent interface, this class will only be loaded
@@ -59,23 +58,25 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
         }
     }
 
-    public void transform(TarariMessageContext input, OutputStream output, Map vars) throws IOException, SAXException {
+    public void transform(TarariMessageContext input, OutputStream output, String[] varsUsed, Functions.Unary<Object, String> variableGetter) throws IOException, SAXException {
         XmlSource source = (XmlSource)xmlSource.get();
         RaxDocument raxDocument = ((TarariMessageContextImpl)input).getRaxDocument();
         source.setData(raxDocument);
-        transform(source, output, vars);
+        transform(source, output, varsUsed, variableGetter);
     }
 
-    public void transform(InputStream input, OutputStream output, Map vars) throws SAXException, IOException {
-        transform(new XmlSource(input), output, vars);
+    public void transform(InputStream input, OutputStream output, String[] varsUsed, Functions.Unary<Object, String> variableGetter) throws SAXException, IOException {
+        transform(new XmlSource(input), output, varsUsed, variableGetter);
     }
 
-    private void transform(XmlSource source, OutputStream output, Map vars) throws IOException, SAXException {
+    private void transform(XmlSource source, OutputStream output, String[] varsUsed, Functions.Unary<Object, String> variableGetter) throws IOException, SAXException {
         Stylesheet transformer = new Stylesheet(master);
         transformer.setValidate(false);
-        for (Iterator i = vars.entrySet().iterator(); i.hasNext();) {
-            Map.Entry entry = (Map.Entry)i.next();
-            transformer.setParameter(entry.getKey().toString(), entry.getValue());
+        if (varsUsed != null && variableGetter != null) {
+            for (String variableName : varsUsed) {
+                Object value = variableGetter.call(variableName);
+                if (value != null) transformer.setParameter(variableName, value);
+            }
         }
         XmlResult result = new XmlResult(output);
         try {

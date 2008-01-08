@@ -5,12 +5,12 @@
 
 package com.l7tech.common.xml.tarari;
 
+import com.l7tech.common.util.Functions;
 import org.xml.sax.SAXException;
 
-import java.io.OutputStream;
-import java.io.InputStream;
 import java.io.IOException;
-import java.util.Map;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * Holds a {@link com.tarari.xml.xslt11.Stylesheet} instance, but in a way that introduces no static dependencies
@@ -23,21 +23,23 @@ public interface TarariCompiledStylesheet {
      *
      * @param input   an already-parsed TarariMessageContext to transform.  Must not be null.
      * @param output  stream to which the transformation output will be written.  Must not be null.
-     * @param vars    a Map of variables to make available to the stylesheet.  May be null.
+     * @param varsUsed  names of variables used by this stylesheet, or null.
+     * @param variableGetter  variableGetter to look up variables used by this stylesheet, or null.
      * @throws IOException if there is a problem writing to output
      * @throws SAXException if the input document can't be parsed.  (Probably can't happen here.)
      */
-    void transform(TarariMessageContext input, OutputStream output, Map vars) throws IOException, SAXException;
+    void transform(TarariMessageContext input, OutputStream output, String[] varsUsed, Functions.Unary<Object, String> variableGetter) throws IOException, SAXException;
 
     /**
      * Perform a Tarari XSLT transformation upon the specified XML message stream.
      *
      * @param input   stream containing an XML message to transform.  Must not be null.
      * @param output  stream to which the transformation output will be written.  Must not be null.
-     * @param vars    a Map of variables to make available to the stylesheet.  May be null.
+     * @param varsUsed  names of variables used by this stylesheet, or null.
+     * @param variableGetter  variableGetter to look up variables used by this stylesheet, or null.
      * @throws IOException if the input document can't be read.
      * @throws SAXException if the input document can't be parsed.
      * @throws IOException if there is a problem writing to output
      */
-    void transform(InputStream input, OutputStream output, Map vars) throws SAXException, IOException;
+    void transform(InputStream input, OutputStream output, String[] varsUsed, Functions.Unary<Object, String> variableGetter) throws SAXException, IOException;
 }
