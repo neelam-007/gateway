@@ -41,13 +41,13 @@ public class FtpRoutingAssertion extends RoutingAssertion {
     /** Port number. */
     private int _port = DEFAULT_FTP_PORT;
 
-    /** Destination directory pattern (can contain context variables). */
+    /** Destination directory pattern. */
     private String _directory;
 
     /** Where the file name on server will come from. */
     private FtpFileNameSource _fileNameSource;
 
-    /** File name pattern if {@link #_fileNameSource} is {@link FtpFileNameSource#PATTERN}. */
+    /** File name pattern if {@link #_fileNameSource} is {@link FtpFileNameSource#PATTERN}; can contain context variables. */
     private String _fileNamePattern;
 
     /** Where the login credentials wil come from. */
