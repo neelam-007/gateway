@@ -11,10 +11,12 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.util.SoapMessageGenerator;
 import com.l7tech.external.assertions.echorouting.server.ServerEchoRoutingAssertion;
 import com.l7tech.objectmodel.*;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.server.MockServletApi;
 import com.l7tech.server.SoapMessageProcessingServlet;
 import com.l7tech.server.audit.AuditContextStub;
@@ -23,6 +25,7 @@ import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerCompositeAssertion;
 import com.l7tech.server.transport.http.HttpTransportModuleTester;
+import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServicesHelper;
 import junit.framework.Test;
@@ -125,6 +128,18 @@ public class EchoAssertionTest extends TestCase {
                 assertTrue(Arrays.equals(canonicalizedRequest.toByteArray(), canonicalizedResponse.toByteArray()));
             }
         }
+    }
+
+    public void testBug4570RoutingStatus() throws Exception {
+        Message request = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
+        Message response = new Message();
+        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        context.setService(new PublishedService());
+
+        ServerAssertion sa = new ServerEchoRoutingAssertion(new EchoRoutingAssertion(), servletApi.getApplicationContext());
+        AssertionStatus result = sa.checkRequest(context);
+        assertEquals(result, AssertionStatus.NONE);
+        assertEquals("Routing status must be routed after an echo (Bug #4570)", context.getRoutingStatus(), RoutingStatus.ROUTED);
     }
 
     private static void initializeServicesAndPolicies()
