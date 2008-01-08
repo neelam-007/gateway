@@ -91,26 +91,7 @@ public class SsgDatabaseConfigBean extends BaseConfigurationBean {
     }
 
     public void setDbHostname(String hostname) {
-        dbInformation.setHostname(getNonLocalHostame(hostname, SharedWizardInfo.getInstance().getHostname()));
-    }
-
-    private String getNonLocalHostame(String dbHostname, String realHostname) {
-        if (dbHostname.equalsIgnoreCase("localhost")) {
-            return realHostname;
-        }
-
-        if (dbHostname.contains(",")) {
-            String[] hosts = dbHostname.split(",");
-            String returnMe = "";
-            for (int i = 0; i < hosts.length; i++) {
-                String host = hosts[i];
-                hosts[i]= getNonLocalHostame(host,realHostname);
-                returnMe += ((i == 0)?"":",") + hosts[i];
-            }
-            return returnMe;
-        }
-
-        return dbHostname;
+        dbInformation.setHostname(hostname);
     }
 
     public void setDbUsername(String username) {

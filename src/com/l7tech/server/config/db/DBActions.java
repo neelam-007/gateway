@@ -7,6 +7,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.config.LicenseChecker;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.SharedWizardInfo;
 import com.l7tech.server.partition.PartitionInformation;
 import org.apache.commons.lang.StringUtils;
 
@@ -703,10 +704,30 @@ public class DBActions {
         List<String> list = new ArrayList<String>();
 
         list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@'%' identified by '" + dbInfo.getPassword() + "'"));
-        list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@" + dbInfo.getHostname() + " identified by '" + dbInfo.getPassword() + "'"));
 
-        if (!isWindows && dbInfo.getHostname().equals("localhost"))
-            list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@localhost.localdomain identified by '" + dbInfo.getPassword() + "'"));
+        boolean usesLocalhost = false;
+
+        String dbHostnameString = dbInfo.getHostname();
+        //if there are more than one hostname, grant each one separately
+        if (dbHostnameString.contains(",")) {
+            String[] hosts = dbHostnameString.split(",");
+            for (String host : hosts) {
+                if (host.equalsIgnoreCase("localhost") || host.equalsIgnoreCase("127.0.0.1") )
+                    usesLocalhost = true;
+
+                //grant the ACTUAL hostname, not the localhost one
+                list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@" + DBActions.getNonLocalHostame(host, SharedWizardInfo.getInstance().getHostname()) + " identified by '" + dbInfo.getPassword() + "'"));
+            }
+        } else {
+            list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@" + dbHostnameString + " identified by '" + dbInfo.getPassword() + "'"));
+        }
+
+        //if localhost was used, then grant that too
+        if (usesLocalhost) {
+            list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@localhost identified by '" + dbInfo.getPassword() + "'"));
+            if (!isWindows)
+                list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@localhost.localdomain identified by '" + dbInfo.getPassword() + "'"));
+        }
 
         list.add(new String("FLUSH PRIVILEGES"));
         return list.toArray(new String[0]);
@@ -968,6 +989,26 @@ Statement getCreateTablesStmt = null;
 
     public void setLicenseChecker(LicenseChecker licenseChecker) {
         licChecker = licenseChecker;
+    }
+
+    public static String getNonLocalHostame(String dbHostname, String realHostname) {
+        if (dbHostname.equalsIgnoreCase("localhost") || dbHostname.equalsIgnoreCase("127.0.0.1")) {
+            return realHostname;
+        }
+
+        if (dbHostname.contains(",")) {
+            String[] hosts = dbHostname.split(",");
+            String returnMe = "";
+            for (int i = 0; i < hosts.length; i++) {
+                String host = hosts[i];
+                hosts[i]= getNonLocalHostame(host,realHostname);
+                returnMe += ((i == 0)?"":",") + hosts[i];
+            }
+            return returnMe;
+        }
+
+        return dbHostname;
+
     }
 
     public class WrongDbVersionException extends Exception {

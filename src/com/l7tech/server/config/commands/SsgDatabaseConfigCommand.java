@@ -6,6 +6,8 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.PasswordPropertyCrypto;
 import com.l7tech.server.config.PropertyHelper;
+import com.l7tech.server.config.SharedWizardInfo;
+import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.ui.console.ConfigurationWizard;
@@ -114,10 +116,11 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
         return success;
     }
 
-    private void updateDbConfigFile(File dbConfigFile) throws IOException, ParseException {
+        private void updateDbConfigFile(File dbConfigFile) throws IOException, ParseException {
 
         SsgDatabaseConfigBean dbConfigBean = (SsgDatabaseConfigBean) configBean;
         String dbUrl = dbConfigBean.getDbHostname();
+        dbUrl = DBActions.getNonLocalHostame(dbUrl, SharedWizardInfo.getInstance().getHostname());
         String dbName = dbConfigBean.getDbName();
         String dbUsername = dbConfigBean.getDbUsername();
         String dbPassword = dbConfigBean.getDbPassword();
