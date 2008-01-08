@@ -9,7 +9,6 @@ import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -41,7 +40,7 @@ public class ServicesFolderNode extends AbstractTreeNode {
      * a given service manager with the name.
      */
     public ServicesFolderNode(ServiceAdmin sm, String name) {
-        super(null, EntityHeaderNode.IGNORE_CASE_NAME_COMPARATOR);
+        super(null, EntityHeaderNode.DEFAULT_COMPARATOR);
         serviceManager = sm;
         title = name;
     }
@@ -51,6 +50,7 @@ public class ServicesFolderNode extends AbstractTreeNode {
      *
      * @return true if leaf, false otherwise
      */
+    @Override
     public boolean isLeaf() {
         return false;
     }
@@ -58,6 +58,7 @@ public class ServicesFolderNode extends AbstractTreeNode {
     /**
      * Returns true if the receiver allows children.
      */
+    @Override
     public boolean getAllowsChildren() {
         return true;
     }
@@ -68,6 +69,7 @@ public class ServicesFolderNode extends AbstractTreeNode {
      *
      * @return actions appropriate to the node
      */
+    @Override
     public Action[] getActions() {
         // Filter unlicensed actions
         List<Action> actions = new ArrayList<Action>();
@@ -75,12 +77,13 @@ public class ServicesFolderNode extends AbstractTreeNode {
             if (action.isEnabled())
                 actions.add(action);
         }
-        return actions.toArray(new Action[0]);
+        return actions.toArray(new Action[actions.size()]);
     }
 
     /**
      * load the service folder children
      */
+    @Override
     protected void loadChildren() {
         EntitiesEnumeration en = new EntitiesEnumeration(new ServiceEntitiesCollection(serviceManager));
         Enumeration e = TreeNodeFactory.getTreeNodeEnumeration(en);
@@ -94,6 +97,7 @@ public class ServicesFolderNode extends AbstractTreeNode {
     /**
      * @return true as this node children can be refreshed
      */
+    @Override
     public boolean canRefresh() {
         return true;
     }

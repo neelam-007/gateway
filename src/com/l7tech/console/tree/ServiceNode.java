@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class ServiceNode extends PolicyEntityNode {
+public class ServiceNode extends PolicyEntityNode implements Comparable<ServiceNode> {
     static final Logger log = Logger.getLogger(ServiceNode.class.getName());
     private PublishedService svc;
 
@@ -96,6 +96,7 @@ public class ServiceNode extends PolicyEntityNode {
     /**
      * Nullify service,  will cause service reload next time.
      */
+    @Override
     public void clearCachedEntities() {
         super.clearCachedEntities();
         svc = null;
@@ -107,6 +108,7 @@ public class ServiceNode extends PolicyEntityNode {
      *
      * @return actions appropriate to the node
      */
+    @Override
     public Action[] getActions() {
         final Collection<Action> actions = new ArrayList<Action>();
 
@@ -116,7 +118,7 @@ public class ServiceNode extends PolicyEntityNode {
         actions.add(new DeleteServiceAction(this));
         actions.add(new PolicyRevisionsAction(this));
 
-        return actions.toArray(new Action[0]);
+        return actions.toArray(new Action[actions.size()]);
     }
 
     /**
@@ -124,6 +126,7 @@ public class ServiceNode extends PolicyEntityNode {
      *
      * @return true if the node can be deleted, false otherwise
      */
+    @Override
     public boolean canDelete() {
         return true;
     }
@@ -133,6 +136,7 @@ public class ServiceNode extends PolicyEntityNode {
      *
      * @return true if leaf, false otherwise
      */
+    @Override
     public boolean isLeaf() {
         return !allowsChildren;
     }
@@ -140,6 +144,7 @@ public class ServiceNode extends PolicyEntityNode {
     /**
      * subclasses override this method
      */
+    @Override
     protected void loadChildren() {
         try {
             PublishedService s = getPublishedService();
@@ -168,12 +173,21 @@ public class ServiceNode extends PolicyEntityNode {
     /**
      * @return the node name that is displayed
      */
+    @Override
     public String getName() {
         return getHeader().getDisplayName();
     }
 
+    @Override
     protected String getEntityName() {
         return getEntityHeader().getName();
+    }
+
+    /**
+     *
+     */
+    public int compareTo( ServiceNode serviceNode ) {
+        return getName().toLowerCase().compareTo( serviceNode.getName().toLowerCase() );
     }
 
     /**
@@ -181,13 +195,14 @@ public class ServiceNode extends PolicyEntityNode {
      *
      * @param open for nodes that can be opened, can have children
      */
+    @Override
     protected String iconResource(boolean open) {
         ServiceHeader header = getHeader();
         if (header == null) {
             return "com/l7tech/console/resources/services_disabled16.png";
         }
         else if (header.isDisabled()) {
-            if (header == null || !header.isSoap()) {
+            if (!header.isSoap()) {
                 return "com/l7tech/console/resources/xmlObject_disabled16.png";
             } else {
                 return "com/l7tech/console/resources/services_disabled16.png";
