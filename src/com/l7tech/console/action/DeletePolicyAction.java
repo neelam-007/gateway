@@ -6,6 +6,7 @@ package com.l7tech.console.action;
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.util.Functions;
 import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.panels.HomePagePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
@@ -38,6 +39,7 @@ public class DeletePolicyAction extends PolicyNodeAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Delete";
     }
@@ -45,6 +47,7 @@ public class DeletePolicyAction extends PolicyNodeAction {
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return "Delete the Policy";
     }
@@ -52,6 +55,7 @@ public class DeletePolicyAction extends PolicyNodeAction {
     /**
      * subclasses override this method specifying the resource name
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/delete.gif";
     }
@@ -85,7 +89,7 @@ public class DeletePolicyAction extends PolicyNodeAction {
                             PolicyEditorPanel pe = (PolicyEditorPanel)jc;
                             // if currently edited service was deleted
                             if (policyNode.getPolicy().getOid() == pe.getPolicyNode().getPolicy().getOid()) {
-                                cws.clearWorkspace();
+                                cws.setComponent(new HomePagePanel());
                             }
                         } catch (Exception e) {
                             throw new RuntimeException(e);
