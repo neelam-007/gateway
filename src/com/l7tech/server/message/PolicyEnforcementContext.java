@@ -360,8 +360,8 @@ public class PolicyEnforcementContext extends ProcessingContext {
      * Get the value of a context variable, with name resolution
      *  
      * @param inName the name of the variable to get (case-insensitive), ie "requestXpath.result".  Required.
-     * @return  the Object representing the value of the specified variable.  Never null.
-     * @throws NoSuchVariableException  if no value is set for the specified variable
+     * @return a Pair containing the matched variable name and the variable value; never null but the variable value can be null
+     * @throws NoSuchVariableException if the given name does not resolve to any variable
      */
     private Pair<String, Object> getVariableWithNameLookup(String inName) throws NoSuchVariableException {
         String outName = inName;
@@ -375,11 +375,9 @@ public class PolicyEnforcementContext extends ProcessingContext {
                 outName = mname;
                 value = variables.get(mname);
             } else {
-                value = null;
+                throw new NoSuchVariableException(inName);
             }
         }
-
-        if (value == null) throw new NoSuchVariableException(inName);
 
         return new Pair<String, Object>(outName, value);
     }
@@ -390,6 +388,9 @@ public class PolicyEnforcementContext extends ProcessingContext {
             try {
                 final Pair<String, Object> tuple = getVariableWithNameLookup(name);
                 vars.put(tuple.left, tuple.right);
+                if (tuple.right == null) {
+                    auditor.logAndAudit(AssertionMessages.VARIABLE_IS_NULL, name);
+                }
             } catch (NoSuchVariableException e) {
                 auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, name);
             }
