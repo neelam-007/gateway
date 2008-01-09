@@ -13,6 +13,7 @@ import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.tomcat.*;
@@ -30,6 +31,7 @@ import org.apache.coyote.ProtocolHandler;
 import org.apache.coyote.http11.Http11Protocol;
 import org.apache.naming.resources.FileDirContext;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEvent;
 
 import javax.naming.directory.DirContext;
 import javax.servlet.http.HttpServletRequest;
@@ -212,7 +214,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         if (extraDir.isDirectory())
             addDirEntriesFromDirectory(webinfEntries, extraDir);
 
-        VirtualDirContext webInfContext = new VirtualDirContext("WEB-INF", webinfEntries.toArray(new VirtualDirEntry[0]));
+        VirtualDirContext webInfContext = new VirtualDirContext("WEB-INF", webinfEntries.toArray(new VirtualDirEntry[webinfEntries.size()]));
         VirtualDirEntry favicon = createDirEntryFromClassPathResource("favicon.ico");
         VirtualDirEntry indexhtml = createDirEntryFromClassPathResource("index.html");
 
@@ -289,7 +291,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         }
     }
 
-    private String getListenAddress() {
+    private static String getListenAddress() {
         String addr;
         try {
             addr = InetAddress.getLocalHost().getCanonicalHostName();
@@ -333,7 +335,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         }
     }
 
-    private void startInitialConnectors() throws ListenerException {
+    private void startInitialConnectors(boolean actuallyStartThem) throws ListenerException {
         try {
             Collection<SsgConnector> connectors = ssgConnectorManager.findAll();
             boolean foundHttp = false;
@@ -341,7 +343,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 if (connector.isEnabled() && connectorIsOwnedByThisModule(connector)) {
                     foundHttp = true;
                     try {
-                        addConnector(connector);
+                        if (actuallyStartThem) addConnector(connector);
                     } catch (Exception e) {
                         logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
                                     ": " + ExceptionUtils.getMessage(e), e);
@@ -499,9 +501,20 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             return;
         try {
             startServletEngine();
-            startInitialConnectors();
+            startInitialConnectors(false); // ensure we can find some initial connectors but don't start them yet (Bug #4500)
         } catch (ListenerException e) {
             throw new LifecycleException("Unable to start HTTP transport module: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    public void onApplicationEvent(ApplicationEvent applicationEvent) {
+        super.onApplicationEvent(applicationEvent);
+        if (applicationEvent instanceof ReadyForMessages) {
+            try {
+                startInitialConnectors(true);
+            } catch (ListenerException e) {
+                logger.log(Level.SEVERE, "Unable to start HTTP connectors", e);
+            }
         }
     }
 
@@ -641,7 +654,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         }
     }
 
-    private void setConnectorAttributes(Connector c, Map<String, Object> attrs) {
+    private static void setConnectorAttributes(Connector c, Map<String, Object> attrs) {
         for (Map.Entry<String, Object> entry : attrs.entrySet())
             c.setAttribute(entry.getKey(), entry.getValue());
     }

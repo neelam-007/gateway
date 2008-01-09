@@ -363,6 +363,10 @@ public class BootProcess
         return comps;
     }
 
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
     public static final String LOCALHOST_IP = "127.0.0.1";
 
     private List<ServerComponentLifecycle> _components;

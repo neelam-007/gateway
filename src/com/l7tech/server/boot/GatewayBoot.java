@@ -1,11 +1,12 @@
 package com.l7tech.server.boot;
 
+import com.l7tech.common.BuildInfo;
+import com.l7tech.common.Component;
 import com.l7tech.server.BootProcess;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.log.JdkLogConfig;
-import com.l7tech.common.BuildInfo;
-
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.File;
@@ -49,7 +50,8 @@ public class GatewayBoot {
         boolean itworked = false;
         try {
             createApplicationContext();
-            startBootProcess();
+            String ipAddress = startBootProcess();
+            startListeners(ipAddress);
             itworked = true;
         } finally {
             if (!itworked)
@@ -117,8 +119,13 @@ public class GatewayBoot {
         serverConfig = (ServerConfig)applicationContext.getBean("serverConfig", ServerConfig.class);
     }
 
-    private void startBootProcess() throws LifecycleException {
+    private String startBootProcess() throws LifecycleException {
         BootProcess boot = (BootProcess)applicationContext.getBean("ssgBoot", BootProcess.class);
         boot.start();
+        return boot.getIpAddress();
+    }
+
+    private void startListeners(String ipAddress) {
+        applicationContext.publishEvent(new ReadyForMessages(this, Component.GW_SERVER, ipAddress));
     }
 }
