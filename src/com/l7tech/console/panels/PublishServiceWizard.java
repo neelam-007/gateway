@@ -176,6 +176,7 @@ public class PublishServiceWizard extends Wizard {
                 ByteArrayOutputStream bo = new ByteArrayOutputStream();
                 WspWriter.writePolicy(saBundle.getAssertion(), bo);
                 service.getPolicy().setXml(bo.toString());
+                service.getPolicy().setSoap(service.isSoap());
             } else {
                 ByteArrayOutputStream bo = new ByteArrayOutputStream();
                 WspWriter.writePolicy(new TrueAssertion(), bo); // means no policy
