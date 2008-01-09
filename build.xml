@@ -2533,6 +2533,50 @@
         <rpm specFile="ssg-appliance.spec" topDir="${build.rpm}" command="-bb --target i386" failOnError="true"/>
     </target>
 
+    <target name="package.installgateway.work.rpm.stig" depends="init, package.readversion, package.checkrelease" if="makerpm.enabled">
+        <!-- create directories -->
+        <mkdir dir="${build.rpm}/BUILD"/>
+        <mkdir dir="${build.rpm}/RPMS"/>
+        <mkdir dir="${build.rpm}/SOURCES"/>
+        <mkdir dir="${build.rpm}/SPECS"/>
+        <mkdir dir="${build.rpm}/SRPMS"/>
+
+        <!-- Prepare the source tarball -->
+        <mkdir dir="${build.rpm}/SOURCES/temp"/>
+        <mkdir dir="${build.rpm}/SOURCES/temp/ssg"/>
+        <mkdir dir="${build.rpm}/SOURCES/temp/ssg/etc"/>
+        <mkdir dir="${build.rpm}/SOURCES/temp/ssg/bin"/>
+        <copy file="etc/stig/issue" todir="${build.rpm}/SOURCES/temp/ssg/etc"/>
+        <copy file="etc/stig/harden.sh" todir="${build.rpm}/SOURCES/temp/ssg/bin"/>
+        <tar destfile="${build.rpm}/SOURCES/ssg-security.tar.gz" basedir="${build.rpm}/SOURCES/temp" compression="gzip"/>
+        <delete dir="${build.rpm}/SOURCES/temp"/>
+
+        <!-- Set release as empty if not yet set -->
+        <property name="build.release" value=""/>
+        <property name="package.installgateway.work.stig.rpmspec" value="etc/stig/ssg-security.spec"/>
+        <echo level="info">Using spec file : ${package.installgateway.work.stig.rpmspec}</echo>
+        <echo level="info">Using source TGZ: ${build.rpm}/SOURCES/ssg-security.tar.gz</echo>
+        <copy file="${package.installgateway.work.stig.rpmspec}" todir="${build.rpm}/SPECS">
+            <filterchain>
+                <tokenfilter>
+                    <replaceregex pattern="(?&lt;=^Version: )[0-9\._\-a-z]{1,10}" replace="${build.version}" flags="m"/>
+                    <replaceregex pattern="(?&lt;=^Release: [0-9]{1,10})" replace="${build.release}" flags="m"/>
+                    <replaceregex pattern="(?&lt;=^[a-zA-Z &quot;]{0,80}Layer 7 SecureSpan\(tm\) Gateway v)[0-9\._\-a-z]{1,10}" replace="${build.version}" flags="m"/>
+                </tokenfilter>
+            </filterchain>
+        </copy>
+
+        <rpm specFile="ssg-security.spec" topDir="${build.rpm}" command="-bb --target noarch" failOnError="true"/>
+    </target>
+
+    <target name="securityrpm" depends="package.installgateway.work.rpm.stig">
+        <move todir="${dist.dir}" flatten="true">
+            <fileset dir="${build.rpm}/RPMS">
+                <include name="*/*.rpm"/>
+            </fileset>
+        </move>
+    </target>
+
     <!--
       Create the SSG RPM (x86_64)
     -->
