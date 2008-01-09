@@ -127,7 +127,7 @@
         <property name="httpMethodNames" column="http_methods" type="text"/>
         <property name="laxResolution" column="lax_resolution" type="boolean"/>
         <many-to-one class="com.l7tech.common.policy.Policy"
-                     name="policy" lazy="false" column="policy_oid" cascade="persist,merge,save-update"/>
+                     name="policy" lazy="false" column="policy_oid" unique="true" cascade="persist,merge,save-update,delete"/>
     </class>
 
     <class name="com.l7tech.common.policy.Policy" table="policy" lazy="false">
