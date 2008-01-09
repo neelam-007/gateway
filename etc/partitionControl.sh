@@ -24,7 +24,7 @@ usage() {
     echo "  start - start the given partition and detach from the console"
     echo "  run - start the given partition but do not detach from the console"
     echo "  stop - stop the given partition"
-    echo "  status = query the status of the given partition (check the running state)."
+    echo "  status - query the status of the given partition (check the running state)."
     echo "  usage - show this message"
     echo "  partition-name - the name of the partition to control"
     echo
