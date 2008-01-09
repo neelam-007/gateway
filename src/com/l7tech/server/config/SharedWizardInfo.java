@@ -13,6 +13,7 @@ public class SharedWizardInfo {
     private KeystoreType keystoreType = KeystoreType.UNDEFINED;
     private DBInformation dbinfo;
     private String hostname;
+    private String realHostname;
 
     private static SharedWizardInfo instance;
 
@@ -58,6 +59,14 @@ public class SharedWizardInfo {
 
     public String getHostname() {
         return hostname;
+    }
+
+    public String getRealHostname() {
+        return realHostname;
+    }
+
+    public void setRealHostname(String realHostname) {
+        this.realHostname = realHostname;
     }
 
     public static SharedWizardInfo getInstance() {

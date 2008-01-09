@@ -63,7 +63,7 @@ mv %{buildroot}/ssg/bin/appliancedefs.sh %{buildroot}/ssg/etc/profile.d/
 mv %{buildroot}/ssg/bin/tarari.sh %{buildroot}/ssg/etc/profile.d/
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
 mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
-mv %{buildroot}/ssg/bin/configuser_bashrc %{buildroot}/home/ssgconfig/.bashrc
+mv %{buildroot}/ssg/bin/configuser_profile %{buildroot}/home/ssgconfig/.bash_profile
 mv %{buildroot}/ssg/bin/pkcs11_linux.cfg %{buildroot}/ssg/appliance/pkcs11.cfg
 mv %{buildroot}/ssg/bin/* %{buildroot}/ssg/appliance/bin/
 mv %{buildroot}/ssg/libexec/* %{buildroot}/ssg/appliance/libexec
@@ -145,7 +145,7 @@ chmod 711 %{buildroot}/ssg/appliance/libexec/*
 %attr(0775,gateway,gateway) /ssg/sysconfigwizard/configfiles
 %attr(0755,gateway,gateway) /ssg/sysconfigwizard/*.sh
 
-%attr(0664,ssgconfig,gateway) /home/ssgconfig/.bashrc
+%attr(0664,ssgconfig,gateway) /home/ssgconfig/.bash_profile
 %attr(0775,gateway,gateway) /ssg/migration/cfg/grandmaster_flash
 
 %pre
@@ -250,6 +250,10 @@ fi
 
 %post
 
+if [ ! -e /etc/profile.d/tarari.sh ] ; then
+    ln -s /ssg/etc/profile.d/tarari.sh /etc/profile.d/tarari.sh
+fi
+
 #modify java.sh to use the appliance jdk
 cat > /ssg/etc/profile.d/java.sh <<-EOF
 SSG_JAVA_HOME="/ssg/jdk"
@@ -309,5 +313,9 @@ if [ "$1" = "0" ] ; then
     chkconfig --del ssg-dbstatus
     chkconfig --del ssgsysconfig
     chkconfig --del ssg
+
+    if [ -e /etc/profile.d/tarari.sh ] ; then
+        rm -f /etc/profile.d/tarari.sh
+    fi
 fi
 

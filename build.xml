@@ -3889,7 +3889,7 @@
                 <include name="ssg-initd"/>
                 <include name="ssg-dbstatus-initd"/>
                 <include name="snmpd.conf"/>
-                <include name="configuser_bashrc"/>
+                <include name="configuser_profile"/>
                 <include name="sysconfigscript-initd"/>
                 <include name="pkcs11_linux.cfg"/>
                 <include name="systeminfo.sh"/>

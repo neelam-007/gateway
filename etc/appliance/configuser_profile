@@ -1,0 +1,138 @@
+set -u
+set -e
+
+trap doLogout INT
+
+SYSWIZARD="/ssg/sysconfigwizard/systemconfig.sh"
+CONFWIZARD="/ssg/configwizard/ssgconfig.sh"
+UPDATEWIZARD="/ssg/updatewizard/ssgupdatewizard.sh"
+MASTERKEYMANAGE="/ssg/appliance/libexec/masterkey-manage.pl"
+GETROOT="su -"
+MASTER_KEY_BACKUP_FILE_NAME="ssg_mkey.bak"
+
+checkForUpdater() {
+    if [ -e "/ssg/updatewizard/ssgupdatewizard.sh" ] ; then
+        UPDATER_PRESENT="true"
+    else
+        UPDATER_PRESENT=""
+    fi
+}
+
+checkForSca() {
+    SCADIAG="/opt/sun/sca6000/sbin/scadiag"
+    if [ -s "${SCADIAG}" ] ; then
+        SCA_PRESENT="true"
+    else
+        SCA_PRESENT=""
+    fi
+}
+
+doLogout() {
+    exit
+}
+
+checkForUpdater
+checkForSca
+isValid="n"
+while [ "$isValid" != "y" ]
+do
+    clear
+    echo "Welcome to the SecureSpan Gateway"
+    echo
+    echo "This user account allows you to configure the appliance"
+    echo "What would you like to do?"
+        echo "1) Configure networking on this SecureSpan Gateway appliance"
+        echo "2) Configure the SecureSpan Gateway application on this appliance"
+        echo "3) Use a privileged shell (root)"
+        echo "4) Logout (no reboot)"
+        echo "5) Reboot the SSG appliance (apply the new configuration)"
+        echo "6) Change the Master Passphrase"
+        if [ "${SCA_PRESENT}" == "true" ] ; then
+            echo "7) Back up the Master Key to USB flash drive"
+        fi
+
+        if [ "${UPDATER_PRESENT}" == "true" ] ; then
+            echo "8) Upgrade the SecureSpan Appliance"
+        fi
+
+        echo -n "Please make a selection: "
+        read choice
+
+        case $choice in
+                1) 	clear;
+                    echo "1) Configure networking"
+                    echo "2) Display current network configuration"
+                    echo -n "Please make a selection: "
+                    read choice
+                    case $choice in
+                        1) clear
+                           (${SYSWIZARD});;
+                        2) clear
+                           (${SYSWIZARD} -printConfig);;
+                        *) echo "That is not a valid selection"
+                    esac
+                    echo "Press enter to continue";
+                    read;
+                    clear;;
+                2)  clear;
+                    (${CONFWIZARD});
+                    echo "Press enter to continue";
+                    read;
+                    clear;;
+                3)  clear;
+                    (${GETROOT});
+                    clear;;
+                4)  doLogout;;
+                5)  echo -n "Are you sure you want to reboot the SecureSpan Gateway? [y/n]: "
+                    read okToReboot
+                    if [ "$okToReboot" == "y" ] || [ "$okToReboot" == "yes" ] ; then
+                        sudo /sbin/reboot
+                    fi
+                    clear;;
+                6)  clear;
+                    (${CONFWIZARD} -changeMasterPassphrase);
+                    echo "Press enter to continue";
+                    read;
+                    clear;;
+                *)  if [ "$choice" == "7" ] && [ "${SCA_PRESENT}" == "true" ]; then
+                        clear;
+                        echo "Checking for USB drive"
+                        (sudo ${MASTERKEYMANAGE} probe &> /dev/null);
+                        if [ ${?} != 0 ] ; then
+                            echo ""
+                            echo "The USB drive could not be found. Please attach the USB drive and try again."
+                            echo "Press enter to continue."
+                            read;
+                        else
+                            echo "Found the USB drive. Continuing..."
+                            echo -n "Enter the keystore password:"
+                            read -s ksPassword;
+			    echo ""
+                            echo -n "Enter the master key backup password:"
+                            read -s masterKeyBackupPassword;
+			    echo "" 
+                            (sudo ${MASTERKEYMANAGE} backup ${ksPassword} ${MASTER_KEY_BACKUP_FILE_NAME} ${masterKeyBackupPassword});
+                            if [ ${?} != 0 ] ; then
+                                echo ""
+                                echo "The master key backup did not succeed. See the error message above for details."
+                            else
+                                echo ""
+                                echo "The master key backup was successfull."
+                            fi
+                            echo "Press enter to continue."
+                            read;
+                        fi
+                    elif [ "$choice" == "8" ] && [ "${UPDATER_PRESENT}" == "true" ]; then
+                        clear;
+                        (${UPDATEWIZARD})
+                        echo "Press enter to continue";
+                        read;
+                        clear;
+                    else
+                        isValid="n";
+                        echo "That is not a valid selection";
+                        echo "Press enter to continue";
+                        read;
+                    fi;;
+        esac
+done

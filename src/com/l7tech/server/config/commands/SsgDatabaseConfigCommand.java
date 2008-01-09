@@ -120,7 +120,7 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
 
         SsgDatabaseConfigBean dbConfigBean = (SsgDatabaseConfigBean) configBean;
         String dbUrl = dbConfigBean.getDbHostname();
-        dbUrl = DBActions.getNonLocalHostame(dbUrl, SharedWizardInfo.getInstance().getHostname());
+        dbUrl = DBActions.getNonLocalHostame(dbUrl);
         String dbName = dbConfigBean.getDbName();
         String dbUsername = dbConfigBean.getDbUsername();
         String dbPassword = dbConfigBean.getDbPassword();

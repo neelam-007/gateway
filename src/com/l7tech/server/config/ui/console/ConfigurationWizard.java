@@ -177,8 +177,16 @@ public class ConfigurationWizard {
         sharedWizardInfo.setHostname(hostname);
     }
 
+    public void setRealHostname(String realHostname) {
+        sharedWizardInfo.setRealHostname(realHostname);
+    }
+
     public String getHostname() {
         return sharedWizardInfo.getHostname();
+    }
+
+    public String getRealHostname() {
+        return sharedWizardInfo.getRealHostname();
     }
 
     public List<String[]> getCommandDescriptions() {

@@ -81,6 +81,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
 
         clusterBean.setClusterHostname(input.trim());
 
+        getParentWizard().setRealHostname(defaultClusterHostname);
         getParentWizard().setHostname(input.trim());
     }
 

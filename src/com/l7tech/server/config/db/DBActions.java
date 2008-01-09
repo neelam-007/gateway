@@ -716,10 +716,13 @@ public class DBActions {
                     usesLocalhost = true;
 
                 //grant the ACTUAL hostname, not the localhost one
-                list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@" + DBActions.getNonLocalHostame(host, SharedWizardInfo.getInstance().getHostname()) + " identified by '" + dbInfo.getPassword() + "'"));
+                list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@" + DBActions.getNonLocalHostame(host) + " identified by '" + dbInfo.getPassword() + "'"));
             }
         } else {
-            list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@" + dbHostnameString + " identified by '" + dbInfo.getPassword() + "'"));
+            if (dbHostnameString.equalsIgnoreCase("localhost") || dbHostnameString.equalsIgnoreCase("127.0.0.1") )
+                usesLocalhost = true;
+
+            list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@" + DBActions.getNonLocalHostame(dbHostnameString) + " identified by '" + dbInfo.getPassword() + "'"));
         }
 
         //if localhost was used, then grant that too
@@ -991,7 +994,9 @@ Statement getCreateTablesStmt = null;
         licChecker = licenseChecker;
     }
 
-    public static String getNonLocalHostame(String dbHostname, String realHostname) {
+    public static String getNonLocalHostame(String dbHostname) {
+        String realHostname = SharedWizardInfo.getInstance().getRealHostname();
+
         if (dbHostname.equalsIgnoreCase("localhost") || dbHostname.equalsIgnoreCase("127.0.0.1")) {
             return realHostname;
         }
@@ -1001,7 +1006,7 @@ Statement getCreateTablesStmt = null;
             String returnMe = "";
             for (int i = 0; i < hosts.length; i++) {
                 String host = hosts[i];
-                hosts[i]= getNonLocalHostame(host,realHostname);
+                hosts[i]= getNonLocalHostame(host);
                 returnMe += ((i == 0)?"":",") + hosts[i];
             }
             return returnMe;
