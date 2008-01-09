@@ -2560,7 +2560,7 @@
             <filterchain>
                 <tokenfilter>
                     <replaceregex pattern="(?&lt;=^Version: )[0-9\._\-a-z]{1,10}" replace="${build.version}" flags="m"/>
-                    <replaceregex pattern="(?&lt;=^Release: [0-9]{1,10})" replace="${build.release}" flags="m"/>
+                    <replaceregex pattern="(?&lt;=^Release: )[0-9]{1,10}" replace="${build.release}" flags="m"/>
                     <replaceregex pattern="(?&lt;=^[a-zA-Z &quot;]{0,80}Layer 7 SecureSpan\(tm\) Gateway v)[0-9\._\-a-z]{1,10}" replace="${build.version}" flags="m"/>
                 </tokenfilter>
             </filterchain>

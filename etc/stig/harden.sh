@@ -61,6 +61,7 @@ account     required      /lib/security/$ISA/pam_tally.so deny=3 no_magic_root r
   fi
 
   # GEN000580, GEN000600, GEN000620 GEN000640
+  sed -i -e 's/PASS_MIN_LEN\t5/PASS_MIN_LEN\t9/' /etc/login.defs
   sed -i -e 's/\(password\s*requisite\s*.*\/pam_cracklib.so\s.*\)/\1 minlen=9 ucredit=2 lcredit=2 dcredit=2 ocredit=2/' /etc/pam.d/system-auth
 
   # GEN000800
@@ -116,6 +117,7 @@ account     required      /lib/security/$ISA/pam_tally.so deny=3 no_magic_root r
 
   # GEN002960
   touch /etc/cron.allow
+  chmod 600 /etc/cron.allow
 
   # GEN003080
   chmod 600 /etc/crontab
@@ -125,6 +127,13 @@ account     required      /lib/security/$ISA/pam_tally.so deny=3 no_magic_root r
 
   # GEN003320
   touch /etc/at.allow
+  chmod 600 /etc/at.allow
+
+  # GEN003540
+  chmod 700 /var/crash
+
+  # GEN003740
+  chmod 440 /etc/xinetd.conf
 
   # GEN003865
   #rpm -e tcpdump
@@ -137,6 +146,10 @@ account     required      /lib/security/$ISA/pam_tally.so deny=3 no_magic_root r
 
   # GEN005400
   chmod 640 /etc/syslog.conf
+
+  # GEN005540
+  echo 'sshd1: ALL' >> /etc/hosts.deny
+  echo 'sshdfwd-x11: ALL' >> /etc/hosts.deny
 
   # LNX00340
   userdel news
@@ -226,6 +239,7 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   fi
 
   # GEN000580, GEN000600, GEN000620, GEN000640
+  sed -i -e 's/PASS_MIN_LEN\t9/PASS_MIN_LEN\t5/' /etc/login.defs
   sed -i -e 's/\(password\s*requisite\s*.*\/pam_cracklib.so\s.*\) minlen=9 ucredit=2 lcredit=2 dcredit=2 ocredit=2/\1/' /etc/pam.d/system-auth
 
   # GEN000800
@@ -292,6 +306,12 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   # GEN003320
   rm -f /etc/at.allow
 
+  # GEN003540
+  chmod 755 /var/crash
+
+  # GEN003740
+  chmod 644 /etc/xinetd.conf
+
   # GEN004000
   chmod 4755 /bin/traceroute*
 
@@ -300,6 +320,9 @@ halt:*:13637:0:99999:7:::' /etc/shadow
 
   # GEN005400
   chmod 644 /etc/syslog.conf
+
+  # GEN005540
+  sed -i -e '/sshd1: ALL/d' -e '/sshdfwd-x11: ALL/d' /etc/hosts.deny
 
   # LNX00340
   sed -i -e 's/news:x:13:/news:x:13:news/' /etc/group
