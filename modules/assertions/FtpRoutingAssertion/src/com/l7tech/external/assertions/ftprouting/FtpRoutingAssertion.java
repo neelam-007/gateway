@@ -9,12 +9,16 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * <code>FtpRoutingAssertion</code> is an assertion that routes the request
@@ -23,7 +27,7 @@ import java.util.HashMap;
  * @author rmak
  * @since SecureSpan 4.0
  */
-public class FtpRoutingAssertion extends RoutingAssertion {
+public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariables {
 
     public static final int DEFAULT_FTP_PORT = 21;
     public static final int DEFAULT_FTPS_IMPLICIT_PORT = 990;
@@ -41,7 +45,7 @@ public class FtpRoutingAssertion extends RoutingAssertion {
     /** Port number. */
     private int _port = DEFAULT_FTP_PORT;
 
-    /** Destination directory pattern. */
+    /** Destination directory pattern.  Can contain context variables. */
     private String _directory;
 
     /** Where the file name on server will come from. */
@@ -231,5 +235,12 @@ public class FtpRoutingAssertion extends RoutingAssertion {
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         return meta;
+    }
+
+    public String[] getVariablesUsed() {
+        Set<String> vars = new HashSet<String>();
+        vars.addAll(Arrays.asList(Syntax.getReferencedNames(getFileNamePattern())));
+        vars.addAll(Arrays.asList(Syntax.getReferencedNames(getDirectory())));
+        return vars.toArray(new String[vars.size()]);
     }
 }

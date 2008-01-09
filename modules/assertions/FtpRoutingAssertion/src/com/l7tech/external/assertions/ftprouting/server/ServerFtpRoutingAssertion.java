@@ -192,11 +192,11 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             final InputStream messageBodyStream = mimeKnob.getEntireMessageBodyAsInputStream();
             final FtpSecurity security = assertion.getSecurity();
             if (security == FtpSecurity.FTP_UNSECURED) {
-                doFtp(userName, password, messageBodyStream, fileName);
+                doFtp(context, userName, password, messageBodyStream, fileName);
             } else if (security == FtpSecurity.FTPS_EXPLICIT) {
-                doFtps(true, userName, password, messageBodyStream, fileName);
+                doFtps(context, true, userName, password, messageBodyStream, fileName);
             } else if (security == FtpSecurity.FTPS_IMPLICIT) {
-                doFtps(false, userName, password, messageBodyStream, fileName);
+                doFtps(context, false, userName, password, messageBodyStream, fileName);
             }
             return AssertionStatus.NONE;
         } catch (NoSuchPartException e) {
@@ -207,7 +207,12 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         }
     }
 
-    private void doFtp(String userName,
+    private String getDirectory(PolicyEnforcementContext context, FtpRoutingAssertion assertion) {
+        return expandVariables(context, assertion.getDirectory());
+    }
+
+    private void doFtp(PolicyEnforcementContext context,
+                       String userName,
                        String password,
                        InputStream is,
                        String fileName) throws FtpException {
@@ -215,7 +220,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                                          assertion.getPort(),
                                          userName,
                                          password,
-                                         assertion.getDirectory(),
+                                         getDirectory(context, assertion),
                                          assertion.getTimeout(),
                                          null);
         try {
@@ -225,7 +230,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         }
     }
 
-    private void doFtps(boolean isExplicit,
+    private void doFtps(PolicyEnforcementContext context,
+                        boolean isExplicit,
                         String userName,
                         String password,
                         InputStream is,
@@ -239,7 +245,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                                             assertion.isUseClientCert(),
                                             assertion.getClientCertKeystoreId(),
                                             assertion.getClientCertKeyAlias(),
-                                            assertion.getDirectory(),
+                                            getDirectory(context, assertion),
                                             assertion.getTimeout(),
                                             null,
                                             _trustManager,
