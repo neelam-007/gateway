@@ -25,8 +25,8 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.RequestIdGenerator;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.identity.AuthCache;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
@@ -68,8 +68,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private AuditContext auditContext = null;
     private SoapFaultManager soapFaultManager = null;
     private final Map<String,Object> variables = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
-    private int authSuccessCacheTime = AuthCache.SUCCESS_CACHE_TIME;
-    private int authFailureCacheTime = AuthCache.FAILURE_CACHE_TIME;
     private PolicyContextCache cache;
     private CompositeRoutingResultListener routingResultListener = new CompositeRoutingResultListener();
     private boolean operationAttempted = false;
@@ -456,11 +454,11 @@ public class PolicyEnforcementContext extends ProcessingContext {
     }
 
     public int getAuthSuccessCacheTime() {
-        return authSuccessCacheTime;
+        return ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_AUTH_CACHE_MAX_SUCCESS_TIME, 1000, 27000L);
     }
 
     public int getAuthFailureCacheTime() {
-        return authFailureCacheTime;
+        return ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_AUTH_CACHE_MAX_FAILURE_TIME, 1000, 27000L);
     }
 
     /**

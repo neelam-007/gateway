@@ -3,6 +3,7 @@ package com.l7tech.server.identity;
 import com.l7tech.common.util.WhirlycacheFactory;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
+import com.l7tech.server.ServerConfig;
 import com.whirlycott.cache.Cache;
 
 import java.security.cert.X509Certificate;
@@ -13,11 +14,16 @@ import java.security.cert.X509Certificate;
 public final class AuthenticationResult {
     public static final AuthenticationResult AUTHENTICATED_UNKNOWN_USER = new AuthenticationResult();
 
-    private static final Cache groupMembershipCache = AuthCache.GROUP_CACHE_SIZE < 1 ? null :
-            WhirlycacheFactory.createCache("groupMemberships",
-                                           AuthCache.GROUP_CACHE_SIZE,
-                                           71, WhirlycacheFactory.POLICY_LFU
-            );
+    private static class CacheHolder {
+        private static final int CACHE_SIZE =
+                ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_AUTH_CACHE_GROUP_MEMB_CACHE_SIZE, 1000, 15000);
+        private static final Cache CACHE = CACHE_SIZE < 1
+                                           ? null
+                                           : WhirlycacheFactory.createCache("groupMemberships",
+                                                                            CACHE_SIZE,
+                                                                            71,
+                                                                            WhirlycacheFactory.POLICY_LFU);
+    }
 
     private AuthenticationResult() {
         user = null;
@@ -98,16 +104,22 @@ public final class AuthenticationResult {
         }
     }
 
+    private static Cache getCache() {
+        return CacheHolder.CACHE;
+    }
+
     public void setCachedGroupMembership(Group group, boolean isMember) {
-        if (groupMembershipCache == null) return; // fail fast if caching disabled
-        groupMembershipCache.store(new CacheKey(user.getProviderId(), user.getId(),
+        Cache cache = getCache();
+        if (cache == null) return; // fail fast if caching disabled
+        cache.store(new CacheKey(user.getProviderId(), user.getId(),
                                                 group.getProviderId(), group.getId()),
                                    new Long(System.currentTimeMillis() * (isMember ? 1 : -1)));
     }
 
     public Boolean getCachedGroupMembership(Group group) {
-        if (groupMembershipCache == null) return null; // fail fast if caching disabled
-        Long when = (Long)groupMembershipCache.retrieve(
+        Cache cache = getCache();
+        if (cache == null) return null; // fail fast if caching disabled
+        Long when = (Long)cache.retrieve(
                 new CacheKey(user.getProviderId(), user.getId(),
                              group.getProviderId(), group.getId()));
         if (when == null) return null; // missed

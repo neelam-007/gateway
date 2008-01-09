@@ -8,6 +8,7 @@ import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.whirlycott.cache.Cache;
 
@@ -18,19 +19,15 @@ import java.util.logging.Logger;
  * Cached authentication.
  */
 public final class AuthCache {
-    public static final int SUCCESS_CACHE_TIME = Integer.getInteger(AuthCache.class.getName() + ".maxSuccessTime", 60000).intValue();
-    public static final int FAILURE_CACHE_TIME = Integer.getInteger(AuthCache.class.getName() + ".maxFailureTime", 30000).intValue();
-    public static final int SUCCESS_CACHE_SIZE = Integer.getInteger(AuthCache.class.getName() + ".successCacheSize", 2000).intValue();
-    public static final int FAILURE_CACHE_SIZE = Integer.getInteger(AuthCache.class.getName() + ".failureCacheSize", 200).intValue();
-    public static final int GROUP_CACHE_SIZE = Integer.getInteger(AuthCache.class.getName() + ".groupMembershipCacheSize", 5000).intValue();
-
     private static final Logger logger = Logger.getLogger(AuthCache.class.getName());
 
     private final Cache cache;
 
     private AuthCache() {
         String name = "AuthCache_unified";
-        int size = SUCCESS_CACHE_SIZE + FAILURE_CACHE_SIZE;
+        int succSize = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_SUCCESS_CACHE_SIZE, 200);
+        int failSize = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_FAILURE_CACHE_SIZE, 100);
+        int size = succSize + failSize;
         int tunerInterval = 59;
         cache = size < 1 ? null :
                 WhirlycacheFactory.createCache(name, size, tunerInterval, WhirlycacheFactory.POLICY_LFU);
