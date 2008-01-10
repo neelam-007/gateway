@@ -179,6 +179,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                 WspWriter.writePolicy(new AllAssertion(children), bo);
 
                 service.getPolicy().setXml(bo.toString());
+                service.getPolicy().setSoap(service.isSoap());
 
                 Set<WsdlComposer.WsdlHolder> sourceWsdls = composer.getSourceWsdls(false);
                 for (WsdlComposer.WsdlHolder sourceWsdl : sourceWsdls) {
