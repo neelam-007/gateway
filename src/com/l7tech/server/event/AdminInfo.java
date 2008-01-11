@@ -5,11 +5,14 @@ import com.l7tech.identity.User;
 import com.l7tech.spring.remoting.RemoteUtils;
 
 import javax.security.auth.Subject;
-import java.util.logging.Logger;
-import java.util.Set;
+import java.rmi.server.ServerNotActiveException;
 import java.security.AccessController;
 import java.security.Principal;
-import java.rmi.server.ServerNotActiveException;
+import java.security.PrivilegedAction;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Holds information about a client admin that triggered some behavior.
@@ -20,17 +23,19 @@ public class AdminInfo {
     public static final String LOCALHOST_IP = "127.0.0.1";
     public static final String LOCALHOST_SUBJECT = "localsystem";
 
-    public AdminInfo(String login, String id, long ipOid, String ip) {
+    public AdminInfo(String login, String id, long ipOid, String ip, Subject subject) {
         this.ip = ip;
         this.id = id;
         this.identityProviderOid = ipOid;
         this.login = login;
+        this.subject = subject;
     }
 
     public final String login;
     public final String id;
     public final long identityProviderOid;
     public final String ip;
+    private final Subject subject;
 
     /**
      * Finds available information stashed thread-locally about the admin client that triggered the current
@@ -50,8 +55,8 @@ public class AdminInfo {
             address = RemoteUtils.getClientHost();
             clientSubject = Subject.getSubject(AccessController.getContext());
         } catch (ServerNotActiveException e) {
-            logger.warning("The administrative event caused as local call, outside of servicing an adminstrative remote call." +
-              "Will use ip/user" + LOCALHOST_IP + '/' + LOCALHOST_SUBJECT);
+            logger.log(Level.WARNING, "The administrative event caused as local call, outside of servicing an adminstrative remote call." +
+              "Will use ip/user" + LOCALHOST_IP + '/' + LOCALHOST_SUBJECT, new Throwable());
             address = LOCALHOST_IP;
             login = LOCALHOST_SUBJECT;
         }
@@ -70,6 +75,49 @@ public class AdminInfo {
             }
         }
 
-        return new AdminInfo(login, uniqueId, providerOid, address);
+        return new AdminInfo(login, uniqueId, providerOid, address, clientSubject);
+    }
+
+    /**
+     * Wrap the specified Callable so that it will be executed in a thread-local context configured
+     * with this AdminInfo.
+     * <p/>
+     * This can be used to ensure that an asynchronous job started in service of an admin request
+     * has enough information to tie its audit records back to the admin user and host that originally
+     * made the request.  See Bug #4032.
+     *
+     * @param delegate the Callable to wrap.  Required.
+     * @return a Callable that will set up the AdminInfo before invoking the delegate
+     */
+    public <OUT> Callable<OUT> wrapCallable(Callable<OUT> delegate) {
+        return wrapWithSubject(subject, wrapWithConnectionInfo(ip, delegate));
+    }
+
+    private static <OUT> Callable<OUT> wrapWithSubject(final Subject subject, final Callable<OUT> toWrap) {
+        if (subject == null)
+            return toWrap;
+        return new Callable<OUT>() {
+            public OUT call() {
+                return Subject.doAs(subject, new PrivilegedAction<OUT>() {
+                    public OUT run() {
+                        try {
+                            return toWrap.call();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
+            }
+        };
+    }
+
+    private static <OUT> Callable<OUT> wrapWithConnectionInfo(final String host, final Callable<OUT> toWrap) {
+        if (host == null)
+            return toWrap;
+        return new Callable<OUT>() {
+            public OUT call() throws Exception {
+                return RemoteUtils.callWithConnectionInfo(host, null, toWrap);
+            }
+        };
     }
 }

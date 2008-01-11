@@ -5,6 +5,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore;
 import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.KeystoreFileManager;
@@ -144,8 +145,8 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
         }
     }
 
-    protected <OUT> Future<OUT> mutateKeystore(final Functions.Nullary<OUT> mutator) throws KeyStoreException {
-        return mutationExecutor.submit(new Callable<OUT>() {
+    protected <OUT> Future<OUT> mutateKeystore(final Callable<OUT> mutator) throws KeyStoreException {
+        return mutationExecutor.submit(AdminInfo.find().wrapCallable(new Callable<OUT>() {
             public OUT call() throws Exception {
                 final Object[] out = new Object[] { null };
                 try {
@@ -157,7 +158,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
                                     lastLoaded = System.currentTimeMillis();
                                     out[0] = mutator.call();
                                     return keyStoreToBytes(cachedKeystore);
-                                } catch (KeyStoreException e) {
+                                } catch (Exception e) {
                                     throw new RuntimeException(e);
                                 }
                             }
@@ -170,6 +171,6 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
                 //noinspection unchecked
                 return (OUT)out[0];
             }
-        });
+        }));
     }
 }

@@ -12,6 +12,7 @@ import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.KeystoreFileManager;
 import static com.l7tech.server.security.keystore.SsgKeyFinder.SsgKeyStoreType.PKCS11_HARDWARE;
 import com.l7tech.server.security.keystore.SsgKeyStore;
+import com.l7tech.server.event.AdminInfo;
 import org.jboss.util.stream.NullInputStream;
 
 import javax.security.auth.x500.X500Principal;
@@ -258,8 +259,8 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
      * @return the value returned by the mutator
      */
     @Override
-    protected <OUT> Future<OUT> mutateKeystore(final Functions.Nullary<OUT> mutator) throws KeyStoreException {
-        return mutationExecutor.submit(new Callable<OUT>() {
+    protected <OUT> Future<OUT> mutateKeystore(final Callable<OUT> mutator) throws KeyStoreException {
+        return mutationExecutor.submit(AdminInfo.find().wrapCallable(new Callable<OUT>() {
             public OUT call() throws Exception {
 
                 final Object[] out = new Object[] { null };
@@ -272,7 +273,7 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
                                     lastLoaded = System.currentTimeMillis();
                                     out[0] = mutator.call();
                                     return keyStoreToBytes();
-                                } catch (KeyStoreException e) {
+                                } catch (Exception e) {
                                     throw new RuntimeException(e);
                                 }
                             }
@@ -285,6 +286,6 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
                 //noinspection unchecked
                 return (OUT)out[0];
             }
-        });
+        }));
     }
 }

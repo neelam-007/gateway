@@ -1,7 +1,7 @@
 package com.l7tech.common.util;
 
-import java.beans.Introspector;
 import java.beans.IntrospectionException;
+import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -16,7 +16,10 @@ import java.util.*;
 public final class Functions {
     private Functions() {}
 
-    /** A function that takes no arguments and returns a value. */
+    /**
+     * A function that takes no arguments and returns a value.
+     * Provided for symmetry; instead of this, you might consider using the mostly-equivalent but more idiomatic Callable.
+     */
     public interface Nullary<R> {
         R call();
     }

@@ -1,17 +1,17 @@
 package com.l7tech.server.security.keystore;
 
+import com.l7tech.common.security.BouncyCastleCertUtils;
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.JceProvider;
-import com.l7tech.common.security.BouncyCastleCertUtils;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.Functions;
 
 import javax.security.auth.x500.X500Principal;
+import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.math.BigInteger;
 
 /**
  * Base class for SsgKeyStore implementations that are based on a JDK KeyStore instance.
@@ -122,7 +121,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
 
         KeyStore keystore = keyStore();
         if (!overwriteExisting && keystore.containsAlias(alias))
-            throw new KeyStoreException("Keystore already contains an entry with the alias '" + alias + "'");
+            throw new KeyStoreException("Keystore already contains an entry with the alias '" + alias + '\'');
 
         keystore.setKeyEntry(alias, key, getEntryPassword(), chain);
     }
@@ -155,7 +154,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
             throw new IllegalArgumentException("entry's private key must be present", e);
         }
 
-        return mutateKeystore(new Functions.Nullary<Boolean>() {
+        return mutateKeystore(new Callable<Boolean>() {
             public Boolean call() {
                 try {
                     storePrivateKeyEntryImpl(entry, overwriteExisting);
@@ -168,7 +167,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     }
 
     public synchronized Future<Boolean> deletePrivateKeyEntry(final String keyAlias) throws KeyStoreException {
-        return mutateKeystore(new Functions.Nullary<Boolean>() {
+        return mutateKeystore(new Callable<Boolean>() {
             public Boolean call() {
                 try {
                     keyStore().deleteEntry(keyAlias);
@@ -183,7 +182,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     public synchronized Future<X509Certificate> generateKeyPair(final String alias, final X500Principal dn, final int keybits, final int expiryDays)
             throws GeneralSecurityException
     {
-        return mutateKeystore(new Functions.Nullary<X509Certificate>() {
+        return mutateKeystore(new Callable<X509Certificate>() {
             public X509Certificate call() {
                 try {
                     KeyStore keystore = keyStore();
@@ -217,7 +216,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     public synchronized Future<Boolean> replaceCertificateChain(final String alias, final X509Certificate[] chain) throws InvalidKeyException, KeyStoreException {
         if (chain == null || chain.length < 1 || chain[0] == null)
             throw new IllegalArgumentException("Cert chain must contain at least one cert.");
-        return mutateKeystore(new Functions.Nullary<Boolean>() {
+        return mutateKeystore(new Callable<Boolean>() {
             public Boolean call() {
                 try {
                     KeyStore keystore = keyStore();
@@ -306,5 +305,5 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
      *                           the process
      * @return the value returned by the mutator
      */
-    protected abstract <OUT> Future<OUT> mutateKeystore(Functions.Nullary<OUT> mutator) throws KeyStoreException;
+    protected abstract <OUT> Future<OUT> mutateKeystore(Callable<OUT> mutator) throws KeyStoreException;
 }

@@ -3,6 +3,7 @@ package com.l7tech.spring.remoting;
 import javax.servlet.http.HttpServletRequest;
 import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.concurrent.Callable;
 
 /**
  * Remoting utility methods.
@@ -17,9 +18,10 @@ public class RemoteUtils {
     //- PUBLIC
 
     /**
-     * Run a runnable with the given host in the context.
+     * Run a runnable with the given host (and, optionally, HttpServletRequest) in the context.
      *
      * @param host the remote ip
+     * @param request an HttpServletRequest to make available or null
      * @param runnable the runnable to run
      */
     public static void runWithConnectionInfo(String host, HttpServletRequest request, Runnable runnable) {
@@ -29,6 +31,26 @@ public class RemoteUtils {
             runnable.run();
         }
         finally {
+            clientHost.set(null);
+            servletRequest.set(null);
+        }
+    }
+
+    /**
+     * Call a callable with the given host (and, optionally, HttpServletRequest) in the context.
+     *
+     * @param host the remote ip
+     * @param request an HttpServletRequest to make available or null
+     * @param callable the Callable to invoke
+     * @return the value returned by the callable
+     * @throws Exception if the callable threw an exception
+     */
+    public static <OUT> OUT callWithConnectionInfo(String host, HttpServletRequest request, Callable<OUT> callable) throws Exception {
+        clientHost.set(host);
+        servletRequest.set(request);
+        try {
+            return callable.call();
+        } finally {
             clientHost.set(null);
             servletRequest.set(null);
         }

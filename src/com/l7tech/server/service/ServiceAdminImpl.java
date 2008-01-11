@@ -23,6 +23,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.uddi.UddiAgent;
@@ -223,7 +224,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
             throw new RuntimeException("Cannot parse passed WSDL XML: " + ExceptionUtils.getMessage(e), e);
         }
 
-        return asyncSupport.registerJob(validatorExecutor.submit(new Callable<PolicyValidatorResult>() {
+        return asyncSupport.registerJob(validatorExecutor.submit(AdminInfo.find().wrapCallable(new Callable<PolicyValidatorResult>() {
             public PolicyValidatorResult call() throws Exception {
                 try {
                     return policyValidator.validate(assertion, policyType, wsdl, soap, licenseManager);
@@ -232,7 +233,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
                     throw new RuntimeException(e);
                 }
             }
-        }), PolicyValidatorResult.class);
+        })), PolicyValidatorResult.class);
     }
 
     private static boolean isDefaultOid(PersistentEntity entity) {
