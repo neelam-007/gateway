@@ -10,6 +10,7 @@
     <property name="moduleName" value="CaWsdmAssertion"/>
     <property name="assertionList" value="com.l7tech.external.assertions.cawsdm.${moduleName}"/>
     <property name="build.classes" location="build/classes"/>
+    <property name="privateLibraries" value="ca_wsdm-*.jar"/>
 
 
     <import file="../assertion-build.xml"/>
