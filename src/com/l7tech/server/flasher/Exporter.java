@@ -221,7 +221,6 @@ public class Exporter {
                 File tomcatprops = new File(osFunctions.getTomcatServerConfig());
                 // temp patch to address the half done partition work
                 if (!tomcatprops.exists()) {
-                    logger.warning("tomcat properties are not where expected. this could be caused by an imcomplete partition migration");
                     tomcatprops = new File("/ssg/tomcat/conf/server.xml");
                 }
                 File sysProps = new File(osFunctions.getSsgSystemPropertiesFile());
