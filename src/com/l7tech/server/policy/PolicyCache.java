@@ -24,7 +24,6 @@ public interface PolicyCache {
     /**
      * Notify the PolicyCache that the specified policy is new or updated.
      * @param policy the policy that has been saved or updated
-     * @return the compiled server policy
      * @throws LicenseException if the policy contains at least one unlicensed assertion
      * @throws ServerPolicyException if the policy cannot be compiled (e.g. due to an exception thrown from a 
      *         {@link ServerAssertion} constructor)
@@ -39,7 +38,10 @@ public interface PolicyCache {
     void remove(long oid) throws PolicyDeletionForbiddenException;
 
     /**
-     * Find any Policies that use the policy with the specified OID.
+     * Find any Policies that directly use the policy with the specified OID.
+     *
+     * <p>This will not find ancestors other than parents.</p>
+     *
      * @param oid the OID of the policy to find usages of
      * @return the Set of policies that use the policy with the specified OID. Never null.
      */
@@ -50,4 +52,12 @@ public interface PolicyCache {
      * the given OID is in the cache.  Always includes the provided policy OID, mapped to its version.
      */
     Map<Long, Integer> getDependentVersions(long policyOid);
+
+    /**
+     * Get the unique identifier for the current version of the policy.
+     *
+     * @param policyOid The policy oid
+     * @return The policy unique version identifier
+     */
+    String getUniquePolicyVersionIdentifer(long policyOid);
 }

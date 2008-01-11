@@ -445,6 +445,7 @@
     <!-- server Message Processor -->
     <bean id="messageProcessor" class="com.l7tech.server.MessageProcessor">
         <constructor-arg ref="serviceCache"/>
+        <constructor-arg ref="policyCache"/>
         <constructor-arg ref="wssDecorator"/>
         <constructor-arg ref="securityTokenResolver"/>
         <constructor-arg ref="licenseManager"/>
@@ -627,6 +628,7 @@
                 <ref bean="revocationCheckPolicyManager"/>
                 <ref bean="ssgConnectorManager"/>
                 <ref bean="sinkManager"/>
+                <ref bean="policyManager"/>
             </list>
         </property>
         <property name="timer">

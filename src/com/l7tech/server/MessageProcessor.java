@@ -39,6 +39,7 @@ import com.l7tech.server.message.PolicyContextCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.policy.ServerPolicyHandle;
+import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceCache;
@@ -70,6 +71,7 @@ import java.util.logging.Logger;
 public class MessageProcessor extends ApplicationObjectSupport implements InitializingBean {
     private static final int SETTINGS_RECHECK_MILLIS = 7937;
     private final ServiceCache serviceCache;
+    private final PolicyCache policyCache;
     private final WssDecorator wssDecorator;
     private final SecurityTokenResolver securityTokenResolver;
     private final LicenseManager licenseManager;
@@ -92,6 +94,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
      * @throws IllegalArgumentException if any of the arguments is null
      */
     public MessageProcessor(ServiceCache sc,
+                            PolicyCache pc,
                             WssDecorator wssd,
                             SecurityTokenResolver securityTokenResolver,
                             LicenseManager licenseManager,
@@ -101,6 +104,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                             TrafficLogger trafficLogger)
       throws IllegalArgumentException {
         if (sc == null) throw new IllegalArgumentException("Service Cache is required");
+        if (pc == null) throw new IllegalArgumentException("Policy Cache is required");
         if (wssd == null) throw new IllegalArgumentException("Wss Decorator is required");
         if (licenseManager == null) throw new IllegalArgumentException("License Manager is required");
         if (metricsManager == null) throw new IllegalArgumentException("Service Metrics Manager is required");
@@ -108,6 +112,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         if (serverConfig == null) throw new IllegalArgumentException("Server Config is required");
         if (trafficLogger == null) throw new IllegalArgumentException("Traffic Logger is required");
         this.serviceCache = sc;
+        this.policyCache = pc;
         this.wssDecorator = wssd;
         this.securityTokenResolver = securityTokenResolver;
         this.licenseManager = licenseManager;
@@ -227,10 +232,12 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                         wrongPolicyVersion = true;
                     } else {
                         try {
+                            String expectedPolicyVersion = policyCache.getUniquePolicyVersionIdentifer( service.getPolicy().getOid() );
                             long reqPolicyId = Long.parseLong(requestorVersion.substring(0, indexofbar));
-                            long reqPolicyVer = Long.parseLong(requestorVersion.substring(indexofbar + 1));
-                            if (reqPolicyVer != service.getPolicy().getVersion() || reqPolicyId != service.getOid()) {
-                                auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_INVALID, requestorVersion, String.valueOf(service.getOid()), String.valueOf(service.getVersion()));
+                            String reqPolicyVersion = requestorVersion.substring(indexofbar + 1);
+                            if ( reqPolicyId != service.getOid() ||
+                                 !reqPolicyVersion.equals( expectedPolicyVersion )) {
+                                auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_INVALID, requestorVersion, String.valueOf(service.getOid()), expectedPolicyVersion);
                                 wrongPolicyVersion = true;
                             }
                         } catch (NumberFormatException e) {

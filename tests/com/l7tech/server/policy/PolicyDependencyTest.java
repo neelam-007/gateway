@@ -4,6 +4,7 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.policy.*;
+import com.l7tech.common.LicenseException;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.PolicyPathBuilder;
 import com.l7tech.policy.PolicyPathBuilderFactory;
@@ -19,6 +20,8 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.objectmodel.FindException;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -28,6 +31,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,6 +41,7 @@ public class PolicyDependencyTest extends TestCase {
 
     private PolicyManager simpleFinder;
     private PolicyManager cycleFinder;
+    private PolicyManager complexCycleFinder;
     private PolicyManager clonedGrandchildFinder;
     private PolicyManager notSoSimpleFinder;
 
@@ -55,6 +61,7 @@ public class PolicyDependencyTest extends TestCase {
 
         setupSimple();
         setupCycle();
+        setupComplexCycle();
         setupClonedGrandchild();
         setupNotSoSimple();
     }
@@ -81,6 +88,18 @@ public class PolicyDependencyTest extends TestCase {
         final Policy sp = newPolicy(PolicyType.PRIVATE_SERVICE, 2000, "test-sp", new Include(1001L, "test-i1!"));
 
         cycleFinder = new PolicyManagerStub(new Policy[] { i1, sp });
+    }
+
+    private void setupComplexCycle() {
+        int cycleLength = 1000;
+        List<Policy> policies = new ArrayList<Policy>(cycleLength);
+
+        for ( int p=0; p<cycleLength; p++) {
+            long includeId = 1000 + ((1 + p) % cycleLength);
+            policies.add( newPolicy(PolicyType.INCLUDE_FRAGMENT, 1000 + p, "test-i1", new Include(includeId, "test-i"+includeId+"!")) );
+        }
+
+        complexCycleFinder = new PolicyManagerStub(policies.toArray( new Policy[policies.size()] ));
     }
 
     private Policy newPolicy(PolicyType type, long oid, String name, Assertion... asses) {
@@ -160,10 +179,21 @@ public class PolicyDependencyTest extends TestCase {
         }
     }
 
+    public void testComplexCycle() throws Exception {
+        try {
+            setupPolicyCache(complexCycleFinder);
+            fail("Expected CircularPolicyException");
+        } catch (CircularPolicyException e) {
+            // Success
+            logger.log(Level.INFO, "Caught expected exception", e);
+        }
+    }
+
     public void testGrandchild() throws Exception {
         PolicyCache cache = setupPolicyCache(clonedGrandchildFinder);
         Map<Long, Integer> m = cache.getDependentVersions(2000L);
-        assertEquals(m.size(), 4);
+        System.out.println( m );
+        assertEquals( "Number of dependencies", 4, m.size());
         assertTrue(m.containsKey(2000L));
         assertTrue(m.containsKey(1234L));
         assertTrue(m.containsKey(1001L));
@@ -180,13 +210,47 @@ public class PolicyDependencyTest extends TestCase {
         }
     }
 
+    public void testUpdateDescendentForVersioning() throws Exception {
+        PolicyCache cache = setupPolicyCache(clonedGrandchildFinder);
+
+        String versionBefore = cache.getUniquePolicyVersionIdentifer( 2000L );
+
+        Policy child = clonedGrandchildFinder.findByPrimaryKey( 1234 );
+        child.setVersion( 2 );
+        cache.update( child );
+
+        String versionAfter = cache.getUniquePolicyVersionIdentifer( 2000L );
+
+        assertNotNull("Version before update", versionBefore);
+        assertNotNull("Version after update", versionAfter);
+
+        System.out.println( "Version before update: " + versionBefore );
+        System.out.println( "Version after update : " + versionAfter );
+
+        assertFalse("Version updated", versionBefore.equals( versionAfter ));
+    }
+
     public void testSuccessfulDeletion() throws Exception {
         PolicyCache cache = setupPolicyCache(clonedGrandchildFinder);
         cache.remove(2000);
     }
 
     private PolicyCache setupPolicyCache(PolicyManager manager) throws Exception {
-        PolicyCacheImpl cache = new PolicyCacheImpl(null);
+        PolicyCacheImpl cache = new PolicyCacheImpl(null){
+            // TODO check if version and/or XML are different, avoid needless recompiles for non-policy changes
+            @Override
+            public ServerAssertion getServerPolicy( Policy policy ) throws IOException, ServerPolicyException, LicenseException {
+                return null;
+            }
+            @Override
+            public ServerAssertion getServerPolicy( long policyOid ) throws FindException, IOException, ServerPolicyException, LicenseException {
+                return null;
+            }
+            @Override
+            protected ServerAssertion buildServerPolicy( Policy policy ) throws IOException, LicenseException, ServerPolicyException {
+                return null;
+            }
+        };
         cache.setPolicyManager(manager);
         cache.afterPropertiesSet();
         return cache;

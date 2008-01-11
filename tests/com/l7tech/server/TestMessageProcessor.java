@@ -13,15 +13,13 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
+import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.log.TrafficLogger;
 
 import java.io.IOException;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -31,7 +29,7 @@ import java.util.Set;
  * @version Apr 8, 2005
  */
 public class TestMessageProcessor extends MessageProcessor {
-    private Set listeners = new HashSet();
+    private Set<MessageProcessorListener> listeners = new HashSet<MessageProcessorListener>();
 
     /**
      * Create the new <code>MessageProcessor</code> instance with the service
@@ -42,11 +40,12 @@ public class TestMessageProcessor extends MessageProcessor {
      * @param wssd         the Wss Decorator
      * @throws IllegalArgumentException if any of the arguments is null
      */
-    public TestMessageProcessor(ServiceCache sc, WssDecorator wssd)
+    public TestMessageProcessor(ServiceCache sc, PolicyCache pc, WssDecorator wssd)
       throws IllegalArgumentException {
-        super(sc , wssd, null, new TestLicenseManager(), new ServiceMetricsManager("yo",null), new AuditContextStub(), ServerConfig.getInstance(), new TrafficLogger(ServerConfig.getInstance(), null));
+        super(sc, pc, wssd, null, new TestLicenseManager(), new ServiceMetricsManager("yo",null), new AuditContextStub(), ServerConfig.getInstance(), new TrafficLogger(ServerConfig.getInstance(), null));
     }
 
+    @Override
     public AssertionStatus processMessage(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException {
 
@@ -72,18 +71,15 @@ public class TestMessageProcessor extends MessageProcessor {
         listeners.remove(l);
     }
 
-
     private void notifyListenersBefore(PolicyEnforcementContext context) {
-        for (Iterator iterator = listeners.iterator(); iterator.hasNext();) {
-            MessageProcessorListener messageProcessorListener = (MessageProcessorListener)iterator.next();
-            messageProcessorListener.beforeProcessMessage(context);
+        for( MessageProcessorListener messageProcessorListener : listeners ) {
+            messageProcessorListener.beforeProcessMessage( context );
         }
     }
 
     private void notifyListenersAfter(PolicyEnforcementContext context) {
-        for (Iterator iterator = listeners.iterator(); iterator.hasNext();) {
-            MessageProcessorListener messageProcessorListener = (MessageProcessorListener)iterator.next();
-            messageProcessorListener.afterProcessMessage(context);
+        for( MessageProcessorListener messageProcessorListener : listeners ) {
+            messageProcessorListener.afterProcessMessage( context );
         }
     }
 }

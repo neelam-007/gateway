@@ -150,11 +150,17 @@ public class SoapFaultManager implements ApplicationContextAware {
     public String constructExceptionFault(Throwable e, PolicyEnforcementContext pec) {
         String output = null;
         try {
-            Document tmp = XmlUtil.stringToDocument(EXCEPTION_FAULT);
-            NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
-            // populate @status element
-            Element policyResultEl = (Element)res.item(0);
-            policyResultEl.setAttribute("status", e.getMessage());
+            boolean policyVersionFault = pec.isRequestClaimingWrongPolicyVersion();
+            Document tmp = XmlUtil.stringToDocument( policyVersionFault ?
+                    POLICY_VERSION_EXCEPTION_FAULT : EXCEPTION_FAULT);
+
+            if ( !policyVersionFault ) {
+                NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
+                Element policyResultEl = (Element)res.item(0);
+
+                // populate @status element
+                policyResultEl.setAttribute("status", e.getMessage());
+            }
             // populate the faultactor value
             String actor;
             try {
@@ -164,7 +170,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                 logger.log(Level.WARNING, "this variable is not found but should always be set", notfound);
                 actor = "ssg";
             }
-            res = tmp.getElementsByTagName("faultactor");
+            NodeList res = tmp.getElementsByTagName("faultactor");
             Element faultactor = (Element)res.item(0);
             faultactor.setTextContent(actor);
             output = XmlUtil.nodeToFormattedString(tmp);
@@ -299,12 +305,24 @@ public class SoapFaultManager implements ApplicationContextAware {
                         "    </soapenv:Body>\n" +
                         "</soapenv:Envelope>";
 
+    private static final String POLICY_VERSION_EXCEPTION_FAULT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                        "    <soapenv:Body>\n" +
+                        "        <soapenv:Fault>\n" +
+                        "            <faultcode>soapenv:Client</faultcode>\n" +
+                        "            <faultstring>Incorrect policy version</faultstring>\n" +
+                        "            <faultactor/>\n" +
+                        "        </soapenv:Fault>\n" +
+                        "    </soapenv:Body>\n" +
+                        "</soapenv:Envelope>";
+
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         auditor = new Auditor(this, applicationContext, logger);
         this.applicationContext = applicationContext;
         clusterPropertiesManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
         final SoapFaultManager tasker = this;
         TimerTask task = new TimerTask() {
+            @Override
             public void run() {
                 try {
                     tasker.updateOverrides();

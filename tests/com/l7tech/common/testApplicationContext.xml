@@ -175,6 +175,7 @@
     <!-- server Message Processor -->
     <bean id="messageProcessor" class="com.l7tech.server.TestMessageProcessor">
         <constructor-arg ref="serviceCache"/>
+        <constructor-arg ref="policyCache"/>
         <constructor-arg ref="wssDecorator"/>
     </bean>
 

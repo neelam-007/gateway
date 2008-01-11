@@ -8,7 +8,6 @@ import com.l7tech.common.policy.CircularPolicyException;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyDeletionForbiddenException;
 import com.l7tech.common.security.rbac.EntityType;
-import com.l7tech.common.util.Pair;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
@@ -32,14 +31,8 @@ import java.util.logging.Logger;
  * policies and their {@link Include}d policies, if any.
  */
 public class PolicyCacheImpl implements PolicyCache, ApplicationListener, InitializingBean {
-    private static final Logger logger = Logger.getLogger(PolicyCacheImpl.class.getName());
 
-    private PolicyManager policyManager;
-    private final ServerPolicyFactory policyFactory;
-
-    private final Map<Long, ServerAssertion> serverPolicyCache = new HashMap<Long, ServerAssertion>();
-    private final Map<Long, PolicyDependencyInfo> dependencyCache = new HashMap<Long, PolicyCacheImpl.PolicyDependencyInfo>();
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    //- PUBLIC
 
     public PolicyCacheImpl(ServerPolicyFactory policyFactory) {
         this.policyFactory = policyFactory;
@@ -49,36 +42,49 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
     public ServerAssertion getServerPolicy(Policy policy) throws IOException, ServerPolicyException, LicenseException {
         final long oid = policy.getOid();
         if (oid == Policy.DEFAULT_OID) throw new IllegalArgumentException("Can't compile a brand-new policy--it must be saved first");
-        Lock read = lock.readLock();
-        Lock write = lock.writeLock();
+
+        final Lock read = lock.readLock();
+        read.lock();
         try {
-            read.lock();
             ServerAssertion sass = serverPolicyCache.get(oid);
             if (sass != null) return sass;
-            read.unlock(); read = null;
-
-            // Must not hold either lock here, we're reentrant if an Include assertion is in the policy
-            sass = policyFactory.compilePolicy(policy.getAssertion(), true);
-
-            try {
-                write.lock();
-                serverPolicyCache.put(oid, sass);
-                return sass;
-            } finally {
-                write.unlock();
-            }
         } finally {
-            if (read != null) read.unlock();
+            read.unlock();
         }
+
+        // Must not hold either lock here, we're reentrant if an Include assertion is in the policy
+        ServerAssertion sass = policyFactory.compilePolicy(policy.getAssertion(), true);
+
+        final Lock write = lock.writeLock();
+        write.lock();
+        try {
+            serverPolicyCache.put(oid, sass);
+            return sass;
+        } finally {
+            write.unlock();
+        }
+
     }
 
     public Map<Long, Integer> getDependentVersions(long policyOid) {
-        Lock read = lock.readLock();
+        final Lock read = lock.readLock();
+        read.lock();
         try {
-            read.lock();
             PolicyDependencyInfo pdi = dependencyCache.get(policyOid);
             if (pdi == null) return null;
-            return pdi.dependentVersions;
+            return pdi.getDependentVersions(true);
+        } finally {
+            read.unlock();
+        }
+    }
+
+    public String getUniquePolicyVersionIdentifer(long policyOid) {
+        final Lock read = lock.readLock();
+        read.lock();
+        try {
+            PolicyDependencyInfo pdi = dependencyCache.get(policyOid);
+            if (pdi == null) return null;
+            return pdi.policyUVID.getPolicyUniqueIdentifer();
         } finally {
             read.unlock();
         }
@@ -89,9 +95,9 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
     {
         ServerAssertion sass;
 
-        Lock read = lock.readLock();
+        final Lock read = lock.readLock();
+        read.lock();
         try {
-            read.lock();
             sass = serverPolicyCache.get(policyOid);
             if (sass != null) return sass;
         } finally {
@@ -101,21 +107,24 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
         Policy policy = policyManager.findByPrimaryKey(policyOid);
 
         final Lock write = lock.writeLock();
-        try {
-            if (policy == null) {
-                write.lock();
+        if (policy == null) {
+            write.lock();
+            try {
                 serverPolicyCache.remove(policyOid);
                 logger.info("Policy #" + policyOid + " has been deleted");
                 return null;
-            } else {
-                sass = policyFactory.compilePolicy(policy.getAssertion(), true);
-
-                write.lock();
+            } finally {
+                write.unlock();
+            }
+        } else {
+            sass = policyFactory.compilePolicy(policy.getAssertion(), true);
+            write.lock();
+            try {
                 serverPolicyCache.put(policyOid, sass);
                 return sass;
+            } finally {
+                write.unlock();
             }
-        } finally {
-            write.unlock();
         }
     }
 
@@ -125,45 +134,59 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
         getServerPolicy(policy); // Refresh the cache, don't care about return value
 
         // Prevent reentrant calls from ServerInclude from deadlocking
-        ServerAssertion sass = policyFactory.compilePolicy(policy.getAssertion(), true);
+        ServerAssertion sass = buildServerPolicy(policy);
 
-        this.lock.writeLock().lock();
+        final Lock write = lock.writeLock();
+        write.lock();
         try {
-            final Set<Long> seenOids = new HashSet<Long>();
-            final Map<Long, Integer> dependentVersions = new HashMap<Long, Integer>();
-            findDependentPolicies(policy, seenOids, dependentVersions);
+            final Set<Long> usingPolicies = new HashSet<Long>();
+            findAllUsages(policy.getOid(), usingPolicies);
 
-            final PolicyDependencyInfo pdi = dependencyCache.get(policy.getOid());
-            pdi.dependentVersions = Collections.unmodifiableMap(dependentVersions);
+            findDependentPolicies(policy, null, new HashSet<Long>(), new HashMap<Long, Integer>());
 
-            updateUsedBy();
-            
             serverPolicyCache.remove(policy.getOid());
             serverPolicyCache.put(policy.getOid(), sass);
+
+            usingPolicies.remove( policy.getOid() ); // don't allow policy to invalidate itself
+            for ( Long policyOid : usingPolicies) {
+                Policy usingPolicy = policyManager.findByPrimaryKey( policyOid );
+                if ( usingPolicy != null ) {
+                    findDependentPolicies(usingPolicy, null, new HashSet<Long>(), new HashMap<Long, Integer>());
+                }
+            }
+
+            trace( dependencyCache.get( policy.getOid() ));
         } catch (FindException e) {
             throw new ServerPolicyException(policy.getAssertion(), "Included policy could not be loaded", e);
         } finally {
-            this.lock.writeLock().unlock();
+            write.unlock();
         }
     }
 
     public Set<Policy> findUsages(long oid) {
+        final Lock read = lock.readLock();
+        read.lock();
         try {
-            lock.readLock().lock();
-            PolicyDependencyInfo pdi = dependencyCache.get(oid);
-            final Set<Long> usedByOids = pdi.usedBy;
             Set<Policy> policies = new HashSet<Policy>();
-            for (Long aLong : usedByOids) {
-                policies.add(dependencyCache.get(aLong).policy);
+            PolicyDependencyInfo pdi = dependencyCache.get(oid);
+            if ( pdi != null ) {
+                final Set<Long> usedByOids = pdi.usedBy;
+                for (Long aLong : usedByOids) {
+                    PolicyDependencyInfo pdiuser = dependencyCache.get(aLong);
+                    if ( pdiuser != null ) {
+                        policies.add(pdiuser.policy);
+                    }
+                }
             }
             return Collections.unmodifiableSet(policies);
         } finally {
-            lock.readLock().unlock();
+            read.unlock();
         }
     }
 
     public void remove(long oid) throws PolicyDeletionForbiddenException {
-        lock.writeLock().lock();
+        final Lock write = lock.writeLock();
+        write.lock();
         try {
             PolicyDependencyInfo pdi = dependencyCache.get(oid);
             if (pdi == null) {
@@ -178,14 +201,14 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
                 for (Long useeOid : pdi.uses) {
                     PolicyDependencyInfo useePdi = dependencyCache.get(useeOid);
                     if (useePdi == null) continue;
-                    useePdi.usedBy.remove(deletedPolicy.getOid());
+                    dependencyCache.put( useeOid, useePdi.removeUsingPolicy( deletedPolicy.getOid() ) );
                 }
-                logger.log(Level.INFO, "Policy #{0} has been deleted; removing from cache", oid);
+                logger.log(Level.FINE, "Policy #{0} has been deleted; removing from cache", oid);
                 dependencyCache.remove(oid);
             }
             serverPolicyCache.remove(oid);
         } finally {
-            lock.writeLock().unlock();
+            write.unlock();
         }
     }
 
@@ -205,7 +228,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
                 }
 
                 if (policy == null) {
-                    logger.log(Level.INFO, MessageFormat.format("Policy #{0} has been deleted", oid));
+                    logger.log(Level.FINE, MessageFormat.format("Policy #{0} has been deleted", oid));
                     try {
                         remove(oid);
                     } catch (PolicyDeletionForbiddenException e) {
@@ -232,31 +255,56 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
 
     public void afterPropertiesSet() throws Exception {
         logger.info("Analyzing policy dependencies");
-        lock.writeLock().lock();
+        final Lock write = lock.writeLock();
+        write.lock();
         try {
             for (Policy policy : policyManager.findAll()) {
-                findDependentPolicies(policy, new HashSet<Long>(), new HashMap<Long, Integer>());
+                findDependentPolicies(policy, null, new HashSet<Long>(), new HashMap<Long, Integer>());
             }
-            updateUsedBy();
         } finally {
-            lock.writeLock().unlock();
+            write.unlock();
         }
+
+        trace();
     }
 
-    /**
-     * Caller must hold write lock.
-     */
-    private void updateUsedBy() {
-        // TODO can this be tightened up from O(2n) to O(n)?
-        for (PolicyCacheImpl.PolicyDependencyInfo pdi : dependencyCache.values()) {
-            pdi.usedBy.clear();
-        }
+    public void setPolicyManager(PolicyManager policyManager) {
+        this.policyManager = policyManager;
+    }
 
-        for (PolicyCacheImpl.PolicyDependencyInfo pdi : dependencyCache.values()) {
-            for (Long usedPolicyOid : pdi.uses) {
-                PolicyCacheImpl.PolicyDependencyInfo usedPdi = dependencyCache.get(usedPolicyOid);
-                usedPdi.usedBy.add(pdi.policy.getOid());
+    //- PROTECTED
+
+    protected ServerAssertion buildServerPolicy(final Policy policy) throws IOException, LicenseException, ServerPolicyException {
+        return policyFactory.compilePolicy(policy.getAssertion(), true);
+    }
+
+    // - PRIVATE
+
+    private static final Logger logger = Logger.getLogger(PolicyCacheImpl.class.getName());
+
+    private static final Level TRACE_LEVEL = Level.FINEST;
+
+    private PolicyManager policyManager;
+    private final ServerPolicyFactory policyFactory;
+
+    private final Map<Long, ServerAssertion> serverPolicyCache = new HashMap<Long, ServerAssertion>();
+    private final Map<Long, PolicyDependencyInfo> dependencyCache = new HashMap<Long, PolicyDependencyInfo>();
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+
+    /**
+     * Find all usages of the policy, populate given set. 
+     */
+    private void findAllUsages( Long oid, Set<Long> usingPolicies ) {
+        final Lock read = lock.readLock();
+        read.lock();
+        try {
+            for ( Policy policy : findUsages(oid) ) {
+                if ( usingPolicies.add( policy.getOid() )) {
+                    findAllUsages( policy.getOid(), usingPolicies );
+                }
             }
+        } finally {
+            read.unlock();
         }
     }
 
@@ -270,25 +318,22 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
      *        (always pass a new, mutable <code>{@link Set}&lt;{@link Long}&gt;)
      * @param dependentVersions the OIDs and versions of policies seen thus far in this path through the policy tree, to
      *                          track dependencies. (always pass a new, mutable <code>{@link java.util.Map}&lt;Long, Integer&gt;)
+     * @return the set of policies thisPolicy uses
      * @throws IOException if this policy, or one of its descendants, could not be parsed
      * @throws FindException if one of this policy's descendants could not be loaded
      */
-    private void findDependentPolicies(final Policy thisPolicy,
-                                       final Set<Long> seenOids,
-                                       final Map<Long, Integer> dependentVersions)
+    private Set<Long> findDependentPolicies(final Policy thisPolicy,
+                                            final Policy parentPolicy,
+                                            final Set<Long> seenOids,
+                                            final Map<Long, Integer> dependentVersions)
             throws IOException, FindException
     {
+        Set<Long> descendentPolicies = new HashSet<Long>();
         logger.log(Level.FINE, "Processing Policy #{0} ({1})", new Object[] { thisPolicy.getOid(), thisPolicy.getName() });
-        seenOids.add(thisPolicy.getOid());
-        dependentVersions.put(thisPolicy.getOid(), thisPolicy.getVersion());
-
-        PolicyCacheImpl.PolicyDependencyInfo thisInfo = dependencyCache.get(thisPolicy.getOid());
-        if (thisInfo == null) {
-            thisInfo = new PolicyCacheImpl.PolicyDependencyInfo(thisPolicy);
-            dependencyCache.put(thisPolicy.getOid(), thisInfo);
-        } else {
-            thisInfo.uses.clear(); // We're about to rebuild it in this and subsequent recursive invocations
+        if ( !seenOids.add(thisPolicy.getOid()) ) {
+            throw new CircularPolicyException(parentPolicy, thisPolicy.getOid(), thisPolicy.getName());
         }
+        dependentVersions.put(thisPolicy.getOid(), thisPolicy.getVersion());
 
         final Assertion thisRootAssertion = thisPolicy.getAssertion();
         final Iterator assit = thisRootAssertion.preorderIterator();
@@ -300,7 +345,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
             final Long includedOid = include.getPolicyOid();
             logger.log(Level.FINE, "Policy #{0} ({1}) includes Policy #{2} ({3})", new Object[] { thisPolicy.getOid(), thisPolicy.getName(), includedOid, include.getPolicyName() });
             if (includedOid == null) throw new RuntimeException("Found Include assertion with no PolicyOID in Policy #" + thisPolicy.getOid());
-            if (seenOids.contains(includedOid)) throw new CircularPolicyException(thisPolicy, includedOid, include.getPolicyName());
+
+            descendentPolicies.add( includedOid );
 
             PolicyDependencyInfo includedInfo = dependencyCache.get(includedOid);
             final Policy includedPolicy;
@@ -311,44 +357,131 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationListener, Initia
                     logger.info("Include assertion in Policy #" + thisPolicy.getOid() + " refers to Policy #" + includedOid + ", which does not exist");
                     continue;
                 }
-
-                includedInfo = new PolicyDependencyInfo(includedPolicy);
-                dependencyCache.put(includedOid, includedInfo);
             } else {
                 includedPolicy = includedInfo.policy;
             }
-            findDependentPolicies(includedPolicy, seenOids, dependentVersions);
-            seenOids.remove(includedOid);
-            thisInfo.uses.add(includedInfo.policy.getOid());
-            includedInfo.usedBy.add(thisPolicy.getOid());
-            thisInfo.dependentVersions = Collections.unmodifiableMap(dependentVersions);
+            descendentPolicies.addAll( findDependentPolicies(includedPolicy, thisPolicy, seenOids, dependentVersions) );
+            dependencyCache.put( includedOid, dependencyCache.get(includedOid).addUsingPolicy( thisPolicy.getOid() ) );
+        }
+
+        seenOids.remove(thisPolicy.getOid());
+        Set<Long> usedBy = Collections.emptySet();
+        Set<Long> oldUse = Collections.emptySet();
+        PolicyDependencyInfo oldPDI = dependencyCache.get( thisPolicy.getOid() );
+        if ( oldPDI != null ) {
+            usedBy = oldPDI.usedBy;
+            oldUse = oldPDI.uses;
+        }
+        dependencyCache.put( thisPolicy.getOid(), new PolicyDependencyInfo(thisPolicy, descendentPolicies, usedBy, dependentVersions) );
+
+        if ( !oldUse.isEmpty() ) {
+            Set<Long> noLongerUsed = new HashSet<Long>( oldUse );
+            noLongerUsed.removeAll( descendentPolicies );
+            for ( Long notIncludedOid : noLongerUsed ) {
+                PolicyDependencyInfo pdi = dependencyCache.get(notIncludedOid);
+                if ( pdi != null) {
+                    dependencyCache.put( notIncludedOid, pdi.removeUsingPolicy( thisPolicy.getOid() ) );
+                }
+            }
+        }
+
+        return descendentPolicies;
+    }
+
+    private void trace() {
+        if ( logger.isLoggable( TRACE_LEVEL )) {
+            Lock read = lock.readLock();
+            read.lock();
+            try {
+                for ( PolicyDependencyInfo dpi : dependencyCache.values() ) {
+                    trace(dpi);
+                }
+            } finally {
+                read.unlock();    
+            }
+        }
+    }
+
+    private void trace( final PolicyDependencyInfo pdi ) {
+        if ( logger.isLoggable( TRACE_LEVEL )) {
+            StringBuilder builder = new StringBuilder();
+
+            builder.append( "Version: " );
+            builder.append( pdi.policy.getVersion() );
+            builder.append( '\n' );
+
+            builder.append( "Unique Version: " );
+            builder.append( pdi.policyUVID.getPolicyUniqueIdentifer() );
+            builder.append( '\n' );
+
+            builder.append( "Uses: " );
+            builder.append( pdi.uses );
+            builder.append( '\n' );
+
+            builder.append( "Used By: " );
+            builder.append( pdi.usedBy );
+            builder.append( '\n' );
+
+            logger.log( TRACE_LEVEL, "Dependency info for policy " + pdi.policy.getOid() + "\n" + builder.toString());
         }
     }
 
     private static class PolicyDependencyInfo {
         private final Policy policy;
-        private final Set<Long> uses = new HashSet<Long>();
-        private final Set<Long> usedBy = new HashSet<Long>();
+        private final PolicyUniqueIdentifier policyUVID;
+        private final Set<Long> uses;
+        private final Set<Long> usedBy;
+        private final Map<Long, Integer> dependentVersions;
 
-        private Map<Long, Integer> dependentVersions;
-
-        private PolicyDependencyInfo(Policy policy) {
+        private PolicyDependencyInfo(final Policy policy,
+                                     final Set<Long> uses,
+                                     final Set<Long> usedBy,
+                                     final Map<Long, Integer> dependentVersions) {
             this.policy = policy;
+            this.uses = Collections.unmodifiableSet( new HashSet<Long>(uses) );
+            this.usedBy = Collections.unmodifiableSet( new HashSet<Long>(usedBy) );
+            this.dependentVersions = Collections.unmodifiableMap( new HashMap<Long,Integer>(dependentVersions) );
+            this.policyUVID = buildPolicyUniqueIdentifier();
         }
-    }
 
-    /**
-     * Caller must hold read lock at a minimum (write lock is sufficient)
-     */
-    private void collectVersions(PolicyDependencyInfo info, List<Pair<Long,Integer>> versions) {
-        for (Long usedOid : info.uses) {
-            PolicyDependencyInfo usedPdi = dependencyCache.get(usedOid);
-            versions.add(new Pair<Long, Integer>(usedOid, usedPdi.policy.getVersion()));
-            collectVersions(usedPdi, versions);
+        private Map<Long,Integer> getDependentVersions(final boolean includeSelf) {
+            return policyUVID.getUsedPoliciesAndVersions( includeSelf );
         }
-    }
 
-    public void setPolicyManager(PolicyManager policyManager) {
-        this.policyManager = policyManager;
+        private PolicyDependencyInfo addUsingPolicy(final Long policyOid) {
+            if ( !usedBy.contains( policyOid )) {
+                Set<Long> newUsedBy = new HashSet<Long>( usedBy );
+                newUsedBy.add( policyOid );
+
+                return new PolicyDependencyInfo( policy, uses, newUsedBy, dependentVersions );
+            } else {
+                return this;
+            }
+        }
+
+        private PolicyDependencyInfo removeUsingPolicy(final Long policyOid) {
+            if ( usedBy.contains( policyOid )) {
+                Set<Long> newUsedBy = new HashSet<Long>( usedBy );
+                newUsedBy.remove( policyOid );
+
+                return new PolicyDependencyInfo( policy, uses, newUsedBy, dependentVersions );
+            } else {
+                return this;
+            }
+        }
+
+        private PolicyUniqueIdentifier buildPolicyUniqueIdentifier() {
+            Map<Long, Integer> usedPoliciesAndVersions = new HashMap<Long,Integer>();
+
+            for ( Long policyOid : uses ) {
+                Integer usedVersion = dependentVersions.get( policyOid );
+                if ( usedVersion == null ) {
+                    throw new IllegalArgumentException("Missing version for policy with oid " + policyOid);
+                }
+                usedPoliciesAndVersions.put( policyOid, usedVersion );
+            }
+
+            return new PolicyUniqueIdentifier( policy.getOid(), policy.getVersion(), usedPoliciesAndVersions );
+        }
     }
 }

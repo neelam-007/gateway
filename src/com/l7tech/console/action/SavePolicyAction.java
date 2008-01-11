@@ -5,6 +5,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyVersion;
+import com.l7tech.common.policy.CircularPolicyException;
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.util.Pair;
 import com.l7tech.console.panels.WorkSpacePanel;
@@ -56,6 +57,7 @@ public class SavePolicyAction extends PolicyNodeAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return getLabel();
     }
@@ -63,6 +65,7 @@ public class SavePolicyAction extends PolicyNodeAction {
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return getShortDesc();
     }
@@ -70,6 +73,7 @@ public class SavePolicyAction extends PolicyNodeAction {
     /**
      * subclasses override this method specifying the resource name
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Save16.gif";
     }
@@ -80,6 +84,7 @@ public class SavePolicyAction extends PolicyNodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         if (node == null) {
             throw new IllegalStateException("no node specified");
@@ -94,6 +99,7 @@ public class SavePolicyAction extends PolicyNodeAction {
         }
     }
 
+    @Override
     protected OperationType getOperation() {
         return OperationType.UPDATE;
     }
@@ -102,6 +108,7 @@ public class SavePolicyAction extends PolicyNodeAction {
         if (node == null) {
             throw new IllegalStateException("no node specified");
         }
+        String name = null;
         try {
             PolicyEntityNode policyNode = getPolicyNode();
             if (policyNode == null) {
@@ -110,6 +117,7 @@ public class SavePolicyAction extends PolicyNodeAction {
             final long newVersionOrdinal;
             if (policyNode instanceof ServiceNode) {
                 final PublishedService svc = ((ServiceNode) policyNode).getPublishedService();
+                name = svc.getName();
                 if (activateAsWell) {
                     // TODO remove this branch and just call updatePolicyXml() as soon as the Gateway is fixed to notice
                     // policy changes that occur without going through ServiceAdminImpl.
@@ -122,6 +130,7 @@ public class SavePolicyAction extends PolicyNodeAction {
                 }
             } else {
                 Policy policy = policyNode.getPolicy();
+                name = policy.getName();
                 newVersionOrdinal = updatePolicyXml(policy.getOid(), xml, activateAsWell);
             }
             policyNode.clearCachedEntities();
@@ -133,7 +142,12 @@ public class SavePolicyAction extends PolicyNodeAction {
                 pep.setOverrideVersionActive(activateAsWell);
                 pep.updateHeadings();
             }
-
+        } catch ( CircularPolicyException cpe) {
+            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                  "Unable to save the policy '" + name + "'.\n" +
+                  "The policy contains an include that causes circularity.",
+                  "Policy include circularity",
+                  JOptionPane.ERROR_MESSAGE);                
         } catch (Exception e) {
             throw new RuntimeException("Error saving service and policy",e);
         }

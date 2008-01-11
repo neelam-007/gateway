@@ -86,10 +86,12 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private ServerConfig serverConfig;
     private ClusterPropertyManager clusterPropertyManager;
     private PolicyPathBuilder policyPathBuilder;
+    private PolicyCache policyCache;
 
     /** A serviceoid request that comes in via this URI should be served a compatibility-mode policy. */
     private static final String PRE32_DISCO_URI = "disco.modulator";
 
+    @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         try {
@@ -102,6 +104,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             clusterPropertyManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
             PolicyPathBuilderFactory pathBuilderFactory = (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory");
             policyPathBuilder = pathBuilderFactory.makePathBuilder();
+            policyCache = (PolicyCache) applicationContext.getBean( "policyCache", PolicyCache.class );
         } catch (BeansException be) {
             throw new ServletException(be);
         }catch (IOException e) {
@@ -109,10 +112,12 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
     }
 
+    @Override
     protected String getFeature() {
         return GatewayFeatureSets.SERVICE_POLICYDISCO;
     }
 
+    @Override
     protected SsgConnector.Endpoint getRequiredEndpoint() {
         return SsgConnector.Endpoint.POLICYDISCO;
     }
@@ -120,6 +125,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     /**
      * Soapy policy downloads
      */
+    @Override
     protected void doPost(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
       throws ServletException, IOException {
         PolicyEnforcementContext context = null;
@@ -217,6 +223,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                     if (targetService == null) throw new IllegalStateException("Service not found ("+serviceId+")"); // caught by us in doGet and doPost
 
                     final Assertion servicePolicy = targetService.getPolicy().getAssertion();
+                    final String servicePolicyVersion = policyCache.getUniquePolicyVersionIdentifer( targetService.getPolicy().getOid() );
 
                     return new PolicyService.ServiceInfo() {
                         private Assertion inlinedIncludesPolicy = null;
@@ -232,7 +239,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                         }
 
                         public String getVersion() {
-                            return Integer.toString(targetService.getPolicy().getVersion());
+                            return servicePolicyVersion;
                         }
                     };
                 } catch (IOException e) {
@@ -250,6 +257,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     /**
      * HTTP Get policy downloads for those who want to see policies in their browser
      */
+    @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
         // GET THE PARAMETERS PASSED
@@ -415,7 +423,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
      * Given a username, find all matching users in every registered ID provider
      * and return the corresponding {@link com.l7tech.common.util.CertificateCheckInfo} instance.
      *
-     * @param username
+     * @param username The username to use
      * @return A collection of {@link CertificateCheckInfo} instances.
      * @throws com.l7tech.objectmodel.FindException
      *          if the ID Provider list could not be determined.

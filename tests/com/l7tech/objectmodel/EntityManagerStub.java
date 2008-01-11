@@ -22,8 +22,8 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
 
     public EntityManagerStub(ET[] entities) {
         long maxOid = 0;
-        Map<Long, ET> es = new HashMap<Long, ET>();
-        Map<Long, EH> hs = new HashMap<Long, EH>();
+        Map<Long, ET> es = new LinkedHashMap<Long, ET>();
+        Map<Long, EH> hs = new LinkedHashMap<Long, EH>();
         for (ET entity : entities) {
             es.put(entity.getOid(), entity);
             hs.put(entity.getOid(), header(entity));
