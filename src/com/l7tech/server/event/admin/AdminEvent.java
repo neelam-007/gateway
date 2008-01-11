@@ -6,7 +6,7 @@
 
 package com.l7tech.server.event.admin;
 
-import com.l7tech.server.audit.AdminAuditListener;
+import com.l7tech.server.audit.AdminAuditConstants;
 import org.springframework.context.ApplicationEvent;
 
 import java.util.logging.Level;
@@ -31,7 +31,7 @@ public abstract class AdminEvent extends ApplicationEvent {
     }
 
     public Level getMinimumLevel() {
-        return AdminAuditListener.DEFAULT_LEVEL;
+        return AdminAuditConstants.DEFAULT_LEVEL;
     }
 
     protected String note;

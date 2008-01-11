@@ -50,8 +50,6 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
     }
 
 
-    public static final Level DEFAULT_LEVEL = Level.INFO;
-
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof Updated) {
             Updated updated = (Updated)event;
@@ -109,7 +107,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             PersistenceEvent event = (PersistenceEvent)genericEvent;
             Entity ent = event.getEntity();
             LevelMapping lm = levelMappings.get(ent.getClass());
-            Level level = DEFAULT_LEVEL;
+            Level level = AdminAuditConstants.DEFAULT_LEVEL;
             if (lm != null) {
                 Map map = lm.getEventClassesToLevels();
                 Level temp = (Level)map.get(event.getClass());
