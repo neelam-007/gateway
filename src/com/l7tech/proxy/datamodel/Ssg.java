@@ -87,11 +87,10 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private transient X509Certificate lastSeenPeerCertificate = null;
     private transient SsgListener trustedGatewayListener = null;
 
-    private static Set headersToCopy = new TreeSet(String.CASE_INSENSITIVE_ORDER);
-    static {
-        headersToCopy.add("Cookie");
-        headersToCopy.add("Set-Cookie");
-    }
+    private static Set<String> headersToCopy = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER) {{
+        add("Cookie");
+        add("Set-Cookie");
+    }};
 
     /**
      * Copy all persistent (non-Runtime) settings from that Ssg into this Ssg (except Id), overwriting this Ssg's
@@ -99,6 +98,8 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
      * Caller is responsibile for ensuring that any necessary external state is kept in sync (ie, keystore files
      * needed by the Runtime's keystore manager, and which need to have pass phrases matching the persistent
      * password, if any).
+     * <p/>
+     * This is a shallow copy.
      *
      * @param that   the Ssg from which we will copy our settings.
      */
