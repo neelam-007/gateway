@@ -10,7 +10,6 @@ import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.util.BeanUtils;
 import com.l7tech.common.util.Functions.Unary;
 import static com.l7tech.common.util.Functions.map;
-import com.l7tech.common.util.Pair;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.security.rbac.RoleManager;
@@ -68,24 +67,25 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
     }
 
     public long savePolicy(Policy policy) throws SaveException {
-        return savePolicy(policy, true).left;
+        return savePolicy(policy, true).getPolicyOid();
     }
 
-    public Pair<Long,Long> savePolicy(Policy policy, boolean activateAsWell) throws SaveException {
+    public PolicyCheckpointState savePolicy(Policy policy, boolean activateAsWell) throws SaveException {
         try {
             if (!activateAsWell)
                 return saveWithoutActivating(policy);
 
             if (policy.getOid() == Policy.DEFAULT_OID) {
                 final long oid = policyManager.save(policy);
-                long versionOrdinal = checkpointPolicy(policy, activateAsWell, true).getOrdinal();
+                final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(policy, activateAsWell, true);
                 policyManager.addManagePolicyRole(policy);
-                return new Pair<Long,Long>(oid, versionOrdinal);
+                return new PolicyCheckpointState(oid, checkpoint.getOrdinal(), checkpoint.isActive());
             } else {
                 policyManager.update(policy);
-                long versionOrdinal = checkpointPolicy(policy, true, false).getOrdinal();
+                final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(policy, true, false);
+                long versionOrdinal = checkpoint.getOrdinal();
                 auditor.logAndAudit(SystemMessages.POLICY_VERSION_ACTIVATION, Long.toString(versionOrdinal), Long.toString(policy.getOid()));
-                return new Pair<Long,Long>(policy.getOid(), versionOrdinal);
+                return new PolicyCheckpointState(policy.getOid(), versionOrdinal, checkpoint.isActive());
             }
         } catch (SaveException e) {
             throw e;
@@ -94,7 +94,7 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
         }
     }
 
-    private Pair<Long,Long> saveWithoutActivating(Policy policy) throws ObjectModelException {
+    private PolicyCheckpointState saveWithoutActivating(Policy policy) throws ObjectModelException {
         long policyOid = policy.getOid();
         if (policyOid == Policy.DEFAULT_OID) {
             // Save new policy without activating it
@@ -104,8 +104,8 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
             policyManager.addManagePolicyRole(policy);
             Policy toCheckpoint = makeCopyWithDifferentXml(policy, revisionXml);
             toCheckpoint.setVersion(toCheckpoint.getVersion() - 1);
-            long versionOrdinal = checkpointPolicy(toCheckpoint, false, true).getOrdinal();
-            return new Pair<Long,Long>(oid, versionOrdinal);
+            final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(toCheckpoint, false, true);
+            return new PolicyCheckpointState(oid, checkpoint.getOrdinal(), checkpoint.isActive());
         }
 
         try {
@@ -118,8 +118,8 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
             BeanUtils.copyProperties(policy, curPolicy, OMIT_VERSION_AND_XML);
             curPolicy.setXml(curXml + ' '); // leave policy semantics unchanged but bump the version number
             policyManager.update(curPolicy);
-            long versionOrdinal = checkpointPolicy(makeCopyWithDifferentXml(curPolicy, revisionXml), false, false).getOrdinal();
-            return new Pair<Long,Long>(policyOid, versionOrdinal);
+            final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(makeCopyWithDifferentXml(curPolicy, revisionXml), false, false);
+            return new PolicyCheckpointState(policyOid, checkpoint.getOrdinal(), checkpoint.isActive());
         } catch (InvocationTargetException e) {
             throw new SaveException(e);
         } catch (IllegalAccessException e) {
@@ -137,10 +137,6 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
         } catch (IllegalAccessException e) {
             throw new SaveException("Unable to copy Policy properties", e); // can't happen
         }
-    }
-
-    private PolicyVersion checkpointPolicy(Policy toCheckpoint, boolean activate, boolean newEntity) throws ObjectModelException {
-        return policyVersionManager.checkpointPolicy(toCheckpoint, activate, newEntity);
     }
 
     @Secured(stereotype=MethodStereotype.FIND_ENTITIES)

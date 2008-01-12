@@ -3,11 +3,11 @@
  */
 package com.l7tech.console.action;
 
-import com.l7tech.common.policy.Policy;
-import com.l7tech.common.policy.PolicyVersion;
 import com.l7tech.common.policy.CircularPolicyException;
+import com.l7tech.common.policy.Policy;
+import com.l7tech.common.policy.PolicyCheckpointState;
+import com.l7tech.common.policy.PolicyVersion;
 import com.l7tech.common.security.rbac.OperationType;
-import com.l7tech.common.util.Pair;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.PolicyEntityNode;
@@ -115,6 +115,7 @@ public class SavePolicyAction extends PolicyNodeAction {
                 throw new IllegalArgumentException("No edited policy or service specified");
             }
             final long newVersionOrdinal;
+            final boolean activationState;
             if (policyNode instanceof ServiceNode) {
                 final PublishedService svc = ((ServiceNode) policyNode).getPublishedService();
                 name = svc.getName();
@@ -125,13 +126,18 @@ public class SavePolicyAction extends PolicyNodeAction {
                     Registry.getDefault().getServiceManager().savePublishedService(svc);
                     PolicyVersion policyVersion = Registry.getDefault().getPolicyAdmin().findActivePolicyVersionForPolicy(svc.getPolicy().getOid());
                     newVersionOrdinal = policyVersion == null ? 0 : policyVersion.getOrdinal();
+                    activationState = policyVersion == null ? false : policyVersion.isActive();
                 } else {
-                    newVersionOrdinal = updatePolicyXml(svc.getPolicy().getOid(), xml, activateAsWell);
+                    PolicyCheckpointState checkpointState = updatePolicyXml(svc.getPolicy().getOid(), xml, activateAsWell);
+                    newVersionOrdinal = checkpointState.getPolicyVersionOrdinal();
+                    activationState = checkpointState.isPolicyVersionActive();
                 }
             } else {
                 Policy policy = policyNode.getPolicy();
                 name = policy.getName();
-                newVersionOrdinal = updatePolicyXml(policy.getOid(), xml, activateAsWell);
+                PolicyCheckpointState checkpointState = updatePolicyXml(policy.getOid(), xml, activateAsWell);
+                newVersionOrdinal = checkpointState.getPolicyVersionOrdinal();
+                activationState = checkpointState.isPolicyVersionActive();
             }
             policyNode.clearCachedEntities();
 
@@ -139,7 +145,7 @@ public class SavePolicyAction extends PolicyNodeAction {
             if (workspace.getComponent() instanceof PolicyEditorPanel) {
                 PolicyEditorPanel pep = (PolicyEditorPanel)workspace.getComponent();
                 pep.setOverrideVersionNumber(newVersionOrdinal);
-                pep.setOverrideVersionActive(activateAsWell);
+                pep.setOverrideVersionActive(activationState);
                 pep.updateHeadings();
             }
         } catch ( CircularPolicyException cpe) {
@@ -153,11 +159,10 @@ public class SavePolicyAction extends PolicyNodeAction {
         }
     }
 
-    private static long updatePolicyXml(long policyOid, String xml, boolean activateAsWell) throws FindException, SaveException, PolicyAssertionException {
+    private static PolicyCheckpointState updatePolicyXml(long policyOid, String xml, boolean activateAsWell) throws FindException, SaveException, PolicyAssertionException {
         Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(policyOid);
         if (policy == null) throw new SaveException("Unable to save policy -- this policy no longer exists");
         policy.setXml(xml);
-        Pair<Long,Long> policyOidAndVersionOrdinal = Registry.getDefault().getPolicyAdmin().savePolicy(policy, activateAsWell);
-        return policyOidAndVersionOrdinal.right;
+        return Registry.getDefault().getPolicyAdmin().savePolicy(policy, activateAsWell);
     }
 }

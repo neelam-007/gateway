@@ -20,12 +20,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Gateway's production implementation of {@link PolicyVersionManager}.
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersion, EntityHeader> implements PolicyVersionManager {
+    protected static final Logger logger = Logger.getLogger(PolicyVersionManagerImpl.class.getName());
+
     private final ServerConfig serverConfig;
 
     public PolicyVersionManagerImpl(ServerConfig serverConfig) {
@@ -75,6 +79,19 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
 
         AdminInfo adminInfo = AdminInfo.find();
         PolicyVersion ver = snapshot(newPolicy, adminInfo, activated, newEntity);
+
+        // If a PolicyVersion with this ordinal already exists, this was a do-nothing policy change
+        // and should be ignored (Bug #4569)
+        PolicyVersion existing = findByOrdinal(policyOid, ver.getOrdinal());
+        if (existing != null) {
+            if (activated && !existing.isActive()) {
+                existing.setActive(true);
+                update(existing);
+                deactivateVersions(policyOid, existing.getOid());
+            }
+            return existing;
+        }
+
         final long versionOid = save(ver);
         ver.setOid(versionOid);
 
@@ -87,6 +104,22 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         return ver;
     }
 
+    @Transactional(propagation=Propagation.SUPPORTS)
+    private PolicyVersion findByOrdinal(final long policyOid, final long versionOrdinal) throws FindException {
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("policyOid", policyOid);
+        map.put("ordinal", versionOrdinal);
+        List<PolicyVersion> found = findMatching(map);
+        if (found == null || found.isEmpty())
+            return null;
+        if (found.size() > 1) {
+            logger.log(Level.WARNING, "Duplicate PolicyVersion ordinal found for policyOid=" + policyOid + ": ordinal=" + versionOrdinal);
+            return null;
+        }
+        return found.iterator().next();
+    }
+
+    @Transactional(propagation=Propagation.SUPPORTS)
     private void deleteStaleRevisions(final long policyOid, final PolicyVersion justSaved) throws FindException, DeleteException {
         final long justSavedOid = justSaved.getOid();
 

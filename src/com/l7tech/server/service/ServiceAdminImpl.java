@@ -240,10 +240,6 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         return entity.getOid() == PersistentEntity.DEFAULT_OID;
     }
 
-    private PolicyVersion checkpointPolicy(Policy toCheckpoint, boolean activate, boolean newEntity) throws ObjectModelException {
-        return policyVersionManager.checkpointPolicy(toCheckpoint, activate, newEntity);
-    }
-
     /**
      * this save method handles both save and updates.
      * the distinction happens on the server side by inspecting the oid of the object
@@ -267,14 +263,14 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
                 logger.fine("Updating PublishedService: " + oid);
                 serviceManager.update(service);
                 if (policy != null) {
-                    PolicyVersion ver = checkpointPolicy(policy, true, false);
+                    PolicyVersion ver = policyVersionManager.checkpointPolicy(policy, true, false);
                     auditor.logAndAudit(SystemMessages.POLICY_VERSION_ACTIVATION, Long.toString(ver.getOrdinal()), Long.toString(policy.getOid()));
                 }
             } else {
                 // SAVING NEW SERVICE
                 logger.fine("Saving new PublishedService");
                 oid = serviceManager.save(service);
-                if (policy != null) checkpointPolicy(policy, true, true);
+                if (policy != null) policyVersionManager.checkpointPolicy(policy, true, true);
                 serviceManager.addManageServiceRole(service);
             }
         } catch (UpdateException e) {

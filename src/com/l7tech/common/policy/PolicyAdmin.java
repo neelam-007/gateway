@@ -8,7 +8,6 @@ import com.l7tech.common.security.rbac.MethodStereotype;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
 import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.rbac.Secured;
-import com.l7tech.common.util.Pair;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
@@ -83,11 +82,11 @@ public interface PolicyAdmin {
      *                       but will not take effect.
      *                       (<b>NOTE:</b> Any other changes to the Policy bean, aside from policy XML, will
      *                       ALWAYS take effect immediately.)
-     * @return a Pair of (OID of the policy that was saved, version ordinal that was assigned to this policy XML)
+     * @return PolicyCheckpointState describing the status of the policy after the save operation completed
      * @throws PolicyAssertionException if there is a problem with the policy
      */
     @Secured(stereotype=SAVE_OR_UPDATE, relevantArg=0)
-    Pair<Long,Long> savePolicy(Policy policy, boolean activateAsWell) throws PolicyAssertionException, SaveException;
+    PolicyCheckpointState savePolicy(Policy policy, boolean activateAsWell) throws PolicyAssertionException, SaveException;
 
     @Secured(stereotype = MethodStereotype.FIND_HEADERS)
     Set<Policy> findUsages(long oid) throws FindException;

@@ -1,13 +1,12 @@
 package com.l7tech.console.policy;
 
 import com.l7tech.common.policy.*;
-import com.l7tech.common.util.Pair;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 
 import java.util.Collection;
-import java.util.Set;
 import java.util.List;
+import java.util.Set;
 
 /**
  * PolicyAdmin wrapper that fires invalidation events for the active policy.
@@ -41,9 +40,9 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
         return delegate.savePolicy( policy );
     }
 
-    public Pair<Long, Long> savePolicy( Policy policy, boolean activateAsWell ) throws PolicyAssertionException, SaveException {
-        Pair<Long, Long> result = delegate.savePolicy( policy, activateAsWell );
-        fireEntityInvalidated( result.left );
+    public PolicyCheckpointState savePolicy( Policy policy, boolean activateAsWell ) throws PolicyAssertionException, SaveException {
+        PolicyCheckpointState result = delegate.savePolicy( policy, activateAsWell );
+        fireEntityInvalidated( result.getPolicyOid() );
         return result;
     }
 
