@@ -1,5 +1,6 @@
 package com.l7tech.server.flasher;
 
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.db.DBActions;
 
@@ -124,13 +125,22 @@ public class DBDumpUtil {
                         case Types.VARCHAR:
                         case Types.CHAR:
                         case Types.LONGVARCHAR: // medium text
-                        case Types.LONGVARBINARY: // medium blob
                             String tmp = tdataList.getString(i);
                             if (tmp != null) {
                                 tmp = escapeForSQLInsert(tmp);
                                 insertStatementToRecord.append("'");
                                 insertStatementToRecord.append(tmp);
                                 insertStatementToRecord.append("'");
+                            } else {
+                                insertStatementToRecord.append("NULL");
+                            }
+                            if (i < rowInfo.getColumnCount()) insertStatementToRecord.append(", ");
+                            break;
+                        case Types.LONGVARBINARY: // medium blob
+                            final byte[] tmpBytes = tdataList.getBytes(i);
+                            if (tmpBytes != null) {
+                                insertStatementToRecord.append("0x");
+                                insertStatementToRecord.append(HexUtils.hexDump(tmpBytes));
                             } else {
                                 insertStatementToRecord.append("NULL");
                             }
