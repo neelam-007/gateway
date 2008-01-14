@@ -712,6 +712,7 @@ public class DBActions {
         if (dbHostnameString.contains(",")) {
             String[] hosts = dbHostnameString.split(",");
             for (String host : hosts) {
+                host = host.trim();
                 if (host.equalsIgnoreCase("localhost") || host.equalsIgnoreCase("127.0.0.1") )
                     usesLocalhost = true;
 
@@ -719,6 +720,7 @@ public class DBActions {
                 list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@" + DBActions.getNonLocalHostame(host) + " identified by '" + dbInfo.getPassword() + "'"));
             }
         } else {
+            dbHostnameString = dbHostnameString.trim();
             if (dbHostnameString.equalsIgnoreCase("localhost") || dbHostnameString.equalsIgnoreCase("127.0.0.1") )
                 usesLocalhost = true;
 
