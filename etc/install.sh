@@ -257,6 +257,7 @@ save_all() {
         [ -z "${DOIT}" ] && DOIT="n"
 
         if [ ! "${DOIT}" == "n" ] ; then
+            check_user
             do_command_as_user "ssgconfig" "${MYCOMMAND}"
             if [ "${?}" == "0" ]; then
                 echo "The configuration was successful."
@@ -269,8 +270,6 @@ save_all() {
     fi
 }
 
-echo ""
-check_user
 echo ""
 configure_java_home
 echo ""

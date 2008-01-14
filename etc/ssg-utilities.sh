@@ -15,16 +15,21 @@ check_user() {
   if [ "$USER" != "ssgconfig" ] && [ "$USER" != "root" ] ; then
       echo "This utility needs to be run as the ssgconfig user."
       echo "If prompted, please enter the ssgconfig login password."
+      echo ""
   fi
 }
 
 do_command_as_user() {
     WHICHUSER=$1
     WHICHCOMMAND=$2
-   
-    echo ""
-    if [ "${LOGNAME}" != root ] ; then
+
+    if [ "${LOGNAME}" != "root" ] && [ "${LOGNAME}" != "${WHICHUSER}" ] ; then
         echo "Please enter the password for ${WHICHUSER}"
     fi
-    su ${WHICHUSER} -c "${WHICHCOMMAND}"
+
+    if [ "${LOGNAME}" == "${WHICHUSER}" ] ; then
+        bash -c "${WHICHCOMMAND}"
+    else
+        su ${WHICHUSER} -c "${WHICHCOMMAND}"
+    fi
 }

@@ -10,7 +10,13 @@ popd > /dev/null
 
 . ${SSG_ROOT}/etc/profile
 
-USER=${LOGNAME}
+OLDPATH=$PATH
+#this puts the necessary "id" that supports -u first in the path on Solaris, and is a noop on other OSes
+PATH="/usr/xpg4/bin:$PATH"
+USERID=`id -u`
+SSGCONFIG_USERID=`id -u ssgconfig`
+PATH=$OLDPATH
+
 SCADIAG="/opt/sun/sca6000/sbin/scadiag"
 OPTIONS="-Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT}"
 
@@ -22,8 +28,8 @@ check_options(){
 
 launch_wizard(){
 	check_options
-	#check if we're root
-	if [ "$USER" != "ssgconfig" ]; then
+	#check who we are
+	if [ "${USERID}" != "${SSGCONFIG_USERID}" ]; then
         do_command_as_user ssgconfig "${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*"
     else
         ${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*
@@ -34,8 +40,4 @@ ensure_JDK
 launchtype=${1}
 check_user
 
-if [ "${launchtype}z" == "-exportsharedkeyz" ] || [ "${launchtype}z" == "-changeMasterPassphrasez" ]; then
-    do_command_as_user ssgconfig "${SSG_JAVA_HOME}/bin/java ${OPTIONS} -jar ConfigWizard.jar $*"
-else
-    launch_wizard "${launchtype}"
-fi
+launch_wizard "$*"

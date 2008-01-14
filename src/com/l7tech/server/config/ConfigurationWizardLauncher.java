@@ -42,15 +42,15 @@ public class ConfigurationWizardLauncher {
             newArgs = args;
         }
 
-        if (PARTITION_UPGRADE.equalsIgnoreCase(launchType)) {
+        if (EXPORT_SHARED_KEY.equalsIgnoreCase(launchType)) {
+                SharedKeyGetter.main(newArgs);
+        } else if (PARTITION_UPGRADE.equalsIgnoreCase(launchType)) {
             //if they have asked for partitionMigrate explicitly, we've give them just that.
             PartitionManager.doMigration(false);
         } else {
             //otherwise we'll migrate and then do what they ask.
             PartitionManager.doMigration(true);
-            if (EXPORT_SHARED_KEY.equalsIgnoreCase(launchType)) {
-                SharedKeyGetter.main(newArgs);
-            } else if (CHANGE_MASTER_PASSPHRASE.equalsIgnoreCase(launchType)) {
+            if (CHANGE_MASTER_PASSPHRASE.equalsIgnoreCase(launchType)) {
                 MasterPassphraseChanger.main(newArgs);
             } else if (null == launchType || "".equals(launchType) || CONSOLE_MODE.equalsIgnoreCase(launchType)) {
                 ConsoleConfigWizardLauncher.launch(newArgs);

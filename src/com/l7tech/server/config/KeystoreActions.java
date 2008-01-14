@@ -10,6 +10,7 @@ import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.exceptions.KeystoreActionsException;
 import com.l7tech.server.config.exceptions.WrongKeystorePasswordException;
+import com.l7tech.server.config.ui.console.ConsoleWizardUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
@@ -78,10 +79,7 @@ public class KeystoreActions {
             throw new KeystoreActionsException(MessageFormat.format("Attempting to retrieve the cluster shared key resulted in the following error code and message: {0}, {1}", result.getExitStatus(), new String(result.getOutput())));
         }
 
-        byte[] rawKey = HexUtils.decodeBase64(new String(base64sharedKey), true);
-//        logger.info(MessageFormat.format("KeystoreActions.spawnSubProcessAndGetSharedKey - Shared Key: {0} Length: {1}",HexUtils.hexDump(rawKey),String.valueOf(rawKey.length)));
-
-        return rawKey;
+        return HexUtils.decodeBase64(new String(base64sharedKey), true);
     }
 
     public void prepareJvmForNewKeystoreType(KeystoreType ksType) throws IllegalAccessException, InstantiationException, FileNotFoundException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException {
@@ -220,6 +218,9 @@ public class KeystoreActions {
             });
             ksType = props.get(KeyStoreConstants.PROP_KS_TYPE);
             ksPassword = props.get(KeyStoreConstants.PROP_SSL_KS_PASS).toCharArray();
+            PasswordPropertyCrypto pc = osFunctions.getPasswordPropertyCrypto();
+            ksPassword = pc.decryptIfEncrypted(new String(ksPassword)).toCharArray();
+
             ksDir = props.get(KeyStoreConstants.PROP_KEYSTORE_DIR);
             ksFilename = props.get(KeyStoreConstants.PROP_SSL_KEYSTORE_FILE);
         } catch (IOException e) {
@@ -234,16 +235,20 @@ public class KeystoreActions {
         if (!existingKeystoreFile.exists()) {
             logger.info(MessageFormat.format("No existing keystore found. No need to backup shared key. (tried {0})", existingKeystoreFile.getAbsolutePath()));
         } else {
-            String msg = MessageFormat.format("An existing keystore was found at {0}. Attempting to back up shared key.", existingKeystoreFile.getAbsolutePath());
+            String msg = MessageFormat.format(
+                    "An existing keystore was found at {0}. " +
+                    ConsoleWizardUtils.EOL_CHAR +
+                    "Attempting to back up shared key. Please wait ...", existingKeystoreFile.getAbsolutePath());
             if (listener != null) listener.printKeystoreInfoMessage(msg);
             logger.info(msg);
             sharedKey = getExistingSharedKey(new File(ksDir, ksFilename), ksType, ksPassword, true, listener);
             if (sharedKey != null) {
                 if (sharedKey.length == 0) {
                     logger.info("No shared key was found in the database. No need to back it up.");
+                    if (listener != null) listener.printKeystoreInfoMessage("No shared key was found in the database. No need to back it up.");
                 } else {
                     logger.info("Found a shared key in the database. Backing it up.");
-//                    logger.info(MessageFormat.format("KeystoreActions.getSharedKey - Shared Key = {0}, Shared Key Length {1}", HexUtils.hexDump(sharedKey), String.valueOf(sharedKey.length)));
+                    if (listener != null) listener.printKeystoreInfoMessage("Found a shared key in the database. Backing it up.");
                 }
             }
         }
@@ -263,7 +268,6 @@ public class KeystoreActions {
             logger.severe("Error loading existing keystore and retrieving cluster shared key: " + e.getMessage());
             throw new KeystoreActionsException("Error loading existing keystore and retrieving cluster shared key: " + e.getMessage());
         }
-//        logger.info(MessageFormat.format("KeystoreActions.getExistingSharedKey - shared key: {0}", HexUtils.hexDump(sharedKey)));
         return sharedKey;
     }
 
@@ -293,7 +297,6 @@ public class KeystoreActions {
                 }
             }
         }
-//        logger.info(MessageFormat.format("KeystoreActions.reallyGetExistingSharedKey - shared key: {0}", HexUtils.hexDump(sharedKey)));
         return sharedKey;
     }
 
