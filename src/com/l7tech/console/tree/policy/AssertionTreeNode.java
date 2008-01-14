@@ -192,7 +192,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     @Override
     public String getTooltipText() {
         List messages = getValidatorMessages();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (messages.isEmpty()) {
             final String st = super.getTooltipText();
             if (st != null) sb.append(st);
@@ -224,7 +224,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
                 return null;
             }
         } else {
-            sb.append("<html><strong>The policy may be invalid due to {0}<br>");
+            String toBeFormatted = "<html><strong>The policy may be invalid due to {0}<br>";
             Iterator it = messages.iterator();
             boolean first = true;
             boolean hasWarnings = false;
@@ -246,14 +246,14 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
                 sb.append("<i>").append(blahness).append("</i>");
             }
             sb.append("</strong></html>");
-            String format = sb.toString();
             String msg = "warnings and errors:";
             if (hasWarnings && !hasErrors) {
                 msg = "warnings:";
             } else if (!hasWarnings && hasErrors) {
                 msg = "errors:";
             }
-            return MessageFormat.format(format, msg);
+            sb.insert(0, MessageFormat.format(toBeFormatted, msg));
+            return sb.toString();
         }
     }
 
