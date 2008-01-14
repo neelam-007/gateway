@@ -114,7 +114,9 @@ control_single_partition() {
     check_enabled
     if [ $? -eq 0 ] ; then
 
-        do_firewall
+        if [ "${COMMAND}" == "stop" ] ; then
+            do_firewall
+        fi
 
         if [ "${PARTITION_NAME}"  == "default_" ] && [ -e  /usr/local/Tarari ] ; then
             ORIGINAL_JAVA_OPTS="-Dcom.l7tech.common.xml.tarari.enable=true $ORIGINAL_JAVA_OPTS"
