@@ -3,30 +3,41 @@
  */
 package com.l7tech.server.event.system;
 
+import com.l7tech.common.Component;
 import com.l7tech.service.PublishedService;
-import org.springframework.context.ApplicationEvent;
 
 /**
  * @author alex
  */
-public abstract class ServiceCacheEvent extends ApplicationEvent {
+public abstract class ServiceCacheEvent extends SystemEvent {
+    private final PublishedService service;
+
     private ServiceCacheEvent(PublishedService source) {
-        super(source);
+        super(source, Component.GW_SERVER);
+        this.service = source;
     }
 
     public PublishedService getService() {
-        return (PublishedService) source;
+        return service;
     }
 
     public static class Deleted extends ServiceCacheEvent {
         public Deleted(PublishedService source) {
             super(source);
         }
+
+        public String getAction() {
+            return "Deleted";
+        }
     }
 
     public static class Updated extends ServiceCacheEvent {
         public Updated(PublishedService source) {
             super(source);
+        }
+
+        public String getAction() {
+            return "Updated";
         }
     }
 }
