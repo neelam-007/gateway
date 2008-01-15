@@ -1,6 +1,13 @@
 package com.l7tech.server.config.db;
 
+import com.l7tech.server.config.PropertyHelper;
+import org.apache.commons.lang.StringUtils;
+
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DBInformation implements Serializable {
     private String hostname = "";
@@ -10,6 +17,10 @@ public class DBInformation implements Serializable {
     private String privUsername = "";
     private String privPassword = "";
     private boolean isNew;
+    public final static String PROP_DB_USERNAME = "hibernate.connection.username";
+    public final static String PROP_DB_URL = "hibernate.connection.url";
+    public final static String PROP_DB_PASSWORD = "hibernate.connection.password" ;
+    public final static Pattern dbUrlPattern = Pattern.compile("^.*//(.*)/(.*)\\?.*$");
 
     public DBInformation(String hostname, String dbName, String username, String password, String privUsername, String privPassword) {
         this.hostname = hostname;
@@ -18,6 +29,10 @@ public class DBInformation implements Serializable {
         this.password = password;
         this.privUsername = privUsername;
         this.privPassword = privPassword;
+    }
+
+    public DBInformation(String dbConfigFile) throws IOException {
+        initFromConfigFile(dbConfigFile);
     }
 
     public DBInformation() {
@@ -77,5 +92,34 @@ public class DBInformation implements Serializable {
 
     public void setNew(boolean aNew) {
         isNew = aNew;
+    }
+
+    private void initFromConfigFile(String configFile) throws IOException {
+        Map<String, String> defaults = PropertyHelper.getProperties(configFile, new String[] {
+                PROP_DB_URL,
+                PROP_DB_USERNAME,
+                PROP_DB_PASSWORD
+        });
+
+        String dbUsername = defaults.get(PROP_DB_USERNAME);
+        String dbPassword = defaults.get(PROP_DB_PASSWORD);
+        String existingDBUrl = (String) defaults.get(PROP_DB_URL);
+
+        String dbHostname = "";
+        String dbName = "";
+
+        if (StringUtils.isNotEmpty(existingDBUrl)) {
+            Matcher matcher = dbUrlPattern.matcher(existingDBUrl);
+            if (matcher.matches()) {
+                dbHostname = matcher.group(1);
+                dbName = matcher.group(2);
+            }
+            setHostname(dbHostname);
+            setDbName(dbName);
+            setUsername(dbUsername);
+            setPassword(dbPassword);
+        } else {
+            throw new IOException("no database url was found while reading the configfile [" + configFile + "].");
+        }
     }
 }

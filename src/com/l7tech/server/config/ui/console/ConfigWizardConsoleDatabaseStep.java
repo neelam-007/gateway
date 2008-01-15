@@ -106,19 +106,19 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
     private void doDBInfoPrompts() throws IOException, WizardNavigationException {
         //if the bean didn't contain anything useful, get whatever is currently in the config file
         Map<String, String> defaults = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[] {
-                SsgDatabaseConfigBean.PROP_DB_URL,
-                SsgDatabaseConfigBean.PROP_DB_USERNAME,
-                SsgDatabaseConfigBean.PROP_DB_PASSWORD,
+                DBInformation.PROP_DB_URL,
+                DBInformation.PROP_DB_USERNAME,
+                DBInformation.PROP_DB_PASSWORD,
         });
 
         String defaultHostname = null;
         String defaultDbName = null;
         String defaultDbUsername;
 
-        String existingDBUrl = (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_URL);
+        String existingDBUrl = (String) defaults.get(DBInformation.PROP_DB_URL);
 
         if (StringUtils.isNotEmpty(existingDBUrl)) {
-            Matcher matcher = SsgDatabaseConfigBean.dbUrlPattern.matcher(existingDBUrl);
+            Matcher matcher = DBInformation.dbUrlPattern.matcher(existingDBUrl);
             if (matcher.matches()) {
                 defaultHostname = matcher.group(1);
                 defaultDbName = matcher.group(2);
@@ -128,7 +128,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         defaultHostname = selectDefault(databaseBean.getDbHostname(), defaultHostname);
         defaultDbName = selectDefault(databaseBean.getDbName(), defaultDbName);
 
-        defaultDbUsername = defaults.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
+        defaultDbUsername = defaults.get(DBInformation.PROP_DB_USERNAME);
         defaultDbUsername = selectDefault(databaseBean.getDbUsername(), defaultDbUsername );
 
         if (createNewDb) printText(HEADER_NEW_DB_INFO + getEolChar());
@@ -138,10 +138,11 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         printText(REPLICATED_HOSTNAME_INSTRUCTIONS + getEolChar() + getEolChar());
 
         DBInformation dbInfo = new DBInfoGetter(parent.getWizardUtils(), isShowNavigation()).getDbInfo(defaultHostname, defaultDbName, defaultDbUsername, "", createNewDb);
-        databaseBean.setDbHostname(dbInfo.getHostname());
-        databaseBean.setDbName(dbInfo.getDbName());
-        databaseBean.setDbUsername(dbInfo.getUsername());
-        databaseBean.setDbPassword(dbInfo.getPassword());
+//        databaseBean.setDbInformation(dbInfo);
+//        databaseBean.setDbHostname(dbInfo.getHostname());
+//        databaseBean.setDbName(dbInfo.getDbName());
+//        databaseBean.setDbUsername(dbInfo.getUsername());
+//        databaseBean.setDbPassword(dbInfo.getPassword());
         getParentWizard().setDbInfo(dbInfo);
     }
 

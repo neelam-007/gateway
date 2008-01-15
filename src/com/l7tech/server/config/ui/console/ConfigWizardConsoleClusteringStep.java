@@ -5,9 +5,8 @@ import com.l7tech.server.config.*;
 import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.commands.ClusteringConfigCommand;
 import com.l7tech.server.config.db.DBInformation;
-import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.exceptions.DatabaseConfigException;
-import com.l7tech.server.partition.PartitionManager;
+import com.l7tech.server.config.exceptions.WizardNavigationException;
 import org.apache.commons.lang.StringUtils;
 
 import javax.crypto.BadPaddingException;

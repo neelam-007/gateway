@@ -1,7 +1,6 @@
 package com.l7tech.server.config;
 
 import com.l7tech.common.util.*;
-import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.exceptions.KeystoreActionsException;
@@ -419,8 +418,7 @@ public class PartitionActions {
             try {
                 OSSpecificFunctions osf = partitionToRemove.getOSSpecificFunctions();
 
-                SsgDatabaseConfigBean dbBean = new SsgDatabaseConfigBean(osf.getDatabaseConfig());
-                DBInformation dbInfo = dbBean.getDbInformation();
+                DBInformation dbInfo = new DBInformation(osf.getDatabaseConfig());
 
                 DBActions dba = new DBActions(osf);
                 boolean removeDb = listener.getPartitionActionsConfirmation(

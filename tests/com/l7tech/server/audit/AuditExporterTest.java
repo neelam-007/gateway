@@ -14,8 +14,8 @@ import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PasswordPropertyCrypto;
 import com.l7tech.server.config.PropertyHelper;
-import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.db.DBActions;
+import com.l7tech.server.config.db.DBInformation;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -62,13 +62,13 @@ public class AuditExporterTest extends TestCase {
         final OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions("default_");
         PasswordPropertyCrypto passwordCrypto = osFunctions.getPasswordPropertyCrypto();
         Map<String, String> dbProps = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[]{
-                SsgDatabaseConfigBean.PROP_DB_USERNAME,
-                SsgDatabaseConfigBean.PROP_DB_PASSWORD,
-                SsgDatabaseConfigBean.PROP_DB_URL,
+                DBInformation.PROP_DB_USERNAME,
+                DBInformation.PROP_DB_PASSWORD,
+                DBInformation.PROP_DB_URL,
         });
-        final String databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
-        final String databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
-        final String databasePasswdCrypt = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
+        final String databaseURL = dbProps.get(DBInformation.PROP_DB_URL);
+        final String databaseUser = dbProps.get(DBInformation.PROP_DB_USERNAME);
+        final String databasePasswdCrypt = dbProps.get(DBInformation.PROP_DB_PASSWORD);
         final String databasePasswd = passwordCrypto.decryptIfEncrypted(databasePasswdCrypt);
 
         logger.info("using database url " + databaseURL);

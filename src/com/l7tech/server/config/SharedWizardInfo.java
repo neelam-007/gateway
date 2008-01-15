@@ -46,6 +46,7 @@ public class SharedWizardInfo {
     }
 
     public DBInformation getDbinfo() {
+        if (dbinfo == null) dbinfo = new DBInformation();
         return dbinfo;
     }
 

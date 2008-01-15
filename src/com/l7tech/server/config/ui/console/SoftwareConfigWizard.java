@@ -6,6 +6,8 @@ import com.l7tech.server.config.*;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
+import com.l7tech.server.config.db.DBActions;
+import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 import org.xml.sax.SAXException;
@@ -70,6 +72,11 @@ public class SoftwareConfigWizard extends ConfigurationWizard {
                     }
                 }
             }
+
+            //set the right DBInformation
+            DBInformation dbInfo = silentConfig.getDbInfo();
+            SharedWizardInfo.getInstance().setDbinfo(dbInfo);
+
             //restore the keystore to the partition before running the commands
             File keystoreDir = new File(pInfo.getOSSpecificFunctions().getKeystoreDir());
             keystoreDir.mkdirs();
@@ -141,6 +148,8 @@ public class SoftwareConfigWizard extends ConfigurationWizard {
 
                 SilentConfigData configData = new SilentConfigData();
                 configData.setCommands(commands);
+                String dbHostname = sharedWizardInfo.getDbinfo().getHostname();
+                sharedWizardInfo.getDbinfo().setHostname(DBActions.getNonLocalHostame(dbHostname));
                 configData.setDbInfo(sharedWizardInfo.getDbinfo());
                 configData.setPartitionInfo(pInfo);
 

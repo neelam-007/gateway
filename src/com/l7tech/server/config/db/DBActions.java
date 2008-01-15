@@ -735,7 +735,7 @@ public class DBActions {
         }
 
         list.add(new String("FLUSH PRIVILEGES"));
-        return list.toArray(new String[0]);
+        return list.toArray(new String[list.size()]);
     }
 
     private String[] getCreateDbStatementsFromFile(String dbCreateScript) throws IOException {
@@ -784,7 +784,7 @@ Statement getCreateTablesStmt = null;
             ResourceUtils.closeQuietly(getCreateTablesStmt);
         }
 
-        return list.toArray(new String[0]);
+        return list.toArray(new String[list.size()]);
     }
 
     private boolean testForExistingDb(Statement stmt, String dbName) {

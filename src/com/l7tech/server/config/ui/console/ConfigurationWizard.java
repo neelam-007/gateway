@@ -5,12 +5,10 @@ import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.server.config.*;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.db.DBInformation;
-import com.l7tech.server.config.exceptions.KeystoreActionsException;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.*;

@@ -6,7 +6,7 @@ import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PasswordPropertyCrypto;
 import com.l7tech.server.config.PropertyHelper;
-import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
+import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 import org.apache.commons.lang.StringUtils;
@@ -160,13 +160,13 @@ public class Exporter {
             OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
             PasswordPropertyCrypto passwordCrypto = osFunctions.getPasswordPropertyCrypto();
             Map<String, String> dbProps = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[]{
-                    SsgDatabaseConfigBean.PROP_DB_USERNAME,
-                    SsgDatabaseConfigBean.PROP_DB_PASSWORD,
-                    SsgDatabaseConfigBean.PROP_DB_URL,
+                    DBInformation.PROP_DB_USERNAME,
+                    DBInformation.PROP_DB_PASSWORD,
+                    DBInformation.PROP_DB_URL,
             });
-            String databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
-            String databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
-            String databasePasswd = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
+            String databaseURL = dbProps.get(DBInformation.PROP_DB_URL);
+            String databaseUser = dbProps.get(DBInformation.PROP_DB_USERNAME);
+            String databasePasswd = dbProps.get(DBInformation.PROP_DB_PASSWORD);
             databasePasswd = passwordCrypto.decryptIfEncrypted(databasePasswd);
 
             logger.info("using database url " + databaseURL);

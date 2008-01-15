@@ -1,10 +1,8 @@
 package com.l7tech.server.flasher;
 
 import com.l7tech.common.BuildInfo;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.server.config.*;
-import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.partition.PartitionInformation;
@@ -14,7 +12,6 @@ import org.xml.sax.SAXException;
 
 import java.io.*;
 import java.sql.*;
-import java.text.ParseException;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -176,13 +173,13 @@ public class Importer {
             passwordCrypto = osFunctions.getPasswordPropertyCrypto();
 
             Map<String, String> dbProps = PropertyHelper.getProperties(tempDirectory + File.separator + "hibernate.properties", new String[] {
-                SsgDatabaseConfigBean.PROP_DB_USERNAME,
-                SsgDatabaseConfigBean.PROP_DB_PASSWORD,
-                SsgDatabaseConfigBean.PROP_DB_URL,
+                DBInformation.PROP_DB_USERNAME,
+                DBInformation.PROP_DB_PASSWORD,
+                DBInformation.PROP_DB_URL,
             });
-            databaseURL = dbProps.get(SsgDatabaseConfigBean.PROP_DB_URL);
-            databaseUser = dbProps.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
-            String imageDbPasswdRaw = dbProps.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
+            databaseURL = dbProps.get(DBInformation.PROP_DB_URL);
+            databaseUser = dbProps.get(DBInformation.PROP_DB_USERNAME);
+            String imageDbPasswdRaw = dbProps.get(DBInformation.PROP_DB_PASSWORD);
             databasePasswd = passwordCrypto.decryptIfEncrypted(imageDbPasswdRaw);
             logger.info("using database url " + databaseURL);
             logger.info("using database user " + databaseUser);
