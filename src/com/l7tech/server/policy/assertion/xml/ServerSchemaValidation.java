@@ -189,15 +189,10 @@ public class ServerSchemaValidation
                     return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
                 }
                 if (elementsToValidate == null || elementsToValidate.length < 1) {
-                    if (assertion.isApplyToArguments()) {
-                        logger.fine("There is nothing to validate. This is legal because setting is set " +
-                                "to validate arguments only and certain rpc operations do not have any " +
-                                "argument elements.");
-                        return AssertionStatus.NONE;
-                    } else {
-                        auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_EMPTY_BODY);
-                        return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
-                    }
+                    logger.fine("There is nothing to validate. This is legal because setting is set " +
+                            "to validate arguments only and certain rpc operations do not have any " +
+                            "argument elements.");
+                    return AssertionStatus.NONE;
                 }
 
                 try {
