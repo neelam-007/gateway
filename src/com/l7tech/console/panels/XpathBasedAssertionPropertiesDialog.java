@@ -26,6 +26,7 @@ import com.l7tech.console.tree.wsdl.BindingTreeNode;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SoapMessageGenerator;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.SoapMessageGenerator.Message;
 import com.l7tech.console.xmlviewer.ExchangerDocument;
 import com.l7tech.console.xmlviewer.Viewer;
@@ -473,7 +474,9 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 if (res != null && !res.valid()) {
                     String xpathmsg = xpath;
                     if (xpathmsg == null || xpathmsg.equals("")) {
-                        xpathmsg = "[empty]";
+                        DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
+                                "The empty XPath is invalid. Please specify it.", null);
+                        return;
                     }
                     int rs2 = JOptionPane.showConfirmDialog(okButton, "The path " + xpathmsg + " is not valid (" +
                       res.getShortMessage() + ").\nAre you sure " +
