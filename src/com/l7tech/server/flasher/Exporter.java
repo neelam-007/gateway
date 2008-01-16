@@ -43,9 +43,9 @@ public class Exporter {
                                                                         false,
                                                                         true);
     public static final CommandLineOption PARTITION = new CommandLineOption("-p",
-                                                                            "partition name to import to");
+                                                                            "name of partition to export");
     public static final CommandLineOption MAPPING_PATH = new CommandLineOption("-it",
-                                                                               "path of the output mapping template",
+                                                                               "path of the output mapping template file",
                                                                                true, false);
     public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, PARTITION, MAPPING_PATH};
     public static final String VERSIONFILENAME = "version";

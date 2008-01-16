@@ -37,9 +37,9 @@ public class Importer {
                                                                              "location of image file to import",
                                                                              true, false);
     public static final CommandLineOption MODE = new CommandLineOption("-mode", "[restore | migrate]");
-    public static final CommandLineOption PARTITION = new CommandLineOption("-p", "partition name to import to");
+    public static final CommandLineOption PARTITION = new CommandLineOption("-p", "name of partition to import");
     public static final CommandLineOption MAPPING_PATH = new CommandLineOption("-mapping",
-                                                                               "location of the staging mapping file",
+                                                                               "location of the mapping template file",
                                                                                true, false);
     public static final CommandLineOption DB_HOST_NAME = new CommandLineOption("-dbh", "database host name");
     public static final CommandLineOption DB_NAME = new CommandLineOption("-db", "database name");
