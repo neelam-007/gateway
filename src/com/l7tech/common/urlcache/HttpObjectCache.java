@@ -134,8 +134,8 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
                     return sourceResponse.getContentType();
                 }
 
-                public String getString() throws IOException {
-                    return sourceResponse.getAsString();
+                public String getString(boolean isXml) throws IOException {
+                    return sourceResponse.getAsString(isXml);
                 }
             });
             if (userObject != null) {

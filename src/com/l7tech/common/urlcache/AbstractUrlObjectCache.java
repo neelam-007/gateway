@@ -477,10 +477,11 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
         /**
          * Get the contents of the URL as a String.
          *
+         * @param isXml Whether the input is an XML document or not
          * @return The String data
          * @throws IOException if an error occurs.
          */
-        String getString() throws IOException;
+        String getString(boolean isXml) throws IOException;
 
         /**
          * Get the contents of the URL as a String.

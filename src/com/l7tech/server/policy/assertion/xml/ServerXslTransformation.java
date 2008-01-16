@@ -89,7 +89,7 @@ public class ServerXslTransformation
     private static final HttpObjectCache.UserObjectFactory<CompiledStylesheet> cacheObjectFactory =
                 new HttpObjectCache.UserObjectFactory<CompiledStylesheet>() {
                     public CompiledStylesheet createUserObject(String url, AbstractUrlObjectCache.UserObjectSource responseSource) throws IOException {
-                        String response = responseSource.getString();                        
+                        String response = responseSource.getString(true);                        
                         try {
                             return StylesheetCompiler.compileStylesheet(response);
                         } catch (ParseException e) {
@@ -130,7 +130,7 @@ public class ServerXslTransformation
                                 public ContentTypeHeader getContentType() {
                                     return null;
                                 }
-                                public String getString() {
+                                public String getString(boolean isXml) {
                                     return resourceString;
                                 }
                             });

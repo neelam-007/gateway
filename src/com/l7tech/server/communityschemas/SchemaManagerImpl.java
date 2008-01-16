@@ -142,7 +142,7 @@ public class SchemaManagerImpl implements SchemaManager {
 
         HttpObjectCache.UserObjectFactory<String> userObjectFactory = new HttpObjectCache.UserObjectFactory<String>() {
             public String createUserObject(String url, AbstractUrlObjectCache.UserObjectSource responseSource) throws IOException {
-                String response = responseSource.getString();
+                String response = responseSource.getString(true);
                 onUrlDownloaded(url);
                 return response;
             }
