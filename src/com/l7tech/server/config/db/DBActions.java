@@ -2,12 +2,9 @@ package com.l7tech.server.config.db;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.InvalidLicenseException;
-import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.server.config.LicenseChecker;
-import com.l7tech.server.config.OSDetector;
-import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.SharedWizardInfo;
+import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.server.config.*;
 import com.l7tech.server.partition.PartitionInformation;
 import org.apache.commons.lang.StringUtils;
 
@@ -58,6 +55,8 @@ public class DBActions {
     private static final String SQL_CREATE_DB = "create database ";
     private static final String SQL_USE_DB = "use ";
     private static final String SQL_GRANT_ALL = "grant all on ";
+    private static final String SQL_REVOKE_ALL = "revoke all privileges on ";
+
     private static final String SQL_DROP_DB = "drop database ";
 
     private static final String GENERIC_DBCONNECT_ERROR_MSG = "There was an error while attempting to connect to the database. Please try again";
@@ -447,25 +446,56 @@ public class DBActions {
         return DriverManager.getConnection(makeConnectionString(hostname, dbName), username, password);
     }
 
-    public void dropDatabase(String dbName, String hostname, String username, String password, boolean isInfo) {
+    public void dropDatabase(DBInformation dbInfo, boolean isInfo, boolean doRevoke, DBActionsListener ui) {
+        String pUsername = dbInfo.getPrivUsername();
+        String pPassword = dbInfo.getPrivPassword();
+        if (StringUtils.isEmpty(pUsername) || pPassword == null) {
+            if (ui != null) {
+                String defaultUserName = StringUtils.isEmpty(pUsername)?"root":pUsername;
+                Map<String, String> creds = ui.getPrivelegedCredentials(
+                    "Please enter the credentials for the root database user (needed to drop the database)",
+                    "Please enter the username for the root database user: [" + defaultUserName + "] ",
+                    "Please enter the password for the root database user: ",
+                    defaultUserName);
+
+                if (creds == null) {
+                    return;
+                } else {
+                    pUsername = creds.get(USERNAME_KEY);
+                    pPassword = creds.get(PASSWORD_KEY);
+                }
+            }
+        }
+
         Connection conn = null;
         Statement stmt = null;
         try {
-            conn = getConnection(hostname, dbName, username, password);
+            conn = getConnection(dbInfo.getHostname(), ADMIN_DB_NAME, pUsername, pPassword);
         } catch (SQLException connectException) {
-            try {
-                conn = getConnection(hostname, ADMIN_DB_NAME, username, password);
-            } catch (SQLException e) {
-                logger.severe("Failure while dropping the database. Could not connect to either \"" + dbName + "\" or \"" + ADMIN_DB_NAME + "\" as user \"" + username + "\". Please drop the database manually.");
-            }
+            logger.severe("Failure while dropping the database. Could not connect to the admin database on the server (" + ADMIN_DB_NAME + ") as user " + pUsername + "\". Please drop the database manually.");
         }
 
         if (conn != null) {
             try {
-                stmt = conn.createStatement();
-                dropDatabase(stmt, dbName, isInfo);
-            } catch (SQLException e) {
-                logger.severe("Failure while dropping the database: " + ExceptionUtils.getMessage(e));
+                boolean dropSucceeded = false;
+                try {
+                    stmt = conn.createStatement();
+                    dropDatabase(stmt, dbInfo.getDbName(), isInfo);
+                    dropSucceeded = true;
+                } catch (SQLException e) {
+                    logger.severe("Failure while dropping the database: " + ExceptionUtils.getMessage(e));
+                }
+
+                if (dropSucceeded && doRevoke) {
+                    String [] revokeStatements = getRevokeStatements(dbInfo, osFunctions.isWindows());
+                    for (String revokeStatement : revokeStatements) {
+                        try {
+                            stmt.executeUpdate(revokeStatement);
+                        } catch (SQLException e) {
+                            //don't want to halt on errors here
+                        }
+                    }
+                }
             } finally {
                 ResourceUtils.closeQuietly(stmt);
                 ResourceUtils.closeQuietly(conn);
@@ -669,12 +699,21 @@ public class DBActions {
         } else {
             logger.info("Skipping creation of tables and rows");
         }
-        executeUpdates(getGrantStatements(dbInfo, isWindows),
+        executeUpdates(
+                getGrantStatements(dbInfo, isWindows),
                 stmt,
                 "Creating user \"" + dbInfo.getUsername() + "\" and performing grants on " + newDbName + " database", newDbName);
 
         stmt.getConnection().commit();     //finish transaction
         stmt.getConnection().setAutoCommit(true);
+    }
+
+    public String[] getGrantStatements(DBInformation dbInfo, boolean isWindows) {
+        return getPermissionChangeStatements(dbInfo,  isWindows, true);
+    }
+
+    private String[] getRevokeStatements(DBInformation dbInfo, boolean isWindows) {
+        return getPermissionChangeStatements(dbInfo,  isWindows, false);
     }
 
     private void createDatabase(Connection dbConnection, String dbName) throws SQLException {
@@ -700,42 +739,8 @@ public class DBActions {
         }
     }
 
-    private String[] getGrantStatements(DBInformation dbInfo, boolean isWindows) {
-        List<String> list = new ArrayList<String>();
-
-        list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@'%' identified by '" + dbInfo.getPassword() + "'"));
-
-        boolean usesLocalhost = false;
-
-        String dbHostnameString = dbInfo.getHostname();
-        //if there are more than one hostname, grant each one separately
-        if (dbHostnameString.contains(",")) {
-            String[] hosts = dbHostnameString.split(",");
-            for (String host : hosts) {
-                host = host.trim();
-                if (host.equalsIgnoreCase("localhost") || host.equalsIgnoreCase("127.0.0.1") )
-                    usesLocalhost = true;
-
-                //grant the ACTUAL hostname, not the localhost one
-                list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@" + DBActions.getNonLocalHostame(host) + " identified by '" + dbInfo.getPassword() + "'"));
-            }
-        } else {
-            dbHostnameString = dbHostnameString.trim();
-            if (dbHostnameString.equalsIgnoreCase("localhost") || dbHostnameString.equalsIgnoreCase("127.0.0.1") )
-                usesLocalhost = true;
-
-            list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@" + DBActions.getNonLocalHostame(dbHostnameString) + " identified by '" + dbInfo.getPassword() + "'"));
-        }
-
-        //if localhost was used, then grant that too
-        if (usesLocalhost) {
-            list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@localhost identified by '" + dbInfo.getPassword() + "'"));
-            if (!isWindows)
-                list.add(new String(SQL_GRANT_ALL + dbInfo.getDbName() + ".* to " + dbInfo.getUsername() + "@localhost.localdomain identified by '" + dbInfo.getPassword() + "'"));
-        }
-
-        list.add(new String("FLUSH PRIVILEGES"));
-        return list.toArray(new String[list.size()]);
+    private String[] getPermissionChangeStatements(DBInformation dbInfo, boolean isWindows, boolean doGrants) {
+        return new DBPermission(dbInfo, isWindows, doGrants).getStatements();
     }
 
     private String[] getCreateDbStatementsFromFile(String dbCreateScript) throws IOException {
@@ -888,8 +893,9 @@ Statement getCreateTablesStmt = null;
             result.setStatus(determineErrorStatus(e.getSQLState()));
             result.setErrorMessage(ExceptionUtils.getMessage(e));
         } finally {
+            DBInformation testDbInfo = new DBInformation(dbInfo.getHostname(), testDbName, dbInfo.getUsername(), dbInfo.getPassword(), dbInfo.getPrivUsername(), dbInfo.getPrivPassword());
             //get rid of the temp database
-            dropDatabase(testDbName, dbInfo.getHostname(), dbInfo.getPrivUsername(), dbInfo.getPrivPassword(), true);
+            dropDatabase(testDbInfo, true, false, null);
         }
 
         return result;
@@ -1071,6 +1077,75 @@ Statement getCreateTablesStmt = null;
 
         public void setErrorMessage(String errorMessage) {
             this.errorMessage = errorMessage;
+        }
+    }
+
+    private class DBPermission {
+        private DBInformation dbInfo;
+        private boolean isWindows;
+        private boolean isGrant;
+
+        /**
+         * Create a new DBPermission
+         * @param dbInfo the DBInformation object that contains the information for the permission to be generated
+         * @param isWindows true if the database resides on a windows machine, false otherwise
+         * @param isGrant true if this is a grant, false if this is a revocation
+         */
+        DBPermission(DBInformation dbInfo, boolean isWindows, boolean isGrant) {
+            this.dbInfo = dbInfo;
+            this.isWindows = isWindows;
+            this.isGrant = isGrant;
+        }
+
+        public String[] getSql() {
+            return getStatements();
+        }
+
+        public String getPermissionStatement(String hostname) {
+            return new String((isGrant?SQL_GRANT_ALL:SQL_REVOKE_ALL) + dbInfo.getDbName() + ".* " + (isGrant?"to ":"from ") + dbInfo.getUsername() + "@'" + hostname + "' identified by '" + dbInfo.getPassword() + "'");
+        }
+
+        private String[] getStatements() {
+            List<String> list = new ArrayList<String>();
+            list.add(getPermissionStatement("%"));
+
+            boolean usesLocalhost = false;
+
+            String dbHostnameString = dbInfo.getHostname();
+            //if there are more than one hostname, grant each one separately
+            if (dbHostnameString.contains(",")) {
+                String[] hosts = dbHostnameString.split(",");
+                for (String host : hosts) {
+                    host = host.trim();
+                    if (host.equalsIgnoreCase("localhost") || host.equalsIgnoreCase("127.0.0.1") )
+                        usesLocalhost = true;
+
+                    //grant the ACTUAL hostname, not the localhost one
+                    list.add(getPermissionStatement(DBActions.getNonLocalHostame(host)));
+                }
+            } else {
+                dbHostnameString = dbHostnameString.trim();
+                if (dbHostnameString.equalsIgnoreCase("localhost") || dbHostnameString.equalsIgnoreCase("127.0.0.1") )
+                    usesLocalhost = true;
+
+                list.add(getPermissionStatement(DBActions.getNonLocalHostame(dbHostnameString)));
+            }
+
+            //if localhost was used, then grant that too
+            if (usesLocalhost) {
+                list.add(getPermissionStatement("localhost"));
+                if (!isWindows) {
+                    list.add(getPermissionStatement("localhost.localdomain"));
+                }
+            } else {
+                //if this is a revoke, we should still add in the localhost stuff
+                if (!isGrant) {
+                    list.add(getPermissionStatement("localhost"));
+                    list.add(getPermissionStatement("localhost.localdomain"));
+                }
+            }
+            list.add(new String("FLUSH PRIVILEGES"));
+            return list.toArray(new String[list.size()]);
         }
     }
 }

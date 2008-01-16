@@ -6,6 +6,7 @@ import com.l7tech.server.config.PartitionActionListener;
 import com.l7tech.server.config.PartitionActions;
 import com.l7tech.server.config.beans.PartitionConfigBean;
 import com.l7tech.server.config.commands.PartitionConfigCommand;
+import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
@@ -14,7 +15,9 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -219,55 +222,104 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
     }
 
     private void doDeletePartitionPrompts() throws IOException, WizardNavigationException {
-        List<String> prompts = new ArrayList<String>();
-        prompts.add(HEADER_DELETE_PARTITION);
-        int index = 1;
         List<String> nameList = new ArrayList<String>(partitionNames);
         nameList.remove(PartitionInformation.DEFAULT_PARTITION_NAME);
+
         if (nameList.isEmpty()) {
             printText("\nThere are no partitions other than the default_ partition, which cannot be deleted.\n");
             printText("Please select another option.\n\n");
-
         } else {
 
-            for (String partitionName : nameList) {
-                prompts.add(String.valueOf(index++) + ") " + partitionName + getEolChar());
-            }
-
-            String defaultValue = "1";
-            prompts.add("Please make a selection: [" + defaultValue + "] ");
-
-            String[] allowedEntries = new String[index -1];
-            for (int i = 0; i < allowedEntries.length; i++) {
-                allowedEntries[i]= String.valueOf(i + 1);
-            }
-
-            String whichPartition = getData(prompts.toArray(new String[prompts.size()]), defaultValue, allowedEntries,null);
-            int whichIndex = Integer.parseInt(whichPartition) -1;
-
-            String whichPartitionName = nameList.get(whichIndex);
-
-            PartitionInformation partitionToRemove = PartitionManager.getInstance().getPartition(whichPartitionName);
-            boolean isUnix = partitionToRemove.getOSSpecificFunctions().isUnix();
-            String warningMessage;
-            if (isUnix) {
-                warningMessage = "Removing the \"" + partitionToRemove.getPartitionId() + "\" partition will remove all the associated configuration.\n\n" +
-                    "This cannot be undone.\n" +
-                    "Do you wish to proceed?";
-            } else {
-                warningMessage = "Removing the \"" + partitionToRemove.getPartitionId() + "\" partition will stop the service and remove all the associated configuration.\n\n" +
-                    "This cannot be undone.\n" +
-                    "Do you wish to proceed?";
-            }
-            boolean confirmed = getConfirmationFromUser(warningMessage, "n");
+            PartitionInformation partitionToRemove = selectPartitionToRemove(nameList);
+            boolean confirmed = warnAndConfirmPartitionDelete(partitionToRemove);
             if (confirmed) {
-                if (PartitionActions.removePartition(partitionToRemove, this)) {
-                    PartitionManager.getInstance().removePartition(whichPartitionName);
+                DBInformation dbInfo = promptToRemoveAssociatedDb(partitionToRemove);
+                if (PartitionActions.removePartitionAndMaybeDatabase(partitionToRemove, dbInfo, this)) {
+                    PartitionManager.getInstance().removePartition(partitionToRemove.getPartitionId());
                     partitionNames = PartitionManager.getInstance().getPartitionNames();
                     printText(getEolChar() + "The selected partition has been deleted. You may continue to use the wizard to configure other partitions or exit now." + getEolChar());
                 }
             }
         }
+    }
+
+    private DBInformation promptToRemoveAssociatedDb(PartitionInformation partitionToRemove) throws IOException, WizardNavigationException {
+        DBInformation dbInfo = null;
+        try {
+            dbInfo = new DBInformation(partitionToRemove.getOSSpecificFunctions().getDatabaseConfig());
+            } catch (IOException e) {
+                logger.warning("Could not determine the database information fo the partition to be deleted (" + e.getMessage() + "). The database will not be deleted.");
+            }
+            if (dbInfo != null) {
+                boolean shouldRemoveDb = getConfirmationFromUser(
+                    getEolChar() + getEolChar() + "This wizard can remove the database used by this partition." + getEolChar() +
+                    "This will remove all data in the database and cannot be undone." + getEolChar() +
+                    "Are you sure you want to delete the \"" + dbInfo.getDbName() + "\" database ?","n");
+
+                if (shouldRemoveDb) {
+                    String pUsername = dbInfo.getPrivUsername();
+                    String pPassword = dbInfo.getPrivPassword();
+                    if (StringUtils.isEmpty(pUsername) || pPassword == null) {
+                        String defaultUserName = StringUtils.isEmpty(pUsername)?"root":pUsername;
+                        printText(getEolChar() + "Please enter the credentials for the root database user (needed to drop the database)" + getEolChar());
+                        pUsername = getData(
+                                new String[]{"Please enter the username for the root database user: [" + defaultUserName + "] "},
+                                defaultUserName,
+                                (String[]) null,
+                                null);
+
+                        pPassword = getSecretData(
+                                new String[] {"Please enter the password for the root database user: "},
+                                "",
+                                null,
+                                null);
+                        dbInfo.setPrivUsername(pUsername);
+                        dbInfo.setPrivPassword(pPassword);
+                    }
+                }
+            }
+        return dbInfo;
+    }
+
+    private boolean warnAndConfirmPartitionDelete(PartitionInformation partitionToRemove) throws IOException, WizardNavigationException {
+        String warningMessage;
+        boolean isUnix = partitionToRemove.getOSSpecificFunctions().isUnix();
+
+        if (isUnix) {
+            warningMessage = getEolChar() + "Removing the \"" + partitionToRemove.getPartitionId() + "\" partition will remove all the associated configuration.\n\n" +
+                "This cannot be undone.\n" +
+                "Do you wish to proceed?";
+        } else {
+            warningMessage = getEolChar() + "Removing the \"" + partitionToRemove.getPartitionId() + "\" partition will stop the service and remove all the associated configuration.\n\n" +
+                "This cannot be undone.\n" +
+                "Do you wish to proceed?";
+        }
+        return getConfirmationFromUser(warningMessage, "n");
+    }
+
+    private PartitionInformation selectPartitionToRemove(List<String> nameList) throws IOException, WizardNavigationException {
+        List<String> prompts = new ArrayList<String>();
+        prompts.add(HEADER_DELETE_PARTITION);
+        int index = 1;
+
+        for (String partitionName : nameList) {
+            prompts.add(String.valueOf(index++) + ") " + partitionName + getEolChar());
+        }
+
+        String defaultValue = "1";
+        prompts.add("Please make a selection: [" + defaultValue + "] ");
+
+        String[] allowedEntries = new String[index -1];
+        for (int i = 0; i < allowedEntries.length; i++) {
+            allowedEntries[i]= String.valueOf(i + 1);
+        }
+
+        String whichPartition = getData(prompts.toArray(new String[prompts.size()]), defaultValue, allowedEntries,null);
+        int whichIndex = Integer.parseInt(whichPartition) -1;
+
+        String whichPartitionName = nameList.get(whichIndex);
+
+        return PartitionManager.getInstance().getPartition(whichPartitionName);
     }
 
     private String getRunMarker(String partitionName) {

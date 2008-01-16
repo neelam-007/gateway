@@ -145,7 +145,7 @@ public class PartitionActions {
                 copyFilesInDirectory(oldPartitionDir, newPartitionDir);
 
                 //this will stop/remove any services associated with the partition
-                removePartition(partitionToRename, null);
+                removePartitionAndMaybeDatabase(partitionToRename, null,  null);
                 PartitionManager.getInstance().addPartition(newName);
                 PartitionInformation newPi = PartitionManager.getInstance().getPartition(newName);
                 prepareNewpartition(newPi);
@@ -328,16 +328,14 @@ public class PartitionActions {
         writeWindowsServiceConfigFile(pInfo);
     }
 
-    public static boolean removePartition(PartitionInformation partitionToRemove, PartitionActionListener listener) {
-        boolean wasDeleted = false;
-
+    public static boolean removePartitionAndMaybeDatabase(PartitionInformation partitionToRemove, DBInformation dbInfo, PartitionActionListener listener) {
         OSSpecificFunctions osFunctions = partitionToRemove.getOSSpecificFunctions();
         String message;
-        boolean okToProceed;
+        boolean okToProceed = false;
         if (osFunctions.isWindows()) {
             try {
                 if (listener != null) {
-                    message = "Removing the \"" + partitionToRemove.getPartitionId() + "\" partition will stop the service and remove all the associated configuration.\n\n" +
+                    message =  "\nRemoving the \"" + partitionToRemove.getPartitionId() + "\" partition will stop the service and remove all the associated configuration.\n" +
                             "This cannot be undone.\n" +
                             "Do you wish to proceed?";
                     okToProceed = listener.getPartitionActionsConfirmation(message);
@@ -348,58 +346,32 @@ public class PartitionActions {
                 if (okToProceed) {
                     //this will stop the service if it's running and uninstall it too
                     uninstallService(partitionToRemove, osFunctions);
-                    wasDeleted = true;
+                    okToProceed= true;
                 }
             } catch (Exception e) {
                 logger.warning("Could not uninstall the SSG service for the \"" + partitionToRemove.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
-                wasDeleted = false;
+                okToProceed = false;
             }
         } else {
             try {
                 if (listener != null) {
-                    message = "Please ensure that the \"" + partitionToRemove.getPartitionId() + "\" partition is stopped before proceeding.\n\n" +
+                    message = "\nPlease ensure that the \"" + partitionToRemove.getPartitionId() + "\" partition is stopped before proceeding.\n" +
                             "Is the partition stopped?";
                     okToProceed = listener.getPartitionActionsConfirmation(message);
                 } else {
                     okToProceed = true;
                 }
-
-                if (okToProceed) {
-                    wasDeleted = true;
-                }
             } catch (Exception e) {
                 logger.warning("Could not delete the \"" + partitionToRemove.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
-                wasDeleted = false;
+                okToProceed = false;
             }
-                    //call the partitionControl.sh stop partitionToRemove.getPartitionId on linux
-//            String controlScript = partitionToRemove.getOSSpecificFunctions().getOriginalPartitionControlScriptName();
-//            File parentDir = new File(controlScript).getParentFile();
-//TODO currently it's not possible to run the script unless you are root. We need to change this or stopping/starting won't work for the partition in linux
-//            try {
-//                int retcode = executeCommand(new String[] {
-//                    controlScript,
-//                    "stop",
-//                    partitionToRemove.getPartitionId()
-//                }, parentDir);
-//                wasDeleted = true;
-//                if (retcode == 0) {
-//                    logger.info("Partition stopped successfully");
-//                    wasDeleted = true;
-//                } else {
-//                    logger.warning("Could not stop the partition");
-//                    wasDeleted = false;
-//                }
-//            } catch (IOException e) {
-//                logger.warning("Could not stop the \"" + partitionToRemove.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
-//                wasDeleted = false;
-//            } catch (InterruptedException e) {
-//                logger.warning("Could not stop the \"" + partitionToRemove.getPartitionId() + "\" partition. [" + e.getMessage() + "]");
-//                wasDeleted = false;
-//            }
         }
 
-        if (wasDeleted) {
-            doRemoveAssociatedDatabasePrompts(partitionToRemove, listener);
+        boolean wasDeleted = false;
+        if (okToProceed) {
+            if (dbInfo != null)
+                doRemoveAssociatedDatabase(partitionToRemove, dbInfo);
+
             File deleteMe = new File(osFunctions.getPartitionBase() + partitionToRemove.getPartitionId());
             if (deleteMe.exists()) {
                 wasDeleted = FileUtils.deleteDir(deleteMe);
@@ -413,24 +385,13 @@ public class PartitionActions {
         return wasDeleted;
     }
 
-    private static void doRemoveAssociatedDatabasePrompts(PartitionInformation partitionToRemove, PartitionActionListener listener) {
-        if (listener != null) {
-            try {
-                OSSpecificFunctions osf = partitionToRemove.getOSSpecificFunctions();
-
-                DBInformation dbInfo = new DBInformation(osf.getDatabaseConfig());
-
-                DBActions dba = new DBActions(osf);
-                boolean removeDb = listener.getPartitionActionsConfirmation(
-                        "This wizard can remove the database used by this partition.\n" +
-                        "This will remove all data in the database and cannot be undone.\n\n" +
-                        "Are you sure you want to delete the database named \"" + dbInfo.getDbName() + "\" ?");
-
-                if (removeDb)
-                        dba.dropDatabase(dbInfo.getDbName(), dbInfo.getHostname(), dbInfo.getUsername(), dbInfo.getPassword(), true);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+    private static void doRemoveAssociatedDatabase(PartitionInformation partitionToRemove, DBInformation dbInfo) {
+        try {
+            OSSpecificFunctions osf = partitionToRemove.getOSSpecificFunctions();
+            DBActions dba = new DBActions(osf);
+            dba.dropDatabase(dbInfo, true, true, null);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
