@@ -11,20 +11,25 @@ if [ ! "$SSG_USER" ]; then
     SSG_USER="gateway:gateway"
 fi
 
-# set the current working directory to where this script lives
-cd `dirname $0`
+# Saves current directory as base dir for all relative paths.
+REL_BASE_DIR=`pwd`
 
-# assume we're running from SSG_ROOT/migration and deduct SSG_ROOT from there
-pushd .. > /dev/null
-SSG_ROOT=`pwd`
+# Assumes this script file is in the SSG_HOME/migration and deduce SSG_HOME from there.
+pushd `dirname $0` > /dev/null
+MIGRATION_HOME=`pwd`
+cd ..
+SSG_HOME=`pwd`
 popd > /dev/null
 
 # This will set the location of the jdk into SSG_JAVA_HOME.
-. ${SSG_ROOT}/etc/profile
+. ${SSG_HOME}/etc/profile
+
+# The migration Java app must be launched from the migration home folder.
+cd ${MIGRATION_HOME}
 
 if [ "$1" == "cfgdeamon" ]; then
-    ${SSG_JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SSGMigration.jar $*
-    chown ${SSG_USER} ${SSG_ROOT}/migration/*
+    ${SSG_JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_HOME} -Dcom.l7tech.server.flasher.basedir=${REL_BASE_DIR} -jar ${MIGRATION_HOME}/SSGMigration.jar $*
+    chown ${SSG_USER} ${MIGRATION_HOME}/*
     chmod 666 *.log*
     exit
 fi
@@ -32,9 +37,9 @@ fi
 # This must be run as ssgconfig
 if [ $UID -eq 0 ]; then
     # invoke flasher as ssgconfig
-    su ssgconfig -c "${SSG_JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SSGMigration.jar $*"
+    su ssgconfig -c "${SSG_JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_HOME} -Dcom.l7tech.server.flasher.basedir=${REL_BASE_DIR} -jar ${MIGRATION_HOME}/SSGMigration.jar $*"
 elif [ "$USER" == "ssgconfig" ]; then
-    ${SSG_JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_ROOT} -jar SSGMigration.jar $*
+    ${SSG_JAVA_HOME}/bin/java -Dcom.l7tech.server.home=${SSG_HOME} -Dcom.l7tech.server.flasher.basedir=${REL_BASE_DIR} -jar ${MIGRATION_HOME}/SSGMigration.jar $*
 else
 	echo "Must be ssgconfig to invoke ssgmigration.sh"
 fi

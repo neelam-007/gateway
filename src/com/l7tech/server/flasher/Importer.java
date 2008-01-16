@@ -69,7 +69,7 @@ public class Importer {
 
     // do the import
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
-        String inputpathval = arguments.get(IMAGE_PATH.name);
+        String inputpathval = FlashUtilityLauncher.getAbsolutePath(arguments.get(IMAGE_PATH.name));
         if (inputpathval == null) {
             logger.info("Error, no image provided for import");
             throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ". i don't know what to import");
@@ -96,7 +96,7 @@ public class Importer {
         tempDirectory = Exporter.createTmpDirectory();
         logger.info("Uncompressing image to temporary directory " + tempDirectory);
         try {
-            System.out.println("Reading SecureSpan image file");
+            System.out.println("Reading SecureSpan image file " + inputpathval);
             unzipToDir(inputpathval, tempDirectory);
             if (!(new File(tempDirectory + File.separator + DBDumpUtil.DBDUMPFILENAME_STAGING)).exists()) {
                 logger.info("Error, the image provided does not contain an expected file and is therefore suspicious");
@@ -281,10 +281,10 @@ public class Importer {
             }
             
             // load mapping if requested
-            String mappingPath = arguments.get(MAPPING_PATH.name);
+            String mappingPath = FlashUtilityLauncher.getAbsolutePath(arguments.get(MAPPING_PATH.name));
             if (mappingPath != null) {
-                logger.info("loading mapping file");
-                System.out.print("Reading mapping file ..");
+                logger.info("loading mapping file " + mappingPath);
+                System.out.print("Reading mapping file " + mappingPath);
                 try {
                     mapping = MappingUtil.loadMapping(mappingPath);
                 } catch (SAXException e) {

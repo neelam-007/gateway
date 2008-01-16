@@ -78,8 +78,8 @@ public class Exporter {
     /**
      * @param partitionName     can be null only if system has one partition
      * @param includeAudit      whether to include audit
-     * @param mappingPath       can be null
-     * @param outputPath        must not be null
+     * @param mappingPath       can be null; relative path is assumed to be relative to the directory specified by the system property {@link FlashUtilityLauncher#BASE_DIR_PROPERTY}
+     * @param outputPath        must not be null; relative path is assumed to be relative to the directory specified by the system property {@link FlashUtilityLauncher#BASE_DIR_PROPERTY}
      */
     public void doIt(final String partitionName,
                      final boolean includeAudit,
@@ -100,7 +100,7 @@ public class Exporter {
     // do the export
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
         // check that we can write output at located asked for
-        String outputpathval = arguments.get(IMAGE_PATH.name);
+        String outputpathval = FlashUtilityLauncher.getAbsolutePath(arguments.get(IMAGE_PATH.name));
         if (outputpathval == null) {
             logger.info("no target image path specified");
             throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ". i dont know where to output the image to.");
@@ -192,7 +192,7 @@ public class Exporter {
             fos.close();
 
             // produce template mapping if necessary
-            partitionName = arguments.get(MAPPING_PATH.name);
+            partitionName = FlashUtilityLauncher.getAbsolutePath(arguments.get(MAPPING_PATH.name));
             if (partitionName != null) {
                 if (!testCanWrite(partitionName)) {
                     throw new FlashUtilityLauncher.InvalidArgumentException("cannot write to the mapping template path provided: " + partitionName);

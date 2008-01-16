@@ -22,6 +22,8 @@ import java.util.logging.Logger;
  */
 public class FlashUtilityLauncher {
     public static final String EOL_CHAR = System.getProperty("line.separator");
+    /** System property used as base directory for all relative paths. */
+    private static final String BASE_DIR_PROPERTY = "com.l7tech.server.flasher.basedir";
     private static final String LOGCONFIG_NAME = "migrationlogging.properties";
     private static final Logger logger = Logger.getLogger(FlashUtilityLauncher.class.getName());
     private static ArrayList<CommandLineOption> allRuntimeOptions = null;
@@ -200,5 +202,26 @@ public class FlashUtilityLauncher {
             }
         }
         return false;
+    }
+
+    /**
+     * @param path  either a relative path or an absolute path
+     * @return if <code>path</code> is absolute, it is simply returned;
+     *         if <code>path</code> is relative, it is resolved by prefixing it with the directory specified by the system property {@link #BASE_DIR_PROPERTY};
+     *         if <code>path</code> is null, returns null
+     * @throws RuntimeException if the system property {@link #BASE_DIR_PROPERTY} is not set when it is needed
+     */
+    public static String getAbsolutePath(final String path) {
+        if (path == null) return null;
+
+        if (new File(path).isAbsolute()) {
+            return path;
+        }
+
+        final String baseDir = System.getProperty(BASE_DIR_PROPERTY);
+        if (baseDir == null) {
+            throw new RuntimeException("System property \"" + BASE_DIR_PROPERTY + "\" not set.");
+        }
+        return baseDir + File.separator + path;
     }
 }
