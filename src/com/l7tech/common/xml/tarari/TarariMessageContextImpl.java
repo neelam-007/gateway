@@ -45,9 +45,10 @@ public class TarariMessageContextImpl implements TarariMessageContext {
         this.raxDocument = doc;
     }
 
-    /** Free resources used by this Tarari context.  After this is called, behavior of this instance is undefined. */
     public void close() {
-        raxDocument.release();
+        if (raxDocument != null && !raxDocument.isReleased()) {
+            raxDocument.release();
+        }
     }
 
     /**

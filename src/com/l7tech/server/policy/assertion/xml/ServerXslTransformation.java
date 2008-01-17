@@ -56,6 +56,7 @@ import javax.xml.transform.ErrorListener;
 import javax.xml.transform.TransformerException;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.ByteArrayInputStream;
+import java.io.Closeable;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
@@ -271,7 +272,11 @@ public class ServerXslTransformation
         // These variables are used ONLY for interpolation into a remote URL; variables used inside
         // the stylesheet itself are fed in via the variableGetter inside TransformInput
         Map urlVars = context.getVariableMap(urlVarsUsed, auditor);
-        return transform(transformInput, transformOutput, isrequest, urlVars);
+        final AssertionStatus status = transform(transformInput, transformOutput, isrequest, urlVars);
+        if (transformInput instanceof Closeable) {
+            ((Closeable)transformInput).close();
+        }
+        return status;
     }
 
     //  Get a stylesheet from the resourceGetter and transform input into output
@@ -447,14 +452,29 @@ public class ServerXslTransformation
      * of a MIME part other than the first part.
      */
     private TransformInput makePartInfoTransformInput(PartInfo partInfo, Functions.Unary<Object, String> variableGetter) throws IOException, SAXException {
-        TarariMessageContext tmc = makeTarariMessageContext(partInfo);
+        final TarariMessageContext tmc = makeTarariMessageContext(partInfo);
         if (tmc != null)
-            return new TransformInput(tmc.getElementCursor(), variableGetter);
+            return new CloseableTransformInput(tmc.getElementCursor(), variableGetter) {
+                public void close() {
+                    tmc.close();
+                }
+            };
 
         try {
             return new TransformInput(new DomElementCursor(XmlUtil.parse(partInfo.getInputStream(false))), variableGetter);
         } catch (NoSuchPartException e) {
             throw new RuntimeException(e); // can't happen -- we never destructively read MIME parts currently
+        }
+    }
+
+    private static abstract class CloseableTransformInput extends TransformInput implements Closeable {
+        public CloseableTransformInput(ElementCursor elementCursor, Functions.Unary<Object, String> variableGetter) {
+            super(elementCursor, variableGetter);
+        }
+
+        @Override
+        protected void finalize() throws Throwable {
+            close();
         }
     }
 }

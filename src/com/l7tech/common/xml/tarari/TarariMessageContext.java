@@ -18,7 +18,7 @@ import com.l7tech.common.xml.SoftwareFallbackException;
 public interface TarariMessageContext {
     /**
      * Free all resources used by this message context.  After this is called, behavior of this instance
-     * is not defined.
+     * is not defined. No-op when called a second time.
      */
     void close();
 
