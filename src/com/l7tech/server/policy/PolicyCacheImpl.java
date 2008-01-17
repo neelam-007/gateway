@@ -108,8 +108,6 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
      *
      */
     public ServerPolicyHandle getServerPolicy( final Policy policy ) {
-        logger.warning( "Getting Server policy: " + policy );
-
         if( policy == null ) {
             throw new IllegalArgumentException( "policy must not be null" );
         }
@@ -121,8 +119,6 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
      *
      */
     public ServerPolicyHandle getServerPolicy( final long policyOid ) {
-        logger.warning( "Getting Server policy: " + policyOid );
-
         if( policyOid == Policy.DEFAULT_OID )
             throw new IllegalArgumentException( "Can't compile a brand-new policy--it must be saved first" );
 
@@ -136,53 +132,6 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         } finally {
             read.unlock();
         }
-
-//TODO [steve] should we ever be rebuilding here? (if so need to fix this up)
-//        Policy policy;
-//        try {
-//            policy = policyManager.findByPrimaryKey( policyOid );
-//        } catch( FindException fe ) {
-//            auditor.logAndAudit( MessageProcessingMessages.POLICY_CACHE_STORAGE_ERROR, new String[] { Long.toString(policyOid) }, fe );
-//            return null;
-//        }
-//
-//        if( policy == null ) {
-//            final Lock write = lock.writeLock();
-//            write.lock();
-//            try {
-//                ResourceUtils.closeQuietly( policyCache.remove( policyOid ) );
-//                logger.info( "Policy #" + policyOid + " has been deleted" );
-//                return null;
-//            } finally {
-//                write.unlock();
-//            }
-//        } else {
-//            try {
-//                updateInternal( new Policy(policy, true) );
-//            } catch( FindException fe ) {
-//                auditor.logAndAudit( MessageProcessingMessages.POLICY_CACHE_STORAGE_ERROR, new String[] { Long.toString(policyOid) }, fe );
-//                return null;
-//            } catch ( ServerPolicyException e ) {
-//                logger.log( Level.WARNING, "Invalid policy '"+policy.getName()+"' (#"+policy.getId()+"): " + ExceptionUtils.getMessage( e ), e );
-//                return null;
-//            } catch ( ServerPolicyInstantiationException e ) {
-//                logger.log( Level.WARNING, "Invalid policy '"+policy.getName()+"' (#"+policy.getId()+"): " + ExceptionUtils.getMessage( e ), e );
-//                return null;
-//            }
-//
-//            read.lock();
-//            try {
-//                PolicyCacheEntry pce = policyCache.get( policyOid );
-//                if( pce != null && pce.isValid() ) {
-//                    ServerPolicy serverPolicy = pce.handle.getTarget();
-//                    if( serverPolicy != null ) {
-//                        return serverPolicy.ref();
-//                    }
-//                }
-//            } finally {
-//                read.unlock();
-//            }
-//        }
 
         return null;
     }
