@@ -271,6 +271,9 @@ public class WSDLCompositionPanel extends WizardStepPanel{
         sourceOperationsListModel.clear();
 
         WsdlComposer.WsdlHolder currentHolder = getSelectedSourceWsdl();
+        if (currentHolder == null || currentHolder.wsdl == null)
+            return;
+
         Definition currentDef = currentHolder.wsdl.getDefinition();
         Map bindings = currentDef.getBindings();
         Set keys = bindings.keySet();
@@ -288,7 +291,13 @@ public class WSDLCompositionPanel extends WizardStepPanel{
     }
 
     private void prepareSourceWsdlTree() {
-        WsdlTreeNode rootSourceWsdlTreeNode = WsdlTreeNode.newInstance(getSelectedSourceWsdl().wsdl);
+        final WsdlComposer.WsdlHolder s = getSelectedSourceWsdl();
+        if (s == null || s.wsdl == null) {
+            sourceWsdlTreeModel.setRoot(null);
+            sourcePreviewTree.setRootVisible(false);
+            return;
+        }
+        WsdlTreeNode rootSourceWsdlTreeNode = WsdlTreeNode.newInstance(s.wsdl);
         sourceWsdlTreeModel.setRoot(rootSourceWsdlTreeNode);
         sourcePreviewTree.setRootVisible(true);
     }
@@ -496,6 +505,8 @@ public class WSDLCompositionPanel extends WizardStepPanel{
 
         private void addBindingOperations(Collection<BindingOperation> allOps) {
             WsdlComposer.WsdlHolder sourceWsdl = getSelectedSourceWsdl();
+            if (sourceWsdl == null)
+                return;
             for (BindingOperation bindingOperation: allOps) {
                 if (wsdlComposer.addBindingOperation(bindingOperation, sourceWsdl)) {
                     addElement(new BindingOperationHolder(bindingOperation, sourceWsdl));
