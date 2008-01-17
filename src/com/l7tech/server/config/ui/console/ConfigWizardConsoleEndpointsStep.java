@@ -33,7 +33,6 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep {
     private static final String HEADER_CONFIGURE_ENDPOINTS= "-- Configure Endpoints for the \"{0}\" Partition --" + getEolChar();
     public static final String TITLE = "Configure Endpoints";
     private List<SsgConnector> endpointsToAdd;
-//    private EndpointConfigBean endpointBean;
 
     private static enum EndpointEnabledState {
         ENABLED("enabled"),
@@ -99,7 +98,6 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep {
     private void init() {
         osFunctions = parent.getOsFunctions();
         configBean = new EndpointConfigBean();
-//        endpointBean = (EndpointConfigBean) configBean;
         configCommand = new EndpointConfigCommand(configBean);
         endpointsToAdd = new ArrayList<SsgConnector>();
     }
@@ -143,7 +141,6 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep {
             doConfigureEndpointsPrompts(pinfo, validated);
             EndpointConfigBean endpointBean = (EndpointConfigBean) configBean;
             endpointBean.setEndpointsToAdd(endpointsToAdd);
-//            endpointBean.setPartitionInfo(pinfo);
         } catch (IOException e) {
             logger.severe(ExceptionUtils.getMessage(e));
         }
@@ -174,6 +171,15 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep {
                   printText("\t" + new ConnectorAdapter(adminEndpoint, pinfo, dbinfo) + getEolChar());
                 }
                 printText(getEolChar());
+
+                if (endpointsToAdd != null && !endpointsToAdd.isEmpty()) {
+                    printText("The following endpoints have been added and will be assigned" +
+                            getEolChar() + "when the wizard completes." + getEolChar());
+                    for (SsgConnector ssgConnector : endpointsToAdd) {
+                        printText("\t" + new ConnectorAdapter(ssgConnector, pinfo, dbinfo) + getEolChar());
+                    }
+                    printText(getEolChar());
+                }
             } else {
                 if (shouldShowMessage) printText("At least one administration (secure) endpoint needs to be configured" + getEolChar() + "in order to administer the SecureSpan Gateway." + getEolChar() + getEolChar());    
             }
@@ -202,11 +208,32 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep {
                     printText(endpoint.getPort() + " is already in use. Please select another port." + getEolChar() + getEolChar());
                     finishedEndpointConfig =false;
                 } else {
-                    finishedEndpointConfig = true;
-                    endpointsToAdd.add(endpoint);
+                    SsgConnector found = alreadyAdded(endpoint);
+                    if (found != null) {
+                        printText(getEolChar() + found.getName() + " (" + found.getPort() + ") is already configured to use that port." +
+                                getEolChar() + "Please select another port." + getEolChar() + getEolChar());
+                        finishedEndpointConfig =false;
+                        getData(new String[] {"Press Enter to Continue"}, "", (String[]) null, null);
+                        printText(getEolChar());
+                    } else {
+                        finishedEndpointConfig = true;
+                        endpointsToAdd.add(endpoint);
+                    }
                 }
             }
         } while (!finishedEndpointConfig);
+    }
+
+    private SsgConnector alreadyAdded(SsgConnector endpoint) {
+        if (endpointsToAdd == null) return null;
+
+        for (SsgConnector existingOne : endpointsToAdd) {
+            if (endpoint.getPort() == existingOne.getPort()) {
+                return existingOne;
+            }
+        }
+        
+        return null;
     }
 
     private void doCollectEndpointInfo(SsgConnector connector) throws IOException, WizardNavigationException {
