@@ -2,13 +2,12 @@ package com.l7tech.server.partition;
 
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.JdkLoggerConfigurator;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.*;
 import com.l7tech.server.config.ui.console.ConfigurationWizard;
 import org.xml.sax.SAXException;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -294,7 +293,35 @@ public class PartitionManager {
             PasswordPropertyCrypto passwordEncryptor =
                     OSDetector.getOSSpecificFunctions(destinationPartition.getName()).getPasswordPropertyCrypto(); 
             updateConfigInPartition(templateFiles, destinationPartition, passwordEncryptor);
+            updateJavaSecurity(destinationPartition);
         }
+    }
+
+    private static void updateJavaSecurity(File destinationPartition) throws IOException {
+        OSSpecificFunctions osf = OSDetector.getOSSpecificFunctions(destinationPartition.getName());
+        String keystoreFile = osf.getKeyStorePropertiesFile();
+        Properties props = new Properties();
+
+        InputStream is = null;
+        String[] providerList = null;
+        try {
+            is = new FileInputStream(keystoreFile);
+            props.load(is);
+            String keystoreType = props.getProperty(KeyStoreConstants.PROP_KS_TYPE);
+            if (keystoreType.equalsIgnoreCase(KeystoreType.SCA6000_KEYSTORE_NAME.getShortTypeName())) {
+                providerList = KeyStoreConstants.HSM_SECURITY_PROVIDERS;
+            } else if (keystoreType.equalsIgnoreCase(KeystoreType.DEFAULT_KEYSTORE_NAME.getShortTypeName())) {
+                providerList = KeyStoreConstants.DEFAULT_SECURITY_PROVIDERS;
+            } else if (keystoreType.equalsIgnoreCase(KeystoreType.LUNA_KEYSTORE_NAME.getShortTypeName())) {
+                providerList = KeyStoreConstants.LUNA_SECURITY_PROVIDERS;
+            }
+        } finally {
+            ResourceUtils.closeQuietly(is);
+        }
+
+        String javaSecurity = osf.getPathToJavaSecurityFile();
+        if (providerList != null)
+            KeystoreActions.updateJavaSecurity(new File(javaSecurity), new File(javaSecurity + ".backup"), providerList);
     }
 
     private static void updateConfigInPartition(File[] templateFiles, File destinationPartition, PasswordPropertyCrypto passwordEncryptor)

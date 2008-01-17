@@ -37,24 +37,6 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     private char[] masterKeyBackupPassword;
 
     private DBInformation dbInformation;
-    public static final String[] DEFAULT_SECURITY_PROVIDERS =
-            {
-                "sun.security.provider.Sun",
-                "sun.security.rsa.SunRsaSign",
-                "com.sun.net.ssl.internal.ssl.Provider",
-                "com.sun.crypto.provider.SunJCE",
-                "sun.security.jgss.SunProvider",
-                "com.sun.security.sasl.Provider"
-            };
-
-    public static final String PKCS11_CFG_FILE = "/ssg/appliance/pkcs11.cfg";
-    public static final String[] HSM_SECURITY_PROVIDERS =
-            {
-                "sun.security.pkcs11.SunPKCS11 " + PKCS11_CFG_FILE,
-                "sun.security.provider.Sun",
-                "com.sun.net.ssl.internal.ssl.Provider",
-                "com.sun.crypto.provider.SunJCE"
-            };
 
     public KeystoreConfigBean() {
         super(NAME, DESCRIPTION);

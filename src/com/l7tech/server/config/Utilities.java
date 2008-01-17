@@ -1,8 +1,13 @@
 package com.l7tech.server.config;
 
+import com.l7tech.common.util.FileUtils;
+
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.logging.Logger;
 import java.text.MessageFormat;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * User: megery
@@ -10,6 +15,8 @@ import java.text.MessageFormat;
  * Time: 12:41:51 PM
  */
 public class Utilities {
+    private static final Logger logger = Logger.getLogger(Utilities.class.getName());
+
     public static final String EOL_CHAR = System.getProperty("line.separator");
     
     public static String getFormattedMac(String mac) {
@@ -29,4 +36,27 @@ public class Utilities {
         }
         return formattedMac;
     }
+
+    public static void renameFile(File srcFile, File destFile) throws IOException {
+        String backupName = destFile.getAbsoluteFile() + ".bak";
+
+        logger.info("Renaming: " + destFile + " to: " + backupName);
+        File backupFile = new File(backupName);
+        if (backupFile.exists()) {
+            backupFile.delete();
+        }
+
+        //copy the old file to the backup location
+
+        FileUtils.copyFile(destFile, backupFile);
+        try {
+            destFile.delete();
+            FileUtils.copyFile(srcFile, destFile);
+            srcFile.delete();
+            logger.info("Successfully updated the " + destFile.getName() + " file");
+        } catch (IOException e) {
+            throw new IOException("You may need to restore the " + destFile.getAbsolutePath() + " file from: " + backupFile.getAbsolutePath() + "reason: " + e.getMessage());
+        }
+    }
+
 }

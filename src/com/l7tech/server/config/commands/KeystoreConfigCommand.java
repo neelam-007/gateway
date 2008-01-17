@@ -53,16 +53,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     private static final String LUNA_SYSTEM_CMU_PROPERTY = "lunaCmuPath";
 
-    private static final String PROPKEY_SECURITY_PROVIDER = "security.provider";
     private static final String PROPKEY_JCEPROVIDER = "com.l7tech.common.security.jceProviderEngine";
-
-    private static final String[] LUNA_SECURITY_PROVIDERS =
-            {
-                "com.chrysalisits.crypto.LunaJCAProvider",
-                "com.chrysalisits.cryptox.LunaJCEProvider",
-                "sun.security.provider.Sun",
-                "com.sun.net.ssl.internal.ssl.Provider"
-            };
 
     private static final String SUDO_COMMAND = "/usr/bin/sudo";
     private static final String ZERO_HSM_COMMAND = "appliance/libexec/zerohsm.sh";
@@ -247,7 +238,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             } else {
                 logger.info("The config wizard is running in cluster cloning mode and will not generate new keys. The existing cluster keys will be used");
             }
-            updateJavaSecurity(javaSecFile, newJavaSecFile, KeystoreConfigBean.DEFAULT_SECURITY_PROVIDERS);
+            updateJavaSecurity(javaSecFile, newJavaSecFile, KeyStoreConstants.DEFAULT_SECURITY_PROVIDERS);
             updateKeystoreProperties(keystorePropertiesFile, ksPassword);
             updateSystemPropertiesFile(systemPropertiesFile);
         } catch (Exception e) {
@@ -297,7 +288,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             copyLunaJars(ksBean);
             ka.prepareJvmForNewKeystoreType(KeystoreType.LUNA_KEYSTORE_NAME);
             if (!cloningMode) makeLunaKeys(ksBean, caCertFile, sslCertFile, caKeyStoreFile, sslKeyStoreFile);
-            updateJavaSecurity(javaSecFile, newJavaSecFile, LUNA_SECURITY_PROVIDERS);
+            updateJavaSecurity(javaSecFile, newJavaSecFile, KeyStoreConstants.LUNA_SECURITY_PROVIDERS);
             updateKeystoreProperties(keystorePropertiesFile, ksPassword);
             updateSystemPropertiesFile(systemPropertiesFile);
         } catch (Exception e) {
@@ -372,7 +363,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
             insertKeystoreIntoDatabase(scaManager);
             backupHsmMasterkey(ksBean);
-            updateJavaSecurity(javaSecFile, newJavaSecFile, KeystoreConfigBean.HSM_SECURITY_PROVIDERS);
+            updateJavaSecurity(javaSecFile, newJavaSecFile, KeyStoreConstants.HSM_SECURITY_PROVIDERS);
 
             //General Keystore Setup
             updateKeystoreProperties(keystorePropertiesFile, fullPassword);
@@ -412,7 +403,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
             ka.prepareJvmForNewKeystoreType(KeystoreType.SCA6000_KEYSTORE_NAME);
             makeHSMKeys(new File(ksDir), fullKsPassword, true);
-            updateJavaSecurity(javaSecFile, newJavaSecFile, KeystoreConfigBean.HSM_SECURITY_PROVIDERS);
+            updateJavaSecurity(javaSecFile, newJavaSecFile, KeyStoreConstants.HSM_SECURITY_PROVIDERS);
 
             //General Keystore Setup
             updateKeystoreProperties(keystorePropertiesFile, fullKsPassword);
@@ -881,7 +872,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             File newFile = new File(getOsFunctions().getSsgSystemPropertiesFile() + ".confignew");
             os = new FileOutputStream(newFile);
             systemProps.save(os, "iso-8859-1");
-            renameFile(newFile, systemPropertiesFile);
+            Utilities.renameFile(newFile, systemPropertiesFile);
         } catch (FileNotFoundException e) {
             logger.severe(MessageFormat.format("Error while updating the file: {0}. ({1})", systemPropertiesFile.getAbsolutePath(), e.getMessage()));
             throw e;
@@ -898,74 +889,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
 
     private void updateJavaSecurity(File javaSecFile, File newJavaSecFile, String[] providersList) throws IOException {
-        BufferedReader reader = null;
-        PrintWriter writer = null;
-        try {
-            reader = new BufferedReader(new FileReader(javaSecFile));
-            writer= new PrintWriter(newJavaSecFile);
-
-            String line = null;
-            int secProviderIndex = 0;
-            while ((line = reader.readLine()) != null) { //start looking for the security providers section
-                if (!line.startsWith("#") && line.startsWith(PROPKEY_SECURITY_PROVIDER)) { //ignore comments and match if we find a security providers section
-                    while ((line = reader.readLine()) != null) { //read the rest of the security providers list, esssentially skipping over it
-                        if (!line.startsWith("#") && line.startsWith(PROPKEY_SECURITY_PROVIDER)) {
-                        }
-                        else {
-                            break; //we're done with the sec providers
-                        }
-                    }
-
-                    //now write out the new ones
-                    while (secProviderIndex < providersList.length) {
-                        line = PROPKEY_SECURITY_PROVIDER + "." + String.valueOf(secProviderIndex + 1) + "=" + providersList[secProviderIndex];
-                        writer.println(line);
-                        secProviderIndex++;
-                    }
-                }
-                else {
-                    writer.println(line);
-                }
-            }
-            logger.info("Updating the java.security file");
-            writer.flush();
-            writer.close();
-            renameFile(newJavaSecFile, javaSecFile);
-
-        } catch (FileNotFoundException e) {
-            logger.severe("Error while updating the file: " + javaSecFile.getAbsolutePath());
-            logger.severe(e.getMessage());
-            throw e;
-        } catch (IOException e) {
-            logger.severe("Error while updating the file: " + javaSecFile.getAbsolutePath());
-            logger.severe(e.getMessage());
-            throw e;
-        } finally {
-            ResourceUtils.closeQuietly(reader);
-            ResourceUtils.closeQuietly(writer);
-        }
-    }
-
-    private void renameFile(File srcFile, File destFile) throws IOException {
-        String backupName = destFile.getAbsoluteFile() + ".bak";
-
-        logger.info("Renaming: " + destFile + " to: " + backupName);
-        File backupFile = new File(backupName);
-        if (backupFile.exists()) {
-            backupFile.delete();
-        }
-
-        //copy the old file to the backup location
-
-        FileUtils.copyFile(destFile, backupFile);
-        try {
-            destFile.delete();
-            FileUtils.copyFile(srcFile, destFile);
-            srcFile.delete();
-            logger.info("Successfully updated the " + destFile.getName() + " file");
-        } catch (IOException e) {
-            throw new IOException("You may need to restore the " + destFile.getAbsolutePath() + " file from: " + backupFile.getAbsolutePath() + "reason: " + e.getMessage());
-        }
+        KeystoreActions.updateJavaSecurity(javaSecFile, newJavaSecFile, providersList);
     }
 
     private void copyLunaJars(KeystoreConfigBean ksBean) {

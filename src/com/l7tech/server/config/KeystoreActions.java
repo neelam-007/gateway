@@ -35,6 +35,9 @@ import java.util.logging.Logger;
  */
 public class KeystoreActions {
     private static final Logger logger = Logger.getLogger(KeystoreActions.class.getName());
+
+    private static final String PROPKEY_SECURITY_PROVIDER = "security.provider";
+
     private OSSpecificFunctions osFunctions;
 
 
@@ -90,11 +93,11 @@ public class KeystoreActions {
 
        switch (ksType) {
             case DEFAULT_KEYSTORE_NAME:
-                prepareProviders(KeystoreConfigBean.DEFAULT_SECURITY_PROVIDERS);
+                prepareProviders(KeyStoreConstants.DEFAULT_SECURITY_PROVIDERS);
                 System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.BC_ENGINE);
                 break;
             case SCA6000_KEYSTORE_NAME:
-                prepareProviders(KeystoreConfigBean.HSM_SECURITY_PROVIDERS);
+                prepareProviders(KeyStoreConstants.HSM_SECURITY_PROVIDERS);
                 System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.PKCS11_ENGINE);
                 break;
             case LUNA_KEYSTORE_NAME:
@@ -406,6 +409,55 @@ public class KeystoreActions {
             throw new KeystoreActionsException("Error while determining the contents of the HSM keystore in the database: " + e.getMessage());
         } finally{
             ResourceUtils.closeQuietly(stmt);
+        }
+    }
+
+    public static void updateJavaSecurity(File javaSecFile, File newJavaSecFile, String[] providersList) throws IOException {
+        BufferedReader reader = null;
+        PrintWriter writer = null;
+        try {
+            reader = new BufferedReader(new FileReader(javaSecFile));
+            writer= new PrintWriter(newJavaSecFile);
+
+            String line = null;
+            int secProviderIndex = 0;
+            while ((line = reader.readLine()) != null) { //start looking for the security providers section
+                if (!line.startsWith("#") && line.startsWith(PROPKEY_SECURITY_PROVIDER)) { //ignore comments and match if we find a security providers section
+                    while ((line = reader.readLine()) != null) { //read the rest of the security providers list, esssentially skipping over it
+                        if (!line.startsWith("#") && line.startsWith(PROPKEY_SECURITY_PROVIDER)) {
+                        }
+                        else {
+                            break; //we're done with the sec providers
+                        }
+                    }
+
+                    //now write out the new ones
+                    while (secProviderIndex < providersList.length) {
+                        line = PROPKEY_SECURITY_PROVIDER + "." + String.valueOf(secProviderIndex + 1) + "=" + providersList[secProviderIndex];
+                        writer.println(line);
+                        secProviderIndex++;
+                    }
+                }
+                else {
+                    writer.println(line);
+                }
+            }
+            logger.info("Updating the java.security file");
+            writer.flush();
+            writer.close();
+            Utilities.renameFile(newJavaSecFile, javaSecFile);
+
+        } catch (FileNotFoundException e) {
+            logger.severe("Error while updating the file: " + javaSecFile.getAbsolutePath());
+            logger.severe(e.getMessage());
+            throw e;
+        } catch (IOException e) {
+            logger.severe("Error while updating the file: " + javaSecFile.getAbsolutePath());
+            logger.severe(e.getMessage());
+            throw e;
+        } finally {
+            ResourceUtils.closeQuietly(reader);
+            ResourceUtils.closeQuietly(writer);
         }
     }
 }
