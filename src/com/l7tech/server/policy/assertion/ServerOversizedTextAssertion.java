@@ -44,6 +44,7 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion<Oversi
     private final Auditor auditor;
     private final CompiledXpath matchBigText;
     private final long attrLimit; // maximum attribute length to enforce with software; -1 means do not enforce a length with software
+    private final int attrNameLimit; // maximum attribute name length to enforce with software; -1 means do not enforce attr name length with software
     private final CompiledXpath matchOverdeepNesting;
     private final CompiledXpath matchExtraPayload;
     private final boolean requireValidSoap;
@@ -65,6 +66,7 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion<Oversi
         // These three tests might be taken over by ServerAcceleratedOversizedTextAssertion
         final String textXpath = omitTarariTests ? null : data.makeTextXpath();
         final long attrLimit = omitTarariTests ? -1 : (data.isLimitAttrChars() ? data.getMaxAttrChars() : -1);
+        final int attrNameLimit = omitTarariTests ? -1 : (data.isLimitAttrNameChars() ? data.getMaxAttrNameChars() : -1);
         final String nestingXpath = omitTarariTests ? null : data.makeNestingXpath();
 
         final String payloadXpath = data.makePayloadLimitXpath();
@@ -72,6 +74,7 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion<Oversi
             // These three tests might be taken over by ServerAcceleratedOversizedTextAssertion
             matchBigText = textXpath == null ? null : new XpathExpression(textXpath).compile();
             this.attrLimit = attrLimit;
+            this.attrNameLimit = attrNameLimit;
             matchOverdeepNesting = nestingXpath == null ? null : new XpathExpression(nestingXpath).compile();
 
             matchExtraPayload = payloadXpath == null ? null : new XpathExpression(payloadXpath).compile();
@@ -111,7 +114,7 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion<Oversi
                 return AssertionStatus.BAD_REQUEST;
             }
 
-            if (attrLimit >= 0 && exceedsAttrLimit(cursor, attrLimit, getMaxAttrNameChars())) {
+            if ((attrLimit >= 0 || attrNameLimit >= 0) && exceedsAttrLimit(cursor, attrLimit, attrNameLimit)) {
                 auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_OVERSIZED_TEXT);
                 return AssertionStatus.BAD_REQUEST;
             }
@@ -137,22 +140,16 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion<Oversi
         }
     }
 
-    private long getMaxAttrNameChars() {
-        return assertion.isLimitTextChars()
-               ? Math.min(attrLimit * 2, assertion.getMaxTextChars() * 2)
-               : attrLimit * 2;
-    }
-
     private boolean exceedsAttrLimit(ElementCursor cursor, final long attrLimit, final long attrNameLimit) throws TransformerConfigurationException {
         Source source = new DOMSource(cursor.asDomElement().getOwnerDocument());
         SAXResult result = new SAXResult(new DefaultHandler() {
             public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
                 int num = attributes.getLength();
                 for (int i = 0; i < num; i++) {
-                    if (attributes.getValue(i).length() > attrLimit)
+                    if (attrLimit >= 0 && attributes.getValue(i).length() > attrLimit)
                         throw new SAXException("Atribute value length limit exceeded");
-                    if (attributes.getQName(i).length() > attrNameLimit)
-                        throw new SAXException("Atribute value length limit exceeded (attribute QName length)");
+                    if (attrNameLimit >= 0 && attributes.getQName(i).length() > attrNameLimit)
+                        throw new SAXException("Atribute name length limit exceeded (attribute QName length)");
                 }
             }
         });

@@ -37,6 +37,8 @@ public class OversizedTextDialog extends JDialog {
     private JCheckBox nestingDepthCheckBox;
     private JCheckBox payloadCheckBox;
     private JCheckBox soapEnvCheckBox;
+    private JCheckBox attrNameLengthCheckBox;
+    private JTextField attrNameLengthField;
 
     public boolean wasConfirmed() {
         return confirmed;
@@ -77,17 +79,20 @@ public class OversizedTextDialog extends JDialog {
         nestingDepthCheckBox.addChangeListener(changeListener);
         soapEnvCheckBox.addChangeListener(changeListener);
         payloadCheckBox.addChangeListener(changeListener);
+        attrNameLengthCheckBox.addChangeListener(changeListener);
 
         Utilities.setEscKeyStrokeDisposes(this);
         getRootPane().setDefaultButton(okButton);
 
         Utilities.enableGrayOnDisabled(textLengthField);
         Utilities.enableGrayOnDisabled(attrLengthField);
+        Utilities.enableGrayOnDisabled(attrNameLengthField);
         Utilities.enableGrayOnDisabled(nestingDepthField);
         Utilities.enableGrayOnDisabled(payloadCountField);
 
         validator.constrainTextFieldToNumberRange("text length", textLengthField, 0, Integer.MAX_VALUE);
         validator.constrainTextFieldToNumberRange("attribute length", attrLengthField, 0, Integer.MAX_VALUE);
+        validator.constrainTextFieldToNumberRange("attribute name length", attrNameLengthField, 0, Integer.MAX_VALUE);
         validator.constrainTextFieldToNumberRange("maximum payload count", payloadCountField, 0, Integer.MAX_VALUE);
         validator.constrainTextFieldToNumberRange("maximum nesting depth", nestingDepthField,
                                                   OversizedTextAssertion.MIN_NESTING_LIMIT,
@@ -102,6 +107,8 @@ public class OversizedTextDialog extends JDialog {
         textLengthCheckBox.setSelected(assertion.isLimitTextChars());
         attrLengthField.setText(Long.toString(assertion.getMaxAttrChars()));
         attrLengthCheckBox.setSelected(assertion.isLimitAttrChars());
+        attrNameLengthField.setText(Integer.toString(assertion.getMaxAttrNameChars()));
+        attrNameLengthCheckBox.setSelected(assertion.isLimitAttrNameChars());
         nestingDepthField.setText(Integer.toString(assertion.getMaxNestingDepth()));
         nestingDepthCheckBox.setSelected(assertion.isLimitNestingDepth());
         soapEnvCheckBox.setSelected(assertion.isRequireValidSoapEnvelope());
@@ -113,6 +120,7 @@ public class OversizedTextDialog extends JDialog {
     private void updateEnableState() {
         textLengthField.setEnabled(textLengthCheckBox.isSelected());
         attrLengthField.setEnabled(attrLengthCheckBox.isSelected());
+        attrNameLengthField.setEnabled(attrNameLengthCheckBox.isSelected());
         nestingDepthField.setEnabled(nestingDepthCheckBox.isSelected());
         payloadCountField.setEnabled(payloadCheckBox.isSelected());
     }
@@ -147,6 +155,15 @@ public class OversizedTextDialog extends JDialog {
                 err = "Maximum attribute characters must be a number.";
         }
 
+        int attrNameLen = assertion.getMaxAttrNameChars();
+        final boolean limitAttrNameLen = attrNameLengthCheckBox.isSelected();
+        try {
+            attrNameLen = Integer.parseInt(attrNameLengthField.getText());
+        } catch (NumberFormatException nfe) {
+            if (limitAttrNameLen)
+                err = "Maximum attribute name characters must be a number.";
+        }
+
         int nestDepth = assertion.getMaxNestingDepth();
         final boolean limitNestDepth = nestingDepthCheckBox.isSelected();
         try {
@@ -168,7 +185,8 @@ public class OversizedTextDialog extends JDialog {
         if ((limitAttrLen && attrLen < 0) ||
                 (limitTextLen && textLen < 0) ||
                 (limitNestDepth && nestDepth < 0) ||
-                (limitPayload && payloadCount < 0))
+                (limitPayload && payloadCount < 0) ||
+                (limitAttrNameLen && attrNameLen < 0))
             err = "Limits must be nonnegative.";
 
         if (err != null) {
@@ -177,11 +195,13 @@ public class OversizedTextDialog extends JDialog {
         }
 
         assertion.setMaxAttrChars(attrLen);
+        assertion.setMaxAttrNameChars(attrNameLen);
         assertion.setMaxTextChars(textLen);
         assertion.setMaxNestingDepth(nestDepth);
         assertion.setMaxPayloadElements(payloadCount);
         assertion.setLimitTextChars(limitTextLen);
         assertion.setLimitAttrChars(limitAttrLen);
+        assertion.setLimitAttrNameChars(limitAttrNameLen);
         assertion.setLimitNestingDepth(limitNestDepth);
         assertion.setRequireValidSoapEnvelope(soapEnvCheckBox.isSelected());
         confirmed = true;

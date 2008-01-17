@@ -48,7 +48,7 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
         // specially by just scanning the token buffer in one pass.
         delegate = new ServerOversizedTextAssertion(data, springContext, true);
         this.ota = data;
-        this.lengthLimitTestsPresent = ota.isLimitAttrChars() || ota.isLimitTextChars();
+        this.lengthLimitTestsPresent = ota.isLimitAttrChars() || ota.isLimitTextChars() || ota.isLimitAttrNameChars();
         this.accelTestsPresent = lengthLimitTestsPresent || ota.isLimitNestingDepth();
     }
 
@@ -138,7 +138,8 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
                     int longestAttrValue = chunkState.getLongestAttr();
                     int longestOther = Math.max(chunkState.getLongestOther(), chunkState.getLongestElem());
 
-                    if ((ota.isLimitAttrChars() && Math.max(longestAttrValue, longestOther/2) > ota.getMaxAttrChars()) ||
+                    if ((ota.isLimitAttrChars() && longestAttrValue > ota.getMaxAttrChars()) ||
+                        (ota.isLimitAttrNameChars() && longestOther > ota.getMaxAttrNameChars()) ||
                         (ota.isLimitTextChars() && longestText > ota.getMaxTextChars()))
                     {
                         auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_OVERSIZED_TEXT);

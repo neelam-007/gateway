@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 public class OversizedTextAssertion extends Assertion {
     public static final long DEFAULT_ATTR_LIMIT = 2048;
     public static final long DEFAULT_TEXT_LIMIT = 16384;
+    public static final int DEFAULT_ATTR_NAME_LIMIT = 128;
     public static final int DEFAULT_NESTING_LIMIT = 32;
     public static final int DEFAULT_PAYLOAD_LIMIT = 0;     // Unlimited by default
     public static final int MIN_NESTING_LIMIT = 2;         // Constrain to prevent useless check
@@ -37,6 +38,8 @@ public class OversizedTextAssertion extends Assertion {
     private int maxNestingDepth = DEFAULT_NESTING_LIMIT;
     private int maxPayloadElements = DEFAULT_PAYLOAD_LIMIT;
     private boolean requireValidSoapEnvelope = false;
+    private boolean limitAttrNameChars = true;
+    private int maxAttrNameChars = DEFAULT_ATTR_NAME_LIMIT;
 
     public boolean isLimitTextChars() {
         return limitTextChars;
@@ -103,6 +106,22 @@ public class OversizedTextAssertion extends Assertion {
 
     public int getMaxPayloadElements() {
         return maxPayloadElements;
+    }
+
+    public boolean isLimitAttrNameChars() {
+        return limitAttrNameChars;
+    }
+
+    public void setLimitAttrNameChars(boolean limitAttrNameChars) {
+        this.limitAttrNameChars = limitAttrNameChars;
+    }
+
+    public int getMaxAttrNameChars() {
+        return maxAttrNameChars;
+    }
+
+    public void setMaxAttrNameChars(int maxAttrNameChars) {
+        this.maxAttrNameChars = maxAttrNameChars;
     }
 
     /**

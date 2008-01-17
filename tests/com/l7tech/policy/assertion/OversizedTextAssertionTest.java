@@ -5,19 +5,17 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.common.message.Message;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.server.MockServletApi;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.util.logging.Logger;
-
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.message.Message;
-import com.l7tech.common.TestLicenseManager;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.ServerPolicyFactory;
-import com.l7tech.server.MockServletApi;
 
 /**
  * Test for OversizedTextAssertion bean.
@@ -92,6 +90,15 @@ public class OversizedTextAssertionTest extends TestCase {
         assertEquals(AssertionStatus.BAD_REQUEST, checkRequest(ota.getCopy(), TEST_DOC));
     }
 
+    public void testOtaLongAttrNameNode() throws Exception {
+        OversizedTextAssertion ota = new OversizedTextAssertion();
+        ota.setLimitAttrNameChars(true);
+        ota.setMaxAttrNameChars(40);
+        assertEquals(AssertionStatus.NONE, checkRequest(ota.getCopy(), TEST_DOC_LONG_ATTR_NAME));
+        ota.setMaxAttrNameChars(20);
+        assertEquals(AssertionStatus.BAD_REQUEST, checkRequest(ota.getCopy(), TEST_DOC_LONG_ATTR_NAME));
+    }
+
     public void testOtaNesting() throws Exception {
         OversizedTextAssertion ota = new OversizedTextAssertion();
         ota.setLimitNestingDepth(true);
@@ -125,6 +132,19 @@ public class OversizedTextAssertionTest extends TestCase {
             "    <soapenv:Body>\n" +
             "        <getOffensiveStats xmlns=\"http://playerstatsws.test.l7tech.com\">\n" +
             "            <playerNumber>19</playerNumber>\n" +
+            "            <delay>0</delay>\n" +
+            "        </getOffensiveStats>\n" +
+            "    </soapenv:Body>\n" +
+            "</soapenv:Envelope>";
+
+    private static final String TEST_DOC_LONG_ATTR_NAME =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<soapenv:Envelope\n" +
+            "    xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" +
+            "    xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instancex\">\n" +
+            "    <soapenv:Body>\n" +
+            "        <getOffensiveStats xmlns=\"http://playerstatsws.test.l7tech.com\">\n" +
+            "            <playerNumber myveryextremelylongattributename=\"blah\">19</playerNumber>\n" +
             "            <delay>0</delay>\n" +
             "        </getOffensiveStats>\n" +
             "    </soapenv:Body>\n" +
