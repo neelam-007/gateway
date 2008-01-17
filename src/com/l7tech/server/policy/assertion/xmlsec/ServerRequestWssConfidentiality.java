@@ -9,6 +9,8 @@ import org.springframework.context.ApplicationContext;
 import java.util.logging.Logger;
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Collections;
 
 /**
  * Enforces that a specific element in a request is encrypted.
@@ -36,11 +38,15 @@ public class ServerRequestWssConfidentiality extends ServerRequestWssOperation {
             return elementsThatWereEncrypted;
         }
         RequestWssConfidentiality rwss = (RequestWssConfidentiality)data;
-        String xencAlgorithm = rwss.getXEncAlgorithm();
+        List<String> algList = rwss.getXEncAlgorithmList();
+        if (algList == null) {
+            algList = Collections.singletonList(rwss.getXEncAlgorithm());
+        }
         Collection elementsToReturn = new ArrayList();
         for (int i = elementsThatWereEncrypted.length - 1; i >= 0; i--) {
             EncryptedElement encryptedElement = elementsThatWereEncrypted[i];
-            if (encryptedElement.getAlgorithm().equals(xencAlgorithm)) {
+
+            if (algList.contains(encryptedElement.getAlgorithm())) {
                 elementsToReturn.add(encryptedElement);
             }
         }

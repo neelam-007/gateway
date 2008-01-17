@@ -1,9 +1,10 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.xml.xpath.XpathExpression;
+import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 
+import java.util.List;
 /**
  * Enforces the XML security on the message elements or entire message
  * 
@@ -21,22 +22,45 @@ public class RequestWssConfidentiality extends XmlSecurityAssertionBase {
     }
 
     /**
-     * Get the requested xml encrytpion algorithm. Defaults to http://www.w3.org/2001/04/xmlenc#aes128-cbc
-     * @return the encrytion algorithm requested
+     * Get the requested xml encryption algorithm with the highest preference from the list of encryption algorithms.
+     * The default one is http://www.w3.org/2001/04/xmlenc#aes128-cbc.
+     * @return the encrytion algorithm with the highest preference.
      */
     public String getXEncAlgorithm() {
-        return xEncAlgorithm;
+        // It is guranteed that xEncAlgorithmWithHighestPref is the one with highest preference, since the
+        // methods setXEncAlgorithm and setXEncAlgorithmList always update the new  xEncAlgorithmWithHighestPref.
+        return xEncAlgorithmWithHighestPref;
+    }
+
+    public List<String> getXEncAlgorithmList() {
+        return xEncAlgorithmList;
     }
 
     /**
-     * Set the xml encryption algorithm.
+     * Set the xml encryption algorithm with the highest preference.
      * @param xEncAlgorithm
      */
     public void setXEncAlgorithm(String xEncAlgorithm) {
-        if (xEncAlgorithm == null) {
-            throw new IllegalArgumentException();
+        if (xEncAlgorithm == null) throw new IllegalArgumentException();
+        if (xEncAlgorithmList != null) {
+            // Add the algorithm into the list if the algorithm is not in the list.
+            if (! xEncAlgorithmList.contains(xEncAlgorithm)) xEncAlgorithmList.add(xEncAlgorithm);
+            // Update the encryption algorithm with the highest preference
+            xEncAlgorithmWithHighestPref = findAlgWithHighestPreference();
+        } else {
+            xEncAlgorithmWithHighestPref = xEncAlgorithm;
         }
-        this.xEncAlgorithm = xEncAlgorithm;
+    }
+
+    /**
+     * Update the encryption algorithm list.  It is important to update the algorithm with the highest preference.
+     * @param newList
+     */
+    public void setXEncAlgorithmList(List<String> newList) {
+        if (newList == null) throw new IllegalArgumentException();
+        xEncAlgorithmList = newList;
+        // Update the encryption algorithm with the highest preference
+        xEncAlgorithmWithHighestPref = findAlgWithHighestPreference();
     }
 
     public String getKeyEncryptionAlgorithm() {
@@ -47,6 +71,29 @@ public class RequestWssConfidentiality extends XmlSecurityAssertionBase {
         this.xencKeyAlgorithm = keyEncryptionAlgorithm;
     }
 
-    private String xEncAlgorithm = XencUtil.AES_128_CBC;
-    private String xencKeyAlgorithm = null;
+    private String findAlgWithHighestPreference() {
+        if (xEncAlgorithmList.isEmpty()) {
+            xEncAlgorithmWithHighestPref = XencUtil.AES_128_CBC;
+            xEncAlgorithmList.add(XencUtil.AES_128_CBC);
+            return XencUtil.AES_128_CBC;
+        }
+
+        if (xEncAlgorithmList.contains(XencUtil.AES_128_CBC)) {
+            return XencUtil.AES_128_CBC;
+        } else if (xEncAlgorithmList.contains(XencUtil.AES_192_CBC)) {
+            return XencUtil.AES_192_CBC;
+        }
+         else if (xEncAlgorithmList.contains(XencUtil.AES_256_CBC)) {
+            return XencUtil.AES_256_CBC;
+        }
+         else if (xEncAlgorithmList.contains(XencUtil.TRIPLE_DES_CBC)) {
+            return XencUtil.TRIPLE_DES_CBC;
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+    
+    private String xEncAlgorithmWithHighestPref = XencUtil.AES_128_CBC; // The encryption algorithm wiht the highese preference
+    private String xencKeyAlgorithm;
+    private List<String> xEncAlgorithmList; // Store all encrption algorithms user chose
 }

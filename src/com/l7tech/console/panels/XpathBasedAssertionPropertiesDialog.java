@@ -119,10 +119,10 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private JPanel speedIndicatorPanel;
     private JPanel encryptionConfigPanel;
     private JPanel signatureResponseConfigPanel;
-    private JRadioButton aes128radioButton;
-    private JRadioButton aes192radioButton;
-    private JRadioButton aes256radioButton;
-    private JRadioButton tripleDESradioButton;
+    private JCheckBox aes128CheckBox;
+    private JCheckBox aes192CheckBox;
+    private JCheckBox aes256CheckBox;
+    private JCheckBox tripleDESCheckBox;
     private JRadioButton bstReferenceRadioButton;
     private JRadioButton skiReferenceRadioButton;
     private JTextField varPrefixField;
@@ -500,7 +500,9 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                     ass.setXmlMsgSrc(((MsgSrcComboBoxItem)xmlMsgSrcComboBox.getSelectedItem()).getVariableName());
                 }
 
-                collectEncryptionConfig();
+                if (!collectEncryptionConfig()) { // check if there exists invalid configurations or not.
+                    return;
+                }
                 collectResponseSignatureConfig();
                 XpathBasedAssertionPropertiesDialog.this.dispose();
                 if (okActionListener != null) okActionListener.actionPerformed(e);
@@ -618,54 +620,77 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             encryptionConfigPanel.setVisible(false);
             return;
         }
-        ButtonGroup bg = new ButtonGroup();
-        bg.add(aes128radioButton);
-        bg.add(aes192radioButton);
-        bg.add(aes256radioButton);
-        bg.add(tripleDESradioButton);
-
-        String xencAlgorithm = null;
 
         if (assertion instanceof ResponseWssConfidentiality) {
             ResponseWssConfidentiality responseWssConfidentiality = (ResponseWssConfidentiality)assertion;
-            xencAlgorithm = responseWssConfidentiality.getXEncAlgorithm();
+            String xencAlgorithm = responseWssConfidentiality.getXEncAlgorithm();
+
+            if (xencAlgorithm == null) {
+                xencAlgorithm = XencAlgorithm.AES_128_CBC.getXEncName();
+            }
+            aes128CheckBox.setSelected(XencAlgorithm.AES_128_CBC.getXEncName().equals(xencAlgorithm));
+            aes192CheckBox.setSelected(XencAlgorithm.AES_192_CBC.getXEncName().equals(xencAlgorithm));
+            aes256CheckBox.setSelected(XencAlgorithm.AES_256_CBC.getXEncName().equals(xencAlgorithm));
+            tripleDESCheckBox.setSelected(XencAlgorithm.TRIPLE_DES_CBC.getXEncName().equals(xencAlgorithm));
+
         } else if (assertion instanceof RequestWssConfidentiality) {
             RequestWssConfidentiality requestWssConfidentiality = (RequestWssConfidentiality)assertion;
-            xencAlgorithm = requestWssConfidentiality.getXEncAlgorithm();
+            List<String> xencAlgorithmlist = requestWssConfidentiality.getXEncAlgorithmList();
+
+            if (xencAlgorithmlist == null) {
+                xencAlgorithmlist = new ArrayList<String>();
+                xencAlgorithmlist.add(requestWssConfidentiality.getXEncAlgorithm());
+            }
+
+            aes128CheckBox.setSelected(xencAlgorithmlist.contains(XencAlgorithm.AES_128_CBC.getXEncName()));
+            aes192CheckBox.setSelected(xencAlgorithmlist.contains(XencAlgorithm.AES_192_CBC.getXEncName()));
+            aes256CheckBox.setSelected(xencAlgorithmlist.contains(XencAlgorithm.AES_256_CBC.getXEncName()));
+            tripleDESCheckBox.setSelected(xencAlgorithmlist.contains(XencAlgorithm.TRIPLE_DES_CBC.getXEncName()));
         }
-        if (xencAlgorithm == null) {
-            xencAlgorithm = XencAlgorithm.AES_128_CBC.getXEncName();
-        }
-        aes128radioButton.setSelected(XencAlgorithm.AES_128_CBC.getXEncName().equals(xencAlgorithm));
-        aes192radioButton.setSelected(XencAlgorithm.AES_192_CBC.getXEncName().equals(xencAlgorithm));
-        aes256radioButton.setSelected(XencAlgorithm.AES_256_CBC.getXEncName().equals(xencAlgorithm));
-        tripleDESradioButton.setSelected(XencAlgorithm.TRIPLE_DES_CBC.getXEncName().equals(xencAlgorithm));
     }
 
-    private void collectEncryptionConfig() {
+    /**
+     * Collect encryption configuration.
+     * @return true if there are no invalid configurations.
+     */
+    private boolean collectEncryptionConfig() {
         if (!isEncryption) {
-            return;
+            return true;
         }
-        String xencAlgorithm = null;
-        if (aes128radioButton.isSelected()) {
-            xencAlgorithm = XencAlgorithm.AES_128_CBC.getXEncName();
-        } else if (aes192radioButton.isSelected()) {
-            xencAlgorithm = XencAlgorithm.AES_192_CBC.getXEncName();
-        } else if (aes256radioButton.isSelected()) {
-            xencAlgorithm = XencAlgorithm.AES_256_CBC.getXEncName();
-        } else if (tripleDESradioButton.isSelected()) {
-            xencAlgorithm = XencAlgorithm.TRIPLE_DES_CBC.getXEncName();
+        List<String> xencAlgorithmList = new ArrayList<String>();
+        if (aes128CheckBox.isSelected()) {
+            xencAlgorithmList.add(XencAlgorithm.AES_128_CBC.getXEncName());
         }
-        if (xencAlgorithm == null) {
-            xencAlgorithm = XencAlgorithm.AES_128_CBC.getXEncName();
+        if (aes192CheckBox.isSelected()) {
+            xencAlgorithmList.add(XencAlgorithm.AES_192_CBC.getXEncName());
+        }
+        if (aes256CheckBox.isSelected()) {
+            xencAlgorithmList.add(XencAlgorithm.AES_256_CBC.getXEncName());
+        }
+        if (tripleDESCheckBox.isSelected()) {
+            xencAlgorithmList.add(XencAlgorithm.TRIPLE_DES_CBC.getXEncName());
+        }
+        // Check if there are invalid configurations.
+        if (xencAlgorithmList.isEmpty()) {
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
+                            "You did not choose any encryption methods.  Please choose at least one of them.", null);
+            return false;
         }
         if (assertion instanceof ResponseWssConfidentiality) {
+            // Response Encryption Assertion allows only one encryption method.
+            if (xencAlgorithmList.size() > 1) {
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
+                            "It is not allowed to choose more than one encryption methods.  Please choose one of them.", null);
+                return false;
+            }
             ResponseWssConfidentiality responseWssConfidentiality = (ResponseWssConfidentiality)assertion;
-            responseWssConfidentiality.setXEncAlgorithm(xencAlgorithm);
+            responseWssConfidentiality.setXEncAlgorithm(xencAlgorithmList.get(0));
+
         } else if (assertion instanceof RequestWssConfidentiality) {
             RequestWssConfidentiality requestWssConfidentiality = (RequestWssConfidentiality)assertion;
-            requestWssConfidentiality.setXEncAlgorithm(xencAlgorithm);
+            requestWssConfidentiality.setXEncAlgorithmList(xencAlgorithmList);
         }
+        return true;
     }
 
     private void collectResponseSignatureConfig() {
@@ -713,7 +738,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }
         blankMessage = XmlUtil.nodeToString(document);
     }
-
 
     /**
      * Populate/initialize the operations tree
