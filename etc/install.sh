@@ -119,15 +119,19 @@ check_java_version() {
 	basepath=${1}
 	result=""
 
-	echo "Trying to find java at ${basepath}"
+	echo "Trying to find java at ${basepath} ..."
 
 	if [ ! -d "${basepath}" ] ; then
+	    echo ""
 		echo "No Java found at ${basepath}"
+		echo ""
 		return
 	else
 		binpath="${basepath}/bin/java"
 		if [ ! -x "${binpath}" ]; then
+			echo ""
 			echo "No Java found at ${basepath} (or ${binpath})"
+			echo ""
 			return
 		fi
 	fi
@@ -143,19 +147,33 @@ check_java_version() {
 			result="`dirname ${temp}`"
 		else
 			result="${basepath}"
-			echo "Checking for appropriate cryptography configuration"
-	        check_crypto "${result}"
-	        if [ ${cryptoOk} != 0 ] ; then
-	            echo "*** Cryptography configuration test failed. ***"
-	            echo "Please ensure that the JDK has been updated with the unlimited strength crypto"
-	            echo "policy files."
-	            echo "See the SecureSpan Installation and Maintenance Manual:"
+			echo ""
+			echo "Validating the JDK ..."
+			if [ ! -d ${result}/jre/lib/ext ] ; then
+                echo ""
+                echo "*** ${result} does not point to valid JDK. (no ${result}/jre/lib/ext was found) ***"
+                echo "Please specify a location for a full JDK."
+                echo "See the SecureSpan Installation and Maintenance Manual:"
 	            echo "'Chapter 3 - Installing the SecureSpan Gateway' for details"
+	            echo ""
 	            result=""
-	        else
-	            echo "Cryptography configuration test passed"
-	        fi
-	        rm /tmp/${javaclassname}*
+			else
+			    echo "The JDK is valid"
+                echo ""
+                echo "Now checking for appropriate cryptography configuration ..."
+                check_crypto "${result}"
+                if [ ${cryptoOk} != 0 ] ; then
+                    echo "*** Cryptography configuration test failed. ***"
+                    echo "Please ensure that the JDK has been updated with the unlimited strength crypto"
+                    echo "policy files."
+                    echo "See the SecureSpan Installation and Maintenance Manual:"
+                    echo "'Chapter 3 - Installing the SecureSpan Gateway' for details"
+                    result=""
+                else
+                    echo "Cryptography configuration test passed"
+                fi
+	            rm /tmp/${javaclassname}*
+            fi
 		fi
 	fi
 }
@@ -174,6 +192,7 @@ get_java_location() {
 		check_java_version "${response}"
 	done
 
+	echo ""
 	echo "A compatible JDK was found at ${result}"
 	MY_JAVA_HOME=${result}
 }
