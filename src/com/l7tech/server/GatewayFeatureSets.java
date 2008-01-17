@@ -468,6 +468,7 @@ public class GatewayFeatureSets {
             fs(policyAccel),
             fs(threatFw),
             fs(uiFw),
+            fs(ssb),
             fs(customFw));
 
         PROFILE_ALL =
