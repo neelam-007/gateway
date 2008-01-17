@@ -60,6 +60,17 @@
                         </entry>
                         <entry key="sinkManager"><list><value>logLevels</value></list></entry>
                         <entry key="auditLogListenerTarget"><list><value>auditBatchExternal</value></list></entry>
+                        <entry key="schemaManager">
+                            <list>
+                                <value>schemaMaxCacheEntries</value>
+                                <value>schemaMaxCacheAge</value>
+                                <value>schemaRecompileLatency</value>
+                                <value>schemaRecompileMinAge</value>
+                                <value>schemaRecompileMaxAge</value>
+                                <value>schemaCacheMaxSchemaSize</value>
+                                <value>schemaSoftwareFallback</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -532,6 +543,7 @@
     </bean>
 
     <bean id="schemaManager" class="com.l7tech.server.communityschemas.SchemaManagerImpl" depends-on="clusterPropertyManager">
+        <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="httpClientFactory"/>
         <constructor-arg>
             <bean class="com.l7tech.server.util.ManagedTimer">

@@ -484,7 +484,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
         String getString(boolean isXml) throws IOException;
 
         /**
-         * Get the contents of the URL as a String.
+         * Get the contents of the URL as a byte array.
          *
          * @return The String data
          * @throws IOException if an error occurs.

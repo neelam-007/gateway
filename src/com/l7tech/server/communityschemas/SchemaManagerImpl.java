@@ -3,6 +3,9 @@
  */
 package com.l7tech.server.communityschemas;
 
+import com.l7tech.common.http.*;
+import com.l7tech.common.io.ByteLimitInputStream;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.urlcache.AbstractUrlObjectCache;
 import com.l7tech.common.urlcache.HttpObjectCache;
 import com.l7tech.common.util.CausedIOException;
@@ -22,18 +25,22 @@ import org.xml.sax.SAXException;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -46,16 +53,34 @@ import java.util.regex.Pattern;
  * actually in use, but should not cache them any longer than needed; hardware acceleration
  * relies on their prompt closure.
  */
-public class SchemaManagerImpl implements SchemaManager {
+public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener {
     private static final Logger logger = Logger.getLogger(SchemaManagerImpl.class.getName());
 
-    private final int maxCacheAge = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_AGE, 300000);
-    private final int maxCacheEntries = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 100);
-    private final int hardwareRecompileLatency = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY, 10000);
-    private final int hardwareRecompileMinAge = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MIN_AGE, 500);
-    private final int hardwareRecompileMaxAge = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MAX_AGE, 30000);
-    // This isn't "true".equals(...) just in case ServerConfig returns null--we want to default to true.
-    private final boolean softwareFallback = !("false".equals(ServerConfig.getInstance().getProperty(ServerConfig.PARAM_SCHEMA_SOFTWARE_FALLBACK)));
+    private static class CacheConf {
+        private final int maxCacheAge;
+        private final int maxCacheEntries;
+        private final int hardwareRecompileLatency;
+        private final int hardwareRecompileMinAge;
+        private final int hardwareRecompileMaxAge;
+        private final long maxSchemaSize;
+        private final boolean softwareFallback;
+
+        CacheConf(ServerConfig serverConfig) {
+            maxCacheAge = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_AGE, 300000);
+            maxCacheEntries = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 100);
+            hardwareRecompileLatency = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY, 10000);
+            hardwareRecompileMinAge = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MIN_AGE, 500);
+            hardwareRecompileMaxAge = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MAX_AGE, 30000);
+            maxSchemaSize = serverConfig.getLongProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_SCHEMA_SIZE, 1000000L);
+
+            // This isn't "true".equals(...) just in case ServerConfig returns null--we want to default to true.
+            softwareFallback = !("false".equals(serverConfig.getProperty(ServerConfig.PARAM_SCHEMA_SOFTWARE_FALLBACK)));
+        }
+    }
+
+    private final ServerConfig serverConfig;
+    private final AtomicReference<CacheConf> conf;
+    private final HttpClientFactory httpClientFactory;
 
     /** This LSInput will be returned to indicate "Resource not resolved, and don't try to get it over the network unless you know what you are doing" */
     public static final LSInput LSINPUT_UNRESOLVED = new LSInputImpl();
@@ -95,7 +120,7 @@ public class SchemaManagerImpl implements SchemaManager {
      * Shared cache for all remotely-loaded schema strings, system-wide.
      * This is a low-level cache that stores Strings, to save network calls.
      */
-    private final HttpObjectCache<String> httpStringCache;
+    private final AtomicReference<HttpObjectCache<String>> httpStringCache;
 
     /**
      * Stores the latest version of each globally-registered schema string (SchemaEntry, and policy assertion
@@ -124,8 +149,10 @@ public class SchemaManagerImpl implements SchemaManager {
     private long firstSchemaEligibilityTime = 0;
 
     private final Timer maintenanceTimer;
+    private SafeTimerTask cacheCleanupTask;
+    private SafeTimerTask hardwareReloadTask;
 
-    private abstract class SafeTimerTask extends TimerTask {
+    private abstract static class SafeTimerTask extends TimerTask {
         public final void run() {
             try {
                 doRun();
@@ -137,9 +164,27 @@ public class SchemaManagerImpl implements SchemaManager {
         protected abstract void doRun();
     }
 
-    public SchemaManagerImpl(HttpClientFactory httpClientFactory, Timer timer) {
-        if (httpClientFactory == null) throw new NullPointerException();
+    /*
 
+       Constructor
+
+    */
+    public SchemaManagerImpl(ServerConfig serverConfig, HttpClientFactory httpClientFactory, Timer timer) {
+        if (serverConfig == null || httpClientFactory == null) throw new NullPointerException();
+        this.serverConfig = serverConfig;
+        this.httpClientFactory = httpClientFactory;
+        this.conf = new AtomicReference<CacheConf>();
+        this.httpStringCache = new AtomicReference<HttpObjectCache<String>>();
+
+        if (timer == null)
+            timer = new Timer("Schema cache maintenance", true);
+        maintenanceTimer = timer;
+
+        updateCacheConfiguration();
+    }
+
+    private synchronized void updateCacheConfiguration() {
+        conf.set(new CacheConf(serverConfig));
         HttpObjectCache.UserObjectFactory<String> userObjectFactory = new HttpObjectCache.UserObjectFactory<String>() {
             public String createUserObject(String url, AbstractUrlObjectCache.UserObjectSource responseSource) throws IOException {
                 String response = responseSource.getString(true);
@@ -148,30 +193,116 @@ public class SchemaManagerImpl implements SchemaManager {
             }
         };
 
-        httpStringCache = new HttpObjectCache<String>(maxCacheEntries,
-                                                      maxCacheAge,
-                                                      httpClientFactory,
-                                                      userObjectFactory,
-                                                      HttpObjectCache.WAIT_LATEST);
+        if (this.cacheCleanupTask != null) {
+            this.cacheCleanupTask.cancel();
+            this.cacheCleanupTask = null;
+        }
 
-        if (timer == null)
-            timer = new Timer("Schema cache maintenance", true);
-        maintenanceTimer = timer;
-        SafeTimerTask cacheCleanupTask = new SafeTimerTask() {
+        if (this.hardwareReloadTask != null) {
+            this.hardwareReloadTask.cancel();
+            this.hardwareReloadTask = null;
+        }
+
+        GenericHttpClientFactory hcf = wrapHttpClientFactory(httpClientFactory, conf.get().maxSchemaSize);
+
+        httpStringCache.set(new HttpObjectCache<String>(conf.get().maxCacheEntries,
+                                                      conf.get().maxCacheAge,
+                                                      hcf,
+                                                      userObjectFactory,
+                                                      HttpObjectCache.WAIT_LATEST));
+
+        cacheCleanupTask = new SafeTimerTask() {
             public void doRun() {
                 cacheCleanup();
             }
         };
-        maintenanceTimer.schedule(cacheCleanupTask, 4539, maxCacheAge * 2 + 263);
+        maintenanceTimer.schedule(cacheCleanupTask, 4539, conf.get().maxCacheAge * 2 + 263);
 
         if (tarariSchemaHandler != null) {
-            final SafeTimerTask hardwareReloadTask = new SafeTimerTask() {
+            hardwareReloadTask = new SafeTimerTask() {
                 public void doRun() {
                     maybeRebuildHardwareCache();
                 }
             };
-            maintenanceTimer.schedule(hardwareReloadTask, 1000, hardwareRecompileLatency);
+            maintenanceTimer.schedule(hardwareReloadTask, 1000, conf.get().hardwareRecompileLatency);
         }
+    }
+
+    public void propertyChange(PropertyChangeEvent evt) {
+        logger.info("Rebuilding schema cache due to change in cache configuration");
+        try {
+            updateCacheConfiguration();
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error while rebuilding schema cache: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    private GenericHttpClientFactory wrapHttpClientFactory(final HttpClientFactory httpClientFactory, final long maxResponseSize) {
+        return new GenericHttpClientFactory() {
+            public GenericHttpClient createHttpClient() {
+                return wrapHttpClient(httpClientFactory.createHttpClient());
+            }
+
+            public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
+                return wrapHttpClient(httpClientFactory.createHttpClient(hostConnections, totalConnections, connectTimeout, timeout, identity));
+            }
+
+            private GenericHttpClient wrapHttpClient(final GenericHttpClient httpClient) {
+                return new GenericHttpClient() {
+                    public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
+                        return wrapHttpRequest(httpClient.createRequest(method, params));
+                    }
+                };
+            }
+
+            private GenericHttpRequest wrapHttpRequest(final GenericHttpRequest request) {
+                return new GenericHttpRequest() {
+                    public void setInputStream(InputStream bodyInputStream) {
+                        request.setInputStream(bodyInputStream);
+                    }
+
+                    public GenericHttpResponse getResponse() throws GenericHttpException {
+                        return wrapHttpResponse(request.getResponse());
+                    }
+
+                    public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
+                        request.addParameter(paramName, paramValue);
+                    }
+
+                    public void close() {
+                        request.close();
+                    }
+                };
+            }
+
+            private GenericHttpResponse wrapHttpResponse(final GenericHttpResponse response) {
+                return new GenericHttpResponse() {
+                    public InputStream getInputStream() throws GenericHttpException {
+                        return new ByteLimitInputStream(response.getInputStream(), 1024, maxResponseSize);
+                    }
+
+                    public void close() {
+                        response.close();
+                    }
+
+                    public int getStatus() {
+                        return response.getStatus();
+                    }
+
+                    public HttpHeaders getHeaders() {
+                        return response.getHeaders();
+                    }
+
+                    public ContentTypeHeader getContentType() {
+                        return response.getContentType();
+                    }
+
+                    public Long getContentLength() {
+                        return response.getContentLength();
+                    }
+                };
+            }
+        };
     }
 
     /**
@@ -205,7 +336,7 @@ public class SchemaManagerImpl implements SchemaManager {
 
         cacheLock.readLock().lock();
         try {
-            maxCacheEntries = this.maxCacheEntries + globalSchemasByUrl.size();
+            maxCacheEntries = conf.get().maxCacheEntries + globalSchemasByUrl.size();
 
             // First, if the cache is too big, throw out the least-recently-used schemas until it isn't.
             long extras = schemasBySystemId.size() - maxCacheEntries;
@@ -245,7 +376,7 @@ public class SchemaManagerImpl implements SchemaManager {
 
             // Then scan for any duplicate-TNS-causers that haven't been used in a while
             long now = System.currentTimeMillis();
-            long maxAge = maxCacheAge * 4;
+            long maxAge = conf.get().maxCacheAge * 4;
             for (SchemaHandle schemaHandle : schemasBySystemId.values()) {
                 CompiledSchema schema = schemaHandle.getTarget();
                 if (schema != null && schema.isTransientSchema()) {
@@ -333,8 +464,8 @@ public class SchemaManagerImpl implements SchemaManager {
             if (handle != null) handle.close();
     }
 
-    /** Caller must hold at least the read lock. */
-    private void visitAllParentsRecursive(CompiledSchema schema, Set<CompiledSchema> visited) {
+    /* Caller must hold at least the read lock. */
+    private static void visitAllParentsRecursive(CompiledSchema schema, Set<CompiledSchema> visited) {
         if (visited.contains(schema)) return;
         visited.add(schema);
         Set<CompiledSchema> exps = schema.getExports();
@@ -343,7 +474,7 @@ public class SchemaManagerImpl implements SchemaManager {
         }
     }
 
-    /** Caller must hold at least the read lock. */
+    /* Caller must hold at least the read lock. */
     private void getParents(String url, Set<CompiledSchema> collected) {
         Collection<SchemaHandle> allHandles = new ArrayList<SchemaHandle>(schemasBySystemId.values());
         for (SchemaHandle schemaHandle : allHandles) {
@@ -400,6 +531,7 @@ public class SchemaManagerImpl implements SchemaManager {
      * <p/>
      * Caller must hold at least the read lock.
      *
+     * @param url the URL to look up in the cache.  Must not be null.
      * @return the already-compiled cached schema for this url, or null if there isn't one.
      *         If a handle is returned, it will be a new handle duped just for the caller.
      *         Caller must close the handle when they are finished with it.
@@ -445,7 +577,7 @@ public class SchemaManagerImpl implements SchemaManager {
 
         // Not a global schema -- do a remote schema load    TODO url whitelist goes here somewhere
         AbstractUrlObjectCache.FetchResult<String> result =
-                httpStringCache.fetchCached(url, HttpObjectCache.WAIT_LATEST);
+                httpStringCache.get().fetchCached(url, HttpObjectCache.WAIT_LATEST);
 
         schemaDoc = result.getUserObject();
         if (schemaDoc != null)
@@ -714,8 +846,9 @@ public class SchemaManagerImpl implements SchemaManager {
      * <p/>
      * Caller must hold the write lock.
      *
-     * @param systemId
-     * @param schemadoc
+     * @param systemId    systemId of the schema being compiled. required
+     * @param schemadoc   a String containing the schema XML
+     * @param seenSystemIds  the set of system IDs seen since the current top-level compile began
      * @return a SchemaHandle to a new CompiledSchema instance, already duplicated for the caller.  Caller must close
      *         this handle when they are finished with it.
      */
@@ -765,7 +898,7 @@ public class SchemaManagerImpl implements SchemaManager {
             String mangledDoc = XmlUtil.nodeToString(mangledElement);
             CompiledSchema newSchema =
                     new CompiledSchema(tns, systemId, schemadoc, mangledDoc, softwareSchema, this,
-                            directImports, true, softwareFallback);
+                            directImports, true, conf.get().softwareFallback);
             for (SchemaHandle directImport : directImports.values()) {
                 final CompiledSchema impSchema = directImport.getCompiledSchema();
                 if (impSchema == null) continue;
@@ -869,59 +1002,60 @@ public class SchemaManagerImpl implements SchemaManager {
 
     /** Caller must NOT hold the write lock. */
     private void reportCacheContents() {
-        if (logger.isLoggable(Level.FINEST)) {
-            StringBuilder sb = new StringBuilder("\n\nSchema cache contents: \n\n");
-            Set<CompiledSchema> schemaSet = new HashSet<CompiledSchema>();
-            Set<CompiledSchema> reported = new HashSet<CompiledSchema>();
-            cacheLock.readLock().lock();
-            try {
-                // We'll do two passes.  In the first pass, we'll draw trees down from the roots.
-                // In second pass, we'll draw any schemas that we missed during the first pass (possible
-                // due to upward links being weak references)
+        if (!logger.isLoggable(Level.FINEST))
+            return;
+        
+        StringBuilder sb = new StringBuilder("\n\nSchema cache contents: \n\n");
+        Set<CompiledSchema> schemaSet = new HashSet<CompiledSchema>();
+        Set<CompiledSchema> reported = new HashSet<CompiledSchema>();
+        cacheLock.readLock().lock();
+        try {
+            // We'll do two passes.  In the first pass, we'll draw trees down from the roots.
+            // In second pass, we'll draw any schemas that we missed during the first pass (possible
+            // due to upward links being weak references)
 
-                // First pass: find all roots, then draw the trees top-down
-                final Collection<SchemaHandle> allSchemas = schemasBySystemId.values();
-                for (SchemaHandle ref : allSchemas) {
-                    if (ref == null) continue;
-                    CompiledSchema cs = ref.getTarget();
-                    if (cs == null) continue;
-                    getRoots(cs, schemaSet);
-                }
-
-                for (CompiledSchema schema : schemaSet) {
-                    reportNode(schema, reported, sb, " -");
-                }
-
-                // Second pass: draw any that we missed
-                for (SchemaHandle ref : allSchemas) {
-                    if (ref == null) continue;
-                    CompiledSchema cs = ref.getTarget();
-                    if (cs == null) continue;
-                    if (!reported.contains(cs))
-                        reportNode(cs, reported, sb, "?-");
-                }
-
-
-                // Now draw the TNS cache
-                sb.append("\n\nTNS cache:\n");
-                for (Map.Entry<String, Map<CompiledSchema, Object>> entry : tnsCache.entrySet()) {
-                    String tns = entry.getKey();
-                    Map<CompiledSchema,Object> ss = entry.getValue();
-                    if (tns == null || ss == null || ss.isEmpty()) continue;
-                    sb.append("  TNS:").append(tns).append("\n");
-                    for (CompiledSchema schema : ss.keySet()) {
-                        if (schema == null) continue;
-                        final SchemaHandle current = schemasBySystemId.get(schema.getSystemId());
-                        String active = (current != null && current.getTarget() == schema) ? "*" : " ";
-                        sb.append("       ").append(active).append(schema).append("\n");
-                    }
-                }
-            } finally {
-                cacheLock.readLock().unlock();
+            // First pass: find all roots, then draw the trees top-down
+            final Collection<SchemaHandle> allSchemas = schemasBySystemId.values();
+            for (SchemaHandle ref : allSchemas) {
+                if (ref == null) continue;
+                CompiledSchema cs = ref.getTarget();
+                if (cs == null) continue;
+                getRoots(cs, schemaSet);
             }
-            sb.append("\n\n");
-            logger.finest(sb.toString());
+
+            for (CompiledSchema schema : schemaSet) {
+                reportNode(schema, reported, sb, " -");
+            }
+
+            // Second pass: draw any that we missed
+            for (SchemaHandle ref : allSchemas) {
+                if (ref == null) continue;
+                CompiledSchema cs = ref.getTarget();
+                if (cs == null) continue;
+                if (!reported.contains(cs))
+                    reportNode(cs, reported, sb, "?-");
+            }
+
+
+            // Now draw the TNS cache
+            sb.append("\n\nTNS cache:\n");
+            for (Map.Entry<String, Map<CompiledSchema, Object>> entry : tnsCache.entrySet()) {
+                String tns = entry.getKey();
+                Map<CompiledSchema,Object> ss = entry.getValue();
+                if (tns == null || ss == null || ss.isEmpty()) continue;
+                sb.append("  TNS:").append(tns).append("\n");
+                for (CompiledSchema schema : ss.keySet()) {
+                    if (schema == null) continue;
+                    final SchemaHandle current = schemasBySystemId.get(schema.getSystemId());
+                    String active = (current != null && current.getTarget() == schema) ? "*" : " ";
+                    sb.append("       ").append(active).append(schema).append("\n");
+                }
+            }
+        } finally {
+            cacheLock.readLock().unlock();
         }
+        sb.append("\n\n");
+        logger.finest(sb.toString());
     }
 
     /**
@@ -987,7 +1121,7 @@ public class SchemaManagerImpl implements SchemaManager {
         if (firstSchemaEligibilityTime == 0)
             firstSchemaEligibilityTime = now;
         lastSchemaEligibilityTime = now;
-        scheduleOneShotRebuildCheck(hardwareRecompileMinAge);
+        scheduleOneShotRebuildCheck(conf.get().hardwareRecompileMinAge);
     }
 
     /** Schedule a one-shot call to maybeRebuildHardwareCache(), delay ms from now. */
@@ -1015,6 +1149,10 @@ public class SchemaManagerImpl implements SchemaManager {
     private boolean shouldRebuildNow() {
         if (schemasWaitingToLoad.size() < 1)
             return false;
+
+        int hardwareRecompileLatency = conf.get().hardwareRecompileLatency;
+        int hardwareRecompileMinAge = conf.get().hardwareRecompileMinAge;
+        int hardwareRecompileMaxAge = conf.get().hardwareRecompileMaxAge;
 
         final long beforeTime = System.currentTimeMillis();
 
