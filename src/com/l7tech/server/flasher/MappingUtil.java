@@ -2,8 +2,8 @@ package com.l7tech.server.flasher;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TooManyChildElementsException;
-import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.db.DBActions;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -14,11 +14,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.logging.Logger;
+import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,28 +56,9 @@ public class MappingUtil {
             Statement selStatement = c.createStatement();
 
             // iterate through policies
-            ResultSet selrs = selStatement.executeQuery("select policy_xml, objectid, name from published_service");
-            while (selrs.next()) {
-                String policy = selrs.getString(1);
-                boolean changed = false;
-                for (String fromip : mappingResults.backendIPMapping.keySet()) {
-                    if (policy.indexOf("stringValue=\"" + fromip + "\"") >= 0) {
-                        String toip = mappingResults.backendIPMapping.get(fromip);
-                        logger.info("changing " + fromip + " to " + toip + " in service named " + selrs.getString(3));
-                        System.out.println("\tchanging " + fromip + " to " + toip + " in service named " + selrs.getString(3));
-                        policy = policy.replace("stringValue=\"" + fromip + "\"", "stringValue=\"" + toip + "\"");
-                        changed = true;
-                    }
-                }
-                if (changed) {
-                    PreparedStatement updateps = c.prepareStatement("update published_service set policy_xml=? where objectid=?");
-                    updateps.setString(1, policy);
-                    updateps.setLong(2, selrs.getLong(2));
-                    updateps.executeUpdate();
-                    updateps.close();
-                }
-            }
-            selStatement.close();
+            applyRoutingIpMapping(c, "published_service", "policy_xml", mappingResults);    // column exists if upgraded from 4.2
+            applyRoutingIpMapping(c, "policy", "xml", mappingResults);
+            applyRoutingIpMapping(c, "policy_version", "xml", mappingResults);
 
             // iterate through global variables
             for (String varname : mappingResults.varMapping.keySet()) {
@@ -168,7 +147,7 @@ public class MappingUtil {
                                                         String dbpasswd, String outputTemplatePath) throws SQLException, SAXException, IOException {
 
         Connection c = getConnection(osFunctions, dburl, dbuser, dbpasswd);
-        ArrayList<String> ipaddressesInRoutingAssertions = new ArrayList<String>();
+        Set<String> ipaddressesInRoutingAssertions = new HashSet<String>();
         HashMap<String, String> mapOfClusterProperties = new HashMap<String, String>();
         try {
             // go through the cluster properties
@@ -180,29 +159,11 @@ public class MappingUtil {
                 if (!key.equals("license")) mapOfClusterProperties.put(key, value);
             }
             rs.close();
-            // go through the policies
-            rs = s.executeQuery("select policy_xml from published_service;");
-            while (rs.next()) {
-                String xml = rs.getString(1);
-                Document doc = XmlUtil.stringToDocument(xml);
-                List<Element> routingAssertionElements = getRoutingAssertionElementsFromPolicy(doc);
-                for (Element ra : routingAssertionElements) {
-                    Element cia = XmlUtil.findFirstChildElementByName(ra, "http://www.layer7tech.com/ws/policy",
-                                                                          "CustomIpAddresses");
-                    if (cia != null) {
-                        List listofitems = XmlUtil.findChildElementsByName(cia, "http://www.layer7tech.com/ws/policy", "item");
-                        for (Object listofitem : listofitems) {
-                            Element el = (Element) listofitem;
-                            String val = el.getAttribute("stringValue");
-                            if (val != null && !ipaddressesInRoutingAssertions.contains(val)) {
-                                ipaddressesInRoutingAssertions.add(val);
-                            }
-                        }
-                    }
-                }
-            }
-            rs.close();
             s.close();
+            // go through the policies
+            ipaddressesInRoutingAssertions.addAll(getRoutingIpAddressesFromPolicies(c, "published_service", "policy_xml"));  // column exists if upgraded from 4.2
+            ipaddressesInRoutingAssertions.addAll(getRoutingIpAddressesFromPolicies(c, "policy", "xml"));
+            ipaddressesInRoutingAssertions.addAll(getRoutingIpAddressesFromPolicies(c, "policy_version", "xml"));
         } finally {
             c.close();
         }
@@ -256,6 +217,98 @@ public class MappingUtil {
         return dbActions;
     }
 
+    /**
+     * Searches for routing IP addresses in policies stored in a table column.
+     *
+     * <p>Example policy XML with custom routing IP addresses:
+     * <blockquote><pre>
+     * &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+     *     ...
+     *     &lt;L7p:HttpRoutingAssertion>
+     *         ...
+     *         &lt;L7p:CustomIpAddresses stringArrayValue="included">
+     *             &lt;L7p:item stringValue="123.0.0.1"/>
+     *             &lt;L7p:item stringValue="123.0.0.2"/>
+     *             ...
+     *         &lt;/L7p:CustomIpAddresses>
+     *         ...
+     *     &lt;/L7p:HttpRoutingAssertion>
+     *     ...
+     * &lt;/wsp:Policy>
+     * </pre></blockquote>
+     *
+     * @param connection    opened connection to the database
+     * @param table         name of database table to search in
+     * @param column        name of table column with policy XMLs
+     * @return Set of routing IP addresses found; empty Set if table or column does not exist; never null
+     * @throws SQLException if database error occurs
+     * @throws SAXException if XML parsing error occurs
+     * @throws NullPointerException if any parameter is <code>null</code>
+     */
+    private static Set<String> getRoutingIpAddressesFromPolicies(final Connection connection,
+                                                                 final String table,
+                                                                 final String column)
+            throws SQLException, SAXException {
+        if (connection == null) throw new NullPointerException("connection must not be null");
+        if (table == null) throw new NullPointerException("table must not be null");
+        if (column == null) throw new NullPointerException("column must not be null");
+
+        final Statement statement = connection.createStatement();
+        try {
+            // Tests if table exists.
+            ResultSet resultSet = statement.executeQuery("SHOW TABLES LIKE '" + table + "';");
+            final boolean tableExists = resultSet.next();
+            resultSet.close();
+            if (!tableExists) {
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine("Table \"" + table + "\" does not exists; skipped in search for routing IP addresses.");
+                }
+                return Collections.emptySet();
+            }
+
+            // Tests if column exists.
+            resultSet = statement.executeQuery("SHOW COLUMNS FROM " + table + " LIKE '" + column + "';");
+            final boolean columnExists = resultSet.next();
+            resultSet.close();
+            if (!columnExists) {
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine("Column \"" + table + "." + column + "\" does not exist; skipped in search for routing IP addresses.");
+                }
+                return Collections.emptySet();
+            }
+
+            final Set<String> ipAddresses = new HashSet<String>();
+            resultSet = statement.executeQuery("select " + column + " from " + table + ";");
+            while (resultSet.next()) {
+                final String policyXml = resultSet.getString(1);
+                final Document doc = XmlUtil.stringToDocument(policyXml);
+                final List<Element> routingAssertions = getRoutingAssertionElementsFromPolicy(doc);
+                for (Element routingAssertion : routingAssertions) {
+                    final Element cia = XmlUtil.findFirstChildElementByName(routingAssertion,
+                                                                            "http://www.layer7tech.com/ws/policy",
+                                                                            "CustomIpAddresses");
+                    if (cia != null) {
+                        final List<Element> items = XmlUtil.findChildElementsByName(cia, "http://www.layer7tech.com/ws/policy", "item");
+                        for (Element item : items) {
+                            String value = item.getAttribute("stringValue");
+                            if (value != null) {
+                                ipAddresses.add(value);
+                            }
+                        }
+                    }
+                }
+            }
+            resultSet.close();
+
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine("Custom routing IP addresses found in \"" + table + "." + column + "\": " + ipAddresses);
+            }
+            return ipAddresses;
+        } finally {
+            statement.close();
+        }
+    }
+
     private static List<Element> getRoutingAssertionElementsFromPolicy(Document policyxml) {
         ArrayList<Element> output = new ArrayList<Element>();
         NodeList nl = policyxml.getElementsByTagNameNS("http://www.layer7tech.com/ws/policy", "HttpRoutingAssertion");
@@ -272,6 +325,166 @@ public class MappingUtil {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Applies mapping of routing IP addresses to a database table.
+     *
+     * @param connection    opened connection to the database
+     * @param table         name of database table to apply to
+     * @param policyColumn  name of column containing policy XML
+     * @param mapping       mapping to apply
+     * @throws SQLException if database error occurs
+     * @throws NullPointerException if any parameter is <code>null</code>
+     */
+    private static void applyRoutingIpMapping(final Connection connection,
+                                              final String table,
+                                              final String policyColumn,
+                                              final CorrespondanceMap mapping)
+            throws SQLException {
+        if (connection == null) throw new NullPointerException("connection must not be null");
+        if (table == null) throw new NullPointerException("table must not be null");
+        if (policyColumn == null) throw new NullPointerException("policyColumn must not be null");
+        if (mapping == null) throw new NullPointerException("mapping must not be null");
+
+        final Statement selectStatement = connection.createStatement();
+        try {
+            // Tests if table exists.
+            ResultSet resultSet = selectStatement.executeQuery("SHOW TABLES LIKE '" + table + "';");
+            final boolean tableExists = resultSet.next();
+            resultSet.close();
+            if (!tableExists) {
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine("Table \"" + table + "\" does not exists; skipped in mapping routing IP addresses.");
+                }
+                return;
+            }
+
+            // Tests if column exists.
+            resultSet = selectStatement.executeQuery("SHOW COLUMNS FROM " + table + " LIKE '" + policyColumn + "';");
+            final boolean columnExists = resultSet.next();
+            resultSet.close();
+            if (!columnExists) {
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine("Column \"" + table + "." + policyColumn + "\" does not exist; skipped in mapping routing IP addresses.");
+                }
+                return;
+            }
+
+            resultSet = selectStatement.executeQuery("select objectid, " + policyColumn + " from " + table + ";");
+            while (resultSet.next()) {
+                final long objectid = resultSet.getLong(1);
+                String policyXml = resultSet.getString(2);
+                boolean changed = false;
+                for (String fromIP : mapping.backendIPMapping.keySet()) {
+                    if (policyXml.indexOf("stringValue=\"" + fromIP + "\"") >= 0) {
+                        String toIP = mapping.backendIPMapping.get(fromIP);
+                        logger.info("Mapping routing IP address for " + getDescription(connection, table, objectid) + ": from " + fromIP + " to " + toIP);
+                        policyXml = policyXml.replace("stringValue=\"" + fromIP + "\"", "stringValue=\"" + toIP + "\"");
+                        changed = true;
+                    }
+                }
+                if (changed) {
+                    final PreparedStatement updateStatement = connection.prepareStatement("UPDATE " + table + " SET " + policyColumn + "=? WHERE objectid=?");
+                    updateStatement.setString(1, policyXml);
+                    updateStatement.setLong(2, objectid);
+                    updateStatement.executeUpdate();
+                    updateStatement.close();
+                }
+            }
+            resultSet.close();
+        } finally {
+            selectStatement.close();
+        }
+    }
+
+    /**
+     * Gets a printable description of a policy-related item.
+     *
+     * @param connection    opened connection to the database
+     * @param table         name of table containing the item
+     * @param objectid      objectid of the item
+     * @return an appropriate description of the policy item; or "N/A" if database error occurs
+     * @throws NullPointerException if any parameter is <code>null</code>
+     * @throws RuntimeException if <code>table</code> is not related to policies
+     */
+    private static String getDescription(final Connection connection,
+                                         final String table,
+                                         final long objectid) {
+        if (connection == null) throw new NullPointerException("connection must not be null");
+        if (table == null) throw new NullPointerException("table must not be null");
+
+        String description = null;
+        try {
+            if (table.equalsIgnoreCase("published_service")) {
+                final String serviceName = getNameField(connection, "published_service", "objectid", objectid);
+                description = "\"" + serviceName + "\" service";
+            } else if (table.equalsIgnoreCase("policy")) {
+                description = getPolicyDescription(connection, objectid);
+            } else if (table.equalsIgnoreCase("policy_version")) {
+                final PreparedStatement statement = connection.prepareStatement("SELECT ordinal, policy_oid FROM policy_version WHERE objectid=?");
+                statement.setLong(1, objectid);
+                final ResultSet resultSet = statement.executeQuery();
+                resultSet.next();
+                final int ordinal = resultSet.getInt(1);
+                final long policy_oid = resultSet.getLong(2);
+                resultSet.close();
+                statement.close();
+                description = getPolicyDescription(connection, policy_oid) + " version " + ordinal;
+            } else {
+                throw new RuntimeException("Table not related to policies: " + table);
+            }
+        } catch (SQLException e) {
+            description = "N/A";
+        }
+
+        return description;
+    }
+
+    /**
+     * Gets a printable description of a policy item.
+     *
+     * <p>If the item is a policy fragment, returns a string of the form
+     * <blockquote><pre>policy fragment "foo"</pre></blockquote>
+     * If the item is a published service policy, returns a string of the form
+     * <blockquote><pre>"bar" service policy</pre></blockquote>
+     *
+     * @param connection    opened connection to the database
+     * @param policyOid     policy objectid
+     * @return an appropriate description of the policy item
+     * @throws SQLException if database error occurs
+     */
+    private static String getPolicyDescription(final Connection connection, final Long policyOid) throws SQLException {
+        final String policyName = getNameField(connection, "policy", "objectid", policyOid);
+        if (policyName != null) {
+            // This is a named policy fragment.
+            return "policy fragment \"" + policyName + "\"";
+        } else {
+            // This is a published service policy.
+            final String serviceName = getNameField(connection, "published_service", "policy_oid", policyOid);
+            return "\"" + serviceName + "\" service policy";
+        }
+    }
+
+    /**
+     * Gets the "name" column value for a unique row in a table.
+     *
+     * @param connection    opened connection to the database
+     * @param table         name of database table
+     * @param oidColumn     name of column containing objectid
+     * @param oid           value of objectid
+     * @return value of "name" column
+     * @throws SQLException if database error occurs
+     */
+    private static String getNameField(final Connection connection, final String table, final String oidColumn, final long oid) throws SQLException {
+        final PreparedStatement statement = connection.prepareStatement("SELECT name FROM " + table + " WHERE " + oidColumn + "=?;");
+        statement.setLong(1, oid);
+        final ResultSet resultSet = statement.executeQuery();
+        resultSet.next();
+        final String name = resultSet.getString(1);
+        resultSet.close();
+        statement.close();
+        return name;
     }
 
     /*
