@@ -437,7 +437,8 @@ public class WsdlComposer {
             return false;
 
         Types sourceTypes = sourceWsdlHolder.wsdl.getTypes();
-        typesMap.put(sourceWsdlHolder, sourceTypes);
+        if (sourceTypes != null)
+            typesMap.put(sourceWsdlHolder, sourceTypes);
         return true;
     }
 
