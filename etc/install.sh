@@ -197,6 +197,58 @@ get_java_location() {
 	MY_JAVA_HOME=${result}
 }
 
+getYesNoResponse() {
+    prompt=$1
+    default=$2
+    isValid=0
+
+    while [ $isValid -eq 0 ]
+    do
+        echo -n ${prompt}
+        read RESPONSE
+        [ -z "$RESPONSE" ]  && RESPONSE="$default"
+
+        isyes=`echo $RESPONSE | egrep -i "^\s*(y|yes)$"`
+        if [ -n "$isyes" ] ; then
+            RESPONSE="y"
+            isValid=1
+        else
+            isno=`echo $RESPONSE | egrep -i "^\s*(n|no)$"`
+            if [ -n "$isno" ] ; then
+                isValid=1
+            else
+                echo "That is not a valid response. Please enter yes or no"
+                isValid=0
+            fi
+        fi
+    done
+    eval "$3=$RESPONSE"
+}
+
+getValidMemoryValue() {
+    prompt=$1
+
+    isValid=0
+    while [ $isValid -eq 0 ]
+    do
+        echo -n ${prompt}
+        read RESPONSE
+        onlyNumbers=`echo $RESPONSE | egrep -i "^[1-9][0-9]*$"`
+        if [ -n "$onlyNumbers" ] ; then
+            if [ $RESPONSE -lt 256 ] ; then
+                echo "The minimum recommended amount for an SSG is 256 (megabytes)"
+                isValid=0
+            else
+                isValid=1
+            fi
+        else
+            echo "That is not a valid number."
+            isValid=0
+        fi
+    done
+    eval "$2=$RESPONSE"
+}
+
 store_java_location() {
     MY_JAVAHOME_COMMAND="sed -e s@SSG_JAVA_HOME=.*@SSG_JAVA_HOME=${MY_JAVA_HOME}@ ${SSG_ROOT}/etc/profile.d/java.sh > ${SSG_ROOT}/etc/profile.d/java.sh.temp && mv ${SSG_ROOT}/etc/profile.d/java.sh.temp ${SSG_ROOT}/etc/profile.d/java.sh"
 }
@@ -211,11 +263,7 @@ configure_java_home() {
         DOIT="y"
     else
         echo "The gateway is currently configured to use \"${SSG_JAVA_HOME}\" for Java."
-        echo -n "Would you like to configure a new Java location? [y] "
-        read DOIT
-        if [ -z "$DOIT" ] ; then
-            DOIT="y"
-        fi
+        getYesNoResponse 'Would you like to configure a new Java location? [y] ' 'y' DOIT
     fi
 
     if [ "$DOIT" == "y" ] ; then
@@ -228,19 +276,15 @@ configure_memory() {
     echo "----------------------------------------------------"
     echo "           Configuration of Java Options            "
     echo "----------------------------------------------------"
-    echo -n "Would you like to configure the Java options (such as memory usage) for the gateway? [y]"
-    read DOIT
-    if [ -z "${DOIT}" ] ; then
-        DOIT="y"
-    fi
+    getYesNoResponse 'Would you like to configure the Java options (such as memory usage) for the gateway? [y] ' 'y' DOIT
 
     MY_MEM_COMMAND=""
     if [ "${DOIT}" == "y" ] ; then
         HOWMUCHMEM=""
         while [ -z "${HOWMUCHMEM}" ] ; do
             echo "How much memory should be allocated to each gateway partition?"
-            echo -n "(Please answer in megabytes): ";
-            read HOWMUCHMEM;
+            echo "Note: a minimum of 256 is required"
+            getValidMemoryValue 'Please answer in megabytes: ' HOWMUCHMEM
         done
         FOUND=`grep "\-Xmx" ${SSG_ROOT}/etc/profile.d/jvmoptions`
 	    if [ -n "${FOUND}" ] ; then
@@ -271,9 +315,7 @@ save_all() {
 
     if [ -n "${MYMSG}" ] && [ -n "${MYCOMMAND}" ]; then
         echo -e "This script is about to perform the following: \n${MYMSG}"
-        echo -n "Proceed?: [n]"
-        read DOIT
-        [ -z "${DOIT}" ] && DOIT="n"
+        getYesNoResponse 'Proceed?: [n] ' 'n' DOIT
 
         if [ ! "${DOIT}" == "n" ] ; then
             check_user
