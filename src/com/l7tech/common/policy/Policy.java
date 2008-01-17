@@ -8,14 +8,11 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Iterator;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
@@ -27,8 +24,6 @@ public class Policy extends NamedEntityImp {
 
     private String xml;
     private PolicyType type;
-    private boolean tarariWanted;
-    private boolean wssInPolicy;
     private boolean soap;
 
     private long versionOrdinal;   // Not persisted -- filled in by admin layer
@@ -50,6 +45,37 @@ public class Policy extends NamedEntityImp {
     }
 
     /**
+     * Create a copy of the given policy.
+     *
+     * <p>This will copy the identity of the orginal, if you don't want this
+     * you will need to reset the id and version.</p>
+     *
+     * @param policy The policy to duplicate.
+     */
+    public Policy(final Policy policy) {
+        this(policy, false);
+    }
+
+    /**
+     * Create a copy of the given policy.
+     *
+     * <p>This will copy the identity of the orginal, if you don't want this
+     * you will need to reset the id and version.</p>
+     *
+     * @param policy The policy to duplicate.
+     * @param lock true to create a read-only policy
+     */
+    public Policy(final Policy policy, final boolean lock) {
+        super(policy);
+        setSoap(policy.isSoap());
+        setType(policy.getType());
+        setVersionActive(isVersionActive());
+        setVersionOrdinal(getVersionOrdinal());
+        setXml(policy.getXml());
+        if ( lock ) lock();
+    }
+
+    /**
      * Parses the policy if necessary, and returns the {@link Assertion} at its root.
      *
      * @return the {@link Assertion} at the root of the policy. May be null.
@@ -64,41 +90,9 @@ public class Policy extends NamedEntityImp {
         if (assertion == null) {
             assertion = WspReader.getDefault().parsePermissively(xml);
             assertion.ownerPolicyOid(getOid());
-            updatePolicyHints(assertion);
         }
 
         return assertion;
-    }
-
-    /* Caller must hold lock */
-    private void updatePolicyHints(Assertion rootAssertion) {
-        // TODO split request/response into separate flags
-        tarariWanted = false;
-        Iterator i = rootAssertion.preorderIterator();
-        while (i.hasNext()) {
-            Assertion ass = (Assertion) i.next();
-            if (ass instanceof SchemaValidation || ass instanceof XslTransformation) {
-                tarariWanted = true;
-            } else if ( Assertion.isRequest(ass) && Assertion.isWSSecurity(ass)) {
-                wssInPolicy = true;
-            }
-        }
-    }
-
-    /**
-     * @return true if at least one assertion in this service's policy strongly prefers to use Tarari rather than use a
-     * pre-parsed DOM tree.
-     */
-    public boolean isTarariWanted() {
-        return tarariWanted;
-    }
-
-    /**
-     * @return true if there is a WSS assertion in this services policy, in which case DOM would likely be better than
-     * using Tarari.
-     */
-    public boolean isWssInPolicy() {
-        return wssInPolicy;
     }
 
     public synchronized void forceRecompile() {
@@ -110,6 +104,7 @@ public class Policy extends NamedEntityImp {
     }
 
     public synchronized void setXml(String xml) {
+        if ( isLocked() ) throw new IllegalStateException("Cannot update locked policy");
         this.xml = xml;
         this.assertion = null;
     }
@@ -119,6 +114,7 @@ public class Policy extends NamedEntityImp {
     }
 
     public void setType(PolicyType type) {
+        if ( isLocked() ) throw new IllegalStateException("Cannot update locked policy");
         this.type = type;
     }
 
@@ -127,6 +123,7 @@ public class Policy extends NamedEntityImp {
     }
 
     public void setSoap(boolean soap) {
+        if ( isLocked() ) throw new IllegalStateException("Cannot update locked policy");
         this.soap = soap;
     }
 
@@ -149,20 +146,6 @@ public class Policy extends NamedEntityImp {
         return pxml == null || pxml.trim().equals(DISABLED_POLICY_XML); // trim() currently not optional
     }
 
-    @SuppressWarnings({"RedundantIfStatement"})
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-
-        Policy policy = (Policy) o;
-
-        if (type != policy.type) return false;
-        if (xml != null ? !xml.equals(policy.xml) : policy.xml != null) return false;
-
-        return true;
-    }
-
     /**
      * The version ordinal, or zero if one is not set.
      * This is used for display purposes only.  It is not persisted to the database;
@@ -183,6 +166,7 @@ public class Policy extends NamedEntityImp {
      * @param versionOrdinal the version ordinal, or zero to clear it.
      */
     public void setVersionOrdinal(long versionOrdinal) {
+        if ( isLocked() ) throw new IllegalStateException("Cannot update locked policy");
         this.versionOrdinal = versionOrdinal;
     }
 
@@ -207,9 +191,26 @@ public class Policy extends NamedEntityImp {
      * @param active the new state of the VersionActive flag
      */
     public void setVersionActive(boolean active) {
+        if ( isLocked() ) throw new IllegalStateException("Cannot update locked policy");
         this.versionActive = active;
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        Policy policy = (Policy) o;
+
+        if (type != policy.type) return false;
+        if (xml != null ? !xml.equals(policy.xml) : policy.xml != null) return false;
+
+        return true;
+    }
+
+    @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (xml != null ? xml.hashCode() : 0);
@@ -217,6 +218,7 @@ public class Policy extends NamedEntityImp {
         return result;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("<policy ");
         sb.append("oid=\"").append(_oid).append("\" ");

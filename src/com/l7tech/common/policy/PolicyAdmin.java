@@ -43,7 +43,7 @@ public interface PolicyAdmin {
      */
     @Secured(stereotype=FIND_ENTITIES)
     @Transactional(readOnly=true)
-    Collection<EntityHeader> findPolicyHeadersByType(PolicyType type) throws FindException;
+    Collection<PolicyHeader> findPolicyHeadersByType(PolicyType type) throws FindException;
 
     /**
      * Deletes the policy with the specified OID.  An impact analysis will be performed prior to deleting the policy,

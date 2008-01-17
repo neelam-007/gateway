@@ -27,13 +27,13 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
         return delegate.findPolicyByPrimaryKey( oid );
     }
 
-    public Collection<EntityHeader> findPolicyHeadersByType( PolicyType type ) throws FindException {
+    public Collection<PolicyHeader> findPolicyHeadersByType( PolicyType type ) throws FindException {
         return delegate.findPolicyHeadersByType( type );
     }
 
     public void deletePolicy( long policyOid ) throws PolicyDeletionForbiddenException, DeleteException, FindException {
         delegate.deletePolicy( policyOid );
-        fireEntityInvalidated( policyOid );
+        fireEntityDelete( policyOid );
     }
 
     public long savePolicy( Policy policy ) throws PolicyAssertionException, SaveException {
@@ -42,7 +42,7 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
 
     public PolicyCheckpointState savePolicy( Policy policy, boolean activateAsWell ) throws PolicyAssertionException, SaveException {
         PolicyCheckpointState result = delegate.savePolicy( policy, activateAsWell );
-        fireEntityInvalidated( result.getPolicyOid() );
+        fireEntityUpdate( result.getPolicyOid() );
         return result;
     }
 
@@ -64,7 +64,7 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
 
     public void setActivePolicyVersion( long policyOid, long versionOid ) throws FindException, UpdateException {
         delegate.setActivePolicyVersion( policyOid, versionOid );
-        fireEntityInvalidated( policyOid );
+        fireEntityUpdate( policyOid );
     }
 
     public PolicyVersion findActivePolicyVersionForPolicy( long policyOid ) throws FindException {
@@ -73,7 +73,7 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
 
     public void clearActivePolicyVersion( long policyOid ) throws FindException, UpdateException {
         delegate.clearActivePolicyVersion( policyOid );
-        fireEntityInvalidated( policyOid );
+        fireEntityUpdate( policyOid );
     }
 
     //- PRIVATE
@@ -84,9 +84,18 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
     /**
      * 
      */
-    private void fireEntityInvalidated( long policyOid ) {
+    private void fireEntityDelete( long policyOid ) {
         if ( listener != null ) {
-            listener.invalidate( new EntityHeader( Long.toString(policyOid), EntityType.POLICY, "", "") );
+            listener.notifyDelete( new EntityHeader( Long.toString(policyOid), EntityType.POLICY, "", "") );
+        }
+    }
+
+    /**
+     *
+     */
+    private void fireEntityUpdate( long policyOid ) {
+        if ( listener != null ) {
+            listener.notifyUpdate( new EntityHeader( Long.toString(policyOid), EntityType.POLICY, "", "") );
         }
     }
 }

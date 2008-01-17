@@ -61,17 +61,17 @@ public class MessageProcessingMessages extends Messages {
     public static final M SR_SOAPOPERATION_NO_WSDL          = m(3131, Level.FINE, "Service is SOAP but has no WSDL");
     public static final M SR_SOAPOPERATION_WSDL_NO_BINDINGS = m(3132, Level.FINE, "WSDL has no bindings");
     // The following are deprecated because they were "moved" to {@link CommonMessages}, but they must remain here so that they can be looked up by ID for compatibility with old audit data
-    /** @deprecated */ public static final M __UNUSED__SR_SOAPOPERATION_WSDL_NO_STYLE    = m(3133, CommonMessages.WSDL_OPERATION_NO_STYLE.getLevel(), CommonMessages.WSDL_OPERATION_NO_STYLE.getMessage());
-    /** @deprecated */ public static final M __UNUSED__SR_SOAPOPERATION_WSDL_PART_TYPE   = m(3134, CommonMessages.WSDL_OPERATION_PART_TYPE.getLevel(), CommonMessages.WSDL_OPERATION_PART_TYPE.getMessage());
-    /** @deprecated */ public static final M __UNUSED__SR_SOAPOPERATION_WSDL_DOCLIT_TYPE = m(3135, Level.INFO, "Input message {0} in document-style operation has a type, not an element");
-    /** @deprecated */ public static final M __UNUSED__SR_SOAPOPERATION_BAD_STYLE        = m(3136, CommonMessages.WSDL_OPERATION_BAD_STYLE.getLevel(), CommonMessages.WSDL_OPERATION_BAD_STYLE.getMessage());
-    /** @deprecated */ public static final M __UNUSED__SR_SOAPOPERATION_NO_QNAMES_FOR_OP = m(3137, CommonMessages.WSDL_OPERATION_NO_QNAMES_FOR_OP.getLevel(), CommonMessages.WSDL_OPERATION_NO_QNAMES_FOR_OP.getMessage());
+    /** @deprecated */ @Deprecated public static final M __UNUSED__SR_SOAPOPERATION_WSDL_NO_STYLE    = m(3133, CommonMessages.WSDL_OPERATION_NO_STYLE.getLevel(), CommonMessages.WSDL_OPERATION_NO_STYLE.getMessage());
+    /** @deprecated */ @Deprecated public static final M __UNUSED__SR_SOAPOPERATION_WSDL_PART_TYPE   = m(3134, CommonMessages.WSDL_OPERATION_PART_TYPE.getLevel(), CommonMessages.WSDL_OPERATION_PART_TYPE.getMessage());
+    /** @deprecated */ @Deprecated public static final M __UNUSED__SR_SOAPOPERATION_WSDL_DOCLIT_TYPE = m(3135, Level.INFO, "Input message {0} in document-style operation has a type, not an element");
+    /** @deprecated */ @Deprecated public static final M __UNUSED__SR_SOAPOPERATION_BAD_STYLE        = m(3136, CommonMessages.WSDL_OPERATION_BAD_STYLE.getLevel(), CommonMessages.WSDL_OPERATION_BAD_STYLE.getMessage());
+    /** @deprecated */ @Deprecated public static final M __UNUSED__SR_SOAPOPERATION_NO_QNAMES_FOR_OP = m(3137, CommonMessages.WSDL_OPERATION_NO_QNAMES_FOR_OP.getLevel(), CommonMessages.WSDL_OPERATION_NO_QNAMES_FOR_OP.getMessage());
     public static final M SR_SOAPOPERATION_NO_QNAMES_AT_ALL = m(3138, Level.INFO, "Unable to find any payload element QNames for service {0} (#{1})");
     public static final M SR_SOAPOPERATION_BAD_WSDL         = m(3139, Level.INFO, "Unable to parse WSDL for {0} service (#{1})");
     public static final M SR_SOAPOPERATION_FOUND_QNAME      = m(3140, Level.FINE, "Found payload QName \"{0}\"");
 
-    public static final M SERVICE_CACHE_MODULE_UNLOAD      = m(3200, Level.INFO, "Recompiling all published services due to module unload");
-    public static final M SERVICE_CACHE_RESETTING_SERVICES = m(3201, Level.INFO, "License changed/module loaded -- resetting {0} affected services");
+    /** @deprecated */ @Deprecated public static final M __UNUSED__SERVICE_CACHE_MODULE_UNLOAD      = m(3200, Level.INFO, "Recompiling all published services due to module unload");
+    /** @deprecated */ @Deprecated public static final M __UNUSED__SERVICE_CACHE_RESETTING_SERVICES = m(3201, Level.INFO, "License changed/module loaded -- resetting {0} affected services");
     public static final M SERVICE_CACHE_DISABLING_SERVICE  = m(3202, Level.WARNING, "Unable to reenable service after license changed/module loaded: {0}: {1}");
     public static final M SERVICE_CACHE_NO_SERVICES        = m(3203, Level.FINEST, "Resolution failed; no Published Services");
     public static final M SERVICE_CACHE_RESOLVED_EARLY     = m(3204, Level.FINEST, "Service resolved early by {0}");
@@ -83,5 +83,14 @@ public class MessageProcessingMessages extends Messages {
     public static final M SERVICE_CACHE_BAD_POLICY         = m(3210, Level.WARNING, "\"{0}\" service (#{1}) cannot be read properly and will be discarded from the service cache");
     public static final M SERVICE_CACHE_NOT_SOAP           = m(3211, Level.INFO, "Non-SOAP request resolved to SOAP service");
     public static final M SERVICE_CACHE_OPERATION_MISMATCH = m(3212, Level.INFO, "Resolved \"{0}\" service (#{1}) but request does not match any operation in the service''s WSDL");
+    public static final M SERVICE_CACHE_ENABLING_SERVICE   = m(3213, Level.INFO, "Renable service after license or policy changed/module loaded: {0}: {1}");
+
+    public static final M POLICY_CACHE_MODULE_UNLOAD      = m(3250, Level.INFO, "Recompiling all policies due to module unload");
+    public static final M POLICY_CACHE_RESETTING_POLICIES = m(3251, Level.INFO, "License changed/module loaded -- resetting {0} affected policies");
+    public static final M POLICY_CACHE_STORAGE_ERROR      = m(3252, Level.WARNING, "Error accessing policy (#{1})");
+    public static final M POLICY_CACHE_BUILD              = m(3253, Level.INFO, "(Re)building policy cache");
+    public static final M POLICY_CACHE_INVALID            = m(3254, Level.INFO, "Policy {0} (#{1}) is invalid: {2}");
+    public static final M POLICY_CACHE_UNLICENSED         = m(3255, Level.WARNING,  "Policy {0} (#{1}) contains an unlicensed assertion: {2}");
+
      // MAX -                                                  m(3499
 }

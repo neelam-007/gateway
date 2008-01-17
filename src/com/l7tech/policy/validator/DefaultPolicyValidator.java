@@ -4,8 +4,8 @@ import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyType;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.WsdlUtil;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.ReadOnlyEntityManager;
+import com.l7tech.objectmodel.PolicyHeader;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
@@ -43,10 +43,11 @@ import java.util.logging.Logger;
 public class DefaultPolicyValidator extends PolicyValidator {
     static Logger log = Logger.getLogger(DefaultPolicyValidator.class.getName());
 
-    public DefaultPolicyValidator(ReadOnlyEntityManager<Policy, EntityHeader> policyFinder, PolicyPathBuilderFactory pathBuilderFactory) {
+    public DefaultPolicyValidator(ReadOnlyEntityManager<Policy, PolicyHeader> policyFinder, PolicyPathBuilderFactory pathBuilderFactory) {
         super(policyFinder, pathBuilderFactory);
     }
 
+    @Override
     public PolicyValidatorResult validate(Assertion assertion, PolicyType policyType, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense) throws InterruptedException {
         PolicyValidatorResult r = super.validate(assertion, policyType, wsdl, soap, assertionLicense);
 
@@ -65,6 +66,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
         return r;
     }
 
+    @Override
     public void validatePath(final AssertionPath ap,
                              final PolicyType policyType,
                              final Wsdl wsdl,

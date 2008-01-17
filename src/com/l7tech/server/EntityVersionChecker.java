@@ -3,12 +3,23 @@ package com.l7tech.server;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.admin.Created;
+import com.l7tech.server.event.admin.Updated;
+import com.l7tech.server.event.admin.Deleted;
+import com.l7tech.server.event.admin.PersistenceEvent;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronization;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -20,7 +31,8 @@ import java.util.logging.Logger;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public class EntityVersionChecker implements ApplicationContextAware, InitializingBean, DisposableBean {
+public class EntityVersionChecker implements ApplicationContextAware, ApplicationListener, InitializingBean, DisposableBean {
+    
     //- PUBLIC
 
     /**
@@ -30,11 +42,11 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
      * @throws IllegalStateException if the managers are already set
      * @throws ClassCastException if the list contains a non-HibernateEntityManager
      */
-    public void setEntityManagers(List<EntityManager> managers) {
+    public void setEntityManagers(List<EntityManager<PersistentEntity,EntityHeader>> managers) {
         if(btt!=null) throw new IllegalStateException("manager already set");
         if(managers!=null && !managers.isEmpty()) {
             List<EntityInvalidationVersionCheck> tasks = new ArrayList<EntityInvalidationVersionCheck>();
-            for (EntityManager manager : managers) {
+            for (EntityManager<PersistentEntity,EntityHeader> manager : managers) {
                 try {
                     tasks.add(new EntityInvalidationVersionCheck(manager));
                 } catch (Exception e) {
@@ -89,24 +101,76 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
     }
 
     /**
+     * Listen for and asynchronously dispatch entity admin events.
+     */
+    public void onApplicationEvent( final ApplicationEvent event ) {
+        if ( event instanceof Created ) {
+            handleAdminInvalidation((PersistenceEvent) event, new char[]{EntityInvalidationEvent.CREATE});
+        } else if ( event instanceof Updated ) {
+            handleAdminInvalidation((PersistenceEvent) event, new char[]{EntityInvalidationEvent.UPDATE});
+        } else if ( event instanceof Deleted ) {
+            handleAdminInvalidation((PersistenceEvent) event, new char[]{EntityInvalidationEvent.DELETE});
+        }
+    }
+
+    /**
      * Set the application context.
      *
      * @param applicationContext the context to use.
      * @throws IllegalStateException if the context is already set.
      */
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        if(this.applicationContext!=null) throw new IllegalStateException("applicationContext is already set");
-        this.applicationContext = applicationContext;
+        if(this.eventSink!=null) throw new IllegalStateException("applicationContext is already set");
+        this.eventSink = applicationContext;
     }
 
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(EntityVersionChecker.class.getName());
 
-    private ApplicationContext applicationContext;
+    private ApplicationEventPublisher eventSink;
     private Timer timer;
     private long interval = 15 * 1000;
     private BigTimerTask btt;
+
+    private void handleAdminInvalidation(final PersistenceEvent event, char[] operation) {
+        PersistentEntity entity = (PersistentEntity) event.getEntity();
+        Class<? extends Entity> typeClass = null;
+
+        for ( EntityInvalidationVersionCheck check : btt.tasks ) {
+            if ( check.isOfInterest( entity ) ) {
+                typeClass = check.entityType;
+                break;
+            }
+        }
+
+        if ( typeClass != null ) {
+            enqueueInvalidation( new EntityInvalidationEvent( event.getSource(), typeClass, new long[]{entity.getOid()}, operation) );
+        }
+    }
+
+    private void enqueueInvalidation( final EntityInvalidationEvent eie ) {
+        if ( logger.isLoggable( Level.FINE ))
+            logger.log( Level.FINE, "Queuing invalidation for entities: {0}", asList(eie.getEntityIds()) );
+
+        DispatchingTransactionSynchronization dts = null;
+
+        //noinspection unchecked
+        for ( TransactionSynchronization ts : (List<TransactionSynchronization>) TransactionSynchronizationManager.getSynchronizations() ) {
+            if ( ts instanceof DispatchingTransactionSynchronization ) {
+                dts = (DispatchingTransactionSynchronization) ts;
+                break;
+            }
+        }
+
+        // Create sync if none registered
+        if ( dts == null ) {
+            dts = new DispatchingTransactionSynchronization();
+            TransactionSynchronizationManager.registerSynchronization( dts );
+        }
+
+        dts.events.add( eie );
+    }
 
     /**
      * Publish invalidation information for the given entityies
@@ -121,23 +185,45 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
                 opsArray[i] = ops.get(i);
             }
 
-            if(logger.isLoggable(Level.FINE))
-                logger.fine("Invalidating entities of type '"+entityType.getName()+"'; ids are "+oids+".");
-
-            applicationContext.publishEvent(new EntityInvalidationEvent(this, entityType, oidArray, opsArray));
+            dispatchInvalidation(new EntityInvalidationEvent(this, entityType, oidArray, opsArray));
         }
+    }
+
+    /**
+     * Dispatch the given event using the application event sink.
+     *
+     * WARNING: only dispatch on a callback to ensure single threaded for any listeners that expect that
+     */
+    private void dispatchInvalidation( final EntityInvalidationEvent eie ) {
+
+        if(logger.isLoggable(Level.FINE))
+            logger.fine("Invalidating entities of type '"+eie.getEntityClass().getName()+"'; ids are "+asList(eie.getEntityIds())+".");
+
+        eventSink.publishEvent(eie);
+    }
+
+    /**
+     * Box array
+     */
+    private List<Long> asList( long[] items ) {
+        List<Long> list = new ArrayList<Long>( items.length );
+        for ( long item : items ) {
+            list.add( item );
+        }
+        return list;
     }
 
     /**
      * Run a collection of TimerTasks as one task.
      */
     private class BigTimerTask extends TimerTask {
-        private final List<? extends TimerTask> tasks;
+        private final List<EntityInvalidationVersionCheck> tasks;
 
-        private BigTimerTask(List<? extends TimerTask> subTimerTasks) {
-            this.tasks = subTimerTasks;
+        private BigTimerTask(List<EntityInvalidationVersionCheck> subTimerTasks) {
+            this.tasks = Collections.unmodifiableList( subTimerTasks );
         }
 
+        @Override
         public void run() {
             if(logger.isLoggable(Level.FINE)) logger.fine("Running entity invalidation.");
 
@@ -170,11 +256,16 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
         private List<Long> invalidationOids;
         private List<Character> invalidationOps;
 
-        private EntityInvalidationVersionCheck(EntityManager manager) throws Exception {
+        private EntityInvalidationVersionCheck(EntityManager<PersistentEntity, EntityHeader> manager) throws Exception {
             super(manager);
             entityType = manager.getInterfaceClass();
         }
 
+        public boolean isOfInterest( Entity entity ) {
+            return entityType.isInstance( entity );
+        }
+
+        @Override
         public void run() {
             invalidationOids = new ArrayList<Long>();
             invalidationOps = new ArrayList<Character>();
@@ -187,7 +278,7 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
         @Override
         protected void onDelete(long removedOid) {
             if(invalidationOids !=null) {
-                invalidationOids.add(Long.valueOf(removedOid));
+                invalidationOids.add(removedOid);
                 invalidationOps.add(EntityInvalidationEvent.DELETE);
             }
         }
@@ -205,6 +296,27 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
             if(invalidationOids !=null) {
                 invalidationOids.add(createdEntity.getOid());
                 invalidationOps.add(EntityInvalidationEvent.CREATE);
+            }
+        }
+    }
+
+    /**
+     * Dispatch invalidations for entity events on commit
+     */
+    private class DispatchingTransactionSynchronization extends TransactionSynchronizationAdapter {
+        final List<EntityInvalidationEvent> events = new ArrayList<EntityInvalidationEvent>(); 
+
+        @Override
+        public void afterCompletion( final int status ) {
+            if ( status == TransactionSynchronization.STATUS_COMMITTED ) {
+                timer.schedule( new TimerTask() {
+                    @Override
+                    public void run() {
+                        for ( EntityInvalidationEvent eie : events ) {
+                            dispatchInvalidation(eie);
+                        }
+                    }
+                }, 10L );
             }
         }
     }

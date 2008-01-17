@@ -12,7 +12,6 @@ import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.rbac.Role;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.JaasUtils;
-import com.l7tech.common.policy.PolicyDeletionForbiddenException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.system.ServiceCacheEvent;
@@ -51,14 +50,12 @@ public class ServiceManagerImp
 
     private final ResolutionManager resolutionManager;
     private final RoleManager roleManager;
-    private final PolicyCache policyCache;
 
     private ApplicationContext spring;
 
 
-    public ServiceManagerImp(ResolutionManager resolutionManager, PolicyCache policyCache, RoleManager roleManager) {
+    public ServiceManagerImp(ResolutionManager resolutionManager, RoleManager roleManager) {
         this.roleManager = roleManager;
-        this.policyCache = policyCache;
         this.resolutionManager = resolutionManager;
     }
 
@@ -72,17 +69,12 @@ public class ServiceManagerImp
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public long save(PublishedService service) throws SaveException {
         // 1. record the service
         long oid = super.save(service);
         logger.info("Saved service #" + oid);
         service.setOid(oid);
-
-        try {
-            policyCache.update(service.getPolicy());
-        } catch (Exception e) {
-            throw new SaveException("Unable to update Policy", e);
-        }
 
         // 2. record resolution parameters
         try {
@@ -103,6 +95,7 @@ public class ServiceManagerImp
         return service.getOid();
     }
 
+    @Override
     public void update(PublishedService service) throws UpdateException {
         // try recording resolution parameters
         try {
@@ -111,12 +104,6 @@ public class ServiceManagerImp
             String msg = "cannot update service. duplicate resolution parameters";
             logger.log(Level.INFO, msg, e);
             throw new UpdateException(msg, e);
-        }
-
-        try {
-            policyCache.update(service.getPolicy());
-        } catch (Exception e) {
-            throw new UpdateException("Unable to update Policy", e);
         }
 
         super.update(service);
@@ -131,19 +118,14 @@ public class ServiceManagerImp
         spring.publishEvent(new ServiceCacheEvent.Updated(service));
     }
 
+    @Override
+    public void delete( final long oid ) throws DeleteException, FindException {
+        findAndDelete(oid);
+    }
+
+    @Override
     public void delete(PublishedService service) throws DeleteException {
-        if (!policyCache.findUsages(service.getPolicy().getOid()).isEmpty()) {
-            // Assertion failure--there should be no dependencies *to* service policies
-            throw new IllegalStateException("Deletion of a service policy was vetoed by the PolicyCache");
-        }
-
         super.delete(service);
-
-        try {
-            policyCache.remove(service.getPolicy().getOid());
-        } catch (PolicyDeletionForbiddenException e) {
-            throw new IllegalStateException("Deletion of a service policy was vetoed by the PolicyCache", e);
-        }
 
         resolutionManager.deleteResolutionParameters(service.getOid());
         logger.info("Deleted service " + service.getName() + " #" + service.getOid());
@@ -151,12 +133,14 @@ public class ServiceManagerImp
     }
 
     @Transactional(propagation=SUPPORTS)
-    public Class getImpClass() {
+    @Override
+    public Class<PublishedService> getImpClass() {
         return PublishedService.class;
     }
 
     @Transactional(propagation=SUPPORTS)
-    public Class getInterfaceClass() {
+    @Override
+    public Class<PublishedService> getInterfaceClass() {
         return PublishedService.class;
     }
 
@@ -166,10 +150,12 @@ public class ServiceManagerImp
     }
 
     @Transactional(propagation=SUPPORTS)
+    @Override
     public EntityType getEntityType() {
         return EntityType.SERVICE;
     }
 
+    @Override
     protected UniqueType getUniqueType() {
         return UniqueType.NONE;
     }

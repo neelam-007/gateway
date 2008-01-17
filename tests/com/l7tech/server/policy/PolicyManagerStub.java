@@ -14,7 +14,7 @@ import java.util.HashSet;
 /**
  * @author alex
 */
-public class PolicyManagerStub extends EntityManagerStub<Policy,EntityHeader> implements PolicyManager {
+public class PolicyManagerStub extends EntityManagerStub<Policy,PolicyHeader> implements PolicyManager {
     public PolicyManagerStub(Policy[] entities) {
         super(entities);
     }
@@ -23,10 +23,10 @@ public class PolicyManagerStub extends EntityManagerStub<Policy,EntityHeader> im
         super(new Policy[0]);
     }
 
-    public Collection<EntityHeader> findHeadersByType(PolicyType type) throws FindException {
-        Set<EntityHeader> hs = new HashSet<EntityHeader>();
+    public Collection<PolicyHeader> findHeadersByType(PolicyType type) throws FindException {
+        Set<PolicyHeader> hs = new HashSet<PolicyHeader>();
         for (Policy policy : entities.values()) {
-            if (policy.getType() == type) hs.add(new EntityHeader(policy.getId(), EntityType.POLICY, policy.getName(), null));
+            if (policy.getType() == type) hs.add(new PolicyHeader(policy));
         }
         return hs;
     }

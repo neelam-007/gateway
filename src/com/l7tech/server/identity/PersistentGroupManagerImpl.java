@@ -108,6 +108,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
         try {
             //noinspection unchecked
             return (Collection<IdentityHeader>) getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria searchCriteria = session.createCriteria(getImpClass());
                     // replace wildcards to match stuff understood by mysql
@@ -150,6 +151,15 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     /**
      * Must be called in a transaction!
      */
+    @Override
+    public void delete(long oid) throws DeleteException, FindException {
+        findAndDelete( oid );        
+    }
+
+    /**
+     * Must be called in a transaction!
+     */
+    @Override
     public void delete(GT group) throws DeleteException {
         try {
             // it is not allowed to delete the admin group
@@ -338,6 +348,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
         if (!checkProvider(user)) return false;
         try {
             return (Boolean)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query query = session.createQuery(HQL_ISMEMBER);
                     query.setString(0, user.getId());
@@ -525,6 +536,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     private Set<IdentityHeader> doGetUserHeaders(final String groupId) throws HibernateException {
         //noinspection unchecked
         return (Set<IdentityHeader>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            @Override
             public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Set<IdentityHeader> headers = new HashSet<IdentityHeader>();
                 Query query = session.createQuery(getMemberQueryString());
@@ -542,6 +554,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     private Set<IdentityHeader> doGetGroupHeaders(final String userId) throws HibernateException {
         //noinspection unchecked
         return (Set<IdentityHeader>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            @Override
             public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Set<IdentityHeader> headers = new HashSet<IdentityHeader>();
                 Query query = session.createQuery(HQL_GETGROUPS);
@@ -611,6 +624,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
         return UniqueType.OTHER;
     }
 
+    @Override
     public EntityType getEntityType() {
         return EntityType.GROUP;
     }

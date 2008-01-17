@@ -4,8 +4,8 @@
 package com.l7tech.common.policy;
 
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.ReadOnlyEntityManager;
+import com.l7tech.objectmodel.PolicyHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionTranslator;
 import com.l7tech.policy.assertion.Include;
@@ -20,15 +20,15 @@ import java.util.Set;
  * @author alex
  */
 public class IncludeAssertionDereferenceTranslator implements AssertionTranslator {
-    private final ReadOnlyEntityManager<Policy, EntityHeader> policyGetter;
+    private final ReadOnlyEntityManager<Policy, PolicyHeader> policyGetter;
     private final Set<Long> policyOids;
     private final boolean readOnly;
 
-    public IncludeAssertionDereferenceTranslator(final ReadOnlyEntityManager<Policy,EntityHeader> policyGetter) {
+    public IncludeAssertionDereferenceTranslator(final ReadOnlyEntityManager<Policy,PolicyHeader> policyGetter) {
         this(policyGetter, null, true);
     }
 
-    public IncludeAssertionDereferenceTranslator(final ReadOnlyEntityManager<Policy,EntityHeader> policyGetter,
+    public IncludeAssertionDereferenceTranslator(final ReadOnlyEntityManager<Policy,PolicyHeader> policyGetter,
                                                  final Set<Long> includedPolicyOids,
                                                  final boolean readOnly) {
         this.policyGetter = policyGetter;

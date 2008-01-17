@@ -5,6 +5,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.tree.AbstractLeafPaletteNode;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.PolicyHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
 
@@ -14,8 +15,11 @@ import com.l7tech.policy.assertion.Include;
 public class IncludeAssertionPaletteNode extends AbstractLeafPaletteNode {
     private final EntityHeader header;
 
-    public IncludeAssertionPaletteNode(EntityHeader header) {
-        super(header.getName(), "com/l7tech/console/resources/include16.png");
+    public IncludeAssertionPaletteNode( PolicyHeader header) {
+        super(header.getName(),
+              header.isSoap() ?
+                      "com/l7tech/console/resources/include_soap16_frag.png" :
+                      "com/l7tech/console/resources/include16_frag.png");
         this.header = header;
     }
 

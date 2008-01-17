@@ -55,6 +55,7 @@ public class IdProvConfManagerServer
         provider.test(false);
     }
 
+    @Override
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
 
         // For the moment don't allow the name etc to be changed
@@ -65,6 +66,7 @@ public class IdProvConfManagerServer
         return super.save(identityProviderConfig);
     }
 
+    @Override
     public void update(IdentityProviderConfig identityProviderConfig) throws UpdateException {
         // For the moment don't allow the name etc to be changed
         if (identityProviderConfig.type() == IdentityProviderType.INTERNAL) {
@@ -85,6 +87,12 @@ public class IdProvConfManagerServer
         }
     }
 
+    @Override
+    public void delete( long oid ) throws DeleteException, FindException {
+        findAndDelete( oid );
+    }
+
+    @Override
     public void delete(IdentityProviderConfig identityProviderConfig) throws DeleteException {
         // we should not accept deleting an internal type
         if (identityProviderConfig.type() == IdentityProviderType.INTERNAL) {
@@ -103,21 +111,25 @@ public class IdProvConfManagerServer
         return identityProviderFactory.findAllIdentityProviders(this);
     }
 
+    @Override
     public Collection<IdentityProviderConfig> findAll() throws FindException {
         Collection<IdentityProviderConfig> out = new ArrayList<IdentityProviderConfig>(super.findAll());
         return out;
     }
 
+    @Override
     public Collection<IdentityProviderConfig> findAll(int offset, int windowSize) throws FindException {
         Collection<IdentityProviderConfig> out = new ArrayList<IdentityProviderConfig>(super.findAll(offset, windowSize));
         return out;
     }
 
-    public Class getImpClass() {
+    @Override
+    public Class<IdentityProviderConfig> getImpClass() {
         return IdentityProviderConfig.class;
     }
 
-    public Class getInterfaceClass() {
+    @Override
+    public Class<IdentityProviderConfig> getInterfaceClass() {
         return IdentityProviderConfig.class;
     }
 
@@ -133,6 +145,7 @@ public class IdProvConfManagerServer
         this.identityProviderFactory = identityProviderFactory;
     }
 
+    @Override
     public EntityType getEntityType() {
         return EntityType.ID_PROVIDER_CONFIG;
     }

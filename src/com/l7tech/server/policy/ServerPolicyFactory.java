@@ -32,6 +32,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
     private final AssertionLicense licenseManager;
     private ApplicationContext applicationContext;
     private static ThreadLocal<LinkedList<Boolean>> licenseEnforcement = new ThreadLocal<LinkedList<Boolean>>() {
+        @Override
         protected LinkedList<Boolean> initialValue() {
             return new LinkedList<Boolean>();
         }
@@ -93,6 +94,8 @@ public class ServerPolicyFactory implements ApplicationContextAware {
             return doWithEnforcement(licenseEnforcement, c);
         } catch (ServerPolicyException e) {
             throw e;
+        } catch (LicenseException e) {
+            throw e;
         } catch (Exception e) {
             throw new ServerPolicyException(genericAssertion, e);
         }
@@ -112,7 +115,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
         return doMakeServerAssertion(genericAsertion);
     }
 
-    /* 
+    /**
      * Compile the specified assertion tree, with license enforcement.
      */
     private ServerAssertion doMakeServerAssertion(Assertion genericAssertion) throws ServerPolicyException, LicenseException {
@@ -160,7 +163,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
             // Handle exceptions thrown by the server assertion constructor
             Throwable cause = ite.getCause();
             if (cause instanceof LicenseException)
-                throw new LicenseException(ite);
+                throw (LicenseException) cause;
             throw new ServerPolicyException(genericAssertion, "Error creating specific assertion for '"+genericAssertion.getClass().getName()+"'", ite);
         } catch (Exception ie) {
             throw new ServerPolicyException(genericAssertion, "Error creating specific assertion for '"+genericAssertion.getClass().getName()+"'", ie);

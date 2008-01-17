@@ -3,11 +3,11 @@
  */
 package com.l7tech.server.policy;
 
-import com.l7tech.common.LicenseException;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.common.policy.PolicyDeletionForbiddenException;
 import com.l7tech.common.policy.PolicyType;
+import com.l7tech.common.policy.CircularPolicyException;
 import static com.l7tech.common.security.rbac.EntityType.POLICY;
 import static com.l7tech.common.security.rbac.OperationType.*;
 import com.l7tech.common.security.rbac.RbacAdmin;
@@ -27,7 +27,6 @@ import org.springframework.transaction.annotation.Propagation;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -40,7 +39,7 @@ import java.util.regex.Pattern;
  * @author alex
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-public class PolicyManagerImpl extends HibernateEntityManager<Policy, EntityHeader> implements PolicyManager {
+public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHeader> implements PolicyManager {
     private static final Logger logger = Logger.getLogger(PolicyManagerImpl.class.getName());
     
     String ROLE_NAME_TYPE_SUFFIX = "Policy";
@@ -62,77 +61,68 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, EntityHead
     }
 
     @Override
-    public long save(Policy entity) throws SaveException {
+    public long save(final Policy policy) throws SaveException {
+        long oid;
+
         try {
-            long oid = super.save(entity);
-            policyCache.update(entity);
-            return oid;
-        } catch (ServerPolicyException e) {
-            throw new SaveException("Policy could not be saved; it contained an assertion failed to initialize", e);
-        } catch (LicenseException e) {
-            throw new SaveException("Policy could not be saved; it contained an assertion that is unlicensed on the gateway", e);
-        } catch (IOException e) {
-            throw new SaveException("Policy could not be saved; it could not be parsed", e);
+            policyCache.validate(policy);
+        } catch ( CircularPolicyException e ) {
+            throw new SaveException("Couldn't save Policy: " + ExceptionUtils.getMessage(e), e);
         }
+
+        oid = super.save(policy);
+
+        return oid;
     }
 
     @Override
-    public void update(Policy entity) throws UpdateException {
+    public void update(final Policy policy) throws UpdateException {
         try {
-            // TODO this should probably be split into a pre-update feasibility test and a post-commit actuallyDoIt
-            policyCache.update(entity);
-
-            try {
-                roleManager.renameEntitySpecificRole(POLICY, entity, replaceRoleName);
-            } catch (FindException e) {
-                throw new UpdateException("Couldn't find Role to rename", e);
-            }
-
-            super.update(entity);
-        } catch (ServerPolicyException e) {
-            throw new UpdateException("Policy could not be saved; it contained an assertion failed to initialize", e);
-        } catch (LicenseException e) {
-            throw new UpdateException("Policy could not be saved; it contained an assertion that is unlicensed on the gateway", e);
-        } catch (IOException e) {
-            throw new UpdateException("Policy could not be saved; it could not be parsed", e);
+            policyCache.validate(policy);
+        } catch ( CircularPolicyException e ) {
+            throw new UpdateException("Couldn't update Policy: " + ExceptionUtils.getMessage(e), e);
         }
+
+        try {
+            roleManager.renameEntitySpecificRole(POLICY, policy, replaceRoleName);
+        } catch (FindException e) {
+            throw new UpdateException("Couldn't find Role to rename", e);
+        }
+
+        super.update(policy);
     }
 
     @Override
-    public void delete(long oid) throws DeleteException, FindException {
-        // TODO check for users
-        super.delete(oid);
-        try {
-            policyCache.remove(oid);
-        } catch (PolicyDeletionForbiddenException e) {
-            throw new DeleteException("Couldn't delete Policy: " + ExceptionUtils.getMessage(e), e);
-        }
+    public void delete( long oid ) throws DeleteException, FindException {
+        findAndDelete(oid);
     }
 
     @Override
     public void delete(Policy policy) throws DeleteException {
-        // TODO check for users
-        super.delete(policy);
         try {
-            policyCache.remove(policy.getOid());
+            if ( policy != null )
+                policyCache.validateRemove( policy.getOid() );
         } catch (PolicyDeletionForbiddenException e) {
             throw new DeleteException("Couldn't delete Policy: " + ExceptionUtils.getMessage(e), e);
         }
+
+        super.delete(policy);
     }
 
     @Transactional(readOnly=true)
-    public Collection<EntityHeader> findHeadersByType(final PolicyType type) throws FindException {
+    public Collection<PolicyHeader> findHeadersByType(final PolicyType type) throws FindException {
         //noinspection unchecked
         List<Policy> policies = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            @Override
             protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Criteria crit = session.createCriteria(Policy.class);
                 crit.add(Restrictions.eq("type", type));
                 return crit.list();
             }
         });
-        List<EntityHeader> hs = new ArrayList<EntityHeader>(policies.size());
+        List<PolicyHeader> hs = new ArrayList<PolicyHeader>(policies.size());
         for (Policy policy : policies) {
-            hs.add(new EntityHeader(policy.getId(), EntityType.POLICY, policy.getName(), null));
+            hs.add(newHeader(policy));
         }
         return hs;
     }
@@ -191,5 +181,11 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, EntityHead
     public String getTableName() {
         return "policy";
     }
+
+    @Override
+    protected PolicyHeader newHeader( final Policy entity ) {
+        return new PolicyHeader( entity );
+    }
+
 }
 

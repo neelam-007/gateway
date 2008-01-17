@@ -30,16 +30,13 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService,Servi
     private final PolicyManager policyManager;
 
     public ServiceManagerStub(PolicyManager policyManager) {
-        super(StubDataStore.defaultStore().getPublishedServices().values().toArray(new PublishedService[0]));
+        super(toArray(StubDataStore.defaultStore().getPublishedServices().values()));
         this.policyManager = policyManager;
     }
 
     /**
      * Used by the console to retreive the actual wsdl located at a target
      * as seen by the ssg.
-     * 
-     * @param url
-     * @return a string containing the xml document
      */
     public String resolveWsdlTarget(String url) {
         try {
@@ -57,10 +54,8 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService,Servi
 
     /**
      * saves a published service along with it's policy assertions
-     * 
-     * @param service
-     * @throws SaveException
      */
+    @Override
     public long save(PublishedService service) throws SaveException {
         Policy policy = service.getPolicy();
         if (policy == null) throw new IllegalArgumentException("Service saved without a policy");
@@ -83,10 +78,8 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService,Servi
      * has an history. on the console side implementation, you can call save
      * either way and the oid will dictate whether the object should be saved
      * or updated.
-     * 
-     * @param service
-     * @throws UpdateException
      */
+    @Override
     public void update(PublishedService service) throws UpdateException {
         super.update(service);
         try {
@@ -98,37 +91,31 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService,Servi
 
     }
 
-    /**
-     * deletes the service
-     * 
-     * @param service
-     * @throws DeleteException
-     */
+    @Override
     public void delete(PublishedService service) throws DeleteException {
         super.delete(service);
-        try {
-            serviceCache.removeFromCache(service);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        serviceCache.removeFromCache(service);
     }
 
-    public Class getImpClass() {
+    @Override
+    public Class<PublishedService> getImpClass() {
         return PublishedService.class;
     }
 
-    public Class getInterfaceClass() {
+    @Override
+    public Class<PublishedService> getInterfaceClass() {
         return PublishedService.class;
     }
 
+    @Override
     public EntityType getEntityType() {
         return EntityType.SERVICE;
     }
 
+    @Override
     public String getTableName() {
         return "published_service";
     }
-
 
     public void setServiceCache(ServiceCache serviceCache) {
         this.serviceCache = serviceCache;
@@ -140,31 +127,32 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService,Servi
 
     private void initializeServiceCache() throws ObjectModelException {
         // build the cache if necessary
-        try {
-            if (serviceCache.size() > 0) {
-                logger.finest("cache already built (?)");
-            } else {
-                logger.finest("building service cache");
-                Collection<PublishedService> services = findAll();
-                for (PublishedService service : services) {
-                    Policy policy = service.getPolicy();
-                    if (policy.getOid() == Policy.DEFAULT_OID) policyManager.save(policy);
+        if (serviceCache.size() > 0) {
+            logger.finest("cache already built (?)");
+        } else {
+            logger.finest("building service cache");
+            Collection<PublishedService> services = findAll();
+            for (PublishedService service : services) {
+                Policy policy = service.getPolicy();
+                if (policy.getOid() == Policy.DEFAULT_OID) policyManager.save(policy);
 
-                    try {
-                        serviceCache.cache(service);
-                    } catch (ServerPolicyException e) {
-                        logger.log(Level.WARNING, "Service disabled: " + ExceptionUtils.getMessage(e), e);
-                    }
+                try {
+                    serviceCache.cache(service);
+                } catch (ServerPolicyException e) {
+                    logger.log(Level.WARNING, "Service disabled: " + ExceptionUtils.getMessage(e), e);
                 }
             }
-            // make sure the integrity check is running
-            serviceCache.initiateIntegrityCheckProcess();
-        } catch (InterruptedException e) {
-            throw new ObjectModelException("Exception building cache", e);
         }
+        // make sure the integrity check is running
+        serviceCache.initiateIntegrityCheckProcess();
     }
 
+    @Override
     protected ServiceHeader header(PublishedService entity) {
         return new ServiceHeader( entity );
     }
+
+    private static PublishedService[] toArray( Collection<PublishedService> publishedServices ) {
+        return publishedServices.toArray( new PublishedService[publishedServices.size()] );
+    }    
 }

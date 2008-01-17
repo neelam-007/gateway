@@ -83,6 +83,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         try {
             //noinspection unchecked
             return (List<ET>)getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                @Override
                 protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(getImpClass());
                     for (Map.Entry<String,?> entry: map.entrySet()) {
@@ -195,6 +196,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     public Integer getVersion(final long oid) throws FindException {
         try {
             return (Integer)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_FIND_VERSION_BY_OID);
                     q.setLong(0, oid);
@@ -212,6 +214,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         try {
             //noinspection unchecked
             return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_FIND_BY_OID);
                     q.setLong(0, oid);
@@ -275,6 +278,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     public Collection<HT> findAllHeaders(final int offset, final int windowSize) {
         //noinspection unchecked
         List<ET> entities = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            @Override
             protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Criteria crit = session.createCriteria(getImpClass());
                 crit.setFirstResult(offset);
@@ -323,6 +327,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         try {
             //noinspection unchecked
             return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria allHeadersCriteria = session.createCriteria(getImpClass());
                     addFindAllCriteria(allHeadersCriteria);
@@ -338,6 +343,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         try {
             //noinspection unchecked
             return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria allCriteria = session.createCriteria(getImpClass());
                     addFindAllCriteria(allCriteria);
@@ -453,6 +459,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         try {
             //noinspection unchecked
             return (ET)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(getImpClass());
                     addFindByNameCriteria(crit);
@@ -524,7 +531,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         } finally {
             if (read != null) read.release();
         }
-
     }
 
     private ET freshen(CacheInfo<ET> cacheInfo, int maxAge) throws FindException, CacheVeto {
@@ -651,6 +657,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         try {
             //noinspection unchecked
             return (ET) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     return session.load(impClass, oid);
                 }
@@ -692,6 +699,24 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         } catch (Exception he) {
             throw new DeleteException(he.toString(), he);
         }
+    }
+
+    /**
+     * Lookup the entity by oid and delete(ET) it.
+     *
+     * @param oid The entity oid.
+     * @return true if the entity was deleted; false otherwise
+     */
+    protected boolean findAndDelete(final long oid) throws FindException, DeleteException {
+        boolean deleted = false;
+
+        ET entity = this.findByPrimaryKey( oid );
+        if ( entity != null ) {
+            delete(entity);
+            deleted = true;
+        }
+
+        return deleted;
     }
 
     protected UniqueType getUniqueType() {

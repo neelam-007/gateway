@@ -16,9 +16,8 @@ import java.io.IOException;
  * Handle pointing at a ServerPolicy instance.
  */
 public class ServerPolicyHandle extends Handle<ServerPolicy> {
-    protected ServerPolicyHandle(ServerPolicy cs) {
-        super(cs);
-    }
+
+    //- PUBLIC
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
         ServerPolicy target = getTarget();
@@ -26,8 +25,34 @@ public class ServerPolicyHandle extends Handle<ServerPolicy> {
         return target.checkRequest(context);
     }
 
-    /** Open up access so service cache can use this.  ONLY ServiceCache should use this. */
-    public ServerPolicy getTarget() {
+    public PolicyMetadata getPolicyMetadata() {
+        return policyMetadata;
+    }
+
+    //- PROTECTED
+
+    /** Open up access so policy cache can use this.  ONLY PolicyCache should use this. */
+    @Override
+    protected ServerPolicy getTarget() {
         return super.getTarget();
     }
+
+    //- PACKAGE
+
+    ServerPolicyHandle( final ServerPolicy cs,
+                        final PolicyMetadata policyMetadata,
+                        final ServerPolicyMetadata metadata ) {
+        super(cs);
+        this.policyMetadata = policyMetadata;
+        this.metadata = metadata;
+    }
+
+    ServerPolicyMetadata getMetadata() {
+        return metadata;
+    }
+
+    //- PRIVATE
+
+    private final PolicyMetadata policyMetadata;
+    private final ServerPolicyMetadata metadata;
 }

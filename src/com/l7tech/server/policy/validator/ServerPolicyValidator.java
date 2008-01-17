@@ -98,10 +98,11 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
     private EntityFinder entityFinder;
     private SsgKeyStoreManager ssgKeyStoreManager;
 
-    public ServerPolicyValidator(ReadOnlyEntityManager<Policy, EntityHeader> policyFinder, PolicyPathBuilderFactory pathBuilderFactory) {
+    public ServerPolicyValidator(ReadOnlyEntityManager<Policy, PolicyHeader> policyFinder, PolicyPathBuilderFactory pathBuilderFactory) {
         super(policyFinder, pathBuilderFactory);
     }
 
+    @Override
     public void validatePath(AssertionPath ap, PolicyType policyType, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense, PolicyValidatorResult r) {
         Assertion[] ass = ap.getPath();
         PathContext pathContext = new PathContext();

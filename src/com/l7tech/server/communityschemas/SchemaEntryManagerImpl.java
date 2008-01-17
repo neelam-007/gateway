@@ -57,6 +57,7 @@ public class SchemaEntryManagerImpl
         this.schemaManager = schemaManager;
     }
 
+    @Override
     protected void initDao() throws Exception {
         super.initDao();
         for (SchemaEntry entry : findAll()) {
@@ -72,6 +73,7 @@ public class SchemaEntryManagerImpl
     }
 
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
+    @Override
     public Collection<SchemaEntry> findAll() throws FindException {
         Collection<SchemaEntry> output = super.findAll();
 
@@ -96,6 +98,7 @@ public class SchemaEntryManagerImpl
         final String queryname = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
                           " where " + TABLE_NAME + ".name = ?";
         Collection output = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            @Override
             public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Query q = session.createQuery(queryname);
                 q.setString(0, schemaName);
@@ -118,6 +121,7 @@ public class SchemaEntryManagerImpl
         final String querytns = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
                           " where " + TABLE_NAME + ".tns = ?";
         Collection output = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            @Override
             public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Query q = session.createQuery(querytns);
                 q.setString(0, tns);
@@ -132,19 +136,15 @@ public class SchemaEntryManagerImpl
     }
 
     @Transactional(readOnly=true)
+    @Override
     public SchemaEntry findByPrimaryKey(long oid) throws FindException {
         if (SOAP_SCHEMA_OID == oid)
             return SOAP_SCHEMA_ENTRY;
         return super.findByPrimaryKey(oid);
     }
 
-    protected boolean delete(Class entityClass, long oid) throws DeleteException {
-        if (SOAP_SCHEMA_OID == oid)
-            throw new DeleteException("The SOAP schema cannot be deleted");
-        return super.delete(entityClass, oid);
-    }
-
     @Transactional(readOnly=true)
+    @Override
     public Collection<EntityHeader> findAllHeaders() throws FindException {
         ArrayList<EntityHeader> completeList = new ArrayList<EntityHeader>(super.findAllHeaders());
         completeList.add(SOAP_SCHEMA_HEADER);
@@ -152,6 +152,7 @@ public class SchemaEntryManagerImpl
     }
 
     @Transactional(readOnly=true)
+    @Override
     public SchemaEntry findEntity(long oid) throws FindException {
         if (SOAP_SCHEMA_OID == oid)
             return SOAP_SCHEMA_ENTRY;
@@ -159,6 +160,7 @@ public class SchemaEntryManagerImpl
     }
 
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
+    @Override
     public long save(SchemaEntry newSchema) throws SaveException {
         if (newSchema.getOid() == SOAP_SCHEMA_OID)
             throw new SaveException("The SOAP schema cannot be saved");
@@ -180,6 +182,7 @@ public class SchemaEntryManagerImpl
     }
 
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
+    @Override
     public void update(SchemaEntry schemaEntry) throws UpdateException {
         if (schemaEntry.getOid() == SOAP_SCHEMA_OID)
             throw new UpdateException("The SOAP schema cannot be updated");
@@ -200,6 +203,13 @@ public class SchemaEntryManagerImpl
     }
 
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
+    @Override
+    public void delete( long oid ) throws DeleteException, FindException {
+        findAndDelete( oid );
+    }
+
+    @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
+    @Override
     public void delete(SchemaEntry existingSchema) throws DeleteException {
         if (SOAP_SCHEMA_OID == existingSchema.getOid())
             throw new DeleteException("The SOAP schema cannot be deleted");
@@ -215,6 +225,7 @@ public class SchemaEntryManagerImpl
             final EntityInvalidationEvent eieio = (EntityInvalidationEvent)event;
             if (SchemaEntry.class.isAssignableFrom(eieio.getEntityClass())) {
                 new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
+                    @Override
                     protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
                         
                         for (long oid : eieio.getEntityIds()) {
@@ -272,11 +283,13 @@ public class SchemaEntryManagerImpl
     }
 
 
-    public Class getImpClass() {
+    @Override
+    public Class<SchemaEntry> getImpClass() {
         return SchemaEntry.class;
     }
 
-    public Class getInterfaceClass() {
+    @Override
+    public Class<SchemaEntry> getInterfaceClass() {
         return SchemaEntry.class;
     }
 
@@ -285,6 +298,7 @@ public class SchemaEntryManagerImpl
     }
 
     @Transactional(propagation=SUPPORTS)
+    @Override
     public EntityType getEntityType() {
         return EntityType.SCHEMA_ENTRY;
     }

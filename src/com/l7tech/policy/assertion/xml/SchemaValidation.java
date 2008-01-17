@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.UsesResourceInfo;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.AssertionResourceType;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
+import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
 
 /**
  * Contains the xml schema for which requests and/or responses need to be validated against.
@@ -21,7 +22,8 @@ import com.l7tech.policy.assertion.annotation.RequiresXML;
  * $Id$<br/>
  *
  */
-@RequiresXML()
+@RequiresXML
+@HardwareAccelerated( type=HardwareAccelerated.Type.SCHEMA )
 public class SchemaValidation extends Assertion implements UsesResourceInfo, UsesVariables {
 
     /**

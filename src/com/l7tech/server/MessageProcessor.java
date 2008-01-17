@@ -40,6 +40,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.policy.PolicyCache;
+import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceCache;
@@ -126,6 +127,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private void initSettings(final int period) {
         updateSettings(period);
         Background.scheduleRepeated(new TimerTask() {
+            @Override
             public void run() {
                 updateSettings(period);
             }
@@ -264,23 +266,14 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             }
 
             // Get the server policy
-            try {
-                serverPolicy = serviceCache.getServerPolicy(service.getOid());
-            } catch (InterruptedException e) {
-                auditor.logAndAudit(MessageProcessingMessages.CANNOT_GET_POLICY, null, e);
-                serverPolicy = null;
-            }
+            serverPolicy = serviceCache.getServerPolicy(service.getOid());
             if (serverPolicy == null) {
                 throw new ServiceResolutionException("service is resolved but the corresponding policy is invalid");
             }
 
             // Run the policy
             auditor.logAndAudit(MessageProcessingMessages.RUNNING_POLICY);
-            try {
-                stats = serviceCache.getServiceStatistics(service.getOid());
-            } catch (InterruptedException e) {
-                auditor.logAndAudit(MessageProcessingMessages.CANNOT_GET_STATS_OBJECT, null, e);
-            }
+            stats = serviceCache.getServiceStatistics(service.getOid());
             attemptedRequest = true;
 
             status = serverPolicy.checkRequest(context);
@@ -550,14 +543,14 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             this.ioExceptionHolder = ioException;
         }
 
-        public boolean notifyPreParseServices(Message message, Set<PublishedService> serviceSet) {
+        public boolean notifyPreParseServices(Message message, Set<PolicyMetadata> policyMetadataSet) {
             boolean isSoap = false;
             boolean hasSecurity = false;
             boolean preferDom = true;
 
             // If any service does not use WSS then don't prefer DOM
-            for (PublishedService service : serviceSet) {
-                if (!service.getPolicy().isWssInPolicy()) {
+            for (PolicyMetadata policyMetadata : policyMetadataSet) {
+                if (!policyMetadata.isWssInPolicy()) {
                     preferDom = false;
                     break;
                 }

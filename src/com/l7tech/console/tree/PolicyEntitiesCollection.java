@@ -5,7 +5,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.common.policy.PolicyType;
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.PolicyHeader;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -22,7 +22,7 @@ public class PolicyEntitiesCollection implements EntitiesCollection {
      * @return Returns the collection of <code>EntityHeader</code> instances
      * @throws RuntimeException thrown on error retrieving the user collection
      */
-    public Collection<EntityHeader> getNextBatch() throws RuntimeException {
+    public Collection<PolicyHeader> getNextBatch() throws RuntimeException {
         if (exhausted) {
             return Collections.emptyList();
         }

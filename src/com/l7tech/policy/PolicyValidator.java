@@ -5,8 +5,8 @@ import com.l7tech.common.policy.Policy;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.ReadOnlyEntityManager;
+import com.l7tech.objectmodel.PolicyHeader;
 
 /**
  * A class for validating policies.
@@ -25,14 +25,14 @@ import com.l7tech.objectmodel.ReadOnlyEntityManager;
  * @version 1.0
  */
 public abstract class PolicyValidator {
-    protected final ReadOnlyEntityManager<Policy, EntityHeader> policyFinder;
+    protected final ReadOnlyEntityManager<Policy, PolicyHeader> policyFinder;
     private final PolicyPathBuilderFactory pathBuilderFactory;
 
     /**
      * Protected constructor, the <code>PolicyValidator</code> instances
      * are obtained using Spring
      */
-    protected PolicyValidator(ReadOnlyEntityManager<Policy, EntityHeader> policyFinder, PolicyPathBuilderFactory pathBuilderFactory) {
+    protected PolicyValidator(ReadOnlyEntityManager<Policy, PolicyHeader> policyFinder, PolicyPathBuilderFactory pathBuilderFactory) {
         this.policyFinder = policyFinder;
         this.pathBuilderFactory = pathBuilderFactory;
     }
@@ -63,10 +63,10 @@ public abstract class PolicyValidator {
      * Validate the the asserion path and collect the result into the validator result
      *
      * @param ap the assertion path to validate
-     * @param policyType
-     * @param wsdl
-     * @param soap @throws InterruptedException if the thread is interrupted while validating
-     * @param r  the result collect parameter
+     * @param policyType The type of the policy to validate
+     * @param wsdl The WSDL that relates to the policy
+     * @param soap true if the policy is only for SOAP services
+     * @param r The result collect parameter
      * @throws InterruptedException if the thread is interrupted while validating
      */
     abstract public void validatePath(AssertionPath ap, PolicyType policyType, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense, PolicyValidatorResult r) throws InterruptedException;

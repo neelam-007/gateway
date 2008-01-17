@@ -18,7 +18,6 @@ import com.l7tech.objectmodel.FindException;
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -48,7 +47,7 @@ public class PolicyEntityNode extends EntityHeaderNode {
         return policy != null ? policy : (policy = refreshPolicy());
     }
 
-    public Entity getEntity() throws FindException, RemoteException {
+    public Entity getEntity() throws FindException {
         return getPolicy();
     }
 
@@ -57,7 +56,6 @@ public class PolicyEntityNode extends EntityHeaderNode {
      * If the service has been deleted, this will prune it from the services tree before returning.
      *
      * @throws com.l7tech.objectmodel.FindException  if unable to find service, possibly because it was deleted
-     * @throws java.rmi.RemoteException  on remote communication error
      * @return the published service.  Never null.
      */
     public Policy refreshPolicy() throws FindException {
@@ -93,6 +91,7 @@ public class PolicyEntityNode extends EntityHeaderNode {
      *
      * @return actions appropriate to the node
      */
+    @Override
     public Action[] getActions() {
         Collection<Action> actions = new ArrayList<Action>();
 
@@ -100,9 +99,8 @@ public class PolicyEntityNode extends EntityHeaderNode {
         actions.add(new EditPolicyProperties(this));
         actions.add(new DeletePolicyAction(this));
         actions.add(new PolicyRevisionsAction(this));
-        // TODO find usages...
 
-        return actions.toArray(new Action[0]);
+        return actions.toArray(new Action[actions.size()]);
     }
 
     /**
@@ -110,6 +108,7 @@ public class PolicyEntityNode extends EntityHeaderNode {
      *
      * @return true if the node can be deleted, false otherwise
      */
+    @Override
     public boolean canDelete() {
         return true;
     }
@@ -117,6 +116,7 @@ public class PolicyEntityNode extends EntityHeaderNode {
     /**
      * @return the node name that is displayed
      */
+    @Override
     public String getName() {
         try {
             String nodeName = getPolicy().getName();
@@ -139,8 +139,23 @@ public class PolicyEntityNode extends EntityHeaderNode {
      *
      * @param open for nodes that can be opened, can have children
      */
+    @Override
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/include16.png";
+        boolean isSoap;
+        try {
+            isSoap = getPolicy().isSoap();
+        } catch (Exception e) {
+            ErrorManager.getDefault().
+              notify(Level.SEVERE, e,
+                "Error accessing policy entity");
+            return "com/l7tech/console/resources/include16.png";
+        }
+
+        if ( isSoap ) {
+            return "com/l7tech/console/resources/include_soap16.png";
+        } else {
+            return "com/l7tech/console/resources/include16.png";
+        }
     }
 
     public void clearCachedEntities() {

@@ -57,7 +57,7 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
         return policy;
     }
 
-    public Collection<EntityHeader> findPolicyHeadersByType(PolicyType type) throws FindException {
+    public Collection<PolicyHeader> findPolicyHeadersByType(PolicyType type) throws FindException {
         return policyManager.findHeadersByType(type);
     }
 

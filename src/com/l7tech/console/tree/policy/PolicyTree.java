@@ -1003,6 +1003,10 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 // prohibit dropping onto assertions that do not allow it
                 Point pt = e.getLocation();
                 TreePath path = getClosestPathForLocation(pt.x, pt.y);
+                int row = getRowForLocation(pt.x, pt.y);
+                if (row == -1) {
+                    path = new TreePath(getModel().getRoot());
+                }
                 Object treeObject = path.getLastPathComponent();
                 try {
                     Object transferData = e.getTransferable().getTransferData( PolicyTransferable.ASSERTION_DATAFLAVOR );

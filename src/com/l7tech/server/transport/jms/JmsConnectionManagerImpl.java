@@ -70,6 +70,10 @@ public class JmsConnectionManagerImpl
     }
 */
 
+    @Override
+    public void delete( long oid ) throws DeleteException, FindException {
+        findAndDelete( oid );
+    }
 
     /**
      * Deletes a {@link JmsConnection} and all associated {@link com.l7tech.common.transport.jms.JmsEndpoint}s.
@@ -79,6 +83,7 @@ public class JmsConnectionManagerImpl
      * @param connection the object to be deleted.
      * @throws DeleteException if the connection, or one of its dependent endpoints, cannot be deleted.
      */
+    @Override
     public void delete(final JmsConnection connection) throws DeleteException {
         _logger.info("Deleting JmsConnection " + connection);
 
@@ -94,15 +99,18 @@ public class JmsConnectionManagerImpl
         }
     }
 
+    @Override
     protected UniqueType getUniqueType() {
         return UniqueType.NONE;
     }
 
-    public Class getImpClass() {
+    @Override
+    public Class<JmsConnection> getImpClass() {
         return JmsConnection.class;
     }
 
-    public Class getInterfaceClass() {
+    @Override
+    public Class<JmsConnection> getInterfaceClass() {
         return JmsConnection.class;
     }
 
@@ -110,6 +118,7 @@ public class JmsConnectionManagerImpl
         return "jms_connection";
     }
 
+    @Override
     public EntityType getEntityType() {
         return EntityType.JMS_CONNECTION;
     }
@@ -120,6 +129,7 @@ public class JmsConnectionManagerImpl
         this.jmsEndpointManager = jmsEndpointManager;
     }
 
+    @Override
     protected void initDao() throws Exception {
         if (jmsEndpointManager == null) {
             throw new IllegalArgumentException("Endpoint Manager is required");

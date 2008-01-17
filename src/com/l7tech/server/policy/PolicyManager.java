@@ -5,18 +5,26 @@ package com.l7tech.server.policy;
 
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyType;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.PolicyHeader;
 
 import java.util.Collection;
 
 /**
  * @author alex
  */
-public interface PolicyManager extends EntityManager<Policy, EntityHeader> {
-    Collection<EntityHeader> findHeadersByType(PolicyType type) throws FindException;
+public interface PolicyManager extends EntityManager<Policy, PolicyHeader> {
+
+    /**
+     * Find headers for policies of the given type.
+     *
+     * @param type The type of policy to access.
+     * @return The collection of headers
+     * @throws FindException if an error occurs
+     */
+    Collection<PolicyHeader> findHeadersByType(PolicyType type) throws FindException;
 
     /**
      * Create and save an RBAC {@link com.l7tech.common.security.rbac.Role} granting permission to read, update and delete the policy.

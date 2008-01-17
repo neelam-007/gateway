@@ -45,7 +45,15 @@ public class ManagerPolicyCache implements EntityInvalidationListener, ReadOnlyE
         throw new UnsupportedOperationException();
     }
 
-    public void invalidate( final EntityHeader entityHeader ) {
+    public void notifyDelete( final EntityHeader entityHeader ) {
+        invalidate( entityHeader );
+    }
+
+    public void notifyUpdate( final EntityHeader entityHeader ) {
+        invalidate( entityHeader );
+    }
+
+    private void invalidate( final EntityHeader entityHeader ) {
         if ( entityHeader.getType() == EntityType.POLICY ) {
             cache.remove( entityHeader.getOid() );
         }

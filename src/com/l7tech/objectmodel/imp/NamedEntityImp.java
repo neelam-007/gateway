@@ -3,10 +3,27 @@ package com.l7tech.objectmodel.imp;
 import com.l7tech.objectmodel.NamedEntity;
 
 public abstract class NamedEntityImp extends PersistentEntityImp implements NamedEntity {
-    public String getName() { return _name; }
-    public void setName( String name ) { _name = name; }
-    protected String _name;
 
+    public NamedEntityImp() {
+        super();
+    }
+    
+    protected NamedEntityImp(final NamedEntityImp entity) {
+        super(entity);
+        setName(entity.getName());
+    }
+
+    public String getName() {
+        return _name;
+    }
+
+    public void setName( String name ) {
+        if ( isLocked() ) throw new IllegalStateException("Cannot update locked entity");
+        _name = name;
+    }
+
+    @SuppressWarnings( { "RedundantIfStatement" } )
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -19,9 +36,12 @@ public abstract class NamedEntityImp extends PersistentEntityImp implements Name
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (_name != null ? _name.hashCode() : 0);
         return result;
     }
+
+    protected String _name;
 }

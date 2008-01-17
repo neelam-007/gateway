@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileNotFoundException;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,8 +57,8 @@ public class StatusUpdateManagerImpl extends HibernateDaoSupport implements Stat
     }
 
     private void updateNodeStatus() throws UpdateException {
-        double load = 0.0;
-        UptimeMetrics metrics = null;
+        double load;
+        UptimeMetrics metrics;
         try {
             metrics = UptimeMonitor.getLastUptime();
             load = metrics.getLoad1();
@@ -76,12 +75,7 @@ public class StatusUpdateManagerImpl extends HibernateDaoSupport implements Stat
     private void updateServiceUsage() {
         // get service usage from local cache
         String ourid = clusterInfoManager.thisNodeId();
-        Collection stats = null;
-        try {
-            stats = serviceCache.getAllServiceStatistics();
-        } catch (InterruptedException e) {
-            logger.log(Level.SEVERE, "could not update service usage");
-        }
+        Collection<ServiceStatistics> stats = serviceCache.getAllServiceStatistics();
         if (stats != null) {
             try {
                 serviceUsageManager.clear(ourid);
@@ -89,9 +83,8 @@ public class StatusUpdateManagerImpl extends HibernateDaoSupport implements Stat
                 logger.log(Level.SEVERE, "could not update service usage");
                 return;
             }
-            for (Iterator i = stats.iterator(); i.hasNext();) {
-                ServiceStatistics statobj = (ServiceStatistics)i.next();
-                ServiceUsage sa = ServiceUsage.fromStat(statobj, ourid);
+            for( ServiceStatistics statobj : stats ) {
+                ServiceUsage sa = ServiceUsage.fromStat( statobj, ourid );
                 /*ServiceUsage sa = new ServiceUsage();
                 sa.setServiceid(statobj.getServiceOid());
                 sa.setNodeid(ourid);

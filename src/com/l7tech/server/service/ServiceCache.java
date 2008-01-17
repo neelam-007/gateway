@@ -1,31 +1,24 @@
 package com.l7tech.server.service;
 
-import com.l7tech.common.LicenseException;
 import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.SoapKnob;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.policy.Policy;
-import com.l7tech.common.util.Background;
 import com.l7tech.common.util.Decorator;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.server.event.system.ServiceCacheEvent;
 import com.l7tech.server.event.system.ServiceReloadEvent;
 import com.l7tech.server.event.system.Started;
-import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.event.PolicyCacheEvent;
 import com.l7tech.server.policy.*;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.resolution.*;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
@@ -40,14 +33,13 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.*;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * Contains cached services, with corresponding pre-parsed server-side policies and
@@ -73,10 +65,8 @@ public class ServiceCache
 
     // the cache data itself
     private final Map<Long, PublishedService> services = new HashMap<Long, PublishedService>();
-    private final Map<Long, ServerPolicyHandle> serverPolicies = new HashMap<Long, ServerPolicyHandle>();
     private final Map<Long, ServiceStatistics> serviceStatistics = new HashMap<Long, ServiceStatistics>();
-    private final Map<Long, Integer> servicesThatAreThrowing = new HashMap<Long, Integer>();
-    private final Set<Long> servicesThatAreUnlicensed = new HashSet<Long>();
+    private final Map<Long, String> servicesThatAreThrowing = new HashMap<Long, String>();
     private final Collection<Decorator<PublishedService>> decorators;
 
     private final PlatformTransactionManager transactionManager;
@@ -153,6 +143,7 @@ public class ServiceCache
         if (!running) {
             final ServiceCache tasker = this;
             TimerTask task = new TimerTask() {
+                @Override
                 public void run() {
                     try {
                         tasker.checkIntegrity();
@@ -167,25 +158,31 @@ public class ServiceCache
     }
 
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
-        if (applicationEvent instanceof LicenseEvent || applicationEvent instanceof AssertionModuleRegistrationEvent) {
-            try {
-                resetUnlicensed();
-            } finally {
-                getApplicationContext().publishEvent(new ServiceReloadEvent(this));
-            }
-        } else if (applicationEvent instanceof AssertionModuleUnregistrationEvent) {
-            try {
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_MODULE_UNLOAD);
-                resetAll();
-            } finally {
-                getApplicationContext().publishEvent(new ServiceReloadEvent(this));
-            }
-        } else if (applicationEvent instanceof ServiceCacheEvent.Updated) {
+        if (applicationEvent instanceof ServiceCacheEvent.Updated) {
             doCacheUpdate((ServiceCacheEvent.Updated) applicationEvent);
         } else if (applicationEvent instanceof ServiceCacheEvent.Deleted) {
             doCacheDelete((ServiceCacheEvent.Deleted) applicationEvent);
+        } else if (applicationEvent instanceof PolicyCacheEvent.Invalid) {
+            PolicyCacheEvent.Invalid invalidEvent = (PolicyCacheEvent.Invalid) applicationEvent;
+            final Lock read = rwlock.readLock();
+            read.lock();
+            try {
+                handleInvalidPolicy(null, invalidEvent.getPolicyId(), invalidEvent.getException());
+            } finally {
+                read.unlock();
+            }
+        } else if (applicationEvent instanceof PolicyCacheEvent.Updated) {
+            PolicyCacheEvent.Updated validEvent = (PolicyCacheEvent.Updated) applicationEvent;
+            final Lock read = rwlock.readLock();
+            read.lock();
+            try {
+                handleValidPolicy(validEvent.getPolicy());
+            } finally {
+                read.unlock();
+            }
         } else if (applicationEvent instanceof Started) {
             new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
+                @Override
                 protected void doInTransactionWithoutResult(TransactionStatus status) {
                     try {
                         initializeServiceCache();
@@ -199,13 +196,10 @@ public class ServiceCache
 
     private void doCacheDelete(final ServiceCacheEvent.Deleted deleted) {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            @Override
             public void afterCompletion(int status) {
                 if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                    try {
-                        removeFromCache(deleted.getService());
-                    } catch (InterruptedException e) {
-                        logger.log(Level.WARNING, "could not update service cache: " + ExceptionUtils.getMessage(e), e);
-                    }
+                    removeFromCache(deleted.getService());
                 }
             }
         });
@@ -213,6 +207,7 @@ public class ServiceCache
 
     private void doCacheUpdate(final ServiceCacheEvent.Updated updated) {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            @Override
             public void afterCompletion(int status) {
                 if (status == TransactionSynchronization.STATUS_COMMITTED) {
                     // get service. version property must be up-to-date
@@ -237,48 +232,6 @@ public class ServiceCache
         });
     }
 
-    private void resetUnlicensed() {
-        rwlock.writeLock().lock();
-        try {
-            List<Long> unlicensed = new ArrayList<Long>(servicesThatAreUnlicensed);
-
-            int numUnlicensed = unlicensed.size();
-            if (numUnlicensed < 1) return;
-            if (logger.isLoggable(Level.INFO))
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESETTING_SERVICES, Integer.toString(numUnlicensed));
-            for (Long oid : unlicensed) {
-                PublishedService service = services.get(oid);
-                if (service == null) continue; // no longer relevant
-
-                removeNoLock(service);
-                try {
-                    cacheNoLock(service);
-                } catch (ServerPolicyException e) {
-                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_DISABLING_SERVICE, new String[] { service.getName(), ExceptionUtils.getMessage(e) }, e);
-                }
-            }
-        } finally {
-            rwlock.writeLock().unlock();
-        }
-    }
-
-    private void resetAll() {
-        rwlock.writeLock().lock();
-        try {
-            final Collection<PublishedService> allservs = new ArrayList<PublishedService>(services.values());
-            for (PublishedService service : allservs) {
-                removeNoLock(service);
-                try {
-                    cacheNoLock(service);
-                } catch (ServerPolicyException e) {
-                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_DISABLING_SERVICE, new String[] { service.getName(), ExceptionUtils.getMessage(e) }, e);
-                }
-            }
-        } finally {
-            rwlock.writeLock().unlock();
-        }
-    }
-
     private void initializeServiceCache() throws ObjectModelException {
         // build the cache if necessary
         try {
@@ -289,24 +242,22 @@ public class ServiceCache
                 Collection<PublishedService> services = serviceManager.findAll();
                 for (PublishedService service : services) {
                     try {
-                        cache(service);
+                        // cache a copy not bound to hibernate session
+                        cache(  new PublishedService( service ) );
                     } catch (ServerPolicyException e) {
                         Assertion ass = e.getAssertion();
 
                         String ordinal = ass == null ? "" : "#" + Integer.toString(ass.getOrdinal());
                         String what = ass == null ? "<unknown>" : "(" + ass.getClass().getSimpleName() + ")";
-                        String msg = "Disabling PublishedService #{0} ({1}); policy could not be compiled (assertion {2} {3})";
-                        LogRecord r = new LogRecord(Level.WARNING, msg);
-                        r.setParameters(new Object[] { service.getOid(), service.getName(), ordinal, what});
-                        r.setThrown(e);
-                        logger.log(r);
+                        String msg = MessageFormat.format( "Disabling PublishedService #{0} ({1}); policy could not be compiled (assertion {2} {3})",
+                                        service.getOid(), service.getName(), ordinal, what );
+                        logger.log(Level.WARNING, msg, e);
                         // We don't actually disable the service here -- only the admin should be doing that.
                         // Instead, we will let the service cache continue to monitor the situation
                     } catch (Exception e) {
-                        LogRecord r = new LogRecord(Level.WARNING, "Disabling PublishedService #{0} ({1}); policy could not be compiled");
-                        r.setParameters(new Object[] { service.getOid(), service.getName() });
-                        r.setThrown(e);
-                        logger.log(r);
+                        String msg = MessageFormat.format( "Disabling PublishedService #{0} ({1}); policy could not be compiled",
+                                        service.getOid(), service.getName() );
+                        logger.log(Level.WARNING, msg, e);
                     }
                 }
                 TarariLoader.compile();
@@ -325,7 +276,7 @@ public class ServiceCache
      *
      * @return the number of services currently cached
      */
-    public int size() throws InterruptedException {
+    public int size() {
         rwlock.readLock().lock();
         try {
             return services.size();
@@ -352,20 +303,19 @@ public class ServiceCache
      *
      * @param serviceOid id of the service of which we want the parsed server side root assertion
      */
-    public ServerPolicyHandle getServerPolicy(long serviceOid) throws InterruptedException {
+    public ServerPolicyHandle getServerPolicy(long serviceOid) {
         rwlock.readLock().lock();
         try {
-            ServerPolicyHandle handle = serverPolicies.get(serviceOid);
-            if (handle == null) return null;
-            ServerPolicy target = handle.getTarget();
-            return target == null ? null : target.ref();
+            PublishedService service = services.get( serviceOid );
+            if (service == null) return null;
+            return getServerPolicyForService( service );
         } finally {
             rwlock.readLock().unlock();
         }
     }
 
     public static interface ResolutionListener {
-        boolean notifyPreParseServices(Message message, Set<PublishedService> serviceSet);
+        boolean notifyPreParseServices(Message message, Set<PolicyMetadata> serviceSet);
     }
 
     /**
@@ -389,7 +339,7 @@ public class ServiceCache
             for (ServiceResolver resolver : activeResolvers) {
                 if (rl != null && resolver.usesMessageContent() && !notified) {
                     notified = true;
-                    if (!rl.notifyPreParseServices(req, serviceSet))
+                    if (!rl.notifyPreParseServices(req, getPolicyMetadata(serviceSet)))
                         return null;
                 }
 
@@ -427,7 +377,7 @@ public class ServiceCache
                 return null;
             } else if (serviceSet.size() == 1) {
                 if (rl != null && !notified) {
-                    if (!rl.notifyPreParseServices(req, serviceSet))
+                    if (!rl.notifyPreParseServices(req, getPolicyMetadata(serviceSet)))
                         return null;
                 }
 
@@ -435,7 +385,7 @@ public class ServiceCache
                 XmlKnob xk = (XmlKnob) req.getKnob(XmlKnob.class);
 
                 if (!service.isSoap() || service.isLaxResolution()) {
-                    if (xk != null) xk.setTarariWanted(service.getPolicy().isTarariWanted());
+                    if (xk != null) xk.setTarariWanted(getPolicyMetadata(service.getPolicy()).isTarariWanted());
                     return service;
                 }
 
@@ -446,7 +396,7 @@ public class ServiceCache
                     return null;
                 } else {
                     // avoid re-Tarari-ing request that's already DOM parsed unless some assertions need it bad
-                    if (xk != null) xk.setTarariWanted(service.getPolicy().isTarariWanted());
+                    if (xk != null) xk.setTarariWanted(getPolicyMetadata(service.getPolicy()).isTarariWanted());
                     Result services = soapOperationResolver.resolve(req, serviceSet);
                     if (services.getMatches().isEmpty()) {
                         auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_OPERATION_MISMATCH, service.getName(), service.getId());
@@ -465,12 +415,48 @@ public class ServiceCache
         }
     }
 
+    private Set<PolicyMetadata> getPolicyMetadata( final Set<PublishedService> services ) {
+        Set<PolicyMetadata> metadata = new LinkedHashSet<PolicyMetadata>();
+
+        for ( PublishedService service : services ) {
+            metadata.add( getPolicyMetadata( service.getPolicy() ) );              
+        }
+
+        return metadata;
+    }
+
+    /**
+     * User should hold lock.
+     */
+    private PolicyMetadata getPolicyMetadata( final Policy policy ) {
+        PolicyMetadata metadata = null;
+        ServerPolicyHandle sph = null;
+        try {
+            sph = policyCache.getServerPolicy( policy );
+            if ( sph != null ) {
+                metadata = sph.getPolicyMetadata();
+            }
+        } finally {
+            ResourceUtils.closeQuietly( sph );
+        }
+
+        if ( metadata == null ) {
+            // use defaults
+            metadata = new PolicyMetadata() {
+                public boolean isTarariWanted() { return false; }
+                public boolean isWssInPolicy() { return false; }
+            };
+        }
+
+        return metadata;
+    }
+
     /**
      * adds or update a service to the cache. this should be called when the cache is initially populated and
      * when a service is saved or updated locally
      * @throws ServerPolicyException if a server assertion contructor for this service threw an exception
      */
-    public void cache(PublishedService service) throws InterruptedException, ServerPolicyException {
+    public void cache(PublishedService service) throws ServerPolicyException {
         rwlock.writeLock().lock();
         try {
             cacheNoLock(service);
@@ -481,8 +467,7 @@ public class ServiceCache
     }
 
     /**
-     * Caller must hold locks protecting {@link #services} and {@link #serverPolicies}
-     * @throws ServerPolicyException if a server policy tree can't be created for this service
+     * Caller must hold lock protecting {@link #services}
      */
     private void cacheNoLock(PublishedService publishedService) throws ServerPolicyException {
         boolean update = false;
@@ -512,57 +497,22 @@ public class ServiceCache
             }
             logger.finest("added service " + service.getName() + " in cache. oid=" + service.getOid());
         }
-        ServerAssertion serverRootAssertion;
-        try {
-            // cache the service
-            PublishedService oldService = services.put(key, service);
-            if (oldService != service) {
-                final ServerPolicyHandle handle = serverPolicies.get(key);
-                if (handle != null) {
-                    TimerTask runnable = new TimerTask() {
-                        public void run() {
-                            handle.close();
-                        }
-                    };
-                    Background.scheduleOneShot(runnable, 0);
-                }
-            }
-            // cache the server policy for this service
-            try {
-                final Policy policy = service.getPolicy();
-                if (policy == null) throw new ServerPolicyException(null, "Service #" + service.getOid() + " (" + service.getName() + ") has no policy");
-                policy.forceRecompile();
-                policyCache.update(policy);
-                serverRootAssertion = policyCache.getServerPolicy(policy);
-                servicesThatAreUnlicensed.remove(service.getOid());
-            } catch (final LicenseException e) {
-                serverRootAssertion = new AbstractServerAssertion<UnknownAssertion>(new UnknownAssertion()) {
-                    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException {
-                        throw new PolicyAssertionException(getAssertion(), "Assertion not available: " + ExceptionUtils.getMessage(e));
-                    }
-                };
-                servicesThatAreUnlicensed.add(service.getOid());
-            }
-            if (serverRootAssertion != null) {
-                serverPolicies.put(key, new ServerPolicy(serverRootAssertion).ref());
-            } else {
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_BAD_POLICY_FORMAT, service.getName(), service.getId());
-                service.setDisabled(true);
-            }
-        } catch (IOException e) {
-            // Note, this exception does not passthrough on purpose. Please see bugzilla 958 if you have any issue
-            // with this.
-            auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_BAD_POLICY, service.getName(), service.getId());
-            service.setDisabled(true);
-        }
+
+        // cache the service
+        services.put(key, service);
+
+        // cache the server policy for this service
+        final Policy policy = service.getPolicy();
+        if (policy == null) throw new ServerPolicyException(null, "Service #" + service.getOid() + " (" + service.getName() + ") has no policy");
+        policyCache.update(policy);
     }
 
     /**
      * removes a service from the cache
      *
-     * @param service
+     * @param service The service to remove from the cache
      */
-    public void removeFromCache(PublishedService service) throws InterruptedException {
+    public void removeFromCache(PublishedService service) {
         rwlock.writeLock().lock();
         try {
             removeNoLock(service);
@@ -572,13 +522,49 @@ public class ServiceCache
         }
     }
 
+    private ServerPolicyHandle getServerPolicyForService(final PublishedService service) {
+        return policyCache.getServerPolicy( service.getPolicy() );
+    }
+
+    private void handleInvalidPolicy( final PublishedService publishedService,
+                                      final Long policyId,
+                                      final Exception exception ) {
+        PublishedService service = publishedService;
+
+        if ( service == null ) {
+            service = getCachedServiceByPolicy( policyId );    
+        }
+
+        // if it is not cached then it will be disabled later
+        if ( service != null && !service.isDisabled() ) {
+            if ( exception instanceof ServerPolicyInstantiationException ) {
+                auditor.logAndAudit( MessageProcessingMessages.SERVICE_CACHE_BAD_POLICY_FORMAT, service.getName(), service.getId() );
+                service.setDisabled(true);
+            } else {
+                auditor.logAndAudit( MessageProcessingMessages.SERVICE_CACHE_BAD_POLICY, service.getName(), service.getId() );
+                auditor.logAndAudit( MessageProcessingMessages.SERVICE_CACHE_DISABLING_SERVICE, service.getId(), service.getName() );
+                service.setDisabled(true);
+            }
+        }
+    }
+
+    private void handleValidPolicy( final Policy policy  ) {
+        PublishedService service = getCachedServiceByPolicy( policy.getOid() );
+
+        // if it is not cached then it will be disabled later
+        if ( service != null && service.isDisabled() ) {
+            auditor.logAndAudit( MessageProcessingMessages.SERVICE_CACHE_ENABLING_SERVICE, service.getName(), service.getId() );
+            service.setDisabled(false);
+        }
+    }
+
     /**
-     * Caller must hold locks protecting {@link #services}, {@link #serverPolicies} and {@link #serviceStatistics}.
+     * Caller must hold a lock protecting {@link #services} and {@link #serviceStatistics}.
      */
     private void removeNoLock(PublishedService service) {
         Long key = service.getOid();
         services.remove(key);
-        serverPolicies.remove(key);
+        policyCache.remove( service.getPolicy().getOid() );
         serviceStatistics.remove(key);
         for (ServiceResolver resolver : notifyResolvers) {
             resolver.serviceDeleted(service);
@@ -590,7 +576,7 @@ public class ServiceCache
     /**
      * gets a service from the cache
      */
-    public PublishedService getCachedService(long oid) throws InterruptedException {
+    public PublishedService getCachedService(long oid) {
         PublishedService out = null;
         rwlock.readLock().lock();
         try {
@@ -601,7 +587,26 @@ public class ServiceCache
         return out;
     }
 
-    public boolean hasCatchAllService() throws InterruptedException {
+    /**
+     * gets a service from the cache
+     */
+    public PublishedService getCachedServiceByPolicy(long policyOid) {
+        PublishedService out = null;
+        rwlock.readLock().lock();
+        try {
+            for ( PublishedService service : services.values() ) {
+                if ( service.getPolicy().getOid() == policyOid ) {
+                    out = service;
+                    break;
+                }
+            }
+        } finally {
+            rwlock.readLock().unlock();
+        }
+        return out;
+    }
+
+    public boolean hasCatchAllService() {
         rwlock.readLock().lock();
         try {
             return hasCatchAllService;
@@ -613,7 +618,7 @@ public class ServiceCache
     /**
      * get all current service stats
      */
-    public Collection<ServiceStatistics> getAllServiceStatistics() throws InterruptedException {
+    public Collection<ServiceStatistics> getAllServiceStatistics() {
         rwlock.readLock().lock();
         try {
             Collection<ServiceStatistics> output = new ArrayList<ServiceStatistics>();
@@ -628,7 +633,7 @@ public class ServiceCache
      * get statistics for cached service.
      * those stats are lazyly created
      */
-    public ServiceStatistics getServiceStatistics(long serviceOid) throws InterruptedException {
+    public ServiceStatistics getServiceStatistics(long serviceOid) {
         ServiceStatistics stats;
         Lock read = null;
         Lock write = null;
@@ -739,12 +744,13 @@ public class ServiceCache
                         }
                         if (toUpdateOrAdd != null) {
                             final Long oid = toUpdateOrAdd.getOid();
+                            final String newVersionUID = policyCache.getUniquePolicyVersionIdentifer( toUpdateOrAdd.getPolicy().getOid() );
                             try {
-                                final Integer throwingVersion = servicesThatAreThrowing.get(oid);
-                                if (throwingVersion == null || throwingVersion != toUpdateOrAdd.getVersion())
+                                final String throwingVersion = servicesThatAreThrowing.get(oid);
+                                if (throwingVersion == null || !throwingVersion.equals( newVersionUID ))
                                 {
                                     // Try to cache it again
-                                    cacheNoLock(toUpdateOrAdd);
+                                    cacheNoLock( new PublishedService( toUpdateOrAdd ) );
                                     if (throwingVersion != null) {
                                         logger.log(Level.INFO, "Policy for service #" + oid + " is no longer invalid");
                                         servicesThatAreThrowing.remove(oid);
@@ -752,7 +758,7 @@ public class ServiceCache
                                 }
                             } catch (ServerPolicyException e) {
                                 logger.log(Level.WARNING, "Policy for service #" + oid + " is invalid: " + ExceptionUtils.getMessage(e), e);
-                                servicesThatAreThrowing.put(oid, toUpdateOrAdd.getVersion());
+                                servicesThatAreThrowing.put(oid, newVersionUID);
                             }
                         } // otherwise, next integrity check shall delete this service from cache
                     }

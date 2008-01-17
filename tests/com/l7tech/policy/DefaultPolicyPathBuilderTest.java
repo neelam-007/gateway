@@ -24,6 +24,7 @@ import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.ReadOnlyEntityManager;
+import com.l7tech.objectmodel.PolicyHeader;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -44,7 +45,7 @@ import org.springframework.context.ApplicationContext;
  */
 public class DefaultPolicyPathBuilderTest extends TestCase {
     private ApplicationContext spring;
-    private ReadOnlyEntityManager<Policy, EntityHeader> policyFinder;
+    private ReadOnlyEntityManager<Policy, PolicyHeader> policyFinder;
 
     public DefaultPolicyPathBuilderTest(String name) {
         super(name);
@@ -73,13 +74,13 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
     }
 
     private DefaultPolicyPathBuilder getPathBuilder() {
-        return new DefaultPolicyPathBuilder((ReadOnlyEntityManager<Policy, EntityHeader>) spring.getBean("policyManager"));
+        return new DefaultPolicyPathBuilder((ReadOnlyEntityManager<Policy, PolicyHeader>) spring.getBean("policyManager"));
     }
 
     @Override
     protected void setUp() throws Exception {
         this.spring = ApplicationContexts.getTestApplicationContext();
-        this.policyFinder = (ReadOnlyEntityManager<Policy, EntityHeader>) spring.getBean("policyManager");
+        this.policyFinder = (ReadOnlyEntityManager<Policy, PolicyHeader>) spring.getBean("policyManager");
     }
 
     public void testAllAssertionSingleDepthWithConjunctionOr() throws Exception {

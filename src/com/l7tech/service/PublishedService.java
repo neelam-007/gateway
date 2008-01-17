@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
  *
  * @author alex
  */
+@SuppressWarnings( { "NonJaxWsWebServices" } )
 public class PublishedService extends NamedEntityImp {
     //private static final long serialVersionUID = 8711916262379377867L;
     private static final Logger logger = Logger.getLogger(PublishedService.class.getName());
@@ -46,6 +47,25 @@ public class PublishedService extends NamedEntityImp {
     public PublishedService() {
         setVersion(1);
         policy = new Policy(PolicyType.PRIVATE_SERVICE, null, null, false);
+    }
+
+    /**
+     * Create a PublishedService that is a copy of the given PublishedService.
+     *
+     * <p>This will copy the identity of the orginal, if you don't want
+     * this you will need to reset the id and version (and the id and version
+     * of the policy).</p>
+     */
+    public PublishedService( final PublishedService objToCopy ) {
+        super(objToCopy);
+        setDisabled(objToCopy.isDisabled());
+        setHttpMethods(objToCopy.getHttpMethods());
+        setLaxResolution(objToCopy.isLaxResolution());
+        setPolicy(new Policy(objToCopy.getPolicy()));
+        setRoutingUri(objToCopy.getRoutingUri());
+        setSoap(objToCopy.isSoap());
+        _wsdlUrl = objToCopy._wsdlUrl;
+        setWsdlXml(objToCopy.getWsdlXml());
     }
 
     /**
@@ -204,27 +224,9 @@ public class PublishedService extends NamedEntityImp {
         return _serviceUrl;
     }
 
-
+    @Override
     public String toString() {
         return _name;
-    }
-
-    /**
-     * allows to set all properties from another object
-     * the version is not copied and should be copied manually when needed
-     *
-     * @param objToCopy
-     */
-    public void copyFrom(PublishedService objToCopy) throws IOException {
-        setName(objToCopy.getName());
-        setPolicy(objToCopy.getPolicy());
-        setSoap(objToCopy.isSoap());
-        setLaxResolution(objToCopy.isLaxResolution());
-        setWsdlUrl(objToCopy.getWsdlUrl());
-        setWsdlXml(objToCopy.getWsdlXml());
-        setDisabled(objToCopy.isDisabled());
-        setRoutingUri(objToCopy.getRoutingUri());
-        setHttpMethods(objToCopy.getHttpMethods());
     }
 
     public Policy getPolicy() {
@@ -243,6 +245,8 @@ public class PublishedService extends NamedEntityImp {
         _disabled = disabled;
     }
 
+    @SuppressWarnings( { "RedundantIfStatement" } )
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof PublishedService)) return false;
@@ -255,6 +259,7 @@ public class PublishedService extends NamedEntityImp {
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result;
         result = (_wsdlUrl != null ? _wsdlUrl.hashCode() : 0);
@@ -326,6 +331,7 @@ public class PublishedService extends NamedEntityImp {
      * @deprecated for persistence use only; do not call this.
      * @return comma-separated list of HTTP method names like "GET,POST,PUT,DELETE", or null.
      */
+    @Deprecated
     public String getHttpMethodNames() {
         return httpMethodNames;
     }
@@ -336,6 +342,7 @@ public class PublishedService extends NamedEntityImp {
      * @deprecated for persistence use only; do not call this.
      * @param httpMethodNames comma-separated list of HTTP method names like "GET,POST,PUT,DELETE", or null.
      */
+    @Deprecated
     public void setHttpMethodNames(String httpMethodNames) {
         if (httpMethodNames == null) httpMethodNames = METHODNAMES_SOAP;
         this.httpMethodNames = httpMethodNames;
@@ -417,7 +424,7 @@ public class PublishedService extends NamedEntityImp {
             }
         }
 
-        return multipart.booleanValue();
+        return multipart;
     }
 
     public boolean isLaxResolution() {

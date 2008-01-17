@@ -75,6 +75,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         try {
             //noinspection unchecked
             UT puser = (UT)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria findByLogin = session.createCriteria(getImpClass());
                     findByLogin.add(Restrictions.eq("login", login));
@@ -107,6 +108,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         try {
             //noinspection unchecked
             return (Collection<IdentityHeader>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria search = session.createCriteria(getImpClass());
                     String s = searchString.replace('*', '%').replace('?', '_');
@@ -133,10 +135,17 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         return identityProvider.getConfig().getOid();
     }
 
+    @Secured(operation=OperationType.DELETE)
+    @Override
+    public void delete( long oid ) throws DeleteException, FindException {
+        findAndDelete( oid );
+    }
+
     /**
      * Must be called in a transaction!
      */
     @Secured(operation=OperationType.DELETE)
+    @Override
     public void delete(UT user) throws DeleteException {
         UT userImp = cast(user);
         try {
@@ -216,6 +225,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     }
 
     @Secured(operation=OperationType.CREATE)
+    @Override
     public long save(UT entity) throws SaveException {
         String id = save(entity, null);
         return Long.parseLong(id);
@@ -251,6 +261,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     }
 
     @Secured(operation=OperationType.UPDATE)
+    @Override
     public void update(UT user) throws UpdateException {
         update(user, null);
     }
@@ -302,6 +313,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         this.clientCertManager = clientCertManager;
     }
 
+    @Override
     public EntityType getEntityType() {
         return EntityType.USER;
     }
@@ -317,6 +329,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
      *
      * @throws Exception if initialization fails
      */
+    @Override
     protected void initDao() throws Exception {
         super.initDao();
         if (clientCertManager == null) {

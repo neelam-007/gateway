@@ -1,6 +1,7 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.TooManyChildElementsException;
 import com.l7tech.policy.assertion.Assertion;
 import org.w3c.dom.Document;
@@ -133,7 +134,7 @@ public class WspReader {
             WspWriter.setCurrent(wspWriter);
             return parse(root, visitor);
         } catch (Exception e) {
-            throw new InvalidPolicyStreamException("Unable to parse policy", e);
+            throw new InvalidPolicyStreamException("Unable to parse policy: " + ExceptionUtils.getMessage( e ), e);
         } finally {
             WspWriter.setCurrent(null);
         }

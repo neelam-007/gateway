@@ -280,7 +280,6 @@
     <!-- server side service manager -->
     <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp" parent="hibernateBean">
         <constructor-arg ref="roleManager"/>
-        <constructor-arg ref="policyCache"/>
         <constructor-arg ref="resolutionManager"/>
     </bean>
 
@@ -784,6 +783,7 @@
     </bean>
 
     <bean id="policyCache" class="com.l7tech.server.policy.PolicyCacheImpl">
+        <constructor-arg ref="transactionManager"/>
         <constructor-arg ref="policyFactory"/>
         <property name="policyManager" ref="policyManager"/>
     </bean>

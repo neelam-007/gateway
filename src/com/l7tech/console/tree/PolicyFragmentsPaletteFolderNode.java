@@ -10,13 +10,12 @@ import com.l7tech.common.util.Resolver;
 import com.l7tech.console.tree.policy.IncludeAssertionPaletteNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.PolicyHeader;
 
 import javax.swing.*;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.DefaultTreeModel;
-import java.util.Collection;
 import java.util.Vector;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,16 +60,16 @@ public class PolicyFragmentsPaletteFolderNode extends AbstractPaletteFolderNode 
     protected void loadChildren() {
         try {
             Vector<IncludeAssertionPaletteNode> kids = new Vector<IncludeAssertionPaletteNode>();
-            List<EntityHeader> headers = new ArrayList<EntityHeader>(Registry.getDefault().getPolicyAdmin().findPolicyHeadersByType(PolicyType.INCLUDE_FRAGMENT));
-            Resolver<EntityHeader, String> resolver = new Resolver<EntityHeader, String>(){
-                public String resolve( EntityHeader key ) {
-                    return key.getName();
+            List<PolicyHeader> headers = new ArrayList<PolicyHeader>(Registry.getDefault().getPolicyAdmin().findPolicyHeadersByType(PolicyType.INCLUDE_FRAGMENT));
+            Resolver<PolicyHeader, String> resolver = new Resolver<PolicyHeader, String>(){
+                public String resolve( PolicyHeader key ) {
+                    return key.getName().toLowerCase();
                 }
             };
             //noinspection unchecked
-            Comparator<EntityHeader> comp = new ResolvingComparator(resolver, false);
+            Comparator<PolicyHeader> comp = new ResolvingComparator(resolver, false);
             Collections.sort( headers, comp );
-            for (EntityHeader header : headers) {
+            for ( PolicyHeader header : headers) {
                 kids.add(new IncludeAssertionPaletteNode(header));
             }
             children = kids;

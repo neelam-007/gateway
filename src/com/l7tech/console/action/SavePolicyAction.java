@@ -6,8 +6,8 @@ package com.l7tech.console.action;
 import com.l7tech.common.policy.CircularPolicyException;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyCheckpointState;
-import com.l7tech.common.policy.PolicyVersion;
 import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.PolicyEntityNode;
@@ -17,6 +17,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspWriter;
@@ -114,31 +115,21 @@ public class SavePolicyAction extends PolicyNodeAction {
             if (policyNode == null) {
                 throw new IllegalArgumentException("No edited policy or service specified");
             }
-            final long newVersionOrdinal;
-            final boolean activationState;
+            final long policyOid;
             if (policyNode instanceof ServiceNode) {
                 final PublishedService svc = ((ServiceNode) policyNode).getPublishedService();
                 name = svc.getName();
-                if (activateAsWell) {
-                    // TODO remove this branch and just call updatePolicyXml() as soon as the Gateway is fixed to notice
-                    // policy changes that occur without going through ServiceAdminImpl.
-                    svc.getPolicy().setXml(xml);
-                    Registry.getDefault().getServiceManager().savePublishedService(svc);
-                    PolicyVersion policyVersion = Registry.getDefault().getPolicyAdmin().findActivePolicyVersionForPolicy(svc.getPolicy().getOid());
-                    newVersionOrdinal = policyVersion == null ? 0 : policyVersion.getOrdinal();
-                    activationState = policyVersion == null ? false : policyVersion.isActive();
-                } else {
-                    PolicyCheckpointState checkpointState = updatePolicyXml(svc.getPolicy().getOid(), xml, activateAsWell);
-                    newVersionOrdinal = checkpointState.getPolicyVersionOrdinal();
-                    activationState = checkpointState.isPolicyVersionActive();
-                }
+                policyOid = svc.getPolicy().getOid();
             } else {
                 Policy policy = policyNode.getPolicy();
                 name = policy.getName();
-                PolicyCheckpointState checkpointState = updatePolicyXml(policy.getOid(), xml, activateAsWell);
-                newVersionOrdinal = checkpointState.getPolicyVersionOrdinal();
-                activationState = checkpointState.isPolicyVersionActive();
+                policyOid = policy.getOid();
             }
+
+            PolicyCheckpointState checkpointState = updatePolicyXml(policyOid, xml, activateAsWell);
+            final long newVersionOrdinal = checkpointState.getPolicyVersionOrdinal();
+            final boolean activationState = checkpointState.isPolicyVersionActive();
+
             policyNode.clearCachedEntities();
 
             WorkSpacePanel workspace = TopComponents.getInstance().getCurrentWorkspace();
@@ -148,12 +139,16 @@ public class SavePolicyAction extends PolicyNodeAction {
                 pep.setOverrideVersionActive(activationState);
                 pep.updateHeadings();
             }
-        } catch ( CircularPolicyException cpe) {
-            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                  "Unable to save the policy '" + name + "'.\n" +
-                  "The policy contains an include that causes circularity.",
-                  "Policy include circularity",
-                  JOptionPane.ERROR_MESSAGE);                
+        } catch ( ObjectModelException ome) {
+            if ( ExceptionUtils.causedBy( ome, CircularPolicyException.class )) {
+                JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                      "Unable to save the policy '" + name + "'.\n" +
+                      "The policy contains an include that causes circularity.",
+                      "Policy include circularity",
+                      JOptionPane.ERROR_MESSAGE);
+            } else {
+                throw new RuntimeException("Error saving service and policy", ome);                
+            }
         } catch (Exception e) {
             throw new RuntimeException("Error saving service and policy",e);
         }
