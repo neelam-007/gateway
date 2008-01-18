@@ -226,4 +226,36 @@ public class Policy extends NamedEntityImp {
         sb.append("name=\"").append(_name == null ? "" : _name).append("\"/>");
         return sb.toString();
     }
+
+    /**
+     * Recursively simplify the given assertion.
+     *
+     * <p>This will simplify the given assertion in a manner that is compatible
+     * with the constraints of a policy (such as root must be an All).</p>
+     *
+     * <p>This method is only for full polcies, so the given assertion must not
+     * have a parent.</p>
+     *
+     * @param assertion The assertion to simplify (must not be null)
+     * @return The simplified assertion (which is always the given assertion)
+     * @throws IllegalArgumentException if the given assertion has a parent
+     * @see Assertion#simplify(Assertion,boolean) Assertion.simplify
+     */
+    public static Assertion simplify( final Assertion assertion ) {
+        if (assertion == null) throw new IllegalArgumentException("assertion must not be null");
+        if (!(assertion instanceof AllAssertion)) throw new IllegalArgumentException("assertion must be AllAssertion");
+        if (assertion.getParent() != null) throw new IllegalArgumentException("assertion has a parent");
+
+        Assertion simplified = Assertion.simplify( assertion, true );
+        if ( simplified != assertion ) {
+            // then we may need to re-add to the root
+            if ( simplified.getParent() != assertion ) {
+                AllAssertion policyRoot = (AllAssertion) assertion;
+                policyRoot.clearChildren();
+                policyRoot.addChild( simplified );
+            }
+        }
+
+        return assertion;
+    }
 }

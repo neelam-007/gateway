@@ -2,6 +2,7 @@ package com.l7tech.server.policy;
 
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.message.HttpServletRequestKnob;
@@ -230,7 +231,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                         public synchronized Assertion getPolicy() throws PolicyAssertionException {
                             if (inlinedIncludesPolicy == null) {
                                 try {
-                                    inlinedIncludesPolicy = Assertion.simplify(policyPathBuilder.inlineIncludes(servicePolicy, null), true);
+                                    inlinedIncludesPolicy = Policy.simplify(policyPathBuilder.inlineIncludes(servicePolicy, null));
                                 } catch (InterruptedException e) {
                                     throw new RuntimeException(e); // Not possible on server side (hopefully)
                                 }
