@@ -16,21 +16,25 @@ public class ManageLogSinksAction extends SecureAction {
     static final Logger log = Logger.getLogger(ManageSsgConnectorsAction.class.getName());
 
     public ManageLogSinksAction() {
-        super(new AttemptedAnyOperation(EntityType.LOG_SINK));
+        super(new AttemptedAnyOperation(EntityType.LOG_SINK), UI_MANAGE_LOG_SINKS);
     }
 
+    @Override
     public String getName() {
         return "Manage Log Sinks";
     }
 
+    @Override
     public String getDescription() {
         return "View and manage log sinks";
     }
 
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/interface.gif";
     }
 
+    @Override
     protected void performAction() {
         LogSinkManagerWindow lsmw = new LogSinkManagerWindow(TopComponents.getInstance().getTopParent());
         lsmw.pack();
