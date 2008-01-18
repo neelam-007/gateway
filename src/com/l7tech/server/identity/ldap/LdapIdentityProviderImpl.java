@@ -493,6 +493,7 @@ public class LdapIdentityProviderImpl
             env.put(Context.PROVIDER_URL, ldapurl);
             env.put("com.sun.jndi.ldap.connect.pool", "true");
             env.put("com.sun.jndi.ldap.connect.timeout", Integer.toString(LDAP_CONNECT_TIMEOUT));
+            env.put("com.sun.jndi.ldap.read.timeout", Integer.toString(LDAP_READ_TIMEOUT));
             env.put("com.sun.jndi.ldap.connect.pool.timeout", Integer.toString(LDAP_POOL_IDLE_TIMEOUT));
             env.put( Context.REFERRAL, "follow" );
             String dn = config.getBindDN();

@@ -44,10 +44,14 @@ public final class LdapUtils {
     }
 
     public static DirContext getLdapContext(String url) throws NamingException {
-        return getLdapContext(url, null, null, 5, 30);
+        return getLdapContext(url, null, null, 5000, 30000);
     }
 
     public static DirContext getLdapContext(String url, String login, String pass, int connectTimeout, int poolTimeout) throws NamingException {
+        return getLdapContext(url, login, pass, connectTimeout, poolTimeout, connectTimeout);
+    }
+
+    public static DirContext getLdapContext(String url, String login, String pass, int connectTimeout, int poolTimeout, int readTimeout) throws NamingException {
         LdapURL lurl = new LdapURL(url);
         UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
         env.put("java.naming.ldap.version", "3");
@@ -55,6 +59,7 @@ public final class LdapUtils {
         env.put(Context.PROVIDER_URL, url);
         env.put("com.sun.jndi.ldap.connect.pool", "true");
         env.put("com.sun.jndi.ldap.connect.timeout", Integer.toString(connectTimeout));
+        env.put("com.sun.jndi.ldap.read.timeout", Integer.toString(readTimeout));
         env.put("com.sun.jndi.ldap.connect.pool.timeout", Integer.toString(poolTimeout));
         env.put( Context.REFERRAL, "follow" );
 
