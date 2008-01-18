@@ -7,10 +7,14 @@ import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.TarariCompiledStylesheet;
 import org.apache.xalan.templates.ElemVariable;
 import org.apache.xalan.templates.StylesheetRoot;
+import org.xml.sax.InputSource;
+import org.w3c.dom.Document;
 
 import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.transform.*;
-import javax.xml.transform.stream.StreamSource;
+import javax.xml.transform.dom.DOMSource;
 import java.io.StringReader;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -58,8 +62,10 @@ public class StylesheetCompiler {
                 public void error(TransformerException exception) throws TransformerException { }
                 public void fatalError(TransformerException exception) throws TransformerException { fatals.add(exception); }
             });
-            StreamSource xsltsource = new StreamSource(new StringReader(thing));
-            Templates result = transfactory.newTemplates(xsltsource);
+            DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            db.setEntityResolver(XmlUtil.getXss4jEntityResolver());
+            Document document = db.parse(new InputSource(new StringReader(thing)));
+            Templates result = transfactory.newTemplates(new DOMSource(document));
             if (result == null) {
                 if (!fatals.isEmpty()) {
                     TransformerException te = fatals.iterator().next();
@@ -69,6 +75,8 @@ public class StylesheetCompiler {
             }
             return result;
         } catch (TransformerConfigurationException e) {
+            throw (ParseException)new ParseException(ExceptionUtils.getMessage(e), 0).initCause(e);
+        } catch (Exception e) {
             throw (ParseException)new ParseException(ExceptionUtils.getMessage(e), 0).initCause(e);
         }
     }

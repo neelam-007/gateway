@@ -8,6 +8,7 @@ package com.l7tech.common.xml.tarari;
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions;
+import com.l7tech.common.util.XmlUtil;
 import com.tarari.xml.XmlParseException;
 import com.tarari.xml.XmlResult;
 import com.tarari.xml.XmlSource;
@@ -33,7 +34,7 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
     private final Stylesheet master;
 
     // Empty XSLT document
-    private static final byte[] EMPTY_XSL;
+    private static final byte[] EMPTY_XSL_BYTES;
     static {
         byte[] bytes = null;
         try {
@@ -42,11 +43,11 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
             // Will never happen
         }
 
-        EMPTY_XSL = bytes;
+        EMPTY_XSL_BYTES = bytes;
     }
     private static final UriResolver NON_FETCHING_URI_RESOLVER = new UriResolver() {
         public XmlSource resolveUri(String s, String s1) throws java.io.IOException {
-            return new XmlSource(s, EMPTY_XSL);
+            return new XmlSource(s, EMPTY_XSL_BYTES);
         }
     };
 
@@ -60,6 +61,7 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
     public static StylesheetParser getStylesheetParser() {
         StylesheetParser stylesheetParser = new StylesheetParser();
         stylesheetParser.setUriResolver(NON_FETCHING_URI_RESOLVER);
+        stylesheetParser.setEntityResolver(XmlUtil.getXss4jEntityResolver());
 
         return stylesheetParser;
     }
