@@ -22,6 +22,8 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.validator.DefaultPolicyValidator.DeferredValidate;
@@ -78,6 +80,8 @@ class PathValidator {
     private Map<String, Boolean> seenSamlSecurity = new HashMap<String, Boolean>();
     private Map<String, Boolean> seenVariables = new HashMap<String, Boolean>();
     private boolean seenSpecificUserAssertion = false;
+    private boolean seenMemberOfGroupAssertion = false;
+    private boolean seenAuthenticationAssertion = false;
     private boolean seenCustomAuth = false;
     private final AssertionLicense assertionLicense;
 
@@ -257,7 +261,6 @@ class PathValidator {
                 }
             }
 
-
             if (seenCustomAuth) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "You already have an access control Custom " +
                   "Assertion in this path.", null));
@@ -286,7 +289,11 @@ class PathValidator {
         }
 
         if (seenSpecificUserAssertion && isSpecificUser(a)) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "Uncommon use of multiple identities in the same path.", null));
+            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "Uncommon use of multiple user identities in the same path.", null));
+        } else if (seenMemberOfGroupAssertion && isMemberOfGroup(a)) {
+            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "Uncommon use of multiple group identities in the same path.", null));
+        } else if (seenAuthenticationAssertion && isAuthenticationAssertion(a)) {
+            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "Uncommon use of multiple authentication assertions in the same path.", null));
         }
 
         if (seenCustomAuth) {
@@ -297,6 +304,10 @@ class PathValidator {
         seenAccessControl = true;
         if (isSpecificUser(a)) {
             seenSpecificUserAssertion = true;
+        } else if (isMemberOfGroup(a)) {
+            seenMemberOfGroupAssertion = true;
+        } else if (isAuthenticationAssertion(a)) {
+            seenAuthenticationAssertion = true;
         }
     }
 
@@ -680,6 +691,14 @@ class PathValidator {
 
     private boolean isSpecificUser(Assertion a) {
         return a instanceof SpecificUser;
+    }
+
+    private boolean isMemberOfGroup(Assertion a) {
+        return a instanceof MemberOfGroup;
+    }
+
+    private boolean isAuthenticationAssertion(Assertion a) {
+        return a instanceof AuthenticationAssertion;
     }
 
     private boolean normallyBeforeRouting(Assertion a) {
