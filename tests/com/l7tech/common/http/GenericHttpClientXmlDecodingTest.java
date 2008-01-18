@@ -5,12 +5,49 @@ import junit.framework.TestCase;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.Arrays;
+import java.io.InputStream;
+import java.io.ByteArrayInputStream;
+
+import com.l7tech.common.mime.ContentTypeHeader;
 
 /**
  * Tests the code that guesses the character encoding of XML files that are retrieved through
  * HTTP.
  */
 public class GenericHttpClientXmlDecodingTest  extends TestCase {
+    private static class MockHttpResponse extends GenericHttpResponse {
+        private ByteArrayInputStream inputStream = null;
+        private ContentTypeHeader contentTypeHeader = null;
+
+        public MockHttpResponse(byte[] bytes, ContentTypeHeader contentTypeHeader) {
+            inputStream = new ByteArrayInputStream(bytes);
+            this.contentTypeHeader = contentTypeHeader;
+        }
+
+        public InputStream getInputStream() {
+            return inputStream;
+        }
+
+        public int getStatus() {
+            return 200;
+        }
+
+        public HttpHeaders getHeaders() {
+            return null;
+        }
+
+        public void close() {
+        }
+
+        public Long getContentLength() {
+            return new Long(inputStream.available());
+        }
+
+        public ContentTypeHeader getContentType() {
+            return contentTypeHeader;
+        }
+    }
+
     private static final String XML_MESSAGE = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n" +
                                               "<test_document>\n" +
                                               "    <test_element myattribute=\"value\">Text</test_element>\n" +
@@ -30,6 +67,10 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
+
+        ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue("text/xml; charset=UTF-8");
+        MockHttpResponse response = new MockHttpResponse(messageBytes, contentTypeHeader);
+        assertEquals(message, response.getAsString(true));
     }
 
     public void testUTF32BEWithoutBOM() throws Exception {
@@ -42,6 +83,10 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
+
+        ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue("text/xml; charset=UTF-8");
+        MockHttpResponse response = new MockHttpResponse(messageBytes, contentTypeHeader);
+        assertEquals(message, response.getAsString(true));
     }
 
     public void testUTF32LEWithBOM() throws Exception {
@@ -53,6 +98,10 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
+
+        ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue("text/xml; charset=UTF-8");
+        MockHttpResponse response = new MockHttpResponse(messageBytes, contentTypeHeader);
+        assertEquals(message, response.getAsString(true));
     }
 
     public void testUTF16LEWithBOM() throws Exception {
@@ -64,6 +113,10 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
+
+        ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue("text/xml; charset=UTF-8");
+        MockHttpResponse response = new MockHttpResponse(messageBytes, contentTypeHeader);
+        assertEquals(message, response.getAsString(true));
     }
 
     public void testUTF16BEWithBOM() throws Exception {
@@ -79,6 +132,10 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
+
+        ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue("text/xml; charset=UTF-8");
+        MockHttpResponse response = new MockHttpResponse(messageBytes, contentTypeHeader);
+        assertEquals(message, response.getAsString(true));
     }
 
     public void testUTF8WithBOM() throws Exception {
@@ -95,6 +152,10 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
+
+        ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue("text/xml; charset=UTF-8");
+        MockHttpResponse response = new MockHttpResponse(messageBytes, contentTypeHeader);
+        assertEquals(message, response.getAsString(true));
     }
 
     public void testUTF32LEWithoutBOM() throws Exception {
@@ -107,6 +168,10 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
+
+        ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue("text/xml; charset=UTF-8");
+        MockHttpResponse response = new MockHttpResponse(messageBytes, contentTypeHeader);
+        assertEquals(message, response.getAsString(true));
     }
 
     public void testUTF16LEWithoutBOM() throws Exception {
@@ -119,6 +184,10 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
+
+        ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue("text/xml; charset=UTF-8");
+        MockHttpResponse response = new MockHttpResponse(messageBytes, contentTypeHeader);
+        assertEquals(message, response.getAsString(true));
     }
 
     public void testUTF16BEWithoutBOM() throws Exception {
@@ -130,6 +199,10 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
+
+        ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue("text/xml; charset=UTF-8");
+        MockHttpResponse response = new MockHttpResponse(messageBytes, contentTypeHeader);
+        assertEquals(message, response.getAsString(true));
     }
 
     public void testUTF8WithoutBOM() throws Exception {
@@ -141,6 +214,10 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
+
+        ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue("text/xml; charset=UTF-8");
+        MockHttpResponse response = new MockHttpResponse(messageBytes, contentTypeHeader);
+        assertEquals(message, response.getAsString(true));
     }
 
     public void testCp1047() throws Exception {
@@ -152,6 +229,10 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
+
+        ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue("text/xml; charset=UTF-8");
+        MockHttpResponse response = new MockHttpResponse(messageBytes, contentTypeHeader);
+        assertEquals(message, response.getAsString(true));
     }
 
     public void testISO_8859_1() throws Exception {
@@ -163,5 +244,9 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
 
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
+
+        ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue("text/xml; charset=UTF-8");
+        MockHttpResponse response = new MockHttpResponse(messageBytes, contentTypeHeader);
+        assertEquals(message, response.getAsString(true));
     }
 }
