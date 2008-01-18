@@ -8,7 +8,7 @@ package com.l7tech.server.policy;
 public interface PolicyMetadata {
 
     /**
-     * Does at least one assertion in the policy strongly prefer to use Tarari
+     * Does at least one assertion in the policy strongly prefer to use Tarari?
      *
      * <p>As opposed to use of a pre-parsed DOM tree. </p>
      *
@@ -17,11 +17,21 @@ public interface PolicyMetadata {
     boolean isTarariWanted();
 
     /**
-     * Does this policy contain a WSS assertion.
+     * Does this policy contain a WSS assertion?
      *
      * <p>If this is the case, then DOM would likely be better than using Tarari.</p>
      *
      * @return true if there is WSS in the policy.
      */
     boolean isWssInPolicy();
+
+    /**
+     * Does at least one assertion in the policy permit multipart data?
+     *
+     * <p>This can be used to determine if a request should be processed by a
+     * particular policy.</p>
+     *
+     * @return true if the policy processes multipart.
+     */
+    boolean isMultipart();
 }

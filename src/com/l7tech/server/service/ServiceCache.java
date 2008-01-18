@@ -445,6 +445,7 @@ public class ServiceCache
             metadata = new PolicyMetadata() {
                 public boolean isTarariWanted() { return false; }
                 public boolean isWssInPolicy() { return false; }
+                public boolean isMultipart() { return false; }
             };
         }
 

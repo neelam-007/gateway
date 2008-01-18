@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import com.l7tech.policy.assertion.annotation.ProcessesResponse;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
+import com.l7tech.policy.assertion.annotation.ProcessesMultipart;
 import com.l7tech.common.util.ClassUtils;
 
 import java.io.Serializable;
@@ -120,6 +121,7 @@ public abstract class Assertion implements Cloneable, Serializable {
      * Properly clone this Assertion.  The clone will have its parent set to null.
      * @noinspection CloneDoesntDeclareCloneNotSupportedException
      */
+    @Override
     public Object clone() {
         final Assertion clone;
         try {
@@ -218,6 +220,7 @@ public abstract class Assertion implements Cloneable, Serializable {
         return b.toString();
     }
 
+    @Override
     public String toString() {
         String fullClass = getClass().getName();
         return fullClass.substring(fullClass.lastIndexOf('.') + 1);
@@ -481,6 +484,10 @@ public abstract class Assertion implements Cloneable, Serializable {
         return hasAnnotation(assertion, HardwareAccelerated.class);
     }
 
+    public static boolean isMultipart(Assertion assertion) {
+        return hasAnnotation(assertion, ProcessesMultipart.class);
+    }
+
     public static boolean isWSSecurity(Assertion assertion) {
         boolean isWss = false;
 
@@ -556,6 +563,7 @@ public abstract class Assertion implements Cloneable, Serializable {
      * policy or service), not just its properties.  Otherwise, for example, it would be impossible to store a set
      * of child assertions that contains two XSLT assertions that implement the same transformation.
      */
+    @Override
     public final boolean equals(Object obj) {
         return super.equals(obj);
     }
@@ -566,6 +574,7 @@ public abstract class Assertion implements Cloneable, Serializable {
      * policy or service), not just its properties.  Otherwise, for example, it would be impossible to store a set
      * of child assertions that contains two XSLT assertions that implement the same transformation.
      */
+    @Override
     public final int hashCode() {
         return super.hashCode();
     }

@@ -10,8 +10,6 @@ import com.l7tech.common.policy.PolicyType;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.MimeMultipartAssertion;
 import org.xml.sax.InputSource;
 
 import javax.wsdl.Port;
@@ -391,36 +389,28 @@ public class PublishedService extends NamedEntityImp {
     /**
      * Does this service allow / process multipart data.
      *
-     * <p>Note that calling this method will cause the WSDL and Policy objects to
-     * be constructed.</p>
+     * <p>Note that calling this method will cause the WSDL to be parsed.</p>
      *
-     * @return true if multipart data is allowed
+     * <p>This value is a hint, and may be overridden if the services policy
+     * permits multipart data.</p>
+     *
+     * @return true if multipart data is expected
      * @see #parsedWsdl
      */
     public boolean isMultipart() throws ServiceException {
         if (multipart == null) {
             try {
                 Wsdl wsdl = parsedWsdl();
-                Assertion assertion = policy.getAssertion();
 
                 if (!isSoap()) {
                     multipart = Boolean.TRUE;
                 } else if (wsdl != null && wsdl.hasMultipartOperations()) {
-                    multipart = Boolean.TRUE;
-                } else if (assertion != null && Assertion.contains(assertion, MimeMultipartAssertion.class)) {
-                    // TODO what about included policies?
-                    // TODO what about included policies?
-                    // TODO what about included policies?
-                    // TODO what about included policies?
-                    // TODO what about included policies?
                     multipart = Boolean.TRUE;
                 } else {
                     multipart = Boolean.FALSE;
                 }
             } catch(WSDLException we) {
                 throw new ServiceException("Cannot determine multipart flag, could not process WSDL.", we);
-            } catch(IOException ioe) {
-                throw new ServiceException("Cannot determine multipart flag, could not process Policy.", ioe);
             }
         }
 

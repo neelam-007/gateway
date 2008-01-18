@@ -845,6 +845,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     private PolicyMetadata collectMetadata( final Assertion rootAssertion, final Set<Long> usedPolicyOids ) {
         boolean tarariWanted = false;
         boolean wssInPolicy = false;
+        boolean multipartInPolicy = false;
         Iterator i = rootAssertion.preorderIterator();
         while( i.hasNext() ) {
             Assertion ass = (Assertion) i.next();
@@ -852,10 +853,12 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                 tarariWanted = true;
             } else if( Assertion.isRequest( ass ) && Assertion.isWSSecurity( ass ) ) {
                 wssInPolicy = true;
+            } else if ( Assertion.isMultipart( ass ) ) {
+                multipartInPolicy = true;
             }
         }
 
-        if( !( tarariWanted && wssInPolicy ) ) {
+        if( !( tarariWanted && wssInPolicy && multipartInPolicy ) ) {
             // need to check included policies also (which must have been cached before calling)
             for( Long usedPolicyOid : usedPolicyOids ) {
                 PolicyCacheEntry entry = cacheGet( usedPolicyOid );
@@ -863,12 +866,14 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                     PolicyMetadata metadata = entry.handle.getPolicyMetadata();
                     tarariWanted = tarariWanted || metadata.isTarariWanted();
                     wssInPolicy = wssInPolicy || metadata.isWssInPolicy();
+                    multipartInPolicy = multipartInPolicy || metadata.isMultipart();
                 }
             }
         }
 
         final boolean metaTarariWanted = tarariWanted;
         final boolean metaWssInPolicy = wssInPolicy;
+        final boolean metaMultipartInPolicy = multipartInPolicy;
         return new PolicyMetadata() {
             public boolean isTarariWanted() {
                 return metaTarariWanted;
@@ -876,6 +881,10 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
 
             public boolean isWssInPolicy() {
                 return metaWssInPolicy;
+            }
+
+            public boolean isMultipart() {
+                return metaMultipartInPolicy;
             }
         };
     }
@@ -966,12 +975,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
                 @Override
                 protected void doInTransactionWithoutResult( final TransactionStatus status ) {
-                    try {
-                        callback.call();
-                    } catch (Throwable t) {
-                        //TOOD [steve] remove
-                        logger.log( Level.WARNING, "Error running in transaction", t );
-                    }
+                    callback.call();
                 }
             });
         } else {

@@ -257,18 +257,18 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 }
             }
 
-            // Check request data
-            if (context.getRequest().getMimeKnob().isMultipart() &&
-                !service.isMultipart()) {
-                auditor.logAndAudit(MessageProcessingMessages.MULTIPART_NOT_ALLOWED);
-                status = AssertionStatus.BAD_REQUEST;
-                return AssertionStatus.BAD_REQUEST;
-            }
-
             // Get the server policy
             serverPolicy = serviceCache.getServerPolicy(service.getOid());
             if (serverPolicy == null) {
                 throw new ServiceResolutionException("service is resolved but the corresponding policy is invalid");
+            }
+
+            // Check request data
+            if (context.getRequest().getMimeKnob().isMultipart() &&
+                !(service.isMultipart() || serverPolicy.getPolicyMetadata().isMultipart())) {
+                auditor.logAndAudit(MessageProcessingMessages.MULTIPART_NOT_ALLOWED);
+                status = AssertionStatus.BAD_REQUEST;
+                return AssertionStatus.BAD_REQUEST;
             }
 
             // Run the policy
