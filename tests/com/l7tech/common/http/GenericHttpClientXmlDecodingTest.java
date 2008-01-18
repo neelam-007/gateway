@@ -153,4 +153,15 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
         assertEquals(message, decodedMessage);
     }
+
+    public void testISO_8859_1() throws Exception {
+        String message = getMessageWithEncoding("ISO-8859-1");
+        byte[] messageBytes = message.getBytes("ISO-8859-1");
+
+        GenericHttpResponse.GuessedEncodingResult guessedEncodingResult = GenericHttpResponse.getXmlEncoding(messageBytes);
+        assertEquals("ISO-8859-1", guessedEncodingResult.encoding);
+
+        String decodedMessage = new String(messageBytes, guessedEncodingResult.bytesToSkip, messageBytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
+        assertEquals(message, decodedMessage);
+    }
 }
