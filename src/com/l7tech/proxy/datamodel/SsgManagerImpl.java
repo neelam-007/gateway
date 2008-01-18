@@ -1,11 +1,15 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.util.FileUtils;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 
 import java.beans.XMLEncoder;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileLock;
 import java.util.Iterator;
 
 /**
@@ -15,6 +19,12 @@ import java.util.Iterator;
  * Time: 1:51:56 PM
  */
 public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
+    protected static final File LOCK_FILE = new File(STORE_DIR + File.separator + "confdir.lck");
+
+    private Thread shutdownHook = null;
+    private RandomAccessFile lockRaf = null;
+    private FileLock lock = null;
+
     private static class SsgManagerHolder {
         private static final SsgManagerImpl ssgManager = new SsgManagerImpl();
     }
@@ -35,7 +45,7 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
 
     /**
      * Save our SSG state to disk.  Caller is responsible for ensuring that only one process will be
-     * calling this method at any given time.
+     * calling this method at any given time; see {@link #lockConfiguration} for a way to do this.
      */
     public synchronized void save() throws IOException {
         FileUtils.saveFileSafely(STORE_PATH, new FileUtils.Saver() {
@@ -121,10 +131,77 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
         rebuildHostCache();
     }
 
+    /** Exception throws if the configuration directory is already locked by some other SsgManagerImpl instance. */
+    public static class ConfigurationAlreadyLockedException extends Exception {
+        public ConfigurationAlreadyLockedException(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * Attempt to obtain write ownership of the Bridge ssgs.xml file.
+     * If the lock was successful this method returns.  It fails with an exception if another process
+     * has locked the configuration or if there is an IOException while trying to obtain a lock.
+     * <p/>
+     * If the configuration is already owned by this SsgManagerImpl instance this method succeeds immediately.
+     * <p/>
+     * This lock is advisory, but is respected by other users of SsgManagerImpl that call lockConfiguration().
+     * <p/>
+     * The configuration can still be read by SsgFinder instances, including other SsgManagerImpl instances
+     * that don't try to lock the configuration.
+     * <p/>
+     * A shutdown hook will be registered that calls {@link #releaseConfiguration()} during JVM shutdown
+     * if it hasn't already been called by then.
+     *
+     * @throws ConfigurationAlreadyLockedException  if write ownership of the ssgs.xml file is already claimed by some
+     *                                              other SsgManagerImpl instance
+     * @throws IOException if there is some other problem creating or locking the lock file
+     */
+    public synchronized void lockConfiguration() throws ConfigurationAlreadyLockedException, IOException {
+        if (lock != null) return; // already locked by us
+
+        boolean gotLock = false;
+        try {
+            //noinspection IOResourceOpenedButNotSafelyClosed
+            lockRaf = new RandomAccessFile(LOCK_FILE, "rw");
+            //noinspection ChannelOpenedButNotSafelyClosed
+            lock = lockRaf.getChannel().tryLock();
+            if (lock == null) throw new ConfigurationAlreadyLockedException("configuration directory is already in use");  
+
+            shutdownHook = new Thread() {
+                public void run() {
+                    shutdownHook = null; // avoid illegal call to removeShutdownHook() during shutdown process
+                    releaseConfiguration();
+                }
+            };
+            Runtime.getRuntime().addShutdownHook(shutdownHook);
+
+            gotLock = true;
+        } finally {
+            if (!gotLock) releaseConfiguration();
+        }
+    }
+
+    /**
+     * Relinquish write ownership of the Bridge ssgs.xml file.
+     * This method always succeeds.
+     */
+    public synchronized void releaseConfiguration() {
+        if (shutdownHook != null)
+            Runtime.getRuntime().removeShutdownHook(shutdownHook);
+        shutdownHook = null;
+        if (lock != null)
+            LOCK_FILE.delete();  // delete before releasing lock to avoid race condition.  hopefully this'll work on windows too
+        ResourceUtils.closeQuietly(lock);
+        lock = null;
+        ResourceUtils.closeQuietly(lockRaf);
+        lockRaf = null;
+    }
+
+
     /**
      * Find the lowest unused ID number.
-     * This doesn't really belong in the FinderImpl -- it belongs in the subclasses -- but our load()
-     * method needs to update nextId while loading so we're stuck with it up here.
+     * @return the lowest unused Ssg ID.
      */
     protected synchronized long nextId() {
         if (!init)

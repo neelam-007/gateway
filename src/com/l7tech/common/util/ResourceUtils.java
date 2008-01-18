@@ -1,9 +1,10 @@
 package com.l7tech.common.util;
 
 import javax.naming.Context;
-import javax.naming.NamingException;
 import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
 import java.io.IOException;
+import java.nio.channels.FileLock;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -132,6 +133,18 @@ public final class ResourceUtils {
             logger.log(Level.INFO, "JNDI error when closing JNDI NamingEnumeration.", e);
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unexpected error when closing JNDI NamingEnumeration", e);
+        }
+    }
+
+    public static void closeQuietly(FileLock lock) {
+        if (lock == null) return;
+
+        try {
+            lock.release();
+        } catch (IOException e) {
+            logger.log(Level.INFO, "IO error when releasing FileLock.", e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unexpected error when releasing FileLock.", e);
         }
     }
 

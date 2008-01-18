@@ -2,14 +2,15 @@ package com.l7tech.proxy.gui;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.JdkLoggerConfigurator;
-import com.l7tech.proxy.datamodel.Managers;
-import com.l7tech.proxy.datamodel.SsgManagerImpl;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.Constants;
-
+import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.SsgManagerImpl;
 import org.mortbay.util.MultiException;
 
+import java.io.IOException;
 import java.net.BindException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,6 +73,15 @@ public final class Main extends com.l7tech.proxy.Main {
         final SsgManagerImpl ssgManager = SsgManagerImpl.getSsgManagerImpl();
         Gui.setInstance(Gui.createGui(new Gui.GuiParams(ssgManager, getBindPort(), true, hideMenus, quitLabel)));
         Managers.setCredentialManager(GuiCredentialManager.createGuiCredentialManager(ssgManager));
+        try {
+            ssgManager.lockConfiguration();
+        } catch (SsgManagerImpl.ConfigurationAlreadyLockedException e) {
+            Gui.errorMessage("Unable to start " + Constants.APP_NAME + " GUI Configuration Editor: another instance may already be running: " + ExceptionUtils.getMessage(e));
+            System.exit(2);
+        } catch (IOException e) {
+            Gui.errorMessage("Unable to Start", "Unable to start " + Constants.APP_NAME + " GUI Configuration Editor", ExceptionUtils.getMessage(e), e);
+            System.exit(2);
+        }                
 
         // Make sure the proxy stops when the GUI does.
         Gui.getInstance().setShutdownListener(new Gui.ShutdownListener() {
@@ -102,11 +112,12 @@ public final class Main extends com.l7tech.proxy.Main {
         Managers.setCredentialManager(GuiCredentialManager.createGuiCredentialManager(ssgManager));
 
         try {
+            ssgManager.lockConfiguration();
             clientProxy.start();
         } catch (Exception e) {
             String message = "Unable to start the "+ Constants.APP_NAME +": " + e;
             // Friendlier error message for starting multiple instances
-            if (e instanceof BindException ||
+            if (e instanceof BindException || e instanceof SsgManagerImpl.ConfigurationAlreadyLockedException ||
               (e instanceof MultiException && ((MultiException)e).getException(0) instanceof BindException)) {
                 message = "The SecureSpan "+ Constants.APP_NAME +" is already running.  \nPlease shut down the existing " +
                   Constants.APP_NAME + " and try again.";
