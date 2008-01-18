@@ -353,7 +353,7 @@ public class KerberosClient {
      * @return the service principal name (e.g http/gateway.l7tech.com@QAWIN2003.COM)
      * @throws KerberosException on error
      */
-    public static String getKerberosAcceptPrincipal() throws KerberosException {
+    public static String getKerberosAcceptPrincipal(final boolean initiator) throws KerberosException {
         String aPrincipal = acceptPrincipal;
         if (aPrincipal != null) {
             if (!KerberosConfig.hasKeytab()) throw new KerberosConfigException("Not configured");
@@ -371,7 +371,8 @@ public class KerberosClient {
                 String spn = KerberosConfig.getKeytabPrincipal();
 
                 final Subject kerberosSubject = new Subject();
-                LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_ACCEPT, kerberosSubject, getServerCallbackHandler(spn));
+                String contextName = initiator ? LOGIN_CONTEXT_ACCEPT_INIT : LOGIN_CONTEXT_ACCEPT;
+                LoginContext loginContext = new LoginContext(contextName, kerberosSubject, getServerCallbackHandler(spn));
                 loginContext.login();
                 aPrincipal = (String) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
                     public String run() throws Exception {
@@ -460,6 +461,7 @@ public class KerberosClient {
     private static final String LOGIN_CONTEXT_INIT = "com.l7tech.common.security.kerberos.initiate";
     private static final String LOGIN_CONTEXT_INIT_CREDS = "com.l7tech.common.security.kerberos.initiate.callback";
     private static final String LOGIN_CONTEXT_ACCEPT = "com.l7tech.common.security.kerberos.accept";
+    private static final String LOGIN_CONTEXT_ACCEPT_INIT = "com.l7tech.common.security.kerberos.acceptinit";
 
     private static final String KERBEROS_LIFETIME_PROPERTY = "com.l7tech.common.security.kerberos.lifetime";
     private static final Integer KERBEROS_LIFETIME_DEFAULT = 60 * 15; // seconds

@@ -32,7 +32,7 @@ public class KerberosAdminImpl implements KerberosAdmin {
 
     public String getPrincipal() throws KerberosException {
         try {
-            return KerberosClient.getKerberosAcceptPrincipal();
+            return KerberosClient.getKerberosAcceptPrincipal(true);
         } catch(KerberosException ke) {
             // Not really an error, since this is usually a configuration problem.
             // Note that we still throw the exception back to the caller so

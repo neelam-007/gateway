@@ -103,7 +103,7 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
             KerberosClient client = new KerberosClient();
             String spn;
             try {
-                spn = KerberosClient.getKerberosAcceptPrincipal();
+                spn = KerberosClient.getKerberosAcceptPrincipal(false);
             }
             catch(KerberosException ke) { // fallback to system property name
                 spn = KerberosClient.getGSSServiceName();

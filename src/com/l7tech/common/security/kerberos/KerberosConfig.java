@@ -147,6 +147,15 @@ class KerberosConfig {
             "    com.sun.security.auth.module.Krb5LoginModule required\n" +
             "    useKeyTab=true\n" +
             "    keyTab=\"{0}\"\n" +
+            "    isInitiator=false\n" +
+            "    storeKey=true;\n" +
+            "};\n" +
+            "\n" +
+            "// Login module for SecureSpan Gateway (initiator)\n" +
+            "com.l7tech.common.security.kerberos.acceptinit '{'\n" +
+            "    com.sun.security.auth.module.Krb5LoginModule required\n" +
+            "    useKeyTab=true\n" +
+            "    keyTab=\"{0}\"\n" +
             "    storeKey=true;\n" +
             "};\n";
 
@@ -336,7 +345,7 @@ class KerberosConfig {
                 realm = keytab.getKeyRealm();
             }
             else {
-                String principal = KerberosClient.getKerberosAcceptPrincipal();
+                String principal = KerberosClient.getKerberosAcceptPrincipal(true);
                 if (principal != null && principal.indexOf('@') > 0) {
                     realm = principal.substring(principal.indexOf('@')+1);
                 }

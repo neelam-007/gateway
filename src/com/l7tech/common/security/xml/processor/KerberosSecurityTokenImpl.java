@@ -38,7 +38,7 @@ public class KerberosSecurityTokenImpl extends SigningSecurityTokenImpl implemen
                 KerberosClient client = new KerberosClient();
                 String spn;
                 try {
-                    spn = KerberosClient.getKerberosAcceptPrincipal();
+                    spn = KerberosClient.getKerberosAcceptPrincipal(false);
                 }
                 catch(KerberosException ke) { // fallback to system property name
                     spn = KerberosClient.getGSSServiceName();

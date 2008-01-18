@@ -101,7 +101,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
                 String configSpn = requestWssKerberos.getServicePrincipalName();
                 if (configSpn == null) {
                     try {
-                        configSpn = KerberosUtils.toGssName(KerberosClient.getKerberosAcceptPrincipal());
+                        configSpn = KerberosUtils.toGssName(KerberosClient.getKerberosAcceptPrincipal(false));
                     }
                     catch(KerberosException ke) {
                         // fallback to system property name

@@ -300,7 +300,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
         // not else-if since this is also a credential source
         if (a instanceof RequestWssKerberos) {
             try {
-                KerberosClient.getKerberosAcceptPrincipal();
+                KerberosClient.getKerberosAcceptPrincipal(true);
             }
             catch(KerberosConfigException kce) {
                 r.addError(new PolicyValidatorResult.Error(a,
