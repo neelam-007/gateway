@@ -82,6 +82,7 @@ public class GatewayFeatureSets {
     public static final String UI_WSDL_CREATE_WIZARD = "ui:WsdlCreateWizard";
     public static final String UI_AUDIT_WINDOW = "ui:AuditWindow";
     public static final String UI_RBAC_ROLE_EDITOR = "ui:RbacRoleEditor";
+    public static final String UI_DASHBOARD_WINDOW = "ui:DashboardWindow";
 
     public static final String FEATURE_SIGNED_ATTACHMENTS = "feature:SignedAttachments";
 
@@ -185,6 +186,7 @@ public class GatewayFeatureSets {
         GatewayFeatureSet uiWsdlCreateWizard = ui(UI_WSDL_CREATE_WIZARD, "Enable the SSM WSDL Create Wizard");
         GatewayFeatureSet uiAuditWindow = ui(UI_AUDIT_WINDOW, "Enable the SSM Audit Window");
         GatewayFeatureSet uiRbacRoleEditor = ui(UI_RBAC_ROLE_EDITOR, "Enable the SSM RBAC Role Editor");
+        GatewayFeatureSet uiDashboardWindow = ui(UI_DASHBOARD_WINDOW, "Enable the SSM Dashboard Window");
 
         //
         // Declare "building block" feature sets
@@ -196,7 +198,8 @@ public class GatewayFeatureSets {
         GatewayFeatureSet uiAccel =
         fsr("set:UI:Accel", "SecureSpan Accelerator UI features",
             uiPublishXmlWizard,
-            uiAuditWindow);
+            uiAuditWindow,
+            uiDashboardWindow);
 
         GatewayFeatureSet uiDs =
         fsr("set:UI:Datascreen", "SecureSpan Datascreen UI features",

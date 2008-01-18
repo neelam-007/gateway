@@ -42,6 +42,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
     public static final String UI_WSDL_CREATE_WIZARD = "ui:WsdlCreateWizard";
     public static final String UI_AUDIT_WINDOW = "ui:AuditWindow";
     public static final String UI_RBAC_ROLE_EDITOR = "ui:RbacRoleEditor";
+    public static final String UI_DASHBOARD_WINDOW = "ui:DashboardWindow";
 
     /** Specify that an action requires at least one authentication assertion to be licensed. */
     public static final Collection<Class> LIC_AUTH_ASSERTIONS =

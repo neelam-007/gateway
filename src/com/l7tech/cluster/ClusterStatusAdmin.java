@@ -42,7 +42,6 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.SERVICE_USAGE, stereotype=MethodStereotype.FIND_ENTITIES)
-    @Administrative(licensed=false)
     ServiceUsage[] getServiceUsage() throws FindException;
 
     /**
@@ -138,7 +137,8 @@ public interface ClusterStatusAdmin {
 
     /**
      * set new value for the cluster-wide property. value set to null will delete the property from the table
-     * @param clusterProperty
+     *
+     * @param clusterProperty The property to save
      */
     @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.SAVE_OR_UPDATE)
     @Administrative(licensed=false)            
@@ -198,7 +198,6 @@ public interface ClusterStatusAdmin {
     /**
      * @return whether collection of service metrics is currently enabled
      */
-    @Administrative(licensed=false)
     boolean isMetricsEnabled();
 
     /**
@@ -206,7 +205,6 @@ public interface ClusterStatusAdmin {
      *
      * @return the fine bin interval in milliseconds
      */
-    @Administrative(licensed=false)
     int getMetricsFineInterval();
 
     /**

@@ -22,7 +22,7 @@ public class ShowDashboardAction extends SecureAction {
     private DashboardWindow dashboardWindow;
 
     public ShowDashboardAction() {
-        super(new AttemptedReadAny(EntityType.METRICS_BIN));
+        super(new AttemptedReadAny(EntityType.METRICS_BIN), UI_DASHBOARD_WINDOW);
     }
 
     public String getName() {
