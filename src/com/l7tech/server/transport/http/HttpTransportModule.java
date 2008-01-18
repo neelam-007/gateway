@@ -509,6 +509,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         super.onApplicationEvent(applicationEvent);
+        if (!isStarted())
+            return;
         if (applicationEvent instanceof ReadyForMessages) {
             try {
                 startInitialConnectors(true);

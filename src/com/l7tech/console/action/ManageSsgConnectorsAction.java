@@ -4,7 +4,6 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedAnyOperation;
 import com.l7tech.common.security.rbac.EntityType;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.panels.SsgConnectorManagerWindow;
 import com.l7tech.console.util.TopComponents;
 
@@ -17,7 +16,7 @@ public class ManageSsgConnectorsAction extends SecureAction {
     static final Logger log = Logger.getLogger(ManageSsgConnectorsAction.class.getName());
 
     public ManageSsgConnectorsAction() {
-        super(new AttemptedAnyOperation(EntityType.SSG_CONNECTOR));
+        super(new AttemptedAnyOperation(EntityType.SSG_CONNECTOR), "service:Admin");
     }
 
     public String getName() {

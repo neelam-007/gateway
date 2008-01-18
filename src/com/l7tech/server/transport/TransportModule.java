@@ -1,18 +1,17 @@
 package com.l7tech.server.transport;
 
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.transport.SsgConnector;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.LifecycleBean;
 import com.l7tech.server.event.EntityInvalidationEvent;
-import com.l7tech.common.LicenseManager;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.transport.SsgConnector;
+import org.springframework.context.ApplicationEvent;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.springframework.context.ApplicationEvent;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Abstract superclass for transport modules for connectors for incoming FTP, HTTP, etc.
@@ -110,6 +109,8 @@ public abstract class TransportModule extends LifecycleBean {
 
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         super.onApplicationEvent(applicationEvent);
+        if (!isStarted())
+            return;
         if (applicationEvent instanceof EntityInvalidationEvent) {
             EntityInvalidationEvent event = (EntityInvalidationEvent)applicationEvent;
             if (SsgConnector.class.equals(event.getEntityClass())) {
@@ -131,6 +132,9 @@ public abstract class TransportModule extends LifecycleBean {
                             break;
                         case EntityInvalidationEvent.DELETE:
                             removeConnector(id);
+                            break;
+                        default:
+                            logger.warning("Unrecognized entity operation: " + ops[i]);
                             break;
                         }
                     } catch (Throwable t) {
