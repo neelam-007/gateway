@@ -42,15 +42,19 @@ public class SchemaEntryManagerImpl
 
     private final Map<Long, String> systemIdsByOid = new HashMap<Long, String>();
     private SchemaManager schemaManager;
+    @SuppressWarnings( { "FieldCanBeLocal" } )
+    private ApplicationListener invalidationListener; // hold reference to prevent listener getting GC'd
 
     public SchemaEntryManagerImpl(ApplicationEventProxy applicationEventProxy) {
         if (applicationEventProxy == null) throw new NullPointerException("missing applicationEventProxy");
 
-        applicationEventProxy.addApplicationListener(new ApplicationListener() {
+        this.invalidationListener = new ApplicationListener() {
             public void onApplicationEvent(ApplicationEvent applicationEvent) {
                 doOnApplicationEvent(applicationEvent);
             }
-        });
+        };
+
+        applicationEventProxy.addApplicationListener( invalidationListener );
     }
 
     public void setSchemaManager(SchemaManager schemaManager) {
