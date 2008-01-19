@@ -255,6 +255,10 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
             throw new SaveException("Unable to save new service with existing policy, or to update existing service with new policy");
 
         long oid;
+        if (policy != null) {
+            String policyName = "policy for service " + service.getName();
+            policy.setName(policyName);
+        }
 
         try {
             if (service.getOid() > 0) {
