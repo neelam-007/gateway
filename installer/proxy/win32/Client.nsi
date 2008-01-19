@@ -175,11 +175,7 @@ Section "SecureSpan XML VPN Client" SecCopyUI
     ReadEnvStr $1 HOMEPATH
     StrCpy $2 "$0$1"
     DetailPrint "SecureSpan XML VPN Client service will run using home directory $2"
-    ; create service, this is actually using a renamed version of JavaService.exe
-    ; this version uses newer version of javaservice which supports the -description parameter
-    ; ExecWait '"$INSTDIR\SSXVCService.exe" -install "SecureSpan XML VPN Client" "$INSTDIR\jre\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Client.jar" -Duser.home="$2" -start com.l7tech.proxy.Main -out "$INSTDIR\ssxvc_out.log" -err "$INSTDIR\ssxvc_err.log" -description "Layer 7 Technologies SecureSpan XML VPN Client"' $0
-    ; this is a recompiled version from an older version which does not support the -description parameter but appears to be a l7 util instead of a sourceforge one
-    ExecWait '"$INSTDIR\SSXVCService.exe" -install "SecureSpan XML VPN Client" "$INSTDIR\jre\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Client.jar" -Duser.home="$2" -start com.l7tech.proxy.Main -out "$INSTDIR\ssxvc_out.log" -err "$INSTDIR\ssxvc_err.log"' $0
+    ExecWait '"$INSTDIR\SSXVCService.exe" -install "SecureSpan XML VPN Client" "$INSTDIR\jre\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Client.jar" -Duser.home="$2" -start com.l7tech.proxy.Main -out "$INSTDIR\ssxvc_out.log" -err "$INSTDIR\ssxvc_err.log" -description "Layer 7 Technologies SecureSpan XML VPN Client"' $0
     DetailPrint "creation of service returned with code $0"
     MessageBox MB_YESNO "Would you like to configure the SecureSpan XML VPN Client now?" IDNO endofserviceinstall
         ExecWait '"$INSTDIR\jre\bin\javaw.exe" -Dfile.encoding=UTF-8  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Dcom.l7tech.proxy.listener.maxthreads=300 -jar "$INSTDIR\Client.jar" -config -hideMenus -quitLabel Continue' $0
