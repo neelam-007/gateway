@@ -148,7 +148,7 @@ public class NewTrustedCertificateAction extends SecureAction {
                     public void run() {
 
                         try {
-                            getTrustedCertAdmin().saveCert(tc);
+                            tc.setOid(getTrustedCertAdmin().saveCert(tc));
 
                             // reload all certs from server
                             if (listener != null) {
