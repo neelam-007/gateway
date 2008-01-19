@@ -267,15 +267,16 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
             case ENTITY:
                 if (check.entity == null) throw new NullPointerException("check.entity");
                 if (!roleManager.isPermittedForEntity(user, check.entity, check.operation, null)) {
-                    throw new PermissionDeniedException(check.operation, check.entity);
+                    throw new PermissionDeniedException(check.operation, check.entity, check.otherOperationName);
                 }
                 break;
             case ID:
                 if (check.id == null) throw new NullPointerException("check.id");
                 if (check.types.length > 1) throw new IllegalStateException("Security declaration for method " + mname + " needs to check ID, but multiple EntityTypes specified");
                 Entity entity = entityFinder.find(check.types[0].getEntityClass(), check.id);
+                if (entity == null) throw new IllegalStateException("Unable to locate " + check.types[0] + " #" + check.id);
                 if (!roleManager.isPermittedForEntity(user, entity, check.operation, check.otherOperationName)) {
-                    throw new PermissionDeniedException(check.operation, entity);
+                    throw new PermissionDeniedException(check.operation, entity, check.otherOperationName);
                 }
                 break;
             case ALL:
@@ -337,7 +338,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                 Entity entity = (Entity)rv;
 
                 if (!roleManager.isPermittedForEntity(user, entity, check.operation, null))
-                    throw new PermissionDeniedException(check.operation, entity);
+                    throw new PermissionDeniedException(check.operation, entity, check.otherOperationName);
                 return rv;
             case NONE:
                 logger.log(Level.FINE, "Permitted {0} on {1} for {2}",

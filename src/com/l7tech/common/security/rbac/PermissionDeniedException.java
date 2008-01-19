@@ -4,6 +4,7 @@
 package com.l7tech.common.security.rbac;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.NamedEntity;
 
 import java.text.MessageFormat;
 
@@ -18,10 +19,6 @@ public class PermissionDeniedException extends RuntimeException {
     private final String otherOperationName;
     private final Entity entity;
     private final EntityType type;
-
-    public PermissionDeniedException(OperationType operation, Entity entity) {
-        this(operation, entity, null);
-    }
 
     public PermissionDeniedException(OperationType operation, EntityType type) {
         super(MessageFormat.format("Permission denied: {0} {1}", operation, type));
@@ -39,13 +36,22 @@ public class PermissionDeniedException extends RuntimeException {
         this.otherOperationName = null;
     }
 
-    public PermissionDeniedException(OperationType operation, Entity entity, String otherName) {
-        super(MessageFormat.format("Permission denied: {0} {1}",
-                operation == OperationType.OTHER ? otherName : operation, entity));
-        this.operation = operation;
-        this.entity = entity;
-        this.otherOperationName = otherName;
-        this.type = null;
+    public PermissionDeniedException(OperationType operation, Entity entity, String otherOperationName) {
+         super(MessageFormat.format("Permission denied: {0} {1}",
+                                   operation == OperationType.OTHER ? otherOperationName : operation,
+                                   getName(entity)));
+         this.operation = operation;
+         this.entity = entity;
+        this.otherOperationName = otherOperationName;
+         this.type = null;
+     }
+
+    private static String getName(Entity entity) {
+        if (entity instanceof NamedEntity) {
+            return ((NamedEntity)entity).getName();
+        } else {
+            return entity.getClass().getSimpleName() + " #" + entity.getId();
+        }
     }
 
     public EntityType getType() {
