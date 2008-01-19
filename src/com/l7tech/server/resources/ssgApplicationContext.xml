@@ -627,6 +627,7 @@
     </bean>
 
     <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker" depends-on="ssgBoot">
+        <property name="applicationEventProxy" ref="applicationEventProxy"/>
         <property name="entityManagers">
             <list>
                 <ref bean="schemaEntryManager"/>

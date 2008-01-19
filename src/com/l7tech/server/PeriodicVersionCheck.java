@@ -197,6 +197,33 @@ public abstract class PeriodicVersionCheck extends TimerTask {
      */
     protected void onCreate(PersistentEntity createdEntity) {}
 
+
+    /**
+     * Notify the task that the given entity update is known.
+     *
+     * <p>This can be used to prevent duplicate event notifications.</p>
+     *
+     * @param updatedOid The updated entity
+     * @param version The latest known version
+     * @return true if this notification is news to us
+     */
+    protected boolean notifyUpdate( long updatedOid, int version ) {
+        Integer previousVersion = cachedVersionMap.put( updatedOid, version );
+        return previousVersion == null || previousVersion != version;
+    }
+
+    /**
+     * Notify the task that the given entity deletion is known.
+     *
+     * <p>This can be used to prevent duplicate event notifications.</p>
+     *
+     * @param deletedOid The deleted entity
+     * @return true if this notification is news to us
+     */
+    protected boolean notifyDelete( long deletedOid ) {
+        return cachedVersionMap.remove( deletedOid ) != null;      
+    }
+
     public long getFrequency() {
         return DEFAULT_FREQUENCY;
     }

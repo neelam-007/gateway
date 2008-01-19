@@ -24,6 +24,7 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.PolicyCacheEvent;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.server.event.system.Started;
+import com.l7tech.server.event.system.PolicyReloadEvent;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -340,6 +341,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                 markDirty();
                 logAndAudit( MessageProcessingMessages.POLICY_CACHE_STORAGE_ERROR, new String[] { Long.toString(policyOid) }, fe );
             }
+            publishReload();
         } else if ( applicationEvent instanceof Started ) {
             transactionIfAvailable( new Functions.NullaryVoid() {
                 @Override
@@ -985,6 +987,10 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     
     private void publishEvent( final PolicyCacheEvent event ) {
         eventSink.publishEvent( event );
+    }
+
+    private void publishReload() {
+        eventSink.publishEvent( new PolicyReloadEvent( this ) );
     }
 
     private void trace() {

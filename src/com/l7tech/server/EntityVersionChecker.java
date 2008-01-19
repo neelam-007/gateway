@@ -9,6 +9,9 @@ import com.l7tech.server.event.admin.Created;
 import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.PersistenceEvent;
+import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.common.util.Pair;
+import com.l7tech.common.util.Functions;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -31,9 +34,27 @@ import java.util.logging.Logger;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public class EntityVersionChecker implements ApplicationContextAware, ApplicationListener, InitializingBean, DisposableBean {
+public class EntityVersionChecker implements ApplicationContextAware, InitializingBean, DisposableBean {
     
     //- PUBLIC
+
+    public EntityVersionChecker() {
+        eventListener = new ApplicationListener() {
+            public void onApplicationEvent(final ApplicationEvent applicationEvent) {
+                handleApplicationEvent(applicationEvent);
+            }
+        };
+    }
+
+    /**
+     * Set the event proxy.
+     *
+     * @param applicationEventProxy The proxy to use
+     */
+    public void setApplicationEventProxy( final ApplicationEventProxy applicationEventProxy ) {
+        if (eventProxy != null) throw new IllegalStateException("applicationEventProxy already set");
+        eventProxy = applicationEventProxy;
+    }
 
     /**
      * Set the list of managers whose entities should be checked.
@@ -81,6 +102,11 @@ public class EntityVersionChecker implements ApplicationContextAware, Applicatio
      */
     public void afterPropertiesSet() throws Exception {
         if(btt!=null) {
+            if ( eventProxy != null ) {
+                logger.fine( "Subscribing to application events." );
+                eventProxy.addApplicationListener(eventListener);
+            }
+
             if (timer == null)
                 timer = new Timer("EntityVersionChecker");
             timer.schedule(btt, interval, interval);
@@ -101,19 +127,6 @@ public class EntityVersionChecker implements ApplicationContextAware, Applicatio
     }
 
     /**
-     * Listen for and asynchronously dispatch entity admin events.
-     */
-    public void onApplicationEvent( final ApplicationEvent event ) {
-        if ( event instanceof Created ) {
-            handleAdminInvalidation((PersistenceEvent) event, new char[]{EntityInvalidationEvent.CREATE});
-        } else if ( event instanceof Updated ) {
-            handleAdminInvalidation((PersistenceEvent) event, new char[]{EntityInvalidationEvent.UPDATE});
-        } else if ( event instanceof Deleted ) {
-            handleAdminInvalidation((PersistenceEvent) event, new char[]{EntityInvalidationEvent.DELETE});
-        }
-    }
-
-    /**
      * Set the application context.
      *
      * @param applicationContext the context to use.
@@ -128,30 +141,35 @@ public class EntityVersionChecker implements ApplicationContextAware, Applicatio
 
     private static final Logger logger = Logger.getLogger(EntityVersionChecker.class.getName());
 
+    private final ApplicationListener eventListener;
     private ApplicationEventPublisher eventSink;
+    private ApplicationEventProxy eventProxy;
     private Timer timer;
     private long interval = 15 * 1000;
     private BigTimerTask btt;
 
-    private void handleAdminInvalidation(final PersistenceEvent event, char[] operation) {
+    private void handleAdminInvalidation(final PersistenceEvent event, char operation) {
         PersistentEntity entity = (PersistentEntity) event.getEntity();
-        Class<? extends Entity> typeClass = null;
+        EntityInvalidationVersionCheck checker = null;
 
         for ( EntityInvalidationVersionCheck check : btt.tasks ) {
             if ( check.isOfInterest( entity ) ) {
-                typeClass = check.entityType;
+                checker = check;
                 break;
             }
         }
 
-        if ( typeClass != null ) {
-            enqueueInvalidation( new EntityInvalidationEvent( event.getSource(), typeClass, new long[]{entity.getOid()}, operation) );
+        if ( checker != null ) {
+            enqueueInvalidation( event.getSource(), entity, operation, checker );
         }
     }
 
-    private void enqueueInvalidation( final EntityInvalidationEvent eie ) {
+    private void enqueueInvalidation( final Object source,
+                                      final PersistentEntity entity,
+                                      final char operation,
+                                      final EntityInvalidationVersionCheck checker ) {
         if ( logger.isLoggable( Level.FINE ))
-            logger.log( Level.FINE, "Queuing invalidation for entities: {0}", asList(eie.getEntityIds()) );
+            logger.log( Level.FINE, "Queuing invalidation for entity {0}", entity.getId() );
 
         DispatchingTransactionSynchronization dts = null;
 
@@ -169,7 +187,13 @@ public class EntityVersionChecker implements ApplicationContextAware, Applicatio
             TransactionSynchronizationManager.registerSynchronization( dts );
         }
 
-        dts.events.add( eie );
+        EntityInvalidationEvent eie = new EntityInvalidationEvent( source, checker.entityType, new long[]{entity.getOid()}, new char[]{operation});
+
+        dts.events.add( new Pair<EntityInvalidationEvent,Functions.Nullary<Boolean>>(eie, new Functions.Nullary<Boolean>(){
+            public Boolean call() {
+                return checker.isInvalidationRequired( entity, operation );
+            }
+        }));
     }
 
     /**
@@ -211,6 +235,19 @@ public class EntityVersionChecker implements ApplicationContextAware, Applicatio
             list.add( item );
         }
         return list;
+    }
+
+    /**
+     * Listen for and asynchronously dispatch entity admin events.
+     */
+    private void handleApplicationEvent( final ApplicationEvent event ) {
+        if ( event instanceof Created ) {
+            handleAdminInvalidation((PersistenceEvent) event, EntityInvalidationEvent.CREATE);
+        } else if ( event instanceof Updated ) {
+            handleAdminInvalidation((PersistenceEvent) event, EntityInvalidationEvent.UPDATE);
+        } else if ( event instanceof Deleted ) {
+            handleAdminInvalidation((PersistenceEvent) event, EntityInvalidationEvent.DELETE);
+        }
     }
 
     /**
@@ -265,6 +302,18 @@ public class EntityVersionChecker implements ApplicationContextAware, Applicatio
             return entityType.isInstance( entity );
         }
 
+        public boolean isInvalidationRequired( PersistentEntity entity, char operation ) {
+            boolean invalidationRequired;
+
+            if ( operation == EntityInvalidationEvent.DELETE ) {
+                invalidationRequired = notifyDelete( entity.getOid() );
+            } else {
+                invalidationRequired = notifyUpdate( entity.getOid(), entity.getVersion() );
+            }
+
+            return invalidationRequired;
+        }
+
         @Override
         public void run() {
             invalidationOids = new ArrayList<Long>();
@@ -304,7 +353,8 @@ public class EntityVersionChecker implements ApplicationContextAware, Applicatio
      * Dispatch invalidations for entity events on commit
      */
     private class DispatchingTransactionSynchronization extends TransactionSynchronizationAdapter {
-        final List<EntityInvalidationEvent> events = new ArrayList<EntityInvalidationEvent>(); 
+        final List<Pair<EntityInvalidationEvent,Functions.Nullary<Boolean>>> events
+                = new ArrayList<Pair<EntityInvalidationEvent, Functions.Nullary<Boolean>>>();
 
         @Override
         public void afterCompletion( final int status ) {
@@ -312,8 +362,13 @@ public class EntityVersionChecker implements ApplicationContextAware, Applicatio
                 timer.schedule( new TimerTask() {
                     @Override
                     public void run() {
-                        for ( EntityInvalidationEvent eie : events ) {
-                            dispatchInvalidation(eie);
+                        for ( Pair<EntityInvalidationEvent,Functions.Nullary<Boolean>> eventAndChecker : events ) {
+                            EntityInvalidationEvent eie = eventAndChecker.left;
+                            Functions.Nullary<Boolean> requiredCallback = eventAndChecker.right;
+
+                            if ( requiredCallback.call() ) {
+                                dispatchInvalidation(eie);
+                            }
                         }
                     }
                 }, 10L );

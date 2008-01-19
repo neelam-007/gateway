@@ -67,6 +67,7 @@ public class ServiceCache
     private final Map<Long, PublishedService> services = new HashMap<Long, PublishedService>();
     private final Map<Long, ServiceStatistics> serviceStatistics = new HashMap<Long, ServiceStatistics>();
     private final Map<Long, String> servicesThatAreThrowing = new HashMap<Long, String>();
+    private final Set<Long> servicesThatAreDisabled = new HashSet<Long>();
     private final Collection<Decorator<PublishedService>> decorators;
 
     private final PlatformTransactionManager transactionManager;
@@ -164,21 +165,21 @@ public class ServiceCache
             doCacheDelete((ServiceCacheEvent.Deleted) applicationEvent);
         } else if (applicationEvent instanceof PolicyCacheEvent.Invalid) {
             PolicyCacheEvent.Invalid invalidEvent = (PolicyCacheEvent.Invalid) applicationEvent;
-            final Lock read = rwlock.readLock();
-            read.lock();
+            final Lock write = rwlock.writeLock();
+            write.lock();
             try {
                 handleInvalidPolicy(null, invalidEvent.getPolicyId(), invalidEvent.getException());
             } finally {
-                read.unlock();
+                write.unlock();
             }
         } else if (applicationEvent instanceof PolicyCacheEvent.Updated) {
             PolicyCacheEvent.Updated validEvent = (PolicyCacheEvent.Updated) applicationEvent;
-            final Lock read = rwlock.readLock();
-            read.lock();
+            final Lock write = rwlock.writeLock();
+            write.lock();
             try {
                 handleValidPolicy(validEvent.getPolicy());
             } finally {
-                read.unlock();
+                write.unlock();
             }
         } else if (applicationEvent instanceof Started) {
             new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
@@ -540,11 +541,11 @@ public class ServiceCache
         if ( service != null && !service.isDisabled() ) {
             if ( exception instanceof ServerPolicyInstantiationException ) {
                 auditor.logAndAudit( MessageProcessingMessages.SERVICE_CACHE_BAD_POLICY_FORMAT, service.getName(), service.getId() );
-                service.setDisabled(true);
+                setDisabled(service, true);
             } else {
                 auditor.logAndAudit( MessageProcessingMessages.SERVICE_CACHE_BAD_POLICY, service.getName(), service.getId() );
                 auditor.logAndAudit( MessageProcessingMessages.SERVICE_CACHE_DISABLING_SERVICE, service.getId(), service.getName() );
-                service.setDisabled(true);
+                setDisabled(service, true);
             }
         }
     }
@@ -553,9 +554,28 @@ public class ServiceCache
         PublishedService service = getCachedServiceByPolicy( policy.getOid() );
 
         // if it is not cached then it will be disabled later
-        if ( service != null && service.isDisabled() ) {
+        if ( service != null && isDisabled(service) ) {
             auditor.logAndAudit( MessageProcessingMessages.SERVICE_CACHE_ENABLING_SERVICE, service.getName(), service.getId() );
-            service.setDisabled(false);
+            setDisabled(service, false);
+        }
+    }
+
+
+    /**
+     * Caller must hold lock
+     */
+    private boolean isDisabled( final PublishedService service ) {
+        return servicesThatAreDisabled.contains( service.getOid() );
+    }
+
+    /**
+     * Caller must hold lock
+     */
+    private void setDisabled( final PublishedService service, final boolean disabled ) {
+        if ( disabled ) {
+            servicesThatAreDisabled.add( service.getOid() );
+        } else {
+            servicesThatAreDisabled.remove( service.getOid() );
         }
     }
 

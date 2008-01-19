@@ -23,10 +23,23 @@ public class ApplicationEventProxy implements ApplicationListener {
     public ApplicationEventProxy() {
     }
 
+    /**
+     * Add an application listener.
+     *
+     * <p>WARNING: You must hold a reference to the listener to prevent it from
+     * being garbage collected.</p>
+     *
+     * @param listener The ApplicationListener to subscribe to events.
+     */
     public void addApplicationListener(ApplicationListener listener) {
         subscribers.put(listener, null);
     }
 
+    /**
+     * Unsubscribe from application events.
+     *
+     * @param listener The ApplicationListener to unsubscribe from events.
+     */
     public void removeApplicationListener(ApplicationListener listener) {
         subscribers.remove(listener);
     }
