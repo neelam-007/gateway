@@ -15,6 +15,7 @@ import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.CertificateCheckInfo;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
@@ -202,13 +203,13 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 catch(Exception e) {
                     logger.log(Level.WARNING, "Error publishing event", e);
                 }
-                finally {
-                    context.close();
-                }
             }
         } catch (Exception e) { // this is to avoid letting the servlet engine returning ugly html error pages.
             logger.log(Level.SEVERE, "Unexpected exception:", e);
             sendExceptionFault(context, e, servletResponse);
+        }
+        finally {
+            ResourceUtils.closeQuietly(context);
         }
     }
 
