@@ -129,7 +129,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             // New exception to conceal original stack trace from LicenseManager
             throw new ServletException(new LicenseException(e.getMessage()));
         } catch (TransportModule.ListenerException e) {
-            throw new ServletException("Published service message input is not enabled on this port", e);
+            logger.log(Level.WARNING, "Published service message input is not enabled on this port, " + hrequest.getServerPort());
+            hresponse.setStatus(500);
+            hresponse.setContentType(null);
+            hresponse.setContentLength(0);
+            hresponse.getOutputStream().close();
+            return;
         }
 
         // Initialize processing context
