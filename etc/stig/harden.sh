@@ -11,6 +11,11 @@ harden() {
 
   # GEN000460
   sed -i -e 's/\(auth  *required  *.*\/pam_tally.so deny\)=[0-9]\( no_magic_root reset\)/\1=3\2/' /etc/pam.d/system-auth
+
+  # GEN002720
+  sed -i -e '
+/-a exit,always -S unlink -S rmdir/ i\
+-a exit,always -S open -F success=0' /etc/audit.rules
 }
 
 soften() {
@@ -22,6 +27,9 @@ soften() {
 
   # GEN000460
   sed -i -e 's/\(auth  *required  *.*\/pam_tally.so deny\)=[0-9]\( no_magic_root reset\)/\1=5\2/' /etc/pam.d/system-auth
+
+  # GEN002720
+  sed -i -e '/-a exit,always -S open -F success=0/d' /etc/audit.rules
 }
 
 if [ "$1" = "-r" ]; then

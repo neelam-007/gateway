@@ -47,7 +47,7 @@ auth        required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root r
   # Give root and ssgconfig 60 days from today before their passwords must be changed
   local DAYS
   DAYS=$((`date +'%s'`/60/60/24))
-  sed -i -e "s/^\(root:[^:]*\):[^:]*:[^:]*:[^:]*:/\1:$DAYS:1:60:/' /etc/shadow
+  sed -i -e "s/^\(root:[^:]*\):[^:]*:[^:]*:[^:]*:/\1:$DAYS:1:60:/" /etc/shadow
   sed -i -e 's/^\(ssgconfig:[^:]*:[^:]*\):[^:]*:[^:]*:/\1:1:60:/' /etc/shadow
 
   # GEN000580, GEN000600, GEN000620 GEN000640
@@ -89,12 +89,9 @@ auth        required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root r
     sed -e 's/\(.*\) [0-9]\{1,\}$/"\1"/' /root/original_permissions | xargs chmod o-w
   fi
 
-  # GEN002720
+  # GEN002740
   chkconfig --level 3 auditd on
   sed -i -e 's/max_log_file = 5/max_log_file = 125/' /etc/auditd.conf
-  echo '-a exit,always -S open -F success=0' >> /etc/audit.rules
-
-  # GEN002740
   echo '-a exit,always -S unlink -S rmdir' >> /etc/audit.rules
 
   # GEN002760
