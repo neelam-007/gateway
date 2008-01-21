@@ -4,12 +4,12 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestSizeLimit;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
@@ -45,11 +45,11 @@ public class ServerRequestSizeLimit extends AbstractServerAssertion implements S
                 messlen = request.getMimeKnob().getContentLength();
             } catch(IOException e) {
                 auditor.logAndAudit(AssertionMessages.REQUEST_BODY_TOO_LARGE, null, e);
-                throw e;
+                return AssertionStatus.FALSIFIED;
             }
             if (messlen > limit) {
                 auditor.logAndAudit(AssertionMessages.REQUEST_BODY_TOO_LARGE);
-                throw new IOException("Request body size exceeds configured limit");
+                return AssertionStatus.FALSIFIED;
             }
             return AssertionStatus.NONE;
         } else {
