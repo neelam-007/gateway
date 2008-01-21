@@ -1,0 +1,164 @@
+#!/bin/sh
+#
+# Layer 7 Technologies Inc.
+#
+# SSG Pre/Seal Script
+#
+
+case "$1" in
+
+preseal)
+
+##########
+# Ensure required services are enabled on boot.
+#
+for f in mysqld ssg ssgsysconfig ssg-dbstatus tarari tcp_tune; do chkconfig $f on; chkconfig --list $f;done
+echo ""
+
+chkconfig kudzu off
+chkconfig cpuspeed off
+
+# fixme: this won't actually do anything as we've already added the latest packages to the install media.
+# Update the system with the lastest packages.
+#yum -y update
+#echo ""
+;;
+
+test)
+echo ""
+
+# Confirm Tarari firmware loads.
+#
+service tarari stop ; cpp_manager -d start
+echo ""
+
+# Run through Tarari tests.
+cpp_manager -t all
+echo ""
+echo ""
+echo ""
+
+
+##########
+# SSG Version
+#
+echo "SSG Version = $(rpm -q ssg)"
+echo ""
+
+##########
+# Tarari Serial Number
+#
+if [ -e "/usr/local/Tarari/bin/cpp_manager" ] ; then
+  echo "Tarari Card Serial Number = $(cpp_manager -t cpp_serial|grep "Serial Number"|cut -d = -f 2|cut -d ' ' -f 2)"
+else
+  echo "ERROR cpp_manager not found. ERROR"
+fi
+echo ""
+
+##########
+# Memory List
+#
+echo "Memory Total = $[$(cat /proc/meminfo |grep MemTotal|cut -d : -f 2|cut -d k -f 1)/1024] Megs"
+echo ""
+
+##########
+# Raid Array Status
+#
+# md0
+if [ "$(cat /proc/mdstat |grep md0|grep "\[0\]")" = "" ]; then
+  echo "ERROR md0 device 0 ERROR"
+  md00=error
+else
+  echo "PASS md0 device 0"
+fi
+if [ "$(cat /proc/mdstat |grep md0|grep "\[1\]")" = "" ]; then
+  echo "ERROR md0 device 1 ERROR"
+  md01=error
+else
+  echo "PASS md0 device 1"
+fi
+echo ""
+
+# md1
+if [ "$(cat /proc/mdstat |grep md1|grep "\[0\]")" = "" ]; then
+  echo "ERROR md1 device 0 ERROR"
+  md10=error
+else
+  echo "PASS md1 device 0"
+fi
+if [ "$(cat /proc/mdstat |grep md1|grep "\[1\]")" = "" ]; then
+  echo "ERROR md1 device 1 ERROR"
+  md11=error
+else
+  echo "PASS md1 device 1"
+fi
+# Check if a raid set is in recovery mode.
+if [ "$(cat /proc/mdstat |grep recovery)" != "" ]; then
+  echo "ERROR Failed Raid Device Rebuilding ERROR"
+  recovery=error
+fi
+# Exit if there are any error with the raid sets.
+if [ "$md00" = "error" ] || [ "$md01" = "error" ] || [ "$md10" = "error" ] || [ "$md11" = "error" ] || [ "$recovery" = "error" ]; then
+  echo ""
+  echo "###################"
+  echo "# RAID SET ERRORS #"
+  echo "###################"
+  exit 1
+fi
+echo ""
+
+;;
+
+seal)
+  # Stop writing to ~/.bash_history
+  export HISTSIZE=0
+
+  # remove ~/.bash_history
+  rm -f ~/.bash_history
+
+  # Delete all log files.
+  rm -f /var/log/*/*
+  rm -f /var/log/*
+  rm -f ~/ks-post.chroot
+  rm -f ~/ks-post.nochroot
+
+  # Remove any left over traces if we happened to ssh anywhere
+  rm -rf ~/.ssh
+
+  # Remove Layer7 rpms.
+  rm -rf /root/rpms
+
+  # Clear the /etc/resolv.conf file
+  echo "" > /etc/resolv.conf
+
+  # Force root to change her password every 365 days.
+  chage -M 365 root
+
+  # Force root to change her password the next time she logs in.
+  chage -d 0 root
+
+# fixme: shouldn't we enable the firstboot service and touch
+# /etc/reconfigSys to have the client go through base
+# install settings? I.e. date,country,keyboard etc.
+  # chkconfig firstboot on
+  # touch /etc/reconfigSys
+
+# fixme: kuduz redetect everything? Is there a way to force kudzu to use some sort of defaults upon detection?
+
+  # fixme: this should probably only be done pre image creation.
+  # Zero out all empty blocks on the hard drive.
+  #dd if=/dev/zero of=/tmp/0bits bs=20971520 # bs=20m
+  #rm -f /tmp/0bits
+
+  # poweroff the system and do not write the wtmp entry.
+  poweroff -d
+
+  # Delete this script.
+  rm -f /root/sealsys
+
+;;
+
+*)
+  echo $"Usage: $0 (preseal|test|seal)"
+esac
+exit 1
