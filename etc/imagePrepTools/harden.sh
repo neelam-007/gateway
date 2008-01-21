@@ -48,7 +48,7 @@ auth        required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root r
   local DAYS
   DAYS=$((`date +'%s'`/60/60/24))
   sed -i -e "s/^\(root:[^:]*\):[^:]*:[^:]*:[^:]*:/\1:$DAYS:1:60:/' /etc/shadow
-  sed -i -e 's/^\(ssgconfig:[^:]*\):[^:]*:[^:]*:[^:]*:/\1:$DAYS:1:60:/' /etc/shadow
+  sed -i -e 's/^\(ssgconfig:[^:]*:[^:]*\):[^:]*:[^:]*:/\1:1:60:/' /etc/shadow
 
   # GEN000580, GEN000600, GEN000620 GEN000640
   sed -i -e 's/PASS_MIN_LEN\t5/PASS_MIN_LEN\t9/' /etc/login.defs
