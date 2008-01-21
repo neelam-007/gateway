@@ -83,6 +83,7 @@ public class UnknownAssertion extends Assertion {
                 return unknownAssertion.getDetailMessage();
             }
         });
+        meta.putNull( AssertionMetadata.PROPERTIES_ACTION_FACTORY );
 
         return meta;
     }
