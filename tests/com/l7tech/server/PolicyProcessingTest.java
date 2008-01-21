@@ -2,14 +2,13 @@ package com.l7tech.server;
 
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.ApplicationContexts;
-import com.l7tech.common.security.JceProvider;
-import com.l7tech.server.audit.AuditContext;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.http.*;
 import com.l7tech.common.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
+import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
@@ -19,6 +18,7 @@ import com.l7tech.identity.UserBean;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.wsp.WspConstants;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.AuditContextStubInt;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -214,7 +214,7 @@ public class PolicyProcessingTest extends TestCase {
         String requestMessage2 = new String(loadResource("REQUEST_requestsizelimit_fail.xml"));
 
         processMessage("/requestsizelimit", requestMessage1,  0);
-        processMessage("/requestsizelimit", requestMessage2, -1);
+        processMessage("/requestsizelimit", requestMessage2, AssertionStatus.FALSIFIED.getNumeric());
     }
 
     /**
