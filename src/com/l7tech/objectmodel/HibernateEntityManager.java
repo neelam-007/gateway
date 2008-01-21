@@ -659,7 +659,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             return (ET) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    return session.load(impClass, oid);
+                    return session.get(impClass, oid);
                 }
             });
         } catch (Exception e) {
