@@ -1095,6 +1095,7 @@
             </classpath>
             <arg value="-note=You can change benchmark list in &lt;code>UneasyRooster/build.xml&lt;/code> Ant target &lt;code>test.perf.trend&lt;/code>."/>
             <arg value="-note=Also see &lt;a href=&quot;../regression/index.html&quot;>Regression Report&lt;/a>"/>
+            <arg value="-note=Also see &lt;a href=&quot;http://sarek.l7tech.com/mediawiki/index.php?title=Nightly_Performance_Regression#Post-implementation_Documentation&quot;>functional spec&lt;/a> on how to generate this"/>
             <arg value="-verbose"/>
             <arg value="Performance Trend Report"/>             <!-- title -->
             <arg value="${test.perf.trend.dir}"/>               <!-- outputDir -->
@@ -1123,8 +1124,9 @@
             <arg value="-alwaysEMail"/>
             <arg value="-httpDir=testperf/regression"/>
             <arg value="-note=View this page online &lt;a href=&quot;index.html&quot;>here&lt;/a>."/>
-            <arg value="-note=See also &lt;a href=&quot;../trend/index.html&quot;>Trend Report&lt;/a>."/>
             <arg value="-note=You can change threshold, benchmark list and e-mail recipients in &lt;code>UneasyRooster/build.xml&lt;/code> Ant target &lt;code>test.perf.regression&lt;/code>."/>
+            <arg value="-note=Also see &lt;a href=&quot;../trend/index.html&quot;>Trend Report&lt;/a>."/>
+            <arg value="-note=Also see &lt;a href=&quot;http://sarek.l7tech.com/mediawiki/index.php?title=Nightly_Performance_Regression#Post-implementation_Documentation&quot;>functional spec&lt;/a> on how to generate this"/>
             <arg value="-verbose"/>
             <arg value="Performance Regression Report"/>        <!-- title -->
             <arg value="${test.perf.regression.dir}"/>          <!-- outputDir -->
