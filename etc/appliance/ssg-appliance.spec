@@ -232,7 +232,7 @@ if [ "$gettys" ]; then
 	echo -n ""
 	# serial line agetty exists
 else
-	echo 	's0:2345:respawn:/sbin/agetty -L 115200 ttyS0 vt100' >> /etc/inittab
+	echo 	's0:2345:respawn:/sbin/agetty -L 9600 ttyS0 vt100' >> /etc/inittab
 	echo 	'ttyS0' >> /etc/securetty
 fi
 
