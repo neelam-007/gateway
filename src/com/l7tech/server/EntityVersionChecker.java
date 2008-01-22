@@ -148,19 +148,24 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
     private long interval = 15 * 1000;
     private BigTimerTask btt;
 
-    private void handleAdminInvalidation(final PersistenceEvent event, char operation) {
-        PersistentEntity entity = (PersistentEntity) event.getEntity();
-        EntityInvalidationVersionCheck checker = null;
+    private void handleAdminInvalidation(final PersistenceEvent event, final char operation) {
+        Entity entity = event.getEntity();
 
-        for ( EntityInvalidationVersionCheck check : btt.tasks ) {
-            if ( check.isOfInterest( entity ) ) {
-                checker = check;
-                break;
+        if ( entity instanceof PersistentEntity ) {
+            PersistentEntity persistentEntity = (PersistentEntity) entity;
+            EntityInvalidationVersionCheck checker = null;
+
+            for ( EntityInvalidationVersionCheck check : btt.tasks ) {
+                if ( check.isOfInterest( persistentEntity ) ) {
+                    checker = check;
+                    break;
+                }
             }
-        }
 
-        if ( checker != null ) {
-            enqueueInvalidation( event.getSource(), entity, operation, checker );
+            if ( checker != null ) {
+                enqueueInvalidation( event.getSource(), persistentEntity, operation, checker );
+            }
+
         }
     }
 
