@@ -294,6 +294,7 @@ public class PartitionManager {
                     OSDetector.getOSSpecificFunctions(destinationPartition.getName()).getPasswordPropertyCrypto(); 
             updateConfigInPartition(templateFiles, destinationPartition, passwordEncryptor);
             updateJavaSecurity(destinationPartition);
+            PartitionActions.fixKeystoreValues(destinationPartition, new PartitionInformation(destinationPartition.getName()));
         }
     }
 
