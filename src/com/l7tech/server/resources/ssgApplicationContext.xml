@@ -727,6 +727,7 @@
 
     <bean id="ssgConnectorManager" class="com.l7tech.server.transport.SsgConnectorManagerImpl" parent="hibernateBean">
         <constructor-arg ref="serverConfig"/>            
+        <constructor-arg ref="applicationEventProxy"/>
     </bean>
 
     <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerImpl" depends-on="gatewaySanityChecker">
@@ -808,6 +809,7 @@
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="syslogManager"/>
         <constructor-arg ref="trafficLogger"/>
+        <constructor-arg ref="applicationEventProxy"/>
     </bean>
 
     <bean id="auditLogListenerTarget" class="com.l7tech.server.log.FilteringAuditLogListener">

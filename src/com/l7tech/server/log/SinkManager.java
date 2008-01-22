@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.HibernateEntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.SyslogEvent;
 import com.l7tech.server.log.syslog.SyslogManager;
@@ -45,18 +46,26 @@ import java.nio.charset.Charset;
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class SinkManager
         extends HibernateEntityManager<SinkConfiguration, EntityHeader>
-        implements ApplicationContextAware, ApplicationListener, PropertyChangeListener {
+        implements ApplicationContextAware, PropertyChangeListener {
     //- PUBLIC
 
     public SinkManager( final ServerConfig serverConfig,
                         final SyslogManager syslogManager,
-                        final TrafficLogger trafficLogger ) {
+                        final TrafficLogger trafficLogger,
+                        final ApplicationEventProxy eventProxy ) {
         if ( serverConfig == null ) throw new IllegalArgumentException("serverConfig must not be null");
         if ( syslogManager == null ) throw new IllegalArgumentException("syslogManager must not be null");
 
         this.serverConfig = serverConfig;
         this.syslogManager = syslogManager;
         this.trafficLogger = trafficLogger;
+        this.applicationListener = new ApplicationListener() {
+            public void onApplicationEvent( ApplicationEvent event ) {
+                handleEvent(event);
+            }
+        };
+
+        eventProxy.addApplicationListener( applicationListener );
     }
 
     /**
@@ -158,16 +167,6 @@ public class SinkManager
             this.applicationContext = applicationContext;
     }
 
-    public void onApplicationEvent(final ApplicationEvent event) {
-        if ( event instanceof EntityInvalidationEvent ) {
-            EntityInvalidationEvent evt = (EntityInvalidationEvent) event;
-
-            if ( SinkConfiguration.class.isAssignableFrom(evt.getEntityClass()) ) {
-                rebuildLogSinks();
-            }
-        }
-    }
-
     public void propertyChange(PropertyChangeEvent evt) {
         updateLogLevels( (String)evt.getOldValue(), (String)evt.getNewValue() );    
     }
@@ -211,10 +210,25 @@ public class SinkManager
 
     private final DispatchingMessageSink dispatchingSink = new DispatchingMessageSink();
     private final MessageSink publishingSink = new DelegatingMessageSink(dispatchingSink);
+    @SuppressWarnings( { "FieldCanBeLocal" } )
+    private final ApplicationListener applicationListener; // need reference to prevent listener gc
     private final ServerConfig serverConfig;
     private final SyslogManager syslogManager;
     private final TrafficLogger trafficLogger;
     private ApplicationContext applicationContext;
+
+    /**
+     * Handle application event
+     */
+    private void handleEvent(final ApplicationEvent event) {
+        if ( event instanceof EntityInvalidationEvent ) {
+            EntityInvalidationEvent evt = (EntityInvalidationEvent) event;
+
+            if ( SinkConfiguration.class.isAssignableFrom(evt.getEntityClass()) ) {
+                rebuildLogSinks();
+            }
+        }
+    }
 
     /**
      * Re-install logging handlers.

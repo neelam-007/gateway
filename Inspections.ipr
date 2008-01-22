@@ -61,6 +61,15 @@
     <option name="OPEN_IN_BROWSER" value="false" />
     <option name="OUTPUT_DIRECTORY" />
   </component>
+  <component name="FacetAutodetectingManager">
+    <autodetection-disabled>
+      <facet-type id="Spring">
+        <modules>
+          <module name="UneasyRooster" />
+        </modules>
+      </facet-type>
+    </autodetection-disabled>
+  </component>
   <component name="IdProvider" IDEtalkID="8B63BCF9794E3A813A3924901C49B2A0" />
   <component name="InspectionProjectProfileManager">
     <option name="PROJECT_PROFILE" value="Project Default" />
@@ -92,6 +101,11 @@
             <constraint name="Block" />
             <constraint name="CatchStatement" />
           </replaceConfiguration>
+          <searchConfiguration name="Transactional ApplicationListener" text="class $AnEntityManagerClass$ extends $HEM$ implements $AL$&#10;" recursive="true" caseInsensitive="true">
+            <constraint name="HEM" regexp="com.l7tech.objectmodel.HibernateEntityManager" withinHierarchy="true" />
+            <constraint name="AL" regexp="org.springframework.context.ApplicationListener" withinHierarchy="true" />
+            <constraint name="AnEntityManagerClass" />
+          </searchConfiguration>
         </inspection_tool>
         <inspection_tool class="CastToConcreteClass" level="WARNING" enabled="false" />
         <inspection_tool class="InstanceofChain" level="WARNING" enabled="false" />

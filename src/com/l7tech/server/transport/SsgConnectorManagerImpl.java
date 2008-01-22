@@ -5,6 +5,7 @@ import com.l7tech.common.transport.SsgConnector.Endpoint;
 import com.l7tech.common.util.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.partition.FirewallRules;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import org.springframework.beans.factory.InitializingBean;
@@ -21,7 +22,7 @@ import java.util.logging.Logger;
  */
 public class SsgConnectorManagerImpl
         extends HibernateEntityManager<SsgConnector, EntityHeader>
-        implements SsgConnectorManager, InitializingBean, ApplicationListener
+        implements SsgConnectorManager, InitializingBean
 {
     protected static final Logger logger = Logger.getLogger(SsgConnectorManagerImpl.class.getName());
 
@@ -32,12 +33,14 @@ public class SsgConnectorManagerImpl
                                                                                 "firewall_rules");
 
     private final ServerConfig serverConfig;
+    @SuppressWarnings( { "FieldCanBeLocal" } )
+    private final ApplicationListener applicationListener; // need reference to prevent listener gc
     private final Map<Long, SsgConnector> knownConnectors = new LinkedHashMap<Long, SsgConnector>();
     private final Map<Endpoint, SsgConnector> httpConnectorsByService = Collections.synchronizedMap(new HashMap<Endpoint, SsgConnector>());
     private final Map<Endpoint, SsgConnector> httpsConnectorsByService = Collections.synchronizedMap(new HashMap<Endpoint, SsgConnector>());
     private final File sudo;
 
-    public SsgConnectorManagerImpl(ServerConfig serverConfig) {
+    public SsgConnectorManagerImpl(ServerConfig serverConfig, ApplicationEventProxy eventProxy) {
         this.serverConfig = serverConfig;
         File sudo = null;
         try {
@@ -46,6 +49,13 @@ public class SsgConnectorManagerImpl
             /* FALLTHROUGH and do without */
         }
         this.sudo = sudo;
+        this.applicationListener = new ApplicationListener() {
+            public void onApplicationEvent( ApplicationEvent event ) {
+                handleEvent(event);
+            }
+        };
+
+        eventProxy.addApplicationListener( applicationListener );
     }
 
     public Class<? extends Entity> getImpClass() {
@@ -60,6 +70,7 @@ public class SsgConnectorManagerImpl
         return "connector";
     }
 
+    @Override
     public EntityType getEntityType() {
         return EntityType.CONNECTOR;
     }
@@ -131,6 +142,7 @@ public class SsgConnectorManagerImpl
         }
     }
 
+    @Override
     protected void initDao() throws Exception {
         super.initDao();
 
@@ -192,7 +204,7 @@ public class SsgConnectorManagerImpl
         return file.exists() && file.canExecute() ? file : null;
     }
 
-    public void onApplicationEvent(ApplicationEvent event) {
+    private void handleEvent(ApplicationEvent event) {
         if (!(event instanceof EntityInvalidationEvent))
             return;
         EntityInvalidationEvent evt = (EntityInvalidationEvent)event;
