@@ -1,8 +1,9 @@
 package com.l7tech.server;
 
 import com.l7tech.common.LicenseException;
-import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.transport.SsgConnector;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.AuthenticationException;
@@ -123,8 +124,12 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 results = authenticateRequestBasic(req);
             }
         } catch (AuthenticationException e) {
-            logger.log(Level.INFO, "Credentials do not authenticate against any of the providers, assuming anonymous");
-            results = null;
+            // Authentication failed (bug #4338)
+            logger.log(Level.INFO, "WSDL proxy request authentication failed: " + ExceptionUtils.getMessage(e), e);
+            res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            res.getOutputStream().print("Authentication failed");
+            res.flushBuffer();
+            return;
         } catch (LicenseException e) {
             logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
             res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);

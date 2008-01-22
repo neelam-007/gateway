@@ -72,8 +72,8 @@ class WsdlProxy {
      * @return the Wsdl document obtained from the Ssg.
      * @throws OperationCanceledException       if the user canceled the Logon dialog
      * @throws IOException                      if there was a network problem
-     * @throws DownloadException            if we got a status code other than 200, 401 or 404
-     * @throws DownloadException            if we got three bad password attempts in a row
+     * @throws DownloadException            if we got a status code other than 200, 401 or 404; or,
+     *                                      if we got three bad password attempts in a row
      * @throws WSDLException                    if the Ssg gave us back something other than a valid Wsdl document
      * @throws ServiceNotFoundException     if we got back a 404 from the Wsdl service
      */
@@ -99,8 +99,8 @@ class WsdlProxy {
      * @return the Wsdl document obtained from the Ssg.
      * @throws OperationCanceledException       if the user canceled the Logon dialog
      * @throws IOException                      if there was a network problem
-     * @throws DownloadException            if we got a status code other than 200, 401 or 404
-     * @throws DownloadException            if we got three bad password attempts in a row
+     * @throws DownloadException            if we got a status code other than 200, 401 or 404; or,
+     *                                      if we got three bad password attempts in a row
      * @throws SAXException                 if we got back invalid XML
      * @throws ServiceNotFoundException     if we got back a 404
      */
@@ -120,12 +120,12 @@ class WsdlProxy {
     private static Object doDownload(Ssg ssg, long serviceoid, StreamReader sr)
             throws OperationCanceledException, IOException, DownloadException,
             WSDLException, SAXException, ServiceNotFoundException, HttpChallengeRequiredException {
-        String file = SecureSpanConstants.WSDL_PROXY_FILE;
+        StringBuilder file = new StringBuilder(SecureSpanConstants.WSDL_PROXY_FILE);
         if (serviceoid != 0)
-            file += "?serviceoid=" + serviceoid;
+            file.append("?serviceoid=").append(serviceoid);
         URL url;
         try {
-            url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), file);
+            url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), file.toString());
         } catch (MalformedURLException e) {
             throw new RuntimeException(e); // can't happen
         }
@@ -151,8 +151,7 @@ class WsdlProxy {
                 status = result.getStatus();
             } catch (GenericHttpException e) {
                 error = e;
-                ServerCertificateUntrustedException scue = (ServerCertificateUntrustedException)
-                        ExceptionUtils.getCauseIfCausedBy(e, ServerCertificateUntrustedException.class);
+                ServerCertificateUntrustedException scue = ExceptionUtils.getCauseIfCausedBy(e, ServerCertificateUntrustedException.class);
                 if (scue != null) {
                     error = scue;
                     try {
@@ -176,7 +175,7 @@ class WsdlProxy {
                 return sr.readStream(new ByteArrayInputStream(result.getBytes()));
             } else if (status == 404) {
                 throw new ServiceNotFoundException("No service was found on Gateway " + ssg + " with serviceoid " + serviceoid);
-            } else if (status == 401) {
+            } else if (status == 401 || status == 403) {
                 pw = ssg.getRuntime().getCredentialManager().getNewCredentials(ssg, true);
                 // FALLTHROUGH - continue and try again with new password
             } else if (status == -1) {
