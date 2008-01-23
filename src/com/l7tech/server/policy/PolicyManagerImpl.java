@@ -83,10 +83,12 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
             throw new UpdateException("Couldn't update Policy: " + ExceptionUtils.getMessage(e), e);
         }
 
-        try {
-            roleManager.renameEntitySpecificRole(POLICY, policy, replaceRoleName);
-        } catch (FindException e) {
-            throw new UpdateException("Couldn't find Role to rename", e);
+        if ( policy.getType() != PolicyType.PRIVATE_SERVICE ) {
+            try {
+                roleManager.renameEntitySpecificRole(POLICY, policy, replaceRoleName);
+            } catch (FindException e) {
+                throw new UpdateException("Couldn't find Role to rename", e);
+            }
         }
 
         super.update(policy);
