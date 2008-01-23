@@ -8,6 +8,28 @@ popd > /dev/null
 
 . ${SSG_HOME}/etc/profile
 
+pid_exited() {
+  if [ -f "${GATEWAY_PID}" ]  && [ -d "/proc/$(< ${GATEWAY_PID})" ] ; then
+    return 1;
+  else
+    return 0;
+  fi
+}
+
+wait_for_pid() {
+  TRYCOUNT=0
+  while [ $TRYCOUNT -lt 45 ]
+  do
+    if pid_exited; then
+      return 0 
+    fi
+    TRYCOUNT=`expr $TRYCOUNT + 1`
+    sleep 1
+  done
+  # Too many tries; give up
+  return 1
+}
+
 if [ "$1" = "jpda" ] ; then
   if [ -z "$JPDA_TRANSPORT" ]; then
     JPDA_TRANSPORT="dt_socket"
@@ -65,12 +87,19 @@ elif [ "$1" = "stop" ] ; then
 
   if [ ! -z "$GATEWAY_SHUTDOWN" ]; then
     touch $GATEWAY_SHUTDOWN
-    sleep 2
+    if wait_for_pid; then
+      exit 0
+    fi
   else
     if [ $FORCE -eq 0 ]; then
       echo Shutdown failed -- must either provide GATEWAY_SHUTDOWN or use -force
       exit 21
     fi
+  fi
+
+  if [ $FORCE -eq 0 ]; then
+    echo Shutdown failed -- to forcibly terminate the process, use -force
+    exit 21
   fi
 
   if [ $FORCE -eq 1 ]; then

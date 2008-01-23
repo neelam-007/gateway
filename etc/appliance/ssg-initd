@@ -75,6 +75,11 @@ stop() {
         else
             for partition_dir in $ALL_PARTITIONS
             do
+                touch /ssg/etc/conf/partitions/${partition_dir}/SHUTDOWN.NOW
+            done
+
+            for partition_dir in $ALL_PARTITIONS
+            do
                 stop_ssg ${partition_dir}
             done
         fi

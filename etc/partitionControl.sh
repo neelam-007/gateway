@@ -114,9 +114,7 @@ control_single_partition() {
     check_enabled
     if [ $? -eq 0 ] ; then
 
-        if [ "${COMMAND}" == "stop" ] ; then
-            do_firewall
-        fi
+        do_firewall
 
         if [ "${PARTITION_NAME}"  == "default_" ] && [ -e  /usr/local/Tarari ] ; then
             ORIGINAL_JAVA_OPTS="-Dcom.l7tech.common.xml.tarari.enable=true $ORIGINAL_JAVA_OPTS"
@@ -148,6 +146,7 @@ control_single_partition() {
             (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND}") <&- &>/dev/null &
         else
             (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND}")
+            do_firewall
         fi
     fi  
 }
