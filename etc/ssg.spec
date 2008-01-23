@@ -1,4 +1,4 @@
-Summary: SecureSpan Gateway, Copyright Layer 7 Technologies 2003-2007
+Summary: SecureSpan Gateway, Copyright Layer 7 Technologies 2003-2008
 Name: ssg
 Version: 4.3
 Release: 1
