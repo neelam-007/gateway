@@ -125,7 +125,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
             }
         }
 
-        defaultHostname = selectDefault(databaseBean.getDbHostname(), defaultHostname);
+        defaultHostname = createNewDb?"localhost":selectDefault(databaseBean.getDbHostname(), defaultHostname);
         defaultDbName = selectDefault(databaseBean.getDbName(), defaultDbName);
 
         defaultDbUsername = defaults.get(DBInformation.PROP_DB_USERNAME);
@@ -138,11 +138,6 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         printText(REPLICATED_HOSTNAME_INSTRUCTIONS + getEolChar() + getEolChar());
 
         DBInformation dbInfo = new DBInfoGetter(parent.getWizardUtils(), isShowNavigation()).getDbInfo(defaultHostname, defaultDbName, defaultDbUsername, "", createNewDb);
-//        databaseBean.setDbInformation(dbInfo);
-//        databaseBean.setDbHostname(dbInfo.getHostname());
-//        databaseBean.setDbName(dbInfo.getDbName());
-//        databaseBean.setDbUsername(dbInfo.getUsername());
-//        databaseBean.setDbPassword(dbInfo.getPassword());
         getParentWizard().setDbInfo(dbInfo);
     }
 

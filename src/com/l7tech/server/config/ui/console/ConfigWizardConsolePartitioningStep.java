@@ -238,6 +238,9 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
                     PartitionManager.getInstance().removePartition(partitionToRemove.getPartitionId());
                     partitionNames = PartitionManager.getInstance().getPartitionNames();
                     printText(getEolChar() + "The selected partition has been deleted. You may continue to use the wizard to configure other partitions or exit now." + getEolChar());
+                } else {
+                    printText(getEolChar() + "there was an error while deleting the partition." + getEolChar() +
+                            "Please check the logs and correct any errors");
                 }
             }
         }
@@ -256,7 +259,9 @@ public class ConfigWizardConsolePartitioningStep extends BaseConsoleStep impleme
                     "This will remove all data in the database and cannot be undone." + getEolChar() +
                     "Are you sure you want to delete the \"" + dbInfo.getDbName() + "\" database ?","n");
 
-                if (shouldRemoveDb) {
+                if (!shouldRemoveDb) {
+                    return null;
+                } else {
                     String pUsername = dbInfo.getPrivUsername();
                     String pPassword = dbInfo.getPrivPassword();
                     if (StringUtils.isEmpty(pUsername) || pPassword == null) {

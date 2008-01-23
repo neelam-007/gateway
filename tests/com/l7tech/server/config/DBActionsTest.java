@@ -89,7 +89,7 @@ public class DBActionsTest extends TestCase {
             DBActions.DBActionsResult upgradeStatus = new DBActions.DBActionsResult();
             try {
                 upgradeStatus = dbActions.upgradeDbSchema(hostname, privUsername, privPassword, dbName+versionName,
-                        dbVersion, currentVersion);
+                        dbVersion, currentVersion, null);
                 assertEquals("Failed upgrade procedure. upgradeStatus != success [" + upgradeStatus.getErrorMessage() + "]", DBActions.DB_SUCCESS, upgradeStatus.getStatus());
                 dbVersion = dbActions.checkDbVersion(hostname, dbName+versionName, username, password);
                 assertEquals("The version of the upgraded DB is incorrect", currentVersion, dbVersion);

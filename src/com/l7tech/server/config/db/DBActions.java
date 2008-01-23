@@ -165,8 +165,13 @@ public class DBActions {
     }
 
 
-    public DBActionsResult upgradeDbSchema(String hostname, String username, String password, String databaseName, String oldVersion,
-                                           String newVersion) throws IOException {
+    public DBActionsResult upgradeDbSchema(String hostname,
+                                           String username,
+                                           String password,
+                                           String databaseName,
+                                           String oldVersion,
+                                           String newVersion,
+                                           DBActionsListener ui) throws IOException {
         DBActionsResult result = new DBActionsResult();
         File f = new File(osFunctions.getPathToDBCreateFile());
 
@@ -191,13 +196,20 @@ public class DBActions {
 
                     String[] statements = getCreateDbStatementsFromFile(upgradeInfo[1]);
 
-                    conn.setAutoCommit(false);
+//                    conn.setAutoCommit(false);
+                    int totalStatements = statements.length;
+                    int statementNum = 0;
+                    if (ui != null) ui.showSuccess("Upgrading \"" + databaseName + "\" from " + oldVersion + "->" + upgradeInfo[0] + Utilities.EOL_CHAR) ;
                     for (String statement : statements) {
+                        if ((statementNum % 10) == 0) {
+                            if (ui != null) ui.showSuccess(".");
+                        }
                         stmt.executeUpdate(statement);
                     }
+                    ui.showSuccess("completed" + Utilities.EOL_CHAR);
 
-                    conn.commit();
-                    conn.setAutoCommit(true);
+//                    conn.commit();
+//                    conn.setAutoCommit(true);
 
                     oldVersion = checkDbVersion(conn, databaseName);
                 }
@@ -446,7 +458,7 @@ public class DBActions {
         return DriverManager.getConnection(makeConnectionString(hostname, dbName), username, password);
     }
 
-    public void dropDatabase(DBInformation dbInfo, boolean isInfo, boolean doRevoke, DBActionsListener ui) {
+    public boolean dropDatabase(DBInformation dbInfo, boolean isInfo, boolean doRevoke, DBActionsListener ui) {
         String pUsername = dbInfo.getPrivUsername();
         String pPassword = dbInfo.getPrivPassword();
         if (StringUtils.isEmpty(pUsername) || pPassword == null) {
@@ -459,7 +471,7 @@ public class DBActions {
                     defaultUserName);
 
                 if (creds == null) {
-                    return;
+                    return false;
                 } else {
                     pUsername = creds.get(USERNAME_KEY);
                     pPassword = creds.get(PASSWORD_KEY);
@@ -467,40 +479,46 @@ public class DBActions {
             }
         }
 
+        boolean allIsWell = false;
         Connection conn = null;
         Statement stmt = null;
         try {
-            conn = getConnection(dbInfo.getHostname(), ADMIN_DB_NAME, pUsername, pPassword);
-        } catch (SQLException connectException) {
-            logger.severe("Failure while dropping the database. Could not connect to the admin database on the server (" + ADMIN_DB_NAME + ") as user " + pUsername + "\". Please drop the database manually.");
-        }
-
-        if (conn != null) {
+            String hostname = dbInfo.getHostname();
+            if (hostname.equalsIgnoreCase(SharedWizardInfo.getInstance().getRealHostname())) {
+                hostname = "localhost";
+            }
+            conn = getConnection(hostname, ADMIN_DB_NAME, pUsername, pPassword);
             try {
-                boolean dropSucceeded = false;
-                try {
-                    stmt = conn.createStatement();
-                    dropDatabase(stmt, dbInfo.getDbName(), isInfo);
-                    dropSucceeded = true;
-                } catch (SQLException e) {
-                    logger.severe("Failure while dropping the database: " + ExceptionUtils.getMessage(e));
-                }
+                stmt = conn.createStatement();
+                dropDatabase(stmt, dbInfo.getDbName(), isInfo);
+                allIsWell = true;
+            } catch (SQLException e) {
+                logger.severe("Failure while dropping the database: " + ExceptionUtils.getMessage(e));
+                allIsWell = false;
+            }
 
-                if (dropSucceeded && doRevoke) {
+            if (allIsWell) {
+                if (doRevoke) {
                     String [] revokeStatements = getRevokeStatements(dbInfo, osFunctions.isWindows());
                     for (String revokeStatement : revokeStatements) {
                         try {
                             stmt.executeUpdate(revokeStatement);
                         } catch (SQLException e) {
+                            logger.info("While revoking a permission for user " + dbInfo.getUsername() + " an error occurred. The privilege was not found.");
+                            logger.info("This is not a cause for concern. The database is likely an older one.");
                             //don't want to halt on errors here
                         }
                     }
                 }
-            } finally {
-                ResourceUtils.closeQuietly(stmt);
-                ResourceUtils.closeQuietly(conn);
             }
+        } catch (SQLException connectException) {
+            logger.severe("Failure while dropping the database. Could not connect to the admin database on the server (" + ADMIN_DB_NAME + ") as user " + pUsername + "\". Please drop the database manually.");
+            allIsWell = false;
+        } finally {
+            ResourceUtils.closeQuietly(stmt);
+            ResourceUtils.closeQuietly(conn);
         }
+        return allIsWell;
     } 
 
 //
@@ -837,7 +855,9 @@ Statement getCreateTablesStmt = null;
     private boolean doDbUpgrade(DBInformation dbInfo, String currentVersion, String dbVersion, DBActionsListener ui) throws IOException {
         boolean isOk = false;
 
-        DBActions.DBActionsResult testUpgradeResult = testDbUpgrade(dbInfo, dbVersion, currentVersion);
+        if (ui != null) ui.showSuccess("Testing the upgrade on a test database ... " + Utilities.EOL_CHAR);
+        
+        DBActions.DBActionsResult testUpgradeResult = testDbUpgrade(dbInfo, dbVersion, currentVersion, ui);
         if (testUpgradeResult.getStatus() != DB_SUCCESS) {
             String msg = "The database was not upgraded due to the following reasons:\n\n" + testUpgradeResult.getErrorMessage() + "\n\n" +
                     "No changes have been made to the database. Please correct the problem and try again.";
@@ -846,7 +866,7 @@ Statement getCreateTablesStmt = null;
             isOk = false;
         } else {
             logger.info("Attempting to upgrade the existing database \"" + dbInfo.getDbName()+ "\"");
-            DBActionsResult upgradeResult = upgradeDbSchema(dbInfo.getHostname(), dbInfo.getPrivUsername(), dbInfo.getPrivPassword(), dbInfo.getDbName(), dbVersion, currentVersion);
+            DBActionsResult upgradeResult = upgradeDbSchema(dbInfo.getHostname(), dbInfo.getPrivUsername(), dbInfo.getPrivPassword(), dbInfo.getDbName(), dbVersion, currentVersion,ui);
             String msg;
             switch (upgradeResult.getStatus()) {
                 case DBActions.DB_SUCCESS:
@@ -877,12 +897,15 @@ Statement getCreateTablesStmt = null;
         return isOk;
     }
 
-    private DBActionsResult testDbUpgrade(DBInformation dbInfo, String dbVersion, String currentVersion) throws IOException {
+    private DBActionsResult testDbUpgrade(DBInformation dbInfo, String dbVersion, String currentVersion, DBActionsListener ui) throws IOException {
         DBActionsResult result = new DBActionsResult();
         String testDbName = dbInfo.getDbName() + "_testUpgrade";
         try {
+            if (ui != null) ui.showSuccess("Creating the test database \"" + testDbName + "\" this could take a while ..." + Utilities.EOL_CHAR);
             copyDatabase(dbInfo, testDbName);
-            DBActionsResult upgradeResult  = upgradeDbSchema(dbInfo.getHostname(), dbInfo.getPrivUsername(), dbInfo.getPrivPassword(), testDbName, dbVersion, currentVersion);
+            if (ui != null) ui.showSuccess("The test database was created." + Utilities.EOL_CHAR);
+            if (ui != null) ui.showSuccess("Upgrading the test database. This could take a while ..." + Utilities.EOL_CHAR);
+            DBActionsResult upgradeResult  = upgradeDbSchema(dbInfo.getHostname(), dbInfo.getPrivUsername(), dbInfo.getPrivPassword(), testDbName, dbVersion, currentVersion, ui);
             if (upgradeResult.getStatus() != DB_SUCCESS) {
                 result.setStatus(DB_CANNOT_UPGRADE);
                 result.setErrorMessage(upgradeResult.getErrorMessage());

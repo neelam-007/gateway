@@ -369,8 +369,11 @@ public class PartitionActions {
 
         boolean wasDeleted = false;
         if (okToProceed) {
-            if (dbInfo != null)
-                doRemoveAssociatedDatabase(partitionToRemove, dbInfo);
+            if (dbInfo != null) {
+                if (!doRemoveAssociatedDatabase(partitionToRemove, dbInfo)) {
+                    return false;
+                }
+            }
 
             File deleteMe = new File(osFunctions.getPartitionBase() + partitionToRemove.getPartitionId());
             if (deleteMe.exists()) {
@@ -385,14 +388,16 @@ public class PartitionActions {
         return wasDeleted;
     }
 
-    private static void doRemoveAssociatedDatabase(PartitionInformation partitionToRemove, DBInformation dbInfo) {
+    private static boolean doRemoveAssociatedDatabase(PartitionInformation partitionToRemove, DBInformation dbInfo) {
+        boolean done = false;
         try {
             OSSpecificFunctions osf = partitionToRemove.getOSSpecificFunctions();
             DBActions dba = new DBActions(osf);
-            dba.dropDatabase(dbInfo, true, true, null);
+            done = dba.dropDatabase(dbInfo, true, true, null);
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return done;
     }
 
     private static int executeCommand(String[] cmdArray, File parentDir) throws IOException, InterruptedException {
