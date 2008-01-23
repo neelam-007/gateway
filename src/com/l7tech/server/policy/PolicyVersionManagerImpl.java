@@ -162,6 +162,10 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         }
     }
 
+    protected UniqueType getUniqueType() {
+        return UniqueType.NONE;
+    }
+
     private static boolean isNameEmpty(PolicyVersion policyVersion) {
         return policyVersion.getName() == null || policyVersion.getName().length() < 1;
     }
