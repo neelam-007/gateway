@@ -3,10 +3,8 @@ package com.l7tech.console.tree.policy.advice;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.WSDLOperationPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
-import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Operation;
@@ -40,14 +38,15 @@ public class AddWSDLOperationAssertionAdvice implements Advice {
 
 
         PublishedService svc = pc.getService();
-        if (!svc.isSoap()) {
-            String msg = "This assertion is not applicable to non-SOAP services.";
+        if (svc == null || !(svc.isSoap())) {
+            String msg = "This assertion is not supported by non-SOAP services or policies not attached to a WSDL.";
             JOptionPane.showMessageDialog(f, msg, "Not applicable", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         String[] operations;
         try {
+            //noinspection unchecked,ToArrayCallWithZeroLengthArrayArgument
             operations = (String[]) SoapUtil.getOperationNames(svc.parsedWsdl()).toArray(new String[0]);
         } catch (WSDLException e) {
             String msg = "Error retrieving wsdl details";
