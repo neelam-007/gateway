@@ -118,7 +118,7 @@ public class AdminLoginImpl
             if (remoteLogin) {
                 // If local, caller is responsible for generating event/session if required
                 getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON));
-                cookie = sessionManager.createSession(user);
+                cookie = sessionManager.createSession(user, null);
             }
 
             return new AdminLoginResult(user, adminContext, cookie);

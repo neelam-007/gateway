@@ -66,7 +66,7 @@ public class ManagerAppletFilter implements Filter {
     public static final String PROP_CREDS = "ManagerApplet.authenticatedCredentials";
     public static final String PROP_USER = "ManagerApplet.authenticatedUser";
     public static final String SESSION_ID_COOKIE_NAME = "sessionId";
-    public static final String DEFAULT_CODEBASE_PREFIX = "/ssg/webadmin/";
+    public static final String DEFAULT_CODEBASE_PREFIX = "/ssg/webadmin/applet/";
 
     private enum AuthResult { OK, CHALLENGED, FAIL }
 
@@ -122,6 +122,9 @@ public class ManagerAppletFilter implements Filter {
         String codebasePrefix = filterConfig.getInitParameter("codebaseprefix");
         if (codebasePrefix == null)
             codebasePrefix = DEFAULT_CODEBASE_PREFIX;
+        if (!codebasePrefix.endsWith("/")) {
+            codebasePrefix += "/";
+        }
         this.codebasePrefix = codebasePrefix;
     }
 
@@ -161,7 +164,12 @@ public class ManagerAppletFilter implements Filter {
             }
 
             if (authResult != AuthResult.OK) {
-                filterConfig.getServletContext().getNamedDispatcher("ssgLoginFormServlet").include(hreq, hresp);
+                if (isClasspathResourceRequest(hreq)) {
+                    hresp.setStatus(403);
+                    hresp.sendError(403);
+                } else {
+                    filterConfig.getServletContext().getNamedDispatcher("ssgLoginFormServlet").include(hreq, hresp);
+                }
                 return;
             }
 
@@ -255,19 +263,23 @@ public class ManagerAppletFilter implements Filter {
             if (SESSION_ID_COOKIE_NAME.equalsIgnoreCase(cookie.getName())) {
                 String sessionId = cookie.getValue();
                 if (sessionId != null && sessionId.length() > 0 && hreq.isSecure()) {
-                    Principal userObj = adminSessionManager.resumeSession(sessionId);
-                    if (userObj instanceof User) {
-                        User user = (User) userObj;
-                        LoginCredentials creds = new LoginCredentials(user.getLogin(),
-                                sessionId.toCharArray(),
-                                CredentialFormat.OPAQUETOKEN,
-                                CookieCredentialSourceAssertion.class);
-                        context.addCredentials(creds);
-                        hreq.setAttribute(PROP_CREDS, creds);
-                        hreq.setAttribute(PROP_USER, user);
-                        hreq.setAttribute(ManagerAppletFilter.SESSION_ID_COOKIE_NAME, sessionId);
-                        auditor.logAndAudit(ServiceMessages.APPLET_AUTH_COOKIE_SUCCESS, getName(user));
-                        return AuthResult.OK;
+                    Object sessionInfo = adminSessionManager.getSessionInfo(sessionId);
+                    if ((sessionInfo instanceof AdditionalSessionInfo) &&
+                            (hreq.getServerPort() == ((AdditionalSessionInfo)sessionInfo).port)) {
+                        Principal userObj = adminSessionManager.resumeSession(sessionId);
+                        if (userObj instanceof User) {
+                            User user = (User) userObj;
+                            LoginCredentials creds = new LoginCredentials(user.getLogin(),
+                                    sessionId.toCharArray(),
+                                    CredentialFormat.OPAQUETOKEN,
+                                    CookieCredentialSourceAssertion.class);
+                            context.addCredentials(creds);
+                            hreq.setAttribute(PROP_CREDS, creds);
+                            hreq.setAttribute(PROP_USER, user);
+                            hreq.setAttribute(ManagerAppletFilter.SESSION_ID_COOKIE_NAME, sessionId);
+                            auditor.logAndAudit(ServiceMessages.APPLET_AUTH_COOKIE_SUCCESS, getName(user));
+                            return AuthResult.OK;
+                        }
                     }
                 }
             }
@@ -279,7 +291,12 @@ public class ManagerAppletFilter implements Filter {
                 String username = hreq.getParameter("username");
                 String password = hreq.getParameter("password");
                 if (username == null || password == null) {
-                    filterConfig.getServletContext().getNamedDispatcher("ssgLoginFormServlet").include(hreq, hresp);
+                    if (isClasspathResourceRequest(hreq)) {
+                        hresp.setStatus(403);
+                        hresp.sendError(403);
+                    } else {
+                        filterConfig.getServletContext().getNamedDispatcher("ssgLoginFormServlet").include(hreq, hresp);
+                    }
                     return AuthResult.CHALLENGED;
                 }
 
@@ -289,7 +306,9 @@ public class ManagerAppletFilter implements Filter {
                 auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_SUCCESS, getName(user));
 
                 // Establish a new admin session for the authenticated user
-                String sessionId = adminSessionManager.createSession(user);
+                AdditionalSessionInfo sessionInfo = new AdditionalSessionInfo();
+                sessionInfo.port = hreq.getServerPort();
+                String sessionId = adminSessionManager.createSession(user, sessionInfo);
                 auditor.logAndAudit(ServiceMessages.APPLET_SESSION_CREATED, getName(user));
 
                 Cookie sessionCookie = new Cookie(ManagerAppletFilter.SESSION_ID_COOKIE_NAME, sessionId);
@@ -446,6 +465,15 @@ public class ManagerAppletFilter implements Filter {
         return handled;
     }
 
+    private boolean isClasspathResourceRequest(final HttpServletRequest hreq) {
+        String filePath = hreq.getRequestURI();
+        String contextPath = hreq.getContextPath();
+        if (filePath != null && filePath.startsWith(contextPath) && filePath.contains(codebasePrefix)) {
+            return true;
+        }
+        return false;
+    }
+
     private static final Pattern STRIPCLASS = Pattern.compile("\\/[^/]+$");
 
     private boolean handleAssertionModuleClassRequest(final HttpServletRequest hreq,
@@ -494,5 +522,13 @@ public class ManagerAppletFilter implements Filter {
             if (mod.offersPackage(packageName))
                 ret.add(mod);
         return ret;
+    }
+    
+    /**
+     * The class stores additional session information such as port, etc.
+     * If there are more additional info later on, you can add them as instance variables into the class.
+     */
+    private static class AdditionalSessionInfo {
+        private int port;
     }
 }

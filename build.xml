@@ -3741,7 +3741,8 @@
         <mkdir dir="${install.src.inf}"/>
         <mkdir dir="${install.src.inf}/ssg"/>
         <mkdir dir="${install.src.inf}/ssg/webadmin"/>
-        <mkdir dir="${install.src.inf}/ssg/webadmin/lib"/>
+        <mkdir dir="${install.src.inf}/ssg/webadmin/applet"/>
+        <mkdir dir="${install.src.inf}/ssg/webadmin/applet/lib"/>
         <mkdir dir="${install.src.inf}/ssg/webadmin/help"/>
     </target>
 
@@ -3913,13 +3914,13 @@
             <fileset dir="${src.root}/src/com/l7tech/common/resources" includes="wsil2xhtml.xml"/>
         </copy>
 
-        <copy todir="${install.src.inf}/ssg/webadmin">
+        <copy todir="${install.src.inf}/ssg/webadmin/applet">
             <fileset dir="${build.dir}" includes="Manager.jar*"/>
         </copy>
 
         <unzip src="${src.root}/webhelp/ssm/help.zip" dest="${install.src.inf}/ssg/webadmin"/>
 
-        <copy todir="${install.src.inf}/ssg/webadmin/lib">
+        <copy todir="${install.src.inf}/ssg/webadmin/applet/lib">
             <fileset dir="${build.dir}/managerlibs" includes="*" />
         </copy>
 

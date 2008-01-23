@@ -84,7 +84,8 @@ public class ManagerAppletServlet extends HttpServlet {
         OutputStream os = hresp.getOutputStream();
         PrintStream ps = new PrintStream(os);
         try {
-            String codebase = hreq.getScheme() + "://" + hreq.getServerName() + ":" + hreq.getServerPort() + "/ssg/webadmin/";
+            String codebase = hreq.getScheme() + "://" + hreq.getServerName() + ":" + hreq.getServerPort()
+                    + ManagerAppletFilter.DEFAULT_CODEBASE_PREFIX;
 
             String pageOpen = PAGE_OPEN;
             pageOpen = pageOpen.replaceAll("TITLE", hreq.getServerName());

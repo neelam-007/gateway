@@ -22,12 +22,14 @@ public class AdminSessionManager {
     private static class SessionHolder {
         private final Principal principal;
         private final String cookie;
+        private final Object sessionInfo;
         private long lastUsed;
 
-        public SessionHolder(Principal principal, String cookie) {
+        public SessionHolder(Principal principal, String cookie, Object sessionInfo) {
             this.principal = principal;
             this.cookie = cookie;
             this.lastUsed = System.currentTimeMillis();
+            this.sessionInfo = sessionInfo;
         }
 
         public Principal getPrincipal() {
@@ -44,6 +46,14 @@ public class AdminSessionManager {
 
         public void onUsed() {
             lastUsed = System.currentTimeMillis();
+        }
+
+        /**
+         * Get the session info, which contains port number, etc.
+         * @return an object of the class {@link com.l7tech.server.admin.ManagerAppletFilter.AdditionalSessionInfo}
+         */
+        public Object getSessionInfo() {
+            return sessionInfo;
         }
     }
 
@@ -79,18 +89,31 @@ public class AdminSessionManager {
      * to resume the session from now on.
      *
      * @param authenticatedUser  the principal that was successfully authenticated.  Must not be null.
+     * @param sessionInfo the additional session info such as port number, etc.
      * @return a cookie string that can be used with {@link #resumeSession} later to recover the username.  Never null or empty.
      *         Always contains at least 16 bytes of entropy.
      */
-    public synchronized String createSession(Principal authenticatedUser) {
+    public synchronized String createSession(Principal authenticatedUser, Object sessionInfo) {
         if (authenticatedUser == null) throw new NullPointerException();
 
         byte[] bytes = new byte[20];
         random.nextBytes(bytes);
         String cookie = HexUtils.encodeBase64(bytes, true);
 
-        sessionMap.put(cookie, new SessionHolder(authenticatedUser, cookie));
+        sessionMap.put(cookie, new SessionHolder(authenticatedUser, cookie, sessionInfo));
         return cookie;
+    }
+
+    /**
+     * Retrieve the additional session info for a previously-authenticated user.
+     * @param session the session ID that was originally returned from {@link #createSession}.  Must not be null or empty.
+     * @return the additional session info.  Return null if not found the given session.
+     */
+    public Object getSessionInfo(String session) {
+        if (session == null) throw new NullPointerException();
+        SessionHolder holder = (SessionHolder)sessionMap.get(session);
+        if (holder == null) return null;
+        return holder.getSessionInfo();
     }
 
     /**
