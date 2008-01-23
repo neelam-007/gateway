@@ -18,7 +18,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.system.*;
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.ApplicationObjectSupport;
@@ -39,7 +38,7 @@ import java.util.logging.Logger;
  */
 public class BootProcess
     extends ApplicationObjectSupport
-    implements DisposableBean, InitializingBean
+    implements DisposableBean
 {
     private static final Logger logger = Logger.getLogger(BootProcess.class.getName());
     private boolean wasStarted = false;
@@ -71,6 +70,14 @@ public class BootProcess
     }
 
     public void start() throws LifecycleException {
+        try {
+            initialize();
+        } catch (LifecycleException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new LifecycleException(e);
+        }
+
         initCaches();
         wasStarted = true;
         getApplicationContext().publishEvent(new Starting(this, Component.GW_SERVER, ipAddress));
@@ -168,17 +175,7 @@ public class BootProcess
     }
 
 
-    /**
-     * Invoked by a BeanFactory after it has set all bean properties supplied
-     * (and satisfied BeanFactoryAware and ApplicationContextAware).
-     * <p>This method allows the bean instance to perform initialization only
-     * possible when all bean properties have been set and to throw an
-     * exception in the event of misconfiguration.
-     *
-     * @throws Exception in the event of misconfiguration (such
-     *                   as failure to set an essential property) or if initialization fails.
-     */
-    public void afterPropertiesSet() throws Exception {
+    private void initialize() throws Exception {        
         ApplicationContext applicationContext = getApplicationContext();
 
         auditor = new Auditor(this, applicationContext, logger);
