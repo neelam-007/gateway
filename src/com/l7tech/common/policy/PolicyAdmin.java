@@ -10,6 +10,7 @@ import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.admin.Administrative;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +35,7 @@ public interface PolicyAdmin {
      */
     @Secured(stereotype=FIND_BY_PRIMARY_KEY)
     @Transactional(readOnly=true)
+    @Administrative(licensed = false)
     Policy findPolicyByPrimaryKey(long oid) throws FindException;
 
     /**
@@ -43,6 +45,7 @@ public interface PolicyAdmin {
      */
     @Secured(stereotype=FIND_ENTITIES)
     @Transactional(readOnly=true)
+    @Administrative(licensed = false)
     Collection<PolicyHeader> findPolicyHeadersByType(PolicyType type) throws FindException;
 
     /**
