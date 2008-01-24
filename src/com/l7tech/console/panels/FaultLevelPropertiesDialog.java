@@ -63,10 +63,12 @@ public class FaultLevelPropertiesDialog extends JDialog {
                         "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                         "    <soapenv:Body>\n" +
                         "        <soapenv:Fault>\n" +
-                        "            <faultcode>Server</faultcode>\n" +
+                        "            <faultcode>soapenv:Server</faultcode>\n" +
                         "            <faultstring>Assertion Falsified</faultstring>\n" +
                         "            <faultactor>http://soong:8080/xml/blub</faultactor>\n" +
-                        "            <l7:policyResult status=\"Falsified\" xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
+                        "            <detail>\n" +
+                        "               <l7:policyResult status=\"Falsified\" xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
+                        "            </detail>\n" +
                         "        </soapenv:Fault>\n" +
                         "    </soapenv:Body>\n" +
                         "</soapenv:Envelope>";
@@ -74,15 +76,17 @@ public class FaultLevelPropertiesDialog extends JDialog {
                         "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                         "    <soapenv:Body>\n" +
                         "        <soapenv:Fault>\n" +
-                        "            <faultcode>Server</faultcode>\n" +
+                        "            <faultcode>soapenv:Server</faultcode>\n" +
                         "            <faultstring>Policy Falsified</faultstring>\n" +
                         "            <faultactor>http://soong:8080/xml/blub</faultactor>\n" +
-                        "            <l7:policyResult status=\"Falsified\" xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\" xmlns:l7p=\"http://www.layer7tech.com/ws/policy\">\n" +
-                        "            \t<l7:assertionResult status=\"BAD\" assertion=\"l7p:WssUsernameToken\">\n" +
-                        "            \t    <l7:detailMessage id=\"4302\">This request did not contain any WSS level security.</l7:detailMessage>\n" +
-                        "            \t    <l7:detailMessage id=\"5204\">Request did not include an encrypted UsernameToken.</l7:detailMessage>\n" +
-                        "            \t</l7:assertionResult>\n" +
-                        "            </l7:policyResult>\n" +
+                        "            <detail>\n" +
+                        "               <l7:policyResult status=\"Falsified\" xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\" xmlns:l7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                        "               \t <l7:assertionResult status=\"BAD\" assertion=\"l7p:WssUsernameToken\">\n" +
+                        "               \t    <l7:detailMessage id=\"4302\">This request did not contain any WSS level security.</l7:detailMessage>\n" +
+                        "               \t    <l7:detailMessage id=\"5204\">Request did not include an encrypted UsernameToken.</l7:detailMessage>\n" +
+                        "               \t </l7:assertionResult>\n" +
+                        "               </l7:policyResult>\n" +
+                        "            </detail>\n" +
                         "        </soapenv:Fault>\n" +
                         "    </soapenv:Body>\n" +
                         "</soapenv:Envelope>";
@@ -90,16 +94,18 @@ public class FaultLevelPropertiesDialog extends JDialog {
                         "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                         "    <soapenv:Body>\n" +
                         "        <soapenv:Fault>\n" +
-                        "            <faultcode>Server</faultcode>\n" +
+                        "            <faultcode>soapenv:Server</faultcode>\n" +
                         "            <faultstring>Policy Falsified</faultstring>\n" +
                         "            <faultactor>http://soong:8080/xml/blub</faultactor>\n" +
-                        "            <l7:policyResult status=\"Falsified\" xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\" xmlns:l7p=\"http://www.layer7tech.com/ws/policy\">\n" +
-                        "            \t<l7:assertionResult status=\"OK\" assertion=\"l7p:RequestXpathAssertion\"/>\n" +
-                        "            \t<l7:assertionResult status=\"BAD\" assertion=\"l7p:WssUsernameToken\">\n" +
-                        "            \t    <l7:detailMessage id=\"4302\">This request did not contain any WSS level security.</l7:detailMessage>\n" +
-                        "            \t    <l7:detailMessage id=\"5204\">Request did not include an encrypted UsernameToken.</l7:detailMessage>\n" +
-                        "            \t</l7:assertionResult>\n" +
-                        "            </l7:policyResult>\n" +
+                        "            <detail>\n" +
+                        "               <l7:policyResult status=\"Falsified\" xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\" xmlns:l7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                        "               \t <l7:assertionResult status=\"OK\" assertion=\"l7p:RequestXpathAssertion\"/>\n" +
+                        "               \t <l7:assertionResult status=\"BAD\" assertion=\"l7p:WssUsernameToken\">\n" +
+                        "               \t    <l7:detailMessage id=\"4302\">This request did not contain any WSS level security.</l7:detailMessage>\n" +
+                        "               \t    <l7:detailMessage id=\"5204\">Request did not include an encrypted UsernameToken.</l7:detailMessage>\n" +
+                        "               \t </l7:assertionResult>\n" +
+                        "               </l7:policyResult>\n" +
+                        "            </detail>\n" +
                         "        </soapenv:Fault>\n" +
                         "    </soapenv:Body>\n" +
                         "</soapenv:Envelope>";
@@ -363,6 +369,7 @@ public class FaultLevelPropertiesDialog extends JDialog {
                         "            <faultcode>YOUR_FAULT_CODE</faultcode>\n" +
                         "            <faultstring>YOUR_FAULT_STRING</faultstring>\n" +
                         "            <faultactor>YOUR_FAULT_ACTOR</faultactor>\n" +
+                        "            <detail>YOUR_FAULT_DETAIL</detail>\n" +
                         "        </soapenv:Fault>\n" +
                         "    </soapenv:Body>\n" +
                         "</soapenv:Envelope>";
