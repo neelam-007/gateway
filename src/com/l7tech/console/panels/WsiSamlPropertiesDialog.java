@@ -20,7 +20,7 @@ public class WsiSamlPropertiesDialog extends JDialog {
 
     //- PUBLIC
 
-    public WsiSamlPropertiesDialog(WsiSamlAssertion assertion, Frame owner, boolean modal) throws HeadlessException {
+    public WsiSamlPropertiesDialog(WsiSamlAssertion assertion, Frame owner, boolean modal, boolean readOnly) throws HeadlessException {
         super(owner, "Configure WS-I SAML Token Profile properties", modal);
         this.wsiSamlAssertion = assertion;
 
@@ -62,6 +62,7 @@ public class WsiSamlPropertiesDialog extends JDialog {
         checkRequestMessagesCheckBox.addChangeListener(rocl);
         checkResponseMessagesCheckBox.addChangeListener(rocl);
 
+        okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 boolean requestAudit = reqAuditRadioButton.isSelected() || reqAuditFailRadioButton.isSelected();

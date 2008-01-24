@@ -25,6 +25,7 @@ public class RequestSizeLimitDialogAction extends NodeAction{
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Request Size Limit Properties";
     }
@@ -32,6 +33,7 @@ public class RequestSizeLimitDialogAction extends NodeAction{
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return "View and edit request size limit properties";
     }
@@ -39,16 +41,18 @@ public class RequestSizeLimitDialogAction extends NodeAction{
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
+    @Override
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 Frame f = TopComponents.getInstance().getTopParent();
                 final RequestSizeLimitDialog d;
-                d = new RequestSizeLimitDialog(f, (RequestSizeLimit)node.asAssertion(), true);
+                d = new RequestSizeLimitDialog(f, (RequestSizeLimit)node.asAssertion(), true, !node.canEdit());
                 d.pack();
                 Utilities.centerOnScreen(d);
                 //d.addPolicyListener(listener);

@@ -8,13 +8,13 @@ import java.util.ResourceBundle;
 import javax.swing.*;
 
 import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
-import com.l7tech.console.panels.AssertionPropertiesEditor;
+import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.common.gui.util.Utilities;
 
 /**
  * Properties dialog for WS-Addressing assertion.
  */
-public class WsAddressingPropertiesDialog extends JDialog  implements AssertionPropertiesEditor<WsAddressingAssertion> {
+public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSupport<WsAddressingAssertion> {
     private static final ResourceBundle resources;
 
     private JPanel contentPane;
@@ -57,10 +57,6 @@ public class WsAddressingPropertiesDialog extends JDialog  implements AssertionP
         setData(assertion);
     }
 
-    public JDialog getDialog() {
-        return this;
-    }
-
     public void setData(final WsAddressingAssertion assertion) {
         initData(assertion);
     }
@@ -77,6 +73,11 @@ public class WsAddressingPropertiesDialog extends JDialog  implements AssertionP
      */
     public boolean isConfirmed() {
         return ok;
+    }
+
+    @Override
+    protected void configureView() {
+        buttonOK.setEnabled( !isReadOnly() );
     }
 
     /**

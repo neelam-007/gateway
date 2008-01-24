@@ -26,7 +26,7 @@ public class AddXpathCredentialSourceAdvice implements Advice {
         XpathCredentialSource assertion = (XpathCredentialSource)assertions[0];
         Frame f = TopComponents.getInstance().getTopParent();
 
-        final XpathCredentialSourcePropertiesDialog dlg = new XpathCredentialSourcePropertiesDialog(assertion, f, true);
+        final XpathCredentialSourcePropertiesDialog dlg = new XpathCredentialSourcePropertiesDialog(assertion, f, true, false);
         Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);

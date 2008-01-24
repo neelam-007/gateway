@@ -61,7 +61,11 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
     private final EventListenerList listenerList = new EventListenerList();
     private InputValidator inputValidator;
 
-    public BridgeRoutingAssertionPropertiesDialog(final Frame owner, BridgeRoutingAssertion a, final Policy policy, final Wsdl wsdl) {
+    public BridgeRoutingAssertionPropertiesDialog(final Frame owner,
+                                                  final BridgeRoutingAssertion a,
+                                                  final Policy policy,
+                                                  final Wsdl wsdl,
+                                                  final boolean readOnly) {
         super(owner, true);
         setTitle("Bridge Routing Assertion Properties");
         this.assertion = a;
@@ -81,7 +85,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
                     throw new RuntimeException(e1); // can't happen, but just in case, pass up to error handler
                 }
 
-                final HttpRoutingAssertionDialog httpDialog = new HttpRoutingAssertionDialog(owner, editingCopy, policy, wsdl);
+                final HttpRoutingAssertionDialog httpDialog = new HttpRoutingAssertionDialog(owner, editingCopy, policy, wsdl, readOnly);
                 httpDialog.setAssertionToUseInSearchForPredecessorVariables(assertion);
                 httpDialog.setModal(true);
                 httpDialog.pack();
@@ -98,6 +102,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
 
         Utilities.equalizeButtonSizes(new AbstractButton[] { buttonOk, buttonCancel });
 
+        buttonOk.setEnabled( !readOnly );
         inputValidator.attachToButton(buttonOk, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 copyViewToModel();
@@ -136,6 +141,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
 
         final Utilities.DefaultContextMenuFactory cmf =
                 new Utilities.DefaultContextMenuFactory() {
+                    @Override
                     public JPopupMenu createContextMenu(final JTextComponent tc) {
                         final JPopupMenu m = super.createContextMenu(tc);
                         if (tc.isEditable()) {

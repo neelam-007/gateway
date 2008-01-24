@@ -27,6 +27,7 @@ public class ResponseWssSecurityTokenPropertiesAction extends NodeAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Response Security Token Assertion Properties";
     }
@@ -34,6 +35,7 @@ public class ResponseWssSecurityTokenPropertiesAction extends NodeAction {
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return "View/Edit Response Security Token Assertion Properties";
     }
@@ -41,6 +43,7 @@ public class ResponseWssSecurityTokenPropertiesAction extends NodeAction {
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/About16.gif";
     }
@@ -52,16 +55,17 @@ public class ResponseWssSecurityTokenPropertiesAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        final ResponseWssSecurityTokenDialog dlg = new ResponseWssSecurityTokenDialog(f, true, (ResponseWssSecurityToken) node.asAssertion().clone());
+        final ResponseWssSecurityTokenDialog dlg = new ResponseWssSecurityTokenDialog(f, true, (ResponseWssSecurityToken) node.asAssertion().clone(), !node.canEdit());
         Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (dlg.wasOKed()) {
-                    ResponseWssSecurityToken newAss = (ResponseWssSecurityToken)dlg.getValue();
+                    ResponseWssSecurityToken newAss = dlg.getValue();
                     if (newAss == null) return;
                     ResponseWssSecurityToken oldAss = (ResponseWssSecurityToken)node.asAssertion();
                     oldAss.copyFrom(newAss);

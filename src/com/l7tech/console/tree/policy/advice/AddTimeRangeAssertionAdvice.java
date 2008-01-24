@@ -30,7 +30,7 @@ public class AddTimeRangeAssertionAdvice implements Advice {
         }
         TimeRange subject = (TimeRange)assertions[0];
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final TimeRangePropertiesDialog dlg = new TimeRangePropertiesDialog(mw, true, subject);
+        final TimeRangePropertiesDialog dlg = new TimeRangePropertiesDialog(mw, true, false, subject);
 
         // show the dialog
         dlg.pack();

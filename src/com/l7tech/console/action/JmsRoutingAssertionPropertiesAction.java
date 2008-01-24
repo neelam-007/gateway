@@ -63,7 +63,7 @@ public class JmsRoutingAssertionPropertiesAction extends NodeAction {
             public void run() {
                 Frame f = TopComponents.getInstance().getTopParent();
                 JmsRoutingAssertionDialog d =
-                  new JmsRoutingAssertionDialog(f, (JmsRoutingAssertion)node.asAssertion());
+                  new JmsRoutingAssertionDialog(f, (JmsRoutingAssertion)node.asAssertion(), !node.canEdit());
                 d.addPolicyListener(listener);
                 d.pack();
                 Utilities.centerOnScreen(d);

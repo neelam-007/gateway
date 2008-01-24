@@ -37,6 +37,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:mlyons@layer7-tech.com">Mike Lyons</a>
  * @version 1.0
  */
+@SuppressWarnings( { "UnnecessaryUnboxing", "UnnecessaryBoxing" } )
 public class JmsRoutingAssertionDialog extends JDialog {
 
     //- PUBLIC
@@ -44,11 +45,11 @@ public class JmsRoutingAssertionDialog extends JDialog {
     /**
      * Creates new form ServicePanel
      */
-    public JmsRoutingAssertionDialog(Frame owner, JmsRoutingAssertion a) {
+    public JmsRoutingAssertionDialog(Frame owner, JmsRoutingAssertion a, boolean readOnly) {
         super(owner, true);
         setTitle("JMS Routing Properties");
         assertion = a;
-        initComponents();
+        initComponents(readOnly);
         initFormData();
     }
 
@@ -75,6 +76,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
         listenerList.remove(PolicyListener.class, listener);
     }
 
+    @Override
     public void dispose() {
         super.dispose();
 
@@ -138,8 +140,8 @@ public class JmsRoutingAssertionDialog extends JDialog {
                   PolicyEvent event = new
                     PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
                   EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
-                  for (int i = 0; i < listeners.length; i++) {
-                      ((PolicyListener)listeners[i]).assertionsChanged(event);
+                  for( EventListener listener : listeners ) {
+                      ( (PolicyListener) listener ).assertionsChanged( event );
                   }
               }
           });
@@ -158,7 +160,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
      * This method is called from within the static factory to
      * initialize the form.
      */
-    private void initComponents() {
+    private void initComponents(boolean readOnly) {
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
         Container contentPane = getContentPane();
@@ -204,6 +206,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
             }
         });
 
+        okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 // copy view into model
@@ -305,7 +308,8 @@ public class JmsRoutingAssertionDialog extends JDialog {
     public class JmsMessagePropertiesPanel extends JPanel {
         public static final String PASS_THRU = "<original value>";
 
-        private JPanel mainPanel;       // Not used but required by IntelliJ IDEA.
+        @SuppressWarnings( { "UnusedDeclaration" } )
+        private JPanel mainPanel;       // Not used but required by IntelliJ IDEA.        
         private JRadioButton passThruAllRadioButton;
         private JRadioButton customizeRadioButton;
         private JPanel customPanel;
@@ -334,6 +338,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
 
             final String[] columnNames = new String[]{"Name", "Value"};
             customTableModel = new DefaultTableModel(columnNames, 0) {
+                @Override
                 public boolean isCellEditable(int row, int column) {
                     return false;
                 }
@@ -363,6 +368,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
             });
 
             customTable.addMouseListener(new MouseAdapter() {
+                @Override
                 public void mouseClicked(MouseEvent e) {
                     if (e.getClickCount() == 2)
                         editSelectedRow();
@@ -372,6 +378,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
             // Provides sorting of the custom table by property name.
             final JTableHeader hdr = customTable.getTableHeader();
             hdr.addMouseListener(new MouseAdapter(){
+                @Override
                 public void mouseClicked(MouseEvent event) {
                     final TableColumnModel tcm = customTable.getColumnModel();
                     final int viewColumnIndex = tcm.getColumnIndexAtX(event.getX());

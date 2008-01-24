@@ -57,7 +57,7 @@ public class SqlAttackDialogTest {
         });
         parentFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        SqlAttackDialog dlg = new SqlAttackDialog(parentFrame, sqlAssertion, true);
+        SqlAttackDialog dlg = new SqlAttackDialog(parentFrame, sqlAssertion, true, false);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);

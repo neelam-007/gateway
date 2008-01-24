@@ -57,7 +57,7 @@ public class InverseHttpFormPostPropertiesAction extends NodeAction {
     protected void performAction() {
         InverseHttpFormPost hfp = (InverseHttpFormPost) node.asAssertion();
         Frame f = TopComponents.getInstance().getTopParent();
-        final InverseHttpFormPostDialog hfpd = new InverseHttpFormPostDialog(f, hfp);
+        final InverseHttpFormPostDialog hfpd = new InverseHttpFormPostDialog(f, hfp, !node.canEdit());
         hfpd.setModal(true);
         Utilities.setEscKeyStrokeDisposes(hfpd);
         hfpd.pack();

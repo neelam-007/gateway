@@ -40,7 +40,7 @@ public class JmsRoutingAssertionDialogTest {
         owner.setVisible(true);
 
         JmsRoutingAssertion a = new JmsRoutingAssertion();
-        JmsRoutingAssertionDialog d = new JmsRoutingAssertionDialog(owner, a);
+        JmsRoutingAssertionDialog d = new JmsRoutingAssertionDialog(owner, a, false);
         d.setModal(true);
         d.pack();
         d.setVisible(true);

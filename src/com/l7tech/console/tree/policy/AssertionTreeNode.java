@@ -357,6 +357,16 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     }
 
     /**
+     * Is this nodes assertion editable?
+     *
+     * @return false if read only
+     */
+    @Override
+    public boolean canEdit() {
+        return !isDescendantOfInclude(false);
+    }
+
+    /**
      * Swap the position of this node with the target
      * node.
      */

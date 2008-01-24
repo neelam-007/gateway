@@ -28,7 +28,7 @@ public class RegexAdvice implements Advice {
         }
         Frame f = TopComponents.getInstance().getTopParent();
         Regex r = (Regex)assertions[0];
-        RegexDialog rd = new RegexDialog(f, r);
+        RegexDialog rd = new RegexDialog(f, r, false);
         rd.setModal(true);
         final Collection result = new ArrayList();
         rd.getBeanEditSupport().addBeanListener(new BeanAdapter() {

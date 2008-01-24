@@ -2,7 +2,7 @@ package com.l7tech.external.assertions.script.console;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.console.panels.AssertionPropertiesEditor;
+import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.external.assertions.script.ScriptAssertion;
 
 import javax.swing.*;
@@ -13,7 +13,7 @@ import java.awt.event.ActionListener;
 /**
  * Properties for ScriptAssertion.
  */
-public class ScriptPropertiesDialog extends JDialog implements AssertionPropertiesEditor<ScriptAssertion>, ActionListener {
+public class ScriptPropertiesDialog extends AssertionPropertiesEditorSupport<ScriptAssertion> implements ActionListener {
     private JPanel topPanel;
     private JButton okButton;
     private JButton cancelButton;
@@ -23,17 +23,16 @@ public class ScriptPropertiesDialog extends JDialog implements AssertionProperti
     private boolean confirmed = false;
 
     public ScriptPropertiesDialog(Frame owner, ScriptAssertion rla) throws HeadlessException {
-        super(owner, true);
+        super(owner, "Custom Script Properties", true);
         initialize(rla);
     }
 
     public ScriptPropertiesDialog(Dialog owner, ScriptAssertion rla) throws HeadlessException {
-        super(owner, true);
+        super(owner, "Custom Script Properties", true);
         initialize(rla);
     }
 
     private void initialize(ScriptAssertion rla) {
-        setTitle("Custom Script Properties");
         setContentPane(topPanel);
 
         okButton.addActionListener(this);
@@ -94,14 +93,15 @@ public class ScriptPropertiesDialog extends JDialog implements AssertionProperti
         return rla;
     }
 
-    public JDialog getDialog() {
-        return this;
-    }
-
     /**
      * @return true if the dialog was dismissed by the user pressing the Ok button.
      */
     public boolean isConfirmed() {
         return confirmed;
+    }
+
+    @Override
+    protected void configureView() {
+        okButton.setEnabled( !isReadOnly() );
     }
 }

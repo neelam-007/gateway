@@ -39,7 +39,7 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
     /**
      * Creates new wizard
      */
-    public RequestWssSamlPropertiesPanel(RequestWssSaml assertion, Frame parent, boolean modal) {
+    public RequestWssSamlPropertiesPanel(RequestWssSaml assertion, Frame parent, boolean modal, boolean readOnly) {
         super(parent);
         if (assertion == null) {
             throw new IllegalArgumentException();
@@ -51,7 +51,7 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
         contentPane.setLayout(new BorderLayout());
         /** Set content pane */
         contentPane.add(mainPanel, BorderLayout.CENTER);
-        initialize();
+        initialize(readOnly);
     }
 
     /**
@@ -61,7 +61,7 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
         return assertionChanged;
     }
 
-    private void initialize() {
+    private void initialize(final boolean readOnly) {
         Utilities.setAlwaysOnTop(this, true);
         setResizable(false);
 
@@ -129,7 +129,7 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
                         return;
                     }
                 }
-                buttonOk.setEnabled(true);
+                buttonOk.setEnabled(!readOnly);
             }
         };
         for (int i = 0; i < wizardPanels.length; i++) {
@@ -144,6 +144,7 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
             }
         });
 
+        buttonOk.setEnabled(!readOnly);
         buttonOk.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 for (int i = 0; i < wizardPanels.length; i++) {

@@ -73,7 +73,7 @@ public class AddRoutingAssertionAdvice implements Advice {
             ra.setSamlAssertionVersion(2); // default for new routing assertions
             if (ra.getEndpointOid() == null) {
                 final Frame mainWindow = TopComponents.getInstance().getTopParent();
-                final JmsRoutingAssertionDialog dialog = new JmsRoutingAssertionDialog(mainWindow, ra);
+                final JmsRoutingAssertionDialog dialog = new JmsRoutingAssertionDialog(mainWindow, ra, false);
                 dialog.setModal(true);
                 dialog.pack();
                 Utilities.centerOnScreen(dialog);

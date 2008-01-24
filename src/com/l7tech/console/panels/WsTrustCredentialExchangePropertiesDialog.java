@@ -21,6 +21,7 @@ import java.net.URL;
 public class WsTrustCredentialExchangePropertiesDialog extends JDialog {
     private WsTrustCredentialExchange wsTrustAssertion;
     private boolean assertionChanged = false;
+    private boolean readOnly = false;
 
     private JButton okButton;
     private JButton cancelButton;
@@ -34,9 +35,10 @@ public class WsTrustCredentialExchangePropertiesDialog extends JDialog {
         return wsTrustAssertion;
     }
 
-    public WsTrustCredentialExchangePropertiesDialog(WsTrustCredentialExchange assertion, Frame owner, boolean modal) throws HeadlessException {
+    public WsTrustCredentialExchangePropertiesDialog(WsTrustCredentialExchange assertion, Frame owner, boolean modal, boolean readOnly) throws HeadlessException {
         super(owner, "Configure WS-Trust Credential Exchange", modal);
         this.wsTrustAssertion = assertion;
+        this.readOnly = readOnly;
         requestTypeCombo.setModel(new DefaultComboBoxModel(new WsTrustRequestType[] {WsTrustRequestType.ISSUE, WsTrustRequestType.VALIDATE}));
 
         WsTrustRequestType type = assertion.getRequestType();
@@ -92,7 +94,7 @@ public class WsTrustCredentialExchangePropertiesDialog extends JDialog {
         ok = url != null && url.length() > 0;
         try {
             new URL(url);
-            ok = true;
+            ok = !readOnly;
         } catch (MalformedURLException e) {
             ok = false;
         }

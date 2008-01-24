@@ -11,17 +11,19 @@ import java.awt.event.ActionEvent;
 
 public class CommentAssertionDialog extends JDialog {
     private final CommentAssertion assertion;
+    private final boolean readOnly;
     private boolean assertionModified;
     private JTextField commentField;
     private JButton okButton;
     private JButton cancelButton;
     private JPanel mainPanel;
 
-    public CommentAssertionDialog(Frame owner, final CommentAssertion assertion)
+    public CommentAssertionDialog(Frame owner, final CommentAssertion assertion, final boolean readOnly)
             throws HeadlessException
     {
         super(owner, "Comment Assertion Properties", true);
         this.assertion = assertion;
+        this.readOnly = readOnly;
 
         commentField.setText(assertion.getComment());
 
@@ -52,7 +54,7 @@ public class CommentAssertionDialog extends JDialog {
     }
 
     private void enableButtons() {
-        okButton.setEnabled(commentField.getText() != null && commentField.getText().length() > 0);
+        okButton.setEnabled(!readOnly && commentField.getText() != null && commentField.getText().length() > 0);
     }
 
     public CommentAssertion getAssertion() {

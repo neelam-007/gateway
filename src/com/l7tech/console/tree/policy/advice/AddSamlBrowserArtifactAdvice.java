@@ -26,7 +26,7 @@ public class AddSamlBrowserArtifactAdvice implements Advice {
         SamlBrowserArtifact assertion = (SamlBrowserArtifact) assertions[0];
         Frame f = TopComponents.getInstance().getTopParent();
 
-        final SamlBrowserArtifactPropertiesDialog dlg = new SamlBrowserArtifactPropertiesDialog(assertion, f, true);
+        final SamlBrowserArtifactPropertiesDialog dlg = new SamlBrowserArtifactPropertiesDialog(assertion, f, true, false);
         Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);

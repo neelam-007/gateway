@@ -44,18 +44,19 @@ public class OversizedTextDialog extends JDialog {
         return confirmed;
     }
 
-    public OversizedTextDialog(Frame owner, OversizedTextAssertion assertion, boolean modal) throws HeadlessException {
+    public OversizedTextDialog(Frame owner, OversizedTextAssertion assertion, boolean modal, boolean readOnly) throws HeadlessException {
         super(owner, "Configure Document Structure Threat Protection", modal);
         this.assertion = assertion;
         this.validator = new InputValidator(this, "Document Structure Threats");
-        doInit();
+        doInit(readOnly);
     }
 
-    private void doInit() {
+    private void doInit(boolean readOnly) {
         getContentPane().add(mainPanel);
 
         Utilities.equalizeButtonSizes(new AbstractButton[]{okButton, cancelButton});
 
+        okButton.setEnabled( !readOnly );
         validator.attachToButton(okButton, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 doSave();

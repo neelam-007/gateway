@@ -20,7 +20,7 @@ public class WsiBspPropertiesDialog extends JDialog {
 
     //- PUBLIC
 
-    public WsiBspPropertiesDialog(WsiBspAssertion assertion, Frame owner, boolean modal) throws HeadlessException {
+    public WsiBspPropertiesDialog(WsiBspAssertion assertion, Frame owner, boolean modal, boolean readOnly) throws HeadlessException {
         super(owner, "Configure WS-I BSP properties", modal);
         this.wsiBspAssertion = assertion;
 
@@ -62,6 +62,7 @@ public class WsiBspPropertiesDialog extends JDialog {
         checkRequestMessagesCheckBox.addChangeListener(rocl);
         checkResponseMessagesCheckBox.addChangeListener(rocl);
 
+        okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 boolean requestAudit = reqAuditRadioButton.isSelected() || reqAuditFailRadioButton.isSelected();

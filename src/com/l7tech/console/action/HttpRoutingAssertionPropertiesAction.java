@@ -78,7 +78,7 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
                         policy = getPolicyNodeCookie().getPolicy();
                         wsdl = null;
                     }
-                    d = new HttpRoutingAssertionDialog(f, (HttpRoutingAssertion)node.asAssertion(), policy, wsdl);
+                    d = new HttpRoutingAssertionDialog(f, (HttpRoutingAssertion)node.asAssertion(), policy, wsdl, !node.canEdit());
                 } catch (FindException e) {
                     log.log(Level.WARNING, e.getMessage(), e);
                     throw new RuntimeException(e);

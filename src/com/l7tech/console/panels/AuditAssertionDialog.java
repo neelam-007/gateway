@@ -48,8 +48,7 @@ public class AuditAssertionDialog extends JDialog {
         //get the current server level
         updateThresholdLabel();
 
-        okButton.setVisible(!readOnly);
-        if (readOnly) cancelButton.setText("Close");
+        okButton.setEnabled(!readOnly);
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {

@@ -29,6 +29,7 @@ public class HttpFormPostPropertiesAction extends NodeAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "HTTP Form to MIME Translation Properties";
     }
@@ -36,6 +37,7 @@ public class HttpFormPostPropertiesAction extends NodeAction {
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return "View/Edit HTTP Form POST to MIME Translation Properties";
     }
@@ -43,6 +45,7 @@ public class HttpFormPostPropertiesAction extends NodeAction {
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/network.gif";
     }
@@ -54,10 +57,11 @@ public class HttpFormPostPropertiesAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         HttpFormPost hfp = (HttpFormPost) node.asAssertion();
         Frame f = TopComponents.getInstance().getTopParent();
-        final HttpFormPostDialog hfpd = new HttpFormPostDialog(f, hfp);
+        final HttpFormPostDialog hfpd = new HttpFormPostDialog(f, hfp, !node.canEdit());
         hfpd.setModal(true);
         Utilities.setEscKeyStrokeDisposes(hfpd);
         hfpd.pack();

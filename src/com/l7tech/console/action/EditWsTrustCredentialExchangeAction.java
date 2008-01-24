@@ -40,21 +40,25 @@ public class EditWsTrustCredentialExchangeAction extends NodeAction {
         wsTrustAssertion = (WsTrustCredentialExchange)node.asAssertion();
     }
 
+    @Override
     public String getName() {
         return "View/Edit WS-Trust Credential Exchange Properties";
     }
 
+    @Override
     public String getDescription() {
         return getName();
     }
 
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Edit16.gif";
     }
 
+    @Override
     protected void performAction() {
         Frame parent = TopComponents.getInstance().getTopParent();
-        final WsTrustCredentialExchangePropertiesDialog dlg = new WsTrustCredentialExchangePropertiesDialog(wsTrustAssertion, parent, true);
+        final WsTrustCredentialExchangePropertiesDialog dlg = new WsTrustCredentialExchangePropertiesDialog(wsTrustAssertion, parent, true, !node.canEdit());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

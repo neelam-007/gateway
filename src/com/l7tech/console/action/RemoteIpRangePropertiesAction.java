@@ -26,21 +26,25 @@ public class RemoteIpRangePropertiesAction extends SecureAction {
         this.subject = subject;
     }
 
+    @Override
     public String getName() {
         return "IP Address Range Properties";
     }
 
+    @Override
     public String getDescription() {
         return "View / Edit properties of an IP Address Range Assertion";
     }
 
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
+    @Override
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        final RemoteIpRangePropertiesDialog dlg = new RemoteIpRangePropertiesDialog(f, false, subject.asAssertion());
+        final RemoteIpRangePropertiesDialog dlg = new RemoteIpRangePropertiesDialog(f, false, !subject.canEdit(), subject.asAssertion());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

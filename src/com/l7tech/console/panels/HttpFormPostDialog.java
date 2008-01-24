@@ -35,7 +35,7 @@ public class HttpFormPostDialog extends JDialog {
     private JButton moveDownButton;
     private Frame ownerFrame;
 
-    public HttpFormPostDialog(Frame owner, HttpFormPost ass) throws HeadlessException {
+    public HttpFormPostDialog(Frame owner, HttpFormPost ass, boolean readOnly) throws HeadlessException {
         super(owner, "HTTP Form to MIME Translation Properties", true);
         this.ownerFrame = owner;
         this.assertion = ass;
@@ -69,6 +69,7 @@ public class HttpFormPostDialog extends JDialog {
             }
         });
 
+        okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ArrayList infos = new ArrayList();

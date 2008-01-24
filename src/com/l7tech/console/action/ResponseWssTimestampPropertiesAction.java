@@ -30,6 +30,7 @@ public class ResponseWssTimestampPropertiesAction extends NodeAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Response Timestamp Assertion Properties";
     }
@@ -37,6 +38,7 @@ public class ResponseWssTimestampPropertiesAction extends NodeAction {
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return "View/Edit Response Timestamp Assertion Properties";
     }
@@ -44,6 +46,7 @@ public class ResponseWssTimestampPropertiesAction extends NodeAction {
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/About16.gif";
     }
@@ -55,17 +58,18 @@ public class ResponseWssTimestampPropertiesAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         final ResponseWssTimestamp ass = (ResponseWssTimestamp)node.asAssertion();
         Frame f = TopComponents.getInstance().getTopParent();
-        final ResponseWssTimestampDialog dlg = new ResponseWssTimestampDialog(f, true, (ResponseWssTimestamp)(ass.clone()));
+        final ResponseWssTimestampDialog dlg = new ResponseWssTimestampDialog(f, true, (ResponseWssTimestamp)(ass.clone()), !node.canEdit());
         Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (dlg.wasOKed()) {
-                    ResponseWssTimestamp newAss = (ResponseWssTimestamp)dlg.getValue();
+                    ResponseWssTimestamp newAss = dlg.getValue();
                     if (newAss == null) return;
                     ass.copyFrom(newAss);
                     JTree tree = TopComponents.getInstance().getPolicyTree();

@@ -23,7 +23,7 @@ public class CookieCredentialSourceAssertionPropertiesDialog extends JDialog {
     private JButton cancelButton;
     private boolean confirmed = false;
 
-    public CookieCredentialSourceAssertionPropertiesDialog(Frame owner, boolean modal, CookieCredentialSourceAssertion assertion) {
+    public CookieCredentialSourceAssertionPropertiesDialog(Frame owner, boolean modal, CookieCredentialSourceAssertion assertion, boolean readOnly) {
         super(owner, "HTTP Cookie Properties", modal);
         setContentPane(rootPanel);
 
@@ -31,6 +31,7 @@ public class CookieCredentialSourceAssertionPropertiesDialog extends JDialog {
 
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
 
+        okButton.setEnabled( !readOnly );        
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (!isDataValid())

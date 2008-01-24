@@ -10,9 +10,9 @@ import com.l7tech.common.transport.ftp.FtpTestException;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
-import com.l7tech.console.panels.AssertionPropertiesEditor;
 import com.l7tech.console.panels.CancelableOperationDialog;
 import com.l7tech.console.panels.PrivateKeysComboBox;
+import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.ftprouting.FtpCredentialsSource;
 import com.l7tech.external.assertions.ftprouting.FtpFileNameSource;
@@ -35,7 +35,6 @@ import java.awt.event.ItemListener;
 import java.lang.reflect.InvocationTargetException;
 import java.util.EventListener;
 import java.util.concurrent.Callable;
-import java.util.logging.Logger;
 
 /**
  * Dialog for editing the FtpRoutingAssertion.
@@ -43,7 +42,7 @@ import java.util.logging.Logger;
  * @author rmak
  * @since SecureSpan 4.0
  */
-public class FtpRoutingPropertiesDialog extends JDialog implements AssertionPropertiesEditor<FtpRoutingAssertion> {
+public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport<FtpRoutingAssertion> {
 
     private JPanel _mainPanel;
     private JRadioButton _ftpUnsecuredRadioButton;
@@ -69,8 +68,6 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
     private JRadioButton wssRemoveRadioButton;
     private JRadioButton wssLeaveRadioButton;
 
-    private final Logger _logger = Logger.getLogger(FtpRoutingPropertiesDialog.class.getName());
-    private static final Cursor WAIT_CURSOR = new Cursor(Cursor.WAIT_CURSOR);
     public static final int DEFAULT_PORT_FTP = 21;
     public static final int DEFAULT_PORT_FTPS_IMPLICIT = 990;
 
@@ -84,8 +81,7 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
      * @param a      assertion to edit
      */
     public FtpRoutingPropertiesDialog(Frame owner, FtpRoutingAssertion a) {
-        super(owner, true);
-        setTitle("FTP(S) Routing Properties");
+        super(owner, "FTP(S) Routing Properties", true);
         _assertion = a;
         initComponents();
         initFormData();
@@ -309,11 +305,7 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
                 && !(_filenamePatternRadioButton.isSelected() && _filenamePatternTextField.getText().length() == 0)
                 && !(_credentialsSpecifyRadioButton.isSelected() && _userNameTextField.getText().length() == 0)
                 && (!_useClientCertCheckBox.isSelected() || _clientCertsComboBox.getSelectedIndex() != -1);
-        _okButton.setEnabled(canOK);
-    }
-
-    public JDialog getDialog() {
-        return this;
+        _okButton.setEnabled(!isReadOnly() && canOK);
     }
 
     public boolean isConfirmed() {
@@ -384,6 +376,11 @@ public class FtpRoutingPropertiesDialog extends JDialog implements AssertionProp
         }
 
         return assertion;
+    }
+
+    @Override
+    protected void configureView() {
+        enableOrDisableComponents();
     }
 
     /**

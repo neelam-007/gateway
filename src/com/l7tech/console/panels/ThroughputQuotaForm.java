@@ -52,16 +52,16 @@ public class ThroughputQuotaForm extends JDialog {
     private JRadioButton incrementOnSuccessRadio;
     private JTextField varPrefixField;
 
-    public ThroughputQuotaForm(Frame owner, ThroughputQuota subject, Assertion policyRoot) {
+    public ThroughputQuotaForm(Frame owner, ThroughputQuota subject, Assertion policyRoot, boolean readOnly) {
         super(owner, true);
         setTitle("Throughput Quota Assertion");
         if (subject == null) throw new IllegalArgumentException("subject cannot be null");
         this.subject = subject;
         this.policyRoot = policyRoot;
-        initialize();
+        initialize(readOnly);
     }
 
-    private void initialize() {
+    private void initialize(boolean readOnly) {
         getContentPane().add(mainPanel);
 
         // initial values
@@ -164,6 +164,7 @@ public class ThroughputQuotaForm extends JDialog {
             }
         });
 
+        okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ok();
@@ -267,7 +268,7 @@ public class ThroughputQuotaForm extends JDialog {
     public static void main(String[] args) throws Exception {
         ThroughputQuota ass = new ThroughputQuota();
         for (int i = 0; i < 5; i++) {
-            ThroughputQuotaForm me = new ThroughputQuotaForm(null, ass, null);
+            ThroughputQuotaForm me = new ThroughputQuotaForm(null, ass, null, false);
             me.pack();
             me.setVisible(true);
         }

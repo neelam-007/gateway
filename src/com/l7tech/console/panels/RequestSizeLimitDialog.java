@@ -15,7 +15,6 @@ import java.awt.event.ActionListener;
  * User: megery
  * Date: Sep 29, 2005
  * Time: 2:32:47 PM
- * To change this template use File | Settings | File Templates.
  */
 public class RequestSizeLimitDialog extends JDialog {
     private static final String TITLE = "Request Size Limit";
@@ -30,18 +29,19 @@ public class RequestSizeLimitDialog extends JDialog {
     private boolean modified;
     private boolean confirmed = false;
 
-    public RequestSizeLimitDialog(Frame owner, RequestSizeLimit assertion, boolean modal) throws HeadlessException {
+    public RequestSizeLimitDialog(Frame owner, RequestSizeLimit assertion, boolean modal, boolean readOnly) throws HeadlessException {
         super(owner, TITLE, modal);
-        doInit(assertion);
+        doInit(assertion, readOnly);
     }
 
-    private void doInit(RequestSizeLimit assertion) {
+    private void doInit(RequestSizeLimit assertion, boolean readOnly) {
         this.sizeAssertion = assertion;
         sizeLimit.setDocument(new NumberField(String.valueOf(Long.MAX_VALUE).length()));
 
         validator.constrainTextFieldToNumberRange("size limit", sizeLimit, 1, Long.MAX_VALUE / 1024);
         Utilities.equalizeButtonSizes(new AbstractButton[]{okButton, cancelButton});
 
+        okButton.setEnabled( !readOnly );
         validator.attachToButton(okButton, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 doSave();

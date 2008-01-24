@@ -2,10 +2,8 @@ package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.SqlAttackDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
-import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SqlAttackAssertion;
@@ -23,7 +21,7 @@ public class SqlAttackAssertionAdvice implements Advice {
         }
         SqlAttackAssertion subject = (SqlAttackAssertion) assertions[0];
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final SqlAttackDialog dlg = new SqlAttackDialog(mw, subject, true);
+        final SqlAttackDialog dlg = new SqlAttackDialog(mw, subject, true, false);
 
         // show the dialog
         dlg.pack();

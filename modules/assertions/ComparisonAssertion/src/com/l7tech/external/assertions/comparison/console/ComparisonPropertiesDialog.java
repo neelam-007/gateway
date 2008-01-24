@@ -5,7 +5,7 @@ package com.l7tech.external.assertions.comparison.console;
 
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.panels.AssertionPropertiesEditor;
+import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.external.assertions.comparison.*;
 import com.l7tech.policy.variable.DataType;
 
@@ -26,7 +26,7 @@ import java.util.ArrayList;
 /**
  * @author alex
  */
-public class ComparisonPropertiesDialog extends JDialog implements AssertionPropertiesEditor<ComparisonAssertion> {
+public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport<ComparisonAssertion> {
     private JTextField expressionField;
     private JComboBox dataTypeComboBox;
     private JTable predicatesTable;
@@ -62,10 +62,6 @@ public class ComparisonPropertiesDialog extends JDialog implements AssertionProp
         init();
     }
 
-    public JDialog getDialog() {
-        return this;
-    }
-
     public boolean isConfirmed() {
         return ok;
     }
@@ -88,6 +84,7 @@ public class ComparisonPropertiesDialog extends JDialog implements AssertionProp
             this.predClass = predClass;
         }
 
+        @Override
         public String toString() {
             return name;
         }
@@ -121,6 +118,7 @@ public class ComparisonPropertiesDialog extends JDialog implements AssertionProp
         predicatesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         predicatesTable.setTableHeader(null);
         predicatesTable.addMouseListener(new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) editSelected(); 
             }
@@ -209,7 +207,7 @@ public class ComparisonPropertiesDialog extends JDialog implements AssertionProp
             newPreds.add(pred);
         }
         assertion.setExpression1(expressionField.getText());
-        assertion.setPredicates(newPreds.toArray(new Predicate[0]));
+        assertion.setPredicates(newPreds.toArray(new Predicate[newPreds.size()]));
     }
 
     void enableButtons() {
@@ -217,11 +215,16 @@ public class ComparisonPropertiesDialog extends JDialog implements AssertionProp
 
         boolean canOk = expr != null && expr.length() > 0;
 
-        okButton.setEnabled(canOk);
+        okButton.setEnabled(!isReadOnly() && canOk);
 
         int sel = predicatesTable.getSelectionModel().getMinSelectionIndex();
         editPredicateButton.setEnabled(sel >= 0);
         removePredicateButton.setEnabled(sel >= 0);
+    }
+
+    @Override
+    protected void configureView() {
+        enableButtons();
     }
 
     /**

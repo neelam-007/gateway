@@ -16,20 +16,17 @@ import java.util.List;
  * User: megery
  * Date: Sep 28, 2005
  * Time: 9:42:34 AM
- * To change this template use File | Settings | File Templates.
  */
 public class SqlAttackDialog extends JDialog {
+    private static final String PROTECTION_KEY = "PROT.KEY";
+    private static final String PROTECTION_DESCRIPTION = "PROT.DESCRIPTION";
+
     private JPanel mainPanel;
     private JTextArea attackDescription;
     private JPanel attackNameList;
 
-    ArrayList availableAttacks = new ArrayList();
-//    private DefaultListModel listModel;
-
-    SqlAttackAssertion sqlAssertion;
-    HashMap buttonToStringMap = new HashMap();
-    private static final String PROTECTION_KEY = "PROT.KEY";
-    private static final String PROTECTION_DESCRIPTION = "PROT.DESCRIPTION";
+    private final boolean readOnly;
+    private SqlAttackAssertion sqlAssertion;
     private JButton okButton;
     private JButton cancelButton;
     private boolean modified;
@@ -40,8 +37,9 @@ public class SqlAttackDialog extends JDialog {
         return confirmed;
     }
 
-    public SqlAttackDialog(Frame owner, SqlAttackAssertion assertion, boolean modal) throws HeadlessException {
+    public SqlAttackDialog(Frame owner, SqlAttackAssertion assertion, boolean modal, boolean readOnly) throws HeadlessException {
         super(owner, "Configure SQL Attack Protection", modal);
+        this.readOnly = readOnly;
         doInit(assertion);
     }
 
@@ -51,12 +49,12 @@ public class SqlAttackDialog extends JDialog {
 
         this.sqlAssertion = assertion;
         getContentPane().add(mainPanel);
-//        listModel = new DefaultListModel();
 
         attackNameList.setBackground(mainPanel.getBackground());
         attackDescription.setBackground(mainPanel.getBackground());
         Utilities.equalizeButtonSizes(new AbstractButton[]{okButton, cancelButton});
 
+        okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 doSave();

@@ -25,7 +25,7 @@ public class HttpFormPostAdvice implements Advice {
         }
         Frame f = TopComponents.getInstance().getTopParent();
         HttpFormPost hfp = (HttpFormPost)assertions[0];
-        final HttpFormPostDialog hfpd = new HttpFormPostDialog(f, hfp);
+        final HttpFormPostDialog hfpd = new HttpFormPostDialog(f, hfp, false);
         hfpd.setModal(true);
         Utilities.setEscKeyStrokeDisposes(hfpd);
         hfpd.pack();

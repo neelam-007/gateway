@@ -30,7 +30,7 @@ public class CommentAssertionAdvice implements Advice {
         }
         CommentAssertion subject = (CommentAssertion) assertions[0];
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final CommentAssertionDialog dlg = new CommentAssertionDialog(mw, subject);
+        final CommentAssertionDialog dlg = new CommentAssertionDialog(mw, subject, false);
 
         // show the dialog
         dlg.pack();

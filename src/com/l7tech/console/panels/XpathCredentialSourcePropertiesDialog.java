@@ -26,6 +26,7 @@ import java.util.Map;
 public class XpathCredentialSourcePropertiesDialog extends JDialog {
     private XpathCredentialSource xpathCredsAssertion;
     private boolean assertionChanged = false;
+    private boolean readOnly = false;
 
     private JButton okButton;
     private JButton cancelButton;
@@ -41,9 +42,11 @@ public class XpathCredentialSourcePropertiesDialog extends JDialog {
         return xpathCredsAssertion;
     }
 
-    public XpathCredentialSourcePropertiesDialog(XpathCredentialSource assertion, Frame owner, boolean modal) throws HeadlessException {
+    public XpathCredentialSourcePropertiesDialog(XpathCredentialSource assertion, Frame owner, boolean modal, boolean readOnly) throws HeadlessException {
         super(owner, "Configure XPath Credential Source", modal);
         this.xpathCredsAssertion = assertion;
+        this.readOnly = readOnly;
+
         if (assertion != null && assertion.getXpathExpression() != null) {
             namespaces = assertion.getXpathExpression().getNamespaces();
         }
@@ -128,7 +131,7 @@ public class XpathCredentialSourcePropertiesDialog extends JDialog {
         try {
             new DOMXPath(loginXpathField.getText());
             new DOMXPath(passwordXpathField.getText());
-            ok = true;
+            ok = !readOnly;
         } catch (Exception e) {
             ok = false;
         }

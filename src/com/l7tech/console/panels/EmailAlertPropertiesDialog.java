@@ -36,6 +36,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
     private JTextField ccAddressesField;
     private JTextField bccAddressesField;
 
+    private final boolean readOnly;
     private final EmailAlertAssertion assertion;
     private boolean confirmed = false;
 
@@ -46,8 +47,9 @@ public class EmailAlertPropertiesDialog extends JDialog {
      * @param ass The backing EmailAlertAssertion object
      * @throws HeadlessException
      */
-    public EmailAlertPropertiesDialog(Dialog owner, EmailAlertAssertion ass) throws HeadlessException {
+    public EmailAlertPropertiesDialog(Dialog owner, EmailAlertAssertion ass, boolean readOnly) throws HeadlessException {
         super(owner, TITLE, true);
+        this.readOnly = readOnly;
         this.assertion = ass;
         initialize();
     }
@@ -59,8 +61,9 @@ public class EmailAlertPropertiesDialog extends JDialog {
      * @param ass The backing EmailAlertAssertion object
      * @throws HeadlessException
      */
-    public EmailAlertPropertiesDialog(Frame owner, EmailAlertAssertion ass) throws HeadlessException {
+    public EmailAlertPropertiesDialog(Frame owner, EmailAlertAssertion ass, boolean readOnly) throws HeadlessException {
         super(owner, TITLE, true);
+        this.readOnly = readOnly;
         this.assertion = ass;
         initialize();
     }
@@ -151,7 +154,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
         int port = safeParseInt(portField.getText(), EmailAlertAssertion.DEFAULT_PORT);
         if (port < 1 || port > 65535) ok = false;
 
-        okButton.setEnabled(ok);
+        okButton.setEnabled(!readOnly && ok);
     }
 
     private int safeParseInt(String str, int def) {
@@ -180,7 +183,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
         f.setVisible(true);
         EmailAlertAssertion ass = new EmailAlertAssertion();
         ass.setSmtpPort(27);
-        EmailAlertPropertiesDialog d = new EmailAlertPropertiesDialog(f, ass);
+        EmailAlertPropertiesDialog d = new EmailAlertPropertiesDialog(f, ass, false);
         d.setVisible(true);
         d.dispose();
         System.out.println("Got object: " + d.getResult());

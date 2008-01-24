@@ -23,30 +23,34 @@ import java.util.logging.Logger;
  */
 public class CookieCredentialSourceAssertionPropertiesAction extends SecureAction {
     private final Logger log = Logger.getLogger(getClass().getName());
-    private CookieCredentialSourceAssertionTreeNode subject;
+    private final CookieCredentialSourceAssertionTreeNode subject;
 
     public CookieCredentialSourceAssertionPropertiesAction(CookieCredentialSourceAssertionTreeNode subject) {
         super(null);
         this.subject = subject;
     }
 
+    @Override
     public String getName() {
         return "Cookie Credential Source Properties";
     }
 
+    @Override
     public String getDescription() {
         return "View / Edit properties of an HTTP Cookie Credential Source Assertion";
     }
 
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
+    @Override
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
         final CookieCredentialSourceAssertion assertion = (CookieCredentialSourceAssertion)subject.asAssertion();
         final CookieCredentialSourceAssertionPropertiesDialog dlg =
-                new CookieCredentialSourceAssertionPropertiesDialog(f, true, assertion);
+                new CookieCredentialSourceAssertionPropertiesDialog(f, true, assertion, !subject.canEdit());
 
         dlg.pack();
         Utilities.centerOnScreen(dlg);

@@ -29,6 +29,7 @@ public class SslPropertiesAction extends NodeAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "SSL Properties";
     }
@@ -36,6 +37,7 @@ public class SslPropertiesAction extends NodeAction {
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return "View/Edit SSL Properties";
     }
@@ -43,6 +45,7 @@ public class SslPropertiesAction extends NodeAction {
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Properties16.gif";
     }
@@ -54,9 +57,10 @@ public class SslPropertiesAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         SslAssertion sslAssertion = (SslAssertion)node.asAssertion();
-        DialogDisplayer.display(new EditSslAssertionPropertiesDialog(TopComponents.getInstance().getTopParent(), sslAssertion),
+        DialogDisplayer.display(new EditSslAssertionPropertiesDialog(TopComponents.getInstance().getTopParent(), sslAssertion, !node.canEdit()),
                                 new Runnable() {
                                     public void run() {
                                         assertionChanged();

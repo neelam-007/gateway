@@ -39,6 +39,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
     private JPanel innerPanel;
     private JComboBox cbXslLocation;
 
+    private final boolean readOnly;
     private XslTransformation assertion;
     private final XslTransformationSpecifyPanel specifyPanel;
     private final XslTransformationFetchPanel fetchPanel;
@@ -67,11 +68,12 @@ public class XslTransformationPropertiesDialog extends JDialog {
     private final String DIRECTION_RESPONSE = resources.getString("directionCombo.responseValue");
     private final String[] DIRECTIONS = new String[]{DIRECTION_REQUEST, DIRECTION_RESPONSE};
 
-    public XslTransformationPropertiesDialog(Frame owner, boolean modal, XslTransformation assertion) {
+    public XslTransformationPropertiesDialog(Frame owner, boolean modal, boolean readOnly, XslTransformation assertion) {
         super(owner, resources.getString("window.title"), modal);
         if (assertion == null) {
             throw new IllegalArgumentException("Xslt Transformation == null");
         }
+        this.readOnly = readOnly;
         this.assertion = assertion;
 
         Utilities.setEscKeyStrokeDisposes(this);
@@ -131,6 +133,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
         updateModeComponents();
 
         // create callbacks
+        okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ok();
@@ -232,7 +235,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
     }
 
     public static void main(String[] args) {
-        XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(null, true, new XslTransformation());
+        XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(null, true, false, new XslTransformation());
         dlg.pack();
         dlg.setVisible(true);
         System.exit(0);

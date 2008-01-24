@@ -33,11 +33,13 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
     private JButton _cancelButton;
 
     private final CodeInjectionProtectionAssertion _assertion;
+    private final boolean _readOnly;
     private boolean _modified;
 
-    public CodeInjectionProtectionAssertionDialog(Frame owner, final CodeInjectionProtectionAssertion assertion) throws HeadlessException {
+    public CodeInjectionProtectionAssertionDialog(Frame owner, final CodeInjectionProtectionAssertion assertion, final boolean readOnly) throws HeadlessException {
         super(owner, "Code Injection Protection", true);
         _assertion = assertion;
+        _readOnly = readOnly;
 
         _requestRadioButton.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
@@ -48,30 +50,36 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
             }
         });
         _requestRadioButton.addMouseListener(new MouseAdapter() {
+                @Override
                 public void mouseEntered(MouseEvent e) {
                     _descriptionText.setText("Scan request message URL or body. Effective only if this assertion is placed before routing assertion.");
                 }
 
+                @Override
                 public void mouseExited(MouseEvent e) {
                     _descriptionText.setText("");
                 }
             });
 
         _requestUrlCheckBox.addMouseListener(new MouseAdapter() {
+                @Override
                 public void mouseEntered(MouseEvent e) {
                     _descriptionText.setText("Scan parameter values in URL query string.");
                 }
 
+                @Override
                 public void mouseExited(MouseEvent e) {
                     _descriptionText.setText("");
                 }
             });
 
         _requestBodyCheckBox.addMouseListener(new MouseAdapter() {
+                @Override
                 public void mouseEntered(MouseEvent e) {
                     _descriptionText.setText("Scan (1) parameter values if Form POST, or (2) attribute values and character content if XML, or (3) entire MIME body otherwise.");
                 }
 
+                @Override
                 public void mouseExited(MouseEvent e) {
                     _descriptionText.setText("");
                 }
@@ -96,10 +104,12 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
             }
         });
         _responseRadioButton.addMouseListener(new MouseAdapter() {
+                @Override
                 public void mouseEntered(MouseEvent e) {
                     _descriptionText.setText("Scan response message body. Applies only if this assertion is placed after routing assertion. Use this only if the response is not supposed to contain keywords being screened for.");
                 }
 
+                @Override                
                 public void mouseExited(MouseEvent e) {
                     _descriptionText.setText("");
                 }
@@ -115,12 +125,14 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
             checkbox.setActionCommand(protection.getWspName());
             checkbox.setSelected(protectionsToApply.contains(protection));
             checkbox.addMouseListener(new MouseAdapter() {
+                @Override
                 public void mouseEntered(MouseEvent e) {
                     final String action = ((JCheckBox) e.getComponent()).getActionCommand();
                     final CodeInjectionProtectionType protection = CodeInjectionProtectionType.fromWspName(action);
                     _descriptionText.setText(protection.getDescription());
                 }
 
+                @Override
                 public void mouseExited(MouseEvent e) {
                     _descriptionText.setText("");
                 }
@@ -158,6 +170,7 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
         getRootPane().setDefaultButton(_okButton);
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 onCancel();
             }
@@ -216,7 +229,7 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
             ok &= _requestUrlCheckBox.isSelected() || _requestBodyCheckBox.isSelected();
         }
 
-        _okButton.setEnabled(ok);
+        _okButton.setEnabled(!_readOnly && ok);
     }
 
     public boolean isAssertionModified() {

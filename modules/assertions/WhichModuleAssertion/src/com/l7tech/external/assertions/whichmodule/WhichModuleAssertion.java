@@ -5,7 +5,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.console.panels.AssertionPropertiesEditor;
+import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
@@ -57,6 +57,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         };
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
         meta.put(AssertionMetadata.LONG_NAME, "Gets info about the module that offers the specified assertion (identified by its XML representation); fails if it is unrecognized");
@@ -113,8 +114,9 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         }
     }
 
-    public static class PropDialog extends JDialog implements AssertionPropertiesEditor<WhichModuleAssertion> {
+    public static class PropDialog extends AssertionPropertiesEditorSupport<WhichModuleAssertion> {
         private JTextArea field = new JTextArea();
+        private JButton ok;
         private boolean confirmed = false;
 
         public PropDialog(Frame parent, WhichModuleAssertion bean) {
@@ -129,7 +131,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         }
 
         private JPanel makeButtons() {
-            final JButton ok = new JButton("Ok");
+            ok = new JButton("Ok");
             JButton cancel = new JButton("Cancel");
             Utilities.equalizeButtonSizes(new JButton[] { ok, cancel });
             Utilities.setEscKeyStrokeDisposes(this);
@@ -152,10 +154,6 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
             return p;
         }
 
-        public JDialog getDialog() {
-            return this;
-        }
-
         public boolean isConfirmed() {
             return confirmed;
         }
@@ -175,6 +173,11 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         public WhichModuleAssertion getData(WhichModuleAssertion assertion) {
             assertion.setAssertionXml(field.getText());
             return assertion;
+        }
+
+        @Override
+        protected void configureView() {
+            ok.setEnabled( !isReadOnly() );
         }
     }
 

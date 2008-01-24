@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.ratelimit.console;
 import com.l7tech.common.gui.NumberField;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.panels.AssertionPropertiesEditor;
+import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.external.assertions.ratelimit.RateLimitAssertion;
 
 import javax.swing.*;
@@ -15,7 +15,7 @@ import java.util.Vector;
 /**
  * Properties for RateLimitAssertion.
  */
-public class RateLimitPropertiesDialog extends JDialog implements AssertionPropertiesEditor<RateLimitAssertion>, ActionListener {
+public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<RateLimitAssertion> implements ActionListener {
 
     private JPanel topPanel;
     private JButton okButton;
@@ -36,17 +36,16 @@ public class RateLimitPropertiesDialog extends JDialog implements AssertionPrope
 
 
     public RateLimitPropertiesDialog(Frame owner, RateLimitAssertion rla) throws HeadlessException {
-        super(owner, true);
+        super(owner, "Rate Limit Properties", true);
         initialize(rla);
     }
 
     public RateLimitPropertiesDialog(Dialog owner, RateLimitAssertion rla) throws HeadlessException {
-        super(owner, true);
+        super(owner, "Rate Limit Properties", true);
         initialize(rla);
     }
 
     private void initialize(RateLimitAssertion rla) {
-        setTitle("Rate Limit Properties");
         setContentPane(topPanel);
 
         okButton.addActionListener(this);
@@ -185,10 +184,6 @@ public class RateLimitPropertiesDialog extends JDialog implements AssertionPrope
         return rla;
     }
 
-    public JDialog getDialog() {
-        return this;
-    }
-
     /**
      * @return true if the dialog was dismissed by the user pressing the Ok button.
      */
@@ -196,4 +191,8 @@ public class RateLimitPropertiesDialog extends JDialog implements AssertionPrope
         return confirmed;
     }
 
+    @Override
+    protected void configureView() {
+        okButton.setEnabled( !isReadOnly() );
+    }
 }

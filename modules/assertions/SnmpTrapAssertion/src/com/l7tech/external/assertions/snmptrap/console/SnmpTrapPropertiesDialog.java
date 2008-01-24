@@ -9,7 +9,7 @@ package com.l7tech.external.assertions.snmptrap.console;
 import com.l7tech.common.gui.util.InputValidator;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.console.panels.AssertionPropertiesEditor;
+import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.external.assertions.snmptrap.SnmpTrapAssertion;
 
 import javax.swing.*;
@@ -20,7 +20,7 @@ import java.awt.event.ActionListener;
 /**
  * Properties dialog for {@link SnmpTrapAssertion}.
  */
-public class SnmpTrapPropertiesDialog extends JDialog implements AssertionPropertiesEditor<SnmpTrapAssertion> {
+public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<SnmpTrapAssertion> {
     public static final String TITLE = "SNMP Properties";
 
     private final InputValidator validator = new InputValidator(this, TITLE);
@@ -147,11 +147,12 @@ public class SnmpTrapPropertiesDialog extends JDialog implements AssertionProper
         validator.validate();
     }
 
-    public JDialog getDialog() {
-        return this;
-    }
-
     public boolean isConfirmed() {
         return confirmed;
+    }
+
+    @Override
+    protected void configureView() {
+        okButton.setEnabled( !isReadOnly() );
     }
 }

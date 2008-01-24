@@ -28,7 +28,7 @@ public class AddRemoteIpRangeAssertionAdvice implements Advice {
         }
         RemoteIpRange assertion = (RemoteIpRange)assertions[0];
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final RemoteIpRangePropertiesDialog dlg = new RemoteIpRangePropertiesDialog(mw, true, assertion);
+        final RemoteIpRangePropertiesDialog dlg = new RemoteIpRangePropertiesDialog(mw, true, false, assertion);
         // show the dialog
         dlg.pack();
         Utilities.centerOnScreen(dlg);

@@ -36,6 +36,7 @@ public class SetVariableAssertionDialog extends JDialog {
         private final DataType _dataType;
         public DataTypeComboBoxItem(DataType dataType) { _dataType = dataType; }
         public DataType getDataType() { return _dataType; }
+        @Override
         public String toString() { return _dataType.getName(); }
     }
 
@@ -59,16 +60,18 @@ public class SetVariableAssertionDialog extends JDialog {
     private JButton _cancelButton;
     private JButton _okButton;
 
+    private final boolean readOnly;
     private boolean _assertionModified;
     private final Set<String> _predecessorVariables;
     private Border _expressionStatusBorder;
 
-    public SetVariableAssertionDialog(Frame owner, final SetVariableAssertion assertion) throws HeadlessException {
-        this(owner, assertion, null);
+    public SetVariableAssertionDialog(Frame owner, final boolean readOnly, final SetVariableAssertion assertion) throws HeadlessException {
+        this(owner, readOnly, assertion, null);
     }
 
-    public SetVariableAssertionDialog(Frame owner, final SetVariableAssertion assertion, final Assertion contextAssertion) throws HeadlessException {
+    public SetVariableAssertionDialog(Frame owner, final boolean readOnly, final SetVariableAssertion assertion, final Assertion contextAssertion) throws HeadlessException {
         super(owner, "Set Variable", true);
+        this.readOnly = readOnly;
 
         _expressionStatusBorder = _expressionStatusScrollPane.getBorder();
         clearVariableNameStatus();
@@ -146,7 +149,7 @@ public class SetVariableAssertionDialog extends JDialog {
                     assertion.setContentType(null);
                 }
 
-                LineBreak lineBreak = null;
+                LineBreak lineBreak = LineBreak.CRLF;
                 if (_crlfRadioButton.isSelected()) {
                     lineBreak = LineBreak.CRLF;
                 } else if (_lfRadioButton.isSelected()) {
@@ -242,7 +245,7 @@ public class SetVariableAssertionDialog extends JDialog {
 
         boolean ok = true;
 
-        String validateNameResult = null;
+        String validateNameResult;
         if (variableName.length() == 0) {
             ok = false;
         } else if ((validateNameResult = VariableMetadata.validateName(variableName)) != null) {
@@ -316,7 +319,7 @@ public class SetVariableAssertionDialog extends JDialog {
             _expressionStatusScrollPane.setBorder(_expressionStatusBorder);
         }
 
-        _okButton.setEnabled(ok);
+        _okButton.setEnabled(!readOnly && ok);
     }
 
     public boolean isAssertionModified() {

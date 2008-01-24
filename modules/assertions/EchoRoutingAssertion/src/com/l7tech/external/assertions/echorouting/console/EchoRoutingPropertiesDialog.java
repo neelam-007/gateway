@@ -12,7 +12,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyEvent;
-import com.l7tech.console.panels.AssertionPropertiesEditor;
+import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.external.assertions.echorouting.EchoRoutingAssertion;
 
@@ -23,7 +23,7 @@ import com.l7tech.external.assertions.echorouting.EchoRoutingAssertion;
  * @author $Author$
  * @version $Revision$
  */
-public class EchoRoutingPropertiesDialog extends JDialog implements AssertionPropertiesEditor<EchoRoutingAssertion> {
+public class EchoRoutingPropertiesDialog extends AssertionPropertiesEditorSupport<EchoRoutingAssertion> {
 
     //- PUBLIC
 
@@ -33,8 +33,7 @@ public class EchoRoutingPropertiesDialog extends JDialog implements AssertionPro
      * @param a      assertion to edit
      */
     public EchoRoutingPropertiesDialog(Frame owner, EchoRoutingAssertion a) {
-        super(owner, true);
-        setTitle("Echo Routing Properties");
+        super(owner, "Echo Routing Properties", true);
         assertion = a;
         initComponents();
         initFormData();
@@ -143,10 +142,6 @@ public class EchoRoutingPropertiesDialog extends JDialog implements AssertionPro
             securityHeaderLeaveRadioButton.setSelected(true);
     }
 
-    public JDialog getDialog() {
-        return this;
-    }
-
     public boolean isConfirmed() {
         return wasOkButtonPressed;
     }
@@ -165,5 +160,10 @@ public class EchoRoutingPropertiesDialog extends JDialog implements AssertionPro
         assertion.setGroupMembershipStatement(false);
         assertion.setAttachSamlSenderVouches(false);
         return assertion;
+    }
+
+    @Override
+    protected void configureView() {
+        okButton.setEnabled( !isReadOnly() );
     }
 }

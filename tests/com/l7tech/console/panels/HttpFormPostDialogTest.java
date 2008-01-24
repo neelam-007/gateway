@@ -24,7 +24,7 @@ public class HttpFormPostDialogTest {
         HttpFormPost.FieldInfo fi3 = new HttpFormPost.FieldInfo("baz", "application/octet-stream");
 
         assertion.setFieldInfos(new HttpFormPost.FieldInfo[] {fi1, fi2, fi3} );
-        HttpFormPostDialog rd = new HttpFormPostDialog(null, assertion);
+        HttpFormPostDialog rd = new HttpFormPostDialog(null, assertion, false);
         rd.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         rd.pack();
         Utilities.centerOnScreen(rd);

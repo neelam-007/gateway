@@ -31,6 +31,7 @@ public class SetVariableAssertionPropertiesAction extends NodeAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Set Variable Assertion Properties";
     }
@@ -38,6 +39,7 @@ public class SetVariableAssertionPropertiesAction extends NodeAction {
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return "View/Edit Set Variable Assertion Properties";
     }
@@ -45,6 +47,7 @@ public class SetVariableAssertionPropertiesAction extends NodeAction {
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/About16.gif";
     }
@@ -56,10 +59,11 @@ public class SetVariableAssertionPropertiesAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         SetVariableAssertion sva = (SetVariableAssertion) node.asAssertion();
-        Frame f = (JFrame)TopComponents.getInstance().getTopParent();
-        final SetVariableAssertionDialog eqd = new SetVariableAssertionDialog(f, sva);
+        Frame f = TopComponents.getInstance().getTopParent();
+        final SetVariableAssertionDialog eqd = new SetVariableAssertionDialog(f, !node.canEdit(), sva);
         Utilities.setEscKeyStrokeDisposes(eqd);
         eqd.pack();
         Utilities.centerOnScreen(eqd);

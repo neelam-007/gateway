@@ -117,10 +117,10 @@ public class FaultLevelPropertiesDialog extends JDialog {
     private JCheckBox urlCheckBox;
     private JButton helpButton;
 
-    public FaultLevelPropertiesDialog(Frame owner, FaultLevel subject) {
+    public FaultLevelPropertiesDialog(Frame owner, FaultLevel subject, boolean readOnly) {
         super(owner, TITLE, true);
         this.assertion = subject;
-        initialize();
+        initialize(readOnly);
         DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
 
@@ -134,7 +134,7 @@ public class FaultLevelPropertiesDialog extends JDialog {
         }
     }
 
-    private void initialize() {
+    private void initialize(boolean readOnly) {
         setContentPane(mainPanel);
         Utilities.equalizeButtonSizes(new AbstractButton[] {okButton, cancelButton, helpButton});
 
@@ -153,6 +153,7 @@ public class FaultLevelPropertiesDialog extends JDialog {
             }
         });
 
+        okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ok();

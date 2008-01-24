@@ -96,6 +96,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     private JButton editGlobalXMLSchemasButton;
 
     // Other fields
+    private final boolean readOnly;
     private UIAccessibility uiAccessibility;
     private SchemaValidation schemaValidationAssertion;
     private PublishedService service;
@@ -126,6 +127,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         super(owner, true);
         final SchemaValidation assertion = node.asAssertion();
         if (assertion == null) throw new IllegalArgumentException("Schema Validation Node == null");
+        this.readOnly = !node.canEdit();
         schemaValidationAssertion = assertion;
         this.service = service;
         initialize();
@@ -136,6 +138,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         if (assertion == null) {
             throw new IllegalArgumentException("Schema Validation == null");
         }
+        this.readOnly = false;
         schemaValidationAssertion = assertion;
         this.service = service;
         initialize();
@@ -176,6 +179,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                 updateModeComponents();
             }
         });
+        okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ok();

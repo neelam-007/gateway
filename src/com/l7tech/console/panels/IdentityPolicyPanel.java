@@ -146,7 +146,7 @@ public class IdentityPolicyPanel extends JPanel {
                 BridgeRoutingAssertionPropertiesDialog d =
                         new BridgeRoutingAssertionPropertiesDialog(TopComponents.getInstance().getTopParent(),
                                                                    guiBraConfig,
-                                service.getPolicy(), wsdl);
+                                service.getPolicy(), wsdl, false);
                 d.setModal(true);
                 d.pack();
                 Utilities.centerOnScreen(d);

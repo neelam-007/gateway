@@ -60,7 +60,7 @@ public class RegexPropertiesAction extends NodeAction {
     protected void performAction() {
         Regex ra = (Regex)node.asAssertion();
         Frame f = TopComponents.getInstance().getTopParent();
-        RegexDialog rd = new RegexDialog(f, ra);
+        RegexDialog rd = new RegexDialog(f, ra, !node.canEdit());
         rd.setModal(true);
         rd.getBeanEditSupport().addBeanListener(new BeanAdapter() {
             public void onEditAccepted(Object source, Object bean) {

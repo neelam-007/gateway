@@ -30,7 +30,7 @@ public class AddCookieCredentialSourceAssertionAdvice implements Advice {
 
         final Frame mw = TopComponents.getInstance().getTopParent();
         final CookieCredentialSourceAssertionPropertiesDialog dlg =
-                new CookieCredentialSourceAssertionPropertiesDialog(mw, true, assertion);
+                new CookieCredentialSourceAssertionPropertiesDialog(mw, true, assertion, false);
 
         dlg.pack();
         Utilities.centerOnScreen(dlg);

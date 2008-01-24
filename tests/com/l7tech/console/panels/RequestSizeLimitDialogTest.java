@@ -31,7 +31,7 @@ public class RequestSizeLimitDialogTest {
         System.out.println("[BEFORE] Apply to whole message = " + assertion.isEntireMessage());
 
 
-        RequestSizeLimitDialog dlg = new RequestSizeLimitDialog(parentFrame, assertion, true);
+        RequestSizeLimitDialog dlg = new RequestSizeLimitDialog(parentFrame, assertion, true, false);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);

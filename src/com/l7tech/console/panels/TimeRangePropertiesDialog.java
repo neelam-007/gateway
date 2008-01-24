@@ -31,8 +31,9 @@ import java.util.*;
  */
 public class TimeRangePropertiesDialog extends JDialog {
 
-    public TimeRangePropertiesDialog(Frame owner, boolean modal, TimeRange assertion) {
+    public TimeRangePropertiesDialog(Frame owner, boolean modal, boolean readOnly, TimeRange assertion) {
         super(owner, modal);
+        this.readOnly = readOnly;
         this.assertion = assertion;
         initialize();
     }
@@ -592,6 +593,7 @@ public class TimeRangePropertiesDialog extends JDialog {
     private JPanel makeBottomButtonsPanel() {
         // construct buttons
         okButton = new JButton();
+        okButton.setEnabled( !readOnly );
         okButton.setText(resources.getString("okButton.name"));
         cancelButton = new JButton();
         cancelButton.setText(resources.getString("cancelButton.name"));
@@ -633,13 +635,14 @@ public class TimeRangePropertiesDialog extends JDialog {
         // run dlg 5 times with same assertion
         for (int i = 0; i < 5; i++) {
 
-            TimeRangePropertiesDialog me = new TimeRangePropertiesDialog(null, true, assertion);
+            TimeRangePropertiesDialog me = new TimeRangePropertiesDialog(null, true, false, assertion);
             me.pack();
             me.setVisible(true);
         }
         System.exit(0);
     }
 
+    private final boolean readOnly;
     private TimeRange assertion;
 
     private JButton helpButton;

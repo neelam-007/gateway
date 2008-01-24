@@ -21,7 +21,7 @@ public class RegexDialogTest {
         r.setRegex("aaaa");
         r.setReplacement("bbbb");
         r.setEncoding("UTF-8");
-        RegexDialog rd = new RegexDialog(null, r);
+        RegexDialog rd = new RegexDialog(null, r, false);
         rd.pack();
         rd.setVisible(true);
 

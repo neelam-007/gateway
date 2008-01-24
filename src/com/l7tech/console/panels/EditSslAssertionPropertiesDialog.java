@@ -33,16 +33,16 @@ public class EditSslAssertionPropertiesDialog extends JDialog {
      *
      * @param parent the parent Frame. May be <B>null</B>
      */
-    public EditSslAssertionPropertiesDialog(Frame parent, SslAssertion sslAssertion) {
+    public EditSslAssertionPropertiesDialog(Frame parent, SslAssertion sslAssertion, boolean readOnly) {
         super(parent, true);
         this.sslAssertion = sslAssertion;
-        initialize();
+        initialize(readOnly);
         pack();
         Utilities.centerOnScreen(this);
         Utilities.setEscKeyStrokeDisposes(this);
     }
 
-    private void initialize() {
+    private void initialize(boolean readOnly) {
         setTitle("SSL or TLS options");
         Container pane = getContentPane();
         pane.setLayout(new BorderLayout());
@@ -83,6 +83,7 @@ public class EditSslAssertionPropertiesDialog extends JDialog {
             }
         });
 
+        okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (sslRequiredRadioButton.isSelected()) {

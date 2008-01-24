@@ -33,7 +33,7 @@ public class AddAuditAdviceAssertion implements Advice {
         AuditDetailAssertion subject = (AuditDetailAssertion)assertions[0];
         subject.setLevel(serverLevel.getName());
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final AuditDetailAssertionPropertiesDialog aad = new AuditDetailAssertionPropertiesDialog(mw, subject);
+        final AuditDetailAssertionPropertiesDialog aad = new AuditDetailAssertionPropertiesDialog(mw, subject, false);
         aad.pack();
         Utilities.centerOnScreen(aad);
         Utilities.setEscKeyStrokeDisposes(aad);

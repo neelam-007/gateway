@@ -30,6 +30,7 @@ public class RequestWssTimestampPropertiesAction extends NodeAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Require Timestamp in Request Properties";
     }
@@ -37,6 +38,7 @@ public class RequestWssTimestampPropertiesAction extends NodeAction {
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return "View/Edit Require Timestamp Assertion Properties";
     }
@@ -44,6 +46,7 @@ public class RequestWssTimestampPropertiesAction extends NodeAction {
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/About16.gif";
     }
@@ -55,17 +58,18 @@ public class RequestWssTimestampPropertiesAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         final RequestWssTimestamp ass = (RequestWssTimestamp)node.asAssertion();
         Frame f = TopComponents.getInstance().getTopParent();
-        final RequestWssTimestampDialog dlg = new RequestWssTimestampDialog(f, true, (RequestWssTimestamp)(ass.clone()));
+        final RequestWssTimestampDialog dlg = new RequestWssTimestampDialog(f, true, (RequestWssTimestamp)(ass.clone()), !node.canEdit());
         Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (dlg.wasOKed()) {
-                    RequestWssTimestamp newAss = (RequestWssTimestamp)dlg.getValue();
+                    RequestWssTimestamp newAss = dlg.getValue();
                     if (newAss == null) return;
 
                     ass.copyFrom(newAss);

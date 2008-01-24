@@ -57,21 +57,24 @@ public class EditWsFederationPassiveTokenRequestAction extends NodeAction {
      *
      * @return the name.
      */
+    @Override
     public String getName() {
         return "View/Edit WS-Federation PRP Properties";
     }
 
     //- PROTECTED
 
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Edit16.gif";
     }
 
+    @Override
     protected void performAction() {
         Frame frame = TopComponents.getInstance().getTopParent();
 
         final WsFederationPassiveTokenRequestPropertiesDialog dlg =
-                new WsFederationPassiveTokenRequestPropertiesDialog(wsFedAssertion, isTokenRequest, frame, true);
+                new WsFederationPassiveTokenRequestPropertiesDialog(wsFedAssertion, isTokenRequest, frame, true, !node.canEdit());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

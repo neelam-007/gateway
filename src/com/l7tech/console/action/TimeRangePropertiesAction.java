@@ -27,21 +27,25 @@ public class TimeRangePropertiesAction extends SecureAction {
         this.subject = subject;
     }
 
+    @Override
     public String getName() {
         return "Time/Day Availability Properties";
     }
 
+    @Override
     public String getDescription() {
         return "Change the properties of the time and day availability assertion.";
     }
 
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
+    @Override
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        TimeRangePropertiesDialog dlg = new TimeRangePropertiesDialog(f, false, subject.asAssertion());
+        TimeRangePropertiesDialog dlg = new TimeRangePropertiesDialog(f, false, !subject.canEdit(), subject.asAssertion());
         dlg.addPolicyListener(listener);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
@@ -49,6 +53,7 @@ public class TimeRangePropertiesAction extends SecureAction {
     }
 
     private final PolicyListener listener = new PolicyListenerAdapter() {
+        @Override
         public void assertionsChanged(PolicyEvent e) {
             JTree tree = TopComponents.getInstance().getPolicyTree();
             if (tree != null) {

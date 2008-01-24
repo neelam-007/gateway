@@ -28,23 +28,27 @@ public class WsiSamlAssertionPropertiesAction extends SecureAction {
         this.node = node;
     }
 
+    @Override
     public String getName() {
         return "WSI-SAML Properties";
     }
 
+    @Override
     public String getDescription() {
         return "View/Edit properties of the WS-I SAML assertion.";
     }
 
     //- PROTECTED
 
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
+    @Override
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        final WsiSamlPropertiesDialog dlg = new WsiSamlPropertiesDialog(node.asAssertion(), f, true);
+        final WsiSamlPropertiesDialog dlg = new WsiSamlPropertiesDialog(node.asAssertion(), f, true, !node.canEdit());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

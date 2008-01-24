@@ -34,7 +34,7 @@ public class AddWsFederationPassiveTokenRequestAdvice implements Advice {
         final WsFederationPassiveTokenRequest assertion = (WsFederationPassiveTokenRequest) assertions[0];
         Frame f = TopComponents.getInstance().getTopParent();
 
-        final WsFederationPassiveTokenRequestPropertiesDialog dlg = new WsFederationPassiveTokenRequestPropertiesDialog(assertion, true, f, true);
+        final WsFederationPassiveTokenRequestPropertiesDialog dlg = new WsFederationPassiveTokenRequestPropertiesDialog(assertion, true, f, true, false);
         Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);

@@ -30,7 +30,7 @@ public class SamlBrowserArtifactDialogTest {
         dap.setAdditionalFields(fields);
         sba.setAuthenticationProperties(dap);
 
-        SamlBrowserArtifactPropertiesDialog dlg = new SamlBrowserArtifactPropertiesDialog(sba, null, false);
+        SamlBrowserArtifactPropertiesDialog dlg = new SamlBrowserArtifactPropertiesDialog(sba, null, false, false);
         dlg.pack();
         dlg.setVisible(true);
     }

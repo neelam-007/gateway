@@ -30,6 +30,7 @@ public class OversizedTextDialogAction extends NodeAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Document Structure Threat Protection Properties";
     }
@@ -37,6 +38,7 @@ public class OversizedTextDialogAction extends NodeAction {
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return "View and edit document structure threat protection properties";
     }
@@ -44,15 +46,17 @@ public class OversizedTextDialogAction extends NodeAction {
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
+    @Override
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 Frame f = TopComponents.getInstance().getTopParent();
-                final OversizedTextDialog d = new OversizedTextDialog(f, (OversizedTextAssertion)node.asAssertion(), true);
+                final OversizedTextDialog d = new OversizedTextDialog(f, (OversizedTextAssertion)node.asAssertion(), true, !node.canEdit());
                 d.pack();
                 Utilities.centerOnScreen(d);
                 //d.addPolicyListener(listener);

@@ -24,7 +24,7 @@ public class RequestWssSamlWizardTest extends JFrame {
                     new ConditionsWizardStepPanel(null))))));
         RequestWssSaml assertion;
         assertion = new RequestWssSaml();
-        Wizard w = new SamlPolicyAssertionWizard(assertion, frame, p, false);
+        Wizard w = new SamlPolicyAssertionWizard(assertion, frame, p, false, false);
         w.pack();
         w.setVisible(true);
         w.addWindowListener(

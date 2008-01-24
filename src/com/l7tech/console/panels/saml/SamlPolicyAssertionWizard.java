@@ -10,6 +10,7 @@ import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
 
+import javax.swing.JButton;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -22,14 +23,18 @@ import java.awt.event.ActionListener;
  * @version Jan 18, 2005
  */
 public class SamlPolicyAssertionWizard extends Wizard {
+
+    //- PUBLIC
+
     /**
      * Creates new wizard
      */
-    public SamlPolicyAssertionWizard(SamlPolicyAssertion assertion, Frame parent, WizardStepPanel panel, boolean issueMode) {
+    public SamlPolicyAssertionWizard(SamlPolicyAssertion assertion, Frame parent, WizardStepPanel panel, boolean issueMode, boolean readOnly) {
         super(parent, panel);
         if (assertion == null) {
             throw new IllegalArgumentException();
         }
+        this.readOnly = readOnly;
         wizardInput = assertion;
         if (issueMode) {
             setTitle("SAML Issuer Assertion Wizard");
@@ -45,4 +50,19 @@ public class SamlPolicyAssertionWizard extends Wizard {
         });
 
     }
+
+    //- PROTECTED
+
+    @Override
+    protected void updateWizardControls( final WizardStepPanel wsp ) {
+        super.updateWizardControls( wsp );
+        JButton finishButton = this.getButtonFinish();
+        if ( finishButton.isEnabled() ) {
+            finishButton.setEnabled( !readOnly );
+        }
+    }
+
+    //- PRIVATE
+
+    private final boolean readOnly;
  }

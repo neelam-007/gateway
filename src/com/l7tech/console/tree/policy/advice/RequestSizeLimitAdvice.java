@@ -23,7 +23,7 @@ public class RequestSizeLimitAdvice implements Advice{
         }
         RequestSizeLimit subject = (RequestSizeLimit) assertions[0];
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final RequestSizeLimitDialog dlg = new RequestSizeLimitDialog(mw, subject, true);
+        final RequestSizeLimitDialog dlg = new RequestSizeLimitDialog(mw, subject, true, false);
 
         // show the dialog
         dlg.pack();

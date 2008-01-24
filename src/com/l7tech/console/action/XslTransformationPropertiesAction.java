@@ -26,21 +26,25 @@ public class XslTransformationPropertiesAction extends SecureAction {
         this.node = node;
     }
 
+    @Override
     public String getName() {
         return "XSL Transformation Properties";
     }
 
+    @Override
     public String getDescription() {
         return "View/Edit properties of the xsl transformation assertion.";
     }
 
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
+    @Override
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        final XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(f, true, node.asAssertion());
+        final XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(f, true, !node.canEdit(), node.asAssertion());
         dlg.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         dlg.pack();
         Utilities.centerOnScreen(dlg);

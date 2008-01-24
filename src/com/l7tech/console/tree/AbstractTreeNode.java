@@ -322,6 +322,14 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         return false;
     }
 
+    /**
+     * Is this nodes assertion editable?
+     *
+     * @return false if read only
+     */
+    public boolean canEdit() {
+        return true;
+    }
 
     /**
      * loads the icon specified by subclass iconResource()

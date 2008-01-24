@@ -24,10 +24,12 @@ public class AuditDetailAssertionTreeNode extends LeafAssertionTreeNode<AuditDet
         super(assertion);
     }
 
+    @Override
     public String getName() {
         return "Audit detail: \"" + assertion.getDetail() + "\"";
     }
 
+    @Override
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/Edit16.gif";
     }
@@ -37,23 +39,28 @@ public class AuditDetailAssertionTreeNode extends LeafAssertionTreeNode<AuditDet
      *
      * @return <code>null</code> indicating there should be none default action
      */
+    @Override
     public Action getPreferredAction() {
         return new SecureAction(null, AuditAssertion.class) {
+            @Override
             public String getName() {
                 return "Audit Detail Properties";
             }
 
+            @Override
             public String getDescription() {
                 return "Change the properties of the audit detail assertion.";
             }
 
+            @Override
             protected String iconResource() {
                 return "com/l7tech/console/resources/Properties16.gif";
             }
 
+            @Override
             protected void performAction() {
                 AuditDetailAssertionPropertiesDialog aad =
-                        new AuditDetailAssertionPropertiesDialog(TopComponents.getInstance().getTopParent(), assertion);
+                        new AuditDetailAssertionPropertiesDialog(TopComponents.getInstance().getTopParent(), assertion, !canEdit());
                 aad.pack();
                 Utilities.centerOnScreen(aad);
                 Utilities.setEscKeyStrokeDisposes(aad);

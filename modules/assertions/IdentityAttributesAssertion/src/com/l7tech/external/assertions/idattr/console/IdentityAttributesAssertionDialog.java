@@ -6,7 +6,7 @@ package com.l7tech.external.assertions.idattr.console;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.RunOnChangeListener;
-import com.l7tech.console.panels.AssertionPropertiesEditor;
+import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.idattr.IdentityAttributesAssertion;
 import static com.l7tech.external.assertions.idattr.IdentityAttributesAssertion.DEFAULT_VAR_PREFIX;
@@ -33,7 +33,7 @@ import java.util.List;
 /**
  * @author alex
  */
-public class IdentityAttributesAssertionDialog extends JDialog implements AssertionPropertiesEditor<IdentityAttributesAssertion> {
+public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditorSupport<IdentityAttributesAssertion> {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.idattr.console.resources.IdentityAttributesAssertionDialog");
 
     private JPanel mainPanel;
@@ -137,7 +137,7 @@ public class IdentityAttributesAssertionDialog extends JDialog implements Assert
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                assertion.setLookupAttributes(mappings.toArray(new IdentityMapping[0]));
+                assertion.setLookupAttributes(mappings.toArray(new IdentityMapping[mappings.size()]));
                 final String text = variablePrefixField.getText();
                 assertion.setVariablePrefix(text.equals(DEFAULT_VAR_PREFIX) ? null : text);
                 assertion.setIdentityProviderOid(previousProvider.getOid());
@@ -324,7 +324,7 @@ public class IdentityAttributesAssertionDialog extends JDialog implements Assert
         removeButton.setEnabled(sel);
 
         final String vp = variablePrefixField.getText();
-        okButton.setEnabled(!mappings.isEmpty() && vp != null && vp.trim().length() > 0 && VariableMetadata.isNameValid(vp));
+        okButton.setEnabled(!isReadOnly() && !mappings.isEmpty() && vp != null && vp.trim().length() > 0 && VariableMetadata.isNameValid(vp));
     }
 
     private boolean edit(IdentityMapping im) {
@@ -333,10 +333,6 @@ public class IdentityAttributesAssertionDialog extends JDialog implements Assert
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
         return dlg.isOk();
-    }
-
-    public JDialog getDialog() {
-        return this;
     }
 
     public boolean isConfirmed() {
@@ -386,5 +382,10 @@ public class IdentityAttributesAssertionDialog extends JDialog implements Assert
 
     public boolean isOk() {
         return ok;
+    }
+
+    @Override
+    protected void configureView() {
+        enableButtons();
     }
 }

@@ -41,10 +41,10 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     private JRadioButton contextVarRadio;
     private JTextField contextVarField;
 
-    public RemoteIpRangePropertiesDialog(Frame owner, boolean modal, RemoteIpRange subject) {
+    public RemoteIpRangePropertiesDialog(Frame owner, boolean modal, boolean readOnly, RemoteIpRange subject) {
         super(owner, modal);
         this.subject = subject;
-        initialize();
+        initialize(readOnly);
         oked = false;
     }
 
@@ -55,10 +55,11 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
         return oked;
     }
 
-    private void initialize() {
+    private void initialize(boolean readOnly) {
         setModal(true);
         initResources();
         setContentPane(mainPanel);
+        okButton.setEnabled( !readOnly );
         Utilities.equalizeButtonSizes(new AbstractButton[] {okButton, cancelButton, helpButton});
         setTitle(resources.getString("window.title"));
         Utilities.setEscKeyStrokeDisposes(this);

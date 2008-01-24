@@ -61,6 +61,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
             _displayName = displayName;
         }
         public String getVariableName() { return _variableName; }
+        @Override
         public String toString() { return _displayName; }
     }
 
@@ -143,7 +144,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     /**
      * Creates new form ServicePanel
      */
-    public HttpRoutingAssertionDialog(Frame owner, HttpRoutingAssertion assertion, Policy policy, Wsdl wsdl) {
+    public HttpRoutingAssertionDialog(Frame owner, HttpRoutingAssertion assertion, Policy policy, Wsdl wsdl, boolean readOnly) {
         super(owner, true);
         setTitle(resources.getString("dialog.title"));
         this.assertion = assertion;
@@ -153,20 +154,23 @@ public class HttpRoutingAssertionDialog extends JDialog {
         this.samlAuthPanel = new HttpRoutingSamlAuthPanel(assertion);
 
         okButtonAction = new SecureAction(new AttemptedUpdate(EntityType.POLICY, policy)) {
+            @Override
             public String getName() {
                 return resources.getString("okButton.text");
             }
 
+            @Override
             protected String iconResource() {
                 return null;
             }
 
+            @Override
             protected void performAction() {
                 ok();
             }
         };
 
-        initComponents();
+        initComponents(readOnly);
         initFormData();
     }
 
@@ -226,7 +230,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
      * This method is called from within the constructor to
      * initialize the form.
      */
-    private void initComponents() {
+    private void initComponents(final boolean readOnly) {
         add(mainPanel);
 
         connectTimeoutSpinner.setModel(new SpinnerNumberModel(1,1,86400,1));  // 1 day in seconds
@@ -332,6 +336,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         initializeHttpRulesTabs();
 
         okButton.setAction(okButtonAction);
+        okButton.setEnabled( !readOnly );
 
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -340,7 +345,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         });
 
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
-        getRootPane().setDefaultButton(okButton);
+        getRootPane().setDefaultButton(okButton);               
         Utilities.setEscKeyStrokeDisposes(this);
     }
 
@@ -726,7 +731,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
         if (resMsgDestVariableRadioButton.isSelected()) {
             final String variableName = resMsgDestVariableTextField.getText();
-            String validateNameResult = null;
+            String validateNameResult;
             if (variableName.length() == 0) {
                 ok = false;
             } else if ((validateNameResult = VariableMetadata.validateName(variableName)) != null) {

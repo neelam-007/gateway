@@ -41,7 +41,7 @@ public class SetVariableAssertionAdvice implements Advice {
         }
 
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final SetVariableAssertionDialog dlg = new SetVariableAssertionDialog(mw, subject, beingInsertedAfter);
+        final SetVariableAssertionDialog dlg = new SetVariableAssertionDialog(mw, false, subject, beingInsertedAfter);
 
         // show the dialog
         dlg.pack();

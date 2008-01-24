@@ -6,8 +6,6 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.console.tree.policy.PolicyChange;
-import com.l7tech.console.tree.policy.PolicyException;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.OversizedTextDialog;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
@@ -28,7 +26,7 @@ public class OversizedTextAssertionAdvice implements Advice {
         }
         OversizedTextAssertion subject = (OversizedTextAssertion) assertions[0];
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final OversizedTextDialog dlg = new OversizedTextDialog(mw, subject, true);
+        final OversizedTextDialog dlg = new OversizedTextDialog(mw, subject, true, false);
 
         // show the dialog
         dlg.pack();

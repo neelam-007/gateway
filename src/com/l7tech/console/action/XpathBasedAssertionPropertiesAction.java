@@ -54,6 +54,7 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return getName();
     }
@@ -61,6 +62,7 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Properties16.gif";
     }
@@ -71,13 +73,14 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         XpathBasedAssertionTreeNode n = (XpathBasedAssertionTreeNode)node;
         final Frame mw = TopComponents.getInstance().getTopParent();
         try {
             if (n.getService() != null) {
                 boolean showAccelStatus = shouldShowHardwareAccelStatus(n);
-                XpathBasedAssertionPropertiesDialog dialog = new XpathBasedAssertionPropertiesDialog(mw, false, n, okListener, showAccelStatus);
+                XpathBasedAssertionPropertiesDialog dialog = new XpathBasedAssertionPropertiesDialog(mw, false, n, okListener, showAccelStatus, !n.canEdit());
                 dialog.pack();
                 Utilities.centerOnScreen(dialog);
                 DialogDisplayer.display(dialog);

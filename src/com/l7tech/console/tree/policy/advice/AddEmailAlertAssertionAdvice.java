@@ -24,7 +24,7 @@ public class AddEmailAlertAssertionAdvice implements Advice {
         }
         EmailAlertAssertion subject = (EmailAlertAssertion)assertions[0];
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final EmailAlertPropertiesDialog dlg = new EmailAlertPropertiesDialog(mw, subject);
+        final EmailAlertPropertiesDialog dlg = new EmailAlertPropertiesDialog(mw, subject, false);
 
         // show the dialog
         dlg.pack();

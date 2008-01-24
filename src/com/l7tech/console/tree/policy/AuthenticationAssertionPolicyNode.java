@@ -46,17 +46,22 @@ public class AuthenticationAssertionPolicyNode extends IdentityAssertionTreeNode
         super(idass);
     }
 
+    @Override
     public String getName() {
         return "Authenticate against " + idProviderName();
     }
 
+    @Override
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/user16.png";
     }
 
     @Override
     public Action getPreferredAction() {
-        return propertiesAction;
+        if ( !canEdit() )
+            return null;
+        else
+            return propertiesAction;
     }
 
 }

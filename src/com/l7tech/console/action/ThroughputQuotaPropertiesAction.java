@@ -25,21 +25,25 @@ public class ThroughputQuotaPropertiesAction extends SecureAction {
         this.subject = subject;
     }
 
+    @Override
     public String getName() {
         return "Throughput Quota Properties";
     }
 
+    @Override
     public String getDescription() {
         return "View / Edit properties of a Throughput Quota Assertion";
     }
 
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
+    @Override
     protected void performAction() {
         final ThroughputQuotaForm dlg = new ThroughputQuotaForm(TopComponents.getInstance().getTopParent(),
-                                                          subject.asAssertion(), null);
+                                                          subject.asAssertion(), null, !subject.canEdit());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

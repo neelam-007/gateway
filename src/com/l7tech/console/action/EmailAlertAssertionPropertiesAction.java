@@ -21,21 +21,25 @@ public class EmailAlertAssertionPropertiesAction extends SecureAction {
         this.subject = subject;
     }
 
+    @Override
     public String getName() {
         return "Email Alert Properties";
     }
 
+    @Override
     public String getDescription() {
         return "Change the properties of the email alert assertion.";
     }
 
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
+    @Override
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        final EmailAlertPropertiesDialog dlg = new EmailAlertPropertiesDialog(f, subject.asAssertion());
+        final EmailAlertPropertiesDialog dlg = new EmailAlertPropertiesDialog(f, subject.asAssertion(), !subject.canEdit());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

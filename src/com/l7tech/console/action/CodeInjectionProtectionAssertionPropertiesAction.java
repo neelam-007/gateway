@@ -45,7 +45,7 @@ public class CodeInjectionProtectionAssertionPropertiesAction extends NodeAction
     protected void performAction() {
         CodeInjectionProtectionAssertion assertion = (CodeInjectionProtectionAssertion) node.asAssertion();
         Frame mainWindow = TopComponents.getInstance().getTopParent();
-        final CodeInjectionProtectionAssertionDialog dialog = new CodeInjectionProtectionAssertionDialog(mainWindow, assertion);
+        final CodeInjectionProtectionAssertionDialog dialog = new CodeInjectionProtectionAssertionDialog(mainWindow, assertion, !node.canEdit());
         Utilities.setEscKeyStrokeDisposes(dialog);
         dialog.pack();
         Utilities.centerOnScreen(dialog);

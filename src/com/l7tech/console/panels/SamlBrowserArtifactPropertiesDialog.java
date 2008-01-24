@@ -23,6 +23,7 @@ public class SamlBrowserArtifactPropertiesDialog extends JDialog {
     private SamlBrowserArtifact samlBrowserArtifactAssertion;
     private AuthenticationProperties authProperties;
     private boolean assertionChanged = false;
+    private boolean readOnly = false;
 
     private JButton okButton;
     private JButton cancelButton;
@@ -36,11 +37,12 @@ public class SamlBrowserArtifactPropertiesDialog extends JDialog {
         return samlBrowserArtifactAssertion;
     }
 
-    public SamlBrowserArtifactPropertiesDialog(SamlBrowserArtifact assertion, final Frame owner, boolean modal)
+    public SamlBrowserArtifactPropertiesDialog(SamlBrowserArtifact assertion, final Frame owner, boolean modal, boolean readOnly)
             throws HeadlessException
     {
         super(owner, "Configure SAML Browser/Artifact", modal);
         this.samlBrowserArtifactAssertion = assertion;
+        this.readOnly = readOnly;
         this.authProperties = new AuthenticationProperties(assertion.getAuthenticationProperties());
         ssoEndpointUrlField.setText(assertion.getSsoEndpointUrl());
         artifactQueryParamField.setText(assertion.getArtifactQueryParameter());
@@ -166,7 +168,7 @@ public class SamlBrowserArtifactPropertiesDialog extends JDialog {
         String ssoUrl = ssoEndpointUrlField.getText();
         String queryParam = artifactQueryParamField.getText();
 
-        ok = validUrl(ssoUrl, false)
+        ok = !readOnly && validUrl(ssoUrl, false)
           && queryParam != null && queryParam.length() > 0;
 
         okButton.setEnabled(ok);

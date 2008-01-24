@@ -34,21 +34,25 @@ public class EditXpathCredentialSourceAction extends NodeAction {
         xpathCredsAssertion = (XpathCredentialSource)node.asAssertion();
     }
 
+    @Override
     public String getName() {
         return "View/Edit XPath Credential Source Properties";
     }
 
+    @Override
     public String getDescription() {
         return getName();
     }
 
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Edit16.gif";
     }
 
+    @Override
     protected void performAction() {
         Frame parent = TopComponents.getInstance().getTopParent();
-        final XpathCredentialSourcePropertiesDialog dlg = new XpathCredentialSourcePropertiesDialog(xpathCredsAssertion, parent, true);
+        final XpathCredentialSourcePropertiesDialog dlg = new XpathCredentialSourcePropertiesDialog(xpathCredsAssertion, parent, true, !node.canEdit());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

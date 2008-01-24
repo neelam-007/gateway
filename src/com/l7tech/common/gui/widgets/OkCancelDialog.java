@@ -17,6 +17,7 @@ import java.beans.PropertyChangeListener;
  */
 public class OkCancelDialog<V> extends JDialog {
     private V value;
+    private final boolean readOnly;
     private boolean wasoked = false;
 
     private JButton cancelButton;
@@ -40,14 +41,24 @@ public class OkCancelDialog<V> extends JDialog {
     }
 
     public OkCancelDialog(Frame owner, String title, boolean modal, ValidatedPanel panel) {
+        this( owner, title, modal, panel, false );
+    }
+
+    public OkCancelDialog(Frame owner, String title, boolean modal, ValidatedPanel panel, boolean readOnly) {
         super(owner, title, modal);
         this.validatedPanel = panel;
+        this.readOnly = readOnly;
         initialize();
     }
 
     public OkCancelDialog(Dialog owner, String title, boolean modal, ValidatedPanel panel) {
+        this( owner, title, modal, panel, false );
+    }
+
+    public OkCancelDialog(Dialog owner, String title, boolean modal, ValidatedPanel panel, boolean readOnly) {
         super(owner, title, modal);
         this.validatedPanel = panel;
+        this.readOnly = readOnly;
         initialize();
     }
 
@@ -60,7 +71,7 @@ public class OkCancelDialog<V> extends JDialog {
 
         validatedPanel.addPropertyChangeListener("ok", new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
-                okButton.setEnabled(evt.getNewValue() == Boolean.TRUE);
+                okButton.setEnabled(!readOnly && evt.getNewValue() == Boolean.TRUE);
             }
         });
 
@@ -86,7 +97,7 @@ public class OkCancelDialog<V> extends JDialog {
 
         okButton.setDefaultCapable(true);
         getRootPane().setDefaultButton(okButton);
-        okButton.setEnabled(validatedPanel.isSyntaxOk());
+        okButton.setEnabled(validatedPanel.isSyntaxOk() && !readOnly);
         innerPanel.add(validatedPanel);
 
         SwingUtilities.invokeLater(new Runnable() {

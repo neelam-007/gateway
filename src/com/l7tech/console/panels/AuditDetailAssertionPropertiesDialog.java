@@ -25,6 +25,7 @@ public class AuditDetailAssertionPropertiesDialog extends JDialog {
     private JComboBox levelComboBox;
     private JButton cancelButton;
     private JButton okButton;
+    private final boolean readOnly;
     private final AuditDetailAssertion assertion;
     private boolean modified;
 
@@ -42,8 +43,9 @@ public class AuditDetailAssertionPropertiesDialog extends JDialog {
         }
     };
 
-    public AuditDetailAssertionPropertiesDialog(Frame owner, AuditDetailAssertion assertion) {
+    public AuditDetailAssertionPropertiesDialog(Frame owner, AuditDetailAssertion assertion, boolean readOnly) {
         super(owner, true);
+        this.readOnly = readOnly;
         this.assertion = assertion;
         initialize();
     }
@@ -78,7 +80,7 @@ public class AuditDetailAssertionPropertiesDialog extends JDialog {
     }
 
     private void enableButtons() {
-        okButton.setEnabled(detailTextArea.getText().length() > 0);
+        okButton.setEnabled(!readOnly && detailTextArea.getText().length() > 0);
     }
 
     private void ok() {

@@ -18,7 +18,7 @@ import java.io.IOException;
 /**
  * Config dialog for HardcodedResponseAssertion.
  */
-public class HardcodedResponseDialog extends JDialog implements AssertionPropertiesEditor<HardcodedResponseAssertion> {
+public class HardcodedResponseDialog extends AssertionPropertiesEditorSupport<HardcodedResponseAssertion> {
     private static final String TITLE = "Template Response Properties";
     private final InputValidator validator = new InputValidator(this, TITLE);
     private JPanel mainPanel;
@@ -136,10 +136,6 @@ public class HardcodedResponseDialog extends JDialog implements AssertionPropert
         return assertion;
     }
 
-    public JDialog getDialog() {
-        return this;
-    }
-
     public boolean isConfirmed() {
         return confirmed;
     }
@@ -151,6 +147,11 @@ public class HardcodedResponseDialog extends JDialog implements AssertionPropert
 
     public HardcodedResponseAssertion getData(HardcodedResponseAssertion assertion) {
         return getAssertion();
+    }
+
+    @Override
+    protected void configureView() {
+        okButton.setEnabled( !isReadOnly() );
     }
 
     private InputValidator.ValidationRule getVariableValidationRule() {

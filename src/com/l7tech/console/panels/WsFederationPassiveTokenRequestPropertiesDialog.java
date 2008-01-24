@@ -25,9 +25,10 @@ public class WsFederationPassiveTokenRequestPropertiesDialog extends JDialog {
         return wsFedAssertion;
     }
 
-    public WsFederationPassiveTokenRequestPropertiesDialog(WsFederationPassiveTokenRequest assertion, boolean request, Frame owner, boolean modal) throws HeadlessException {
+    public WsFederationPassiveTokenRequestPropertiesDialog(WsFederationPassiveTokenRequest assertion, boolean request, Frame owner, boolean modal, boolean readOnly) throws HeadlessException {
         super(owner, "Configure WS-Federation Token Action", modal);
         this.wsFedAssertion = assertion;
+        this.readOnly = readOnly;
 
         ipStsUrlTextField.setText(assertion.getIpStsUrl());
         realmTextField.setText(assertion.getRealm());
@@ -98,6 +99,7 @@ public class WsFederationPassiveTokenRequestPropertiesDialog extends JDialog {
 
     private WsFederationPassiveTokenRequest wsFedAssertion;
     private boolean assertionChanged = false;
+    private boolean readOnly = false;
 
     private JButton okButton;
     private JButton cancelButton;
@@ -117,7 +119,7 @@ public class WsFederationPassiveTokenRequestPropertiesDialog extends JDialog {
         boolean auth = authenticationCheckBox.isSelected();
         String realm = realmTextField.getText();
 
-        ok = validUrl(url, !isTokenRequest() && auth) && validUrl(rurl, !auth) && (!isTokenRequest() || validUrn(realm));
+        ok = !readOnly && validUrl(url, !isTokenRequest() && auth) && validUrl(rurl, !auth) && (!isTokenRequest() || validUrn(realm));
 
         okButton.setEnabled(ok);
     }

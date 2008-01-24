@@ -9,6 +9,16 @@ import javax.swing.*;
  * DefaultAssertionPropertiesAction.  Implementors must have a nullary constructor.
  */
 public interface AssertionPropertiesEditor<AT extends Assertion> {
+
+    /**
+     * Parameter that can be set to request a read-only version of the editor.
+     *
+     * <p>The default state of a properties editor should be read/write.</p>
+     *
+     * <p>The value of this property is a {@link Boolean}</p>
+     */
+    String PARAM_READONLY = AssertionPropertiesEditor.class.getName() + ".readOnly";
+
     /**
      * Get a dialog instance, ready for display with DialogDisplayer.
      * This dialog should be modal and must dispose() itself immediately when dismissed (Ok, Cancel, or closebox).
@@ -48,4 +58,21 @@ public interface AssertionPropertiesEditor<AT extends Assertion> {
      *         Never null.
      */
     AT getData(AT assertion);
+
+    /**
+     * Set a parameter of the view.
+     *
+     * <p>If the parameter is not known or the value is invalid it should be ignored.</p>
+     *
+     * @param name The name of the parameter
+     * @param value The value of the parameter
+     */
+    void setParameter(String name, Object value);
+
+    /**
+     * Get a parameter of the view.
+     *
+     * @return The parameter value or null.
+     */
+    Object getParameter(String name);
 }

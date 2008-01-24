@@ -16,6 +16,7 @@ import javax.swing.*;
  */
 public class SamlIssuerAssertionPropertiesEditor implements AssertionPropertiesEditor<SamlIssuerAssertion> {
     private SamlPolicyAssertionWizard wizard;
+    private boolean readOnly;
     private boolean confirmed;
     private SamlIssuerAssertion assertion;
 
@@ -44,7 +45,7 @@ public class SamlIssuerAssertionPropertiesEditor implements AssertionPropertiesE
                                 new ConditionsWizardStepPanel(
                                     new SamlSignatureStepPanel(null, true), true, true), true, true), true), true), true)), true), true);
 
-        SamlPolicyAssertionWizard wiz = new SamlPolicyAssertionWizard(assertion, TopComponents.getInstance().getTopParent(), p, true);
+        SamlPolicyAssertionWizard wiz = new SamlPolicyAssertionWizard(assertion, TopComponents.getInstance().getTopParent(), p, true, readOnly);
         wiz.addWizardListener(new WizardAdapter() {
             @Override
             public void wizardFinished(WizardEvent e) { confirmed = true; }
@@ -55,4 +56,21 @@ public class SamlIssuerAssertionPropertiesEditor implements AssertionPropertiesE
     public SamlIssuerAssertion getData(SamlIssuerAssertion assertion) {
         return this.assertion;
     }
+
+    public Object getParameter( final String name ) {
+        Object value = null;
+
+        if ( PARAM_READONLY.equals( name )) {
+            value = readOnly;
+        }
+
+        return value;
+    }
+
+    public void setParameter( final String name, Object value ) {
+        if ( PARAM_READONLY.equals( name ) && value instanceof Boolean ) {
+            readOnly = (Boolean) value;
+        }
+    }
+
 }

@@ -85,7 +85,7 @@ public class EditRequestWssSamlAction extends NodeAction {
                                    final Functions.UnaryVoid<Boolean> callback)
     {
         final RequestWssSamlPropertiesPanel dlg =
-          new RequestWssSamlPropertiesPanel(samlAuthenticationStatement, parent, true);
+          new RequestWssSamlPropertiesPanel(samlAuthenticationStatement, parent, true, !node.canEdit());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

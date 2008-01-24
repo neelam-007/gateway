@@ -133,6 +133,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private JButton addSampleButton;
     private JButton removeSampleButton;
     private static final SampleMessageComboEntry USE_AUTOGEN = new SampleMessageComboEntry(null) {
+        @Override
         public String toString() {
             return "<use automatically generated message above>";
         }
@@ -143,14 +144,17 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
     private static final String NON_SOAP_NAME = "<Non-SOAP service>";
     private static final WsdlTreeNode NON_SOAP_NODE = new WsdlTreeNode(NON_SOAP_NAME, new WsdlTreeNode.Options()) {
+        @Override
         protected String iconResource(boolean open) {
             return "com/l7tech/console/resources/methodPublic.gif";
         }
 
+        @Override
         public boolean getAllowsChildren() {
             return false;
         }
 
+        @Override
         public String toString() {
             return NON_SOAP_NAME;
         }
@@ -162,25 +166,31 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
      * @param modal is this modal dialog or not
      * @param n     the xml security node
      */
-    public XpathBasedAssertionPropertiesDialog(Frame owner, boolean modal, XpathBasedAssertionTreeNode n, ActionListener okListener, boolean showHardwareAccelStatus) {
+    public XpathBasedAssertionPropertiesDialog(final Frame owner,
+                                               final boolean modal,
+                                               final XpathBasedAssertionTreeNode n,
+                                               final ActionListener okListener,
+                                               final boolean showHardwareAccelStatus,
+                                               final boolean readOnly) {
         super(owner, modal);
         if (n == null) {
             throw new IllegalArgumentException();
         }
         this.showHardwareAccelStatus = showHardwareAccelStatus;
-        construct(n, okListener);
+        construct(n, okListener, readOnly);
     }
 
 
-    private void construct(XpathBasedAssertionTreeNode n, ActionListener okListener) {
+    private void construct(final XpathBasedAssertionTreeNode n, final ActionListener okListener, final boolean readOnly) {
         node = n;
         okActionListener = okListener;
 
-        assertion = (XpathBasedAssertion) node.asAssertion();
+        assertion = node.asAssertion();
         if (assertion.getXpathExpression() != null) {
+            //noinspection unchecked
             namespaces = assertion.getXpathExpression().getNamespaces();
         } else {
-            namespaces = new HashMap();
+            namespaces = new HashMap<String,String>();
         }
         isEncryption = assertion instanceof RequestWssConfidentiality ||
                 assertion instanceof ResponseWssConfidentiality;
@@ -224,6 +234,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 if (soapMessages.length > 0)
                     initializeBlankMessage(soapMessages[0]);
                 for (Message soapRequest : soapMessages) {
+                    //noinspection unchecked
                     requiredNamespaces.putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
                 }
                 requiredNamespaces.put("L7p",WspConstants.L7_POLICY_NS);
@@ -238,7 +249,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             namespaces.putAll(requiredNamespaces);
         }
 
-        initialize();
+        initialize(readOnly);
 
         // display the existing xpath expression
         String initialvalue = null;
@@ -388,7 +399,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             throw new RuntimeException("Couldn't get sample messages", e);
         }
 
-        sampleMessagesComboModel = new DefaultComboBoxModel(messageEntries.toArray(new SampleMessageComboEntry[0]));
+        sampleMessagesComboModel = new DefaultComboBoxModel(messageEntries.toArray(new SampleMessageComboEntry[messageEntries.size()]));
         sampleMessagesCombo.setModel(sampleMessagesComboModel);
 
         if (whichEntryToSelect != null)
@@ -421,6 +432,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             }
         }
 
+        @Override
         public String toString() {
             return message.getName();
         }
@@ -429,7 +441,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     }
 
 
-    private void initialize() {
+    private void initialize(final boolean readOnly) {
         Utilities.setEscKeyStrokeDisposes(this);
 
         initializeEncryptionConfig();
@@ -464,6 +476,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             }
         });
 
+        okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 // get xpath from control and the namespace map
@@ -709,8 +722,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
      * initialize the blank message tha is displayed on whole message
      * selection. The blank message is created from the first message,
      * without body nodes.
-     *
-     * @param soapMessage
      */
     private void initializeBlankMessage(Message soapMessage) throws IOException, SOAPException, SAXException {
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
@@ -806,6 +817,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
          *
          * @return the <code>Component</code> that the renderer uses to draw the value
          */
+        @Override
         public Component getTreeCellRendererComponent(JTree tree, Object value,
                                                       boolean selected, boolean expanded,
                                                       boolean leaf, int row, boolean hasFocus) {
@@ -885,7 +897,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     /**
      * Display soap message into the message viewer
      *
-     * @param soapMessage
      * @throws RuntimeException wrapping the originasl exception
      */
     private void displayMessage(SOAPMessage soapMessage)
@@ -904,7 +915,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     /**
      * display the string soap message onto the viewer
      *
-     * @param soapMessage
      * @throws RuntimeException wrapping the originasl exception
      */
     private void displayMessage(String soapMessage)
@@ -938,10 +948,9 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }
         String bindingName = binding.getQName().getLocalPart();
 
-        for (int i = 0; i < soapMessages.length; i++) {
-            Message soapRequest = soapMessages[i];
-            if (opName.equals(soapRequest.getOperation()) &&
-              bindingName.equals(soapRequest.getBinding())) {
+        for( Message soapRequest : soapMessages ) {
+            if( opName.equals( soapRequest.getOperation() ) &&
+                    bindingName.equals( soapRequest.getBinding() ) ) {
                 return soapRequest;
             }
         }
@@ -1170,6 +1179,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             _displayName = displayName;
         }
         public String getVariableName() { return _variableName; }
+        @Override
         public String toString() { return _displayName; }
     }
 }

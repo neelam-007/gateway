@@ -15,11 +15,11 @@ import java.util.ResourceBundle;
 public class RequestWssTimestampDialog extends OkCancelDialog<RequestWssTimestamp> {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RequestWssTimestampDialog");
 
-    public RequestWssTimestampDialog(Frame owner, boolean modal, RequestWssTimestamp assertion) {
-        super(owner, resources.getString("dialog.title"), modal, new RequestWssTimestampPanel(assertion));
+    public RequestWssTimestampDialog(Frame owner, boolean modal, RequestWssTimestamp assertion, boolean readOnly) {
+        super(owner, resources.getString("dialog.title"), modal, new RequestWssTimestampPanel(assertion), readOnly);
     }
 
-    public RequestWssTimestampDialog(Dialog owner, boolean modal, RequestWssTimestamp assertion) {
-        super(owner, resources.getString("dialog.title"), modal, new RequestWssTimestampPanel(assertion));
+    public RequestWssTimestampDialog(Dialog owner, boolean modal, RequestWssTimestamp assertion, boolean readOnly) {
+        super(owner, resources.getString("dialog.title"), modal, new RequestWssTimestampPanel(assertion), readOnly);
     }
 }

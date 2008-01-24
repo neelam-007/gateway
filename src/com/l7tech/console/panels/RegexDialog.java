@@ -54,16 +54,18 @@ public class RegexDialog extends JDialog {
     private JLabel testInputLabel;
     private JLabel testResultLabel;
     private JScrollPane testInputScroller;
+    private final boolean readOnly;
 
     private final Audit auditor = new LoggerAudit(Logger.getLogger(RegexDialog.class.getName()));
 
-    public RegexDialog(Frame owner, Regex regexAssertion) throws HeadlessException {
+    public RegexDialog(Frame owner, Regex regexAssertion, boolean readOnly) throws HeadlessException {
         super(owner, true);
         setTitle("Regular Expression Assertion");
         if (regexAssertion == null) {
             throw new IllegalArgumentException();
         }
         this.regexAssertion = regexAssertion;
+        this.readOnly = readOnly;
         initialize();
     }
 
@@ -190,19 +192,19 @@ public class RegexDialog extends JDialog {
         regexTextArea.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) {
                 updatePattern();
-                okButton.setEnabled(pattern != null);
+                okButton.setEnabled(!readOnly && pattern != null);
                 testButton.setEnabled(shouldEnableTestButton());
             }
 
             public void removeUpdate(DocumentEvent e) {
                 updatePattern();
-                okButton.setEnabled(pattern != null);
+                okButton.setEnabled(!readOnly && pattern != null);
                 testButton.setEnabled(shouldEnableTestButton());
             }
 
             public void changedUpdate(DocumentEvent e) {
                 updatePattern();
-                okButton.setEnabled(pattern != null);
+                okButton.setEnabled(!readOnly && pattern != null);
                 testButton.setEnabled(shouldEnableTestButton());
             }
 
@@ -222,7 +224,7 @@ public class RegexDialog extends JDialog {
             }
         });
         updatePattern();
-        okButton.setEnabled(pattern != null);
+        okButton.setEnabled(!readOnly && pattern != null);
         testResultTextPane.setEditable(false);
         testResultTextPane.setFont(testInputTextArea.getFont());
         TextComponentPauseListenerManager.registerPauseListener(regexTextArea, new PauseListener() {

@@ -25,8 +25,9 @@ import java.util.logging.Logger;
  * Generic Assertion bean property editor that provides poor-quality dialog for any assertion bean that has
  * at least one WSP-visible property.
  */
-public class DefaultAssertionPropertiesEditor<AT extends Assertion> extends JDialog implements AssertionPropertiesEditor<AT>{
+public class DefaultAssertionPropertiesEditor<AT extends Assertion> extends AssertionPropertiesEditorSupport<AT>{
     protected static final Logger logger = Logger.getLogger(DefaultAssertionPropertiesEditor.class.getName());
+    private JButton okButton;
     private boolean confirmed = false;
 
     private static class BadViewValueException extends RuntimeException {
@@ -77,10 +78,15 @@ public class DefaultAssertionPropertiesEditor<AT extends Assertion> extends JDia
         }
     }
 
+    @Override
+    protected void configureView() {
+        okButton.setEnabled( !isReadOnly() );
+    }
+
     private void initFields(final Class<? extends Assertion> c) {
         editRows.clear();
 
-        JButton okButton = new JButton("Ok");
+        okButton = new JButton("Ok");
         JButton cancelButton = new JButton("Cancel");
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
         okButton.addActionListener(new ActionListener() {
@@ -168,6 +174,7 @@ public class DefaultAssertionPropertiesEditor<AT extends Assertion> extends JDia
                             }
                         });
                         row = new EditRow(prop, editor) {
+                            @Override
                             Object getViewValue() throws BadViewValueException {
                                 try {
                                     editor1.setAsText(comboBox.getSelectedItem().toString());
@@ -186,6 +193,7 @@ public class DefaultAssertionPropertiesEditor<AT extends Assertion> extends JDia
                             }
                         });
                         row = new EditRow(prop, editor) {
+                            @Override
                             Object getViewValue() throws BadViewValueException {
                                 try {
                                     editor1.setAsText(textArea.getText());
@@ -199,6 +207,7 @@ public class DefaultAssertionPropertiesEditor<AT extends Assertion> extends JDia
                 } else {
                     final PropertyEditor editor2 = editor;
                     row = new EditRow(prop, editor2) {
+                        @Override
                         Object getViewValue() {
                             return editor2.getValue();
                         }
@@ -242,10 +251,6 @@ public class DefaultAssertionPropertiesEditor<AT extends Assertion> extends JDia
                 ret.add(prop);
         }
         return ret;
-    }
-
-    public JDialog getDialog() {
-        return this;
     }
 
     public boolean isConfirmed() {

@@ -13,11 +13,11 @@ public class ResponseWssSecurityTokenDialog extends OkCancelDialog<ResponseWssSe
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.ResponseWssSecurityTokenDialog");
 
 
-    public ResponseWssSecurityTokenDialog(Frame owner, boolean modal, ResponseWssSecurityToken assertion) {
-        super(owner, resources.getString("dialog.title"), modal, new ResponseWssSecurityTokenPanel(assertion));
+    public ResponseWssSecurityTokenDialog(Frame owner, boolean modal, ResponseWssSecurityToken assertion, boolean readOnly) {
+        super(owner, resources.getString("dialog.title"), modal, new ResponseWssSecurityTokenPanel(assertion), readOnly);
     }
 
-    public ResponseWssSecurityTokenDialog(Dialog owner, boolean modal, ResponseWssSecurityToken assertion) {
-        super(owner, resources.getString("dialog.title"), modal, new ResponseWssSecurityTokenPanel(assertion));
+    public ResponseWssSecurityTokenDialog(Dialog owner, boolean modal, ResponseWssSecurityToken assertion, boolean readOnly) {
+        super(owner, resources.getString("dialog.title"), modal, new ResponseWssSecurityTokenPanel(assertion), readOnly);
     }
 }

@@ -31,7 +31,7 @@ public class InverseHttpFormPostDialog extends JDialog {
     private JButton moveDownButton;
     private Frame ownerFrame;
 
-    public InverseHttpFormPostDialog(Frame owner, InverseHttpFormPost ass) throws HeadlessException {
+    public InverseHttpFormPostDialog(Frame owner, InverseHttpFormPost ass, boolean readOnly) throws HeadlessException {
         super(owner, "MIME to HTTP Form Translation Properties", true);
         this.ownerFrame = owner;
         this.assertion = ass;
@@ -61,6 +61,7 @@ public class InverseHttpFormPostDialog extends JDialog {
             }
         });
 
+        okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ArrayList names = new ArrayList();

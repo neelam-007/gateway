@@ -27,7 +27,7 @@ public class CodeInjectionProtectionAssertionAdvice implements Advice {
 
         final CodeInjectionProtectionAssertion assertion = (CodeInjectionProtectionAssertion) assertions[0];
         final Frame mainWindow = TopComponents.getInstance().getTopParent();
-        final CodeInjectionProtectionAssertionDialog dialog = new CodeInjectionProtectionAssertionDialog(mainWindow, assertion);
+        final CodeInjectionProtectionAssertionDialog dialog = new CodeInjectionProtectionAssertionDialog(mainWindow, assertion, false);
 
         // Shows the dialog.
         dialog.pack();

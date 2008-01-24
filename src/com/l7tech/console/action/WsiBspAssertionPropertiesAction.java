@@ -6,7 +6,6 @@ package com.l7tech.console.action;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.WsiBspPropertiesDialog;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.WsiBspAssertionPolicyNode;
 import com.l7tech.console.util.TopComponents;
@@ -29,23 +28,27 @@ public class WsiBspAssertionPropertiesAction extends SecureAction {
         this.node = node;
     }
 
+    @Override
     public String getName() {
         return "WSI-BSP Properties";
     }
 
+    @Override
     public String getDescription() {
         return "View/Edit properties of the WS-I BSP assertion.";
     }
 
     //- PROTECTED
 
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
+    @Override
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        final WsiBspPropertiesDialog dlg = new WsiBspPropertiesDialog(node.asAssertion(), f, true);
+        final WsiBspPropertiesDialog dlg = new WsiBspPropertiesDialog(node.asAssertion(), f, true, !node.canEdit());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
@@ -54,7 +57,7 @@ public class WsiBspAssertionPropertiesAction extends SecureAction {
                     JTree tree = TopComponents.getInstance().getPolicyTree();
                     if (tree != null) {
                         PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                        model.assertionTreeNodeChanged((AssertionTreeNode)node);
+                        model.assertionTreeNodeChanged(node);
                     } else {
                         log.log(Level.WARNING, "Unable to reach the palette tree.");
                     }
