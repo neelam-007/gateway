@@ -23,6 +23,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,7 +38,6 @@ public class ServerVariables {
     private static final RemoteIpGetter remoteIpGetter = new RemoteIpGetter();
     private static final OperationGetter soapOperationGetter = new OperationGetter();
     private static final SoapNamespaceGetter soapNamespaceGetter = new SoapNamespaceGetter();
-    private static final AuthenticatedUserGetter authenticatedUserGetter = new AuthenticatedUserGetter();
 
     private static final Map<String, Variable> varsByName = new HashMap<String, Variable>();
     private static final Map<String, Variable> varsByPrefix = new HashMap<String, Variable>();
@@ -115,7 +116,8 @@ public class ServerVariables {
                 return tk == null ? null : tk.getRemoteHost();
             }
         }),
-        new Variable(BuiltinVariables.PREFIX_AUTHENTICATED_USER, authenticatedUserGetter),
+        new Variable(BuiltinVariables.PREFIX_AUTHENTICATED_USER, new AuthenticatedUserGetter(BuiltinVariables.PREFIX_AUTHENTICATED_USER)),
+        new Variable(BuiltinVariables.PREFIX_AUTHENTICATED_USERS, new AuthenticatedUserGetter(BuiltinVariables.PREFIX_AUTHENTICATED_USERS)),
         new Variable("request.clientid", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 User user = context.getLastAuthenticatedUser();
@@ -505,37 +507,57 @@ public class ServerVariables {
     }
 
     private static class AuthenticatedUserGetter implements Getter {
+        private String variableType;
+        public AuthenticatedUserGetter(String variableType) {
+            this.variableType = variableType;
+        }
         public Object get(String name, PolicyEnforcementContext context) {
-            String suffix = name.substring(BuiltinVariables.PREFIX_AUTHENTICATED_USER.length());
-            if (suffix.length() == 0) { // Without suffix
-                String user = null;
-                User authenticatedUser = context.getLastAuthenticatedUser();
-                if (authenticatedUser != null) {
-                    user = authenticatedUser.getName();
-                    if (user == null) user = authenticatedUser.getId();
-                }
-                return user;
-            } else { // With suffix
-                if (!suffix.startsWith(".")) throw new IllegalArgumentException("Variable '" + name + "' does not have a period before the parameter name.");
-                String indexS = name.substring(BuiltinVariables.PREFIX_AUTHENTICATED_USER.length() + 1);
-                try {
-                    int index = Integer.parseInt(indexS);
-                    AuthenticationResult ar = context.getAllAuthenticationResults().get(index);
-                    if (ar == null) {
-                        logger.info("Context variable " + name + " yielded null");
-                        return null;
+            // The variable is request.authenticatedusers
+            if (BuiltinVariables.PREFIX_AUTHENTICATED_USERS.equals(variableType)) {
+                List<AuthenticationResult> authResultList = context.getAllAuthenticationResults();
+                List<String> authUsersList = new ArrayList<String>();
+                for (AuthenticationResult authResult: authResultList) {
+                    if (authResult != null) {
+                        authUsersList.add(authResult.getUser().getName());
                     }
-                    return ar.getUser().getName();
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("Was expecting a number suffix with " + name + ". " + e.getMessage());
-                } catch (IndexOutOfBoundsException e) {
-                    logger.info("not that many users authenticated: " + e.getMessage());
-                    // shouldn't throw here, we'll be nice
-                    return "";
+                }
+                return authUsersList.toArray(new String[authUsersList.size()]);
+            }
+            // The variable is request.authenticateduser
+            else if (BuiltinVariables.PREFIX_AUTHENTICATED_USER.equals(variableType)) {
+                String suffix = name.substring(BuiltinVariables.PREFIX_AUTHENTICATED_USER.length());
+                if (suffix.length() == 0) { // Without suffix
+                    String user = null;
+                    User authenticatedUser = context.getLastAuthenticatedUser();
+                    if (authenticatedUser != null) {
+                        user = authenticatedUser.getName();
+                        if (user == null) user = authenticatedUser.getId();
+                    }
+                    return user;
+                } else { // With suffix
+                    if (!suffix.startsWith(".")) throw new IllegalArgumentException("Variable '" + name + "' does not have a period before the parameter name.");
+                    String indexS = name.substring(BuiltinVariables.PREFIX_AUTHENTICATED_USER.length() + 1);
+                    try {
+                        int index = Integer.parseInt(indexS);
+                        AuthenticationResult ar = context.getAllAuthenticationResults().get(index);
+                        if (ar == null) {
+                            logger.info("Context variable " + name + " yielded null");
+                            return null;
+                        }
+                        return ar.getUser().getName();
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException("Was expecting a number suffix with " + name + ". " + e.getMessage());
+                    } catch (IndexOutOfBoundsException e) {
+                        logger.info("not that many users authenticated: " + e.getMessage());
+                        // shouldn't throw here, we'll be nice
+                        return "";
+                    }
                 }
             }
+            // Otherwise, the variable is invalid.
+            logger.info("The context variable, '" + name + "' is invalid");
+            return null;
         }
-
     }
 
     private static class OperationGetter implements Getter {

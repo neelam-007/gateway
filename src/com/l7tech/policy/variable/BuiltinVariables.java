@@ -29,6 +29,7 @@ public class BuiltinVariables {
     public static final String PREFIX_CLUSTER_PROPERTY = "gateway"; // value of a variable in the cluster property table
 
     public static final String PREFIX_AUTHENTICATED_USER = "request.authenticateduser";
+    public static final String PREFIX_AUTHENTICATED_USERS = "request.authenticatedusers";
 
     private static final Map metadataByName = new HashMap();
     private static final Map metadataPresetByName = new HashMap();
@@ -72,6 +73,7 @@ public class BuiltinVariables {
         new VariableMetadata("request.tcp.remoteip", false, false, "request.tcp.remoteAddress", false),
         new VariableMetadata("request.tcp.remoteHost", false, false, null, false),
         new VariableMetadata(PREFIX_AUTHENTICATED_USER, true, false, null, false),
+        new VariableMetadata(PREFIX_AUTHENTICATED_USERS, false, true, null, false),
         new VariableMetadata("request.clientid", false, false, null, false),
         new VariableMetadata("request.tcp.localPort", false, false, null, false, DataType.INTEGER),
         new VariableMetadata("request.http.method", false, false, null, false),
