@@ -16,6 +16,7 @@ import com.l7tech.common.log.SinkConfiguration;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.security.RevocationCheckPolicy;
 import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
@@ -36,8 +37,6 @@ import java.util.Comparator;
 
 /**
  * Enum of all entity types known to the RBAC system.
- *
- * TODO this is also used in quite a few other places now, it should be moved upward in com.l7tech.common.
  */
 public enum EntityType {
     ANY("<any>", Entity.class, UNDEFINED, true),
@@ -50,7 +49,7 @@ public enum EntityType {
     JMS_ENDPOINT("JMS Endpoint", JmsEndpoint.class, com.l7tech.objectmodel.EntityType.JMS_ENDPOINT, true),
     TRUSTED_CERT("Trusted Certificate", TrustedCert.class, com.l7tech.objectmodel.EntityType.TRUSTED_CERT, true),
     REVOCATION_CHECK_POLICY("Revocation Check Policy", RevocationCheckPolicy.class, com.l7tech.objectmodel.EntityType.REVOCATION_CHECK_POLICY, true),
-    SSG_KEY_ENTRY("Private Key", Entity.class, com.l7tech.objectmodel.EntityType.PRIVATE_KEY, true), // TODO find a good home for SsgKeyEntry.class
+    SSG_KEY_ENTRY("Private Key", SsgKeyEntry.class, com.l7tech.objectmodel.EntityType.PRIVATE_KEY, true),
     ALERT_TRIGGER("Alert Event", AlertEvent.class, com.l7tech.objectmodel.EntityType.ALERT_TRIGGER, false),
     ALERT_ACTION("Alert Notification", Notification.class, com.l7tech.objectmodel.EntityType.ALERT_ACTION, false),
     SAMPLE_MESSAGE("Sample Message", SampleMessage.class, com.l7tech.objectmodel.EntityType.SAMPLE_MESSAGE, true),
@@ -69,10 +68,10 @@ public enum EntityType {
 
     RBAC_ROLE("Access Control Role", Role.class, com.l7tech.objectmodel.EntityType.RBAC_ROLE, true),
 
-    AUDIT_RECORD("Audit Record <any type>", AuditRecord.class, UNDEFINED, true),
     AUDIT_MESSAGE("Audit Record (Message)", MessageSummaryAuditRecord.class, UNDEFINED, true),
     AUDIT_ADMIN("Audit Record (Admin)", AdminAuditRecord.class, UNDEFINED, true),
     AUDIT_SYSTEM("Audit Record (System)", SystemAuditRecord.class, UNDEFINED, true),
+    AUDIT_RECORD("Audit Record <any type>", AuditRecord.class, UNDEFINED, true),
 
     SSG_CONNECTOR("Listen Port", SsgConnector.class, com.l7tech.objectmodel.EntityType.CONNECTOR, true),
 
@@ -107,8 +106,26 @@ public enum EntityType {
         return oldEntityType;
     }
 
+    @Override
     public String toString() {
         return name;
+    }
+
+    public static EntityType findTypeByEntity(Class<? extends Entity> entityClass) {
+        EntityType type = null;
+
+        for ( EntityType et : values() ) {
+            if ( et == EntityType.ANY ) continue;
+            if ( et.entityClass.isAssignableFrom( entityClass )) {
+                type = et;
+                break;
+            }
+        }
+
+        if ( type == null )
+            type = EntityType.ANY;
+
+        return type;
     }
 
     public static final NameComparator NAME_COMPARATOR = new NameComparator();

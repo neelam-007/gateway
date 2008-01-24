@@ -6,7 +6,6 @@ package com.l7tech.console.action;
 import com.l7tech.common.security.rbac.*;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.PolicyEntityNode;
-import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -17,13 +16,10 @@ import com.l7tech.objectmodel.Entity;
  */
 public abstract class PolicyNodeAction extends NodeAction {
     protected final PolicyEntityNode policyNode;
-    protected final EntityType type;
 
     protected PolicyNodeAction(PolicyEntityNode node) {
         super(node);
         this.policyNode = node;
-        // TODO support other types of entities
-        type = node instanceof ServiceNode ? EntityType.SERVICE : EntityType.POLICY;
     }
 
     protected abstract OperationType getOperation();
@@ -43,6 +39,9 @@ public abstract class PolicyNodeAction extends NodeAction {
             logger.warning("Couldn't resolve policy");
             return false;
         }
+
+        EntityType type = EntityType.findTypeByEntity( entity.getClass() );
+
         switch(getOperation()) {
             case CREATE:
                 ao = new AttemptedCreate(type);

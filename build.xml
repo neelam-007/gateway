@@ -883,6 +883,7 @@
             -->
             <test name="com.l7tech.identity.IdentityEqualityTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.policy.assertion.RequestSwAAssertionTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.security.rbac.EntityTypeTest" haltonfailure="no"/>
         </junit>
     </target>
 
