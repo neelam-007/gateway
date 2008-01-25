@@ -2616,7 +2616,8 @@ public class MainWindow extends JFrame implements SheetHolder {
               try {
                   TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
               } catch (RuntimeException e) {
-                  log.log(Level.WARNING, "Unable to update modular assertions: " + ExceptionUtils.getMessage(e), e);
+                  log.log(Level.WARNING, "Unable to update modular assertions: " + ExceptionUtils.getMessage(e) + ".",
+                          ExceptionUtils.getDebugException(e));
               }
 
               String nodeName = "";
