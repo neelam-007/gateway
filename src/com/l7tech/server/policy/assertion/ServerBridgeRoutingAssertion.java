@@ -580,10 +580,12 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 }
                 msg = (Message)requestSrc;
 
-                // Inherits the HttpRequestKnob from the default request.
-                final HttpRequestKnob defaultHRK = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
-                if (defaultHRK != null) {
-                    msg.attachHttpRequestKnob(defaultHRK);
+                if (msg.getKnob(HttpRequestKnob.class) == null) {
+                    // Make it a request message by inheriting the HttpRequestKnob from the default request.
+                    final HttpRequestKnob defaultHRK = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+                    if (defaultHRK != null) {
+                        msg.attachHttpRequestKnob(defaultHRK);
+                    }
                 }
             } catch (NoSuchVariableException e) {
                 // Should never happen.
