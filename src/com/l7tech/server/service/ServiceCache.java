@@ -432,13 +432,15 @@ public class ServiceCache
     private PolicyMetadata getPolicyMetadata( final Policy policy ) {
         PolicyMetadata metadata = null;
         ServerPolicyHandle sph = null;
-        try {
-            sph = policyCache.getServerPolicy( policy );
-            if ( sph != null ) {
-                metadata = sph.getPolicyMetadata();
+        if ( policy != null ) {
+            try {
+                sph = policyCache.getServerPolicy( policy );
+                if ( sph != null ) {
+                    metadata = sph.getPolicyMetadata();
+                }
+            } finally {
+                ResourceUtils.closeQuietly( sph );
             }
-        } finally {
-            ResourceUtils.closeQuietly( sph );
         }
 
         if ( metadata == null ) {
@@ -524,8 +526,18 @@ public class ServiceCache
         }
     }
 
+    /**
+     * Get server policy handle for given service, null if invalid 
+     */
     private ServerPolicyHandle getServerPolicyForService(final PublishedService service) {
-        return policyCache.getServerPolicy( service.getPolicy() );
+        ServerPolicyHandle handle = null;
+
+        Policy policy = service.getPolicy();
+        if ( policy != null ) {
+            handle = policyCache.getServerPolicy( policy );
+        }
+
+        return  handle;
     }
 
     private void handleInvalidPolicy( final PublishedService publishedService,
@@ -583,14 +595,19 @@ public class ServiceCache
      * Caller must hold a lock protecting {@link #services} and {@link #serviceStatistics}.
      */
     private void removeNoLock(PublishedService service) {
-        Long key = service.getOid();
+        final Long key = service.getOid();
+        final Policy policy = service.getPolicy();
         services.remove(key);
-        policyCache.remove( service.getPolicy().getOid() );
+        if ( policy != null ) {
+            policyCache.remove( policy.getOid() );
+        }
         serviceStatistics.remove(key);
         for (ServiceResolver resolver : notifyResolvers) {
             resolver.serviceDeleted(service);
         }
-        service.getPolicy().forceRecompile();
+        if ( policy != null ) {
+            policy.forceRecompile();
+        }
         logger.finest("removed service " + service.getName() + " from cache. oid=" + service.getOid());
     }
 
@@ -616,7 +633,8 @@ public class ServiceCache
         rwlock.readLock().lock();
         try {
             for ( PublishedService service : services.values() ) {
-                if ( service.getPolicy().getOid() == policyOid ) {
+                Policy policy = service.getPolicy();
+                if ( policy != null && policy.getOid() == policyOid ) {
                     out = service;
                     break;
                 }
@@ -765,7 +783,15 @@ public class ServiceCache
                         }
                         if (toUpdateOrAdd != null) {
                             final Long oid = toUpdateOrAdd.getOid();
-                            final String newVersionUID = policyCache.getUniquePolicyVersionIdentifer( toUpdateOrAdd.getPolicy().getOid() );
+                            final Policy policy = toUpdateOrAdd.getPolicy();
+                            String uniqueVersion = null;
+                            if ( policy != null ) { // Get version for full policy if possible
+                                uniqueVersion = policyCache.getUniquePolicyVersionIdentifer( policy.getOid() );
+                            }
+                            if ( uniqueVersion == null ) { // Use service version if that is all that is available
+                                uniqueVersion = Integer.toString( toUpdateOrAdd.getVersion() );
+                            }
+                            final String newVersionUID = uniqueVersion;
                             try {
                                 final String throwingVersion = servicesThatAreThrowing.get(oid);
                                 if (throwingVersion == null || !throwingVersion.equals( newVersionUID ))

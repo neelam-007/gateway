@@ -354,6 +354,28 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
 
     //- PROTECTED
 
+    protected void setTraceLevel(final Level level) {
+        TRACE_LEVEL = level;
+    }
+
+    /**
+     *
+     */
+    protected boolean isInCache( final Long policyOid ) {
+        boolean cached = false;
+
+        final Lock read = lock.readLock();
+        read.lock();
+        try {
+            PolicyCacheEntry pce = cacheGet( policyOid );
+            cached = pce != null;
+        } finally {
+            read.unlock();
+        }
+
+        return cached;
+    }
+
     /**
      *
      */
@@ -410,8 +432,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
 
     private static final Logger logger = Logger.getLogger( PolicyCacheImpl.class.getName() );
 
-    private static final Level TRACE_LEVEL = Level.FINEST;
-
+    private Level TRACE_LEVEL = Level.FINEST;
     private final PlatformTransactionManager transactionManager;
     private Auditor auditor;
     private ApplicationEventPublisher eventSink;
@@ -493,31 +514,41 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
 
     /**
      * Add an item to the cache, update the usage structure (usedBy)
-     *
-     * If the new entry is invalid, we preserve the usedBy entries of
-     * dependencies to allow us to invalidate this entry when a dependency is
-     * updated.
      */
     private void cacheReplace( final PolicyCacheEntry pce ) {
         PolicyCacheEntry replaced = policyCache.put( pce.policyId, pce );
         if ( replaced != null ) {
             ResourceUtils.closeQuietly( replaced );
             pce.usedBy.addAll( replaced.usedBy );
-            if ( pce.isValid() )
-                updateUsage( pce.policyId, false, replaced.getUsedPolicyIds(false));
+            updateUsage( pce.policyId, false, replaced.getUsedPolicyIds());
         }
-        if ( pce.isValid() )
-            updateUsage( pce.policyId, true, pce.getUsedPolicyIds(false));
+        updateUsage( pce.policyId, true, pce.getUsedPolicyIds());
     }
 
     /**
      * Remove an item from the cache, update the usage structure (usedBy)
+     *
+     * If a child is invalid and has no remaining users, it is removed from the
+     * cache. No event is fired in this case since it is not a state change,
+     * just book keeping.
      */
     private PolicyCacheEntry cacheRemove( final Long policyId ) {
         PolicyCacheEntry removed = policyCache.remove( policyId );
         if ( removed != null ) {
             ResourceUtils.closeQuietly( removed );
-            updateUsage( policyId, false, removed.getUsedPolicyIds( false ));
+            updateUsage( policyId, false, removed.getUsedPolicyIds());
+
+            Set<Long> policiesToRemove = new HashSet<Long>();
+            for ( Long usedPolicyId : removed.getUsedPolicyIds() ) {
+                PolicyCacheEntry entry = cacheGet( usedPolicyId );
+                if ( entry != null && !entry.isValid() && entry.usedBy.isEmpty() ) {
+                    policiesToRemove.add( usedPolicyId );      
+                }
+            }
+
+            for ( Long removePolicyId : policiesToRemove ) {
+                cacheRemove( removePolicyId );    
+            }
         }
         return removed;
     }
@@ -593,15 +624,9 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                 } else {
                     // cache as invalid, just in case the OID re-appears somehow
                     logger.log( Level.FINE, "Caching Policy #{0} as invalid for users: {1}", new Object[]{oid, usingPolicies.keySet()} );
-                    cacheReplace( new PolicyCacheEntry( deletedPolicy, null, null ) );
 
-                    for( Long policyOid : usingPolicies.keySet() ) {
-                        PolicyCacheEntry entry = cacheGet( policyOid );
-                        if ( entry != null ) {
-                            invalidated.add( policyOid );
-                            cacheReplace( new PolicyCacheEntry( entry.policy, null, null ) );
-                        }
-                    }
+                    // update users
+                    recursiveInvalidate( deletedPolicy, null , usingPolicies.keySet(), invalidated );
                 }
 
                 removed = deletedPolicy;
@@ -620,6 +645,29 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         }
 
         return removedPolicy;
+    }
+
+    /**
+     * Recursively invalidate the parents of the given policy.
+     */
+    private void recursiveInvalidate( Policy policy, Long usedPolicyId, Set<Long> policiesToInvalidate, Set<Long> invalidated ) {
+        // invalidate the given policy
+        Long policyId = policy.getOid();
+        PolicyCacheEntry entry = cacheGet( policyId );
+        if ( entry != null ) {
+            invalidated.add( policyId );
+            cacheReplace( new PolicyCacheEntry( entry.policy, usedPolicyId ) );
+        }
+
+        // invalidate parents
+        Set<Policy> parents = findUsagesInternal( policyId );
+        for( Policy parentPolicy : parents ) {
+            Long parentPolicyId = parentPolicy.getOid();
+            if ( policiesToInvalidate.contains( parentPolicyId )) {
+                policiesToInvalidate.remove( parentPolicyId );
+                recursiveInvalidate( parentPolicy, policyId, policiesToInvalidate, invalidated );
+            }
+        }
     }
 
     /**
@@ -673,6 +721,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         Assertion assertion = null;
         ServerAssertion serverAssertion = null;
         Exception exception = null;
+        Long usedInvalidPolicyId = null;
         try {
             try {
                 // validate / parse policy
@@ -732,6 +781,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                                     new Object[]{ Long.toString( includedOid ), include.getPolicyName() } );
                         // Add usedBy so we are notified when this policy is updated
                         includedInfo.usedBy.add( thisPolicyId );
+                        usedInvalidPolicyId = includedInfo.policyId;
                         throw new ServerPolicyInstantiationException("Include assertion in Policy #" + thisPolicy.getOid() + " refers to Policy #'"+includedOid+"' which is invalid");
                     }
                 }
@@ -764,7 +814,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                 ServerPolicyHandle handle = new ServerPolicy( thisPolicy, collectMetadata( assertion, descendentPolicies ), descendentPolicies, dependentVersions, serverAssertion ).ref();
                 pce = new PolicyCacheEntry( thisPolicy, handle, null );
             } else {
-                pce = new PolicyCacheEntry( thisPolicy, null, null );
+                pce = new PolicyCacheEntry( thisPolicy, usedInvalidPolicyId );
             }
 
             cacheReplace(pce);
@@ -1038,28 +1088,54 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     private static class PolicyCacheEntry implements Closeable {
         private final Long policyId;
         private final Policy policy;
+
+        // one of these is two fields is required
         private final ServerPolicyHandle handle;
+        private final Long usesPolicyId;
+
         private final Set<Long> usedBy;
         private boolean dirty = false;
 
         /**
          * Create a policy cache entry with the given server policy handle.
          *
+         * <p>This constructor is for use with valid policies.</p>
+         *
          * @param policy The policy, must not be null
-         * @param handle The handle (null if server policy is invalid)
+         * @param handle The handle (must not be null)
          * @param usedBy Ids for policies that use this policy (may be null)
          */
         private PolicyCacheEntry( final Policy policy,
                                   final ServerPolicyHandle handle,
                                   final Set<Long> usedBy ) {
             if ( policy == null ) throw new IllegalArgumentException("policy must not be null");
+            if ( handle == null ) throw new IllegalArgumentException("handle must not be null");
             this.policyId = policy.getOid();
             this.policy = policy;
             this.handle = handle;
+            this.usesPolicyId = null;
             this.usedBy = new HashSet<Long>();
             if ( usedBy != null ) {
                 this.usedBy.addAll( usedBy );
             }
+        }
+
+        /**
+         * Create a policy cache entry for an invalid policy.
+         *
+         * <p>A .</p>
+         *
+         * @param policy The policy, must not be null
+         * @param usesPolicyId The id of the policy that this item depends on (may be null)
+         */
+        private PolicyCacheEntry( final Policy policy,
+                                  final Long usesPolicyId ) {
+            if ( policy == null ) throw new IllegalArgumentException("policy must not be null");
+            this.policyId = policy.getOid();
+            this.policy = policy;
+            this.handle = null;
+            this.usesPolicyId = usesPolicyId;
+            this.usedBy = new HashSet<Long>();
         }
 
         private ServerPolicyMetadata getMetadata() {
@@ -1070,13 +1146,17 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             }
         }
 
-        private Set<Long> getUsedPolicyIds( final boolean includeSelf ) {
+        private Set<Long> getUsedPolicyIds() {
             Set<Long> policyIds;
 
             if ( handle == null ) {
-                policyIds = Collections.emptySet();
+                if ( usesPolicyId == null ) {
+                    policyIds = Collections.emptySet();                    
+                } else {
+                    policyIds = Collections.singleton(usesPolicyId);
+                }
             } else {
-                policyIds = handle.getMetadata().getUsedPolicyIds( includeSelf );
+                policyIds = handle.getMetadata().getUsedPolicyIds( false );
             }
 
             return policyIds;

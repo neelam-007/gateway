@@ -59,7 +59,7 @@ public class PublishedService extends NamedEntityImp {
         setDisabled(objToCopy.isDisabled());
         setHttpMethods(objToCopy.getHttpMethods());
         setLaxResolution(objToCopy.isLaxResolution());
-        setPolicy(new Policy(objToCopy.getPolicy()));
+        setPolicy(objToCopy.getPolicy()==null ? null : new Policy(objToCopy.getPolicy()));
         setRoutingUri(objToCopy.getRoutingUri());
         setSoap(objToCopy.isSoap());
         _wsdlUrl = objToCopy._wsdlUrl;
@@ -283,7 +283,8 @@ public class PublishedService extends NamedEntityImp {
      */
     public void setSoap(boolean isSoap) {
         this.soap = isSoap;
-        policy.setSoap(isSoap);
+        if ( policy != null )
+            policy.setSoap(isSoap);
     }
 
     /**

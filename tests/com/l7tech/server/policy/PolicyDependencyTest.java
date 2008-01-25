@@ -97,9 +97,10 @@ public class PolicyDependencyTest extends TestCase {
         final Policy gc = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1234, "grandchild", new HttpBasic());
         final Policy i2 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1002, "child2", new Include(1234L, "grandchild"));
         final Policy i1 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1001, "child1", new Include(1234L, "grandchild"));
-        final Policy sp = newPolicy(PolicyType.PRIVATE_SERVICE, 2000, "parent", new Include(1001L, "child1"), new Include(1002L, "child2"));
+        final Policy sp1 = newPolicy(PolicyType.PRIVATE_SERVICE, 2000, "parent1", new Include(1001L, "child1"), new Include(1002L, "child2"));
+        final Policy sp2 = newPolicy(PolicyType.PRIVATE_SERVICE, 2001, "parent2", new Include(1001L, "child1"), new Include(1002L, "child2"));
 
-        clonedGrandchildFinder = new PolicyManagerStub(new Policy[] { gc, i1, i2, sp });
+        clonedGrandchildFinder = new PolicyManagerStub(new Policy[] { gc, i1, i2, sp1, sp2 });
     }
 
     private void setupInvalidGrandchild() {
@@ -122,7 +123,6 @@ public class PolicyDependencyTest extends TestCase {
 
         unlicensedGrandchildFinder = new PolicyManagerStub(new Policy[] { gc1, gc2, i1, i2, sp });
     }
-
 
     private void setupCycle() {
         final Policy i1 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1001, "test-i1", new Include(2000L, "test-i2!"));
@@ -286,6 +286,31 @@ public class PolicyDependencyTest extends TestCase {
         assertNotNull( "2000 is valid", cache.getServerPolicy( 2000 ));
     }
 
+    /**
+     * Test that removal cascades to invalid entries that are no longer in use 
+     */
+    public void testRemoveWithCascade() throws Exception {
+        PolicyCacheImpl cache = setupPolicyCache(clonedGrandchildFinder, null);
+        cache.setTraceLevel( Level.INFO );
+
+        assertNotNull( "2000 is valid", cache.getServerPolicy( 2000 ));
+        System.err.println("Removing 1001 from cache");
+        cache.remove( 1001 );
+        assertTrue( "1001 cached invalid", cache.isInCache( 1001L ));
+        assertTrue( "2000 cached invalid", cache.isInCache( 2000L ));
+        assertTrue( "2001 cached invalid", cache.isInCache( 2001L ));
+        System.err.println("Removing 2000 from cache");
+        cache.remove( 2000 );
+        assertTrue( "1001 cached invalid", cache.isInCache( 1001L ));
+        assertFalse( "2000 cached invalid", cache.isInCache( 2000L ));
+        assertTrue( "2001 cached invalid", cache.isInCache( 2001L ));
+        System.err.println("Removing 2001 from cache");
+        cache.remove( 2001 );
+        assertFalse( "1001 cached invalid", cache.isInCache( 1001L ));
+        assertFalse( "2000 cached invalid", cache.isInCache( 2000L ));
+        assertFalse( "2001 cached invalid", cache.isInCache( 2001L ));
+    }
+
     public void testInvalidGrandchild() throws Exception {
         PolicyCache cache = setupPolicyCache(invalidGrandchildFinder, null);
 
@@ -307,7 +332,7 @@ public class PolicyDependencyTest extends TestCase {
     public void testInvalidGrandchildEvents() throws Exception {
         final Set<Long> validPolicies = new TreeSet<Long>();
         final Set<Long> invalidPolicies = new TreeSet<Long>();
-        PolicyCache cache = setupPolicyCache(invalidGrandchildFinder, new ApplicationEventPublisher(){
+        PolicyCacheImpl cache = setupPolicyCache(invalidGrandchildFinder, new ApplicationEventPublisher(){
             public void publishEvent( ApplicationEvent event ) {
                 if ( event instanceof PolicyCacheEvent.Invalid ) {
                     invalidPolicies.add( ((PolicyCacheEvent.Invalid)event).getPolicyId() );
@@ -316,6 +341,7 @@ public class PolicyDependencyTest extends TestCase {
                 }
             }
         } );
+        cache.setTraceLevel( Level.INFO );
 
         System.err.println("Valid policies  : " + validPolicies);
         System.err.println("Invalid policies: " + invalidPolicies);
@@ -327,6 +353,7 @@ public class PolicyDependencyTest extends TestCase {
 
         validPolicies.clear();
         invalidPolicies.clear();
+        System.err.println("Updating policy 1002");
         cache.update( newPolicy(PolicyType.INCLUDE_FRAGMENT, 1002, "grandchild2", new HttpBasic()) );
 
         System.err.println("Valid policies  : " + validPolicies);
