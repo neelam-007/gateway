@@ -12,10 +12,10 @@ import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.rbac.Role;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.JaasUtils;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.system.ServiceCacheEvent;
-import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.service.MetricsBin;
@@ -70,8 +70,10 @@ public class ServiceManagerImp
     }
 
     @Override
-    public long save(PublishedService service) throws SaveException {
-        // 1. record the service
+    public long save(final PublishedService service) throws SaveException {
+        // 1. record the service (no policy)
+        final Policy policy = service.getPolicy();
+        service.setPolicy( null );
         long oid = super.save(service);
         logger.info("Saved service #" + oid);
         service.setOid(oid);
@@ -90,7 +92,22 @@ public class ServiceManagerImp
             throw new SaveException(msg, e);
         }
 
-        // 3. update cache on callback
+        // 3. Service now has correct oid so update the associated policy with the right name
+        try {
+            updatePolicyName( service, policy );
+            Object key = getHibernateTemplate().save( policy );
+            if (!(key instanceof Long))
+                throw new SaveException("Primary key was a " + key.getClass().getName() + ", not a Long");
+            policy.setOid( (Long)key );
+            service.setPolicy( policy );
+            getHibernateTemplate().update( service );
+        } catch (RuntimeException e) {
+            String msg = "Error updating policy name after saving service.";
+            logger.log(Level.WARNING, msg, e);
+            throw new SaveException(msg, e);
+        }
+
+        // 4. update cache on callback
         spring.publishEvent(new ServiceCacheEvent.Updated(service));
         return service.getOid();
     }
@@ -106,6 +123,7 @@ public class ServiceManagerImp
             throw new UpdateException(msg, e);
         }
 
+        updatePolicyName(service, service.getPolicy());
         super.update(service);
 
         try {
@@ -250,5 +268,12 @@ public class ServiceManagerImp
     @Transactional(propagation = Propagation.SUPPORTS)
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.spring = applicationContext;
+    }
+
+    private void updatePolicyName( final PublishedService service, final Policy policy ) {
+        if ( policy != null ) {
+            String policyName = service.generatePolicyName();
+            policy.setName( policyName );
+        }
     }
 }

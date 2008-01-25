@@ -20,6 +20,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 
 import javax.swing.*;
@@ -35,28 +36,33 @@ public class EditPolicyProperties extends PolicyNodeAction {
         super(node);
     }
 
+    @Override
     protected OperationType getOperation() {
         return OperationType.READ;
     }
 
+    @Override
     public String getName() {
         return "Policy Properties";
     }
 
+    @Override
     public String getDescription() {
         return "View/Edit the properties of the policy";
     }
 
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Edit16.gif";
     }
 
+    @Override
     protected void performAction() {
         final PolicyEntityNode policyNode = (PolicyEntityNode) node;
         boolean canUpdate;
         final Policy policy;
         try {
-            policy = policyNode.getPolicy();
+            policy = new Policy(policyNode.getPolicy());
             canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.POLICY, policy));
         } catch (FindException e) {
             logger.log(Level.WARNING, "Cannot get policy", e);
@@ -105,8 +111,15 @@ public class EditPolicyProperties extends PolicyNodeAction {
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (dlg.wasOKed()) {
+                    boolean wasOk = false;
                     try {
                         Registry.getDefault().getPolicyAdmin().savePolicy(policy);
+                        wasOk = true;
+                    } catch ( DuplicateObjectException doe) {
+                        String msg =
+                              "Unable to save the policy '" + policy.getName() + "'.\n" +
+                              "The policy name is already used, please choose a different\n name and try again.";
+                        DialogDisplayer.showMessageDialog(mw, "Duplicate policy name", msg, null);
                     } catch (SaveException e) {
                         String msg = "Error while updating policy due to improper policy properties.";
                         logger.log(Level.INFO, msg, e);
@@ -116,10 +129,10 @@ public class EditPolicyProperties extends PolicyNodeAction {
                         logger.log(Level.INFO, msg, e);
                         DialogDisplayer.showMessageDialog(mw, null, msg, null);
                     }
-                    resultCallback.call(true);
-                    return;
+                    resultCallback.call(wasOk);
+                } else {
+                    resultCallback.call(false);
                 }
-                resultCallback.call(false);
             }
         });
     }

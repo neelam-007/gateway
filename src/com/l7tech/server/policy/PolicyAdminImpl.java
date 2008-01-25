@@ -8,6 +8,7 @@ import com.l7tech.common.policy.*;
 import com.l7tech.common.security.rbac.MethodStereotype;
 import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.util.BeanUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.Functions.Unary;
 import static com.l7tech.common.util.Functions.map;
 import com.l7tech.objectmodel.*;
@@ -89,8 +90,15 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
             }
         } catch (SaveException e) {
             throw e;
+        } catch (UpdateException ue) {
+            DuplicateObjectException doe = ExceptionUtils.getCauseIfCausedBy( ue, DuplicateObjectException.class );
+            if ( doe != null ) {
+                throw doe;
+            } else {
+                throw new SaveException("Couldn't update policy", ue);                
+            }
         } catch (ObjectModelException e) {
-            throw new SaveException("Couldn't update policy", e.getCause());
+            throw new SaveException("Couldn't update policy", e);
         }
     }
 

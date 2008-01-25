@@ -174,7 +174,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 if (!others.isEmpty()) {
                     for (ET other : others) {
                         if (!entity.getId().equals(other.getId()) || !entity.getClass().equals(other.getClass())) {
-                            throw new UpdateException(describeAttributes(newMap) + " must be unique");
+                            String message = describeAttributes(newMap) + " must be unique";
+                            // nested since DuplicateObjectException is a SaveException not an UpdateException
+                            throw new UpdateException(message, new DuplicateObjectException(message));
                         }
                     }
                 }

@@ -37,7 +37,9 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
     }
 
     public long savePolicy( Policy policy ) throws PolicyAssertionException, SaveException {
-        return delegate.savePolicy( policy );
+        long policyOid = delegate.savePolicy( policy );
+        fireEntityUpdate( policyOid );
+        return policyOid;
     }
 
     public PolicyCheckpointState savePolicy( Policy policy, boolean activateAsWell ) throws PolicyAssertionException, SaveException {

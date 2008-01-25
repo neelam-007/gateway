@@ -441,6 +441,24 @@ public class PublishedService extends NamedEntityImp {
         public Wsdl parseWsdl(String uri, String wsdl) throws WSDLException;
     }
 
+    /**
+     * Generate a suitable name for a Policy associated with this service.
+     *
+     * @return The generated unique name
+     */
+    public String generatePolicyName() {
+        StringBuilder builder = new StringBuilder(300);
+
+        builder.append( "Policy for service #" );
+        builder.append( getId() );
+        builder.append( ", " );
+        builder.append( getName() );
+        if (builder.length() > 255)
+            builder.setLength( 255 );
+
+        return builder.toString();
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
