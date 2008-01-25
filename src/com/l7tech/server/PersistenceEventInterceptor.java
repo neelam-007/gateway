@@ -11,19 +11,17 @@ import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.common.audit.AuditDetail;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.audit.SystemAuditRecord;
+import com.l7tech.common.policy.PolicyVersion;
 import com.l7tech.common.security.rbac.AttributePredicate;
 import com.l7tech.common.security.rbac.ObjectIdentityPredicate;
 import com.l7tech.common.security.rbac.Permission;
 import com.l7tech.common.security.rbac.ScopePredicate;
 import com.l7tech.identity.GroupMembership;
 import com.l7tech.logging.SSGLogRecord;
-import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.event.*;
-import com.l7tech.server.event.admin.AdminEvent;
-import com.l7tech.server.event.admin.Created;
-import com.l7tech.server.event.admin.Deleted;
-import com.l7tech.server.event.admin.Updated;
+import com.l7tech.server.event.admin.*;
 import com.l7tech.server.identity.cert.CertEntryRow;
 import com.l7tech.server.service.resolution.ResolutionParameters;
 import com.l7tech.service.MetricsBin;
@@ -128,6 +126,8 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
             return new UserCertEvent(new UserCertEventInfo((CertEntryRow)obj, "added", null, getApplicationContext()));
         } else if (obj instanceof GroupMembership) {
             return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "added", getApplicationContext()));
+        } else if (obj instanceof PolicyVersion) {
+            return new PolicyVersionCreated((PolicyVersion)obj);
         } else if (obj instanceof Entity) {
             return new Created((Entity)obj);
         } else
@@ -139,6 +139,8 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
             return new UserCertEvent(new UserCertEventInfo((CertEntryRow)obj, "updated", changes, getApplicationContext()));
         } else if (obj instanceof GroupMembership) {
             return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "updated", getApplicationContext()));
+        } else if (obj instanceof PolicyVersion) {
+            return new PolicyVersionUpdated((PolicyVersion)obj, changes);
         } else if (obj instanceof Entity) {
             return new Updated((Entity)obj, changes);
         } else

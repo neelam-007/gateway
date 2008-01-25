@@ -3,7 +3,6 @@
  */
 package com.l7tech.server.policy;
 
-import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.policy.*;
 import com.l7tech.common.security.rbac.MethodStereotype;
 import com.l7tech.common.security.rbac.Secured;
@@ -85,7 +84,6 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
                 policyManager.update(policy);
                 final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(policy, true, false);
                 long versionOrdinal = checkpoint.getOrdinal();
-                auditor.logAndAudit(SystemMessages.POLICY_VERSION_ACTIVATION, Long.toString(versionOrdinal), Long.toString(policy.getOid()));
                 return new PolicyCheckpointState(policy.getOid(), versionOrdinal, checkpoint.isActive());
             }
         } catch (SaveException e) {
