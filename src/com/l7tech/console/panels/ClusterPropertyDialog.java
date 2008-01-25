@@ -193,6 +193,8 @@ public class ClusterPropertyDialog extends JDialog {
                 help();
             }
         });
+        // Set F1 funcation for the help button
+        setF1HelpFunction();
 
         closeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -220,6 +222,28 @@ public class ClusterPropertyDialog extends JDialog {
             public void keyTyped(KeyEvent e) {}
             public void keyReleased(KeyEvent e) {}
         });
+    }
+
+    /**
+     * Set F1 help function
+     */
+    private void setF1HelpFunction() {
+        KeyStroke accel = KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0);
+        String actionName = "showHelpTopics";
+        AbstractAction helpAction = new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                helpButton.doClick();
+            }
+        };
+
+        helpAction.putValue(Action.NAME, actionName);
+        helpAction.putValue(Action.ACCELERATOR_KEY, accel);
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(accel, actionName);
+        getRootPane().getActionMap().put(actionName, helpAction);
+        getLayeredPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(accel, actionName);
+        getLayeredPane().getActionMap().put(actionName, helpAction);
+        ((JComponent)getContentPane()).getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(accel, actionName);
+        ((JComponent)getContentPane()).getActionMap().put(actionName, helpAction);
     }
 
     private void add() {

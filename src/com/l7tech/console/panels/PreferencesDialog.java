@@ -10,10 +10,7 @@ import com.l7tech.console.SsmApplication;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Properties;
@@ -299,7 +296,7 @@ public class PreferencesDialog extends JDialog {
         buttonPanel.add(Box.createRigidArea(new Dimension(5, 0)));
 
         // help button
-        JButton helpButton = new JButton();
+        final JButton helpButton = new JButton();
         helpButton.setText(resources.getString("helpButton.label"));
         helpButton.setMnemonic(
           resources.getString("helpButton.mnemonic").charAt(0));
@@ -309,6 +306,24 @@ public class PreferencesDialog extends JDialog {
                 Actions.invokeHelp(PreferencesDialog.this);
             }
         });
+
+        // Set F1 funcation for the help button
+        KeyStroke accel = KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0);
+        String actionName = "showHelpTopics";
+        AbstractAction helpAction = new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                helpButton.doClick();
+            }
+        };
+        helpAction.putValue(Action.NAME, actionName);
+        helpAction.putValue(Action.ACCELERATOR_KEY, accel);
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(accel, actionName);
+        getRootPane().getActionMap().put(actionName, helpAction);
+        getLayeredPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(accel, actionName);
+        getLayeredPane().getActionMap().put(actionName, helpAction);
+        ((JComponent)getContentPane()).getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(accel, actionName);
+        ((JComponent)getContentPane()).getActionMap().put(actionName, helpAction);
+
         buttonPanel.add(helpButton);
 
         constraints = new GridBagConstraints();
