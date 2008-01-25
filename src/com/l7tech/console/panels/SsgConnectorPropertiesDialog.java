@@ -83,6 +83,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private CipherSuiteListModel cipherSuiteListModel;
     private DefaultComboBoxModel interfaceComboBoxModel;
     private DefaultListModel propertyListModel = new DefaultListModel();
+    private List<String> toBeRemovedProperties = new ArrayList<String>();
 
     public SsgConnectorPropertiesDialog(Frame owner, SsgConnector connector) {
         super(owner, DIALOG_TITLE);
@@ -205,6 +206,19 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         });
         removePropertyButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                // Check if the removing list contains the property name.  If so, don't add the property name.
+                Pair<String, String> property = (Pair<String, String>)propertyList.getSelectedValue();
+                boolean found = false;
+                for (String propertyName: toBeRemovedProperties) {
+                    if (propertyName.equals(property.left)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    toBeRemovedProperties.add(property.left);
+                }
+
                 int idx = propertyList.getSelectedIndex();
                 if (idx >= 0) propertyListModel.remove(idx);
             }
@@ -858,6 +872,12 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
         connector.setClientAuth(((ClientAuthType)clientAuthComboBox.getSelectedItem()).code);
         connector.putProperty(SsgConnector.PROP_CIPHERLIST, cipherSuiteListModel.asCipherListString());
+
+        // Delete those removed properties
+        // Note: make sure the step (removeProperty) is prior to the next step (putProperty), since there
+        // is a case - some property is removed first and then added back again.
+        for (String propertyName: toBeRemovedProperties)
+            connector.removeProperty(propertyName);
 
         // Save user-overridden properties last
         //noinspection unchecked

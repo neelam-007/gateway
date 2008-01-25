@@ -367,6 +367,19 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     }
 
     /**
+     * Remove some property associated with the name,  ${propertyName} from the property list.
+     * @param propertyName the property name whose property will be removed from the list.
+     */
+    public synchronized void removeProperty(String propertyName) {
+        for (SsgConnectorProperty property : properties) {
+            if (propertyName.equals(property.getName())) {
+                properties.remove(property);
+                break;
+            }
+        }
+    }
+
+    /**
      * Get the endpoints to enable on this connector.
      * The format is a comma-delimited string of endpoint names.
      *
