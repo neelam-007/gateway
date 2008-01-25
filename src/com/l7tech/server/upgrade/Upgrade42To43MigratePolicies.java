@@ -36,6 +36,7 @@ public class Upgrade42To43MigratePolicies implements UpgradeTask {
     private static final String OBJECTID_COLUMN = "objectid";
     private static final String POLICY_XML_COLUMN = "policy_xml";
     private static final String SOAP_COLUMN = "soap";
+    private static final String NAME_COLUMN = "name";
 
     private static final String SQL_SANITY_CHECK =
             "SELECT COUNT(*) FROM " + PUBLISHED_SERVICE_TABLE +
@@ -44,7 +45,8 @@ public class Upgrade42To43MigratePolicies implements UpgradeTask {
     private static final String SQL_GET_POLICY_XML =
             "SELECT " + OBJECTID_COLUMN + ", " +
                     POLICY_XML_COLUMN + "," +
-                    SOAP_COLUMN + " FROM " + PUBLISHED_SERVICE_TABLE;
+                    SOAP_COLUMN + "," +
+                    NAME_COLUMN + " FROM " + PUBLISHED_SERVICE_TABLE;
 
     private static final String SQL_CLEAR_POLICY_XML =
             "UPDATE " + PUBLISHED_SERVICE_TABLE +
@@ -92,6 +94,7 @@ public class Upgrade42To43MigratePolicies implements UpgradeTask {
                 long oid = rs.getLong(1);
                 Clob clob = rs.getClob(2);
                 boolean soap = rs.getInt(3) == 1;
+                String name = rs.getString(4);
                 if (clob == null) continue; // Maybe someone else has already gotten here
 
                 Reader xmlReader = clob.getCharacterStream();
@@ -101,7 +104,10 @@ public class Upgrade42To43MigratePolicies implements UpgradeTask {
                 } catch (IOException e) {
                     throw new FatalUpgradeException("Couldn't read policy_xml field");
                 }
-                policies.put(oid, new Policy(PolicyType.PRIVATE_SERVICE, null, sw.getBuffer().toString(), soap));
+                PublishedService service = new PublishedService();
+                service.setOid( oid );
+                service.setName( name );
+                policies.put(oid, new Policy(PolicyType.PRIVATE_SERVICE, service.generatePolicyName(), sw.getBuffer().toString(), soap));
             }
 
             return policies;

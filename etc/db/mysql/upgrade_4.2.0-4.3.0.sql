@@ -85,11 +85,12 @@ INSERT INTO rbac_permission VALUES (-804,0,-800,'DELETE',NULL,'LOG_SINK');
 CREATE TABLE policy (
   objectid bigint(20) NOT NULL,
   version int(11) NOT NULL,
-  name varchar(255),
+  name varchar(255) NOT NULL,
   xml mediumtext NOT NULL,
   policy_type VARCHAR(32) NOT NULL,
   soap TINYINT(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (objectid),
+  UNIQUE KEY i_name (name),
   INDEX (policy_type)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
