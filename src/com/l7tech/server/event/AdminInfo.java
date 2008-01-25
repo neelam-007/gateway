@@ -56,7 +56,7 @@ public class AdminInfo {
             clientSubject = Subject.getSubject(AccessController.getContext());
         } catch (ServerNotActiveException e) {
             logger.log(Level.WARNING, "The administrative event caused as local call, outside of servicing an adminstrative remote call." +
-              "Will use ip/user" + LOCALHOST_IP + '/' + LOCALHOST_SUBJECT, new Throwable());
+              "Will use ip/user" + LOCALHOST_IP + '/' + LOCALHOST_SUBJECT);
             address = LOCALHOST_IP;
             login = LOCALHOST_SUBJECT;
         }
