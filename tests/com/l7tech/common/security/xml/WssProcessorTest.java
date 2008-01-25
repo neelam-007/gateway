@@ -20,6 +20,7 @@ import com.l7tech.common.xml.InvalidDocumentSignatureException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.test.BugNumber;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -664,7 +665,8 @@ public class WssProcessorTest extends TestCase {
         }
     }
 
-    public void testSignatureCacheBug() throws Exception {
+    @BugNumber(4667)
+    public void testBug4667SignatureCacheBug() throws Exception {
         WssProcessor proc = new WssProcessorImpl();
 
         try {
