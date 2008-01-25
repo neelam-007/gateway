@@ -1,6 +1,8 @@
 package com.l7tech.server;
 
 import java.util.TimerTask;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -52,15 +54,21 @@ public abstract class LifecycleBean implements InitializingBean, ApplicationCont
     public final void start() throws LifecycleException {
         if ( isLicensed() ) {
             doStart();
-            synchronized (startLock) {
+            startedRwLock.writeLock().lock();
+            try {
                 this.started = true;
+            } finally {
+                startedRwLock.writeLock().unlock();
             }
         }
     }
 
     public void stop() throws LifecycleException {
-        synchronized (startLock) {
+        startedRwLock.writeLock().lock();
+        try {
             this.started = false;
+        } finally {
+            startedRwLock.writeLock().unlock();
         }
         doStop();
     }
@@ -75,8 +83,11 @@ public abstract class LifecycleBean implements InitializingBean, ApplicationCont
     }
 
     public boolean isStarted() {
-        synchronized (startLock) {
+        startedRwLock.readLock().lock();
+        try {
             return this.started;
+        } finally {
+            startedRwLock.readLock().unlock();
         }
     }
 
@@ -85,9 +96,12 @@ public abstract class LifecycleBean implements InitializingBean, ApplicationCont
             if (applicationEvent instanceof LicenseEvent) {
                 // If the subsystem becomes licensed after bootup, start it now
                 // We do not, however, support de-licensing an already-active subsystem without a reboot
-                synchronized (startLock) {
+                startedRwLock.readLock().lock();
+                try {
                     if (started)
                         return;  //avoid cost of scheduling oneshot timertask if we have already started
+                } finally {
+                    startedRwLock.readLock().unlock();
                 }
 
                 if (isLicensed()) {
@@ -119,8 +133,12 @@ public abstract class LifecycleBean implements InitializingBean, ApplicationCont
         this.logger = logger;
         this.licenseFeature = licenseFeature;
         this.licenseManager = licenseManager;
-        synchronized (startLock) {
+
+        startedRwLock.writeLock().lock();
+        try {
             this.started = false;
+        } finally {
+            startedRwLock.writeLock().unlock();
         }
     }
 
@@ -139,7 +157,7 @@ public abstract class LifecycleBean implements InitializingBean, ApplicationCont
     private final String componentName;
     private final String licenseFeature;
     private final LicenseManager licenseManager;
-    private final Object startLock = new Object();
     private boolean started;
+    private final ReadWriteLock startedRwLock = new ReentrantReadWriteLock(false);
     private ApplicationContext applicationContext;
 }
