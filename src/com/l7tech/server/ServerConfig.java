@@ -109,6 +109,7 @@ public class ServerConfig implements ClusterPropertyListener {
 
     public static final String PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES = "ephemeralKeyMaxCacheEntries";
     public static final String PARAM_PRIVATE_KEY_CACHE_MAX_AGE = "privateKeyCacheMaxAgeMillis";
+    public static final String PARAM_RSA_SIGNATURE_CACHE_MAX_ENTRIES = "rsaSignatureCacheMaxEntries";
 
     public static final String PARAM_SCHEMA_SOFTWARE_FALLBACK = "schemaSoftwareFallback";
 
@@ -209,6 +210,8 @@ public class ServerConfig implements ClusterPropertyListener {
         } finally {
             propLock.writeLock().unlock();
         }
+
+        prepopulateSystemProperties();
     }
 
     public void clusterPropertyChanged(final ClusterProperty clusterPropertyOld, final ClusterProperty clusterPropertyNew) {
@@ -342,7 +345,7 @@ public class ServerConfig implements ClusterPropertyListener {
             value = unquote(value);
         }
 
-        if (value != null && "true".equalsIgnoreCase(isSetSystemProperty)) {
+        if (value != null && "true".equalsIgnoreCase(isSetSystemProperty) && systemPropertyName != null && systemPropertyName.length() > 0) {
             System.setProperty(systemPropertyName, value);
         }
 
@@ -784,6 +787,20 @@ public class ServerConfig implements ClusterPropertyListener {
     
     void invalidateCachedProperty(final String propName) {
         valueCache.remove(propName);
+    }
+
+    private void prepopulateSystemProperties() {
+        for (Map.Entry entry : _properties.entrySet()) {
+            String key = (String)entry.getKey();
+            if (key == null)
+                continue;
+            if (key.endsWith(SUFFIX_SETSYSPROP)) {
+                String prop = key.substring(0, key.length() - SUFFIX_SETSYSPROP.length());
+                if (prop.length() < 1)
+                    continue;
+                getPropertyUncached(prop);
+            }
+        }
     }
 
     private void clusterPropertyEvent(final ClusterProperty clusterProperty, final ClusterProperty clusterPropertyOld) {

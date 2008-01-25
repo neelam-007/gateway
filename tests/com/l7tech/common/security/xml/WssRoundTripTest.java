@@ -339,7 +339,7 @@ public class WssRoundTripTest extends TestCase {
 
         martha.decorateMessage(c.messageMessage, reqs);
 
-        log.info("Decorated message (*note: pretty-printed):\n\n" + XmlUtil.nodeToFormattedString(c.messageMessage.getXmlKnob().getDocumentReadOnly()));
+        log.info("Decorated message:\n\n" + XmlUtil.nodeToString(c.messageMessage.getXmlKnob().getDocumentReadOnly()));
         schemaValidateSamlAssertions(soapMessage);
 
         // Serialize to string to simulate network transport

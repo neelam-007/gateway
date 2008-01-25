@@ -72,7 +72,7 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
 
     public SignatureMethod getSignatureMethod(String alg, Object param) throws NoSuchAlgorithmException, NoSuchProviderException {
         final SignatureMethod sm = super.getSignatureMethod(alg, param);
-        if (SignatureMethod.RSA.equals(alg)) {
+        if (SignatureMethod.RSA.equals(alg) && MemoizedRsaSha1SignatureMethod.isEnabled()) {
             // Wrap with memoized version
             return new MemoizedRsaSha1SignatureMethod(sm);
         }

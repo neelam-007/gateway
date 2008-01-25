@@ -7,8 +7,9 @@ package com.l7tech.common.security.xml.processor;
 
 import com.ibm.xml.dsig.SignatureMethod;
 import com.l7tech.common.security.JceProvider;
-import com.l7tech.common.util.WhirlycacheFactory;
+import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.common.util.SyspropUtil;
+import com.l7tech.common.util.WhirlycacheFactory;
 import com.whirlycott.cache.Cache;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERInputStream;
@@ -31,8 +32,8 @@ import java.util.logging.Logger;
  */
 public class MemoizedRsaSha1SignatureMethod extends SignatureMethod {
     private static final Logger logger = Logger.getLogger(MemoizedRsaSha1SignatureMethod.class.getName());
-    private static final String PROPBASE = MemoizedRsaSha1SignatureMethod.class.getName();
-    private static final int SIG_VERIFY_CACHE_MAX = SyspropUtil.getInteger(PROPBASE + ".sigVerifyCacheSize", 1000).intValue();
+    private static final String PROP_RSA_SIG_CACHE_MAX_ENTRIES =
+            "com.l7tech.common.security.xml.processor.MemoizedRsaSha1SignatureMethod.sigVerifyCacheSize";
 
     private static final ThreadLocal tlSha1 = new ThreadLocal() {
         protected Object initialValue() {
@@ -44,29 +45,32 @@ public class MemoizedRsaSha1SignatureMethod extends SignatureMethod {
         }
     };
 
-    //private static final LRUMap sigCache = new LRUMap(SIG_VERIFY_CACHE_MAX);
-    private static final Cache sigCache = WhirlycacheFactory.createCache("sigCache", SIG_VERIFY_CACHE_MAX,
+    private static final Integer SIG_VERIFY_CACHE_SIZE = SyspropUtil.getInteger(PROP_RSA_SIG_CACHE_MAX_ENTRIES, 2000);
+    private static final Cache sigCache = WhirlycacheFactory.createCache("sigCache", SIG_VERIFY_CACHE_SIZE,
                                                                          131, WhirlycacheFactory.POLICY_LRU);
+
+    /** @return true iff. the signature verify cache system property is currently set to, or defaulting to, a value greater than zero */ 
+    public static boolean isEnabled() {
+        return SIG_VERIFY_CACHE_SIZE > 0;
+    }
 
     private static class CachedSignature {
         final byte[] digestBytes;
+        final byte[] signatureValueBytes;
         final byte[] publicKeyBytes;
         final int hashCode;
 
-        public CachedSignature(byte[] digestBytes, byte[] publicKeyBytes) {
-            this.digestBytes = digestBytes;
-            this.publicKeyBytes = publicKeyBytes;
+        private CachedSignature(byte[] digestBytes, byte[] signatureValueBytes, byte[] publicKeyBytes) {
+            this.digestBytes = ArrayUtils.copy(digestBytes);  
+            this.signatureValueBytes = ArrayUtils.copy(signatureValueBytes);
+            this.publicKeyBytes = ArrayUtils.copy(publicKeyBytes);
             this.hashCode = makeHashCode();
         }
 
         private int makeHashCode() {
-            // are the first 4 bytes of the sha1 digest hashy enough for ya, punk?
-            final byte[] b = digestBytes;
-            return b[0] +
-                   b[1] * 256 +
-                   b[2] * 256 * 256 +
-                   b[3] * 256 * 256 * 256 +
-                   Arrays.hashCode(publicKeyBytes) * 17;
+            return Arrays.hashCode(digestBytes) +
+                   Arrays.hashCode(signatureValueBytes) * 17 +
+                   Arrays.hashCode(publicKeyBytes) * 37;
         }
 
         public int hashCode() {
@@ -81,6 +85,7 @@ public class MemoizedRsaSha1SignatureMethod extends SignatureMethod {
             final CachedSignature that = (CachedSignature)o;
 
             if (!Arrays.equals(digestBytes, that.digestBytes)) return false;
+            if (!Arrays.equals(signatureValueBytes, that.signatureValueBytes)) return false;
             if (!Arrays.equals(publicKeyBytes, that.publicKeyBytes)) return false;
 
             return true;
@@ -90,10 +95,10 @@ public class MemoizedRsaSha1SignatureMethod extends SignatureMethod {
         public boolean isVerified() {
             final Object got;
             got = sigCache.retrieve(this);
-            return got instanceof Boolean && ((Boolean)got).booleanValue();
+            return got instanceof Boolean && (Boolean)got;
         }
 
-        /** Report that this signature hash was successfully verified with its public key. */
+        /** Report that this signature hash was successfully verified with its public key and compared with the SignatureValue. */
         public void onVerified() {
             sigCache.store(this, Boolean.TRUE);
         }
@@ -150,9 +155,9 @@ public class MemoizedRsaSha1SignatureMethod extends SignatureMethod {
     }
 
     public boolean verify(byte[] bytes) throws SignatureException {
-        byte[]  hash = sha1.digest();
+        byte[] hash = sha1.digest();
 
-        CachedSignature cached = new CachedSignature(hash, verifyKey.getEncoded());
+        CachedSignature cached = new CachedSignature(hash, bytes, verifyKey.getEncoded());
         if (cached.isVerified()) {
             return true; // cache hit
         }

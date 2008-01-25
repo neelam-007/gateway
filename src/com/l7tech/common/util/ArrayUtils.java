@@ -180,6 +180,42 @@ public class ArrayUtils {
         return true;
     }
 
+    public static byte[] copy(final byte[] data) {
+        byte[] copy = null;
+        if (data != null) {
+            copy = new byte[data.length];
+            System.arraycopy(data, 0, copy, 0, data.length);
+        }
+        return copy;
+    }
+
+    public static int[] copy(final int[] data) {
+        int[] copy = null;
+        if (data != null) {
+            copy = new int[data.length];
+            System.arraycopy(data, 0, copy, 0, data.length);
+        }
+        return copy;
+    }
+
+    public static char[] copy(final char[] data) {
+        char[] copy = null;
+        if (data != null) {
+            copy = new char[data.length];
+            System.arraycopy(data, 0, copy, 0, data.length);
+        }
+        return copy;
+    }
+
+    public static boolean[] copy(final boolean[] data) {
+        boolean[] copy = null;
+        if (data != null) {
+            copy = new boolean[data.length];
+            System.arraycopy(data, 0, copy, 0, data.length);
+        }
+        return copy;
+    }
+
     /**
      * Create an array that is a copy of the given array.
      *
