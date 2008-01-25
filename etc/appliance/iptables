@@ -69,19 +69,21 @@ COMMIT
 [0:0] -A INPUT -p udp -m udp --dport 7001:7100 -j ACCEPT
 # [0:0] -A INPUT -p udp -m udp --dport 32784 -j ACCEPT
 
-# open on eth0 even if SSG's are  not up
+#
+# ADD CUSTOM ALLOW RULES HERE
+#
 
+# open on eth0 even if SSG's are  not up
 [0:0] -A INPUT -i eth0 -p tcp -m tcp --dport 3306 -j ACCEPT
 [0:0] -A INPUT -i eth0 -p tcp -m tcp --dport 22 -j ACCEPT
-
-# Partitions:
-# allow in only the known partitions and IPS
-# Tricky: Using I (insert) to put the rules in above the drop
-# FIXME: if you add new rules above, you MUST change the insert point
-
-# drop all other TCP and UDP
-# THESE RULES MUST BE LAST! 
-
+#
+# DO NOT ADD ANY CUSTOM RULES HERE
+# Any rules between the above rule and the below rule
+# will be overwritten by partition rules whenever a partition
+# is started or stopped, or whenever a partition's listen ports
+# are reconfigured.
+#
+# Finally, drop all other TCP and UDP
 [0:0] -A INPUT -p tcp -m tcp --dport 1:65535 -j portdrop
 [0:0] -A INPUT -p udp -m udp --dport 1:65535 -j portdrop
 

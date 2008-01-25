@@ -73,6 +73,7 @@ elif [ "$1" = "run" ] ; then
     ${SSG_JAVA_HOME}/bin/java -Djava.ext.dirs="${SSG_JAVA_HOME}/jre/lib/ext:${SSG_HOME}/lib/ext" $JAVA_OPTS -jar Gateway.jar "$@"
 
     if [ ! -z "$GATEWAY_PID" ]; then
+        rm -f $GATEWAY_PID
         echo $! > $GATEWAY_PID
     fi
 
