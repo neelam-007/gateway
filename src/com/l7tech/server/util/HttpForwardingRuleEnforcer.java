@@ -189,7 +189,7 @@ public class HttpForwardingRuleEnforcer {
                         }
                         headervalue = ExpandVariables.process(headervalue, vars, auditor);
                     }
-                    routedRequestParams.addExtraHeader(new GenericHttpHeader(headername, headervalue));
+                    routedRequestParams.replaceExtraHeader(new GenericHttpHeader(headername, headervalue));
                 } else if (knob != null) {
                     // set header with incoming value if it's present
                     String headername = rule.getName();
