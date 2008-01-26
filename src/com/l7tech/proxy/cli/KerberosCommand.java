@@ -18,7 +18,7 @@ class KerberosCommand extends Command {
         setMinAbbrev(4);
         setHelpText("Use this command to manually configure Kerberos for use with all gateways.\n" +
                     "\n" +
-                    "   Usage: kerberos <kdc-host> <realm>\n" +
+                    "  Usage: kerberos <kdc-host> <realm>\n" +
                     "\n" +
                     "Example: kerberos 10.0.0.1 MYREALM.COM\n");
     }
