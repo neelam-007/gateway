@@ -23,6 +23,7 @@ import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Node;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.xpath.XPathExpressionException;
@@ -46,7 +47,9 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
     private final String vfound;
     private final String vcount;
     private final String vresult;
+    private final String vmultipleResults;
     private final String velement;
+    private final String vmultipleElements;
 
     public ServerXpathAssertion(SimpleXpathAssertion assertion, ApplicationContext springContext, boolean isReq) {
         super(assertion, springContext);
@@ -55,8 +58,10 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
         Set<String> varsUsed = PolicyVariableUtils.getVariablesUsedBySuccessors(assertion);
         vfound = varsUsed.contains(assertion.foundVariable()) ? assertion.foundVariable() : null;
         vresult = varsUsed.contains(assertion.resultVariable()) ? assertion.resultVariable() : null;
+        vmultipleResults = varsUsed.contains(assertion.multipleResultsVariable()) ? assertion.multipleResultsVariable() : null;
         vcount = varsUsed.contains(assertion.countVariable()) ? assertion.countVariable() : null;
         velement = varsUsed.contains(assertion.elementVariable()) ? assertion.elementVariable() : null;
+        vmultipleElements = varsUsed.contains(assertion.multipleElementsVariable()) ? assertion.multipleElementsVariable() : null;
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
@@ -93,7 +98,9 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
         context.setVariable(vfound, SimpleXpathAssertion.FALSE);
         context.setVariable(vcount, "0");
         context.setVariable(vresult, null);
+        context.setVariable(vmultipleResults, null);
         context.setVariable(velement, null);
+        context.setVariable(vmultipleElements, null);
 
         CompiledXpath compiledXpath = getCompiledXpath();
         if (compiledXpath == null) {
@@ -145,23 +152,29 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
                 if (xpathResult.getBoolean()) {
                     auditor.logAndAudit(AssertionMessages.XPATH_RESULT_TRUE);
                     context.setVariable(vresult, SimpleXpathAssertion.TRUE);
+                    context.setVariable(vmultipleResults, SimpleXpathAssertion.TRUE);
                     context.setVariable(velement, SimpleXpathAssertion.TRUE);
+                    context.setVariable(vmultipleElements, SimpleXpathAssertion.TRUE);
                     context.setVariable(vcount, "1");
                     context.setVariable(vfound, SimpleXpathAssertion.TRUE);
                     return AssertionStatus.NONE;
                 }
                 auditor.logAndAudit(AssertionMessages.XPATH_RESULT_FALSE);
                 context.setVariable(vresult, SimpleXpathAssertion.FALSE);
+                context.setVariable(vmultipleResults, SimpleXpathAssertion.FALSE);
                 context.setVariable(velement, SimpleXpathAssertion.FALSE);
+                context.setVariable(vmultipleElements, SimpleXpathAssertion.FALSE);
                 context.setVariable(vcount, "1");
                 context.setVariable(vfound, SimpleXpathAssertion.FALSE);
                 return AssertionStatus.FALSIFIED;
 
             case XpathResult.TYPE_NUMBER:
-                if (vresult != null || velement != null) {
+                if (vresult != null || velement != null || vmultipleResults != null || vmultipleElements != null) {
                     String val = Double.toString(xpathResult.getNumber());
                     context.setVariable(vresult, val);
+                    context.setVariable(vmultipleResults, val);
                     context.setVariable(velement, val);
+                    context.setVariable(vmultipleElements, val);
                 }
 
                 context.setVariable(vcount, "1");
@@ -171,10 +184,12 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
                 return AssertionStatus.NONE;
 
             case XpathResult.TYPE_STRING:
-                if (vresult != null || velement != null) {
+                if (vresult != null || velement != null || vmultipleResults != null || vmultipleElements != null) {
                     String strVal = xpathResult.getString();
                     context.setVariable(vresult, strVal);
+                    context.setVariable(vmultipleResults, strVal);
                     context.setVariable(velement, strVal);
+                    context.setVariable(vmultipleElements, strVal);
                 }
                 context.setVariable(vcount, "1");
                 context.setVariable(vfound, SimpleXpathAssertion.TRUE);
@@ -214,9 +229,28 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
             case Node.ELEMENT_NODE:
                 auditor.logAndAudit(AssertionMessages.XPATH_ELEMENT_FOUND);
                 if (vresult != null) context.setVariable(vresult, ns.getNodeValue(0));
+                if (vmultipleResults != null) {
+                    if(size > 0) {
+                        String[] val = new String[size];
+                        for(int i = 0;i < size;i++) {
+                            val[i] = ns.getNodeValue(i);
+                        }
+                        context.setVariable(vmultipleResults, val);
+                    }
+                }
                 if (velement != null) {
                     XpathResultIterator it = ns.getIterator();
                     if (it.hasNext()) context.setVariable(velement, it.nextElementAsCursor().asString());
+                }
+                if (vmultipleElements != null) {
+                    if(size > 0) {
+                        Element[] val = new Element[size];
+                        int i = 0;
+                        for(XpathResultIterator it = ns.getIterator();it.hasNext() && i < size;) {
+                            val[i++] = it.nextElementAsCursor().asDomElement();
+                        }
+                        context.setVariable(vmultipleElements, val);
+                    }
                 }
                 return AssertionStatus.NONE;
 
@@ -226,6 +260,19 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
                     String val = ns.getNodeValue(0);
                     context.setVariable(vresult, val);
                     context.setVariable(velement, val);
+                }
+                if (vmultipleElements != null || vmultipleResults != null) {
+                    String[] val;
+                    if(ns.size() > 0) {
+                        val = new String[ns.size()];
+                        for(int i = 0;i < val.length;i++) {
+                            val[i] = ns.getNodeValue(i);
+                        }
+                    } else {
+                        val = new String[0];
+                    }
+                    context.setVariable(vmultipleElements, val);
+                    context.setVariable(vmultipleResults, val);
                 }
                 return AssertionStatus.NONE;
 
@@ -239,6 +286,19 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
             String val = ns.getNodeValue(0);
             context.setVariable(vresult, val);
             context.setVariable(velement, val);
+        }
+        if (vmultipleElements != null || vmultipleResults != null) {
+            String[] val;
+            if(ns.size() > 0) {
+                val = new String[ns.size()];
+                for(int i = 0;i < val.length;i++) {
+                    val[i] = ns.getNodeValue(i);
+                }
+            } else {
+                val = new String[0];
+            }
+            context.setVariable(vmultipleElements, val);
+            context.setVariable(vmultipleResults, val);
         }
         return AssertionStatus.NONE;
     }

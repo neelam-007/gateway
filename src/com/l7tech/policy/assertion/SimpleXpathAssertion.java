@@ -17,13 +17,17 @@ public abstract class SimpleXpathAssertion
 
     public static final String VAR_SUFFIX_FOUND = "found";
     public static final String VAR_SUFFIX_RESULT = "result";
+    public static final String VAR_SUFFIX_MULTIPLE_RESULTS = "results";
     public static final String VAR_SUFFIX_COUNT = "count";
     public static final String VAR_SUFFIX_ELEMENT = "element";
+    public static final String VAR_SUFFIX_MULTIPLE_ELEMENTS = "elements";
 
     private transient String foundVariable;
     private transient String resultVariable;
+    private transient String multipleResultsVariable;
     private transient String countVariable;
     private transient String elementVariable;
+    private transient String multipleElementsVariable;
 
     /**
      * @return the prefix to be used in front of context variable names set by the assertion
@@ -47,8 +51,10 @@ public abstract class SimpleXpathAssertion
         }
         foundVariable = prefix + "." + VAR_SUFFIX_FOUND;
         resultVariable = prefix + "." + VAR_SUFFIX_RESULT;
+        multipleResultsVariable = prefix + "." + VAR_SUFFIX_MULTIPLE_RESULTS;
         countVariable = prefix + "." + VAR_SUFFIX_COUNT;
         elementVariable = prefix + "." + VAR_SUFFIX_ELEMENT;
+        multipleElementsVariable = prefix + "." + VAR_SUFFIX_MULTIPLE_ELEMENTS;
     }
 
     public String foundVariable() {
@@ -61,6 +67,11 @@ public abstract class SimpleXpathAssertion
         return resultVariable;
     }
 
+    public String multipleResultsVariable() {
+        if (multipleResultsVariable == null) doVarNames();
+        return multipleResultsVariable;
+    }
+
     public String countVariable() {
         if (countVariable == null) doVarNames();
         return countVariable;
@@ -71,13 +82,20 @@ public abstract class SimpleXpathAssertion
         return elementVariable;
     }
 
+    public String multipleElementsVariable() {
+        if (multipleElementsVariable == null) doVarNames();
+        return multipleElementsVariable;
+    }
+
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
             // Note default prefixes are used here for property lookup purposes
             new VariableMetadata(foundVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_FOUND, false, DataType.BOOLEAN),
             new VariableMetadata(countVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_COUNT, false, DataType.INTEGER),
             new VariableMetadata(resultVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_RESULT, false, DataType.STRING),
+            new VariableMetadata(multipleResultsVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_MULTIPLE_RESULTS, false, DataType.STRING),
             new VariableMetadata(elementVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_ELEMENT, false, DataType.ELEMENT),
+            new VariableMetadata(multipleElementsVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_MULTIPLE_ELEMENTS, false, DataType.ELEMENT),
         };
     }
 

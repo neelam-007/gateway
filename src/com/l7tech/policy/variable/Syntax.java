@@ -10,6 +10,12 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.io.StringWriter;
+import java.io.IOException;
+
+import org.apache.xml.serialize.XMLSerializer;
+import org.apache.xml.serialize.OutputFormat;
+import org.w3c.dom.Element;
 
 /**
  * @author alex
@@ -89,7 +95,7 @@ public abstract class Syntax {
         int ppos = rawName.indexOf("|");
         if (ppos == 0) throw new IllegalArgumentException("Variable names must not start with '|'");
         if (ppos > 0) {
-            return new MultivalueDelimiterSyntax(rawName.substring(0,ppos), rawName.substring(ppos+1));
+            return new MultivalueDelimiterSyntax(rawName.substring(0,ppos), rawName.substring(ppos+1), true);
         } else {
             // Can't combine concatenation with subscript (yet -- 2D arrays?)
             int lbpos = rawName.indexOf("[");
@@ -109,7 +115,7 @@ public abstract class Syntax {
                     return new MultivalueArraySubscriptSyntax(rawName.substring(0, lbpos), subscript);
                 } else throw new IllegalArgumentException("']' expected but not found");
             } else {
-                return new MultivalueDelimiterSyntax(rawName, delimiter);
+                return new MultivalueDelimiterSyntax(rawName, delimiter, false);
             }
         }
     }
@@ -139,9 +145,11 @@ public abstract class Syntax {
 
     private static class MultivalueDelimiterSyntax extends Syntax {
         private final String delimiter;
-        private MultivalueDelimiterSyntax(String name, String delimiter) {
+        private final boolean delimiterSpecified;
+        private MultivalueDelimiterSyntax(String name, String delimiter, boolean delimiterSpecified) {
             super(name);
             this.delimiter = delimiter;
+            this.delimiterSpecified = delimiterSpecified;
         }
 
         public Object[] filter(Object[] values, Audit audit, boolean strict) {
@@ -150,13 +158,40 @@ public abstract class Syntax {
 
         public String format(final Object[] values, final Formatter formatter, final Audit audit, final boolean strict) {
             if (values == null || values.length == 0) return "";
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < values.length; i++) {
-                Object value = values[i];
-                if (value != null) sb.append(formatter.format(this, value, audit, strict));
-                if (i < values.length-1) sb.append(delimiter);
+
+            // DOM Elements do not have a delimiter unless one was explicitly specified
+            if (values[0] instanceof Element) {
+                StringBuilder sb = new StringBuilder();
+                OutputFormat format = new OutputFormat();
+                format.setOmitXMLDeclaration(true);
+                XMLSerializer serializer = new XMLSerializer(format);
+                for (int i = 0; i < values.length; i++) {
+                    Element value = (Element)values[i];
+                    if (value != null) {
+                        try {
+                            StringWriter writer = new StringWriter();
+                            serializer.setOutputCharStream(writer);
+                            serializer.serialize(value);
+                            sb.append(writer.toString());
+
+                            if (delimiterSpecified && i < values.length - 1) {
+                                sb.append(delimiter);
+                            }
+                        } catch(IOException e) {
+                            // Skip to the next Element
+                        }
+                    }
+                }
+                return sb.toString();
+            } else {
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < values.length; i++) {
+                    Object value = values[i];
+                    if (value != null) sb.append(formatter.format(this, value, audit, strict));
+                    if (i < values.length-1) sb.append(delimiter);
+                }
+                return sb.toString();
             }
-            return sb.toString();
         }
     }
 
@@ -180,7 +215,22 @@ public abstract class Syntax {
 
         public String format(Object[] values, Formatter formatter, Audit audit, boolean strict) {
             if (values == null || values.length != 1) return "";
-            return formatter.format(this, values[0], audit, strict);
+
+            if (values[0] instanceof Element) {
+                try {
+                    OutputFormat format = new OutputFormat();
+                    format.setOmitXMLDeclaration(true);
+                    XMLSerializer serializer = new XMLSerializer(format);
+                    StringWriter writer = new StringWriter();
+                    serializer.setOutputCharStream(writer);
+                    serializer.serialize((Element)values[0]);
+                    return writer.toString();
+                } catch(IOException e) {
+                    return "";
+                }
+            } else {
+                return formatter.format(this, values[0], audit, strict);
+            }
         }
     }
 
