@@ -6,6 +6,7 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -68,5 +69,10 @@ public class ServerInclude extends AbstractServerAssertion<Include> {
             auditor.logAndAudit(AssertionMessages.INCLUDE_POLICY_EXCEPTION, ExceptionUtils.getMessage(e));
             throw e;
         }
+    }
+
+    @Override
+    public void close() {
+        ResourceUtils.closeQuietly( serverPolicy );      
     }
 }
