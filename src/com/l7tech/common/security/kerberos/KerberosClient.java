@@ -151,6 +151,8 @@ public class KerberosClient {
                 loginContext.login();
             }
 
+            // disable inspection until we can use 1.6 api
+            //noinspection unchecked
             ticket = (KerberosServiceTicket) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
                 public KerberosServiceTicket run() throws Exception {
                     Oid kerberos5Oid = getKerberos5Oid();
@@ -222,6 +224,8 @@ public class KerberosClient {
 
             LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_ACCEPT, kerberosSubject, getServerCallbackHandler(servicePrincipalName));
             loginContext.login();
+            // disable inspection until we can use 1.6 api
+            //noinspection unchecked
             ticket = (KerberosServiceTicket) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
                 public KerberosServiceTicket run() throws Exception {
                     Oid kerberos5Oid = getKerberos5Oid();
@@ -239,6 +243,7 @@ public class KerberosClient {
                         byte[] apReqBytes = new sun.security.util.DerValue(gssAPReqTicket.getTicketBody()).toByteArray();
                         KerberosKey[] keys = getKeys(kerberosSubject.getPrivateCredentials());
                         KrbApReq apReq = new KrbApReq(apReqBytes, toEncryptionKey(keys));
+                        validateServerPrincipal(kerberosSubject.getPrincipals(), new KerberosPrincipal(apReq.getCreds().getServer().getName()) );
                         EncryptionKey sessionKey = apReq.getCreds().getSessionKey();
                         EncryptionKey subKey = apReq.getSubKey();
 
@@ -299,6 +304,8 @@ public class KerberosClient {
                 loginContext.login();
             }
 
+            // disable inspection until we can use 1.6 api
+            //noinspection unchecked
             name = (String) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
                 public String run() throws Exception {
                     String name = null;
@@ -374,6 +381,8 @@ public class KerberosClient {
                 String contextName = initiator ? LOGIN_CONTEXT_ACCEPT_INIT : LOGIN_CONTEXT_ACCEPT;
                 LoginContext loginContext = new LoginContext(contextName, kerberosSubject, getServerCallbackHandler(spn));
                 loginContext.login();
+                // disable inspection until we can use 1.6 api
+                //noinspection unchecked
                 aPrincipal = (String) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
                     public String run() throws Exception {
                         String name = null;
@@ -504,6 +513,32 @@ public class KerberosClient {
         if(ticket==null) throw new IllegalStateException("Ticket not found! (credsize:"+info.size()+")");
 
         return ticket;
+    }
+
+    /**
+     * Ensure that the given principal set contains the principal 
+     */
+    private static void validateServerPrincipal(final Set<Principal> allowedPrincipals,
+                                                final KerberosPrincipal principal) throws KerberosException {
+        boolean found = false;
+
+        for ( Principal allowedPrincipal : allowedPrincipals ) {
+            if ( allowedPrincipal instanceof KerberosPrincipal ) {
+                KerberosPrincipal kerbAllowedPrincipal = (KerberosPrincipal) allowedPrincipal;
+
+                // compare REALMS case sensitively but the rest of the name insensitively
+                if ( kerbAllowedPrincipal.getNameType() == principal.getNameType() &&
+                     kerbAllowedPrincipal.getRealm().equals( principal.getRealm() ) &&
+                     kerbAllowedPrincipal.getName().toLowerCase().equals( principal.getName().toLowerCase() )) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        if ( !found ) {
+            throw new KerberosException("Invalid server principal '"+principal+"'.");
+        }
     }
 
     /**
