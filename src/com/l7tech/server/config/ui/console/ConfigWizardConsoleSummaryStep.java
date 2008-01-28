@@ -44,11 +44,10 @@ public class ConfigWizardConsoleSummaryStep extends BaseConsoleStep{
             handleInput(readLine());
 
             if (parent.shouldSaveConfigData()) {
-                String password = getSecretData(new String[] {
-                    "The wizard will save your configuration data to the database for other cluster members to use." + getEolChar(),
-                    "Please enter a passphrase to protect the configuration data: "
-                }, "", null, null);
-
+                String password = getMatchingPasswords("Please enter a passphrase to protect the configuration data:",
+                        "Please confirm the passphrase to protect the configuration data:",
+                        6);
+                
                 parent.setConfigDataPassword(password);
             }
         } catch (IOException e) {
