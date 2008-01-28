@@ -281,18 +281,20 @@ public class MappingUtil {
             resultSet = statement.executeQuery("select " + column + " from " + table + ";");
             while (resultSet.next()) {
                 final String policyXml = resultSet.getString(1);
-                final Document doc = XmlUtil.stringToDocument(policyXml);
-                final List<Element> routingAssertions = getRoutingAssertionElementsFromPolicy(doc);
-                for (Element routingAssertion : routingAssertions) {
-                    final Element cia = XmlUtil.findFirstChildElementByName(routingAssertion,
-                                                                            "http://www.layer7tech.com/ws/policy",
-                                                                            "CustomIpAddresses");
-                    if (cia != null) {
-                        final List<Element> items = XmlUtil.findChildElementsByName(cia, "http://www.layer7tech.com/ws/policy", "item");
-                        for (Element item : items) {
-                            String value = item.getAttribute("stringValue");
-                            if (value != null) {
-                                ipAddresses.add(value);
+                if (policyXml != null) {
+                    final Document doc = XmlUtil.stringToDocument(policyXml);
+                    final List<Element> routingAssertions = getRoutingAssertionElementsFromPolicy(doc);
+                    for (Element routingAssertion : routingAssertions) {
+                        final Element cia = XmlUtil.findFirstChildElementByName(routingAssertion,
+                                                                                "http://www.layer7tech.com/ws/policy",
+                                                                                "CustomIpAddresses");
+                        if (cia != null) {
+                            final List<Element> items = XmlUtil.findChildElementsByName(cia, "http://www.layer7tech.com/ws/policy", "item");
+                            for (Element item : items) {
+                                String value = item.getAttribute("stringValue");
+                                if (value != null) {
+                                    ipAddresses.add(value);
+                                }
                             }
                         }
                     }
@@ -376,12 +378,14 @@ public class MappingUtil {
                 final long objectid = resultSet.getLong(1);
                 String policyXml = resultSet.getString(2);
                 boolean changed = false;
-                for (String fromIP : mapping.backendIPMapping.keySet()) {
-                    if (policyXml.indexOf("stringValue=\"" + fromIP + "\"") >= 0) {
-                        String toIP = mapping.backendIPMapping.get(fromIP);
-                        logger.info("Mapping routing IP address for " + getDescription(connection, table, objectid) + ": from " + fromIP + " to " + toIP);
-                        policyXml = policyXml.replace("stringValue=\"" + fromIP + "\"", "stringValue=\"" + toIP + "\"");
-                        changed = true;
+                if (policyXml != null) {
+                    for (String fromIP : mapping.backendIPMapping.keySet()) {
+                        if (policyXml.indexOf("stringValue=\"" + fromIP + "\"") >= 0) {
+                            String toIP = mapping.backendIPMapping.get(fromIP);
+                            logger.info("Mapping routing IP address for " + getDescription(connection, table, objectid) + ": from " + fromIP + " to " + toIP);
+                            policyXml = policyXml.replace("stringValue=\"" + fromIP + "\"", "stringValue=\"" + toIP + "\"");
+                            changed = true;
+                        }
                     }
                 }
                 if (changed) {
@@ -404,7 +408,7 @@ public class MappingUtil {
      * @param connection    opened connection to the database
      * @param table         name of table containing the item
      * @param objectid      objectid of the item
-     * @return an appropriate description of the policy item; or "N/A" if database error occurs
+     * @return an appropriate description of the policy item; or "N/A" if database error occurs; never null
      * @throws NullPointerException if any parameter is <code>null</code>
      * @throws RuntimeException if <code>table</code> is not related to policies
      */
@@ -451,7 +455,7 @@ public class MappingUtil {
      *
      * @param connection    opened connection to the database
      * @param policyOid     policy objectid
-     * @return an appropriate description of the policy item
+     * @return an appropriate description of the policy item; never null
      * @throws SQLException if database error occurs
      */
     private static String getPolicyDescription(final Connection connection, final Long policyOid) throws SQLException {
@@ -467,21 +471,24 @@ public class MappingUtil {
     }
 
     /**
-     * Gets the "name" column value for a unique row in a table.
+     * Gets the "name" column value for a row in a table with matching objectid.
+     * If more than one row have matching objectid, only the first row is used.
      *
      * @param connection    opened connection to the database
      * @param table         name of database table
      * @param oidColumn     name of column containing objectid
      * @param oid           value of objectid
-     * @return value of "name" column
+     * @return value of "name" column; null if no row has matching objectid or the SQL value is NULL
      * @throws SQLException if database error occurs
      */
     private static String getNameField(final Connection connection, final String table, final String oidColumn, final long oid) throws SQLException {
+        String name = null;
         final PreparedStatement statement = connection.prepareStatement("SELECT name FROM " + table + " WHERE " + oidColumn + "=?;");
         statement.setLong(1, oid);
         final ResultSet resultSet = statement.executeQuery();
-        resultSet.next();
-        final String name = resultSet.getString(1);
+        if (resultSet.next()) {
+            name = resultSet.getString(1);
+        }
         resultSet.close();
         statement.close();
         return name;
