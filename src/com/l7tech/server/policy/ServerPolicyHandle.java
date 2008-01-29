@@ -29,14 +29,6 @@ public class ServerPolicyHandle extends Handle<ServerPolicy> {
         return policyMetadata;
     }
 
-    //- PROTECTED
-
-    /** Open up access so policy cache can use this.  ONLY PolicyCache should use this. */
-    @Override
-    protected ServerPolicy getTarget() {
-        return super.getTarget();
-    }
-
     //- PACKAGE
 
     ServerPolicyHandle( final ServerPolicy cs,

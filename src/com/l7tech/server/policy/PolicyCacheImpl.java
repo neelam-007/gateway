@@ -128,7 +128,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         try {
             PolicyCacheEntry pce = cacheGet( policyOid );
             if( pce != null && pce.isValid() ) {
-                return pce.handle.getTarget().ref();
+                return pce.serverPolicy.ref();
             }
         } finally {
             read.unlock();
@@ -811,8 +811,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
 
             PolicyCacheEntry pce;
             if ( serverAssertion != null ) {
-                ServerPolicyHandle handle = new ServerPolicy( thisPolicy, collectMetadata( assertion, descendentPolicies ), descendentPolicies, dependentVersions, serverAssertion ).ref();
-                pce = new PolicyCacheEntry( thisPolicy, handle, null );
+                ServerPolicy ServerPolicy = new ServerPolicy( thisPolicy, collectMetadata( assertion, descendentPolicies ), descendentPolicies, dependentVersions, serverAssertion );
+                pce = new PolicyCacheEntry( thisPolicy, ServerPolicy, null );
             } else {
                 pce = new PolicyCacheEntry( thisPolicy, usedInvalidPolicyId );
             }
@@ -1091,6 +1091,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
 
         // one of these is two fields is required
         private final ServerPolicyHandle handle;
+        private final ServerPolicy serverPolicy;
         private final Long usesPolicyId;
 
         private final Set<Long> usedBy;
@@ -1102,17 +1103,18 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
          * <p>This constructor is for use with valid policies.</p>
          *
          * @param policy The policy, must not be null
-         * @param handle The handle (must not be null)
+         * @param serverPolicy The serverPolicy (must not be null)
          * @param usedBy Ids for policies that use this policy (may be null)
          */
         private PolicyCacheEntry( final Policy policy,
-                                  final ServerPolicyHandle handle,
+                                  final ServerPolicy serverPolicy,
                                   final Set<Long> usedBy ) {
             if ( policy == null ) throw new IllegalArgumentException("policy must not be null");
-            if ( handle == null ) throw new IllegalArgumentException("handle must not be null");
+            if ( serverPolicy == null ) throw new IllegalArgumentException("serverPolicy must not be null");
             this.policyId = policy.getOid();
             this.policy = policy;
-            this.handle = handle;
+            this.handle = serverPolicy.ref();
+            this.serverPolicy = serverPolicy;
             this.usesPolicyId = null;
             this.usedBy = new HashSet<Long>();
             if ( usedBy != null ) {
@@ -1134,6 +1136,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             this.policyId = policy.getOid();
             this.policy = policy;
             this.handle = null;
+            this.serverPolicy = null;
             this.usesPolicyId = usesPolicyId;
             this.usedBy = new HashSet<Long>();
         }
