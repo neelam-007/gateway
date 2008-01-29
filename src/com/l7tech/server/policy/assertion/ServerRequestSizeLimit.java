@@ -44,7 +44,7 @@ public class ServerRequestSizeLimit extends AbstractServerAssertion implements S
                 request.getMimeKnob().setContentLengthLimit(limit);
                 messlen = request.getMimeKnob().getContentLength();
             } catch(IOException e) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_BODY_TOO_LARGE, null, e);
+                auditor.logAndAudit(AssertionMessages.REQUEST_BODY_TOO_LARGE, null);
                 return AssertionStatus.FALSIFIED;
             }
             if (messlen > limit) {
