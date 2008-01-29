@@ -133,6 +133,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
                                   getEolChar());
                     }
                 } while (configData == null);
+
                 if (configData != null) {
                     if (shouldApplyNewSettings()) {
                         parent.setSilentConfigData(configData);
@@ -171,18 +172,21 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
         try {
                 configData = silentConf.decryptConfigSettings(passphrase.toCharArray(), configBytes);
             } catch (IllegalBlockSizeException e) {
-                exceptionMessage = "there was an error while trying to extract the settings. " + ExceptionUtils.getMessage(e);
+                exceptionMessage = "The configuration settings could not be extracted." + getEolChar() + ExceptionUtils.getMessage(e);
             } catch (InvalidKeyException e) {
-                exceptionMessage = "there was an error while trying to extract the settings. " + ExceptionUtils.getMessage(e);
+                exceptionMessage = "The configuration settings could not be extracted." + getEolChar() + ExceptionUtils.getMessage(e);
             } catch (ParseException e) {
-                exceptionMessage = "there was an error while trying to extract the settings. " + ExceptionUtils.getMessage(e);
+                exceptionMessage = "The configuration settings could not be extracted." + getEolChar() + ExceptionUtils.getMessage(e);
             } catch (BadPaddingException e) {
-                exceptionMessage = "there was an error while trying to extract the settings. " + ExceptionUtils.getMessage(e);
+                exceptionMessage = "The configuration settings could not be extracted." + getEolChar() + "Perhaps you have entered the wrong password.";
             } catch (InvalidAlgorithmParameterException e) {
-                exceptionMessage = "there was an error while trying to extract the settings. " + ExceptionUtils.getMessage(e);
+                exceptionMessage = "The configuration settings could not be extracted." + getEolChar() + ExceptionUtils.getMessage(e);
             } finally {
                 if (exceptionMessage != null) {
                     logger.severe(exceptionMessage);
+                    printText(getEolChar() + StringUtils.repeat("*", 50) + getEolChar());
+                    printText(getEolChar() + exceptionMessage + getEolChar() + "Please enter the information again." + getEolChar());
+                    printText(getEolChar() + StringUtils.repeat("*", 50) + getEolChar());
                     configData = null;
                 }
             }
