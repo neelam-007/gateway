@@ -62,8 +62,10 @@ public class StylesheetCompiler {
                 public void error(TransformerException exception) throws TransformerException { }
                 public void fatalError(TransformerException exception) throws TransformerException { fatals.add(exception); }
             });
-            DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            db.setEntityResolver(XmlUtil.getXss4jEntityResolver());
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setNamespaceAware( true );
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            db.setEntityResolver( XmlUtil.getSafeEntityResolver() );
             Document document = db.parse(new InputSource(new StringReader(thing)));
             Templates result = transfactory.newTemplates(new DOMSource(document));
             if (result == null) {
