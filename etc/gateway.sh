@@ -61,6 +61,7 @@ if [ "$1" = "start" ] ; then
     ${SSG_JAVA_HOME}/bin/java -Djava.ext.dirs="${SSG_JAVA_HOME}/jre/lib/ext:${SSG_HOME}/lib/ext" -Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig $JAVA_OPTS -jar Gateway.jar "$@" &
 
     if [ ! -z "$GATEWAY_PID" ]; then
+        rm -f $GATEWAY_PID
         echo $! > $GATEWAY_PID
     fi
 
@@ -70,12 +71,12 @@ elif [ "$1" = "run" ] ; then
        rm -f $GATEWAY_SHUTDOWN
    fi
 
-    ${SSG_JAVA_HOME}/bin/java -Djava.ext.dirs="${SSG_JAVA_HOME}/jre/lib/ext:${SSG_HOME}/lib/ext" $JAVA_OPTS -jar Gateway.jar "$@"
-
     if [ ! -z "$GATEWAY_PID" ]; then
         rm -f $GATEWAY_PID
-        echo $! > $GATEWAY_PID
+        echo $$ > $GATEWAY_PID
     fi
+
+    ${SSG_JAVA_HOME}/bin/java -Djava.ext.dirs="${SSG_JAVA_HOME}/jre/lib/ext:${SSG_HOME}/lib/ext" $JAVA_OPTS -jar Gateway.jar "$@"
 
 elif [ "$1" = "stop" ] ; then
   shift
