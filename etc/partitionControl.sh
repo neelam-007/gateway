@@ -146,7 +146,9 @@ control_single_partition() {
             (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND}") <&- &>/dev/null &
         else
             (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND}")
+            GATEWAY_RET=$?
             do_firewall
+            return $GATEWAY_RET
         fi
     fi  
 }
