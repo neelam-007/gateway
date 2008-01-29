@@ -69,8 +69,8 @@ sub build_new_rules(\@\@) {
   }
 
   # Prevent wackiness if the existing rule format wasn't recognized
-  die "Did not find a matching start rule in current iptables config\n" unless $sawstart;
-  die "Did not find a matching end rule in current iptables config\n" unless $sawend;
+  die "Did not find a matching start rule in current iptables config (Firewall rules not updated)\n" unless $sawstart;
+  die "Did not find a matching end rule in current iptables config (Firewall rules not updated)\n" unless $sawend;
 
   @buildrules;
 }

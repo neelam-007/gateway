@@ -189,7 +189,7 @@ public class SsgConnectorManagerImpl
         try {
             ProcUtils.exec(null, sudo, new String[] { program.getAbsolutePath(), rulesFile, "start" }, null, false);
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Unable to execute firewall rules program: " + program + ": " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.WARNING, "Unable to execute firewall rules program: " + program + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
         }
     }
 
