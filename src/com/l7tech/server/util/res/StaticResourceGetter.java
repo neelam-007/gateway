@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
  */
 class StaticResourceGetter<R> extends ResourceGetter<R> {
     private static final Logger logger = Logger.getLogger(StaticResourceGetter.class.getName());
+    private final ResourceObjectFactory<R> rof;
     private final R userObject;
 
     StaticResourceGetter(Assertion assertion,
@@ -34,6 +35,8 @@ class StaticResourceGetter<R> extends ResourceGetter<R> {
             throws ServerPolicyException
     {
         super(audit);
+        this.rof = rof;
+
         String doc = ri.getDocument();
         if (doc == null) throw new ServerPolicyException(assertion, "Empty static document");
         try {
@@ -46,18 +49,12 @@ class StaticResourceGetter<R> extends ResourceGetter<R> {
         }
     }
 
+    @Override
     public void close() {
-        if (userObject instanceof java.io.Closeable) {
-            ResourceUtils.closeQuietly((java.io.Closeable)userObject);
-        } else if (userObject != null) {
-            logger.warning("ERROR: Cannot close object of type '"+userObject.getClass().getName()+"'.");
-        }
+        rof.closeResourceObject( userObject );
     }
 
-    public Pattern[] getUrlWhitelist() {
-        return new Pattern[] { MATCH_ALL };
-    }
-
+    @Override
     public R getResource(ElementCursor message, Map vars) throws IOException {
         return userObject;
     }

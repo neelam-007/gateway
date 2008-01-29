@@ -139,6 +139,8 @@ public class ServerXslTransformation
                             throw (ParseException)new ParseException("Unable to parse stylesheet: " +
                                     ExceptionUtils.getMessage(e), 0).initCause(e);
                         }
+                    }                    
+                    public void closeResourceObject( final CompiledStylesheet resourceObject ) {
                     }
                 };
 

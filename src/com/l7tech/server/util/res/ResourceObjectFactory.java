@@ -21,4 +21,11 @@ public interface ResourceObjectFactory<R> {
      * @throws java.text.ParseException if the specified resource bytes could not be converted into a resource object.
      */
     R createResourceObject(String resourceString) throws ParseException;
+
+    /**
+     * Close the given resource object.
+     *
+     * @param resourceObject The object (may be null)
+     */
+    void closeResourceObject(R resourceObject);
 }

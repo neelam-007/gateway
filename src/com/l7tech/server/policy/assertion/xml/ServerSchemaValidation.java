@@ -101,8 +101,10 @@ public class ServerSchemaValidation
             registeredGlobalSchemaUrl = null;
 
         final ResourceObjectFactory<String> rof = new ResourceObjectFactory<String>() {
-            public String createResourceObject(String resourceContent) {
+            public String createResourceObject( final String resourceContent ) {
                 return resourceContent;
+            }
+            public void closeResourceObject( final String resourceObject ) {
             }
         };
 
