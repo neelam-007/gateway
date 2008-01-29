@@ -123,9 +123,11 @@ public abstract class TransportModule extends LifecycleBean {
                         case EntityInvalidationEvent.CREATE:
                         case EntityInvalidationEvent.UPDATE:
                             SsgConnector c = ssgConnectorManager.findByPrimaryKey(id);
-                            if (!connectorIsOwnedByThisModule(c))
-                                break;
-                            if (c.isEnabled() && isValidConnectorConfig(c))
+                            if (c == null) {
+                                // Already removed
+                                return;
+                            }
+                            if (c.isEnabled() && connectorIsOwnedByThisModule(c) && isValidConnectorConfig(c))
                                 addConnector(c);
                             else
                                 removeConnector(id);

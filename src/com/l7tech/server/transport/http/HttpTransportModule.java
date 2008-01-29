@@ -84,7 +84,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     private final MasterPasswordManager masterPasswordManager;
     private final KeystoreUtils keystoreUtils;
     private final SsgKeyStoreManager ssgKeyStoreManager;
-    private final Map<Long, Pair<SsgConnector, Connector>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, Connector>>();
+    private final Map<Long, Pair<SsgConnector, Connector>> activeConnectors = new HashMap<Long, Pair<SsgConnector, Connector>>();
     private Embedded embedded;
     private Engine engine;
     private Host host;
@@ -683,6 +683,11 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         return instanceId;
     }
 
+    /** @return info about the specified active connection or null if it's not found */
+    private synchronized Pair<SsgConnector, Connector> getActiveConnector(long connectorOid) {
+        return activeConnectors.get(connectorOid);
+    }
+
     /**
      * Find the SsgConnector instance whose listener accepted the specified HttpServletRequest,
      * if we have enough information to make that determination.
@@ -695,19 +700,19 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
         Long connectorOid = (Long)req.getAttribute(ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID);
         if (connectorOid == null) {
-            logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID);
+            logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID, new Throwable());
             return null;
         }
         Long htmId = (Long)req.getAttribute(ConnectionIdValve.ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID);
         HttpTransportModule htm = getInstance(htmId);
         if (htm == null) {
-            logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID);
+            logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID, new Throwable());
             return null;
         }
-        Pair<SsgConnector, Connector> pair = htm.activeConnectors.get(connectorOid);
+        Pair<SsgConnector, Connector> pair = htm.getActiveConnector(connectorOid);
         if (pair == null) {
             logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID +
-                                      ": No active connector with oid " + connectorOid);
+                                      ": No active connector with oid " + connectorOid, new Throwable());
             return null;
         }
         return pair.left;
