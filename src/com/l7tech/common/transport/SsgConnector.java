@@ -2,6 +2,7 @@ package com.l7tech.common.transport;
 
 import com.l7tech.common.io.PortOwner;
 import com.l7tech.common.io.PortRange;
+import com.l7tech.common.util.BeanUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
@@ -11,6 +12,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Describes a port on which the Gateway will listen for incoming requests.
@@ -96,9 +98,10 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
          * @return the set of Endpoints that should be enabled if this endpoint is found to be enabled.
          *         This set will always include at least this endpoint itself.
          */
-        public synchronized Set<Endpoint> enabledSet() {
+        public Set<Endpoint> enabledSet() {
             if (enabledSet == null)
                 enabledSet = Collections.unmodifiableSet(EnumSet.of(this, enabledKids));
+            //noinspection ReturnOfCollectionOrArrayField
             return enabledSet;
         }
 
@@ -111,9 +114,9 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
          * @return a new EnumSet of Endpoint instances.  May be empty but never null.
          * @throws IllegalArgumentException of one of the names in the list is unrecognized.
          */
-        public static EnumSet<Endpoint> parseCommaList(String commaDelimitedList) {
+        public static Set<Endpoint> parseCommaList(String commaDelimitedList) {
             String[] names = PATTERN_WS_COMMA_WS.split(commaDelimitedList);
-            EnumSet<Endpoint> ret = EnumSet.noneOf(Endpoint.class);
+            Set<Endpoint> ret = EnumSet.noneOf(Endpoint.class);
             for (String name : names) {
                 try {
                     ret.add(Endpoint.valueOf(name));
@@ -131,11 +134,11 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
          * @return a comma-delimited list, ie "WSDLPROXY,STS".  Never null.
          */
         public static String asCommaList(Set<Endpoint> endpoints) {
-            StringBuilder sb = new StringBuilder();
-            EnumSet<Endpoint> canon = EnumSet.copyOf(endpoints);
+            StringBuilder sb = new StringBuilder(128);
+            Set<Endpoint> canon = EnumSet.copyOf(endpoints);
             boolean first = true;
             for (Endpoint endpoint : canon) {
-                if (!first) sb.append(",");
+                if (!first) sb.append(',');
                 sb.append(endpoint.toString());
                 first = false;
             }
@@ -153,9 +156,11 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     private String keyAlias;
     private Set<SsgConnectorProperty> properties = new HashSet<SsgConnectorProperty>();
 
-    private transient Set<Endpoint> endpointSet;
-    private transient boolean inetAddressSet = false;
-    private transient InetAddress inetAddress;
+    // Fields not saved by hibernate
+    private Set<Endpoint> endpointSet;
+    private boolean inetAddressSet = false;
+    private InetAddress inetAddress;
+    private boolean readonly = false;
 
     public SsgConnector() {
     }
@@ -312,7 +317,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param key  the name of the property to get
      * @return the requested property, or null if it is not set
      */
-    public synchronized String getProperty(String key) {
+    public String getProperty(String key) {
         for (SsgConnectorProperty property : properties) {
             if (key.equals(property.getName()))
                 return property.getValue();
@@ -325,7 +330,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return a List of Strings.  May be empty, but never null.
      */
-    public synchronized List<String> getPropertyNames() {
+    public List<String> getPropertyNames() {
         List<String> propertyNames = new ArrayList<String>();
         for (SsgConnectorProperty property : properties)
             propertyNames.add(property.getName());
@@ -338,7 +343,9 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param key  the name of the property to set
      * @param value the value to set it to, or null to remove the property
      */
-    public synchronized void putProperty(String key, String value) {
+    public void putProperty(String key, String value) {
+        if (readonly) throw new IllegalStateException("readonly");
+
         if (PROP_BIND_ADDRESS.equals(key)) {
             inetAddressSet = false;
             inetAddress = null;
@@ -370,7 +377,9 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * Remove some property associated with the name,  ${propertyName} from the property list.
      * @param propertyName the property name whose property will be removed from the list.
      */
-    public synchronized void removeProperty(String propertyName) {
+    public void removeProperty(String propertyName) {
+        if (readonly) throw new IllegalStateException("readonly");
+
         for (SsgConnectorProperty property : properties) {
             if (propertyName.equals(property.getName())) {
                 properties.remove(property);
@@ -385,7 +394,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return endpoint names, ie "MESSAGE_INPUT,ADMIN_APPLET,STS".  If null, the connector should be treated as disabled.
      */
-    public synchronized String getEndpoints() {
+    public String getEndpoints() {
         return endpoints;
     }
 
@@ -395,7 +404,9 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @param endpoints endpoint names to enable, ie "MESSAGE_INPUT,ADMIN_REMOTE,CSRHANDLER".
      */
-    public synchronized void setEndpoints(String endpoints) {
+    public void setEndpoints(String endpoints) {
+        if (readonly) throw new IllegalStateException("readonly");
+
         this.endpoints = endpoints;
         endpointSet = null;
     }
@@ -420,11 +431,11 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return a read-only expanded Set of enabled endpoints.  Never null.
      */
-    private synchronized Set<Endpoint> endpointSet() {
+    private Set<Endpoint> endpointSet() {
         if (endpointSet == null) {
             String endpointList = getEndpoints();
-            EnumSet<Endpoint> es = endpointList == null ? EnumSet.noneOf(Endpoint.class) : Endpoint.parseCommaList(endpointList);
-            EnumSet<Endpoint> ret = EnumSet.copyOf(es);
+            Set<Endpoint> es = endpointList == null ? EnumSet.noneOf(Endpoint.class) : Endpoint.parseCommaList(endpointList);
+            Set<Endpoint> ret = EnumSet.copyOf(es);
             for (Endpoint e : es)
                 ret.addAll(e.enabledSet());
             endpointSet = Collections.unmodifiableSet(ret);
@@ -438,7 +449,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return an InetAddress instance, or null if this connector should bind to all addresses.
      */
-    public synchronized InetAddress getBindAddress() {
+    public InetAddress getBindAddress() {
         if (inetAddressSet)
             return inetAddress;
 
@@ -460,7 +471,8 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         }
 
         inetAddressSet = true;
-        return inetAddress = result;
+        inetAddress = result;
+        return inetAddress;
     }
 
     /**
@@ -470,7 +482,8 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return a Set containing the extra connector properties.  May be empty but never null.
      */
-    protected synchronized Set<SsgConnectorProperty> getProperties() {
+    protected Set<SsgConnectorProperty> getProperties() {
+        //noinspection ReturnOfCollectionOrArrayField
         return properties;
     }
 
@@ -481,9 +494,12 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @param properties the properties set to use
      */
-    protected synchronized void setProperties(Set<SsgConnectorProperty> properties) {
+    protected void setProperties(Set<SsgConnectorProperty> properties) {
+        if (readonly) throw new IllegalStateException("readonly");
+
         inetAddressSet = false;
         inetAddress = null;
+        //noinspection AssignmentToCollectionOrArrayFieldFromParameter
         this.properties = properties;
     }
 
@@ -544,6 +560,37 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     public List<PortRange> getUsedPorts() {
         // Currently an SsgConnector can only use TCP ports
         return getTcpPortsUsed();
+    }
+
+    /**
+     * Initialize any lazily-computed fields and mark this instance as read-only.
+     */
+    private void setReadOnly() {
+        this.endpointSet();
+        this.getBindAddress();
+        this.getPortRange();
+        this.getClientAuth();
+        this.getKeyAlias();
+        this.getKeystoreOid();
+        this.getPort();
+        this.getPropertyNames();
+        this.getScheme();
+        readonly = true;
+    }
+
+    public SsgConnector getReadOnlyCopy() {
+        try {
+            SsgConnector copy = new SsgConnector();
+            BeanUtils.copyProperties(this, copy,
+                                     BeanUtils.omitProperties(BeanUtils.getProperties(getClass()), "properties"));
+            copy.setProperties(new HashSet<SsgConnectorProperty>(this.getProperties())); // doesn't deep copy the SsgConnectorProperty instances, but they are functionally final
+            copy.setReadOnly();
+            return copy;
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /** @noinspection RedundantIfStatement*/

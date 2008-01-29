@@ -366,6 +366,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         if (!connectorIsOwnedByThisModule(connector))
             return;
 
+        connector = connector.getReadOnlyCopy();
+
         Map<String, Object> connectorAttrs = asTomcatConnectorAttrs(connector);
         connectorAttrs.remove("scheme");
         final String scheme = connector.getScheme();
