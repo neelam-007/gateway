@@ -6,12 +6,10 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
-import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 
 import javax.swing.*;
 import java.util.Map;
@@ -79,13 +77,15 @@ public class CredentialsLocation {
         credentialsLocationMap.put("HTTP Digest", new HttpDigest());
         credentialsLocationMap.put("HTTP Cookie (Single-sign-on token)", new CookieCredentialSourceAssertion());
         credentialsLocationMap.put("SSL or TLS with Client Certificate", new SslAssertion(true));
-        credentialsLocationMap.put("Windows Integrated", new HttpNegotiate() );
+        // don't add this (see bug 4691)
+        //credentialsLocationMap.put("Windows Integrated", new HttpNegotiate() );
         if (soap) {
             credentialsLocationMap.put("WS Token Basic", new WssBasic());
             credentialsLocationMap.put("Encrypted UsernameToken", new EncryptedUsernameTokenAssertion());
             credentialsLocationMap.put("WSS Signature", new RequestWssX509Cert());
             credentialsLocationMap.put("WS Secure Conversation", new SecureConversation());
-            credentialsLocationMap.put("WSS Kerberos", new RequestWssKerberos());
+            // don't add this (see bug 4691)
+            //credentialsLocationMap.put("WSS Kerberos", new RequestWssKerberos());
         }
 
         return credentialsLocationMap;
