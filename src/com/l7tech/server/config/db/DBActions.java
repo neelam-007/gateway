@@ -2,9 +2,12 @@ package com.l7tech.server.config.db;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.InvalidLicenseException;
+import com.l7tech.common.AsyncAdminMethods;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.Background;
 import com.l7tech.server.config.*;
+import com.l7tech.server.config.ui.console.ConsoleWizardUtils;
 import com.l7tech.server.partition.PartitionInformation;
 import org.apache.commons.lang.StringUtils;
 
@@ -13,6 +16,7 @@ import java.sql.*;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -171,7 +175,7 @@ public class DBActions {
                                            String databaseName,
                                            String oldVersion,
                                            String newVersion,
-                                           DBActionsListener ui) throws IOException {
+                                           final DBActionsListener ui) throws IOException {
         DBActionsResult result = new DBActionsResult();
         File f = new File(osFunctions.getPathToDBCreateFile());
 
@@ -196,24 +200,33 @@ public class DBActions {
 
                     String[] statements = getCreateDbStatementsFromFile(upgradeInfo[1]);
 
-//                    conn.setAutoCommit(false);
-                    int totalStatements = statements.length;
-                    int statementNum = 0;
-                    if (ui != null) ui.showSuccess("Upgrading \"" + databaseName + "\" from " + oldVersion + "->" + upgradeInfo[0] + Utilities.EOL_CHAR) ;
+                    TimerTask spammer = new ProgressTimerTask(ui);
+
+                    if (ui != null) {
+                        ui.showSuccess("Upgrading \"" + databaseName + "\" from " + oldVersion + "->" + upgradeInfo[0] + Utilities.EOL_CHAR) ;
+                        Background.scheduleRepeated(spammer, 2000, 2000);
+                    }
+                    
+                    conn.setAutoCommit(false);
                     for (String statement : statements) {
-                        if ((statementNum % 10) == 0) {
-                            if (ui != null) ui.showSuccess(".");
-                        }
                         stmt.executeUpdate(statement);
                     }
-                    ui.showSuccess("completed" + Utilities.EOL_CHAR);
 
-//                    conn.commit();
-//                    conn.setAutoCommit(true);
+                    conn.commit();
+                    conn.setAutoCommit(true);
+
+                    if (spammer != null) {
+                        Background.cancel(spammer);
+                        spammer = null;
+                    }
+                    if (ui != null) ui.showSuccess("completed" + Utilities.EOL_CHAR);
+
 
                     oldVersion = checkDbVersion(conn, databaseName);
                 }
             }
+            if (ui != null) ui.showSuccess(databaseName + " was upgraded successfully." + Utilities.EOL_CHAR);
+            
         } catch (SQLException e) {
             result.setStatus(determineErrorStatus(e.getSQLState()));
             result.setErrorMessage(ExceptionUtils.getMessage(e));
@@ -901,10 +914,14 @@ Statement getCreateTablesStmt = null;
         DBActionsResult result = new DBActionsResult();
         String testDbName = dbInfo.getDbName() + "_testUpgrade";
         try {
-            if (ui != null) ui.showSuccess("Creating the test database \"" + testDbName + "\" this could take a while ..." + Utilities.EOL_CHAR);
-            copyDatabase(dbInfo, testDbName);
+            if (ui != null) ui.showSuccess("Creating the test database \"" + testDbName + "\" (without audits)." +
+                    Utilities.EOL_CHAR +
+                    "this might take a few minutes" +
+                    Utilities.EOL_CHAR);
+            
+            copyDatabase(dbInfo, testDbName, ui);
             if (ui != null) ui.showSuccess("The test database was created." + Utilities.EOL_CHAR);
-            if (ui != null) ui.showSuccess("Upgrading the test database. This could take a while ..." + Utilities.EOL_CHAR);
+            if (ui != null) ui.showSuccess("Upgrading the test database. This could take a while" + Utilities.EOL_CHAR);
             DBActionsResult upgradeResult  = upgradeDbSchema(dbInfo.getHostname(), dbInfo.getPrivUsername(), dbInfo.getPrivPassword(), testDbName, dbVersion, currentVersion, ui);
             if (upgradeResult.getStatus() != DB_SUCCESS) {
                 result.setStatus(DB_CANNOT_UPGRADE);
@@ -935,18 +952,26 @@ Statement getCreateTablesStmt = null;
             return DB_UNKNOWN_FAILURE;
     }
 
-    public void copyDatabase(DBInformation sourceDbInfo, String testDbName) throws SQLException {
+    public void copyDatabase(DBInformation sourceDbInfo, String testDbName, DBActionsListener ui) throws SQLException {
         Connection privilegedConnection = null;
         try {
             privilegedConnection = getConnection(sourceDbInfo.getHostname(), sourceDbInfo.getDbName(), sourceDbInfo.getPrivUsername(), sourceDbInfo.getPrivPassword());
             String sourceDbName = sourceDbInfo.getDbName();
 
             privilegedConnection.setAutoCommit(false);
+            TimerTask spammer = null;
+            if (ui != null) {
+                spammer = new ProgressTimerTask(ui);
+                Background.scheduleRepeated(spammer, 2000, 2000);
+            }
             copyDbSchema(privilegedConnection, sourceDbName, testDbName);
             copyDatabaseContents(privilegedConnection, sourceDbName, testDbName);
             privilegedConnection.commit();
+            if (spammer != null) {
+                Background.cancel(spammer);
+                spammer = null;
+            }
             privilegedConnection.setAutoCommit(true);
-
         } finally {
             ResourceUtils.closeQuietly(privilegedConnection);
         }
@@ -1169,6 +1194,20 @@ Statement getCreateTablesStmt = null;
             }
             list.add(new String("FLUSH PRIVILEGES"));
             return list.toArray(new String[list.size()]);
+        }
+    }
+
+    class ProgressTimerTask extends TimerTask {
+        private final DBActionsListener ui;
+
+        ProgressTimerTask(DBActionsListener ui) {
+            this.ui = ui;
+        }
+
+
+        public void run() {
+            Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+            ui.showSuccess(". ");
         }
     }
 }
