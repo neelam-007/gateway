@@ -9,7 +9,10 @@ public class SampleMessage extends NamedEntityImp {
     public static final String ATTR_SERVICE_OID = "serviceOid";
 
     public SampleMessage(long serviceOid, String name, String operationName, String xml) {
-        this.serviceOid = serviceOid;
+        // If the serviceOid is -1, it means that sample messages are created for a policy.
+        if (serviceOid != -1) {
+            this.serviceOid = serviceOid;
+        }
         this._name = name;
         this.operationName = operationName;
         this.xml = xml;
@@ -25,7 +28,7 @@ public class SampleMessage extends NamedEntityImp {
     /**
      * @return the OID of the {@link PublishedService} to which this message belongs
      */
-    public long getServiceOid() {
+    public Long getServiceOid() {
         return serviceOid;
     }
 
@@ -39,7 +42,7 @@ public class SampleMessage extends NamedEntityImp {
     public SampleMessage() {
     }
 
-    public void setServiceOid(long serviceOid) {
+    public void setServiceOid(Long serviceOid) {
         this.serviceOid = serviceOid;
     }
 
@@ -51,7 +54,7 @@ public class SampleMessage extends NamedEntityImp {
         this.operationName = operationName;
     }
 
-    private long serviceOid;
+    private Long serviceOid;
     private String xml;
     private String operationName;
 

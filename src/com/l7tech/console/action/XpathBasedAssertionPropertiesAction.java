@@ -5,7 +5,6 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.ResponseXpathAssertion;
@@ -72,22 +71,19 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
      * This is the method which should be called programmatically.
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
+     *
+     * We moved checking if the node is a service node or a policy node into the method, 
+     * {@link XpathBasedAssertionPropertiesDialog#construct(com.l7tech.console.tree.policy.XpathBasedAssertionTreeNode, java.awt.event.ActionListener, boolean)}.
      */
     @Override
     protected void performAction() {
         XpathBasedAssertionTreeNode n = (XpathBasedAssertionTreeNode)node;
         final Frame mw = TopComponents.getInstance().getTopParent();
-        try {
-            if (n.getService() != null) {
-                boolean showAccelStatus = shouldShowHardwareAccelStatus(n);
-                XpathBasedAssertionPropertiesDialog dialog = new XpathBasedAssertionPropertiesDialog(mw, false, n, okListener, showAccelStatus, !n.canEdit());
-                dialog.pack();
-                Utilities.centerOnScreen(dialog);
-                DialogDisplayer.display(dialog);
-            }
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "cannot get associated service", e);
-        }
+        boolean showAccelStatus = shouldShowHardwareAccelStatus(n);
+        XpathBasedAssertionPropertiesDialog dialog = new XpathBasedAssertionPropertiesDialog(mw, false, n, okListener, showAccelStatus, !n.canEdit());
+        dialog.pack();
+        Utilities.centerOnScreen(dialog);
+        DialogDisplayer.display(dialog);
     }
 
     private boolean shouldShowHardwareAccelStatus(XpathBasedAssertionTreeNode n) {

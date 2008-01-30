@@ -18,8 +18,10 @@ import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.common.xml.xpath.FastXpath;
 import com.l7tech.common.xml.xpath.XpathExpression;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.tree.wsdl.BindingOperationTreeNode;
 import com.l7tech.console.tree.wsdl.BindingTreeNode;
@@ -47,7 +49,6 @@ import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.policy.variable.*;
 import com.l7tech.policy.wsp.WspConstants;
-import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
 import com.l7tech.service.ServiceAdmin;
 import org.dom4j.Document;
@@ -102,6 +103,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private XpathBasedAssertionTreeNode node;
     private XpathBasedAssertion assertion;
     private ServiceNode serviceNode;
+    private PolicyEntityNode policyNode;
     private Wsdl serviceWsdl;
     private Message[] soapMessages;
     private String blankMessage = "<empty />";
@@ -159,7 +161,22 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             return NON_SOAP_NAME;
         }
     };
+    private static final String GENERIC_SOAP_NAME = "<Generic SOAP service>";
+    private static final WsdlTreeNode GENERIC_SOAP_NODE = new WsdlTreeNode(GENERIC_SOAP_NAME, new WsdlTreeNode.Options()) {
+        @Override
+        protected String iconResource(boolean open) {
+            return "com/l7tech/console/resources/methodPublic.gif";
+        }
 
+        @Override
+        public String toString() {
+            return GENERIC_SOAP_NAME;
+        }
+    };
+
+    private static final String DEFAULT_SOAP_MESSAGE = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org" +
+            "/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/" +
+            "XMLSchema-instance\"><soapenv:Header></soapenv:Header><soapenv:Body></soapenv:Body></soapenv:Envelope>";
 
     /**
      * @param owner this panel owner
@@ -196,7 +213,10 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 assertion instanceof ResponseWssConfidentiality;
         serviceNode = AssertionTreeNode.getServiceNode(node);
         if (serviceNode == null) {
-            throw new IllegalStateException("Unable to determine the service node for " + assertion);
+            policyNode = AssertionTreeNode.getPolicyNode(node);
+            if (policyNode == null) {
+                throw new IllegalStateException("Unable to determine the PolicyEntityNode for " + assertion);
+            }
         }
 
         if (assertion instanceof ResponseXpathAssertion) {
@@ -221,28 +241,39 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }
 
         signatureResponseConfigPanel.setVisible(assertion instanceof ResponseWssIntegrity);
-        try {
-            serviceWsdl = serviceNode.getPublishedService().parsedWsdl();
-            if (serviceWsdl != null) {
-                serviceWsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
-                SoapMessageGenerator sg = new SoapMessageGenerator();
-                if (isEditingRequest()) {
-                    soapMessages = sg.generateRequests(serviceWsdl);
-                } else {
-                    soapMessages = sg.generateResponses(serviceWsdl);
+        if (serviceNode != null) {
+            try {
+                serviceWsdl = serviceNode.getPublishedService().parsedWsdl();
+                if (serviceWsdl != null) {
+                    serviceWsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
+                    SoapMessageGenerator sg = new SoapMessageGenerator();
+                    if (isEditingRequest()) {
+                        soapMessages = sg.generateRequests(serviceWsdl);
+                    } else {
+                        soapMessages = sg.generateResponses(serviceWsdl);
+                    }
+                    if (soapMessages.length > 0)
+                        initializeBlankMessage(soapMessages[0]);
+                    for (Message soapRequest : soapMessages) {
+                        //noinspection unchecked
+                        requiredNamespaces.putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
+                    }
+                    requiredNamespaces.put("L7p",WspConstants.L7_POLICY_NS);
+                    requiredNamespaces.put("wsp",WspConstants.WSP_POLICY_NS);
                 }
-                if (soapMessages.length > 0)
-                    initializeBlankMessage(soapMessages[0]);
-                for (Message soapRequest : soapMessages) {
-                    //noinspection unchecked
-                    requiredNamespaces.putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
-                }
-                requiredNamespaces.put("L7p",WspConstants.L7_POLICY_NS);
-                requiredNamespaces.put("wsp",WspConstants.WSP_POLICY_NS);
-
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to parse the service WSDL " + serviceNode.getName(), e);
             }
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to parse the service WSDL " + serviceNode.getName(), e);
+        } else {
+            try {
+                // policyNode is gurranteed not to be null, since it's been set up in the method construct(...).
+                Policy policy = policyNode.getPolicy();
+                if (policy.isSoap()) {
+                    blankMessage = DEFAULT_SOAP_MESSAGE;
+                }
+            } catch (FindException e) {
+                throw new RuntimeException("Couldn't find the policy", e);
+            }
         }
 
         if (namespaces.size() < requiredNamespaces.size()) {
@@ -272,9 +303,9 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                     } catch (Exception e1) {
                         log.log(Level.WARNING, "Invalid XML", e1);
                     }
-                    PublishedService service = serviceNode.getPublishedService();
                     String name = currentOperation == null ? null : currentOperation.getName();
-                    sm = new SampleMessage(service.getOid(), name, name, xml);
+                    long objectId = (serviceNode == null)? -1 : serviceNode.getPublishedService().getOid();
+                    sm = new SampleMessage(objectId, name, name, xml);
                 } catch (Exception ex) {
                     throw new RuntimeException("Couldn't find PublishedService", ex);
                 }
@@ -388,7 +419,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         SampleMessageComboEntry whichEntryToSelect = null;
         try {
             ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
-            sampleMessages = serviceManager.findSampleMessageHeaders(serviceNode.getPublishedService().getOid(), operationName);
+            long objectId = (serviceNode == null)? -1 : serviceNode.getPublishedService().getOid();
+            sampleMessages = serviceManager.findSampleMessageHeaders(objectId, operationName);
             for (EntityHeader sampleMessage : sampleMessages) {
                 long thisOid = sampleMessage.getOid();
                 SampleMessageComboEntry entry = new SampleMessageComboEntry(serviceManager.findSampleMessageById(thisOid));
@@ -528,14 +560,28 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             }
         });
         try {
-            final Wsdl wsdl = serviceNode.getPublishedService().parsedWsdl();
             final MutableTreeNode root = new DefaultMutableTreeNode();
             final DefaultTreeModel operationsTreeModel = new DefaultTreeModel(root);
 
-            if (wsdl != null) {
-                populateOperations(wsdl, operationsTreeModel, root);
+            if (serviceNode != null) {
+                final Wsdl wsdl = serviceNode.getPublishedService().parsedWsdl();
+                if (wsdl != null) {
+                    populateOperations(wsdl, operationsTreeModel, root);
+                } else {
+                    root.insert(NON_SOAP_NODE, 0);
+                }
             } else {
-                root.insert(NON_SOAP_NODE, 0);
+                try {
+                    // policyNode is gurranteed not to be null, since it's been set up in the method construct(...).
+                    Policy policy = policyNode.getPolicy();
+                    if (policy.isSoap()) {
+                        root.insert(GENERIC_SOAP_NODE, 0);
+                    } else {
+                        root.insert(NON_SOAP_NODE, 0);
+                    }
+                } catch (FindException e) {
+                    throw new RuntimeException("Couldn't find the policy", e);
+                }
             }
 
             operationsTree.setModel(operationsTreeModel);
@@ -853,7 +899,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 currentOperation = null;
             } else {
                 final Object lpc = path.getLastPathComponent();
-                if (!((lpc instanceof BindingOperationTreeNode) || (lpc instanceof BindingTreeNode) || (lpc == NON_SOAP_NODE))) {
+                if (!((lpc instanceof BindingOperationTreeNode) || (lpc instanceof BindingTreeNode) || (lpc == NON_SOAP_NODE) || (lpc == GENERIC_SOAP_NODE))) {
                     messageViewerToolBar.setToolbarEnabled(false);
                     return;
                 }
@@ -887,6 +933,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                     }
                 } else {
                     populateSampleMessages(null, 0);
+                    displayMessage(blankMessage);
+                    currentOperation = null;
                 }
                 messageViewerToolBar.setToolbarEnabled(true);
                 xpathFieldPauseListener.textEntryResumed(xpf);
