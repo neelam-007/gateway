@@ -328,6 +328,8 @@ save_all() {
         else
             echo "The configuration will not be changed."
         fi
+    else
+        echo "No configuration changes will be made to the system."
     fi
 }
 
