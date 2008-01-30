@@ -558,7 +558,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
             out.println("</tr>");
             for (ClusterNodeInfo nodeInfo : nodeInfos) {
                 final long timeStampAge = System.currentTimeMillis() - nodeInfo.getLastUpdateTimeStamp();
-                if (timeStampAge >= 360000) {
+                if (timeStampAge >= 3600000) {
                     out.print("<tr><td>" + nodeInfo.getName() + "</td><td>?</td><td style=\"color:white; background:red;\"><b>FAIL</b></td>");
                 } else {
                     final String status = timeStampAge >= 30000 ? "Warning" : "OK";
