@@ -11,6 +11,7 @@ import org.apache.commons.lang.StringUtils;
 import org.xml.sax.SAXException;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.sql.*;
 import java.util.Map;
 import java.util.Set;
@@ -209,7 +210,13 @@ public class Importer {
                 throw new IOException("cannot resolve host name or database name from jdbc url in " +
                                       tempDirectory + File.separator + "hibernate.properties");
             }
-
+            if (dbHost.equalsIgnoreCase(InetAddress.getLocalHost().getCanonicalHostName()) ||
+                dbHost.equals(InetAddress.getLocalHost().getHostAddress())) {
+                // The database server is on local machine. So use "localhost" instead of
+                // FQDN in case user (such as "root") access is restricted to localhost.
+                logger.fine("Recognizing \"" + dbHost + "\" as \"localhost\".");
+                dbHost = "localhost";
+            }
 
             boolean newDatabaseCreated = false;
             if (fullClone) {
