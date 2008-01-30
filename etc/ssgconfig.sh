@@ -18,7 +18,7 @@ SSGCONFIG_USERID=`id -u ssgconfig`
 PATH=$OLDPATH
 
 SCADIAG="/opt/sun/sca6000/sbin/scadiag"
-OPTIONS="-Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT}"
+OPTIONS="-Djava.library.path=${SSG_ROOT}/lib -Dcom.l7tech.server.home=${SSG_ROOT} -Djava.security.egd=file:/dev/./urandom"
 
 check_options(){
     if [ -s "${SCADIAG}" ] && [ -s "${SSG_ROOT}/appliance/libexec/masterkey-manage.pl" ] ; then
