@@ -421,32 +421,35 @@ public class KeystoreActions {
 
             String line = null;
             int secProviderIndex = 0;
-            while ((line = reader.readLine()) != null) { //start looking for the security providers section
-                if (!line.startsWith("#") && line.startsWith(PROPKEY_SECURITY_PROVIDER)) { //ignore comments and match if we find a security providers section
+            while ((line = reader.readLine()) != null) { //write out comments and and anything but the security providers
+                if (line.startsWith("#") || !line.startsWith(PROPKEY_SECURITY_PROVIDER)) {
+                    writer.println(line);
+                    continue;
+                }
+
+                if (line.startsWith(PROPKEY_SECURITY_PROVIDER)) { //match if we find a security providers section
                     while ((line = reader.readLine()) != null) { //read the rest of the security providers list, esssentially skipping over it
                         if (!line.startsWith("#") && line.startsWith(PROPKEY_SECURITY_PROVIDER)) {
                         }
                         else {
+                            //now write out the new ones
+                            String origLine = line;
+                            while (secProviderIndex < providersList.length) {
+                                line = PROPKEY_SECURITY_PROVIDER + "." + String.valueOf(secProviderIndex + 1) + "=" + providersList[secProviderIndex];
+                                writer.println(line);
+                                secProviderIndex++;
+                            }
+                            writer.println(origLine);
                             break; //we're done with the sec providers
                         }
                     }
-
-                    //now write out the new ones
-                    while (secProviderIndex < providersList.length) {
-                        line = PROPKEY_SECURITY_PROVIDER + "." + String.valueOf(secProviderIndex + 1) + "=" + providersList[secProviderIndex];
-                        writer.println(line);
-                        secProviderIndex++;
-                    }
-                }
-                else {
-                    writer.println(line);
                 }
             }
+
             logger.info("Updating the java.security file");
             writer.flush();
             writer.close();
             Utilities.renameFile(newJavaSecFile, javaSecFile);
-
         } catch (FileNotFoundException e) {
             logger.severe("Error while updating the file: " + javaSecFile.getAbsolutePath());
             logger.severe(e.getMessage());
