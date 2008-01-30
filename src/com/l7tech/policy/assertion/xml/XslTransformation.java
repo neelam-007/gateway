@@ -15,6 +15,10 @@ import org.apache.xalan.templates.StylesheetRoot;
 
 import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.URIResolver;
+import javax.xml.transform.Source;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.stream.StreamSource;
 import javax.xml.transform.dom.DOMSource;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -116,7 +120,13 @@ public class XslTransformation extends Assertion implements UsesVariables, UsesR
         if (xslSrc == null || xslSrc.length() == 0) return new String[0];
 
         try {
-            Templates temp = TransformerFactory.newInstance().newTemplates(new DOMSource(XmlUtil.parse(new StringReader(xslSrc), false)));
+            TransformerFactory tf = TransformerFactory.newInstance();
+            tf.setURIResolver( new URIResolver(){
+                public Source resolve( String href, String base ) throws TransformerException {
+                    return new StreamSource(new StringReader("<a xsl:version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"/>"));
+                }
+            } );
+            Templates temp = tf.newTemplates(new DOMSource(XmlUtil.parse(new StringReader(xslSrc), false)));
             if (temp instanceof StylesheetRoot) {
                 ArrayList vars = new ArrayList();
                 StylesheetRoot stylesheetRoot = (StylesheetRoot)temp;

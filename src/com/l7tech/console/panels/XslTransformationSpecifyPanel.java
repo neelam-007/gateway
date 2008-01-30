@@ -30,6 +30,10 @@ import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.URIResolver;
+import javax.xml.transform.Source;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.stream.StreamSource;
 import javax.xml.transform.dom.DOMSource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -356,7 +360,13 @@ public class XslTransformationSpecifyPanel extends JPanel {
 
     private static void docIsXsl(Document doc) throws SAXException {
         try {
-            TransformerFactory.newInstance().newTemplates(new DOMSource(XmlUtil.parse(new StringReader(XmlUtil.nodeToString(doc)), false)));
+            TransformerFactory tf = TransformerFactory.newInstance();
+            tf.setURIResolver( new URIResolver(){
+                public Source resolve( String href, String base ) throws TransformerException {
+                    return new StreamSource(new StringReader("<a xsl:version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"/>"));
+                }
+            } );            
+            tf.newTemplates(new DOMSource(XmlUtil.parse(new StringReader(XmlUtil.nodeToString(doc)), false)));
         } catch (Exception e) {
             throw new SAXException("Document is not valid XSLT: " + ExceptionUtils.getMessage(e), e);
         }
