@@ -4,10 +4,7 @@ import com.l7tech.common.Component;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.security.MasterPasswordManager;
 import com.l7tech.common.transport.SsgConnector;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.Pair;
-import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.KeystoreUtils;
@@ -84,7 +81,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     private final MasterPasswordManager masterPasswordManager;
     private final KeystoreUtils keystoreUtils;
     private final SsgKeyStoreManager ssgKeyStoreManager;
-    private final Map<Long, Pair<SsgConnector, Connector>> activeConnectors = new HashMap<Long, Pair<SsgConnector, Connector>>();
+    private final Object connectorCrudLuck = new Object();
+    private final Map<Long, Pair<SsgConnector, Connector>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, Connector>>();
     private Embedded embedded;
     private Engine engine;
     private Host host;
@@ -105,6 +103,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         this.keystoreUtils = keystoreUtils;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
         this.instanceId = nextInstanceId.getAndIncrement();
+        //noinspection ThisEscapedInObjectConstruction
         instancesById.put(instanceId, new WeakReference<HttpTransportModule>(this));
     }
 
@@ -251,7 +250,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      *                    in the specified directory.  Required.
      * @param directory   the directory to scan for new files to merge into collector.  Required.
      */
-    private void addDirEntriesFromDirectory(List<VirtualDirEntry> collector, File directory) {
+    private static void addDirEntriesFromDirectory(List<VirtualDirEntry> collector, File directory) {
         File[] files = directory.listFiles();
         if (files == null || files.length < 1)
             return;
@@ -361,25 +360,25 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         }
     }
 
-    protected synchronized void addConnector(SsgConnector connector) throws ListenerException {
-        removeConnector(connector.getOid());
-        if (!connectorIsOwnedByThisModule(connector))
-            return;
+    protected void addConnector(SsgConnector connector) throws ListenerException {
+        synchronized (connectorCrudLuck) {
+            removeConnector(connector.getOid());
+            if (!connectorIsOwnedByThisModule(connector))
+                return;
 
-        connector = connector.getReadOnlyCopy();
+            connector = connector.getReadOnlyCopy();
 
-        Map<String, Object> connectorAttrs = asTomcatConnectorAttrs(connector);
-        connectorAttrs.remove("scheme");
-        final String scheme = connector.getScheme();
-        if (SsgConnector.SCHEME_HTTP.equals(scheme)) {
-            final Connector c = addHttpConnector(connector.getPort(), connectorAttrs);
-            activeConnectors.put(connector.getOid(), new Pair<SsgConnector, Connector>(connector, c));
-        } else if (SsgConnector.SCHEME_HTTPS.equals(scheme)) {
-            final Connector c = addHttpsConnector(connector.getPort(), connectorAttrs);
-            activeConnectors.put(connector.getOid(), new Pair<SsgConnector, Connector>(connector, c));
-        } else {
-            // It's not an HTTP connector; ignore it.  This shouldn't be possible
-            logger.log(Level.WARNING, "HttpTransportModule is ignoring non-HTTP(S) connector with scheme " + scheme);
+            Map<String, Object> connectorAttrs = asTomcatConnectorAttrs(connector);
+            connectorAttrs.remove("scheme");
+            final String scheme = connector.getScheme();
+            if (SsgConnector.SCHEME_HTTP.equals(scheme)) {
+                addHttpConnector(connector, connector.getPort(), connectorAttrs);
+            } else if (SsgConnector.SCHEME_HTTPS.equals(scheme)) {
+                addHttpsConnector(connector, connector.getPort(), connectorAttrs);
+            } else {
+                // It's not an HTTP connector; ignore it.  This shouldn't be possible
+                logger.log(Level.WARNING, "HttpTransportModule is ignoring non-HTTP(S) connector with scheme " + scheme);
+            }
         }
     }
 
@@ -475,17 +474,20 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         return connectorErrors.remove(oid);
     }
 
-    protected synchronized void removeConnector(long oid) {
-        Pair<SsgConnector, Connector> entry = activeConnectors.remove(oid);
-        if (entry == null) return;
-        Connector connector = entry.right;
-        logger.info("Removing " + connector.getScheme() + " connector on port " + connector.getPort());
-        embedded.removeConnector(connector);
-        closeAllSockets(oid);
+    protected void removeConnector(long oid) {
+        synchronized (connectorCrudLuck) {
+            Pair<SsgConnector, Connector> entry = activeConnectors.remove(oid);
+            if (entry == null) return;
+            Connector connector = entry.right;
+            logger.info("Removing " + connector.getScheme() + " connector on port " + connector.getPort());
+            embedded.removeConnector(connector);
+            closeAllSockets(oid);
+        }
     }
 
-    private final Set<String> schemes = new HashSet<String>(Arrays.asList(SsgConnector.SCHEME_HTTP, SsgConnector.SCHEME_HTTPS));
+    private final Set<String> schemes = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(SsgConnector.SCHEME_HTTP, SsgConnector.SCHEME_HTTPS)));
     protected Set<String> getSupportedSchemes() {
+        //noinspection ReturnOfCollectionOrArrayField
         return schemes;
     }
 
@@ -529,41 +531,50 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     private final Map<Long, Map<Socket, Object>> socketsByConnector = new HashMap<Long, Map<Socket, Object>>();
 
-    private synchronized void onSocketOpened(long connectorOid, Socket accepted) {
-        Map<Socket, Object> sockets = socketsByConnector.get(connectorOid);
-        if (sockets == null) {
-            sockets = new WeakHashMap<Socket, Object>();
-            socketsByConnector.put(connectorOid, sockets);
+    private void onSocketOpened(long connectorOid, Socket accepted) {
+        synchronized (socketsByConnector) {
+            Map<Socket, Object> sockets = socketsByConnector.get(connectorOid);
+            if (sockets == null) {
+                sockets = new WeakHashMap<Socket, Object>();
+                socketsByConnector.put(connectorOid, sockets);
+            }
+            sockets.put(accepted, Boolean.TRUE);
         }
-        sockets.put(accepted, Boolean.TRUE);
     }
 
-    private synchronized void onSocketClosed(long connectorOid, Socket closed) {
-        Map<Socket, Object> sockets = socketsByConnector.get(connectorOid);
-        if (sockets == null)
-            return;
-        sockets.remove(closed);
-        if (sockets.isEmpty())
-            socketsByConnector.remove(connectorOid);
+    private void onSocketClosed(long connectorOid, Socket closed) {
+        synchronized (socketsByConnector) {
+            Map<Socket, Object> sockets = socketsByConnector.get(connectorOid);
+            if (sockets == null)
+                return;
+            sockets.remove(closed);
+            if (sockets.isEmpty())
+                socketsByConnector.remove(connectorOid);
+        }
     }
 
-    private void closeAllSockets(long connectorOid) {
-        Map<Socket, Object> sockets = socketsByConnector.get(connectorOid);
+    private void closeAllSockets(final long connectorOid) {
+        final Map<Socket, Object> sockets;
+        synchronized (socketsByConnector) {
+            sockets = socketsByConnector.remove(connectorOid);
+        }
         if (sockets == null || sockets.isEmpty())
             return;
-        Collection<Socket> ks = new ArrayList<Socket>(sockets.keySet());
-        synchronized (this) {
-            for (Socket socket : ks) {
-                if (socket != null) {
-                    try {
-                        if (!socket.isClosed()) {
-                            logger.log(Level.INFO, "Force closing client connection for connector OID " + connectorOid);
-                            socket.close();
-                        }
-                    } catch (Exception e) {
-                        logger.log(Level.WARNING, "Error closing client socket: " + ExceptionUtils.getMessage(e), e);
-                    }
-                }
+        final Collection<Socket> ks = new ArrayList<Socket>(sockets.keySet());
+        for (Socket socket : ks) {
+            if (socket == null)
+                continue;
+            forceClosed(socket, connectorOid);
+        }
+    }
+
+    private static void forceClosed(Socket socket, long connectorOid) {
+        if (!socket.isClosed()) {
+            try {
+                logger.log(Level.INFO, "Force closing client connection for connector OID " + connectorOid);
+                socket.close();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Error closing client socket: " + ExceptionUtils.getMessage(e), e);
             }
         }
     }
@@ -592,7 +603,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         if (module != null) module.onSocketClosed(connectorOid, closed);
     }
 
-    public Connector addHttpConnector(int port, Map<String, Object> attrs) throws ListenerException {
+    private void addHttpConnector(SsgConnector ssgConn, int port, Map<String, Object> attrs) throws ListenerException {
         Connector c = embedded.createConnector((String)null, port, "http");
         c.setEnableLookups(false);
         setConnectorAttributes(c, attrs);
@@ -603,22 +614,10 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         } else
             throw new ListenerException("Unable to start HTTP listener on port " + c.getPort() + ": Unrecognized protocol handler: " + ph.getClass().getName());
 
-        embedded.addConnector(c);
-        try {
-            logger.info("Starting HTTP connector on port " + port);
-            c.start();
-            return c;
-        } catch (org.apache.catalina.LifecycleException e) {
-            final String msg = "Unable to start HTTP listener: " + ExceptionUtils.getMessage(e);
-            getApplicationContext().publishEvent(new TransportEvent(this, Component.GW_HTTPRECV, null, Level.WARNING, "Error", msg));
-            throw new ListenerException(msg, e);
-        }
+        activateConnector(ssgConn, c);
     }
 
-    public Connector addHttpsConnector(int port,
-                                  Map<String, Object> attrs)
-            throws ListenerException
-    {
+    private void addHttpsConnector(SsgConnector ssgConn, int port, Map<String, Object> attrs) throws ListenerException {
         Connector c = embedded.createConnector((String)null, port, "https");
         c.setScheme("https");
         c.setProperty("SSLEnabled","true");
@@ -646,13 +645,18 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         } else
             throw new ListenerException("Unable to start HTTPS listener on port " + c.getPort() + ": Unrecognized protocol handler: " + ph.getClass().getName());
 
+        activateConnector(ssgConn, c);
+    }
+
+    private void activateConnector(SsgConnector connector, Connector c) throws ListenerException {
         embedded.addConnector(c);
         try {
-            logger.info("Starting HTTPS connector on port " + port);
+            logger.info("Starting " + c.getScheme() + " connector on port " + c.getPort());
             c.start();
-            return c;
+            activeConnectors.put(connector.getOid(), new Pair<SsgConnector, Connector>(connector, c));
         } catch (org.apache.catalina.LifecycleException e) {
-            final String msg = "Unable to start HTTPS listener: " + ExceptionUtils.getMessage(e);
+            embedded.removeConnector(c);
+            final String msg = "Unable to start " + c.getScheme() + " listener on port " + c.getPort() + ": " + ExceptionUtils.getMessage(e);
             getApplicationContext().publishEvent(new TransportEvent(this, Component.GW_HTTPRECV, null, Level.WARNING, "Error", msg));
             throw new ListenerException(msg, e);
         }
@@ -685,11 +689,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         return instanceId;
     }
 
-    /** @return info about the specified active connection or null if it's not found */
-    private synchronized Pair<SsgConnector, Connector> getActiveConnector(long connectorOid) {
-        return activeConnectors.get(connectorOid);
-    }
-
     /**
      * Find the SsgConnector instance whose listener accepted the specified HttpServletRequest,
      * if we have enough information to make that determination.
@@ -705,13 +704,15 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID, new Throwable());
             return null;
         }
+
         Long htmId = (Long)req.getAttribute(ConnectionIdValve.ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID);
         HttpTransportModule htm = getInstance(htmId);
         if (htm == null) {
             logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID, new Throwable());
             return null;
         }
-        Pair<SsgConnector, Connector> pair = htm.getActiveConnector(connectorOid);
+
+        Pair<SsgConnector, Connector> pair = htm.activeConnectors.get(connectorOid);
         if (pair == null) {
             logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID +
                                       ": No active connector with oid " + connectorOid, new Throwable());
