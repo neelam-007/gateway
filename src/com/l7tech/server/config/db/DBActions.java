@@ -160,7 +160,7 @@ public class DBActions {
 
             logger.warning("Could not create database. An exception occurred." + ExceptionUtils.getMessage(e));
         } finally {
-            ResourceUtils.closeQuietly(conn);           
+            ResourceUtils.closeQuietly(conn);
             ResourceUtils.closeQuietly(stmt);
         }
 
@@ -183,7 +183,7 @@ public class DBActions {
         Connection conn = null;
         Statement stmt = null;
 
-        TimerTask spammer = null;        
+        TimerTask spammer = null;
         try {
             conn = getConnection(hostname, databaseName, username, password);
             stmt = conn.createStatement();
@@ -204,9 +204,10 @@ public class DBActions {
 
                     if (ui != null) {
                         ui.showSuccess("Upgrading \"" + databaseName + "\" from " + oldVersion + "->" + upgradeInfo[0] + Utilities.EOL_CHAR) ;
+                        ui.showSuccess("Please note that if you have a lot of audits, this may take a long time." + Utilities.EOL_CHAR) ;
                         Background.scheduleRepeated(spammer, 2000, 2000);
                     }
-                    
+
                     conn.setAutoCommit(false);
                     for (String statement : statements) {
                         stmt.executeUpdate(statement);
@@ -226,7 +227,7 @@ public class DBActions {
                 }
             }
             if (ui != null) ui.showSuccess(databaseName + " was upgraded successfully." + Utilities.EOL_CHAR);
-            
+
         } catch (SQLException e) {
             result.setStatus(determineErrorStatus(e.getSQLState()));
             result.setErrorMessage(ExceptionUtils.getMessage(e));
@@ -508,12 +509,12 @@ public class DBActions {
             try {
                 conn = getConnection(dbInfo);
             } catch (SQLException e) {
-                logger.info("Cannot check license. Could not get a connection to the database");
+                logger.info("Cannot check the license. Could not get a connection to the database");
                 return false;
             }
             try {
                 licChecker.checkLicense(conn, currentVersion, BuildInfo.getProductName(), BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor());
-                logger.info("License is valid and will work with this version (" + currentVersion + ").");
+                logger.info("The License is valid and will work with this version (" + currentVersion + ").");
             } catch (InvalidLicenseException e) {
                 String message = ExceptionUtils.getMessage(e);
                 logger.warning(message);
@@ -599,7 +600,7 @@ public class DBActions {
             ResourceUtils.closeQuietly(conn);
         }
         return allIsWell;
-    } 
+    }
 
 //
 // PRIVATE METHODS
@@ -639,7 +640,7 @@ public class DBActions {
     private void init() throws ClassNotFoundException {
         if (osFunctions == null) osFunctions = OSDetector.getOSSpecificFunctions(PartitionInformation.DEFAULT_PARTITION_NAME);
         initDriver();
-        
+
         ssgDbChecker = new CheckSSGDatabase();
         //always sort the dbCheckers in reverse in case someone has added one out of sequence so things still work properly
         if (!hasCheckForCurrentVersion(dbCheckers)) {
@@ -655,7 +656,7 @@ public class DBActions {
     private void initDriver() throws ClassNotFoundException {
         Properties dbProps = new Properties();
         InputStream is = null;
-        //try to read the database driver from 
+        //try to read the database driver from
 
         File templatePartitionDir = new File(osFunctions.getPartitionBase() + "partitiontemplate_");
         File oldConfigLocation = new File(osFunctions.getSsgInstallRoot() + "etc/conf");
@@ -936,7 +937,7 @@ Statement getCreateTablesStmt = null;
         boolean isOk = false;
 
         if (ui != null) ui.showSuccess("Testing the upgrade on a test database ... " + Utilities.EOL_CHAR);
-        
+
         DBActions.DBActionsResult testUpgradeResult = testDbUpgrade(dbInfo, dbVersion, currentVersion, ui);
         if (testUpgradeResult.getStatus() != DB_SUCCESS) {
             String msg = "The database was not upgraded due to the following reasons:\n\n" + testUpgradeResult.getErrorMessage() + "\n\n" +
@@ -985,8 +986,8 @@ Statement getCreateTablesStmt = null;
                     Utilities.EOL_CHAR +
                     "this might take a few minutes" +
                     Utilities.EOL_CHAR);
-            
-            copyDatabase(dbInfo, testDbName, ui);
+
+            copyDatabase(dbInfo, testDbName, true, ui);
             if (ui != null) ui.showSuccess("The test database was created." + Utilities.EOL_CHAR);
             if (ui != null) ui.showSuccess("Upgrading the test database. This could take a while" + Utilities.EOL_CHAR);
             DBActionsResult upgradeResult  = upgradeDbSchema(dbInfo.getHostname(), dbInfo.getPrivUsername(), dbInfo.getPrivPassword(), testDbName, dbVersion, currentVersion, ui);
@@ -1019,8 +1020,9 @@ Statement getCreateTablesStmt = null;
             return DB_UNKNOWN_FAILURE;
     }
 
-    public void copyDatabase(DBInformation sourceDbInfo, String testDbName, DBActionsListener ui) throws SQLException {
+    public void copyDatabase(DBInformation sourceDbInfo, String testDbName, boolean skipAudits, DBActionsListener ui) throws SQLException {
         Connection privilegedConnection = null;
+        Connection privilegedDestConnection = null;
         TimerTask spammer = null;
         try {
             privilegedConnection = getConnection(sourceDbInfo.getHostname(), sourceDbInfo.getDbName(), sourceDbInfo.getPrivUsername(), sourceDbInfo.getPrivPassword());
@@ -1032,11 +1034,23 @@ Statement getCreateTablesStmt = null;
                 Background.scheduleRepeated(spammer, 2000, 2000);
             }
             copyDbSchema(privilegedConnection, sourceDbName, testDbName);
-            copyDatabaseContents(privilegedConnection, sourceDbName, testDbName);
             privilegedConnection.commit();
+
+            privilegedDestConnection = getConnection(sourceDbInfo.getHostname(), testDbName, sourceDbInfo.getPrivUsername(), sourceDbInfo.getPrivPassword());
+            privilegedDestConnection.setAutoCommit(false);
+
+            copyDatabaseContents(privilegedConnection, privilegedDestConnection, sourceDbName, testDbName, skipAudits);
+            privilegedConnection.commit();
+            privilegedDestConnection.commit();
+            if (spammer != null) {
+                Background.cancel(spammer);
+                spammer = null;
+            }
             privilegedConnection.setAutoCommit(true);
+            privilegedDestConnection.setAutoCommit(true);
         } finally {
             ResourceUtils.closeQuietly(privilegedConnection);
+            ResourceUtils.closeQuietly(privilegedDestConnection);
             if (spammer != null) {
                 Background.cancel(spammer);
                 spammer = null;
@@ -1054,49 +1068,63 @@ Statement getCreateTablesStmt = null;
             executeUpdates(createStatements, copyDbStmt, "Creating a copy of " + sourceDbName + " to test the upgrade process.", destinationDbName);
         } finally {
             ResourceUtils.closeQuietly(copyDbStmt);
+            copyDbStmt = null;
         }
     }
 
-    private void copyDatabaseContents(Connection privilegedConnection, String sourceDbName, String destinationDbName) throws SQLException {
+    private void copyDatabaseContents(Connection privSourceConn, final Connection privDestConn, String sourceDbName, String destinationDbName, boolean skipAudits) throws SQLException {
         Statement stmt = null;
-        PreparedStatement pStmt = null;
+        final PreparedStatement[] pStmt = new PreparedStatement[]{null};
         try {
-            Map<String, List<String>> dbData = getDbDataStatements(privilegedConnection, sourceDbName);
-            stmt = privilegedConnection.createStatement();
+            stmt = privDestConn.createStatement();
+            //noinspection JDBCExecuteWithNonConstantString
             stmt.execute("use " + destinationDbName);
-            for (Map.Entry<String, List<String>> entry : dbData.entrySet()) {
-                String tableName = entry.getKey();
-                //don't copy audits, takes too long
-                if (!"audit_main".equalsIgnoreCase(tableName)) {
-                    List<String> values = entry.getValue();
-                    int size = values.size();
-                    StringBuilder sql = new StringBuilder();
-                    sql.append("insert into ").append(entry.getKey()).append(
-                            " values (").append(StringUtils.repeat("?, ", size -1)).append("?").append(");");
+            stmt.execute("SET FOREIGN_KEY_CHECKS = 0");
+            getDbDataStatements(privSourceConn, sourceDbName, skipAudits, new StatementUser() {
+                public void useStatement(String tableName, List<String> rowData) throws SQLException {
+                    //don't copy audits, takes too long
+                    if ("audit_main".equalsIgnoreCase(tableName))
+                        return;
 
-                    pStmt = privilegedConnection.prepareStatement(sql.toString());
+                    int size = rowData.size();
+                    StringBuilder sql = new StringBuilder(512);
+                    sql.append("insert into ").append(tableName).append(
+                            " values (").append(StringUtils.repeat("?, ", size -1)).append('?').append(");");
+
+                    //noinspection JDBCPrepareStatementWithNonConstantString
+                    pStmt[0] = privDestConn.prepareStatement(sql.toString());
                     for (int i = 0; i < size; i++) {
-                        pStmt.setString(i+1 , values.get(i));
+                        pStmt[0].setString(i+1 , rowData.get(i));
                     }
-                    pStmt.addBatch();
-                    pStmt.executeUpdate();
+                    pStmt[0].addBatch();
+                    pStmt[0].executeUpdate();
+                    pStmt[0].close();
+                    pStmt[0] = null;
                 }
-            }
+            });
+            stmt.execute("SET FOREIGN_KEY_CHECKS = 1");
         } finally {
             ResourceUtils.closeQuietly(stmt);
-            ResourceUtils.closeQuietly(pStmt);
+            stmt = null;
+
+            ResourceUtils.closeQuietly(pStmt[0]);
         }
     }
 
-    private Map<String, List<String>> getDbDataStatements(Connection connection, String sourceDbName) throws SQLException {
+    private interface StatementUser {
+        void useStatement(String tableName, List<String> rowData) throws SQLException;
+    }
+
+    private void getDbDataStatements(Connection connection, String sourceDbName, boolean skipAudits, StatementUser statementUser) throws SQLException {
         Statement stmt = null;
-        Map<String, List<String>> tableData = new LinkedHashMap<String, List<String>>();
         try {
             stmt = connection.createStatement();
             Set<String> tableNames = getTableNames(connection, sourceDbName);
 
             stmt.execute("use " + sourceDbName);
             for (String tableName : tableNames) {
+                if (tableName.toLowerCase().startsWith("audit") && skipAudits) continue;
+
                 ResultSet dataRs = stmt.executeQuery("select * from " + tableName);
                 ResultSetMetaData meta = dataRs.getMetaData();
                 while (dataRs.next()) {
@@ -1104,10 +1132,9 @@ Statement getCreateTablesStmt = null;
                     for (int i = 1; i <= meta.getColumnCount(); i++) {
                         rowData.add(dataRs.getString(i));
                     }
-                    tableData.put(tableName, rowData);
+                    statementUser.useStatement(tableName, rowData);
                 }
             }
-            return tableData;
         } finally {
             ResourceUtils.closeQuietly(stmt);
         }

@@ -451,7 +451,7 @@ public class Importer {
         System.out.print("Creating copy of target database for testing import ..");
         DBInformation dbi = new DBInformation(dbHost, dbName, databaseUser, databasePasswd, rootDBUsername, rootDBPasswd);
         String testdbname = "TstDB_" + System.currentTimeMillis();
-        getDBActions(osFunctions).copyDatabase(dbi, testdbname, null);
+        getDBActions(osFunctions).copyDatabase(dbi, testdbname, true, null);
         System.out.println(" DONE");
 
         try {
