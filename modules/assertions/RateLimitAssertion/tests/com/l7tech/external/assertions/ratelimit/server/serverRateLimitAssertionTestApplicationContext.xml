@@ -47,4 +47,8 @@
             <bean class="com.l7tech.server.log.LoggingMessageSink"/>
         </constructor-arg>
     </bean>
+
+    <bean id="auditDetailFilter" class="com.l7tech.server.audit.AuditDetailFilter">
+        <constructor-arg ref="serverConfig"/>
+    </bean>       
 </beans>
