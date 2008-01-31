@@ -126,12 +126,12 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
         }
     }
 
-    public Result resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
+    public Result resolve(Message request, Collection<PublishedService> serviceSubset) throws ServiceResolutionException {
         T value = getRequestValue(request);
         return resolve(value, serviceSubset);
     }
 
-    protected Result resolve(T value, Set serviceSubset) throws ServiceResolutionException {
+    protected Result resolve(T value, Collection serviceSubset) throws ServiceResolutionException {
         /*if (value instanceof String) {
             String s = (String)value;
             if (s.length() > getMaxLength()) {

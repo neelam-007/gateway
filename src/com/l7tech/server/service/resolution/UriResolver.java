@@ -57,7 +57,7 @@ public class UriResolver extends ServiceResolver<String> {
         return false;
     }
 
-    public static Result doResolve(String requestValue, Set<PublishedService> serviceSubset,
+    public static Result doResolve(String requestValue, Collection<PublishedService> serviceSubset,
                                  Map<URIResolutionParam, List<Long>> uriToServiceMap, Auditor auditor) {
         List<Long> res = uriToServiceMap.get(new URIResolutionParam(requestValue));
         if (res != null && res.size() > 0) {
@@ -111,7 +111,7 @@ public class UriResolver extends ServiceResolver<String> {
         }
     }
 
-    public Result resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
+    public Result resolve(Message request, Collection<PublishedService> serviceSubset) throws ServiceResolutionException {
         rwlock.readLock().lock();
         try {
             // since this only applies to http messages, we dont want to narrow down subset if msg is not http
@@ -139,19 +139,19 @@ public class UriResolver extends ServiceResolver<String> {
         }
     }
 
-    private static boolean isInSubset(Set<PublishedService> serviceSubset, List<Long> criteria) {
+    private static boolean isInSubset(Collection<PublishedService> serviceSubset, List<Long> criteria) {
         for (PublishedService svc : serviceSubset) {
-            if (criteria.contains(svc.getOid())) {
+            if (criteria.contains(svc.getOidAsLong())) {
                 return true;
             }
         }
         return false;
     }
 
-    private static Set<PublishedService> narrowList(Set<PublishedService> serviceSubset, List<Long> criteria) {
+    private static Set<PublishedService> narrowList(Collection<PublishedService> serviceSubset, List<Long> criteria) {
         Set<PublishedService> output = new HashSet<PublishedService>();
         for (PublishedService svc : serviceSubset) {
-            if (criteria.contains(svc.getOid())) {
+            if (criteria.contains(svc.getOidAsLong())) {
                 output.add(svc);
             }
         }

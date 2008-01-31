@@ -13,6 +13,7 @@ import org.springframework.context.ApplicationContext;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -111,7 +112,7 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver<Stri
         return false;
     }
 
-    public Result resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
+    public Result resolve(Message request, Collection<PublishedService> serviceSubset) throws ServiceResolutionException {
         String value = getRequestValue(request);
         // special case: if the request does not follow pattern, then all services passed
         // match, the next resolver will narrow it down

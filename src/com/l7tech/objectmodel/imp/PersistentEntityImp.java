@@ -28,6 +28,10 @@ public class PersistentEntityImp implements PersistentEntity, Serializable {
         return _oid;
     }
 
+    public Long getOidAsLong() {
+        return _oidObject;
+    }
+
     public String getId() {
         return Long.toString(_oid);
     }
@@ -35,6 +39,7 @@ public class PersistentEntityImp implements PersistentEntity, Serializable {
     public void setOid( long oid ) {
         if ( isLocked() ) throw new IllegalStateException("Cannot update locked entity");
         _oid = oid;
+        _oidObject = new Long(oid);
     }
 
     public int getVersion() {
@@ -74,6 +79,7 @@ public class PersistentEntityImp implements PersistentEntity, Serializable {
 
     protected int _version;
 	protected long _oid;
+    protected Long _oidObject;
     protected final transient long _loadTime;
     protected transient boolean _locked; // read-only when locked
 }

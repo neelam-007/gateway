@@ -325,11 +325,10 @@ public class ServiceCache
      * @throws ServiceResolutionException
      */
     public PublishedService resolve(Message req, ResolutionListener rl) throws ServiceResolutionException {
-        Set<PublishedService> serviceSet;
+        Collection<PublishedService> serviceSet;
         rwlock.readLock().lock();
         try {
-            serviceSet = new HashSet<PublishedService>();
-            serviceSet.addAll(services.values());
+            serviceSet = Collections.unmodifiableCollection(services.values());
 
             if (serviceSet.isEmpty()) {
                 auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NO_SERVICES);
@@ -377,8 +376,9 @@ public class ServiceCache
                 auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NO_MATCH);
                 return null;
             } else if (serviceSet.size() == 1) {
+                Set<PolicyMetadata> metadatas = getPolicyMetadata(serviceSet);
                 if (rl != null && !notified) {
-                    if (!rl.notifyPreParseServices(req, getPolicyMetadata(serviceSet)))
+                    if (!rl.notifyPreParseServices(req, metadatas))
                         return null;
                 }
 
@@ -386,7 +386,7 @@ public class ServiceCache
                 XmlKnob xk = (XmlKnob) req.getKnob(XmlKnob.class);
 
                 if (!service.isSoap() || service.isLaxResolution()) {
-                    if (xk != null) xk.setTarariWanted(getPolicyMetadata(service.getPolicy()).isTarariWanted());
+                    if (xk != null) xk.setTarariWanted(metadatas.iterator().next().isTarariWanted());
                     return service;
                 }
 
@@ -397,7 +397,7 @@ public class ServiceCache
                     return null;
                 } else {
                     // avoid re-Tarari-ing request that's already DOM parsed unless some assertions need it bad
-                    if (xk != null) xk.setTarariWanted(getPolicyMetadata(service.getPolicy()).isTarariWanted());
+                    if (xk != null) xk.setTarariWanted(metadatas.iterator().next().isTarariWanted());
                     Result services = soapOperationResolver.resolve(req, serviceSet);
                     if (services.getMatches().isEmpty()) {
                         auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_OPERATION_MISMATCH, service.getName(), service.getId());
@@ -416,13 +416,20 @@ public class ServiceCache
         }
     }
 
-    private Set<PolicyMetadata> getPolicyMetadata( final Set<PublishedService> services ) {
-        Set<PolicyMetadata> metadata = new LinkedHashSet<PolicyMetadata>();
+    private Set<PolicyMetadata> getPolicyMetadata( final Collection<PublishedService> services ) {
+        Set<PolicyMetadata> metadata;
 
-        for ( PublishedService service : services ) {
-            metadata.add( getPolicyMetadata( service.getPolicy() ) );              
+        if ( services.isEmpty() ) {
+            metadata = Collections.emptySet();
+        } else if ( services.size() == 1 ) {
+            metadata = Collections.singleton( getPolicyMetadata( services.iterator().next().getPolicy() ) );
+        } else {
+            metadata = new LinkedHashSet<PolicyMetadata>();
+
+            for ( PublishedService service : services ) {
+                metadata.add( getPolicyMetadata( service.getPolicy() ) );
+            }
         }
-
         return metadata;
     }
 
@@ -431,16 +438,8 @@ public class ServiceCache
      */
     private PolicyMetadata getPolicyMetadata( final Policy policy ) {
         PolicyMetadata metadata = null;
-        ServerPolicyHandle sph = null;
         if ( policy != null ) {
-            try {
-                sph = policyCache.getServerPolicy( policy );
-                if ( sph != null ) {
-                    metadata = sph.getPolicyMetadata();
-                }
-            } finally {
-                ResourceUtils.closeQuietly( sph );
-            }
+            metadata = policyCache.getPolicyMetadata(policy);
         }
 
         if ( metadata == null ) {

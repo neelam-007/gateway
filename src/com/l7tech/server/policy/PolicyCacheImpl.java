@@ -105,6 +105,32 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         eventSink = applicationEventPublisher;
     }
 
+    public PolicyMetadata getPolicyMetadata(Policy policy) {
+        if( policy == null ) {
+            throw new IllegalArgumentException( "policy must not be null" );
+        }
+
+        return getPolicyMetadata( policy.getOid() );
+    }
+
+    public PolicyMetadata getPolicyMetadata(long policyOid) {
+        if( policyOid == Policy.DEFAULT_OID )
+            throw new IllegalArgumentException( "Can't compile a brand-new policy--it must be saved first" );
+
+        final Lock read = lock.readLock();
+        read.lock();
+        try {
+            PolicyCacheEntry pce = cacheGet( policyOid );
+            if( pce != null && pce.isValid() ) {
+                return pce.getPolicyMetadata();
+            }
+        } finally {
+            read.unlock();
+        }
+
+        return null;
+    }
+
     /**
      *
      */
@@ -1180,6 +1206,14 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         public void close() {
             if ( handle != null ) {
                 handle.close();
+            }
+        }
+
+        public PolicyMetadata getPolicyMetadata() {
+          if ( handle == null ) {
+                return null;
+            } else {
+                return handle.getPolicyMetadata();
             }
         }
     }

@@ -1,10 +1,13 @@
 package com.l7tech.server.transport;
 
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.audit.AuditDetailEvent;
 import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.LifecycleBean;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.MessageProcessed;
+import com.l7tech.server.event.FaultProcessed;
 import org.springframework.context.ApplicationEvent;
 
 import java.util.Map;
@@ -107,7 +110,17 @@ public abstract class TransportModule extends LifecycleBean {
         return true;
     }
 
+    protected static boolean isEventApplicable(ApplicationEvent applicationEvent) {
+        return applicationEvent instanceof AuditDetailEvent ||
+                applicationEvent instanceof MessageProcessed ||
+                applicationEvent instanceof FaultProcessed;
+    }
+
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
+        if (!TransportModule.isEventApplicable(applicationEvent)) {
+            return;
+        }
+
         super.onApplicationEvent(applicationEvent);
         if (!isStarted())
             return;

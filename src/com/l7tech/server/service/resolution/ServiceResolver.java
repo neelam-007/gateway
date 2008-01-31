@@ -9,6 +9,7 @@ import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;
 
 import java.util.Set;
+import java.util.Collection;
 import java.util.logging.Logger;
 
 /**
@@ -45,7 +46,18 @@ public abstract class ServiceResolver<T> {
      */
     public abstract void serviceDeleted(PublishedService service);
 
-    public abstract Result resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException;
+    /**
+     * Tries to resolve the request to a published service.
+     *
+     * <b><code>serviceSubset</code> was returned from <code>Collections.unmodifiableCollection()</code>, so it should
+     * not be iterated over and cannot be modified.</b>
+     *
+     * @param request The request to process
+     * @param serviceSubset The collection of published services
+     * @return The resolution result
+     * @throws ServiceResolutionException
+     */
+    public abstract Result resolve(Message request, Collection<PublishedService> serviceSubset) throws ServiceResolutionException;
 
     public abstract boolean usesMessageContent();
 

@@ -16,6 +16,7 @@ import javax.wsdl.BindingOperation;
 import javax.wsdl.Definition;
 import java.io.IOException;
 import java.util.Set;
+import java.util.Collection;
 
 /**
  * @author alex
@@ -52,7 +53,7 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
 
     }
 
-    public Result resolve(Message request, Set<PublishedService> serviceSubset) throws ServiceResolutionException {
+    public Result resolve(Message request, Collection<PublishedService> serviceSubset) throws ServiceResolutionException {
         // Filter out requests for which resolution by soap action is not appropriate.
         //
         MimeKnob mimeKnob = (MimeKnob) request.getKnob(MimeKnob.class);

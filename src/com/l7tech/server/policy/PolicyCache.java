@@ -104,4 +104,20 @@ public interface PolicyCache {
      * @return The policy unique version identifier or null
      */
     String getUniquePolicyVersionIdentifer(long policyOid);
+
+    /**
+     * Get the metadata of the given Policy.
+     *
+     * @param policy The policy whose metadata is desired.
+     * @return The metadata for the policy or null if the policy is not valid
+     */
+    PolicyMetadata getPolicyMetadata(Policy policy);
+
+    /**
+     * Get the metadata of the given Policy.
+     *
+     * @param policyOid The OID of the policy whose metadata is desired.
+     * @return The metadata for the policy or null if the policy is not valid
+     */
+    PolicyMetadata getPolicyMetadata(long policyOid);
 }
