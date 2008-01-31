@@ -2,12 +2,10 @@ package com.l7tech.server.config.db;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.InvalidLicenseException;
-import com.l7tech.common.AsyncAdminMethods;
+import com.l7tech.common.util.Background;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.Background;
 import com.l7tech.server.config.*;
-import com.l7tech.server.config.ui.console.ConsoleWizardUtils;
 import com.l7tech.server.partition.PartitionInformation;
 import org.apache.commons.lang.StringUtils;
 
@@ -16,7 +14,6 @@ import java.sql.*;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -126,6 +123,8 @@ public class DBActions {
             dbVersion = checkDbVersion(conn, dbName);
         } catch (SQLException e) {
             logger.warning("Error while checking the database version: " + ExceptionUtils.getMessage(e));
+        } finally {
+            ResourceUtils.closeQuietly(conn);
         }
         return dbVersion;
     }
@@ -184,6 +183,7 @@ public class DBActions {
         Connection conn = null;
         Statement stmt = null;
 
+        TimerTask spammer = null;        
         try {
             conn = getConnection(hostname, databaseName, username, password);
             stmt = conn.createStatement();
@@ -200,7 +200,7 @@ public class DBActions {
 
                     String[] statements = getCreateDbStatementsFromFile(upgradeInfo[1]);
 
-                    TimerTask spammer = new ProgressTimerTask(ui);
+                    spammer = new ProgressTimerTask(ui);
 
                     if (ui != null) {
                         ui.showSuccess("Upgrading \"" + databaseName + "\" from " + oldVersion + "->" + upgradeInfo[0] + Utilities.EOL_CHAR) ;
@@ -233,6 +233,10 @@ public class DBActions {
         } finally {
             ResourceUtils.closeQuietly(stmt);
             ResourceUtils.closeQuietly(conn);
+            if (spammer != null) {
+                Background.cancel(spammer);
+                spammer = null;
+            }
         }
 
         return result;
@@ -335,6 +339,10 @@ public class DBActions {
 
         logger.info("Attempting to connect to an existing database (" + hostname + "/" + dbName + ")" + "using username/password \"" + username + "/" + password + "\"");
 
+
+        if (hostname.equalsIgnoreCase(SharedWizardInfo.getInstance().getRealHostname())) {
+            hostname = "localhost";
+        }
         DBInformation dbInfo = new DBInformation(hostname, dbName, username, password, privUsername, privPassword);
 
         DBActions.DBActionsResult status = checkExistingDb(dbInfo);
@@ -385,7 +393,7 @@ public class DBActions {
                             dbInfo.setPrivPassword(privPassword);
 
                             isOk = doDbUpgrade(dbInfo, currentVersion, dbVersion, ui);
-                            if (isOk && ui != null) ui.showSuccess("Database Successfully Upgraded\n");
+                            if (isOk && ui != null) ui.showSuccess("The database was successfully upgraded\n");
                         } catch (IOException e) {
                             errorMsg = "There was an error while attempting to upgrade the database";
                             logger.severe(errorMsg);
@@ -399,6 +407,13 @@ public class DBActions {
                     }
                 }
             }
+            if (isOk)
+                if (!doGrantsOnExistingDb(dbInfo, ui)) {
+                    String errorMessage = "There was an error while updating the permissions on the existing database.";
+                    logger.severe(errorMessage);
+                    if (ui != null) ui.showErrorMessage(errorMessage);
+                    isOk = false;
+                }
         } else {
             switch (status.getStatus()) {
                 case DBActions.DB_UNKNOWNHOST_FAILURE:
@@ -438,27 +453,79 @@ public class DBActions {
         return isOk;
     }
 
+    private boolean doGrantsOnExistingDb(DBInformation dbInfo, DBActionsListener ui) {
+        boolean success = false;
+        Connection conn = null;
+        Statement stmt = null;
+
+        try {
+            String privUsername = dbInfo.getPrivUsername();
+
+            if (StringUtils.isEmpty(privUsername)) {
+                if (ui == null) {
+                    logger.severe("root credentials are needed to perform the grants on the existing database. Cannot proceed.");
+                    return false;
+                }
+
+                ui.showSuccess("Please enter the credentials for the root database user (needed to grant permissions in the database)" + Utilities.EOL_CHAR);
+                Map<String, String> creds = ui.getPrivelegedCredentials(
+                        null,
+                        "Please enter the username for the root database user: [root]",
+                        "Please enter the password for root database user: ",
+                        "root");
+                if (creds == null) {
+                    logger.severe("root credentials are needed to perform the grants on the existing database. Cannot proceed.");
+                    return false;
+                }
+
+                dbInfo.setPrivUsername(creds.get(DBActions.USERNAME_KEY));
+                dbInfo.setPrivPassword(creds.get(DBActions.PASSWORD_KEY));
+            }
+
+            String hostname = dbInfo.getHostname();
+            if (hostname.equalsIgnoreCase(SharedWizardInfo.getInstance().getRealHostname())) {
+                hostname = "localhost";
+            }
+            conn = getConnection(hostname, dbInfo.getDbName(), dbInfo.getPrivUsername(), dbInfo.getPrivPassword());
+            stmt = conn.createStatement();
+
+            executeUpdates(getGrantStatements(dbInfo, osFunctions.isWindows()), stmt, "Creating grants for user " + dbInfo.getUsername() + " on the " + dbInfo.getDbName() + " database", dbInfo.getDbName());
+            success = true;
+        } catch (SQLException e) {
+            logger.severe("There was an error while trying to create the grants for the existing database." + ExceptionUtils.getMessage(e));
+            success = false;
+        } finally {
+            ResourceUtils.closeQuietly(stmt);
+            ResourceUtils.closeQuietly(conn);
+        }
+        return success;
+    }
+
     private boolean checkLicense(DBActionsListener ui, String currentVersion, DBInformation dbInfo) {
         logger.info("Now Checking SSG License validity");
         Connection conn = null;
         try {
-            conn = getConnection(dbInfo);
-        } catch (SQLException e) {
-            logger.info("Cannot check license. Could not get a connection to the database");
-            return false;
-        }
-        try {
-            licChecker.checkLicense(conn, currentVersion, BuildInfo.getProductName(), BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor());
-            logger.info("License is valid and will work with this version (" + currentVersion + ").");
-        } catch (InvalidLicenseException e) {
-            String message = ExceptionUtils.getMessage(e);
-            logger.warning(message);
-            if (ui != null) {
-                if (!ui.getGenericUserConfirmation(message + "\nDo you wish to continue?")) {
-                    ui.showErrorMessage(message);
-                    return false;
+            try {
+                conn = getConnection(dbInfo);
+            } catch (SQLException e) {
+                logger.info("Cannot check license. Could not get a connection to the database");
+                return false;
+            }
+            try {
+                licChecker.checkLicense(conn, currentVersion, BuildInfo.getProductName(), BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor());
+                logger.info("License is valid and will work with this version (" + currentVersion + ").");
+            } catch (InvalidLicenseException e) {
+                String message = ExceptionUtils.getMessage(e);
+                logger.warning(message);
+                if (ui != null) {
+                    if (!ui.getGenericUserConfirmation(message + "\nDo you wish to continue?")) {
+                        ui.showErrorMessage(message);
+                        return false;
+                    }
                 }
             }
+        } finally {
+            ResourceUtils.closeQuietly(conn);
         }
         return true;
     }
@@ -883,7 +950,7 @@ Statement getCreateTablesStmt = null;
             String msg;
             switch (upgradeResult.getStatus()) {
                 case DBActions.DB_SUCCESS:
-                    logger.info("Database successfully upgraded");
+                    logger.info("The database was successfully upgraded");
                     isOk = true;
                     break;
                 case DBActions.DB_AUTHORIZATION_FAILURE:
@@ -954,12 +1021,12 @@ Statement getCreateTablesStmt = null;
 
     public void copyDatabase(DBInformation sourceDbInfo, String testDbName, DBActionsListener ui) throws SQLException {
         Connection privilegedConnection = null;
+        TimerTask spammer = null;
         try {
             privilegedConnection = getConnection(sourceDbInfo.getHostname(), sourceDbInfo.getDbName(), sourceDbInfo.getPrivUsername(), sourceDbInfo.getPrivPassword());
             String sourceDbName = sourceDbInfo.getDbName();
 
             privilegedConnection.setAutoCommit(false);
-            TimerTask spammer = null;
             if (ui != null) {
                 spammer = new ProgressTimerTask(ui);
                 Background.scheduleRepeated(spammer, 2000, 2000);
@@ -967,13 +1034,13 @@ Statement getCreateTablesStmt = null;
             copyDbSchema(privilegedConnection, sourceDbName, testDbName);
             copyDatabaseContents(privilegedConnection, sourceDbName, testDbName);
             privilegedConnection.commit();
+            privilegedConnection.setAutoCommit(true);
+        } finally {
+            ResourceUtils.closeQuietly(privilegedConnection);
             if (spammer != null) {
                 Background.cancel(spammer);
                 spammer = null;
             }
-            privilegedConnection.setAutoCommit(true);
-        } finally {
-            ResourceUtils.closeQuietly(privilegedConnection);
         }
     }
 
@@ -1010,7 +1077,7 @@ Statement getCreateTablesStmt = null;
                     pStmt = privilegedConnection.prepareStatement(sql.toString());
                     for (int i = 0; i < size; i++) {
                         pStmt.setString(i+1 , values.get(i));
-                    };
+                    }
                     pStmt.addBatch();
                     pStmt.executeUpdate();
                 }
@@ -1150,7 +1217,11 @@ Statement getCreateTablesStmt = null;
         }
 
         public String getPermissionStatement(String hostname) {
-            return new String((isGrant?SQL_GRANT_ALL:SQL_REVOKE_ALL) + dbInfo.getDbName() + ".* " + (isGrant?"to ":"from ") + dbInfo.getUsername() + "@'" + hostname + "' identified by '" + dbInfo.getPassword() + "'");
+            return (isGrant ? SQL_GRANT_ALL : SQL_REVOKE_ALL) +
+                    dbInfo.getDbName() + ".* " +
+                    (isGrant ? "to " : "from ") +
+                    dbInfo.getUsername() + "@'" + hostname +
+                    "' identified by '" + dbInfo.getPassword() + "'";
         }
 
         private String[] getStatements() {
@@ -1192,7 +1263,7 @@ Statement getCreateTablesStmt = null;
                     list.add(getPermissionStatement("localhost.localdomain"));
                 }
             }
-            list.add(new String("FLUSH PRIVILEGES"));
+            list.add("FLUSH PRIVILEGES");
             return list.toArray(new String[list.size()]);
         }
     }
