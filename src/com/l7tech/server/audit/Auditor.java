@@ -17,12 +17,14 @@ public class Auditor implements Audit {
     private final Object source;
     private final Logger logger;
     private final AuditLogListener listener;
+    private final AuditDetailFilter filter;
 
     protected Auditor(Logger logger) {
         this.source = null;
         this.context = null;
         this.logger = logger;
         this.listener = null;
+        this.filter = null;
     }
 
     public Auditor(Object source, ApplicationContext context, Logger logger) {
@@ -33,10 +35,12 @@ public class Auditor implements Audit {
         this.context = context;
         this.logger = logger;
         this.listener = (AuditLogListener) context.getBean("auditLogListener", AuditLogListener.class);
+        this.filter = (AuditDetailFilter) context.getBean("auditDetailFilter", AuditDetailFilter.class);
     }
 
     public void logAndAudit(AuditDetailMessage msg, String[] params, Throwable e) {
-        context.publishEvent(new AuditDetailEvent(source, new AuditDetail(msg, params == null ? null : params, e), e));
+        if ( filter == null || filter.isAuditable( msg ) )
+            context.publishEvent(new AuditDetailEvent(source, new AuditDetail(msg, params == null ? null : params, e), e));
 
         if (logger == null) return;
 

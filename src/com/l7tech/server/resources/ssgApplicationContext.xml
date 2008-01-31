@@ -71,6 +71,7 @@
                                 <value>schemaSoftwareFallback</value>
                             </list>
                         </entry>
+                        <entry key="auditDetailFilter"><list><value>auditAssociatedLogsThreshold</value></list></entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -825,6 +826,11 @@
     <bean id="auditLogListener" class="com.l7tech.spring.factory.config.LazyProxyFactoryBean">
         <constructor-arg value="auditLogListenerTarget"/>
         <constructor-arg value="com.l7tech.server.audit.AuditLogListener"/>
+    </bean>
+
+
+    <bean id="auditDetailFilter" class="com.l7tech.server.audit.AuditDetailFilter">
+        <constructor-arg ref="serverConfig"/>
     </bean>
 
 </beans>

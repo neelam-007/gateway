@@ -110,14 +110,14 @@ public abstract class TransportModule extends LifecycleBean {
         return true;
     }
 
-    protected static boolean isEventApplicable(ApplicationEvent applicationEvent) {
+    protected static boolean isEventIgnorable(ApplicationEvent applicationEvent) {
         return applicationEvent instanceof AuditDetailEvent ||
                 applicationEvent instanceof MessageProcessed ||
                 applicationEvent instanceof FaultProcessed;
     }
 
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
-        if (!TransportModule.isEventApplicable(applicationEvent)) {
+        if (TransportModule.isEventIgnorable(applicationEvent)) {
             return;
         }
 

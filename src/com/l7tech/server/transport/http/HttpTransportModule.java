@@ -512,7 +512,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
-        if (!TransportModule.isEventApplicable(applicationEvent)) {
+        if (TransportModule.isEventIgnorable(applicationEvent)) {
             return;
         }
 
