@@ -408,13 +408,6 @@ public class DBActions {
                     }
                 }
             }
-            if (isOk)
-                if (!doGrantsOnExistingDb(dbInfo, ui)) {
-                    String errorMessage = "There was an error while updating the permissions on the existing database.";
-                    logger.severe(errorMessage);
-                    if (ui != null) ui.showErrorMessage(errorMessage);
-                    isOk = false;
-                }
         } else {
             switch (status.getStatus()) {
                 case DBActions.DB_UNKNOWNHOST_FAILURE:
@@ -452,54 +445,6 @@ public class DBActions {
             }
         }
         return isOk;
-    }
-
-    private boolean doGrantsOnExistingDb(DBInformation dbInfo, DBActionsListener ui) {
-        boolean success = false;
-        Connection conn = null;
-        Statement stmt = null;
-
-        try {
-            String privUsername = dbInfo.getPrivUsername();
-
-            if (StringUtils.isEmpty(privUsername)) {
-                if (ui == null) {
-                    logger.severe("root credentials are needed to perform the grants on the existing database. Cannot proceed.");
-                    return false;
-                }
-
-                ui.showSuccess("Please enter the credentials for the root database user (needed to grant permissions in the database)" + Utilities.EOL_CHAR);
-                Map<String, String> creds = ui.getPrivelegedCredentials(
-                        null,
-                        "Please enter the username for the root database user: [root]",
-                        "Please enter the password for root database user: ",
-                        "root");
-                if (creds == null) {
-                    logger.severe("root credentials are needed to perform the grants on the existing database. Cannot proceed.");
-                    return false;
-                }
-
-                dbInfo.setPrivUsername(creds.get(DBActions.USERNAME_KEY));
-                dbInfo.setPrivPassword(creds.get(DBActions.PASSWORD_KEY));
-            }
-
-            String hostname = dbInfo.getHostname();
-            if (hostname.equalsIgnoreCase(SharedWizardInfo.getInstance().getRealHostname())) {
-                hostname = "localhost";
-            }
-            conn = getConnection(hostname, dbInfo.getDbName(), dbInfo.getPrivUsername(), dbInfo.getPrivPassword());
-            stmt = conn.createStatement();
-
-            executeUpdates(getGrantStatements(dbInfo, osFunctions.isWindows()), stmt, "Creating grants for user " + dbInfo.getUsername() + " on the " + dbInfo.getDbName() + " database", dbInfo.getDbName());
-            success = true;
-        } catch (SQLException e) {
-            logger.severe("There was an error while trying to create the grants for the existing database." + ExceptionUtils.getMessage(e));
-            success = false;
-        } finally {
-            ResourceUtils.closeQuietly(stmt);
-            ResourceUtils.closeQuietly(conn);
-        }
-        return success;
     }
 
     private boolean checkLicense(DBActionsListener ui, String currentVersion, DBInformation dbInfo) {

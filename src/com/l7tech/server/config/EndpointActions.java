@@ -167,6 +167,11 @@ public class EndpointActions {
         OSSpecificFunctions osf = pinfo.getOSSpecificFunctions();
         DBInformation dbinfo = SharedWizardInfo.getInstance().getDbinfo();
         DBActions dba = new DBActions(osf);
-        return dba.getConnection(dbinfo);
+
+        String hostname = dbinfo.getHostname();
+        if (hostname.equalsIgnoreCase(SharedWizardInfo.getInstance().getRealHostname())) {
+            hostname = "localhost";
+        }
+        return dba.getConnection(hostname, dbinfo.getDbName(), dbinfo.getUsername(), dbinfo.getPassword());
     }
 }
