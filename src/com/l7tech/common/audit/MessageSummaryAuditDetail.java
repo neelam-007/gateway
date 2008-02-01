@@ -6,7 +6,7 @@ package com.l7tech.common.audit;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public class MessageSummaryAuditDetail extends AuditDetail {
+public class MessageSummaryAuditDetail extends AuditDetail implements ExtendedAuditDetail {
 
     /**
      * Create an audit detail that will update the response message.
@@ -22,12 +22,13 @@ public class MessageSummaryAuditDetail extends AuditDetail {
     /**
      * Check if this detail should be saved.
      *
-     * @return true to request that this is saved.
+     * @return false, this detail is never saved.
      */
     public boolean shouldSave() {
         return false;
     }
 
+    @Override
     public void setAuditRecord(AuditRecord auditRecord) {
         if (auditRecord instanceof MessageSummaryAuditRecord) {
             MessageSummaryAuditRecord msar = (MessageSummaryAuditRecord) auditRecord;

@@ -194,7 +194,14 @@ public class AuditContextImpl implements AuditContext {
                     if(severity == null)
                         throw new RuntimeException("Cannot find the message (id=" + mid + ")" + " in the Message Map.");
                     if(severity.intValue() >= getAssociatedLogsThreshold().intValue()) {
+                        // Call even if not saving
                         detailWithInfo.detail.setAuditRecord(currentRecord);
+
+                        if (detailWithInfo.detail instanceof ExtendedAuditDetail) {
+                            ExtendedAuditDetail extendedAuditDetail = (ExtendedAuditDetail) detailWithInfo.detail;
+                            if (!extendedAuditDetail.shouldSave()) continue; // we don't want to save this.
+                        }
+
                         detailsToSave.add(detailWithInfo.detail);
 
                         listener.notifyDetailFlushed(

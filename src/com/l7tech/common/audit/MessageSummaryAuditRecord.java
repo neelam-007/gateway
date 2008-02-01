@@ -179,20 +179,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         return operationName;
     }
 
-    public void setDetails(Set<AuditDetail> details) {
-        if (details != null) {
-            for (Iterator<AuditDetail> iterator = details.iterator(); iterator.hasNext();) {
-                Object detailObj = iterator.next();
-                if (detailObj instanceof MessageSummaryAuditDetail) {
-                    MessageSummaryAuditDetail msad = (MessageSummaryAuditDetail) detailObj;
-                    if (!msad.shouldSave()) iterator.remove(); // we don't want to save this.
-                }
-            }
-        }
-
-        super.setDetails(details);
-    }
-
     /** @deprecated to be called only for serialization and persistence purposes! */
     protected void setOperationName(String operationName) {
         this.operationNameHaver = null;
