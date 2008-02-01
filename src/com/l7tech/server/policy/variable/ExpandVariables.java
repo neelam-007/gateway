@@ -25,6 +25,10 @@ public final class ExpandVariables {
         return processSingleVariableAsObject(expr, vars, audit, strict());
     }
 
+    public static Object processSingleVariableAsDisplayableObject(final String expr, final Map vars, final Audit audit) {
+        return processSingleVariableAsDisplayableObject(expr, vars, audit, strict());
+    }
+
     private static boolean strict() {
         return "true".equals(ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_TEMPLATE_STRICTMODE));
     }
@@ -42,6 +46,34 @@ public final class ExpandVariables {
             // TODO is it OK to return both an array and a single value for the same variable?
             if (newVals.length == 1) return newVals[0];
             return newVals;
+        } else {
+            return process(expr, vars, audit, strict);
+        }
+    }
+
+    public static Object processSingleVariableAsDisplayableObject(final String expr, final Map vars, final Audit audit, final boolean strict) {
+        if (expr == null) throw new IllegalArgumentException();
+
+        Matcher matcher = Syntax.oneVarPattern.matcher(expr);
+        if (matcher.matches()) {
+            final String rawName = matcher.group(1);
+            // TODO allow recursive syntax someday (i.e. ${foo[0]|DELIM} if foo is multi-dimensional)
+            final Syntax syntax = Syntax.parse(rawName, defaultDelimiter());
+            final Object[] newVals = getAndFilter(vars, syntax, audit, strict);
+            if(newVals == null || newVals.length == 0) {
+                return null;
+            } else if(newVals.length == 1) {
+                return syntax.format(new Object[] {newVals[0]}, Syntax.DEFAULT_FORMATTER, audit, strict);
+            } else {
+                Object[] retVal = new Object[newVals.length];
+                Object[] dummyObject = new Object[1];
+                for(int i = 0;i < newVals.length;i++) {
+                    dummyObject[0] = newVals[i];
+                    retVal[i] = syntax.format(dummyObject, Syntax.DEFAULT_FORMATTER, audit, strict);
+                }
+
+                return retVal;
+            }
         } else {
             return process(expr, vars, audit, strict);
         }

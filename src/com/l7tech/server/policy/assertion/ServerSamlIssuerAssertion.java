@@ -319,7 +319,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
 
             if (attribute.isRepeatIfMulti()) {
                 // Repeat this attribute once for each value
-                Object obj = ExpandVariables.processSingleVariableAsObject(attribute.getValue(), vars, auditor);
+                Object obj = ExpandVariables.processSingleVariableAsDisplayableObject(attribute.getValue(), vars, auditor);
                 if (obj instanceof Object[]) {
                     Object[] vals = (Object[]) obj;
                     for (Object val : vals) {
