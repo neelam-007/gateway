@@ -9,8 +9,9 @@ package com.l7tech.server.audit;
 import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
 import com.l7tech.common.BuildInfo;
-import com.l7tech.common.audit.Messages;
 import com.l7tech.common.audit.AuditDetailMessage;
+import com.l7tech.common.audit.Messages;
+import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ISO8601Date;
@@ -49,6 +50,7 @@ import java.util.zip.ZipOutputStream;
 public class AuditExporterImpl extends HibernateDaoSupport implements AuditExporter {
 
     private static final Logger logger = Logger.getLogger(AuditExporterImpl.class.getName());
+    private static final String AUTHENTICATION_TYPE = "authenticationType";
     private static final String DETAILS_TO_EXPAND = "audit_associated_logs";
     private static final String AUDITDETAILMESSAGEID = "ADMID:";
     private static final String SEPARATOR = "/-/_/-/";
@@ -254,6 +256,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             ResultSetMetaData md = rs.getMetaData();
 
             int timecolumn = 3; // initial guess
+            int authenticationTypeColumn = -1;
             int detailsToExpand = -1;
             int columns = md.getColumnCount();
             boolean[] zipColumns = new boolean[columns];
@@ -261,6 +264,8 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                 final String columnName = quoteMeta(md.getColumnName(i));
                 if ("time".equalsIgnoreCase(columnName))
                     timecolumn = i;
+                else if (AUTHENTICATION_TYPE.equalsIgnoreCase(columnName))
+                    authenticationTypeColumn = i;
                 else if (DETAILS_TO_EXPAND.equalsIgnoreCase(columnName))
                     detailsToExpand = i;
                 else if (columnName.indexOf("_zip") > -1)
@@ -295,6 +300,9 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                                     highestTime = millis;
                                 if (millis < lowestTime)
                                     lowestTime = millis;
+                            } else if (i == authenticationTypeColumn) {
+                                data = SecurityTokenType.getByNum(rs.getInt(i)).toString();
+                                    // Matches MessageSummaryAuditRecord.serializeOtherProperties().
                             } else if (i == detailsToExpand) {
                                 data = expandDetails(data);
                             } else if (i == 1) {
@@ -392,7 +400,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                             isFirst = false;
                         String formatted = MessageFormat.format(currentMessage, paramArray);
                         buffer.append(currentMessageId);
-                        buffer.append(":");
+                        buffer.append("\\:");   // Matches AuditDetail#serializeSignableProperties().
                         buffer.append(formatted);
                     }
 
@@ -418,7 +426,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                     isFirst = false;
                 String formatted = MessageFormat.format(currentMessage, paramList.toArray());
                 buffer.append(currentMessageId);
-                buffer.append(":");
+                buffer.append("\\:");   // Matches AuditDetail#serializeSignableProperties().
                 buffer.append(formatted);
             }
 
