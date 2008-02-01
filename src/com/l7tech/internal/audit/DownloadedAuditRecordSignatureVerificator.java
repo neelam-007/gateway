@@ -2,16 +2,16 @@ package com.l7tech.internal.audit;
 
 import com.l7tech.common.util.HexUtils;
 
-import javax.security.cert.X509Certificate;
 import javax.crypto.Cipher;
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Logger;
-import java.security.cert.Certificate;
-import java.security.PublicKey;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.io.IOException;
+import java.util.regex.Pattern;
 
 /**
  * Stuff used to parse downloaded audit records and verify it's signature.
@@ -112,15 +112,15 @@ public class DownloadedAuditRecordSignatureVerificator {
             parsedTmp.append(SEPARATOR_PATTERN);
         }
 
-        // Unescape : separators until now
         String parsingResult = parsedTmp.toString();
-        parsingResult = parsingResult.replace("\\:", ":");
 
         // Append the audit details if any
         tmpstart = input.indexOf("[", separatorPositions.get(30));
         if (tmpstart > 0) {
             parsingResult = parsingResult + input.substring(tmpstart);
         }
+
+        parsingResult = Pattern.compile("\\\\([^\\040-\\0176]|\\\\|\\:)").matcher(parsingResult).replaceAll("$1");
 
         out.parsedRecordInSignableFormat = parsingResult;
         return out;

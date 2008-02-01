@@ -40,6 +40,8 @@ public class AuditSignatureChecker extends JFrame {
     private static final Preferences _preferences = Preferences.userRoot().node("/com/l7tech/internal/audit/auditsignaturechecker");
     private static final String PREF_AUDITPATH = "audit.path";
     private static final String PREF_CERTPATH = "cert.path";
+    private static final char DELIM = ':';
+    private static final char ESC = '\\';
 
     private static boolean isZipFile(final String path) throws IOException {
         boolean result = false;
@@ -198,16 +200,29 @@ public class AuditSignatureChecker extends JFrame {
 
     // reconstitutes records on multi lines
     private static String readRecord(BufferedReader in) throws IOException {
-        StringBuffer sb = new StringBuffer();
-        String tmp = in.readLine();
-        if (tmp == null) return null;
-        sb.append(tmp);
-        while (tmp.endsWith("\\")) {
-            tmp = in.readLine();
-            sb.append("\n");
-            sb.append(tmp);
+        final StringBuilder result = new StringBuilder();
+        boolean escaping = false;
+        int numRead = 0;
+        int intValue;
+        while ((intValue = in.read()) != -1) {
+            ++numRead;
+            final char c = (char)intValue;
+            if (escaping) {
+                escaping = false;
+            } else if (c == ESC) {
+                escaping = true;
+            } else if (c == '\n') {
+                // An unescaped LF marks end of record, and is not part of record.
+                break;
+            }
+            result.append(c);
         }
-        return sb.toString();
+
+        if (numRead == 0) {
+            return null;
+        } else {
+            return result.toString();
+        }
     }
 
     /**
