@@ -59,7 +59,6 @@ public class TomcatSsgKeyFinder implements SsgKeyFinder {
     public List<String> getAliases() throws KeyStoreException {
         List<String> aliases = new ArrayList<String>();
         aliases.add("SSL");
-        aliases.add("CA");
         return aliases;
     }
 
