@@ -767,7 +767,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
 
             // get the cert of the ssg we're connected to
             X509Certificate cert = TopComponents.getInstance().getSsgCert()[0];
+            if (cert == null) return DigitalSignatureState.INVALID;
             PublicKey pub = cert.getPublicKey();
+            if (pub == null) return DigitalSignatureState.INVALID;
             try {
                 byte[] decodedSig = HexUtils.decodeBase64(signatureToVerify);
                 Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");

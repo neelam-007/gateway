@@ -3,15 +3,14 @@ package com.l7tech.console.util;
 import com.l7tech.common.gui.util.SheetHolder;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.SsmApplication;
-import com.l7tech.console.policy.ConsoleAssertionRegistry;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.console.policy.ConsoleAssertionRegistry;
 import com.l7tech.console.security.PermissionRefreshListener;
 import com.l7tech.console.tree.PoliciesFolderNode;
 import com.l7tech.console.tree.ServicesFolderNode;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.tree.policy.PolicyTree;
-import com.l7tech.policy.AssertionFinder;
 import com.l7tech.policy.AssertionRegistry;
 import org.springframework.context.ApplicationContext;
 
@@ -21,8 +20,6 @@ import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.security.cert.X509Certificate;
-
-import org.springframework.context.ApplicationContext;
 
 /**
  * The class is Central UI component registry in the SSM.
@@ -34,7 +31,6 @@ import org.springframework.context.ApplicationContext;
  */
 public class TopComponents {
     private static final TopComponents instance = new TopComponents();
-    private X509Certificate[] ssgCert;
     private boolean connectionLost = false;
 
     public void showHelpTopics() {
@@ -117,12 +113,8 @@ public class TopComponents {
         return context==null ? null : (ConsoleAssertionRegistry) context.getBean("assertionRegistry", AssertionRegistry.class);
     }
 
-    public void setSSGCert(X509Certificate[] remoteConnectedCert) {
-        ssgCert = remoteConnectedCert;
-    }
-
     public X509Certificate[] getSsgCert() {
-        return ssgCert;
+        return getMainWindow().getServerSslCertChain();
     }
 
     /** Interface implemented by lazy component finders. */

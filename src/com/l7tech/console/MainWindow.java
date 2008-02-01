@@ -56,6 +56,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.rmi.server.RMIClassLoader;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
@@ -198,6 +199,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private AuditAlertsNotificationPanel auditAlertBar;
     private AuditAlertChecker auditAlertChecker;
+    private X509Certificate serverSslCert;
 
 
     /**
@@ -2657,7 +2659,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                       if (expiryDate!=null && (expiryDate.getTime()-licenseExpiryWarningPeriod) < System.currentTimeMillis()) {
                           showLicenseWarning(false, true, expiryDate);
                       } else {
-                          X509Certificate[] sslCertificates = TopComponents.getInstance().getSsgCert();
+                          X509Certificate[] sslCertificates = getServerSslCertChain();
                           if ( sslCertificates != null && sslCertificates.length > 0 ) {
                               Date sslExpiryDate = sslCertificates[0].getNotAfter();
                               if (sslExpiryDate!=null && (sslExpiryDate.getTime()-licenseExpiryWarningPeriod) < System.currentTimeMillis()) {
@@ -2838,5 +2840,21 @@ public class MainWindow extends JFrame implements SheetHolder {
                 }
             }
         }
+    }
+
+    /**
+     * @return the SSG SSL cert, or null if not connected or we can't look it up due to an error.
+     */
+    public X509Certificate[] getServerSslCertChain() {
+        if (serverSslCert == null) {
+            try {
+                serverSslCert = Registry.getDefault().getTrustedCertManager().getSSGSslCert();
+            } catch (IOException e) {
+                log.log(Level.WARNING, "Unable to look up SSG SSL cert: " + ExceptionUtils.getMessage(e), e);
+            } catch (CertificateException e) {
+                log.log(Level.WARNING, "Unable to look up SSG SSL cert: " + ExceptionUtils.getMessage(e), e);
+            }
+        }
+        return new X509Certificate[] { serverSslCert };
     }
 }
