@@ -55,10 +55,11 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
     private static final int TEXT = 0;
     private static final int ATTR = 1;
     private static final int ELEM = 2;
-    private static final int OTHR = 3;
+    private static final int ATTRNAM = 3;
+    private static final int OTHR = 4;
 
     private static class ChunkState {
-        private int[] longest = new int[] {0, 0, 0, 0};
+        private int[] longest = new int[] {0, 0, 0, 0, 0};
         private int cur = -1;
         private int curType = -1;
 
@@ -96,6 +97,7 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
 
         private int getLongestText() { return longest[TEXT]; }
         private int getLongestAttr() { return longest[ATTR]; }
+        private int getLongestAttrName() { return longest[ATTRNAM]; }
         private int getLongestElem() { return longest[ELEM]; }
         private int getLongestOther(){ return longest[OTHR]; }
     }
@@ -136,12 +138,16 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
 
                     int longestText = chunkState.getLongestText();
                     int longestAttrValue = chunkState.getLongestAttr();
-                    int longestOther = Math.max(chunkState.getLongestOther(), chunkState.getLongestElem());
+                    int longestAttrName = chunkState.getLongestAttrName();
 
-                    if ((ota.isLimitAttrChars() && longestAttrValue > ota.getMaxAttrChars()) ||
-                        (ota.isLimitAttrNameChars() && longestOther > ota.getMaxAttrNameChars()) ||
-                        (ota.isLimitTextChars() && longestText > ota.getMaxTextChars()))
-                    {
+                    // TODO provide a GUI control for limiting element sizes and decide how to classify "other"
+                    //int longestElement = chunkState.getLongestElem();
+                    //int longestOther = chunkState.getLongestOther();
+
+                    boolean brokeAttrValue = ota.isLimitAttrChars() && longestAttrValue > ota.getMaxAttrChars();
+                    boolean brokeAttrName = ota.isLimitAttrNameChars() && longestAttrName > ota.getMaxAttrNameChars();
+                    boolean brokeText = ota.isLimitTextChars() && longestText > ota.getMaxTextChars();
+                    if (brokeAttrValue || brokeAttrName || brokeText) {
                         auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_OVERSIZED_TEXT);
                         return AssertionStatus.BAD_REQUEST;
                     }
@@ -195,12 +201,15 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
 
                 case XmlToken.START_TAG_ELEMENT_PREFIX:
                 case XmlToken.START_TAG_ELEMENT_LOCAL_PART:
-                case XmlToken.START_TAG_DEFAULT_NS_DECL:
-                case XmlToken.START_TAG_ATTR_PREFIX:
-                case XmlToken.START_TAG_ATTR_LOCAL_PART:
                 case XmlToken.END_TAG:
                 case XmlToken.EMPTY_ELEMENT_TAG_END:
                     s.handleToken(ELEM, tokenIterator);
+                    break;
+
+                case XmlToken.START_TAG_ATTR_PREFIX:
+                case XmlToken.START_TAG_ATTR_LOCAL_PART:
+                case XmlToken.START_TAG_DEFAULT_NS_DECL:
+                    s.handleToken(ATTRNAM, tokenIterator);
                     break;
 
                 case XmlToken.START_TAG_END:
@@ -209,7 +218,7 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
                     break;
 
                 default:
-                    s.handleToken(OTHR, tokenIterator);
+                    s.handleToken(TEXT, tokenIterator);
                     break;
             }
         }
