@@ -1,37 +1,33 @@
 package com.l7tech.common.security.saml;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Calendar;
-import java.security.cert.X509Certificate;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import org.apache.xmlbeans.XmlOptions;
-import org.apache.xmlbeans.XmlError;
-import org.w3c.dom.Document;
-import x0Assertion.oasisNamesTcSAML2.AssertionType;
-import x0Assertion.oasisNamesTcSAML2.AssertionDocument;
-import x0Assertion.oasisNamesTcSAML2.ConditionsType;
-
-import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.common.security.xml.KeyInfoInclusionType;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.policy.assertion.SslAssertion;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+import org.apache.xmlbeans.XmlError;
+import org.apache.xmlbeans.XmlOptions;
+import org.w3c.dom.Document;
+import x0Assertion.oasisNamesTcSAML2.AssertionDocument;
+import x0Assertion.oasisNamesTcSAML2.AssertionType;
+import x0Assertion.oasisNamesTcSAML2.ConditionsType;
 
-/**
- * @author Steve Jones, $Author$
- * @version $Revision$
- */
+import java.net.URL;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Iterator;
+
 public class XmlBeansSaml2Test  extends TestCase {
 
     //- PUBLIC
@@ -196,8 +192,7 @@ public class XmlBeansSaml2Test  extends TestCase {
         samlOptions.setSignAssertion(false);
         samlOptions.setVersion(SamlAssertionGenerator.Options.VERSION_2);
         SignerInfo si = new SignerInfo(caPrivateKey, caCertChain);
-        SubjectStatement subjectStatement =
-                SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.SENDER_VOUCHES, KeyInfoInclusionType.STR_THUMBPRINT, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.SENDER_VOUCHES, KeyInfoInclusionType.STR_THUMBPRINT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         subjectStatement.setKeyInfo(creds.getClientCert());
         SamlAssertionGenerator generator = new SamlAssertionGenerator(si);
 

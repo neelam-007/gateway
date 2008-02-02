@@ -1,8 +1,6 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.proxy.processor;
 
 import com.l7tech.common.http.*;
@@ -393,9 +391,16 @@ public class MessageProcessor {
                     // Ensure L7a:MessageID exists if we are supposed to have one
                     final Message request = context.getRequest();
                     final Document requestDoc = request.getXmlKnob().getDocumentReadOnly();
-                    if (context.getL7aMessageId() != null)
-                        if (SoapUtil.getL7aMessageId(requestDoc) == null)
-                            SoapUtil.setL7aMessageId(requestDoc, context.getL7aMessageId());
+                    if (context.getMessageId() != null) {
+                        if (context.isUseWsaMessageId()) {
+                            if (SoapUtil.getWsaMessageId(requestDoc) == null)
+                                SoapUtil.setWsaMessageId(requestDoc, context.getMessageId());
+                        } else {
+                            if (SoapUtil.getL7aMessageId(requestDoc) == null)
+                                SoapUtil.setL7aMessageId(requestDoc, context.getMessageId());
+                        }
+
+                    }
 
                     // Do all WSS processing all at once
                     if (request.isSoap()) {

@@ -1,18 +1,19 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.proxy.message;
 
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
+import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.kerberos.KerberosClient;
 import com.l7tech.common.security.kerberos.KerberosException;
 import com.l7tech.common.security.kerberos.KerberosServiceTicket;
+import com.l7tech.common.security.token.HasUsername;
+import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
 import com.l7tech.common.security.wstrust.WsTrustConfig;
@@ -95,6 +96,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         private Map downstreamRecipientWSSRequirements = new HashMap();
         private String messageId = null;
         private Map pendingDecorations = new LinkedHashMap();
+        public boolean useWsaMessageId;
     }
 
     private PolicySettings policySettings = new PolicySettings();
@@ -336,11 +338,19 @@ public class PolicyApplicationContext extends ProcessingContext {
         return policySettings.pendingDecorations;
     }
 
-    public String getL7aMessageId() {
+    public String getMessageId() {
         return policySettings.messageId;
     }
 
-    public void setL7aMessageId(String newId) {
+    public void setUseWsaMessageId(boolean useWsaMessageId) {
+        policySettings.useWsaMessageId = useWsaMessageId;
+    }
+
+    public boolean isUseWsaMessageId() {
+        return policySettings.useWsaMessageId;
+    }
+
+    public void setMessageId(String newId) {
         policySettings.messageId = newId;
     }
 
@@ -517,17 +527,22 @@ public class PolicyApplicationContext extends ProcessingContext {
     /**
      * Ensure that there is a Wsa message ID in this request.
      */
-    public void prepareWsaMessageId() throws InvalidDocumentFormatException, SAXException, IOException {
-        if (getL7aMessageId() == null) {
-            String id = SoapUtil.getL7aMessageId(getRequest().getXmlKnob().getOriginalDocument());
+    public String prepareWsaMessageId(final boolean useWsa, final String messageIdPrefix) throws InvalidDocumentFormatException, SAXException, IOException {
+        final String existingId = getMessageId();
+        if (existingId != null) return existingId;
 
-            if (id == null) {
-                id = SoapUtil.generateUniqeUri();
-            } else if (id.trim().length() < 1)
-                throw new InvalidDocumentFormatException("Request has existing L7a:MessageID field that is empty or contains only whitespace");
+        String id = useWsa ?
+                SoapUtil.getWsaMessageId(getRequest().getXmlKnob().getOriginalDocument()) :
+                SoapUtil.getL7aMessageId(getRequest().getXmlKnob().getOriginalDocument());
 
-            setL7aMessageId(id);
-        }
+        if (id == null) {
+            id = SoapUtil.generateUniqueUri(messageIdPrefix);
+        } else if (id.trim().length() < 1)
+            throw new InvalidDocumentFormatException("Request has existing L7a:MessageID field that is empty or contains only whitespace");
+
+        setUseWsaMessageId(useWsa);
+        setMessageId(id);
+        return id;
     }
 
     private String establishSecureConversationSession()
@@ -725,27 +740,48 @@ public class PolicyApplicationContext extends ProcessingContext {
             throws ConfigurationException, OperationCanceledException, GeneralSecurityException,
             IOException, KeyStoreCorruptException, ClientCertificateException, BadCredentialsException,
             PolicyRetryableException, HttpChallengeRequiredException {
-        LoginCredentials creds = getRequestCredentials();
-        if (creds == null) {
-            if (ssg.isChainCredentialsFromClient())
-                throw new HttpChallengeRequiredException("username and password required");
 
-            PasswordAuthentication pw = ssg.getRuntime().getCredentials();
-            if (pw == null)
-                throw new ConfigurationException("Unable to create sender vouches assertion -- no username to vouch for");
-            creds = LoginCredentials.makePasswordCredentials(pw.getUserName(), null, HttpBasic.class);
+        // Try a separate username from the client first
+        SecurityKnob sk = (SecurityKnob)getRequest().getKnob(SecurityKnob.class);
+        List<SecurityToken> tokens = sk.getAllSecurityTokens();
+        String username = null;
+        for (SecurityToken token : tokens) {
+            if (token instanceof HasUsername) {
+                username = ((HasUsername)token).getUsername();
+            }
         }
-        creds.setCredentialSourceAssertion(HttpBasic.class);
 
-        String username = creds.getLogin();
-        TokenStrategy strategy;
+        if (username == null) {
+            LoginCredentials creds = getRequestCredentials();
+            if (creds != null) {
+                username = creds.getLogin();
+            } else {
+                if (ssg.isChainCredentialsFromClient())
+                    throw new HttpChallengeRequiredException("username and password required");
+
+                PasswordAuthentication pw = ssg.getRuntime().getCredentials();
+                if (pw == null)
+                    throw new ConfigurationException("Unable to create sender vouches assertion -- no username to vouch for");
+                username = pw.getUserName();
+            }
+        }
+
+        Map<String, String> props = ssg.getProperties();
+        final String nameIdFormatUri;
+        final String authnMethodUri;
+        final String nameIdTemplate;
+        final TokenStrategy strategy;
         if (version == 1) {
-            strategy = ssg.getRuntime().getSenderVouchesStrategyForUsername(SecurityTokenType.SAML_ASSERTION, username);
-        }
-        else if (version == 2 || version == 0) {
-            strategy = ssg.getRuntime().getSenderVouchesStrategyForUsername(SecurityTokenType.SAML2_ASSERTION, username);
-        }
-        else {
+            nameIdFormatUri = props.get("builtinSaml1.nameIdFormatUri");
+            authnMethodUri = props.get("builtinSaml1.authenticationMethodUri");
+            nameIdTemplate = props.get("builtinSaml1.nameIdTemplate");
+            strategy = ssg.getRuntime().getSenderVouchesStrategyForUsername(SecurityTokenType.SAML_ASSERTION, username, nameIdFormatUri, authnMethodUri, nameIdTemplate);
+        } else if (version == 2 || version == 0) {
+            nameIdFormatUri = props.get("builtinSaml2.nameIdFormatUri");
+            authnMethodUri = props.get("builtinSaml2.authenticationMethodUri");
+            nameIdTemplate = props.get("builtinSaml2.nameIdTemplate");
+            strategy = ssg.getRuntime().getSenderVouchesStrategyForUsername(SecurityTokenType.SAML2_ASSERTION, username, nameIdFormatUri, authnMethodUri, nameIdTemplate);
+        } else {
             throw new IllegalArgumentException("Unsupported SAML version '" + version + "'.");
         }
         return (SamlAssertion) strategy.getOrCreate(ssg);

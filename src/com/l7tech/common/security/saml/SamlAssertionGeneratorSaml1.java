@@ -9,6 +9,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlString;
 import org.w3.x2000.x09.xmldsig.KeyInfoType;
 import org.w3.x2000.x09.xmldsig.X509DataType;
+import org.w3.x2000.x09.xmldsig.X509IssuerSerialType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import x0Assertion.oasisNamesTcSAML1.*;
@@ -27,9 +28,6 @@ import java.util.Map;
  * SAML Assertion Generator for SAML 1.x assertions.
  *
  * <p>This code is moved from the SamlAssertionGenerator.</p>
- *
- * @author Steve Jones, $Author$
- * @version $Revision$
  */
 class SamlAssertionGeneratorSaml1 {
 
@@ -217,11 +215,20 @@ class SamlAssertionGeneratorSaml1 {
 
         X509Certificate cert = (X509Certificate)keyInfo;
         switch(subjectStatement.getSubjectConfirmationKeyInfoType()) {
-            case CERT:
+            case CERT: {
                 KeyInfoType keyInfoType = subjectConfirmation.addNewKeyInfo();
                 X509DataType x509Data = keyInfoType.addNewX509Data();
-                x509Data.addX509Certificate(((X509Certificate)keyInfo).getEncoded());
+                x509Data.addX509Certificate(cert.getEncoded());
                 break;
+            }
+            case ISSUER_SERIAL: {
+                KeyInfoType keyInfoType = subjectConfirmation.addNewKeyInfo();
+                X509DataType x509Data = keyInfoType.addNewX509Data();
+                X509IssuerSerialType xist = x509Data.addNewX509IssuerSerial();
+                xist.setX509IssuerName(cert.getIssuerDN().getName());
+                xist.setX509SerialNumber(cert.getSerialNumber());
+                break;
+            }
             case STR_SKI: {
                 Element subjConfEl = (Element)subjectConfirmation.getDomNode();
                 NamespaceFactory nsf = new NamespaceFactory();

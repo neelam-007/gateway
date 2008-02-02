@@ -5,6 +5,7 @@ import com.l7tech.common.gui.util.GuiCertUtil;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.saml.*;
 import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.KeyInfoInclusionType;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.util.ArrayUtils;
@@ -36,10 +37,6 @@ import java.security.cert.X509Certificate;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 
-/**
- * @author Steve Jones, $Author$
- * @version $Revision$
- */
 public class SamlGenerator {
 
     //- PUBLIC
@@ -259,7 +256,7 @@ public class SamlGenerator {
             KeyInfoInclusionType keyInfoType = thumb ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT;
             if (!SELECTION_NONE.equals(authenticationMethod)) {
                 subjectStatement =
-                    SubjectStatement.createAuthenticationStatement(credentials, confirmationMethod, keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
+                    SubjectStatement.createAuthenticationStatement(credentials, confirmationMethod, keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
             } else if (attributeNameTextField.getText().length() > 0) {
                 String attribute = attributeNameTextField.getText();
                 String attributeNs = attributeNamespaceTextField.getText();

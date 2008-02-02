@@ -9,6 +9,7 @@ import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.saml.*;
 import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.KeyInfoInclusionType;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.util.SoapUtil;
@@ -113,8 +114,6 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         String nameQualifier = assertion.getNameQualifier();
         if (nameQualifier != null) nameQualifier = ExpandVariables.process(nameQualifier, vars, auditor);
 
-        // TODO support multiple statements in one Assertion someday (likely only for SAML 2)
-        final SubjectStatement subjectStatement;
         String nameValue;
         final String nameFormat;
         switch(assertion.getNameIdentifierType()) {
@@ -166,15 +165,15 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 break;
         }
 
-        if (assertion.getAttributeStatement() != null) {
-            subjectStatement = makeAttributeStatement(creds, version, vars, nameValue, nameFormat, nameQualifier);
-        } else if (assertion.getAuthenticationStatement() != null) {
-            subjectStatement = makeAuthenticationStatement(creds, nameValue, nameFormat, nameQualifier);
-        } else if (assertion.getAuthorizationStatement() != null) {
-            subjectStatement = makeAuthorizationStatement(creds, vars, nameValue, nameFormat, nameQualifier);
-        } else {
-            throw new PolicyAssertionException(assertion, "No Subject Statement type selected");
-        }
+        final List<SubjectStatement> statements = new LinkedList<SubjectStatement>();
+        if (assertion.getAttributeStatement() != null)
+            statements.add(makeAttributeStatement(creds, version, vars, nameValue, nameFormat, nameQualifier));
+        if (assertion.getAuthenticationStatement() != null)
+            statements.add(makeAuthenticationStatement(creds, nameValue, nameFormat, nameQualifier));
+        if (assertion.getAuthorizationStatement() != null)
+            statements.add(makeAuthorizationStatement(creds, vars, nameValue, nameFormat, nameQualifier));
+
+        if (statements.isEmpty()) throw new PolicyAssertionException(assertion, "No Subject Statement type selected");
 
         if (assertion.isSignAssertion()) {
             options.setSignAssertion(true);
@@ -185,7 +184,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         }
 
         try {
-            final Element assertionEl = samlAssertionGenerator.createAssertion(subjectStatement, options).getDocumentElement();
+            final Element assertionEl = samlAssertionGenerator.createAssertion(statements.toArray(new SubjectStatement[0]), options).getDocumentElement();
             context.setVariable("issuedSamlAssertion", XmlUtil.nodeToString(assertionEl));
 
             EnumSet<SamlIssuerAssertion.DecorationType> dts = assertion.getDecorationTypes();
@@ -296,7 +295,8 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                     assertion.getNameIdentifierType(),
                     overrideNameValue,
                     overrideNameFormat,
-                    nameQualifier);
+                    nameQualifier,
+                    null);
     }
 
     private SubjectStatement makeAttributeStatement(LoginCredentials creds, Integer version, Map<String, Object> vars, String overrideNameValue, String overrideNameFormat, String nameQualifier) throws PolicyAssertionException {
@@ -319,7 +319,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
 
             if (attribute.isRepeatIfMulti()) {
                 // Repeat this attribute once for each value
-                Object obj = ExpandVariables.processSingleVariableAsDisplayableObject(attribute.getValue(), vars, auditor);
+                Object obj = ExpandVariables.processSingleVariableAsObject(attribute.getValue(), vars, auditor);
                 if (obj instanceof Object[]) {
                     Object[] vals = (Object[]) obj;
                     for (Object val : vals) {

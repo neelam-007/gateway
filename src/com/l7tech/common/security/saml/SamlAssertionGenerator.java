@@ -5,6 +5,7 @@ import com.ibm.dom.util.IndentConfig;
 import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.security.xml.KeyInfoDetails;
 import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.KeyInfoInclusionType;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;

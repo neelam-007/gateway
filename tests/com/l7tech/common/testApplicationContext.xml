@@ -288,4 +288,6 @@
     <bean id="auditDetailFilter" class="com.l7tech.server.audit.AuditDetailFilter">
         <constructor-arg ref="serverConfig"/>
     </bean>    
+
+    <bean id="distributedMessageIdManager" class="com.l7tech.server.StubMessageIdManager"/>
 </beans>

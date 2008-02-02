@@ -5,6 +5,7 @@ package com.l7tech.common.security.saml;
 
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.common.security.xml.KeyInfoInclusionType;
 
 import java.security.cert.X509Certificate;
 import java.util.Map;
@@ -54,6 +55,7 @@ public abstract class SubjectStatement {
      * @param overrideNameValue a value to override the NameIdentifier value from the credentials
      * @param overrideNameFormat a value to override the NameIdentifier format from the credentials
      * @param nameQualifier
+     * @param overrideAuthnMethodUri
      * @return the authentication statement for the subject statement, confirmation and method
      */
     public static SubjectStatement createAuthenticationStatement(LoginCredentials credentials,
@@ -62,9 +64,10 @@ public abstract class SubjectStatement {
                                                                  NameIdentifierInclusionType nameIdType,
                                                                  String overrideNameValue,
                                                                  String overrideNameFormat,
-                                                                 String nameQualifier)
+                                                                 String nameQualifier,
+                                                                 String overrideAuthnMethodUri)
     {
-        return new AuthenticationStatement(credentials, confirmation, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat, nameQualifier);
+        return new AuthenticationStatement(credentials, confirmation, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat, nameQualifier, overrideAuthnMethodUri);
     }
 
     /**

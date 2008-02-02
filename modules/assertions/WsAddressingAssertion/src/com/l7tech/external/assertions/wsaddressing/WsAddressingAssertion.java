@@ -1,16 +1,16 @@
 package com.l7tech.external.assertions.wsaddressing;
 
-import java.util.Set;
-import java.util.Collections;
-
+import com.l7tech.common.util.Functions;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.SetsVariables;
-import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.validator.ValidatorFlag;
-import com.l7tech.common.util.Functions;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
+
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * Assertion for WS-Addressing.
@@ -200,6 +200,8 @@ public class WsAddressingAssertion extends Assertion implements SetsVariables {
                 return flags;
             }
         });
+
+        meta.put(AssertionMetadata.USED_BY_CLIENT, true);
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");

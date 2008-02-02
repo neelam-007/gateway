@@ -3,7 +3,7 @@
  */
 package com.l7tech.policy.assertion;
 
-import com.l7tech.common.security.saml.KeyInfoInclusionType;
+import com.l7tech.common.security.xml.KeyInfoInclusionType;
 import com.l7tech.common.security.saml.NameIdentifierInclusionType;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.util.Functions;
@@ -133,13 +133,15 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements SetsVari
                 collectVars(varNames, attr.getName());
                 collectVars(varNames, attr.getValue());
             }
-        } else if (authorizationStatement != null) {
+        }
+
+        if (authorizationStatement != null) {
             collectVars(varNames, authorizationStatement.getAction());
             collectVars(varNames, authorizationStatement.getActionNamespace());
             collectVars(varNames, authorizationStatement.getResource());
-        } else {
-            // TODO how could one parameterize the authentication statement at all?
         }
+
+        // TODO how could one parameterize the authentication statement at all?
         return varNames.toArray(new String[0]);
     }
 

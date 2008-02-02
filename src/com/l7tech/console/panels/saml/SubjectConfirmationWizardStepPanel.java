@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.console.panels.saml;
 
@@ -10,7 +8,7 @@ import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.SamlIssuerAssertion;
-import com.l7tech.common.security.saml.KeyInfoInclusionType;
+import com.l7tech.common.security.xml.KeyInfoInclusionType;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;

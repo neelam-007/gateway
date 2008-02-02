@@ -1,12 +1,11 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.common.security.xml.decorator;
 
 import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.security.token.UsernameToken;
+import com.l7tech.common.security.xml.KeyInfoInclusionType;
 import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.processor.SecurityContext;
 import com.l7tech.common.util.NamespaceFactory;
@@ -117,7 +116,7 @@ public class DecorationRequirements {
     /**
      * populate this with Element objects
      */
-    public Set getElementsToEncrypt() {
+    public Set<Element> getElementsToEncrypt() {
         return elementsToEncrypt;
     }
 
@@ -474,25 +473,29 @@ public class DecorationRequirements {
     }
 
     /**
-     * If a BinarySecurityToken would need to be generated to hold a sender signing certificate, enabling
-     * suppressBst causes it to emit no BST, and instead to refer to the sender cert via its SubjectKeyIdentifier
+     * If a BinarySecurityToken would need to be generated to hold a sender signing certificate, using something other
+     * than {@link KeyInfoInclusionType#CERT} (the default) causes the decorator to emit no BST, and instead to refer to
+     * the sender cert via either a {@link KeyInfoInclusionType#STR_THUMBPRINT SHA-1 thumbprint},
+     * {@link KeyInfoInclusionType#STR_SKI SKI} or {@link KeyInfoInclusionType#ISSUER_SERIAL X509IssuerSerial}
      * in the Signature's KeyInfo.
      *
-     * @return  false to allow normal BST addition, if needed.  True to never add a BST.
+     * @return the KeyInfo inclusion type.
      */
-    public boolean isSuppressBst() {
-        return suppressBst;
+    public KeyInfoInclusionType getKeyInfoInclusionType() {
+        return keyInfoInclusionType;
     }
 
     /**
-     * If a BinarySecurityToken would need to be generated to hold a sender signing certificate, enabling
-     * suppressBst causes it to emit no BST, and instead to refer to the sender cert via its SubjectKeyIdentifier
+     * If a BinarySecurityToken would need to be generated to hold a sender signing certificate, using something other
+     * than {@link KeyInfoInclusionType#CERT} (the default) causes the decorator to emit no BST, and instead to refer to
+     * the sender cert via either a {@link KeyInfoInclusionType#STR_THUMBPRINT SHA-1 thumbprint},
+     * {@link KeyInfoInclusionType#STR_SKI SKI} or {@link KeyInfoInclusionType#ISSUER_SERIAL X509IssuerSerial}
      * in the Signature's KeyInfo.
      *
-     * @param suppressBst  false to allow normal BST addition, if needed.  True to never add a BST.
+     * @param keyInfoInclusionType the KeyInfo inclusion type.
      */
-    public void setSuppressBst(boolean suppressBst) {
-        this.suppressBst = suppressBst;
+    public void setKeyInfoInclusionType(KeyInfoInclusionType keyInfoInclusionType) {
+        this.keyInfoInclusionType = keyInfoInclusionType;
     }
 
     public KerberosServiceTicket getKerberosTicket() {
@@ -608,7 +611,7 @@ public class DecorationRequirements {
     private boolean securityHeaderReusable = false;
     private String securityHeaderActor = SecurityActor.L7ACTOR.getValue();
     private boolean includeSamlTokenInSignature = false;
-    private boolean suppressBst = false;
+    private KeyInfoInclusionType keyInfoInclusionType = KeyInfoInclusionType.CERT;
     private byte[] encryptedKey = null;
     private String encryptedKeySha1 = null;
     private String signatureConfirmation = null;

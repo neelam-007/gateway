@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.common.security.xml.KeyInfoInclusionType;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -19,10 +20,15 @@ public class AuthenticationStatement extends SubjectStatement {
     private String authenticationMethod;
     private Calendar authenticationInstant = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
 
-    public AuthenticationStatement(LoginCredentials credentials, Confirmation confirmation, KeyInfoInclusionType keyInfoType, NameIdentifierInclusionType nameIdType, String overrideNameValue, String overrideNameFormat, String nameQualifier) {
+    public AuthenticationStatement(LoginCredentials credentials, Confirmation confirmation,
+                                   KeyInfoInclusionType keyInfoType, NameIdentifierInclusionType nameIdType,
+                                   String overrideNameValue, String overrideNameFormat, String nameQualifier,
+                                   String overrideAuthnMethodUri) {
         super(credentials, confirmation, keyInfoType, nameIdType, overrideNameValue, overrideNameFormat, nameQualifier);
 
-        this.authenticationMethod = mapAuthMethod(credentials.getCredentialSourceAssertion());
+        this.authenticationMethod = overrideAuthnMethodUri != null
+            ? overrideAuthnMethodUri
+            : mapAuthMethod(credentials.getCredentialSourceAssertion());
         long when = credentials.getAuthInstant();
         if (when == 0) when = System.currentTimeMillis();
         this.authenticationInstant.setTime(new Date(when));

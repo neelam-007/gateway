@@ -11,6 +11,7 @@ import com.l7tech.common.security.token.X509SecurityToken;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.XencUtil;
+import com.l7tech.common.security.xml.KeyInfoInclusionType;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -324,7 +325,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         KeyInfoInclusionType keyInfoType = useThumbprintForSubject ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT;
         SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds,
                                                                                            SubjectStatement.HOLDER_OF_KEY,
-                                                                                           keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
+                                                                                           keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         
         // [Bugzilla #3616] the reason we are using this system property mechanism to pass this information is because
         // the saml generator is common code and can be also used in the bridge which does not have access to the

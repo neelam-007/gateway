@@ -7,10 +7,7 @@ import com.l7tech.common.security.Keys;
 import com.l7tech.common.security.saml.*;
 import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.token.XmlSecurityToken;
-import com.l7tech.common.security.xml.DsigUtil;
-import com.l7tech.common.security.xml.SecurityTokenResolver;
-import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.SimpleSecurityTokenResolver;
+import com.l7tech.common.security.xml.*;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssProcessor;
 import com.l7tech.common.security.xml.processor.WssProcessorImpl;
@@ -139,7 +136,7 @@ public class SamlProcessingTest extends TestCase {
         SubjectStatement subjectStatement =
           SubjectStatement.createAuthenticationStatement(LoginCredentials.makeCertificateCredentials(holderOfKeySigner.getCertificateChain()[0], RequestWssX509Cert.class),
               SubjectStatement.HOLDER_OF_KEY,
-              KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
+              KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         for (int i = 0; i < serviceDescriptors.length; i++) {
             ServiceDescriptor serviceDescriptor = serviceDescriptors[i];
             Wsdl wsdl = Wsdl.newInstance(null, new StringReader(serviceDescriptor.wsdlXml));
@@ -183,7 +180,7 @@ public class SamlProcessingTest extends TestCase {
         final String name = holderOfKeySigner.getCertificateChain()[0].getSubjectDN().getName();
           final LoginCredentials credentials = LoginCredentials.makePasswordCredentials(name, new char[] {}, HttpBasic.class);
 
-        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
 
         for (int i = 0; i < serviceDescriptors.length; i++) {
             ServiceDescriptor serviceDescriptor = serviceDescriptors[i];

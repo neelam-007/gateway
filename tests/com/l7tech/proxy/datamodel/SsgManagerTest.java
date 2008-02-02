@@ -12,9 +12,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
 
 /**
  * Work the Client Proxy's SSG Manager a little bit.
@@ -165,6 +163,10 @@ public class SsgManagerTest extends TestCase {
         s2pm.setPolicy(new PolicyAttachmentKey(SSG2P2_URI, SSG2P2_SA, null), new Policy(policy2, "test"));
         s2pm.setPolicy(new PolicyAttachmentKey(SSG2P1_URI, SSG2P1_SA, null), new Policy(policy1, "test"));
 
+        Map<String, String> ps = new HashMap<String, String>();
+        ps.put("ssg1", "true");
+        SSG1.setProperties(ps);
+
         sm.add(SSG1);
         sm.add(SSG2);
         assertTrue(sm.getSsgList().contains(SSG1));
@@ -199,6 +201,9 @@ public class SsgManagerTest extends TestCase {
         assertNoBunkysIn(sm);
         sm.load();
         Ssg loaded1 = sm.getSsgByHostname(SSG1.getSsgAddress());
+        ps = loaded1.getProperties();
+        assertTrue(ps.size() == 1);
+        assertEquals(ps.get("ssg1"), "true");
         assertTrue(loaded1 != null);
         assertTrue(loaded1.getSsgAddress() != null);
         assertTrue(loaded1.getLocalEndpoint().equals(SSG1.getLocalEndpoint()));

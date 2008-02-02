@@ -1,9 +1,6 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.mime.HybridStashManager;
@@ -11,14 +8,26 @@ import com.l7tech.common.mime.StashManager;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.wsp.WspConstants;
 
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.jar.Manifest;
+import java.util.jar.Attributes;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.io.IOException;
+import java.io.InputStream;
+
 /**
  * Used to obtain datamodel classes.
  */
 public class Managers {
+    private static final Logger logger = Logger.getLogger(Managers.class.getName());
+
     private static CredentialManager credentialManager = null;
     private static BridgeStashManagerFactory stashManagerFactory = new DefaultBridgeStashManagerFactory();
     private static int stashFileUnique = 1; // used to generate unique filenames for stashing large attachments
     private static AssertionRegistry assertionRegistry = null;
+    private static final String PROP_ASSERTION_CLASSNAMES = "com.l7tech.proxy.policy.modularAssertionClassnames";
 
     /**
      * Get the CredentialManager.
@@ -76,8 +85,61 @@ public class Managers {
                 // Must be standalone SSB.   Attach default WspReader to assertion registry now
                 WspConstants.setTypeMappingFinder(assertionRegistry);
             }
+
+            loadModularAssertionsFromJars();
+            loadModularAssertionsFromSystemProperty();
         }
         return assertionRegistry;
+    }
+
+    private static void loadModularAssertionsFromSystemProperty() {
+        String assnames = System.getProperty(PROP_ASSERTION_CLASSNAMES);
+        if (assnames == null) return;
+        String[] names = assnames.split(",\\s*");
+        if (names == null || names.length == 0) return;
+        for (String name : names) {
+            try {
+                Class assclass = Class.forName(name);
+                assertionRegistry.registerAssertion(assclass);
+                logger.info("Registered modular assertion " + assclass.getName());
+            } catch (ClassNotFoundException e) {
+                logger.warning("Unable to load " + name + "; modular assertion will not be available");
+            }
+        }
+    }
+
+    private static void loadModularAssertionsFromJars() {
+        try {
+            Enumeration<URL> mfurls = AssertionRegistry.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
+            while (mfurls.hasMoreElements()) {
+                URL url = mfurls.nextElement();
+                InputStream is = null;
+                try {
+                    is = url.openStream();
+                    Manifest mf = new Manifest(is);
+                    // TODO check if the rest of the manifest looks sane
+                    // TODO check signature someday hopefully
+                    Attributes asses = mf.getAttributes("ModularAssertion-List");
+                    if (asses == null) continue;
+                    for (Object o : asses.values()) {
+                        String assname = (String) o;
+                        try {
+                            Class assclass = Class.forName(assname);
+                            assertionRegistry.registerAssertion(assclass);
+                            logger.log(Level.INFO, "Found modular assertion " + assname);
+                        } catch (ClassNotFoundException e) {
+                            logger.log(Level.WARNING, "Unable to load " + assname + "; modular assertion will not be available");
+                        }
+                    }
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Unable to load manifest " + url.toString() + "; modular assertions in that jar will not be available");
+                } finally {
+                    if (is != null) is.close();
+                }
+            }
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Unable to load JAR manifests; modular assertions will not be available");
+        }
     }
 
     public synchronized static void setAssertionRegistry(AssertionRegistry reg) {

@@ -228,8 +228,27 @@
         </jar>
     </target>
 
+    <!-- Create JAR file -->
+    <target name="-clientJar" depends="-compile" if="makeClientJar">
+        <echo>Building client jar</echo>
+        <jar destfile="build/${moduleName}-${build.version}-client.jar" duplicate="fail">
+            <manifest>
+                <attribute name="Specification-Title" value="ModularAssertion"/>
+                <attribute name="Specification-Version" value="3.7.0"/>
+                <attribute name="Specification-Vendor" value="Layer 7 Technologies"/>
+                <attribute name="Specification-Vendor-Id" value="com.l7tech"/>
+                <attribute name="Implementation-Title" value="${moduleName}"/>
+                <attribute name="Implementation-Version" value="${build.version} ${TODAY}"/>
+                <attribute name="Implementation-Vendor" value="Layer 7 Technologies"/>
+                <attribute name="Implementation-Vendor-Id" value="com.l7tech"/>
+                <attribute name="ModularAssertion-List" value="${assertionList}"/>
+            </manifest>
+            <fileset refid="client.classes"/>
+        </jar>
+    </target>
+
     <!-- Create distribution package -->
-    <target name="package" depends="-aar"
+    <target name="package" depends="-aar, -clientJar"
             description="Creates the distributable JAR file for this assertion.">
     </target>
 
@@ -243,7 +262,7 @@
             depends="OFFICIAL-package-version-check,package">
     </target>
 
-    <target name="deploy" depends="-aar,-common.init.ssg.home"
+    <target name="deploy" depends="-aar, -clientJar, -common.init.ssg.home"
             description="Deploys to SSG at ${ssg.home}. (For developer use)">
         <echo>Deploying to ${ssg.home}.</echo>
         <copy overwrite="true" todir="${ssg.home}/modules/assertions" verbose="true">

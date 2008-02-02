@@ -10,6 +10,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlString;
 import org.w3.x2000.x09.xmldsig.KeyInfoType;
 import org.w3.x2000.x09.xmldsig.X509DataType;
+import org.w3.x2000.x09.xmldsig.X509IssuerSerialType;
 import org.w3c.dom.*;
 import x0Assertion.oasisNamesTcSAML2.*;
 
@@ -27,9 +28,6 @@ import java.util.Map;
 
 /**
  * SAML Assertion Generator for SAML 2.x assertions.
- *
- * @author Steve Jones, $Author$
- * @version $Revision$
  */
 public class SamlAssertionGeneratorSaml2 {
     //- PACKAGE
@@ -172,11 +170,20 @@ public class SamlAssertionGeneratorSaml2 {
 
             X509Certificate cert = (X509Certificate)keyInfo;
             switch(subjectStatement.getSubjectConfirmationKeyInfoType()) {
-                case CERT:
+                case CERT: {
                     KeyInfoType keyInfoType = kicdt.addNewKeyInfo();
                     X509DataType x509Data = keyInfoType.addNewX509Data();
                     x509Data.addX509Certificate(cert.getEncoded());
                     break;
+                }
+                case ISSUER_SERIAL: {
+                    KeyInfoType keyInfoType = kicdt.addNewKeyInfo();
+                    X509DataType x509Data = keyInfoType.addNewX509Data();
+                    X509IssuerSerialType xist = x509Data.addNewX509IssuerSerial();
+                    xist.setX509IssuerName(cert.getIssuerDN().getName());
+                    xist.setX509SerialNumber(cert.getSerialNumber());
+                    break;
+                }
                 case STR_THUMBPRINT: {
                     Node node = kicdt.getDomNode();
                     NamespaceFactory nsf = new NamespaceFactory();

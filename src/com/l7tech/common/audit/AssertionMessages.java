@@ -179,6 +179,10 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_WSS_REPLAY_CREATED_TOO_OLD                = m(4914, Level.WARNING, "Request timestamp contained Created older than the maximum message age hard cap");
     public static final M REQUEST_WSS_REPLAY_NO_SKI                         = m(4915, Level.WARNING, "Unable to generate replay-protection ID; a SKI cannot be derived from signing cert ''{0}''");
     public static final M REQUEST_WSS_REPLAY_UNSUPPORTED_TOKEN_TYPE         = m(4916, Level.WARNING, "Unable to generate replay-protection ID for timestamp -- it was signed, but with the unsupported token type {0}");
+    public static final M REQUEST_WSS_REPLAY_MULTIPLE_SENDER_IDS            = m(4917, Level.WARNING, "Found multiple eligible sender identity tokens; unable to proceed");
+    public static final M REQUEST_WSS_REPLAY_MULTIPLE_MESSAGE_IDS           = m(4918, Level.WARNING, "Found multiple signed wsa:MessageID values; unable to proceed");
+    public static final M REQUEST_WSS_REPLAY_GOT_SIGNED_MESSAGE_ID          = m(4919, Level.FINE, "Found signed wsa:MessageID ''{0}''");
+    public static final M REQUEST_WSS_REPLAY_NO_SIGNED_MESSAGE_ID           = m(4920, Level.WARNING, "No signed wsa:MessageID was present in the request; using Timestamp instead");
 
     // ServerCustomAssertionHolder
     public static final M CA_CREDENTIAL_INFO                                = m(5000, Level.FINE, "Service:{0}, custom assertion: {1}, principal:{2}");

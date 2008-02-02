@@ -12,6 +12,7 @@ import com.l7tech.common.security.token.EncryptedKey;
 import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.xml.KeyReference;
 import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.KeyInfoInclusionType;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CausedIOException;
@@ -195,9 +196,9 @@ public abstract class ServerResponseWssSignature extends AbstractServerAssertion
         String keyReference = wssConfig.getKeyReference();
 
         if (keyReference == null || KeyReference.BST.getName().equals(keyReference)) {
-            wssReq.setSuppressBst(false);
+            wssReq.setKeyInfoInclusionType(KeyInfoInclusionType.CERT);
         } else if (KeyReference.SKI.getName().equals(keyReference)) {
-            wssReq.setSuppressBst(true);
+            wssReq.setKeyInfoInclusionType(KeyInfoInclusionType.STR_SKI);
         }
 
         auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_SIGNED, String.valueOf(howMany));

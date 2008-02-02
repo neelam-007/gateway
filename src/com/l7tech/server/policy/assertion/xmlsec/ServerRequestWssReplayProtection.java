@@ -1,28 +1,24 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.cluster.DistributedMessageIdManager;
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.common.security.token.EncryptedKey;
-import com.l7tech.common.security.token.SecurityContextToken;
-import com.l7tech.common.security.token.X509SigningSecurityToken;
-import com.l7tech.common.security.token.XmlSecurityToken;
+import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssTimestamp;
 import com.l7tech.common.security.xml.processor.WssTimestampDate;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
@@ -39,14 +35,16 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
     private static final long CACHE_ID_EXTRA_TIME_MILLIS = 1000L * 60 * 5; // cache IDs for at least 5 min extra
     private static final long DEFAULT_EXPIRY_TIME = 1000L * 60 * 10; // if no Expires, assume expiry after 10 min
 
-    private final ApplicationContext applicationContext;
     private final Auditor auditor;
+    private final MessageIdManager messageIdManager;
 
     public ServerRequestWssReplayProtection(RequestWssReplayProtection subject, ApplicationContext ctx) {
         super(subject);
-        this.applicationContext = ctx;
-        this.auditor = new Auditor(this, applicationContext, logger);
+        this.auditor = new Auditor(this, ctx, logger);
+        this.messageIdManager = (MessageIdManager)ctx.getBean("distributedMessageIdManager");
     }
+
+    private static final class MultipleSenderIdException extends Exception { }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException {
         ProcessorResult wssResults;
@@ -70,7 +68,26 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
             throw (IOException)new IOException(ExceptionUtils.getMessage(e)).initCause(e);
         }
 
-        // Validate timestamp first
+        // See if there's a wsa:MessageID
+        String wsaMessageId = null;
+        for (SignedElement signedElement : wssResults.getElementsThatWereSigned()) {
+            Element el = signedElement.asElement();
+            if (XmlUtil.elementInNamespace(el, SoapUtil.WSA_NAMESPACE_ARRAY) && SoapUtil.MESSAGEID_EL_NAME.equals(el.getLocalName())) {
+                if (wsaMessageId != null) {
+                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_MULTIPLE_MESSAGE_IDS);
+                    return AssertionStatus.BAD_REQUEST;
+                } else {
+                    wsaMessageId = XmlUtil.getTextValue(el);
+                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_GOT_SIGNED_MESSAGE_ID, wsaMessageId);
+                    // continue in order to detect multiple MessageIDs
+                }
+            }
+        }
+
+        if (wsaMessageId == null) auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_SIGNED_MESSAGE_ID);
+        // OK to proceed with timestamp alone
+
+        // Validate timestamp
         WssTimestamp timestamp = wssResults.getTimestamp();
         if (timestamp == null) {
             context.setRequestPolicyViolated();
@@ -112,11 +129,40 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
             return AssertionStatus.BAD_REQUEST;
         }
 
-        XmlSecurityToken[] signingTokens = wssResults.getSigningTokens(timestamp.asElement());
+        final String messageIdStr;
+        if (wsaMessageId != null) {
+            messageIdStr = wsaMessageId;
+        } else {
+            try {
+                String senderId = getSenderId(wssResults.getSigningTokens(timestamp.asElement()), createdIsoString);
+                if (senderId == null) return AssertionStatus.BAD_REQUEST;
+                messageIdStr = senderId;
+            } catch (MultipleSenderIdException e) {
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_MULTIPLE_SENDER_IDS);
+                return AssertionStatus.BAD_REQUEST;
+            }
+        }
+
+        MessageId messageId = new MessageId(messageIdStr, expires + CACHE_ID_EXTRA_TIME_MILLIS);
+        try {
+            messageIdManager.assertMessageIdIsUnique(messageId);
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, messageIdStr);
+        } catch (MessageIdManager.DuplicateMessageIdException e) {
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_REPLAY, messageIdStr);
+            return AssertionStatus.BAD_REQUEST;
+        }
+
+        return AssertionStatus.NONE;
+    }
+
+    private String getSenderId(XmlSecurityToken[] signingTokens, String createdIsoString)
+        throws MultipleSenderIdException, UnsupportedEncodingException
+    {
+        String senderId = null;
 
         for (XmlSecurityToken signingToken : signingTokens) {
-            final String messageIdStr;
             if (signingToken instanceof X509SigningSecurityToken) {
+                if (senderId != null) throw new MultipleSenderIdException();
                 X509Certificate signingCert = ((X509SigningSecurityToken)signingToken).getMessageSigningCertificate();
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_CERT);
 
@@ -128,14 +174,15 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
                     md.update(signingCert.getIssuerDN().toString().getBytes("UTF-8"));
                     md.update(skiToString(signingCert).getBytes("UTF-8"));
                     byte[] digest = md.digest();
-                    messageIdStr = HexUtils.hexDump(digest);
+                    senderId = HexUtils.hexDump(digest);
                 } catch (CertificateEncodingException e) {
                     auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_SKI, signingCert.getSubjectDN().getName());
-                    return AssertionStatus.BAD_REQUEST;
+                    return null;
                 } catch (NoSuchAlgorithmException e) {
                     throw new RuntimeException(e); // can't happen, misconfigured VM
                 }
             } else if (signingToken instanceof SecurityContextToken) {
+                if (senderId != null) throw new MultipleSenderIdException();
                 // It was signed by a WS-SecureConversation session's derived key
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_SC_KEY);
                 String sessionID = ((SecurityContextToken)signingToken).getContextIdentifier();
@@ -146,8 +193,9 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
                 sb.append(";");
                 sb.append("SessionID=");
                 sb.append(sessionID);
-                messageIdStr = sb.toString();
+                senderId = sb.toString();
             } else if (signingToken instanceof EncryptedKey) {
+                if (senderId != null) throw new MultipleSenderIdException();
                 // It was signed by an EncryptedKey
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_ENC_KEY);
                 final String encryptedKeySha1;
@@ -159,25 +207,14 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
                 sb.append(";");
                 sb.append("EncryptedKeySHA1=");
                 sb.append(encryptedKeySha1);
-                messageIdStr = sb.toString();
+                senderId = sb.toString();
             } else {
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_UNSUPPORTED_TOKEN_TYPE, signingToken.getClass().getName());
-                return AssertionStatus.BAD_REQUEST;
+                return null;
             }
-
-            MessageId messageId = new MessageId(messageIdStr, expires + CACHE_ID_EXTRA_TIME_MILLIS);
-            try {
-                DistributedMessageIdManager dmm = (DistributedMessageIdManager)applicationContext.getBean("distributedMessageIdManager");
-                dmm.assertMessageIdIsUnique(messageId);
-                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, messageIdStr);
-            } catch (MessageIdManager.DuplicateMessageIdException e) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_REPLAY, messageIdStr);
-                return AssertionStatus.BAD_REQUEST;
             }
+        return senderId;
         }
-
-        return AssertionStatus.NONE;
-    }
 
     private String skiToString(X509Certificate signingCert) throws CertificateEncodingException {
         byte[] ski = CertUtils.getSKIBytesFromCert(signingCert);

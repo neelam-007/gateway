@@ -1,5 +1,6 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
+import com.l7tech.common.security.xml.KeyInfoInclusionType;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -21,16 +22,12 @@ import java.util.logging.Logger;
 
 /**
  * This assertion means that the request must provide some xml signature.
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Jul 14, 2004<br/>
- * $Id$<br/>
  */
 public class ClientRequestWssX509Cert extends ClientAssertion {
     private final static Logger logger = Logger.getLogger(ClientRequestWssX509Cert.class.getName());
     private RequestWssX509Cert subject;
+
+    private final String PROP_KEYINFOTYPE = this.getClass().getName() + ".keyInfoInclusionType";
 
     public ClientRequestWssX509Cert(RequestWssX509Cert subject) {
         this.subject = subject;
@@ -58,6 +55,11 @@ public class ClientRequestWssX509Cert extends ClientAssertion {
                     } else {
                         wssReqs = context.getAlternateWssRequirements(subject.getRecipientContext());
                     }
+                    String stype = ssg.getProperties().get(PROP_KEYINFOTYPE);
+                    KeyInfoInclusionType type = null;
+                    if (stype != null) type = KeyInfoInclusionType.valueOf(stype);
+                    if (type == null) type = KeyInfoInclusionType.CERT;
+                    wssReqs.setKeyInfoInclusionType(type);
                     wssReqs.setSenderMessageSigningCertificate(userCert);
                     wssReqs.setSenderMessageSigningPrivateKey(userPrivateKey);
                     wssReqs.setSignTimestamp();

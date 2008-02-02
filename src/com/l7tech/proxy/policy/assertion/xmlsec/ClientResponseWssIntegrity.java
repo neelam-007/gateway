@@ -19,20 +19,17 @@ import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * Verifies that a specific element of the soap response was signed by the ssg.
- * <p/>
- * <br/><br/>
- * User: flascell<br/>
- * Date: Aug 26, 2003<br/>
- * $Id$
  */
 public class ClientResponseWssIntegrity extends ClientAssertion {
     private static final Logger log = Logger.getLogger(ClientResponseWssIntegrity.class.getName());
@@ -53,7 +50,7 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
             context.getPendingDecorations().put(this, new ClientDecorator() {
                 public AssertionStatus decorateRequest(PolicyApplicationContext context) throws InvalidDocumentFormatException, IOException, SAXException {
                     log.log(Level.FINER, "Expecting a signed reply; will be sure to include L7a:MessageID");
-                    context.prepareWsaMessageId();
+                    context.prepareWsaMessageId(false, null);
                     return AssertionStatus.NONE;
                 }
             });
@@ -88,21 +85,29 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
             return AssertionStatus.FAILED;
         }
 
-        String sentMessageId = context.getL7aMessageId();
+        String sentMessageId = context.getMessageId();
         SignedElement[] wereSigned = wssRes.getElementsThatWereSigned();
         if (sentMessageId != null) {
-            String receivedRelatesTo = SoapUtil.getL7aRelatesTo(soapmsg);
-            log.log(Level.FINEST, "Response included L7a:RelatesTo of \"" + receivedRelatesTo + "\"");
+            String receivedRelatesTo = context.isUseWsaMessageId() ?
+                    SoapUtil.getWsaRelatesTo(soapmsg) :
+                    SoapUtil.getL7aRelatesTo(soapmsg);
+
+            final String wsaPrefix = context.isUseWsaMessageId() ? "wsa" : "L7a";
+            log.log(Level.FINEST, MessageFormat.format("Response included {0}:RelatesTo of \"{1}\"", wsaPrefix, receivedRelatesTo));
             if (receivedRelatesTo != null) {
                 if (!sentMessageId.equals(receivedRelatesTo.trim()))
-                    throw new ResponseValidationException("Response does not include L7a:RelatesTo matching L7a:MessageID from request");
-                if (wereSigned != null && wereSigned.length > 0 && !wasElementSigned(wssRes, SoapUtil.getL7aRelatesToElement(soapmsg)))
-                    throw new ResponseValidationException("Response included a matching L7a:RelatesTo, but it was not signed");
+                    throw new ResponseValidationException(MessageFormat.format("Response does not include {0}:RelatesTo matching {0}:MessageID from request", wsaPrefix));
 
+                final Element relatesToEl = context.isUseWsaMessageId() ?
+                        SoapUtil.getWsaRelatesToElement(soapmsg) :
+                        SoapUtil.getL7aRelatesToElement(soapmsg);
+
+                if (wereSigned != null && wereSigned.length > 0 && !wasElementSigned(wssRes, relatesToEl))
+                    throw new ResponseValidationException(MessageFormat.format("Response included a matching {0}:RelatesTo, but it was not signed", wsaPrefix));
             }
 
             // Skip this check on subsequent ResponseWssIntegrity assertions.
-            context.setL7aMessageId(null);
+            context.setMessageId(null);
         }
 
         ProcessorResultUtil.SearchResult result = null;

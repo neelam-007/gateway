@@ -3,6 +3,7 @@ package com.l7tech.common.security.saml;
 import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.KeyInfoInclusionType;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.util.CertUtils;
@@ -28,10 +29,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
-/**
- * @author alex
- * @version $Revision$
- */
 public class SignedSamlTest extends TestCase {
     /**
      * test <code>SignedSamlTest</code> constructor
@@ -76,7 +73,7 @@ public class SignedSamlTest extends TestCase {
         samlOptions.setSignAssertion(false);
         samlOptions.setVersion(samlVersion);
         SignerInfo si = new SignerInfo(caPrivateKey, caCertChain);
-        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY, useThumbprintForSubject ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY, useThumbprintForSubject ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         SamlAssertionGenerator generator = new SamlAssertionGenerator(si);
         samlOptions.setId(id);
         return generator.createAssertion(subjectStatement, samlOptions);
@@ -91,7 +88,7 @@ public class SignedSamlTest extends TestCase {
         SignerInfo si = new SignerInfo(caPrivateKey, caCertChain);
 
         final KeyInfoInclusionType keyInfoType = useThumbprintForSubject ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT;
-        SubjectStatement authnStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY, keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
+        SubjectStatement authnStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY, keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         SubjectStatement attrStatement = SubjectStatement.createAttributeStatement(creds, SubjectStatement.HOLDER_OF_KEY, "foo", "bar", "baz", keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
         SamlAssertionGenerator generator = new SamlAssertionGenerator(si);
         samlOptions.setId(id);
@@ -158,7 +155,7 @@ public class SignedSamlTest extends TestCase {
         SubjectStatement statement =
           SubjectStatement.createAuthenticationStatement(LoginCredentials.makeCertificateCredentials(clientCertChain[0],
                                                                                                      RequestWssX509Cert.class),
-                                                         SubjectStatement.HOLDER_OF_KEY, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
+                                                         SubjectStatement.HOLDER_OF_KEY, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         ag.attachStatement(request, statement, samlOptions);
         return request;
     }
@@ -195,7 +192,7 @@ public class SignedSamlTest extends TestCase {
         samlOptions.setProofOfPosessionRequired(false);
         samlOptions.setId(bstId);
         final LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass());
-        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         SamlAssertionGenerator generator = new SamlAssertionGenerator(new SignerInfo(caPrivateKey, caCertChain));
         samlOptions.setId(bstId);
         Document samlsvAssertion = generator.createAssertion(subjectStatement, samlOptions);

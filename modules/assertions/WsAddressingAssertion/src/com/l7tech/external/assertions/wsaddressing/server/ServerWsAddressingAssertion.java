@@ -1,34 +1,29 @@
 package com.l7tech.external.assertions.wsaddressing.server;
 
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.MessageProcessingMessages;
+import com.l7tech.common.security.token.SignedElement;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.util.*;
+import com.l7tech.common.xml.ElementCursor;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.ArrayUtils;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.Functions;
-import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.MessageProcessingMessages;
-import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.security.token.SignedElement;
-import com.l7tech.common.xml.ElementCursor;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
-
 import org.springframework.context.ApplicationContext;
-import org.xml.sax.SAXException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
-import java.io.IOException;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.Map;
-import java.util.HashMap;
 import javax.xml.namespace.QName;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Server side implementation of the WsAddressingAssertion.
@@ -65,9 +60,9 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                 populateAddressingFromMessage(getElementCursor(context), addressingProperties);
             }
 
-            if ( assertion.isEnableWsAddressing10() && addressingPresent(addressingProperties, NS_WS_ADDRESSING_10) ) {
+            if ( assertion.isEnableWsAddressing10() && addressingPresent(addressingProperties, SoapUtil.WSA_NAMESPACE_10) ) {
                 if ( assertion.getVariablePrefix() != null) {
-                    setVariables(addressingProperties, NS_WS_ADDRESSING_10, context);
+                    setVariables(addressingProperties, SoapUtil.WSA_NAMESPACE_10, context);
                 }
 
                 auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_HEADERS_OK);
@@ -192,10 +187,8 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
 
     private static final Logger logger = Logger.getLogger(ServerWsAddressingAssertion.class.getName());
 
-    // namespaces
-    private static final String NS_WS_ADDRESSING_10 = "http://www.w3.org/2005/08/addressing";
     private static final String NS_WS_ADDRESSING_200408 = SoapUtil.WSA_NAMESPACE2;
-    private static final String[] NS_ADDRESSING = { NS_WS_ADDRESSING_10, NS_WS_ADDRESSING_200408 };
+    private static final String[] NS_ADDRESSING = { SoapUtil.WSA_NAMESPACE_10, NS_WS_ADDRESSING_200408 };
 
     // elements
     private static final String WSA_ACTION = "Action";

@@ -411,9 +411,17 @@ public class SsgRuntime {
      *
      * @param tokenType the type of SecurityTokenType that is required
      * @param username  the username to vouch for
+     * @param nameIdFormatUri an overridden NameIdentifier Format URI (null to base on credentials)
+     * @param authnMethodUri an overridden Authentication Method Format URI (null to base on credentials)
+     * @param nameIdTemplate a {@link java.text.MessageFormat} template to use in generating NameIdentifier values (null to use the name alone)
      * @return a strategy that will produce a token for this user.  Never null.
      */
-    public TokenStrategy getSenderVouchesStrategyForUsername(SecurityTokenType tokenType, String username) {
+    public TokenStrategy getSenderVouchesStrategyForUsername(SecurityTokenType tokenType,
+                                                             String username,
+                                                             String nameIdFormatUri,
+                                                             String authnMethodUri,
+                                                             String nameIdTemplate)
+    {
         synchronized (ssg) {
             if (senderVouchesTokenStrategiesByUser == null)
                 senderVouchesTokenStrategiesByUser = new LRUMap(MAX_SV_USERS);
@@ -421,10 +429,13 @@ public class SsgRuntime {
             List keyList = new ArrayList();
             keyList.add(tokenType);
             keyList.add(username);
+            if (nameIdFormatUri != null) keyList.add(nameIdFormatUri);
+            if (authnMethodUri != null) keyList.add(authnMethodUri);
+            if (nameIdTemplate != null) keyList.add(nameIdTemplate);
 
             TokenStrategy strat = (TokenStrategy) senderVouchesTokenStrategiesByUser.get(keyList);
             if (strat == null) {
-                strat = new SenderVouchesSamlTokenStrategy(tokenType, username);
+                strat = new SenderVouchesSamlTokenStrategy(tokenType, nameIdFormatUri, username, nameIdTemplate, authnMethodUri);
                 senderVouchesTokenStrategiesByUser.put(keyList, strat);
             }
             return strat;
@@ -462,7 +473,7 @@ public class SsgRuntime {
             log.info("Creating new SSL context for SSG " + toString());
             ClientProxyKeyManager keyManager = SslInstanceHolder.keyManager;
             X509TrustManager trustManager = getTrustManager();
-            SSLContext sslContext = null;
+            SSLContext sslContext;
             try {
                 sslContext = SSLContext.getInstance("SSL", System.getProperty(SslPeer.PROP_SSL_PROVIDER,
                                                                               SslPeer.DEFAULT_SSL_PROVIDER));

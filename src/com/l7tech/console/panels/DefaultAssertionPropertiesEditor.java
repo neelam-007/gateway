@@ -6,6 +6,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.wsp.TypeMappingUtils;
+import com.l7tech.console.policy.EnumPropertyEditor;
 
 import javax.swing.*;
 import java.awt.*;
@@ -152,6 +153,11 @@ public class DefaultAssertionPropertiesEditor<AT extends Assertion> extends Asse
 
                 if (editor == null)
                     editor = PropertyEditorManager.findEditor(prop.getPropertyType());
+
+                if (editor == null && Enum.class.isAssignableFrom(prop.getPropertyType())) {
+                    Class<? extends Enum> clazz = (Class<? extends Enum>)prop.getPropertyType();
+                    editor = new EnumPropertyEditor(clazz);
+                }
 
                 if (editor == null) {
                     // No way to edit this property

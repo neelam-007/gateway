@@ -1,15 +1,12 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.common.security.xml;
 
 import com.l7tech.common.message.Message;
-import com.l7tech.common.mime.MimeBodyTest;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.MimeBodyTest;
 import com.l7tech.common.security.JceProvider;
-import com.l7tech.common.security.saml.KeyInfoInclusionType;
 import com.l7tech.common.security.saml.NameIdentifierInclusionType;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
@@ -130,7 +127,7 @@ public class WssDecoratorTest extends TestCase {
         public String[] attachmentsToSign = new String[0];
         public boolean signAttachmentHeaders;
         public boolean signSamlToken = false; // if true, SAML token should be signed
-        public boolean suppressBst = false;
+        public KeyInfoInclusionType keyInfoInclusionType = KeyInfoInclusionType.CERT;
         public String encryptionAlgorithm = XencAlgorithm.AES_128_CBC.getXEncName(); //default
         public String encryptedKeySha1 = null;
         public String signatureConfirmation = null;
@@ -148,7 +145,7 @@ public class WssDecoratorTest extends TestCase {
                             Element[] elementsToEncrypt,
                             Element[] elementsToSign) {
             this(c, null, senderCert, senderKey, recipientCert, recipientKey, signTimestamp,
-                 elementsToEncrypt, elementsToSign, null, false, false);
+                 elementsToEncrypt, elementsToSign, null, false, KeyInfoInclusionType.CERT);
         }
 
         public TestDocument(Context c, Element senderSamlAssertion, X509Certificate senderCert, PrivateKey senderKey,
@@ -158,9 +155,9 @@ public class WssDecoratorTest extends TestCase {
                             Element[] elementsToSign,
                             byte[] secureConversationKey,
                             boolean signSamlToken,
-                            boolean suppressBst) {
+                            KeyInfoInclusionType keyInfoInclusionType) {
             this(c, senderSamlAssertion, senderCert, senderKey, recipientCert, recipientKey, signTimestamp,
-                 elementsToEncrypt, null, elementsToSign, secureConversationKey, signSamlToken, suppressBst, false, null, null, null, null, false, false);
+                 elementsToEncrypt, null, elementsToSign, secureConversationKey, signSamlToken, keyInfoInclusionType, false, null, null, null, null, false, false);
         }
 
         public TestDocument(Context c,
@@ -172,7 +169,7 @@ public class WssDecoratorTest extends TestCase {
                             Element[] elementsToSign,
                             byte[] secureConversationKey,
                             boolean signSamlToken,
-                            boolean suppressBst,
+                            KeyInfoInclusionType keyInfoInclusionType,
                             boolean encryptUsernameToken,
                             String encryptedKeySha1,
                             String signatureConfirmation,
@@ -195,7 +192,7 @@ public class WssDecoratorTest extends TestCase {
                 this.elementsToSign = elementsToSign;
             this.secureConversationKey = secureConversationKey;
             this.signSamlToken = signSamlToken;
-            this.suppressBst = suppressBst;
+            this.keyInfoInclusionType = keyInfoInclusionType;
             this.encryptedKeySha1 = encryptedKeySha1;
             this.signatureConfirmation = signatureConfirmation;
             this.actor = actor;
@@ -224,7 +221,7 @@ public class WssDecoratorTest extends TestCase {
         reqs.setSenderMessageSigningPrivateKey(d.senderKey);
         reqs.setSignTimestamp();
         reqs.setUsernameTokenCredentials(d.usernameToken);
-        reqs.setSuppressBst(d.suppressBst);
+        reqs.setKeyInfoInclusionType(d.keyInfoInclusionType);
         reqs.setSignatureConfirmation(d.signatureConfirmation);
         reqs.setEncryptUsernameToken(d.encryptUsernameToken);
         reqs.setSignUsernameToken(d.signUsernameToken);
@@ -489,7 +486,7 @@ public class WssDecoratorTest extends TestCase {
                                 true,
                                 new Element[0],
                                 new Element[]{c.body},
-                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, false);
+                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, KeyInfoInclusionType.CERT);
     }
 
     public void testSigningAndEncryptionWithSecureConversation() throws Exception {
@@ -506,7 +503,7 @@ public class WssDecoratorTest extends TestCase {
                                 true,
                                 new Element[]{c.productid, c.accountid},
                                 new Element[]{c.body},
-                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, false);
+                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, KeyInfoInclusionType.CERT);
     }
 
     public void testSignedSamlHolderOfKeyRequest() throws Exception {
@@ -529,7 +526,7 @@ public class WssDecoratorTest extends TestCase {
                                 true,
                                 new Element[0],
                                 new Element[]{c.body},
-                                null, false, false);
+                                null, false, KeyInfoInclusionType.CERT);
     }
 
     public void testSignedSamlSenderVouchesRequest() throws Exception {
@@ -553,7 +550,7 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[0],
                                 new Element[]{c.body},
                                 null,
-                                true, false);
+                                true, KeyInfoInclusionType.CERT);
     }
 
     private Element createSenderSamlToken(String subjectNameIdentifierValue,
@@ -581,7 +578,7 @@ public class WssDecoratorTest extends TestCase {
             creds = LoginCredentials.makePasswordCredentials(subjectNameIdentifierValue, "secret".toCharArray(), HttpBasic.class);
             confirmationMethod = SubjectStatement.SENDER_VOUCHES;
         }
-        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, confirmationMethod, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, confirmationMethod, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         SamlAssertionGenerator generator = new SamlAssertionGenerator(si);
         return generator.createAssertion(subjectStatement, samlOptions).getDocumentElement();
     }
@@ -754,7 +751,7 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[]{c.body},
                                 null,
                                 false,
-                                true);
+                                KeyInfoInclusionType.STR_SKI);
     }
 
     public TestDocument getSignedBodyWithNoBstTestDocument() throws Exception {
@@ -770,7 +767,7 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[]{c.body},
                                 null,
                                 false,
-                                true);
+                                KeyInfoInclusionType.STR_SKI);
     }
 
     public void testEncryptedUsernameToken() throws Exception {
@@ -791,7 +788,7 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[]{c.body},
                                 null,
                                 false,
-                                true,
+                                KeyInfoInclusionType.STR_SKI,
                                 true,
                                 null,
                                 null,
@@ -817,7 +814,7 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[]{c.body},
                                 null,
                                 false,
-                                true,
+                                KeyInfoInclusionType.STR_SKI,
                                 true,
                                 null,
                                 null,
@@ -845,7 +842,7 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[]{c.body},
                                 null,
                                 false,
-                                true,
+                                KeyInfoInclusionType.STR_SKI,
                                 true,
                                 null,
                                 null,
@@ -883,7 +880,7 @@ public class WssDecoratorTest extends TestCase {
                                  new Element[]{c.body},
                                  keyBytes,
                                  false,
-                                 false,
+                                 KeyInfoInclusionType.CERT,
                                  false, "abc11EncryptedKeySHA1Value11blahblahblah11==",
                                  "abc11SignatureConfirmationValue11blahblahblah11==",
                                  ACTOR_NONE, null, false, false);

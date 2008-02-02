@@ -14,7 +14,7 @@ import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
-import com.l7tech.common.security.saml.KeyInfoInclusionType;
+import com.l7tech.common.security.xml.KeyInfoInclusionType;
 import com.l7tech.common.security.saml.NameIdentifierInclusionType;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -221,7 +221,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
             SubjectStatement statement = SubjectStatement.createAuthenticationStatement(
                                                             svInputCredentials,
                                                             SubjectStatement.SENDER_VOUCHES,
-                                                            keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
+                                                            keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
             ag.attachStatement(document, statement, samlOptions);
         }
     }    

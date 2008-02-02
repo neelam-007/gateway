@@ -3790,6 +3790,8 @@
             <fileset dir="${src.root}/modules/assertions/FtpCredentialAssertion/build" includes="*.aar"/>
             <fileset dir="${src.root}/modules/assertions/IdentityAttributesAssertion/build" includes="*.aar"/>
             <fileset dir="${src.root}/modules/assertions/WsAddressingAssertion/build" includes="*.aar"/>
+            <fileset dir="${src.root}/modules/assertions/NcesDecoratorAssertion/build" includes="*.aar"/>
+            <fileset dir="${src.root}/modules/assertions/NcesValidatorAssertion/build" includes="*.aar"/>
         </copy>
 
         <!-- Copy LDAP templates -->

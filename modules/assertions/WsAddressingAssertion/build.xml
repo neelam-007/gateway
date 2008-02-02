@@ -10,10 +10,14 @@
     <property name="moduleName" value="WsAddressingAssertion"/>
     <property name="assertionList" value="com.l7tech.external.assertions.wsaddressing.${moduleName}"/>
     <property name="build.classes" location="build/classes"/>
+    <property name="makeClientJar" value="true"/>
 
+    <fileset id="client.classes" dir="${build.classes}">
+        <include name="com/l7tech/external/assertions/wsaddressing/WsAddressingAssertion*.class"/>
+        <include name="com/l7tech/external/assertions/wsaddressing/client/**/*.class"/>
+    </fileset>
 
     <import file="../assertion-build.xml"/>
-
 
     <target name="test" depends="-compile-tests">
         <junit printsummary="yes" haltonfailure="yes" fork="off" errorproperty="test.error" failureproperty="test.failure">

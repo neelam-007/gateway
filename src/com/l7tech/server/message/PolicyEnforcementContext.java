@@ -11,6 +11,7 @@ import com.l7tech.common.audit.AuditDetail;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
+import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.util.Pair;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -533,6 +534,40 @@ public class PolicyEnforcementContext extends ProcessingContext {
             }
         }
         return assertionResultList;
+    }
+
+    /**
+     * @param variableName
+     * @return a request message object as configured by this assertion
+     */
+    public Message getRequestMessage(final String variableName) {
+        if (variableName == null) {
+            return getRequest();
+        } else {
+            try {
+                final Object messageSrc = getVariable(variableName);
+                if (!(messageSrc instanceof Message)) {
+                    // Should never happen.
+                    throw new RuntimeException("Request message source (\"" + variableName +
+                            "\") is a context variable of the wrong type (expected=" + Message.class + ", actual=" + messageSrc.getClass() + ").");
+                }
+
+                Message msg = (Message)messageSrc;
+                final HttpRequestKnob existingHrk = (HttpRequestKnob) msg.getKnob(HttpRequestKnob.class);
+                if (existingHrk != null) return msg;
+
+                // Inherits the HttpRequestKnob from the default request if present.
+                final HttpRequestKnob defaultHRK = (HttpRequestKnob)getRequest().getKnob(HttpRequestKnob.class);
+                if (defaultHRK != null) {
+                    msg.attachHttpRequestKnob(defaultHRK);
+                }
+
+                return msg;
+            } catch (NoSuchVariableException e) {
+                // Should never happen.
+                throw new RuntimeException("Request message source is a non-existent context variable (\"" + variableName + "\").");
+            }
+        }
     }
 
     public final static class AssertionResult {

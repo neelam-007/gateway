@@ -114,7 +114,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     private BridgePolicyPanel getBridgePolicyPane() {
         if (bridgePolicyPane == null) {
-            bridgePolicyPane = new BridgePolicyPanel();
+            bridgePolicyPane = new BridgePolicyPanel(this);
         }
         return bridgePolicyPane;
     }
@@ -770,6 +770,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             getNetworkPane().setFailoverStrategyName(ssg.getFailoverStrategyName());
             getBridgePolicyPane().setUseSslByDefault(ssg.isUseSslByDefault());
             getBridgePolicyPane().setHeaderPassthrough(ssg.isHttpHeaderPassthrough());
+            getBridgePolicyPane().setProperties(ssg.getProperties());
             getNetworkPane().updateCustomPortsEnableState();
         }
         getPoliciesPane().setPolicyCache(ssg.getRuntime().getPolicyManager());
@@ -831,6 +832,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
                 // applicable to both trusted and federated SSG
                 ssg.setUseSslByDefault(!ssg.isGeneric() && getBridgePolicyPane().isUseSslByDefault());
+                ssg.setProperties(getBridgePolicyPane().getProperties());
                 ssg.setHttpHeaderPassthrough(getBridgePolicyPane().isHeaderPassthrough());
                 ssg.setUseOverrideIpAddresses(getNetworkPane().isUseOverrideIpAddresses());
                 ssg.setOverrideIpAddresses(getNetworkPane().getCustomIpAddresses());

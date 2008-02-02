@@ -1,27 +1,25 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  *
  */
 package com.l7tech.common.security.xml.decorator;
 
 import com.ibm.xml.dsig.*;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.message.MimeKnob;
+import com.l7tech.common.mime.PartIterator;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.kerberos.KerberosUtils;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.UsernameToken;
-import com.l7tech.common.security.xml.DsigUtil;
-import com.l7tech.common.security.xml.KeyInfoDetails;
-import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
-import com.l7tech.common.security.xml.XencUtil;
-import com.l7tech.common.security.xml.AttachmentEntityResolver;
+import com.l7tech.common.security.xml.*;
 import com.l7tech.common.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.message.Message;
-import com.l7tech.common.message.MimeKnob;
-import com.l7tech.common.mime.PartIterator;
-
+import org.w3.x2000.x09.xmldsig.KeyInfoType;
+import org.w3.x2000.x09.xmldsig.X509DataType;
+import org.w3.x2000.x09.xmldsig.X509IssuerSerialType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -30,6 +28,7 @@ import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -37,7 +36,6 @@ import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.*;
 import java.util.logging.Logger;
-import java.io.IOException;
 
 /**
  * @author mike
@@ -61,7 +59,7 @@ public class WssDecoratorImpl implements WssDecorator {
         SecureRandom rand = new SecureRandom();
         long count = 0;
         Message message;
-        Map idToElementCache = new HashMap();
+        Map<String, Element> idToElementCache = new HashMap<String, Element>();
         NamespaceFactory nsf = new NamespaceFactory();
         byte[] lastEncryptedKeyBytes = null;
         SecretKey lastEncryptedKeySecretKey = null;
@@ -158,36 +156,60 @@ public class WssDecoratorImpl implements WssDecorator {
             }
         }
 
-        // If there are any WSA headers in the message, and we are signing anything else, then sign them too
-        Element messageId = SoapUtil.getL7aMessageIdElement(soapMsg);
-        if (messageId != null && !signList.isEmpty())
-            signList.add(messageId);
-        Element relatesTo = SoapUtil.getL7aRelatesToElement(soapMsg);
-        if (relatesTo != null && !signList.isEmpty())
-            signList.add(relatesTo);
+        // If there are any L7a or WSA headers in the message, and we are signing anything else, then sign them too
+        {
+            Element messageId = SoapUtil.getL7aMessageIdElement(soapMsg);
+            if (messageId != null && !signList.isEmpty())
+                signList.add(messageId);
+            Element relatesTo = SoapUtil.getL7aRelatesToElement(soapMsg);
+            if (relatesTo != null && !signList.isEmpty())
+                signList.add(relatesTo);
+        }
+        {
+            Element messageId = SoapUtil.getWsaMessageIdElement(soapMsg);
+            if (messageId != null && !signList.isEmpty())
+                signList.add(messageId);
+            Element relatesTo = SoapUtil.getWsaRelatesToElement(soapMsg);
+            if (relatesTo != null && !signList.isEmpty())
+                signList.add(relatesTo);
+        }
 
         // Add sender cert
         // note [bugzilla #2551] dont include a x509 BST if this is gonna use a sc context
         // note [bugzilla #3907] dont include a x509 BST if using kerberos
         KeyInfoDetails senderCertKeyInfo = null;
+        KeyInfoType keyInfoType = null;
         if (dreq.getSenderMessageSigningCertificate() != null &&
             !signList.isEmpty() &&
             dreq.getSecureConversationSession() == null &&
             dreq.getKerberosTicket() == null) {
-            if (dreq.isSuppressBst()) {
-                // Use keyinfo reference target of a SKI
-                X509Certificate senderCert = dreq.getSenderMessageSigningCertificate();
-                byte[] senderSki = CertUtils.getSKIBytesFromCert(senderCert);
-                if (senderSki == null) {
-                    // Supposed to refer to sender cert by its SKI, but it has no SKI
-                    throw new DecoratorException("suppressBst is requested, but the sender cert has no SubjectKeyIdentifier");
-                }
-                senderCertKeyInfo = KeyInfoDetails.makeKeyId(senderSki, SoapUtil.VALUETYPE_SKI);
-            } else {
-                // Use keyinfo reference target of a BinarySecurityToken
-                Element x509Bst = addX509BinarySecurityToken(securityHeader, dreq.getSenderMessageSigningCertificate(), c);
-                String bstId = getOrCreateWsuId(c, x509Bst, null);
-                senderCertKeyInfo = KeyInfoDetails.makeUriReference(bstId, SoapUtil.VALUETYPE_X509);
+            switch(dreq.getKeyInfoInclusionType()) {
+                case CERT:
+                    // Use keyinfo reference target of a BinarySecurityToken
+                    Element x509Bst = addX509BinarySecurityToken(securityHeader, dreq.getSenderMessageSigningCertificate(), c);
+                    String bstId = getOrCreateWsuId(c, x509Bst, null);
+                    senderCertKeyInfo = KeyInfoDetails.makeUriReference(bstId, SoapUtil.VALUETYPE_X509);
+                    break;
+                case STR_SKI:
+                    // Use keyinfo reference target of a SKI
+                    X509Certificate senderCert = dreq.getSenderMessageSigningCertificate();
+                    byte[] senderSki = CertUtils.getSKIBytesFromCert(senderCert);
+                    if (senderSki == null) {
+                        // Supposed to refer to sender cert by its SKI, but it has no SKI
+                        throw new DecoratorException("suppressBst is requested, but the sender cert has no SubjectKeyIdentifier");
+                    }
+                    senderCertKeyInfo = KeyInfoDetails.makeKeyId(senderSki, SoapUtil.VALUETYPE_SKI);
+                    break;
+                case ISSUER_SERIAL:
+                    KeyInfoType kit = KeyInfoType.Factory.newInstance();
+                    X509DataType xdt = kit.addNewX509Data();
+                    X509IssuerSerialType xist = xdt.addNewX509IssuerSerial();
+                    xist.setX509IssuerName(dreq.getSenderMessageSigningCertificate().getIssuerDN().getName());
+                    xist.setX509SerialNumber(dreq.getSenderMessageSigningCertificate().getSerialNumber());
+                    keyInfoType = kit;
+                    break;
+                default:
+                    throw new DecoratorException("Unsupported KeyInfoInclusionType: " + dreq.getKeyInfoInclusionType());
             }
         }
 
@@ -293,7 +315,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 senderSigningKey = new XencUtil.XmlEncKey(dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey();
                 String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
                 signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY2);
-            } else if (senderCertKeyInfo != null) {
+            } else if (senderCertKeyInfo != null || keyInfoType != null) {
                 senderSigningKey = dreq.getSenderMessageSigningPrivateKey();
                 if (senderSigningKey == null)
                     throw new IllegalArgumentException("Signing is requested with sender cert, but senderPrivateKey is null");
@@ -815,7 +837,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                            XSignature.SHA1, Canonicalizer.EXCLUSIVE, signaturemethod);
         template.setIndentation(false);
         template.setPrefix("ds");
-        final Map<Node,Node> strTransformsNodeToNode = new HashMap();
+        final Map<Node,Node> strTransformsNodeToNode = new HashMap<Node, Node>();
         for (int i = 0; i < elementsToSign.length; i++) {
             final Element element = elementsToSign[i];
             final String id = signedIds[i];
@@ -857,12 +879,11 @@ public class WssDecoratorImpl implements WssDecorator {
             ref.addTransform(Transform.C14N_EXCLUSIVE);
             template.addReference(ref);
         }
-        for (int i = 0; i < partsToSign.length; i++) {
-            final String partIdentifier = partsToSign[i];
+        for (final String partIdentifier : partsToSign) {
             final String id = "cid:" + partIdentifier;
 
             final Reference ref = template.createReference(id);
-            if ( signPartHeaders )
+            if (signPartHeaders)
                 ref.addTransform(SoapUtil.TRANSFORM_ATTACHMENT_COMPLETE);
             else
                 ref.addTransform(SoapUtil.TRANSFORM_ATTACHMENT_CONTENT);
@@ -880,7 +901,7 @@ public class WssDecoratorImpl implements WssDecorator {
         SignatureContext sigContext = new SignatureContext();
         sigContext.setIDResolver(new IDResolver() {
             public Element resolveID(Document doc, String s) {
-                Element e = (Element)c.idToElementCache.get(s);
+                Element e = c.idToElementCache.get(s);
                 if (e != null)
                     return e;
                 e = SoapUtil.getElementByWsuId(doc, s);
@@ -1097,7 +1118,7 @@ public class WssDecoratorImpl implements WssDecorator {
      * @param basename Optional.  If non-null, will be used as the start of the Id string
      */
     private String getOrCreateWsuId(Context c, Element element, String basename) {
-        String id = SoapUtil.getElementWsuId(element);
+        String id = SoapUtil.getElementWsuId(element, false);
         if (id == null) {
             id = createWsuId(c, element, basename == null ? element.getLocalName() : basename);
         }

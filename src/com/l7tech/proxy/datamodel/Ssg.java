@@ -81,6 +81,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private boolean genericService = false; // true if the server is not actually an SSG
     private int httpConnectTimeout = -1;
     private int httpReadTimeout = -1;
+    private Map<String, String> properties = new LinkedHashMap<String, String>();
 
     private transient Set listeners = Collections.synchronizedSet(new HashSet()); // Set of weak references to listeners
     private transient SsgRuntime runtime = new SsgRuntime(this);
@@ -654,7 +655,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
 
     public void notifyPolicyUpdate(Policy policy) {
         if (policy != null)
-            firePolicyAttachedEvent(policy);    
+            firePolicyAttachedEvent(policy);
     }
 
     /**
@@ -862,5 +863,15 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     /** @return true if the specified HTTP header should be copied through. */
     public boolean shouldCopyHeader(String headerName) {
         return headersToCopy.contains(headerName);
+    }
+
+    /** @param properties a map of generic properties to store in this Ssg */
+    public void setProperties(Map<String, String> properties) {
+        this.properties = properties;
+    }
+
+    /** @return properties a map of generic properties to store in this Ssg */
+    public Map<String, String> getProperties() {
+        return properties;
     }
 }

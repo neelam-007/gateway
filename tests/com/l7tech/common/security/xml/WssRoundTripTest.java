@@ -1,9 +1,6 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.common.security.xml;
 
 import com.l7tech.common.message.Message;
@@ -527,7 +524,7 @@ public class WssRoundTripTest extends TestCase {
         reqs.setUsernameTokenCredentials(td.usernameToken);
         reqs.setEncryptUsernameToken(td.encryptUsernameToken);
         reqs.setSignUsernameToken(td.signUsernameToken);
-        reqs.setSuppressBst(td.suppressBst);
+        reqs.setKeyInfoInclusionType(td.keyInfoInclusionType);
         reqs.setUseDerivedKeys(td.useDerivedKeys);
         reqs.setKeyEncryptionAlgorithm(td.keyEncryptionAlgoritm);
         reqs.setSignPartHeaders(td.signAttachmentHeaders);

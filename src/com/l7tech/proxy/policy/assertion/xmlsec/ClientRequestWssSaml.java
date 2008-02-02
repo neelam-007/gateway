@@ -1,9 +1,6 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.saml.SamlConstants;
@@ -122,6 +119,8 @@ public class ClientRequestWssSaml extends ClientAssertion {
                             wssReqs.setSenderMessageSigningCertificate(certificate);
                             // only sign the SAML token if the assertion is not signed
                             wssReqs.setSenderSamlToken(ass.asElement(), !Boolean.getBoolean(PROP_SIGN_SAML_SV));
+                            final boolean suppress = "true".equals(ssg.getProperties().get("builtinSaml.suppressStrTransform"));
+                            wssReqs.setSuppressSamlStrTransform(suppress);
                         } else {
                             logger.log(Level.WARNING, "Cannot use SAML Sender Vouches, no private key available to sign assertion.");
                             return AssertionStatus.FALSIFIED;

@@ -96,9 +96,11 @@ public class SoapUtil {
 
     public static final String WSA_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/03/addressing";
     public static final String WSA_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2004/08/addressing"; // FIM
+    public static final String WSA_NAMESPACE_10 = "http://www.w3.org/2005/08/addressing";
     public static final String[] WSA_NAMESPACE_ARRAY = {
         WSA_NAMESPACE,
-        WSA_NAMESPACE2,    // Seen in Tivoli Fim example messages
+        WSA_NAMESPACE2,
+        WSA_NAMESPACE_10,
     };
 
     public static final String L7_MESSAGEID_NAMESPACE = "http://www.layer7tech.com/ws/addr";
@@ -240,6 +242,7 @@ public class SoapUtil {
 
     public static final String C14N_EXCLUSIVE = "http://www.w3.org/2001/10/xml-exc-c14n#";
     public static final String C14N_EXCLUSIVEWC = "http://www.w3.org/2001/10/xml-exc-c14n#WithComments";
+    private static final String DEFAULT_UUID_PREFIX = "http://www.layer7tech.com/uuid/";
 
     /**
      * Get the SOAP envelope from the message
@@ -569,11 +572,22 @@ public class SoapUtil {
     }
 
     /**
-     * Gets the WSU:Id attribute of the passed element using all supported WSU namespaces.
+     * Gets the WSU:Id attribute of the passed element using all supported WSU namespaces, and, as a special case,
+     * SAML1 AssertionID and SAML2 ID values too.
      *
      * @return the string value of the attribute or null if the attribute is not present
      */
     public static String getElementWsuId(Element node) {
+        return getElementWsuId(node, true);
+    }
+
+    /**
+     * Gets the WSU:Id attribute of the passed element using all supported WSU namespaces.
+     *
+     * @param specialSamlHandling true if the method should find SAML1 AssertionID or SAML2 ID attributes as well
+     * @return the string value of the attribute or null if the attribute is not present
+     */
+    public static String getElementWsuId(Element node, boolean specialSamlHandling) {
         String id = node.getAttributeNS(SoapUtil.WSU_NAMESPACE, ID_ATTRIBUTE_NAME);
         if (id == null || id.length() < 1) {
             id = node.getAttributeNS(SoapUtil.WSU_NAMESPACE2, ID_ATTRIBUTE_NAME);
@@ -586,12 +600,12 @@ public class SoapUtil {
                     // SSG/SSB 4.0 onwards use only KeyIdentifier references.
 
                     // Special handling for saml:Assertion
-                    if (SamlConstants.NS_SAML.equals(node.getNamespaceURI()) &&
+                    if (specialSamlHandling && SamlConstants.NS_SAML.equals(node.getNamespaceURI()) &&
                         SamlConstants.ELEMENT_ASSERTION.equals(node.getLocalName())) {
                         id = node.getAttribute(SamlConstants.ATTR_ASSERTION_ID);
                     }
                     // Special handling for saml2:Assertion
-                    if (SamlConstants.NS_SAML2.equals(node.getNamespaceURI()) &&
+                    if (specialSamlHandling && SamlConstants.NS_SAML2.equals(node.getNamespaceURI()) &&
                         SamlConstants.ELEMENT_ASSERTION.equals(node.getLocalName())) {
                         id = node.getAttribute(SamlConstants.ATTR_SAML2_ASSERTION_ID);
                     }
@@ -726,6 +740,20 @@ public class SoapUtil {
         return XmlUtil.findOnlyOneChildElementByName(header, L7_MESSAGEID_NAMESPACE, MESSAGEID_EL_NAME);
     }
 
+
+    /**
+     * Get the wsa:MesageID element from the specified message, or null if there isn't one.
+     *
+     * @param soapMsg the soap envelope to examine
+     * @return the /Envelope/Header/L7a:MessageID element, or null if there isn't one.
+     * @throws InvalidDocumentFormatException if the message isn't soap, or there is more than one Header or MessageID
+     */
+    public static Element getWsaMessageIdElement(Document soapMsg) throws InvalidDocumentFormatException {
+        Element header = getHeaderElement(soapMsg);
+        if (header == null) return null;
+        return XmlUtil.findOnlyOneChildElementByName(header, SoapUtil.WSA_NAMESPACE_ARRAY, MESSAGEID_EL_NAME);
+    }
+
     /**
      * Get the L7a:MessageID URI from the specified message, or null if there isn't one.
      *
@@ -736,6 +764,12 @@ public class SoapUtil {
      */
     public static String getL7aMessageId(Document soapMsg) throws InvalidDocumentFormatException {
         Element messageId = getL7aMessageIdElement(soapMsg);
+        if (messageId == null) return null;
+        return XmlUtil.getTextValue(messageId);
+    }
+
+    public static String getWsaMessageId(Document soapMsg) throws InvalidDocumentFormatException {
+        Element messageId = getWsaMessageIdElement(soapMsg);
         if (messageId == null) return null;
         return XmlUtil.getTextValue(messageId);
     }
@@ -756,6 +790,25 @@ public class SoapUtil {
         Element header = getOrMakeHeader(soapMsg);
         idEl = XmlUtil.createAndPrependElementNS(header, MESSAGEID_EL_NAME, L7_MESSAGEID_NAMESPACE, L7_MESSAGEID_PREFIX);
         idEl.appendChild(XmlUtil.createTextNode(idEl, messageId));
+    }
+
+    /**
+     * Set the wsaa:MessageID URI for the specified message, which must not already have a wsa:MessageID element.
+     *
+     * @param soapMsg   the soap message to modify
+     * @param messageId the new wsa:MessageID value
+     * @throws InvalidDocumentFormatException if the message isn't soap, has more than one header, or already has
+     *                                        a MessageID
+     */
+    public static Element setWsaMessageId(Document soapMsg, String messageId) throws InvalidDocumentFormatException {
+        Element idEl = getWsaMessageIdElement(soapMsg);
+        if (idEl != null)
+            throw new ElementAlreadyExistsException("This message already has a wsa:MessageID");
+
+        Element header = getOrMakeHeader(soapMsg);
+        idEl = XmlUtil.createAndPrependElementNS(header, MESSAGEID_EL_NAME, WSA_NAMESPACE2, "wsa");
+        idEl.appendChild(XmlUtil.createTextNode(idEl, messageId));
+        return idEl;
     }
 
     /**
@@ -792,6 +845,19 @@ public class SoapUtil {
     }
 
     /**
+     * Get the L7a:RelatesTo element from the specified message, or null if there isn't one.
+     *
+     * @param soapMsg the soap envelope to examine
+     * @return the /Envelope/Header/L7a:RelatesTo element, or null if there wasn't one
+     * @throws InvalidDocumentFormatException if the message isn't soap, or there is more than one Header or RelatesTo
+     */
+    public static Element getWsaRelatesToElement(Document soapMsg) throws InvalidDocumentFormatException {
+        Element header = getHeaderElement(soapMsg);
+        if (header == null) return null;
+        return XmlUtil.findOnlyOneChildElementByName(header, WSA_NAMESPACE, RELATESTO_EL_NAME);
+    }
+
+    /**
      * Get the L7a:RelatesTo URI from the specified message, or null if there isn't one.
      *
      * @param soapMsg the soap envelope to examine
@@ -801,6 +867,20 @@ public class SoapUtil {
      */
     public static String getL7aRelatesTo(Document soapMsg) throws InvalidDocumentFormatException {
         Element relatesTo = getL7aRelatesToElement(soapMsg);
+        if (relatesTo == null) return null;
+        return XmlUtil.getTextValue(relatesTo);
+    }
+
+    /**
+     * Get the wsa:RelatesTo URI from the specified message, or null if there isn't one.
+     *
+     * @param soapMsg the soap envelope to examine
+     * @return the body text of the /Envelope/Header/wsa:RelatesTo field, which may be empty or an invalid URI; or,
+     *         null if there was no /Envelope/Header/wsa:RelatesTo field.
+     * @throws InvalidDocumentFormatException if the message isn't soap, or there is more than one Header or RelatesTo
+     */
+    public static String getWsaRelatesTo(Document soapMsg) throws InvalidDocumentFormatException {
+        Element relatesTo = getWsaRelatesToElement(soapMsg);
         if (relatesTo == null) return null;
         return XmlUtil.getTextValue(relatesTo);
     }
@@ -1036,14 +1116,16 @@ public class SoapUtil {
         }
     }
 
-    /** @return a new unique URI in the form http://www.layer7tech.com/uuid/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, where the
-     * Xes stand for random hexadecimal digits. */
-    public static String generateUniqeUri() {
-        String id;
+    /** @return a new unique URI in the form &lt;prefix&gt; + XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, where the
+     * Xes stand for random hexadecimal digits.  The default prefix is {@link #DEFAULT_UUID_PREFIX}.
+     * @param messageIdPrefix an alternate message ID prefix, or null to use {@link #DEFAULT_UUID_PREFIX}.
+     */
+    public static String generateUniqueUri(final String messageIdPrefix) {
         byte[] randbytes = new byte[16];
         rand.nextBytes(randbytes);
-        id = "http://www.layer7tech.com/uuid/" + HexUtils.hexDump(randbytes);
-        return id;
+        StringBuilder sb = new StringBuilder(messageIdPrefix == null ? DEFAULT_UUID_PREFIX : messageIdPrefix);
+        sb.append(HexUtils.hexDump(randbytes));
+        return sb.toString();
     }
 
     private static final SecureRandom rand = new SecureRandom();

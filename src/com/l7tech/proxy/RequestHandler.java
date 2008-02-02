@@ -1,12 +1,16 @@
 package com.l7tech.proxy;
 
-import com.l7tech.common.http.*;
+import com.l7tech.common.http.GenericHttpHeader;
+import com.l7tech.common.http.GenericHttpHeaders;
+import com.l7tech.common.http.HttpHeader;
+import com.l7tech.common.http.HttpHeaders;
 import com.l7tech.common.message.HttpHeadersKnob;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.security.token.http.HttpBasicToken;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultDetail;
@@ -41,6 +45,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.PasswordAuthentication;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -203,19 +208,21 @@ public class RequestHandler extends AbstractHttpHandler {
 
         String reqUsername = null;
         String reqPassword = null;
-        if (ssg.isChainCredentialsFromClient()) {
-            String authHeader = httpRequest.getField("Authorization");
-            if (authHeader != null && "Basic ".equalsIgnoreCase(authHeader.substring(0, 6))) {
-                byte[] authStuff = HexUtils.decodeBase64(authHeader.substring(6));
-                for (int i = 0; i < authStuff.length - 1; ++i) {
-                    if (authStuff[i] == ':') {
-                        reqUsername = new String(authStuff, 0, i);
-                        reqPassword = new String(authStuff, i + 1, authStuff.length - i - 1);
-                    }
+        HttpBasicToken hbt = null;
+        String authHeader = httpRequest.getField("Authorization");
+        if (authHeader != null && "Basic ".equalsIgnoreCase(authHeader.substring(0, 6))) {
+            byte[] authStuff = HexUtils.decodeBase64(authHeader.substring(6));
+            for (int i = 0; i < authStuff.length - 1; ++i) {
+                if (authStuff[i] == ':') {
+                    reqUsername = new String(authStuff, 0, i);
+                    reqPassword = new String(authStuff, i + 1, authStuff.length - i - 1);
                 }
             }
+        }
+        // We no longer send a challenge at this point -- instead  (Bug #2689)
 
-            // We no longer send a challenge at this point -- instead  (Bug #2689)
+        if (!ssg.isChainCredentialsFromClient() && reqUsername != null && reqPassword != null) {
+            hbt = new HttpBasicToken(new PasswordAuthentication(reqUsername, reqPassword.toCharArray()));
         }
 
         PolicyApplicationContext context = null;
@@ -234,6 +241,8 @@ public class RequestHandler extends AbstractHttpHandler {
 
                 URL originalUrl = getOriginalUrl(httpRequest, endpoint);
                 PolicyAttachmentKey pak = gatherPolicyAttachmentKey(httpRequest, prequest.getXmlKnob().getDocumentReadOnly(), originalUrl);
+
+                if (hbt != null) prequest.getSecurityKnob().addSecurityToken(hbt);
 
                 context = new PolicyApplicationContext(ssg,
                                                        prequest,

@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.console.panels.saml;
 
@@ -20,29 +18,49 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
     private JPanel mainPanel;
     private JPanel greetingPanel;
     private JLabel titleLabel;
-    private JRadioButton authenticationStatementRadioButton;
-    private JRadioButton authorizationDecisionStatementRadioButton;
-    private JRadioButton attributeStatementRadioButton;
+    private JToggleButton authenticationStatementRadioButton;
+    private JToggleButton authorizationDecisionStatementRadioButton;
+    private JToggleButton attributeStatementRadioButton;
+    private JPanel buttonsPanel;
+    private final boolean issueMode;
 
     /**
      * Creates new form WizardPanel
      */
-    public SelectStatementWizardStepPanel(WizardStepPanel next) {
+    public SelectStatementWizardStepPanel(WizardStepPanel next, boolean issueMode) {
         super(next);
+        this.issueMode = issueMode;
         setLayout(new BorderLayout());
         /** Set content pane */
         add(mainPanel, BorderLayout.CENTER);
         initialize();
+    }
 
+    public SelectStatementWizardStepPanel(WizardStepPanel next) {
+        this(next, false);
     }
 
     private void initialize() {
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
-        ButtonGroup bg = new ButtonGroup();
-        bg.add(authenticationStatementRadioButton);
-        bg.add(authorizationDecisionStatementRadioButton);
-        bg.add(attributeStatementRadioButton);
-        authenticationStatementRadioButton.setSelected(true);
+
+        if (issueMode) {
+            authenticationStatementRadioButton = new JCheckBox("Authentication Statement");
+            authorizationDecisionStatementRadioButton = new JCheckBox("Authorization Decision Statement");
+            attributeStatementRadioButton = new JCheckBox("Attribute Statement");
+        } else {
+            authenticationStatementRadioButton = new JRadioButton("Authentication Statement");
+            authorizationDecisionStatementRadioButton = new JRadioButton("Authorization Decision Statement");
+            attributeStatementRadioButton = new JRadioButton("Attribute Statement");
+            ButtonGroup bg = new ButtonGroup();
+            bg.add(authenticationStatementRadioButton);
+            bg.add(authorizationDecisionStatementRadioButton);
+            bg.add(attributeStatementRadioButton);
+            authenticationStatementRadioButton.setSelected(true);
+        }
+
+        buttonsPanel.add(authenticationStatementRadioButton, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,0), 0, 0));
+        buttonsPanel.add(authorizationDecisionStatementRadioButton, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,0), 0, 0));
+        buttonsPanel.add(attributeStatementRadioButton, new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,0), 0, 0));
     }
 
     public void readSettings(Object settings)
@@ -52,14 +70,10 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
         SamlAuthorizationStatement athz = assertion.getAuthorizationStatement();
         SamlAttributeStatement atts = assertion.getAttributeStatement();
 
-        if (auths == null && athz == null && atts == null) {
-            authenticationStatementRadioButton.setSelected(true);
-        } else if (auths !=null) {
-            authenticationStatementRadioButton.setSelected(true);
-        } else if (athz !=null) {
-            authorizationDecisionStatementRadioButton.setSelected(true);
-        } else
-            attributeStatementRadioButton.setSelected(true);
+        if (auths == null && athz == null && atts == null) authenticationStatementRadioButton.setSelected(true);
+        if (auths != null) authenticationStatementRadioButton.setSelected(true);
+        if (athz  != null) authorizationDecisionStatementRadioButton.setSelected(true);
+        if (atts  != null) attributeStatementRadioButton.setSelected(true);
     }
 
     public void storeSettings(Object settings)
