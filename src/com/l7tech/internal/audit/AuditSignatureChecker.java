@@ -3,6 +3,7 @@
  */
 package com.l7tech.internal.audit;
 
+import com.l7tech.common.BuildInfo;
 import com.l7tech.common.util.CertUtils;
 
 import javax.net.ssl.*;
@@ -56,9 +57,6 @@ public class AuditSignatureChecker extends JFrame {
     };
 
     private static final Preferences _preferences = Preferences.userRoot().node("/com/l7tech/internal/audit/auditsignaturechecker");
-    private static final String PREF_AUDITPATH = "audit.path";
-    private static final String PREF_CERTPATH = "cert.path";
-    private static final char DELIM = ':';
     private static final char ESC = '\\';
 
     private static boolean isZipFile(final String path) throws IOException {
@@ -134,20 +132,11 @@ public class AuditSignatureChecker extends JFrame {
                     return true;
                 }
             });
-
-            try {
-                conn.connect();
-            } catch (IOException e) {
-                throw e;
-            }
-
-            try {
-                return conn.getServerCertificates();
-            } catch (IOException e) {
-                throw e;
-            }
-        } else
+            conn.connect();
+            return conn.getServerCertificates();
+        } else {
             throw new IOException("URL resulted in a non-HTTPS connection");
+        }
     }
 
 
@@ -370,6 +359,9 @@ public class AuditSignatureChecker extends JFrame {
         private static final String PREF_WINDOW_Y = "window.y";
         private static final String PREF_WINDOW_WIDTH = "window.width";
         private static final String PREF_WINDOW_HEIGHT = "window.height";
+        private static final String PREF_AUDITPATH = "audit.path";
+        private static final String PREF_CERTPATH = "cert.path";
+        private static final String PREF_VERBOSE = "verbose";
 
         private final JTextField _auditPathTextField = new JTextField();
         private final JTextField _certPathTextField = new JTextField();
@@ -404,7 +396,7 @@ public class AuditSignatureChecker extends JFrame {
             System.setOut(_outputTextAreaStream);
             System.setErr(_outputTextAreaStream);
 
-            setTitle("Audit Signature Checker");
+            setTitle("Audit Signature Checker " + BuildInfo.getProductVersion());
 
             setLayout(new GridBagLayout());
             final GridBagConstraints gridBagConstraints = new GridBagConstraints();
@@ -509,6 +501,7 @@ public class AuditSignatureChecker extends JFrame {
                     _preferences.putInt(PREF_WINDOW_HEIGHT, getSize().height);
                     _preferences.put(PREF_AUDITPATH, _auditPathTextField.getText());
                     _preferences.put(PREF_CERTPATH, _certPathTextField.getText());
+                    _preferences.put(PREF_VERBOSE, Boolean.toString(_verboseCheckBox.isSelected()));
                 }
             });
 
@@ -532,6 +525,7 @@ public class AuditSignatureChecker extends JFrame {
 
             _auditPathTextField.setText(_preferences.get(PREF_AUDITPATH, null));
             _certPathTextField.setText(_preferences.get(PREF_CERTPATH, null));
+            _verboseCheckBox.setSelected(Boolean.parseBoolean(_preferences.get(PREF_VERBOSE, "false")));
 
             setVisible(true);
         }

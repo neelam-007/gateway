@@ -2202,6 +2202,7 @@
             </manifest>
             <fileset dir="${build.classes}">
                 <include name="com/l7tech/internal/audit/**/*"/>
+                <include name="com/l7tech/common/BuildInfo.class"/>
                 <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream.class"/>
                 <include name="com/l7tech/common/util/CertUtils*.class"/>
                 <include name="com/l7tech/common/util/CausedIOException.class"/>
