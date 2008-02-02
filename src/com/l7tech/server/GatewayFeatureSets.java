@@ -415,6 +415,12 @@ public class GatewayFeatureSets {
             ass(CustomAssertionHolder.class),
             moduleLoader);
 
+        // NCES
+        GatewayFeatureSet ncesAssertions =
+        fsr("set:Nces:Assertions", "NCES decoration and validation assertions",
+            mass("assertion:NcesDecorator"),
+            mass("assertion:NcesValidator"));
+
         // Formerly a profile set, now present only for backward compatibility
         fsr("set:Profile:IPS", "SecureSpan XML IPS",
             "DEPRECATED -- present for license compat only",
@@ -477,7 +483,7 @@ public class GatewayFeatureSets {
             fs(ssb),
             fs(customFw));
 
-        PROFILE_ALL =
+        GatewayFeatureSet profileGateway =
         fsp("set:Profile:Gateway", "SecureSpan Gateway",
             "All features enabled.",
             misc("bundle:Bridge", "Bundled SecureSpan XML VPN Client", "No effect on Gateway license code -- only purpose is to distinguish two otherwise-identical feature sets"),
@@ -499,7 +505,13 @@ public class GatewayFeatureSets {
 
         fsp("set:Profile:PolicyIntegrationPoint", "SecureSpan Policy Integration Point",
             "Same as SecureSpan Gateway.",
-            fs(PROFILE_ALL));
+            fs(profileGateway));
+
+        PROFILE_ALL =
+        fsp("set:Profile:NCES", "SecureSpan Gateway NCES",
+            "Adds NCES features.",
+            fs(profileGateway),
+            fs(ncesAssertions));
 
         fsp("set:Profile:Federal", "SecureSpan Federal",
             "Exactly the same features as SecureSpan Gateway, but XML VPN Client software is not bundled.",
