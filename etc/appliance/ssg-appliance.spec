@@ -89,7 +89,7 @@ chmod 711 %{buildroot}/ssg/appliance/libexec/*
 /etc/init.d/tcp_tune
 
 %config(noreplace) /etc/sysconfig/iptables
-%defattr(0644,root,root)
+%defattr(0644,root,sys)
 /etc/snmp/snmpd.conf_example
 # Config components, owned by root
 %config(noreplace) /etc/my.cnf.ssg

@@ -119,6 +119,18 @@ if [ `grep ^ssgconfig: /etc/passwd` ]; then
     usermod -G gateway ssgconfig
 else
     useradd -G gateway -g gateway ssgconfig
+
+    # GEN001880
+    # Update the permissions on ssgconfig's initialization files
+    if [ -e /home/ssgconfig/.bash_logout ]; then
+      chmod 740 /home/ssgconfig/.bash_logout
+    fi
+    if [ -e /home/ssgconfig/.bash_profile ]; then
+      chmod 740 /home/ssgconfig/.bash_profile
+    fi
+    if [ -e /home/ssgconfig/.bashrc ]; then
+      chmod 740 /home/ssgconfig/.bashrc
+    fi
 fi
 
 %post

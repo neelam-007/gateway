@@ -19,14 +19,6 @@ harden() {
   # GEN000500
   echo 'export TMOUT=900' >> /etc/profile
 
-  # GEN002860
-  cat > /etc/cron.daily/auditd-rotate <<'EOF'
-#!/bin/bash
-
-kill -USR1 `cat /var/run/auditd.pid`
-EOF
-  chmod u+x /etc/cron.daily/auditd-rotate
-
   # GEN000020
   echo "~~:S:wait:/sbin/sulogin" >> /etc/inittab
 
@@ -44,11 +36,12 @@ auth        required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root r
   echo 'FAIL_DELAY 4' >> /etc/login.defs
 
   # GEN000540, GEN000700
-  # Give root and ssgconfig 60 days from today before their passwords must be changed
+  # Give root and ssgconfig 60 days from today before their passwords must be changed, this is only for
+  # image preparation, as sealsys will still expire the password
   local DAYS
   DAYS=$((`date +'%s'`/60/60/24))
-  sed -i -e "s/^\(root:[^:]*\):[^:]*:[^:]*:[^:]*:/\1:$DAYS:1:60:/" /etc/shadow
-  sed -i -e 's/^\(ssgconfig:[^:]*:[^:]*\):[^:]*:[^:]*:/\1:1:60:/' /etc/shadow
+  chage -m 1 -M 60 -d $DAYS root
+  chage -m 1 -M 60 ssgconfig
 
   # GEN000580, GEN000600, GEN000620 GEN000640
   sed -i -e 's/PASS_MIN_LEN\t5/PASS_MIN_LEN\t9/' /etc/login.defs
@@ -64,23 +57,9 @@ auth        required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root r
   chmod 700 /root
 
   # GEN000980
-  cp /etc/securetty /etc/securetty.orig
   echo 'console' > /etc/securetty
-
-  # GEN001260
-  chmod 644 /var/log/wtmp*
-  sed -i -e 's/create 0664 root utmp/create 0644 root utmp/' /etc/logrotate.conf
-
-  # GEN001880
-  if [ -e /home/ssgconfig/.bash_logout ]; then
-    chmod 740 /home/ssgconfig/.bash_logout
-  fi
-  if [ -e /home/ssgconfig/.bash_profile ]; then
-    chmod 740 /home/ssgconfig/.bash_profile
-  fi
-  if [ -e /home/ssgconfig/.bashrc ]; then
-    chmod 740 /home/ssgconfig/.bashrc
-  fi
+  echo 'tty1' > /etc/securetty
+  echo 'ttyS0' > /etc/securetty
 
   # GEN002480
   find / -type f -perm -002 -printf '%p %m\n' | grep -v '^/tmp/' | grep -v '^/var/tmp/' > /root/original_permissions
@@ -88,9 +67,9 @@ auth        required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root r
   if [ -s /root/original_permissions ]; then
     sed -e 's/\(.*\) [0-9]\{1,\}$/"\1"/' /root/original_permissions | xargs chmod o-w
   fi
+  rm -f /root/original_permissions
 
   # GEN002740
-  chkconfig --level 3 auditd on
   sed -i -e 's/max_log_file = 5/max_log_file = 125/' /etc/auditd.conf
   echo '-a exit,always -S unlink -S rmdir' >> /etc/audit.rules
 
@@ -102,7 +81,6 @@ auth        required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root r
   echo '-a exit,always -S settimeofday -S setrlimit -S setdomainname' >> /etc/audit.rules
   echo '# The mysqld program is expected to call sched_setscheduler' >> /etc/audit.rules
   echo '-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27' >> /etc/audit.rules
-  service auditd start
 
   # GEN002960
   touch /etc/cron.allow
@@ -140,6 +118,7 @@ auth        required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root r
   echo 'sshd1: ALL' >> /etc/hosts.deny
   echo 'sshd2: ALL' >> /etc/hosts.deny
   echo 'sshdfwd-x11: ALL' >> /etc/hosts.deny
+  echo "sshd2: LOCAL" >> /etc/hosts.allow
 
   # LNX00340
   userdel news
@@ -210,8 +189,8 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   sed -i -e '/FAIL_DELAY 4/d' /etc/login.defs
 
   # GEN000540, GEN000700
-  sed -i -e 's/^\(root:[^:]*:[^:]*\):[^:]*:[^:]*:/\1:0:99999:/' /etc/shadow
-  sed -i -e 's/^\(ssgconfig:[^:]*:[^:]*\):[^:]*:[^:]*:/\1:0:99999:/' /etc/shadow
+  chage -m 0 -M 99999 root
+  chage -m 0 -M 99999 ssgconfig
 
   # GEN000580, GEN000600, GEN000620, GEN000640
   sed -i -e 's/PASS_MIN_LEN\t9/PASS_MIN_LEN\t5/' /etc/login.defs
@@ -227,13 +206,30 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   chmod 750 /root
 
   # GEN000980
-  if [ -e /etc/securetty.orig ]; then
-    mv -f /etc/securetty.orig /etc/securetty
-  fi
-
-  # GEN001260
-  chmod 664 /var/log/wtmp*
-  sed -i -e 's/create 0644 root utmp/create 0664 root utmp/' /etc/logrotate.conf
+  echo 'console' > /etc/securetty
+  echo 'vc/1' >> /etc/securetty
+  echo 'vc/2' >> /etc/securetty
+  echo 'vc/3' >> /etc/securetty
+  echo 'vc/4' >> /etc/securetty
+  echo 'vc/5' >> /etc/securetty
+  echo 'vc/6' >> /etc/securetty
+  echo 'vc/7' >> /etc/securetty
+  echo 'vc/8' >> /etc/securetty
+  echo 'vc/9' >> /etc/securetty
+  echo 'vc/10' >> /etc/securetty
+  echo 'vc/11' >> /etc/securetty
+  echo 'tty1' >> /etc/securetty
+  echo 'tty2' >> /etc/securetty
+  echo 'tty3' >> /etc/securetty
+  echo 'tty4' >> /etc/securetty
+  echo 'tty5' >> /etc/securetty
+  echo 'tty6' >> /etc/securetty
+  echo 'tty7' >> /etc/securetty
+  echo 'tty8' >> /etc/securetty
+  echo 'tty9' >> /etc/securetty
+  echo 'tty10' >> /etc/securetty
+  echo 'tty11' >> /etc/securetty
+  echo >> /etc/securetty
 
   # GEN001880
   if [ -e /home/ssgconfig/.bash_logout ]; then
@@ -246,19 +242,8 @@ halt:*:13637:0:99999:7:::' /etc/shadow
     chmod 764 /home/ssgconfig/.bashrc
   fi
 
-  # GEN002480
-  if [ -s /root/original_permissions ]; then
-    sed -e 's/\(.*\) [0-9]\{1,\}$/"\1"/' /root/original_permissions | xargs chmod -f o+w
-  fi
-  rm -f /root/original_permissions
-
-  # GEN002720
-  chkconfig --level 3 auditd off
-  service auditd stop
-  sed -i -e 's/max_log_file = 125/max_log_file = 5/' /etc/auditd.conf
-  sed -i -e '/-a exit,always -S open -F success=0/d' /etc/audit.rules
-
   # GEN002740
+  sed -i -e 's/max_log_file = 125/max_log_file = 5/' /etc/auditd.conf
   sed -i -e '/-a exit,always -S unlink -S rmdir/d' /etc/audit.rules
 
   # GEN002760
@@ -300,6 +285,11 @@ halt:*:13637:0:99999:7:::' /etc/shadow
 
   # GEN005540
   sed -i -e '/sshd1: ALL/d' -e 'sshd2: ALL' -e '/sshdfwd-x11: ALL/d' /etc/hosts.deny
+  sed -i -e '/sshd2: LOCAL/d' /etc/hosts.allow
+
+  # GEN005540
+  sed -i -e '/sshd1: ALL/d' -e '/sshd2: ALL/d' -e '/sshdfwd-x11: ALL/d' /etc/hosts.deny
+  sed -i -e '/sshd2: LOCAL/d' /etc/hosts.allow
 
   # LNX00340
   sed -i -e 's/news:x:13:/news:x:13:news/' /etc/group
