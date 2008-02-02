@@ -1,7 +1,7 @@
 Summary: SCA 6000 Support for SecureSpan Gateway
 Name: SCA6000drv
 Version: 1.0
-Release: 4c
+Release: 5
 Group: Applications/Internet
 License: GPL
 URL: http://www.layer7tech.com
@@ -10,7 +10,7 @@ Source0: /tmp/sca6000drv.tgz
 buildroot: %{_builddir}/%{name}-%{version}
 provides: sca6000drv-l7
 requires: kernel-smp >= 2.6.9-55.EL
-requires: kernel-smp <= 2.6.9-55.0.2.EL
+requires: kernel-smp <= 2.6.9-67.0.1.EL
 requires: sun-sca6000
 # Prevents rpm build from erroring and halting
 %undefine       __check_files
