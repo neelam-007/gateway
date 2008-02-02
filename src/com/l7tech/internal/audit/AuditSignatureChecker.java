@@ -15,14 +15,17 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -32,10 +35,25 @@ import java.util.zip.ZipFile;
  * Tool to check signatures in a downloaded audit file; with both
  * GUI and command line interfaces.
  *
+ * @see <a href="http://sarek/mediawiki/index.php?title=Audit_Signature_Checker">Usage Documentation</a>
  * @since SecureSpan 4.2
- * @rmak
+ * @author rmak
  */
 public class AuditSignatureChecker extends JFrame {
+
+    static {
+        Logger.getLogger("").setLevel(Level.WARNING);
+    }
+
+    /** Result status. Ordinal is used as exit status. */
+    private enum Status {
+        /** All records have signatures and they are valid. */
+        PASS,
+        /** One or more record does not have signature or its signature is invalid. */
+        FAIL,
+        /** Error occurred to prevent checking. */
+        ERROR,
+    };
 
     private static final Preferences _preferences = Preferences.userRoot().node("/com/l7tech/internal/audit/auditsignaturechecker");
     private static final String PREF_AUDITPATH = "audit.path";
@@ -56,26 +74,27 @@ public class AuditSignatureChecker extends JFrame {
         return result;
     }
 
+    private static boolean isFilePath(final String path) {
+        try {
+            new File(path).getCanonicalPath();
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean isURL(final String url) {
+        try {
+            new URI(url);
+        } catch (URISyntaxException e) {
+            return false;
+        }
+        return true;
+    }
+
     private static Certificate[] loadCertFromFile(String file) throws IOException, CertificateException {
-        final File auditFile = new File(file);
-        if (! auditFile.exists()) {
-            return null;
-        }
-        if (! auditFile.isFile()) {
-            return null;
-        }
-        final File certFile = new File(file);
-
-        if (! certFile.exists()) {
-            return null;
-        }
-        if (! certFile.isFile()) {
-            return null;
-        }
-
-        Collection<? extends Certificate> certs = CertUtils.getFactory().generateCertificates(new FileInputStream(file));
-
-        return certs.toArray(new X509Certificate[0]);
+        final Collection<? extends Certificate> certs = CertUtils.getFactory().generateCertificates(new FileInputStream(file));
+        return certs.toArray(new Certificate[certs.size()]);
     }
 
 
@@ -132,30 +151,14 @@ public class AuditSignatureChecker extends JFrame {
     }
 
 
-    private static Certificate[] loadCert(String urlOrFile, final PrintWriter out) {
-        String errormsg = null;
-        Certificate[] output = new Certificate[0];
-        try {
-            output = loadCertFromFile(urlOrFile);
-        } catch (IOException e) {
-            errormsg = e.getMessage();
-        } catch (CertificateException e) {
-            errormsg = e.getMessage();
+    private static Certificate[] loadCert(final String urlOrFile) throws IOException, CertificateException {
+        if (isFilePath(urlOrFile)) {
+            return loadCertFromFile(urlOrFile);
+        } else if (isURL(urlOrFile)) {
+            return loadCertFromURL(urlOrFile);
+        } else {
+            throw new IOException("Neither a file path or URL: " + urlOrFile);
         }
-        if (output == null) {
-            try {
-                output = loadCertFromURL(urlOrFile);
-            } catch (IOException e) {
-                errormsg = e.getMessage();
-            }
-        }
-        if (output == null) {
-            out.println("Could not load cert from " + urlOrFile);
-            out.println(errormsg);
-            return null;
-        }
-        out.println("Certificate loaded OK");
-        return output;
     }
 
     /**
@@ -164,15 +167,16 @@ public class AuditSignatureChecker extends JFrame {
      * @param auditPath     path of audit ZIP file or the uncompressed audit.dat file
      * @param certPath      path of signing certficate file
      * @param out           output writer
-     * @return true if pass; false if fail
+     * @param verbose       verbose mode
+     * @return {@link Status#PASS}, {@link Status#FAIL}, or {@link Status#ERROR}
      */
-    public static boolean checkFile(final String auditPath, final String certPath, final PrintWriter out) {
-        Certificate[] cert = loadCert(certPath, out);
-        if (cert == null) {
-            return false;
-        }
-
+    public static Status checkFile(final String auditPath,
+                                   final String certPath,
+                                   final PrintWriter out,
+                                   final boolean verbose) {
         try {
+            final Certificate[] cert = loadCert(certPath);
+
             if (isZipFile(auditPath)) {
                 // A downloaded audit ZIP file.
                 ZipFile zipFile = null;
@@ -181,20 +185,20 @@ public class AuditSignatureChecker extends JFrame {
                     final ZipEntry zipEntry = zipFile.getEntry("audit.dat");
                     if (zipEntry == null) {
                         out.println("\"audit.dat\" not found inside ZIP file.");
-                        return false;
+                        return Status.ERROR;
                     } else {
-                        return checkFile(zipFile.getInputStream(zipEntry), out, cert);
+                        return checkFile(zipFile.getInputStream(zipEntry), out, cert, verbose);
                     }
                 } finally {
                     if (zipFile != null) zipFile.close();
                 }
             } else {
                 // File is the unZIPed "audit.dat".
-                return checkFile(new FileInputStream(auditPath), out, cert);
+                return checkFile(new FileInputStream(auditPath), out, cert, verbose);
             }
         } catch (Exception e) {
-            e.printStackTrace(out);
-            return false;
+            out.println(e);
+            return Status.ERROR;
         }
     }
 
@@ -228,47 +232,76 @@ public class AuditSignatureChecker extends JFrame {
     /**
      * Check signatures of each audit record in a file.
      *
-     * @param is    input stream of audit.dat
-     * @param cert  signing certficate
-     * @param out   output writer
-     * @return true if pass; false if fail
+     * @param is        input stream of audit.dat
+     * @param cert      signing certficate
+     * @param out       output writer
+     * @param verbose   true for print out per record
+     * @return {@link Status#PASS}, {@link Status#FAIL}, or {@link Status#ERROR}
      * @throws IOException if I/O error occurs
      */
-    private static boolean checkFile(final InputStream is, final PrintWriter out, Certificate[] cert) throws IOException {
+    private static Status checkFile(final InputStream is,
+                                    final PrintWriter out,
+                                    final Certificate[] cert,
+                                    final boolean verbose)
+            throws IOException {
+        Status result = Status.PASS;
         final BufferedReader in = new BufferedReader(new InputStreamReader(is));
         String readrecord;
+        int numValid = 0, numInvalid = 0, numUnsigned = 0, numError = 0, numTotal = 0;
         int i = 0;
         while ((readrecord = readRecord(in)) != null ) {
             i++;
             if (i == 1) continue; // dont do header line
             if (readrecord.length() < 5) continue;
+            ++numTotal;
 
             DownloadedAuditRecordSignatureVerificator rec;
             try {
                 rec = DownloadedAuditRecordSignatureVerificator.parse(readrecord);
             } catch (DownloadedAuditRecordSignatureVerificator.InvalidAuditRecordException e) {
+                ++numError;
                 out.println(e.getMessage());
                 out.println(readrecord);
                 continue;
             }
-            if (!rec.isSigned()) {
-                out.println(rec.getAuditID() + " is not signed");
-            } else {
-                boolean res;
+            if (rec.isSigned()) {
                 try {
-                    res = rec.verifySignature(cert[0]);
+                    if (rec.verifySignature(cert[0])) {
+                        ++numValid;
+                        if (verbose) out.println(rec.getAuditID() + " has a valid signature");
+                    } else {
+                        ++numInvalid;
+                        out.println(rec.getAuditID() + " has an *INVALID* signature");
+                        if (result == Status.PASS) result = Status.FAIL;
+                    }
                 } catch (Exception e) {
-                    out.println("Error validating signature " + e.getMessage());
-                    res = false;
+                    ++numError;
+                    out.println(rec.getAuditID() + ": Error validating signature: " + e.toString());
+                    result = Status.ERROR;
                 }
-                if (res) {
-                    out.println(rec.getAuditID() + " has a valid signature");
-                } else {
-                    out.println(rec.getAuditID() + " has an *INVALID* signature");
-                }
+            } else {
+                ++numUnsigned;
+                out.println(rec.getAuditID() + " is not signed");
+                if (result == Status.PASS) result = Status.FAIL;
             }
         }
-        return true;
+
+        int maxNumDigits = 0;
+        maxNumDigits = Math.max(maxNumDigits, Integer.toString(numValid).length());
+        maxNumDigits = Math.max(maxNumDigits, Integer.toString(numInvalid).length());
+        maxNumDigits = Math.max(maxNumDigits, Integer.toString(numUnsigned).length());
+        maxNumDigits = Math.max(maxNumDigits, Integer.toString(numError).length());
+        maxNumDigits = Math.max(maxNumDigits, Integer.toString(numTotal).length());
+        out.println("--------------------------------------------------------------------------------");
+        out.println("Summary:");
+        out.printf("    Valid   : %" + maxNumDigits + "d\n", numValid);
+        out.printf("    Invalid : %" + maxNumDigits + "d\n", numInvalid);
+        out.printf("    Unsigned: %" + maxNumDigits + "d\n", numUnsigned);
+        out.printf("    Error   : %" + maxNumDigits + "d\n", numError);
+        out.printf("    Total   : %" + maxNumDigits + "d\n", numTotal);
+        out.println("--------------------------------------------------------------------------------");
+
+        return result;
     }
 
     public static void main(String[] args) throws ClassNotFoundException, UnsupportedLookAndFeelException, IllegalAccessException, InstantiationException {
@@ -281,23 +314,53 @@ public class AuditSignatureChecker extends JFrame {
                     frame.toFront();
                 }
             });
-        } else if (args.length == 2) {
-            // Invokes command line interface.
-            final boolean result = checkFile(args[0], args[1], new PrintWriter(System.out, true));
-            System.out.println("***** " + (result ? "PASS" : "FAIL") + " *****");
-            // Saves user preferences (for GUI interface to use).
-            _preferences.put(PREF_AUDITPATH, args[0]);
-            _preferences.put(PREF_CERTPATH, args[1]);
-
         } else {
-            System.out.println("usage: (Help)         java " + AuditSignatureChecker.class.getName() + " -h");
-            System.out.println("       (GUI)          java " + AuditSignatureChecker.class.getName());
-            System.out.println("       (Command line) java " + AuditSignatureChecker.class.getName() + " {ZIP file} {Cert file}");
-            System.out.println("                      java " + AuditSignatureChecker.class.getName() + " audit.dat  {Cert file}");
-            System.exit(1);
+            // Invokes command line interface.
+
+            boolean verbose = false;
+            int i = 0;
+            for (; i < args.length && args[i].startsWith("-"); ++i) {
+                if (args[i].equals("--")) {
+                    ++i;
+                    break;
+                } else if (args[i].equals("-h")) {
+                    usage(System.out);
+                    System.exit(Status.PASS.ordinal());
+                } else if (args[i].equals("-v")) {
+                    verbose = true;
+                } else {
+                    System.out.println("!!unknown option: " + args[i]);
+                    usage(System.out);
+                    System.exit(Status.ERROR.ordinal());
+                }
+            }
+
+            if (args.length - i != 2) {
+                usage(System.out);
+                System.exit(Status.ERROR.ordinal());
+            }
+            final String auditPath = args[i];
+            final String certPath = args[++i];
+
+            final Status result = checkFile(auditPath, certPath, new PrintWriter(System.out, true), verbose);
+            System.out.println("***** " + result + " *****");
+            System.exit(result.ordinal());
         }
     }
 
+    public static void usage(final PrintStream out) {
+        out.println("GUI mode:");
+        out.println("    java -jar AuditSignatureChecker.jar");
+        out.println("Command line mode:");
+        out.println("    java -jar AuditSignatureChecker.jar [options] <ZIP file> <Cert file>");
+        out.println("    java -jar AuditSignatureChecker.jar [options] audit.dat  <Cert file>");
+        out.println("    Options: -h    help (this message)");
+        out.println("             -v    verbose mode");
+        out.println("             --    stop parsing for options");
+        out.println("    Exit status: " + Status.PASS.ordinal() + " " + Status.PASS);
+        out.println("                 " + Status.FAIL.ordinal() + " " + Status.FAIL);
+        out.println("                 " + Status.ERROR.ordinal() + " " + Status.ERROR);
+    }
     /**
      * GUI interface.
      */
@@ -312,6 +375,7 @@ public class AuditSignatureChecker extends JFrame {
         private final JTextField _certPathTextField = new JTextField();
         private final JButton _checkButton = new JButton("Check");
         private final JLabel _statusLabel = new JLabel();
+        private final JCheckBox _verboseCheckBox = new JCheckBox("verbose");
         private final JTextArea _outputTextArea = new JTextArea();
 
         private final PrintWriter _outputTextAreaWriter = new PrintWriter(new Writer() {
@@ -375,7 +439,7 @@ public class AuditSignatureChecker extends JFrame {
 
             gridBagConstraints.insets = new Insets(3, 10, 3, 10);
             gridBagConstraints.gridx = 0;
-            gridBagConstraints.gridy = 1;
+            ++gridBagConstraints.gridy;
             add(new JLabel("Certificate (path or URL):"), gridBagConstraints);
 
             _certPathTextField.getDocument().addDocumentListener(new DocumentListener() {
@@ -411,9 +475,12 @@ public class AuditSignatureChecker extends JFrame {
             subPanel.add(Box.createHorizontalStrut(20));
             subPanel.add(_statusLabel);
             gridBagConstraints.gridx = 0;
-            gridBagConstraints.gridy = 2;
+            ++gridBagConstraints.gridy;
             gridBagConstraints.gridwidth = GridBagConstraints.REMAINDER;
             add(subPanel, gridBagConstraints);
+
+            ++gridBagConstraints.gridy;
+            add(_verboseCheckBox, gridBagConstraints);
 
             _outputTextArea.setEditable(false);
 
@@ -421,7 +488,7 @@ public class AuditSignatureChecker extends JFrame {
             scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
             scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
             scrollPane.setPreferredSize(new Dimension(600, 400));
-            gridBagConstraints.gridy = 3;
+            ++gridBagConstraints.gridy;
             gridBagConstraints.fill = GridBagConstraints.BOTH;
             gridBagConstraints.anchor = GridBagConstraints.CENTER;
             gridBagConstraints.insets = new Insets(3, 10, 10, 10);
@@ -516,22 +583,30 @@ public class AuditSignatureChecker extends JFrame {
         /** Handles check button click. */
         private void onCheck() {
             _outputTextArea.setText(null);
-            final boolean result = checkFile(_auditPathTextField.getText(), _certPathTextField.getText(), _outputTextAreaWriter);
+            this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            final Status result = checkFile(_auditPathTextField.getText(), _certPathTextField.getText(), _outputTextAreaWriter, _verboseCheckBox.isSelected());
+            this.setCursor(null);
             setStatus(result);
         }
 
-        private void setStatus(final boolean pass) {
+        private void setStatus(final Status status) {
             _statusLabel.setOpaque(true);
             _statusLabel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
             _statusLabel.setFont(new Font("Monospaced", Font.BOLD, 12));
-            if (pass) {
+            if (status == Status.PASS) {
                 _statusLabel.setText(" PASS ");
                 _statusLabel.setForeground(Color.BLACK);
                 _statusLabel.setBackground(Color.GREEN);
-            } else {
+            } else if (status == Status.FAIL) {
                 _statusLabel.setText(" FAIL ");
                 _statusLabel.setForeground(Color.RED);
                 _statusLabel.setBackground(Color.YELLOW);
+            } else if (status == Status.ERROR) {
+                _statusLabel.setText(" ERROR ");
+                _statusLabel.setForeground(Color.RED);
+                _statusLabel.setBackground(Color.WHITE);
+            } else {
+                throw new RuntimeException("Internal Error: Unknown status: " + status);
             }
         }
 
