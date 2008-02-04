@@ -415,9 +415,9 @@ public class GatewayFeatureSets {
             ass(CustomAssertionHolder.class),
             moduleLoader);
 
-        // NCES
-        GatewayFeatureSet ncesAssertions =
-        fsr("set:Nces:Assertions", "NCES decoration and validation assertions",
+        // US (NCES)
+        GatewayFeatureSet usAssertions =
+        fsr("set:US:Assertions", "US decoration and validation assertions",
             mass("assertion:NcesDecorator"),
             mass("assertion:NcesValidator"));
 
@@ -508,10 +508,10 @@ public class GatewayFeatureSets {
             fs(profileGateway));
 
         PROFILE_ALL =
-        fsp("set:Profile:NCES", "SecureSpan Gateway NCES",
-            "Adds NCES features.",
+        fsp("set:Profile:US", "SecureSpan Gateway US",
+            "Adds US features.",
             fs(profileGateway),
-            fs(ncesAssertions));
+            fs(usAssertions));
 
         fsp("set:Profile:Federal", "SecureSpan Federal",
             "Exactly the same features as SecureSpan Gateway, but XML VPN Client software is not bundled.",
