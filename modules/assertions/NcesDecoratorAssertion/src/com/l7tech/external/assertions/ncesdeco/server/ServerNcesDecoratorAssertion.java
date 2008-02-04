@@ -73,15 +73,19 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Message msg;
+        final String what;
         switch(assertion.getTarget()) {
             case REQUEST:
                 msg = context.getRequest();
+                what = "request";
                 break;
             case RESPONSE:
                 msg = context.getResponse();
+                what = "response";
                 break;
             case OTHER:
                 msg = context.getRequestMessage(assertion.getOtherTargetMessageVariable());
+                what = assertion.getOtherTargetMessageVariable();
                 break;
             default:
                 throw new PolicyAssertionException(assertion, "Unsupported decoration target: " + assertion.getTarget());
@@ -89,16 +93,16 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
 
         try {
             if (!msg.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, NcesDecoratorAssertion.class.getSimpleName(), "Unable to decorate message: Message not SOAP");
+                auditor.logAndAudit(AssertionMessages.NCESDECO_NOT_SOAP, what);
                 return AssertionStatus.NOT_APPLICABLE;
             }
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] { NcesDecoratorAssertion.class.getSimpleName(), "Unable to decorate message: Parse failure: " + ExceptionUtils.getMessage(e) }, e);
-            return AssertionStatus.FAILED;
+            auditor.logAndAudit(AssertionMessages.NCESDECO_BAD_XML, new String[] { what, ExceptionUtils.getMessage(e) }, e);
+            return AssertionStatus.BAD_REQUEST;
         }
 
         if (context.getCredentials() == null) {
-            auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, NcesDecoratorAssertion.class.getSimpleName(), "Unable to decorate message: No credentials have been collected");
+            auditor.logAndAudit(AssertionMessages.NCESDECO_NO_CREDS);
             return AssertionStatus.AUTH_REQUIRED;
         }
 
@@ -110,8 +114,8 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
         try {
             doc = msg.getXmlKnob().getDocumentWritable();
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] { NcesDecoratorAssertion.class.getSimpleName(), "Unable to decorate message: Parse failure: " + ExceptionUtils.getMessage(e) }, e);
-            return AssertionStatus.FAILED;
+            // Extremely unlikely--isSoap() already succeeded
+            throw new PolicyAssertionException(assertion, "Parse failure after isSoap() success");
         }
 
         final Element securityEl = SoapUtil.getOrMakeSecurityElement(doc);
@@ -122,7 +126,7 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
             addMessageId(doc, decoReq);
             addTimestamp(decoReq);
         } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] { NcesDecoratorAssertion.class.getSimpleName(), "Unable to decorate message: Invalid Document Format: " + ExceptionUtils.getMessage(e) }, e);
+            auditor.logAndAudit(AssertionMessages.NCESDECO_IDFE, new String[] { what, ExceptionUtils.getMessage(e) }, e);
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -133,16 +137,16 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
             martha.decorateMessage(msg, decoReq);
             return AssertionStatus.NONE;
         } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] { NcesDecoratorAssertion.class.getSimpleName(), "Unable to decorate message: " + ExceptionUtils.getMessage(e) }, e);
+            auditor.logAndAudit(AssertionMessages.NCESDECO_IDFE, new String[] { what, ExceptionUtils.getMessage(e) }, e);
             return AssertionStatus.FAILED;
         } catch (GeneralSecurityException e) {
-            auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] { NcesDecoratorAssertion.class.getSimpleName(), "Unable to decorate message: " + ExceptionUtils.getMessage(e) }, e);
+            auditor.logAndAudit(AssertionMessages.NCESDECO_WARN_MISC, new String[] { what, ExceptionUtils.getMessage(e) }, e);
             return AssertionStatus.FAILED;
         } catch (DecoratorException e) {
-            auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] { NcesDecoratorAssertion.class.getSimpleName(), "Unable to decorate message: " + ExceptionUtils.getMessage(e) }, e);
+            auditor.logAndAudit(AssertionMessages.NCESDECO_WARN_MISC, new String[] { what, ExceptionUtils.getMessage(e) }, e);
             return AssertionStatus.FAILED;
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] { NcesDecoratorAssertion.class.getSimpleName(), "Unable to decorate message: " + ExceptionUtils.getMessage(e) }, e);
+            auditor.logAndAudit(AssertionMessages.NCESDECO_BAD_XML, new String[] { what, ExceptionUtils.getMessage(e) }, e);
             return AssertionStatus.FAILED;
         }
     }

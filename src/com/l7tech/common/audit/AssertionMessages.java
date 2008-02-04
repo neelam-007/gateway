@@ -182,7 +182,7 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_WSS_REPLAY_MULTIPLE_SENDER_IDS            = m(4917, Level.WARNING, "Found multiple eligible sender identity tokens; unable to proceed");
     public static final M REQUEST_WSS_REPLAY_MULTIPLE_MESSAGE_IDS           = m(4918, Level.WARNING, "Found multiple signed wsa:MessageID values; unable to proceed");
     public static final M REQUEST_WSS_REPLAY_GOT_SIGNED_MESSAGE_ID          = m(4919, Level.FINE, "Found signed wsa:MessageID ''{0}''");
-    public static final M REQUEST_WSS_REPLAY_NO_SIGNED_MESSAGE_ID           = m(4920, Level.WARNING, "No signed wsa:MessageID was present in the request; using Timestamp instead");
+    public static final M REQUEST_WSS_REPLAY_NO_SIGNED_MESSAGE_ID           = m(4920, Level.FINE, "No signed wsa:MessageID was present in the request; using Timestamp instead");
 
     // ServerCustomAssertionHolder
     public static final M CA_CREDENTIAL_INFO                                = m(5000, Level.FINE, "Service:{0}, custom assertion: {1}, principal:{2}");
@@ -547,4 +547,20 @@ public class AssertionMessages extends Messages {
 
     public static final M TEMPLATE_RESPONSE_EARLY    = m(8600, Level.FINE, "Sending response early");
     public static final M TEMPLATE_RESPONSE_NOT_HTTP = m(8601, Level.WARNING, "Unable to send early response for non HTTP message.");
+
+    public static final M NCESDECO_NOT_SOAP  = m(8650, Level.WARNING, "{0} is not SOAP");
+    public static final M NCESDECO_BAD_XML   = m(8651, Level.WARNING, "{0} parse failure: {1}");
+    public static final M NCESDECO_NO_CREDS  = m(8652, Level.WARNING, "No credentials have been collected");
+    public static final M NCESDECO_IDFE      = m(8653, Level.WARNING, "Invalid {0} message Format: {1}");
+    public static final M NCESDECO_WARN_MISC = m(8654, Level.WARNING, "Unable to decorate {0}: {1}");
+
+    public static final M NCESVALID_NO_MSG          = m(8700, Level.WARNING, "{0} variable has not been set; unable to proceed");
+    public static final M NCESVALID_BAD_XML         = m(8701, Level.WARNING, "{0} parse failure: {1}");
+    public static final M NCESVALID_NOT_SOAP        = m(8702, Level.WARNING, "{0} is not soap");
+    public static final M NCESVALID_NO_SAML         = m(8703, Level.WARNING, "{0} did not contain a signed SAML assertion");
+    public static final M NCESVALID_NO_TIMESTAMP    = m(8704, Level.WARNING, "{0} did not contain a signed wsu:Timestamp");
+    public static final M NCESVALID_NO_MESSAGEID    = m(8705, Level.WARNING, "{0} did not contain a signed wsa:MessageID");
+    public static final M NCESVALID_BODY_NOT_SIGNED = m(8706, Level.WARNING, "{0} SOAP Body was not signed");
+    public static final M NCESVALID_DIFF_SIGNATURES = m(8707, Level.WARNING, "{0} contained the expected elements, but they were covered by different Signatures");
+
 }

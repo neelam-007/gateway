@@ -91,7 +91,8 @@ public class NcesValidatorAssertion extends Assertion implements UsesVariables {
         // that is, we want our required feature set to be "assertion:NcesValidator" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
 
-        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, NcesValidatorAssertionValidator.class.getName());
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.external.assertions.ncesval.NcesValidatorAssertionValidator");
+        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.ncesval.console.NcesValidatorAssertionPropertiesDialog");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

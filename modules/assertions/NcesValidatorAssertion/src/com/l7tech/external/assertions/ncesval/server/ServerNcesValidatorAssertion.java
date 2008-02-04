@@ -11,6 +11,7 @@ import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssProcessorImpl;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -27,7 +28,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -38,14 +38,11 @@ import java.util.logging.Logger;
 public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesValidatorAssertion> {
     private static final Logger logger = Logger.getLogger(ServerNcesValidatorAssertion.class.getName());
 
-    private final NcesValidatorAssertion assertion;
     private final Auditor auditor;
     private final SecurityTokenResolver securityTokenResolver;
 
     public ServerNcesValidatorAssertion(NcesValidatorAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
-
-        this.assertion = assertion;
         this.auditor = new Auditor(this, context, logger);
         this.securityTokenResolver = (SecurityTokenResolver)context.getBean("securityTokenResolver");
     }
@@ -67,7 +64,7 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
                 if (what == null) throw new PolicyAssertionException(assertion, "Target is OTHER but OtherMessageVariableName is null");
                 msg = context.getRequestMessage(what);
                 if (msg == null) {
-                    auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, assertion.getClass().getSimpleName(), what + " message variable has not been set; unable to proceed");
+                    auditor.logAndAudit(AssertionMessages.NCESVALID_NO_MSG, what);
                     return AssertionStatus.FAILED;
                 }
                 break;
@@ -76,10 +73,13 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
         }
 
         try {
-            msg.isSoap(true);
+            if (!msg.isSoap(true)) {
+                auditor.logAndAudit(AssertionMessages.NCESVALID_NOT_SOAP, what);
+                return AssertionStatus.NOT_APPLICABLE;
+            }
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, assertion.getClass().getSimpleName(), "Message is not SOAP");
-            return AssertionStatus.NOT_APPLICABLE;
+            auditor.logAndAudit(AssertionMessages.NCESVALID_BAD_XML, new String[] { what, ExceptionUtils.getMessage(e) }, e);
+            return AssertionStatus.BAD_REQUEST;
         }
 
         SecurityKnob sk = (SecurityKnob)msg.getKnob(SecurityKnob.class);
@@ -134,22 +134,22 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
         }
 
         if (assertion.isSamlRequired() && samlSigner == null) {
-            auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, assertion.getClass().getSimpleName(), what + " did not contain a signed SAML assertion as expected");
+            auditor.logAndAudit(AssertionMessages.NCESVALID_NO_SAML, what);
             return AssertionStatus.BAD_REQUEST;
         }
 
         if (timestampSigner == null) {
-            auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, assertion.getClass().getSimpleName(), what + " did not contain a signed wsu:Timestamp as expected");
+            auditor.logAndAudit(AssertionMessages.NCESVALID_NO_TIMESTAMP, what);
             return AssertionStatus.BAD_REQUEST;
         }
 
         if (messageIdSigner == null) {
-            auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, assertion.getClass().getSimpleName(), what + " did not contain a signed wsa:MessageID as expected");
+            auditor.logAndAudit(AssertionMessages.NCESVALID_NO_MESSAGEID, what);
             return AssertionStatus.BAD_REQUEST;
         }
 
-        if (messageIdSigner == null) {
-            auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, assertion.getClass().getSimpleName(), what + " Body was not signed");
+        if (bodySigner == null) {
+            auditor.logAndAudit(AssertionMessages.NCESVALID_BODY_NOT_SIGNED, what);
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -161,20 +161,10 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
         }
 
         if (!ok) {
-            auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, assertion.getClass().getSimpleName(), what + " contained the expected elements, but they were covered by different Signatures");
+            auditor.logAndAudit(AssertionMessages.NCESVALID_DIFF_SIGNATURES, what);
             return AssertionStatus.BAD_REQUEST;
         }
         
         return AssertionStatus.NONE;
-    }
-
-    /*
-     * Called reflectively by module class loader when module is unloaded, to ask us to clean up any globals
-     * that would otherwise keep our instances from getting collected.
-     */
-    public static void onModuleUnloaded() {
-        // This assertion doesn't have anything to do in response to this, but it implements this anyway
-        // since it will be used as an example by future modular assertion authors
-        logger.log(Level.INFO, "ServerNcesValidatorAssertion is preparing itself to be unloaded");
     }
 }
