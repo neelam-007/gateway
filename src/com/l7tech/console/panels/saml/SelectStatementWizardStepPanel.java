@@ -8,6 +8,8 @@ import com.l7tech.policy.assertion.xmlsec.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 /**
  * The SAML introduction <code>WizardStepPanel</code>
@@ -23,6 +25,12 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
     private JToggleButton attributeStatementRadioButton;
     private JPanel buttonsPanel;
     private final boolean issueMode;
+
+    private final ActionListener changeListener = new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+            notifyListeners();
+        }
+    };
 
     /**
      * Creates new form WizardPanel
@@ -61,6 +69,15 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
         buttonsPanel.add(authenticationStatementRadioButton, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,0), 0, 0));
         buttonsPanel.add(authorizationDecisionStatementRadioButton, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,0), 0, 0));
         buttonsPanel.add(attributeStatementRadioButton, new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,0), 0, 0));
+
+        authenticationStatementRadioButton.addActionListener(changeListener);
+        authorizationDecisionStatementRadioButton.addActionListener(changeListener);
+        attributeStatementRadioButton.addActionListener(changeListener);
+    }
+
+    @Override
+    public boolean canAdvance() {
+        return authenticationStatementRadioButton.isSelected() || authorizationDecisionStatementRadioButton.isSelected() || attributeStatementRadioButton.isSelected();
     }
 
     public void readSettings(Object settings)
