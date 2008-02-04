@@ -3,9 +3,13 @@ package com.l7tech.server.config.beans;
 import com.l7tech.server.config.ClusteringType;
 import com.l7tech.server.config.ConfigurationType;
 import com.l7tech.server.config.SharedWizardInfo;
+import com.l7tech.server.config.exceptions.ConfigException;
+import com.l7tech.common.util.ExceptionUtils;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
  * User: megery
@@ -22,18 +26,21 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
     private final static String NAME = "Clustering Configuration";
     private final static String DESCRIPTION = "Configures the cluster properties for an SSG";
 
-    public ClusteringConfigBean() {
+    public ClusteringConfigBean() throws ConfigException {
         super(NAME, DESCRIPTION);
         init();
     }
 
-    private void init() {
+    private void init() throws ConfigException {
         try {
-            setLocalHostName(InetAddress.getLocalHost().getCanonicalHostName());
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
+            String hostname = InetAddress.getLocalHost().getCanonicalHostName();
+            if (StringUtils.isEmpty(hostname)) 
+                throw new ConfigException("The hostname of this machine could not be determined. ");
 
+            setLocalHostName(hostname);
+        } catch (UnknownHostException e) {
+            throw new ConfigException("The hostname of this machine could not be determined. ");
+        }
         setNewHostName(false);
     }
 

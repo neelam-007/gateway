@@ -4,6 +4,7 @@ import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.commands.LoggingConfigCommand;
 import com.l7tech.server.config.commands.RmiConfigCommand;
 import com.l7tech.server.config.ui.console.*;
+import com.l7tech.server.config.exceptions.ConfigException;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -24,10 +25,19 @@ public class ConsoleConfigWizardLauncher {
     private static final String SILENT_FILENAME_MSG = "A valid filename must be specified when operating in silent mode";
 
     public static void launch(String[] args) {
-        launchWithConsole(args);
+        try {
+            launchWithConsole(args);
+        } catch (ConfigException e) {
+            System.out.println("");
+            System.out.println("The wizard encountered an error while starting up.");
+            System.out.println(e.getMessage());
+            System.out.println("The wizard cannot proceed and will now exit.");
+            System.out.println("");
+            System.exit(1);
+        }
     }
 
-    private static void launchWithConsole(String[] args) {
+    private static void launchWithConsole(String[] args) throws ConfigException {
         //args will be either empty or -silent -filename
         boolean isSilent = false;
         if (args != null && args.length > 0) {
@@ -75,7 +85,7 @@ public class ConsoleConfigWizardLauncher {
         return additionalCommands;
     }
 
-    private static List<ConfigWizardConsoleStep> getSteps(ConfigurationWizard consoleWizard) {
+    private static List<ConfigWizardConsoleStep> getSteps(ConfigurationWizard consoleWizard) throws ConfigException {
         List<ConfigWizardConsoleStep> stepsList = new ArrayList<ConfigWizardConsoleStep>();
 
         stepsList.add(new ConfigWizardConsoleStartStep(consoleWizard));

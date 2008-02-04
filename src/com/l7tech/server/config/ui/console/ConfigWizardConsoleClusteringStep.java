@@ -7,6 +7,7 @@ import com.l7tech.server.config.commands.ClusteringConfigCommand;
 import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.exceptions.DatabaseConfigException;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
+import com.l7tech.server.config.exceptions.ConfigException;
 import org.apache.commons.lang.StringUtils;
 
 import javax.crypto.BadPaddingException;
@@ -17,6 +18,7 @@ import java.security.InvalidKeyException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Logger;
+import java.net.UnknownHostException;
 
 /**
  * User: megery
@@ -32,12 +34,12 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
     private static final String COPY_MASTER_CONFIG = "Enter the database information for the database used by the cluster.";
     private static final String REPLICATED_HOSTNAME_INSTRUCTIONS = "Specify the database hostname. If you are using a replicated database, enter the hostnames of the replicated pair in failover order, separated by commas.";
 
-    public ConfigWizardConsoleClusteringStep(ConfigurationWizard parentWiz) {
+    public ConfigWizardConsoleClusteringStep(ConfigurationWizard parentWiz) throws ConfigException {
         super(parentWiz);
         init();
     }
 
-    private void init() {
+    private void init() throws ConfigException {
         configBean = new ClusteringConfigBean();
         clusterBean = (ClusteringConfigBean) configBean;
         configCommand = new ClusteringConfigCommand(configBean);
