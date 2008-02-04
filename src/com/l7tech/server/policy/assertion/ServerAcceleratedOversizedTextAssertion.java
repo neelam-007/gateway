@@ -218,7 +218,7 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
                     break;
 
                 default:
-                    s.handleToken(TEXT, tokenIterator);
+                    s.handleToken(OTHR, tokenIterator);
                     break;
             }
         }
