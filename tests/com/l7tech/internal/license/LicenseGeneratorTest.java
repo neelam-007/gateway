@@ -62,6 +62,7 @@ public class LicenseGeneratorTest extends TestCase {
 
         spec.setLicenseeName("Blah Blah");
         spec.setEulaText("my happy happy eula");
+        spec.setFeatureLabel("FeatureTronic Awesomox");
 
         // Should work OK now
         LicenseGenerator.generateUnsignedLicense(spec, false);
@@ -119,6 +120,7 @@ public class LicenseGeneratorTest extends TestCase {
         spec.setLicenseId(1001);
         spec.setLicenseeContactEmail("nomailbox@NOWHERE");
         spec.setEulaText("happy eula");
+        spec.setFeatureLabel("FeatureTronic Awesomox");
 
         Document lic = LicenseGenerator.generateUnsignedLicense(spec, false);
 
@@ -139,6 +141,7 @@ public class LicenseGeneratorTest extends TestCase {
         spec.setLicenseId(1001);
         spec.setLicenseeContactEmail("nomailbox@NOWHERE");
         spec.setEulaText("my eula");
+        spec.setFeatureLabel(null);
         spec.addRootFeature("set:Profile:IPS");
         spec.addRootFeature("service:SnmpQuery");
         spec.addRootFeature("assertion:JmsRouting");
@@ -163,6 +166,7 @@ public class LicenseGeneratorTest extends TestCase {
         spec.setLicenseId(1001);
         spec.setLicenseeContactEmail("nomailbox@NOWHERE");
         spec.setEulaText("my eula");
+        spec.setFeatureLabel("FeatureTronic Awesomox");
         spec.addRootFeature("set:Profile:IPS");
         spec.addRootFeature("service:SnmpQuery");
         spec.addRootFeature("assertion:JmsRouting");

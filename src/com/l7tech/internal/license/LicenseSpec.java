@@ -30,6 +30,7 @@ public class LicenseSpec {
     private String versionMinor = "*";
     private String versionMajor = "*";
     private String eulaText = null;
+    private String featureLabel = null;
     private Set<String> rootFeatures = new LinkedHashSet<String>();
 
     /**
@@ -83,6 +84,7 @@ public class LicenseSpec {
         this.setProduct(grants.getProduct());
         this.setVersionMajor(grants.getVersionMajor());
         this.setVersionMinor(grants.getVersionMinor());
+        this.setFeatureLabel(grants.getFeatureLabel());
 
         this.clearRootFeatures();
         this.rootFeatures.addAll(Arrays.asList(grants.getRootFeatureSetNames()));
@@ -283,5 +285,15 @@ public class LicenseSpec {
     /** @param eulaText the literal text of the EULA to include in the new license, or null to avoid including any. */
     public void setEulaText(String eulaText) {
         this.eulaText = eulaText;
+    }
+
+    /** @return the string to show instead of the generated feature grants, or null. */
+    public String getFeatureLabel() {
+        return featureLabel;
+    }
+
+    /** @param featureLabel A string to show instead of the generated feature grants string, or null to just use the generated string. */
+    public void setFeatureLabel(String featureLabel) {
+        this.featureLabel = featureLabel;
     }
 }

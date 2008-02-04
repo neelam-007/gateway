@@ -84,6 +84,7 @@ public final class LicenseGenerator {
         Element version = appendSimpleElement(product, "version", null);
         version.setAttribute("major", spec.getVersionMajor());
         version.setAttribute("minor", spec.getVersionMinor());
+        appendSimpleElementIfNonEmpty(de, "featureLabel", spec.getFeatureLabel());
 
         for (String featureName : spec.getRootFeatures()) {
             Element featureset = appendSimpleElement(product, "featureset", null);

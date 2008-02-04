@@ -86,9 +86,10 @@ public final class License implements Serializable {
         final String versionMajor;
         final String versionMinor;
         final String[] rootFeatureSetNames;
+        final String featureLabel;
 
         public LicenseGrants(String hostname, String ip, String product, String versionMajor, String versionMinor,
-                             String[] rootFeatureSetNames)
+                             String[] rootFeatureSetNames, String featureLabel)
         {
             this.hostname = hostname;
             this.ip = ip;
@@ -96,6 +97,7 @@ public final class License implements Serializable {
             this.versionMajor = versionMajor;
             this.versionMinor = versionMinor;
             this.rootFeatureSetNames = rootFeatureSetNames;
+            this.featureLabel = featureLabel;
         }
 
         public String getHostname() {
@@ -120,6 +122,10 @@ public final class License implements Serializable {
 
         public String[] getRootFeatureSetNames() {
             return rootFeatureSetNames;
+        }
+
+        public String getFeatureLabel() {
+            return featureLabel;
         }
 
         /** @return a string description of the grants. */
@@ -154,31 +160,39 @@ public final class License implements Serializable {
                 sb.append(anyIp ? ", with" : " and").append(" the host name ").append(hostname);
 
             if (rootFeatureSetNames.length > 0) {
-                String setprof = "set:Profile:";
-                int setproflen = setprof.length();
                 sb.append(" featuring ");
-                for (int i = 0; i < rootFeatureSetNames.length; i++) {
-                    String name = rootFeatureSetNames[i];
-                    if (i > 0) {
-                        if (i == rootFeatureSetNames.length - 1) sb.append(" and ");
-                        else sb.append(", ");
-                    }
 
-                    // TODO look up the human-readable marketing name rather than attempting to make one up here
-                    if (name.startsWith(setprof) && name.length() > setproflen) {
-                        sb.append("SecureSpan ");
-                        name = name.substring(setproflen);
-                        if (name.equals("Accel")) name = "Acceleration";
-                        else if (name.equals("IPS")) name = "XML IPS";
-                        else if (name.equals("PolicyIntegrationPoint")) name ="Policy Integration Point";
-                        sb.append(name);
-                    } else
-                        sb.append(name);
-
-                }
+                if (featureLabel != null)
+                    sb.append(featureLabel);
+                else
+                    describeFeatures(sb);
             }
 
             return sb.toString();
+        }
+
+        private void describeFeatures(StringBuffer sb) {
+            String setprof = "set:Profile:";
+            int setproflen = setprof.length();
+            for (int i = 0; i < rootFeatureSetNames.length; i++) {
+                String name = rootFeatureSetNames[i];
+                if (i > 0) {
+                    if (i == rootFeatureSetNames.length - 1) sb.append(" and ");
+                    else sb.append(", ");
+                }
+
+                // TODO look up the human-readable marketing name rather than attempting to make one up here
+                if (name.startsWith(setprof) && name.length() > setproflen) {
+                    sb.append("SecureSpan ");
+                    name = name.substring(setproflen);
+                    if (name.equals("Accel")) name = "Acceleration";
+                    else if (name.equals("IPS")) name = "XML IPS";
+                    else if (name.equals("PolicyIntegrationPoint")) name ="Policy Integration Point";
+                    sb.append(name);
+                } else {
+                    sb.append(name);
+                }
+            }
         }
 
         /** @noinspection RedundantIfStatement*/
@@ -277,6 +291,7 @@ public final class License implements Serializable {
         String product = parseWildcardStringAttribute(ld, "product", "name");
         String versionMajor = parseWildcardStringAttribute(ld, "product", "version", "major");
         String versionMinor = parseWildcardStringAttribute(ld, "product", "version", "minor");
+        String featureLabel = parseSimpleText(ld, "featureLabel");
 
         this.eulaText = parseEulaText(ld);
 
@@ -286,7 +301,7 @@ public final class License implements Serializable {
 
         //noinspection unchecked
         this.g = new LicenseGrants(hostname, ip, product, versionMajor, versionMinor,
-                                   (String[])featureSets.toArray(new String[0]));
+                                   (String[])featureSets.toArray(new String[0]), featureLabel);
         licenseeName = parseWildcardStringAttribute(ld, "licensee", "name");
         requireValue("licensee name", licenseeName);
         final String cemail = parseWildcardStringAttribute(ld, "licensee", "contactEmail");
@@ -328,6 +343,17 @@ public final class License implements Serializable {
         }
         eulaText = eulaText != null && eulaText.length() > 0 ? eulaText : null;
         return eulaText;
+    }
+
+    private String parseSimpleText(Document ld, String elementName) throws TooManyChildElementsException {
+        Element lic = ld.getDocumentElement();
+        Element elm = XmlUtil.findOnlyOneChildElementByName(lic, lic.getNamespaceURI(), elementName);
+        if (elm == null)
+            return null;
+        String val = XmlUtil.getTextValue(elm);
+        if (val == null || val.length() < 1)
+            return null;
+        return val;
     }
 
     /**
