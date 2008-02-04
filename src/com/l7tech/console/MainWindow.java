@@ -2581,6 +2581,9 @@ public class MainWindow extends JFrame implements SheetHolder {
               String statusMessage = connectionID;
               connectionContext = "";
 
+              /* clear cached server cert */
+              serverSslCert = null;
+
               /* init rmi cl */
               if (!isApplet())
                 RMIClassLoader.getDefaultProviderInstance();
