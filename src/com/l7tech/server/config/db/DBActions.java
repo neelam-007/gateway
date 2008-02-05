@@ -5,7 +5,6 @@ import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.WeakSet;
 import com.l7tech.server.config.*;
 import com.l7tech.server.partition.PartitionInformation;
 import org.apache.commons.lang.StringUtils;
@@ -409,8 +408,6 @@ public class DBActions {
                     }
                 }
             }
-            if (isOk)
-                doGrantsOnExistingDb(dbInfo, ui);
         } else {
             switch (status.getStatus()) {
                 case DBActions.DB_UNKNOWNHOST_FAILURE:
@@ -448,137 +445,6 @@ public class DBActions {
             }
         }
         return isOk;
-    }
-
-    private void doGrantsOnExistingDb(DBInformation dbInfo, DBActionsListener ui) {
-        boolean success = checkExistingGrants(dbInfo, ui);
-        if (success) return;
-
-
-        Connection conn = null;
-        Statement stmt = null;
-
-        try {
-            String privUsername = dbInfo.getPrivUsername();
-            if (StringUtils.isEmpty(privUsername)) {
-                if (ui == null) {
-                    logger.severe("The privileges are not correct on the existing database.");
-                    logger.severe("Root credentials are needed to perform the grants on the existing database.");
-                    logger.severe("Cannot proceed with updating the grants.");
-                    return;
-                }
-
-                logger.warning("The privileges are not correct on the existing database.");
-                logger.warning("Root credentials are needed to perform the grants on the existing database.");
-
-                ui.showSuccess("The privileges are not correct on the existing database.");
-                if (!isLocalMachine(dbInfo.getHostname())) {
-                    ui.showSuccess(
-                            "The configuration wizard cannot update the privileges on a remote database." +
-                            Utilities.EOL_CHAR +
-                            "Please consult the SecureSpan Installation and Maintenance Manual " +
-                            Utilities.EOL_CHAR +
-                            "and manually alter the privileges on this database");
-                    return;
-                }
-
-
-                ui.showSuccess("Please enter the credentials for the root database user (needed to grant permissions in the database)" + Utilities.EOL_CHAR);
-                Map<String, String> creds = ui.getPrivelegedCredentials(
-                        null,
-                        "Please enter the username for the root database user: [root]",
-                        "Please enter the password for root database user: ",
-                        "root");
-                if (creds == null) {
-                    logger.severe("root credentials are needed to perform the grants on the existing database. Cannot proceed.");
-                    return;
-                }
-
-                dbInfo.setPrivUsername(creds.get(DBActions.USERNAME_KEY));
-                dbInfo.setPrivPassword(creds.get(DBActions.PASSWORD_KEY));
-            }
-
-            String hostname = dbInfo.getHostname();
-            if (hostname.equalsIgnoreCase(SharedWizardInfo.getInstance().getRealHostname())) {
-                hostname = "localhost";
-            }
-            conn = getConnection(hostname, dbInfo.getDbName(), dbInfo.getPrivUsername(), dbInfo.getPrivPassword());
-            stmt = conn.createStatement();
-
-            executeUpdates(getGrantStatements(dbInfo, osFunctions.isWindows()), stmt, "Creating grants for user " + dbInfo.getUsername() + " on the " + dbInfo.getDbName() + " database", dbInfo.getDbName());
-            success = true;
-        } catch (SQLException e) {
-            logger.severe("There was an error while trying to create the grants for the existing database." + ExceptionUtils.getMessage(e));
-            success = false;
-        } finally {
-            ResourceUtils.closeQuietly(stmt);
-            ResourceUtils.closeQuietly(conn);
-        }
-    }
-
-    private boolean isLocalMachine(String hostname) {
-        if (StringUtils.isEmpty(hostname)) return false;
-
-        if (StringUtils.equalsIgnoreCase("localhost",hostname)) return true;
-        if (StringUtils.equalsIgnoreCase(SharedWizardInfo.getInstance().getRealHostname(), hostname)) return true;
-
-        return false;
-    }
-
-    private boolean checkExistingGrants(DBInformation dbInfo, DBActionsListener ui) {
-        Connection conn = null;
-        Statement stmt = null;
-
-        try {
-            conn = getConnection(dbInfo);
-            stmt = conn.createStatement();
-            
-            Set<String> hostnamesToCheck = new HashSet<String>();
-            String hostnamesFromDBInfo = dbInfo.getHostname();
-            for (String singleHostname : hostnamesFromDBInfo.split(",")) {
-                hostnamesToCheck.add(singleHostname);
-                hostnamesToCheck.add(getNonLocalHostame(singleHostname));
-            }
-            hostnamesToCheck.add("%");
-            hostnamesToCheck.add("localhost");
-            hostnamesToCheck.add("localhost.localdomain");
-
-            Set<String> foundGrants = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-            for (String host : hostnamesToCheck) {
-                ResultSet rs = null;
-                try {
-                    rs = stmt.executeQuery("show grants for " + dbInfo.getUsername() + "@'" + host + "'");
-                    while (rs.next()) {
-                        String grantStmtInDb = rs.getString(1);
-                        foundGrants.add(grantStmtInDb);
-                    }
-                } catch (SQLException e) {
-                    logger.warning("While checking grants in the database, the server said: " + e.getMessage());
-                } finally {
-                    ResourceUtils.closeQuietly(rs);
-                }
-            }
-
-            String[] neededGrants = getGrantStatements(dbInfo, osFunctions.isWindows());
-
-            for (String neededGrant : neededGrants) {
-                String theGrant = neededGrant.toLowerCase();
-                int pos = theGrant.indexOf("identified by");
-                if (pos != -1) {
-                    theGrant = theGrant.substring(0, pos-1);
-                }
-
-                if (!foundGrants.contains(theGrant)) return false;
-            }
-            return true;
-        } catch (SQLException e) {
-            logger.severe("Error while checking grants in the database. " + ExceptionUtils.getMessage(e));
-        } finally {
-            ResourceUtils.closeQuietly(conn);
-            ResourceUtils.closeQuietly(stmt);
-        }
-
-        return false;
     }
 
     private boolean checkLicense(DBActionsListener ui, String currentVersion, DBInformation dbInfo) {
