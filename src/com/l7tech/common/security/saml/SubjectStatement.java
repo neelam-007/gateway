@@ -166,7 +166,7 @@ public abstract class SubjectStatement {
                                String overrideNameFormat,
                                String nameQualifier)
     {
-        if (credentials == null) throw new IllegalArgumentException();
+        if (credentials == null) throw new IllegalArgumentException("Credentials are required");
 
         this.nameQualifier = nameQualifier;
 

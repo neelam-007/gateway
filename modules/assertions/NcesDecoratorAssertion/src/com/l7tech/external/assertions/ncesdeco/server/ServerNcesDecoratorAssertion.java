@@ -101,7 +101,7 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
             return AssertionStatus.BAD_REQUEST;
         }
 
-        if (context.getCredentials() == null) {
+        if (context.getLastCredentials() == null) {
             auditor.logAndAudit(AssertionMessages.NCESDECO_NO_CREDS);
             return AssertionStatus.AUTH_REQUIRED;
         }
