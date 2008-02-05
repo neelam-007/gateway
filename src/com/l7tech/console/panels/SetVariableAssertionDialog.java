@@ -20,7 +20,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.Set;
+import java.util.Iterator;
 
 /**
  * Dialog for {@link com.l7tech.policy.assertion.SetVariableAssertion}.
@@ -298,14 +300,26 @@ public class SetVariableAssertionDialog extends JDialog {
         }
 
         // Expression. Blank is OK.
-        final StringBuilder expressionStatus = new StringBuilder();
         final String[] names = Syntax.getReferencedNames(expression);
+        final java.util.List<String> badNames = new LinkedList<String>();
         for (String name : names) {
             if (BuiltinVariables.getMetadata(name) == null &&
                 Syntax.getMatchingName(name, _predecessorVariables) == null) {
-                if (expressionStatus.length() > 0) expressionStatus.append("\n");
-                expressionStatus.append(name).append(": No such variable");
+                badNames.add(name);
             }
+        }
+        final String expressionStatus;
+        if (badNames.isEmpty()) {
+            expressionStatus = "";
+        } else {
+            StringBuffer sb = new StringBuffer("No such variable");
+            if (badNames.size() > 1) sb.append("s");
+            sb.append(": ");
+            for (Iterator<String> it = badNames.iterator(); it.hasNext();) {
+                sb.append(it.next());
+                if (it.hasNext()) sb.append(", ");
+            }
+            expressionStatus = sb.toString();
         }
 
         if (expressionStatus.length() == 0) {
@@ -315,7 +329,7 @@ public class SetVariableAssertionDialog extends JDialog {
         } else {
             ok = false;
             _expressionStatusLabel.setIcon(WARNING_ICON);
-            _expressionStatusTextArea.setText(expressionStatus.toString());
+            _expressionStatusTextArea.setText(expressionStatus);
             _expressionStatusScrollPane.setBorder(_expressionStatusBorder);
         }
 
