@@ -328,7 +328,8 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                         auditor.logAndAudit(AssertionMessages.SAML_ISSUER_ADDING_ATTR, name, s);
                     }
                 } else {
-                    final String s = obj.toString();
+                    // ExpandVariables will have already thrown/logged a warning if the variable is bad
+                    final String s = obj == null ? "" : obj.toString();
                     auditor.logAndAudit(AssertionMessages.SAML_ISSUER_ADDING_ATTR, name, s);
                     outAtts.add(new Attribute(name, nameFormatOrNamespace, s));
                 }
