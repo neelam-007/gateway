@@ -1783,6 +1783,11 @@
                 <include name="login.config"/>
                 <include name="bridgePolicyTemplates/*"/>
             </fileset>
+            <!-- TODO find some more declarative way to do this -->
+            <fileset dir="${src.root}/modules/assertions/WsAddressingAssertion/build/classes">
+                <include name="com/l7tech/external/assertions/wsaddressing/WsAddressingAssertion.class"/>
+                <include name="com/l7tech/external/assertions/wsaddressing/client/**/*.class"/>
+            </fileset>
         </jar>
     </target>
 
