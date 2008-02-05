@@ -739,15 +739,19 @@ public class PolicyApplicationContext extends ProcessingContext {
     public SamlAssertion getOrCreateSamlSenderVouchesAssertion(int version)
             throws ConfigurationException, OperationCanceledException, GeneralSecurityException,
             IOException, KeyStoreCorruptException, ClientCertificateException, BadCredentialsException,
-            PolicyRetryableException, HttpChallengeRequiredException {
+            PolicyRetryableException, HttpChallengeRequiredException
+    {
+
+        String username = null;
 
         // Try a separate username from the client first
         SecurityKnob sk = (SecurityKnob)getRequest().getKnob(SecurityKnob.class);
-        List<SecurityToken> tokens = sk.getAllSecurityTokens();
-        String username = null;
-        for (SecurityToken token : tokens) {
-            if (token instanceof HasUsername) {
-                username = ((HasUsername)token).getUsername();
+        if (sk != null) {
+            List<SecurityToken> tokens = sk.getAllSecurityTokens();
+            if (tokens != null) for (SecurityToken token : tokens) {
+                if (token instanceof HasUsername) {
+                    username = ((HasUsername)token).getUsername();
+                }
             }
         }
 
