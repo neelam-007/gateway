@@ -191,6 +191,8 @@ public class ServicePropertiesDialog extends JDialog {
             popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_ADDHISTORY_ACTION));
             popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_PREVIOUS_ACTION));
             popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_NEXT_ACTION));
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.UNDO_ACTION));
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.REDO_ACTION));
             boolean lastWasSeparator = true; // remove trailing separator
             for (int i=popupModel.size()-1; i>=0; i--) {
                 boolean isSeparator = popupModel.isSeparator(i);
