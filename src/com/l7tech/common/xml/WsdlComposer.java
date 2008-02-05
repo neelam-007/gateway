@@ -37,7 +37,6 @@ public class WsdlComposer {
     private static final String DEFAULT_BINDING_TRANSPORT_URI = "http://schemas.xmlsoap.org/soap/http";
 
     private Document originalWsdlDoc;
-    private WsdlHolder originalWsdlHolder;
     private Definition delegateWsdl;
 
     private WSDLFactory wsdlFactory;
@@ -58,7 +57,6 @@ public class WsdlComposer {
     private Map<String, Operation> operationsToAdd;
 
     private Map<WsdlHolder, Types> typesMap;
-    private Map<WsdlHolder, Set<Import>> importsMap;
     private Set<WsdlHolder> sourceWsdls;
     private Builder builder;
 
@@ -80,7 +78,6 @@ public class WsdlComposer {
         sourceWsdls = new HashSet<WsdlHolder>();
         otherNamespaces = new HashMap<String, String>();
 
-        importsMap = new HashMap<WsdlHolder, Set<Import>>();
         typesMap = new HashMap<WsdlHolder, Types>();
 
         //Messages
@@ -102,8 +99,8 @@ public class WsdlComposer {
             return;
 
         Wsdl originalWsdl = Wsdl.newInstance(originalWsdlDoc.getDocumentElement().getBaseURI(), originalWsdlDoc);
-        originalWsdlHolder = new WsdlHolder(originalWsdl, "Original Wsdl");
-        addSourceWsdl(originalWsdlHolder);
+        WsdlHolder originalWsdlHolder = new WsdlHolder( originalWsdl, "Original Wsdl" );
+        addSourceWsdl( originalWsdlHolder );
 
         Definition def = originalWsdl.getDefinition();
         setTargetNamespace(def.getTargetNamespace());
@@ -120,7 +117,9 @@ public class WsdlComposer {
 
         // Use first service with supported binding
         out:
+        //noinspection unchecked
         for (Service service : (Collection<Service>) def.getServices().values()) {
+            //noinspection unchecked
             for (Port port : (Collection<Port>) service.getPorts().values()) {
                 Binding b = port.getBinding();
 
@@ -130,7 +129,7 @@ public class WsdlComposer {
                     composedService.addPort(port);
 
                     for (Object boObj : b.getBindingOperations()) {
-                        addBindingOperation((BindingOperation) boObj, originalWsdlHolder);
+                        addBindingOperation((BindingOperation) boObj, originalWsdlHolder );
                     }
 
                     // copy style
@@ -245,7 +244,6 @@ public class WsdlComposer {
 
     private void addWsdlElementsForBindingOperation(WsdlHolder sourceWsdlHolder, BindingOperation bindingOperation) {
         addSourceWsdl(sourceWsdlHolder);
-        addImportsFromSource(sourceWsdlHolder);
         addTypesFromSource(sourceWsdlHolder);
         Operation newOperation = copyOperation(bindingOperation.getOperation());
         bindingOperation.setOperation(newOperation);
@@ -259,12 +257,7 @@ public class WsdlComposer {
 
         if (empty) {
             removeTypesFromSource(sourceWsdlHolder);
-            removeImportsFromSource(sourceWsdlHolder);
         }
-    }
-
-    private void removeImportsFromSource(WsdlHolder sourceWsdlHolder) {
-        importsMap.remove(sourceWsdlHolder);
     }
 
     private void removeMessagesFromSource(Operation operation) {
@@ -368,6 +361,7 @@ public class WsdlComposer {
 
     private void addBindingOperation(BindingOperation bop) {
         Binding binding = getOrCreateBinding();
+        //noinspection unchecked
         if (!hasBindingOperation(binding.getBindingOperations(), bop)) {
             binding.addBindingOperation(bop);
         }
@@ -382,6 +376,7 @@ public class WsdlComposer {
 
         operationsToAdd.put(sourceOperation.getName(), sourceOperation);
         PortType pt = getOrCreatePortType();
+        //noinspection unchecked
         if (!hasOperation(pt.getOperations(), sourceOperation)) {
             pt.addOperation(sourceOperation);
         }
@@ -411,23 +406,6 @@ public class WsdlComposer {
         return found;
     }
 
-    private boolean addImportsFromSource(WsdlHolder sourceWsdlHolder) {
-        Set<Import> importsFromSource = importsMap.get(sourceWsdlHolder);
-        if (importsFromSource != null)
-            return false;
-
-        if (importsMap.containsKey(sourceWsdlHolder))
-            return false;
-
-        Set<Import> imports = new HashSet<Import>();
-        for (Object o : sourceWsdlHolder.wsdl.getDefinition().getImports().values()) {
-            Import im = (Import) o;
-            imports.add(im);
-        }
-        importsMap.put(sourceWsdlHolder, imports);
-        return true;
-    }
-
     private boolean addTypesFromSource(WsdlHolder sourceWsdlHolder) {
         Types typesFromSource = typesMap.get(sourceWsdlHolder);
         if (typesFromSource != null)
@@ -436,10 +414,31 @@ public class WsdlComposer {
         if (typesMap.containsKey(sourceWsdlHolder))
             return false;
 
-        Types sourceTypes = sourceWsdlHolder.wsdl.getTypes();
-        if (sourceTypes != null)
-            typesMap.put(sourceWsdlHolder, sourceTypes);
+        addTypesFromDefinition(sourceWsdlHolder, sourceWsdlHolder.wsdl.getDefinition());
+
         return true;
+    }
+
+    private boolean addTypesFromDefinition(WsdlHolder sourceWsdlHolder, Definition definition) {
+        boolean added = false;
+
+        Types sourceTypes = definition.getTypes();
+        if ( sourceTypes != null ) {
+            added = true;
+            typesMap.put(sourceWsdlHolder, sourceTypes);
+        } else {
+            //noinspection unchecked
+            Collection<List<Import>> importsCollection = definition.getImports().values();
+            outer:
+            for ( List<Import> imports : importsCollection ) {
+                for ( Import imp : imports ) {
+                    added = addTypesFromDefinition(sourceWsdlHolder, imp.getDefinition());
+                    if (added) break outer;
+                }
+            }
+        }
+
+        return added;
     }
 
     private PortType getDefaultPortType() {
@@ -566,6 +565,7 @@ public class WsdlComposer {
         if (b == null)
             return null;
 
+        //noinspection unchecked
         List<ExtensibilityElement> ees = (List<ExtensibilityElement>) b.getExtensibilityElements();
         for (ExtensibilityElement ee : ees) {
             if (ee instanceof SOAPBinding) {
@@ -580,6 +580,7 @@ public class WsdlComposer {
     public void setBindingStyle(Binding b, String style) {
         if (b != null) {
             boolean updated = false;
+            //noinspection unchecked
             List<ExtensibilityElement> ees = (List<ExtensibilityElement>) b.getExtensibilityElements();
             for (ExtensibilityElement ee : ees) {
                 if (ee instanceof SOAPBinding) {
@@ -609,6 +610,7 @@ public class WsdlComposer {
         if (b == null)
             return null;
 
+        //noinspection unchecked
         List<ExtensibilityElement> ees = (List<ExtensibilityElement>) b.getExtensibilityElements();
         for (ExtensibilityElement ee : ees) {
             if (ee instanceof SOAPBinding) {
@@ -623,6 +625,7 @@ public class WsdlComposer {
     public void setBindingTransportURI(Binding b, String transportURI) {
         if (b != null) {
             boolean updated = false;
+            //noinspection unchecked
             List<ExtensibilityElement> ees = (List<ExtensibilityElement>) b.getExtensibilityElements();
             for (ExtensibilityElement ee : ees) {
                 if (ee instanceof SOAPBinding) {
@@ -846,14 +849,22 @@ public class WsdlComposer {
             this.wsdlLocation = wsdlLocation;
         }
 
+        @Override
         public String toString() {
-            return wsdl.getServiceName() + (StringUtils.isEmpty(wsdlLocation)?"":"[" + wsdlLocation + "]");
+            String serviceName = wsdl.getServiceName();
+            if (serviceName == null) {
+                serviceName = wsdlLocation;
+            }
+            return serviceName + (StringUtils.isEmpty(wsdlLocation)?"":"[" + wsdlLocation + "]");
         }
 
+        @Override
         public int hashCode() {
             return wsdl.hashCode();
         }
 
+        @SuppressWarnings( { "EqualsWhichDoesntCheckParameterClass" } )
+        @Override
         public boolean equals(Object obj) {
             return wsdl.equals(obj);
         }
@@ -873,7 +884,7 @@ public class WsdlComposer {
 
         public Definition buildWsdl() throws IOException, SAXException, WSDLException {
             nsPrefixCounter = 0;
-            Definition workingWsdl = null;
+            Definition workingWsdl;
             if (originalWsdlDoc == null) {
                 workingWsdl = wsdlFactory.newDefinition();
             }
@@ -881,17 +892,18 @@ public class WsdlComposer {
                 WSDLReader reader = wsdlFactory.newWSDLReader();
                 reader.setExtensionRegistry(extensionRegistry);
                 workingWsdl = reader.readWSDL(originalWsdlDoc.getDocumentURI(), originalWsdlDoc);
+                workingWsdl.getImports().clear(); // imports are in-lined
             }
             buildDefinition(workingWsdl);
-            buildImports(workingWsdl);
             buildNamespaces(workingWsdl);
             buildTypes(workingWsdl);
 
             buildMessages(workingWsdl);
 
             PortType portType = getPortType();
+            //noinspection unchecked
             List<Operation> operations = portType == null ?
-                    Collections.EMPTY_LIST :
+                    Collections.<Operation>emptyList() :
                     (List<Operation>) portType.getOperations();
             PortType workingPortType = buildOperations(workingWsdl, operations);
             buildBindingOperations(workingWsdl, workingPortType);
@@ -911,29 +923,20 @@ public class WsdlComposer {
                 workingWsdl.addService(service);
         }
 
-        private void buildImports(Definition workingWsdl) {
-            for (Set<Import> imports : importsMap.values()) {
-                for (Import anImport : imports) {
-                    workingWsdl.addImport(anImport);
-                }
-            }
-        }
-
         private void buildTypes(Definition workingWsdl) throws IOException, SAXException, WSDLException {
-            Types workingTypes = workingWsdl.getTypes();
-            if (workingTypes == null) {
-                workingTypes = workingWsdl.createTypes();
+            Types workingTypes = workingWsdl.createTypes();
+
+            boolean typeAdded = false;
+            for (Map.Entry<WsdlHolder, Types> entry : typesMap.entrySet()) {
+                typeAdded = true;
+                Types sourceTypes = entry.getValue();
+                insertTypes(sourceTypes, workingTypes, workingWsdl);
             }
 
-            if (!typesMap.isEmpty()) {
-                for (Map.Entry<WsdlHolder, Types> entry : typesMap.entrySet()) {
-                    if (entry.getKey() != originalWsdlHolder) {
-                        Types sourceTypes = entry.getValue();
-                        insertTypes(sourceTypes, workingTypes, workingWsdl);
-                    }
-                }
+            // don't add empty type element
+            if ( typeAdded ) {
+                workingWsdl.setTypes(workingTypes);
             }
-            workingWsdl.setTypes(workingTypes);
         }
 
         private void insertTypes(Types sourceTypes, Types workingTypes, Definition workingWsdl) throws WSDLException, IOException, SAXException {
@@ -968,7 +971,6 @@ public class WsdlComposer {
 
         private PortType buildOperations(Definition workingWsdl, Collection<Operation> workingOps) {
             workingWsdl.getPortTypes().clear();
-
             PortType destinationPt = getPortType();
             if (destinationPt == null)
                 return null;
@@ -977,7 +979,7 @@ public class WsdlComposer {
             workingPortType.setQName(destinationPt.getQName());
             workingPortType.setUndefined(false);
 
-            Map<String,Operation> opMap = new TreeMap();
+            Map<String,Operation> opMap = new TreeMap<String,Operation>();
             for (Operation operation : workingOps) {
                 opMap.put(operation.getName(), operation);
             }
@@ -1007,12 +1009,14 @@ public class WsdlComposer {
             workingBinding.setQName(destinationBinding.getQName());
             workingBinding.setUndefined(false);
 
+            //noinspection unchecked
             for(ExtensibilityElement ee : (List<ExtensibilityElement>) destinationBinding.getExtensibilityElements()) {
                 workingBinding.addExtensibilityElement(ee);
             }
 
-            Map<String,BindingOperation> opMap = new TreeMap();
+            Map<String,BindingOperation> opMap = new TreeMap<String,BindingOperation>();
 
+            //noinspection unchecked
             for (BindingOperation bindingOperation : (List<BindingOperation>) destinationBinding.getBindingOperations()) {
                 opMap.put(bindingOperation.getName(), bindingOperation);                
             }
