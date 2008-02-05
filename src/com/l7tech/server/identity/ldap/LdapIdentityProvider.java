@@ -22,9 +22,9 @@ public interface LdapIdentityProvider extends IdentityProvider<LdapUser, LdapGro
      */
     static final int LDAP_CONNECT_TIMEOUT = 5 * 1000;
     /**
-     * LDAP reads will fail after 5 seconds' wait
+     * LDAP reads will fail after 30 seconds' wait
      */
-    static final int LDAP_READ_TIMEOUT = 5 * 1000;
+    static final int LDAP_READ_TIMEOUT = 30 * 1000;
     /**
      * An unused LDAP connection will be closed after 30 seconds of inactivity
      */

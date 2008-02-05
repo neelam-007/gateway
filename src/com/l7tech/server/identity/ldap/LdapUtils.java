@@ -44,7 +44,7 @@ public final class LdapUtils {
     }
 
     public static DirContext getLdapContext(String url) throws NamingException {
-        return getLdapContext(url, null, null, 5000, 30000);
+        return getLdapContext(url, null, null, 30000, 30000);
     }
 
     public static DirContext getLdapContext(String url, String login, String pass, int connectTimeout, int poolTimeout) throws NamingException {
