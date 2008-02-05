@@ -22,7 +22,6 @@ import com.l7tech.console.util.WsdlUtils;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ServiceHeader;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
@@ -69,6 +68,7 @@ public class CreateServiceWsdlAction extends SecureAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Create WSDL";
     }
@@ -76,6 +76,7 @@ public class CreateServiceWsdlAction extends SecureAction {
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return "Create WSDL for a new Web service";
     }
@@ -83,6 +84,7 @@ public class CreateServiceWsdlAction extends SecureAction {
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         // todo: find better icon
         return "com/l7tech/console/resources/CreateWSDL16x16.gif";
@@ -95,6 +97,7 @@ public class CreateServiceWsdlAction extends SecureAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -130,6 +133,7 @@ public class CreateServiceWsdlAction extends SecureAction {
          *
          * @param we the event describing the wizard finish
          */
+        @Override
         public void wizardFinished(WizardEvent we) {
             PublishedService service;
             boolean tryToPublish = false;
@@ -305,6 +309,18 @@ public class CreateServiceWsdlAction extends SecureAction {
         throw new IllegalArgumentException("missing SOAP address port definition");
     }
 
+    /**
+     * Set information for the Original WSDL
+     *
+     * <p>If the given original wsdl uses imports then it MUST have been parsed
+     * in a way that will have set the documents base URI. If this is not done
+     * then any relative imports will fail.</p>
+     *
+     * @param origService The original published service
+     * @param editCallback Callback to use when editing
+     * @param origWsdl The original WSDL document (see note)
+     * @param importedWsdls The original source WSDLs (not imports)
+     */
     public void setOriginalInformation(PublishedService origService,
                                        Functions.UnaryVoid<Document> editCallback,
                                        Document origWsdl,

@@ -16,7 +16,18 @@ public class IOExceptionThrowingReader extends Reader {
      * @param ioe The exception to throw
      */
     public IOExceptionThrowingReader(IOException ioe) {
-        exception = ioe;
+        this( ioe, true );
+    }
+
+
+    /**
+     * Create a reader that will throw the given exception (optionally on close).
+     *
+     * @param ioe The exception to throw
+     */
+    public IOExceptionThrowingReader(IOException ioe, boolean throwOnClose) {
+        this.exception = ioe;
+        this.throwOnClose = throwOnClose;
     }
 
 
@@ -25,6 +36,7 @@ public class IOExceptionThrowingReader extends Reader {
      *
      * @throws IOException Always thrown
      */
+    @Override
     public int read(char cbuf[], int off, int len) throws IOException {
         throw exception;
     }
@@ -34,11 +46,15 @@ public class IOExceptionThrowingReader extends Reader {
      *
      * @throws IOException Always thrown
      */
+    @Override
     public void close() throws IOException {
-        throw exception;
+        if ( throwOnClose ) {
+            throw exception;
+        }
     }
 
     //- PRIVATE
 
     private final IOException exception;
+    private final boolean throwOnClose;
 }

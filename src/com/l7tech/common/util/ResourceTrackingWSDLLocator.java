@@ -1,6 +1,7 @@
 package com.l7tech.common.util;
 
 import com.l7tech.common.io.ByteOrderMarkInputStream;
+import com.l7tech.common.io.IOExceptionThrowingReader;
 import com.l7tech.common.mime.ContentTypeHeader;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.Document;
@@ -78,6 +79,10 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
                 }
             } catch (IOException ioe) {
                 logger.log(Level.WARNING, "Error getting base input source '"+uri+"'.", ioe);
+                InputSource inputSource = new InputSource();
+                inputSource.setSystemId( uri );
+                inputSource.setCharacterStream( new IOExceptionThrowingReader(ioe, false) );
+                baseInputSource = inputSource;
             }
         } else {
             baseInputSource = delegate.getBaseInputSource();
@@ -109,6 +114,10 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
             }
         } catch (IOException ioe) {
             logger.log(Level.WARNING, "Error getting import input source '"+uri+"'.", ioe);
+            InputSource errorSource = new InputSource();
+            errorSource.setSystemId( uri );
+            errorSource.setCharacterStream( new IOExceptionThrowingReader(ioe, false) );
+            inputSource = errorSource;
         }
 
         return inputSource;

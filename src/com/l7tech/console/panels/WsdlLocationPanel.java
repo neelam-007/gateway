@@ -48,7 +48,6 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.io.IOExceptionThrowingReader;
-import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.console.event.WsdlEvent;
 import com.l7tech.console.event.WsdlListener;
 import com.l7tech.console.util.Registry;
@@ -154,7 +153,7 @@ public class WsdlLocationPanel extends JPanel {
      * @return The URI.
      */
     public String getWsdlUri(int index) {
-        return wsdlResources.toArray(new ResourceTrackingWSDLLocator.WSDLResource[0])[index].getUri();
+        return wsdlResources.toArray(new ResourceTrackingWSDLLocator.WSDLResource[wsdlResources.size()])[index].getUri();
     }
 
     /**
@@ -166,7 +165,7 @@ public class WsdlLocationPanel extends JPanel {
      * @return The wsdl document.
      */
     public String getWsdlContent(int index) {
-        return wsdlResources.toArray(new ResourceTrackingWSDLLocator.WSDLResource[0])[index].getWsdl();        
+        return wsdlResources.toArray(new ResourceTrackingWSDLLocator.WSDLResource[wsdlResources.size()])[index].getWsdl();
     }
 
     /**
@@ -295,11 +294,13 @@ public class WsdlLocationPanel extends JPanel {
         fc.setDialogTitle("Select WSDL or WSIL.");
         fc.setDialogType(JFileChooser.OPEN_DIALOG);
         FileFilter fileFilter = new FileFilter() {
+            @Override
             public boolean accept(File f) {
                 return  f.isDirectory() ||
                         f.getName().toLowerCase().endsWith(".wsdl") ||
                         f.getName().toLowerCase().endsWith(".wsil");
             }
+            @Override
             public String getDescription() {
                 return "(*.wsdl/*.wsil) Web Service description files.";
             }
@@ -348,7 +349,7 @@ public class WsdlLocationPanel extends JPanel {
     }
 
     private boolean isFileOk(String filePath) {
-        boolean isFile = false;
+        boolean isFile;
 
         File wsdlFile = new File(filePath);
         try {
@@ -372,7 +373,7 @@ public class WsdlLocationPanel extends JPanel {
         urlChanged();
 
         final String wsdlUrl = wsdlUrlTextField.getText();
-        WSDLLocator locator = null;
+        WSDLLocator locator;
         if (isUrlOk(wsdlUrl, null) && !isUrlOk(wsdlUrl, "file")) { // then it is http or https so the Gateway should resolve it
             locator = gatewayHttpWSDLLocator(wsdlUrl);
         }
@@ -387,6 +388,7 @@ public class WsdlLocationPanel extends JPanel {
                 CancelableOperationDialog.newCancelableOperationDialog(this, "Resolving target", "Please wait, resolving target...");
         
         SwingWorker worker = new SwingWorker() {
+            @Override
             public Object construct() {
                 try {
                     new URI(wsdlLocator.getBaseURI()); // ensure valid url
@@ -460,7 +462,7 @@ public class WsdlLocationPanel extends JPanel {
                             InputSource is = new InputSource();
                             is.setSystemId(baseUri);
                             is.setCharacterStream(new StringReader(XmlUtil.nodeToString(resolvedDoc)));
-                            ResourceTrackingWSDLLocator wloc = new ResourceTrackingWSDLLocator(new GatewayWSDLLocator(Wsdl.getWSDLLocator(is, false)), true, true, true);
+                            ResourceTrackingWSDLLocator wloc = new ResourceTrackingWSDLLocator(new GatewayWSDLLocator(Wsdl.getWSDLLocator(is, false), logger), true, true, true);
                             wsdl = Wsdl.newInstance(WsdlUtils.getWSDLFactory(), wloc);
 
                             Collection<ResourceTrackingWSDLLocator.WSDLResource> wsdls = wloc.getWSDLResources();
@@ -566,6 +568,7 @@ public class WsdlLocationPanel extends JPanel {
                 return null;
             }
 
+            @Override
             public void finished() {
                 dlg.setVisible(false);
             }
@@ -592,8 +595,12 @@ public class WsdlLocationPanel extends JPanel {
         return manager.resolveWsdlTarget(wsdlUrl);
     }
 
+    /**
+     * Get a WSDLLocator suitable for retrieval of a single document (will not work for includes)
+     */
     private WSDLLocator gatewayHttpWSDLLocator(final String wsdlUrl) {
         InputSource is = new InputSource() {
+            @Override
             public Reader getCharacterStream() {
                 try {
                     return new StringReader(gatewayFetchWsdlUrl(wsdlUrl));
@@ -602,7 +609,8 @@ public class WsdlLocationPanel extends JPanel {
                     return new IOExceptionThrowingReader(ioe);
                 }
             }
-            
+
+            @Override
             public String getSystemId() {
                 return wsdlUrl;
             }
@@ -611,11 +619,14 @@ public class WsdlLocationPanel extends JPanel {
         return Wsdl.getWSDLLocator(is, false);
     }
 
+    /**
+     * Get a WSDLLocator suitable for retrieval of a single document (will not work for includes)
+     */
     private WSDLLocator fileWSDLLocator(final String wsdlUrl) {
         FileInputStream fin = null;
         InputSource is = new InputSource();
         try {
-            File wsdlFile = null;
+            File wsdlFile;
             if (isUrlOk(wsdlUrl, "file")) {
                 wsdlFile = new File(new URI(wsdlUrl));
             }
@@ -630,10 +641,11 @@ public class WsdlLocationPanel extends JPanel {
             is.setByteStream(new ByteArrayInputStream(HexUtils.slurpStream(fin, 8000000)));
         }
         catch (IOException ioe) {
-            is.setByteStream(new IOExceptionThrowingInputStream(ioe));        
+            is.setCharacterStream(new IOExceptionThrowingReader(ioe, false));
         }
         catch (URISyntaxException uise) {
-            is.setByteStream(new IOExceptionThrowingInputStream(new CausedIOException(uise)));        
+            //noinspection ThrowableInstanceNeverThrown
+            is.setCharacterStream(new IOExceptionThrowingReader(new CausedIOException(uise), false));
         }
         finally {
             ResourceUtils.closeQuietly(fin);
@@ -643,11 +655,16 @@ public class WsdlLocationPanel extends JPanel {
     }
 
 
+    /**
+     * WSDLLocator that accesses HTTP URI's via the gateway.
+     */
     private static class GatewayWSDLLocator implements Closeable, WSDLLocator {
         private final WSDLLocator wsdlLocator;
+        private final Logger logger;
 
-        private GatewayWSDLLocator(final WSDLLocator wsdlLocator) {
+        private GatewayWSDLLocator(final WSDLLocator wsdlLocator, final Logger logger) {
             this.wsdlLocator = wsdlLocator;
+            this.logger = logger;
         }
 
         public void close() {
@@ -665,6 +682,8 @@ public class WsdlLocationPanel extends JPanel {
             InputSource result = null;
             InputSource input = wsdlLocator.getImportInputSource(parentLocation, importLocation);
 
+            logger.log(Level.INFO, "Processing import from location '" + importLocation + "'.");
+
             if (input != null && input.getSystemId() != null) {
                 String uri = input.getSystemId();
 
@@ -674,9 +693,16 @@ public class WsdlLocationPanel extends JPanel {
                     try {
                         result.setCharacterStream(new StringReader(gatewayFetchWsdlUrl(uri)));
                     } catch(IOException ioe) {
-                        result.setCharacterStream(new IOExceptionThrowingReader(ioe));
+                        result.setCharacterStream(new IOExceptionThrowingReader(ioe, false));
                     }
                 }
+            }
+
+            if ( result == null ) {
+                result = new InputSource();
+                result.setSystemId(importLocation);
+                //noinspection ThrowableInstanceNeverThrown
+                result.setCharacterStream( new IOExceptionThrowingReader(new IOException("Import not permitted '"+importLocation+"'."), false) );
             }
 
             return result;

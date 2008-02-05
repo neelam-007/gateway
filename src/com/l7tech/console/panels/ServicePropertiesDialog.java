@@ -22,6 +22,7 @@ import com.l7tech.service.ServiceDocument;
 import com.l7tech.service.ServiceAdmin;
 
 import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 
 import javax.swing.*;
 import java.awt.*;
@@ -473,7 +474,10 @@ public class ServicePropertiesDialog extends JDialog {
         try {
             Document dom = newWSDL;
             if (dom == null) {
-                dom = XmlUtil.stringAsDocument(subject.getWsdlXml());
+                InputSource input = new InputSource();
+                input.setSystemId( subject.getWsdlUrl() );
+                input.setCharacterStream( new StringReader(subject.getWsdlXml()) );
+                dom = XmlUtil.parse(input, false);
             }
 
             Collection<ServiceDocument> svcDocuments = newWsdlDocuments;

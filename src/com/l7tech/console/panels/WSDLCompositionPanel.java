@@ -20,8 +20,8 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.wsdl.BindingOperation;
-import javax.wsdl.Definition;
 import javax.wsdl.WSDLException;
+import javax.wsdl.Binding;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -94,10 +94,12 @@ public class WSDLCompositionPanel extends WizardStepPanel{
         operationIcon = new ImageIcon(getClass().getClassLoader().getResource(RESOURCE_PATH +  "/methodPublic.gif"));
     }
 
+    @Override
     public String getStepLabel() {
         return "Compose WSDL";
     }
 
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         wsdlComposer = (WsdlComposer) settings;
         populateSourceWsdlView();
@@ -160,6 +162,7 @@ public class WSDLCompositionPanel extends WizardStepPanel{
 
         
         sourceOperationsList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (value instanceof BindingOperation) {
@@ -172,6 +175,7 @@ public class WSDLCompositionPanel extends WizardStepPanel{
         });
 
         resultOperationsList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (value instanceof BindingOperationHolder) {
@@ -280,13 +284,8 @@ public class WSDLCompositionPanel extends WizardStepPanel{
         if (currentHolder == null || currentHolder.wsdl == null)
             return;
 
-        Definition currentDef = currentHolder.wsdl.getDefinition();
-        Map bindings = currentDef.getBindings();
-        Set keys = bindings.keySet();
-
-        for (Object key : keys) {
-            Object bindingObj = bindings.get(key);
-            javax.wsdl.Binding binding = (javax.wsdl.Binding) bindingObj;
+        Collection<Binding> bindings = currentHolder.wsdl.getBindings();
+        for (Binding binding : bindings) {
             if (wsdlComposer.isSupportedSoapBinding(binding)) {
                 java.util.List ops = binding.getBindingOperations();
                 for (Object op : ops) {
@@ -451,6 +450,7 @@ public class WSDLCompositionPanel extends WizardStepPanel{
             wsdlMap = new TreeMap<String, java.util.List<String>>();
         }
 
+        @Override
         public void insertNodeInto(MutableTreeNode newChild, MutableTreeNode parent, int index) {
             if (!(newChild instanceof WsdlTreeNode)) {
                 throw new IllegalArgumentException("Expected " + WsdlTreeNode.class.getName());
@@ -482,6 +482,7 @@ public class WSDLCompositionPanel extends WizardStepPanel{
             this.sourceWsdlHolder = sourceWsdl;
         }
 
+        @Override
         public String toString() {
             return bindingOperation.getName();
         }
@@ -531,7 +532,7 @@ public class WSDLCompositionPanel extends WizardStepPanel{
 
         private void revalidate() {
             Collection<BindingOperation> bops = wsdlComposer.getBindingOperations();
-            Collection<BindingOperationHolder> toRemove = new ArrayList();
+            Collection<BindingOperationHolder> toRemove = new ArrayList<BindingOperationHolder>();
             for (int i=0; i<getSize(); i++) {
                 BindingOperationHolder boh = (BindingOperationHolder) getElementAt(i);
                 if (!hasOperation(bops, boh.bindingOperation)) {

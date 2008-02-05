@@ -14,7 +14,6 @@ import javax.wsdl.Port;
 import javax.wsdl.Binding;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPBinding;
-import javax.xml.namespace.QName;
 
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.gui.util.DialogDisplayer;
@@ -45,15 +44,18 @@ public class ServicePanel extends WizardStepPanel {
     /**
      *
      */
+    @Override
     public String getDescription() {
         return "Specify the location for either the WSDL of the service to publish or " +
                "a WSIL document that contains a link to that WSDL.";
     }
 
+    @Override
     public boolean canAdvance() {
         return wsdlLocationPanel.isLocationValid();
     }
 
+    @Override
     public boolean canFinish() {
         return wsdlLocationPanel.isLocationValid();
     }
@@ -63,6 +65,7 @@ public class ServicePanel extends WizardStepPanel {
      * Will pester the user with a dialog box if the WSDL could not be fetched.
      * @return true iff. the WSDL URL in the URL: text field was downloaded successfully.
      */
+    @Override
     public boolean onNextButton() {
         if (TopComponents.getInstance().isConnectionLost()) {
             DialogDisplayer.showMessageDialog(this, "The connection to the SecureSpan Gateway was lost", "Connection Lost", JOptionPane.ERROR_MESSAGE, null, null);
@@ -71,14 +74,16 @@ public class ServicePanel extends WizardStepPanel {
         boolean res = processWsdlLocation();
         if (res) {
             // test for soap bindings
-            Map<QName, Binding> bindings = wsdl.getDefinition().getBindings();
-            if (bindings != null) for (QName qName : bindings.keySet()) {
-                Binding binding = bindings.get(qName);
-                java.util.List<ExtensibilityElement> bindingEels = binding.getExtensibilityElements();
-                for (ExtensibilityElement eel : bindingEels) {
-                    // weird second part if to avoid class path conflict when running from idea where the cp is different than at runtime
-                    if (eel instanceof SOAPBinding && !eel.getClass().getName().equals("com.idoox.wsdl.extensions.soap12.SOAP12Binding")) {
-                        return res;
+            Collection<Binding> bindings = wsdl.getBindings();
+            if (bindings != null) {
+                for ( Binding binding : bindings ) {
+                    //noinspection unchecked
+                    java.util.List<ExtensibilityElement> bindingEels = (java.util.List<ExtensibilityElement>)binding.getExtensibilityElements();
+                    for (ExtensibilityElement eel : bindingEels) {
+                        // weird second part if to avoid class path conflict when running from idea where the cp is different than at runtime
+                        if (eel instanceof SOAPBinding && !eel.getClass().getName().equals("com.idoox.wsdl.extensions.soap12.SOAP12Binding")) {
+                            return res;
+                        }
                     }
                 }
             }
@@ -90,6 +95,7 @@ public class ServicePanel extends WizardStepPanel {
         return res;
     }
 
+    @Override
     public void storeSettings(Object settings) throws IllegalStateException {
         if (!(settings instanceof ServiceAndAssertion)) {
             throw new IllegalArgumentException();
@@ -146,6 +152,7 @@ public class ServicePanel extends WizardStepPanel {
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "Web Service Description";
     }
@@ -156,7 +163,7 @@ public class ServicePanel extends WizardStepPanel {
 
     // local service copy
     private PublishedService service = new PublishedService();
-    private Collection<ServiceDocument> serviceDocuments = new ArrayList();
+    private Collection<ServiceDocument> serviceDocuments = new ArrayList<ServiceDocument>();
     private WsdlLocationPanel wsdlLocationPanel;
     private Wsdl wsdl;
 

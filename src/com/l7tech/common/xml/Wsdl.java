@@ -4,6 +4,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SchemaUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import org.apache.ws.policy.Assertion;
 import org.apache.ws.policy.Policy;
 import org.apache.ws.policy.PolicyReference;
@@ -318,6 +319,11 @@ public class Wsdl {
                         if (allowLocalImports || !"file".equals(resolvedUri.getScheme())) {
                             is = new InputSource();
                             is.setSystemId(resolvedUri.toString());
+                        } else {
+                            is = new InputSource();
+                            is.setSystemId(resolvedUri.toString());
+                            //noinspection ThrowableInstanceNeverThrown
+                            is.setByteStream( new IOExceptionThrowingInputStream(new IOException("Local import not permitted '"+resolvedUri.toString()+"'.")) );
                         }
                     }
                 }
@@ -387,8 +393,10 @@ public class Wsdl {
     }
 
     /**
+     * Get the Bindings for the WSDL (which may be from an import)
+     *
      * @return the collection of WSDL <code>Binding</code>
-     *         instances described in this definition.
+     *         instances described in this definition (may be empty but not null).
      */
     public Collection<Binding> getBindings() {
         final Collection<Binding> allBindings = new ArrayList<Binding>();
@@ -847,6 +855,7 @@ public class Wsdl {
      *
      * @return the string representation of the object
      */
+    @Override
     public String toString() {
         return definition.toString();
     }
@@ -1247,7 +1256,7 @@ public class Wsdl {
     /**
      * extract base URI from the URL specified.
      *
-     * @param url
+     * @param url The url to use
      */
     public static String extractBaseURI(String url) {
 
@@ -1295,8 +1304,8 @@ public class Wsdl {
     /**
      * In-place adjust the port URL of this WSDL.
      *
-     * @param wsdlPort
-     * @param url
+     * @param wsdlPort The port to the the URL for
+     * @param url The URL to use
      */
     public void setPortUrl(Port wsdlPort, URL url) {
         if (wsdlPort == null)
@@ -1337,8 +1346,6 @@ public class Wsdl {
     /**
      * Traverses all the imported definitions and invokes collect on the collector
      * for reach definition
-     *
-     * @param collector
      */
     private void collectElements(ElementCollector collector, Definition def) {
         collector.collect(def);
@@ -1361,8 +1368,8 @@ public class Wsdl {
      * Get the schema element from the wsdl definiton.
      *
      * @param def the wsdl definition
-     * @param getter
-     *  @return Element the "schema" element in the wsdl
+     * @param getter The url retriever
+     * @return Element the "schema" element in the wsdl
      * @throws MalformedURLException if URL format is invalide
      * @throws IOException           when error occured in reading the wsdl document
      * @throws SAXException          when error occured in parsing XML
@@ -1439,49 +1446,60 @@ public class Wsdl {
             this.delegate = extensionRegistry;
         }
 
+        @Override
         public ExtensibilityElement createExtension(Class parentType, QName elementType) throws WSDLException {
             return delegate.createExtension(parentType, elementType);
         }
 
+        @Override
         public Set getAllowableExtensions(Class parentType) {
             return delegate.getAllowableExtensions(parentType);
         }
 
+        @Override
         public ExtensionDeserializer getDefaultDeserializer() {
             return delegate.getDefaultDeserializer();
         }
 
+        @Override
         public ExtensionSerializer getDefaultSerializer() {
             return delegate.getDefaultSerializer();
         }
 
+        @Override
         public void mapExtensionTypes(Class parentType, QName elementType, Class extensionType) {
             delegate.mapExtensionTypes(parentType, elementType, extensionType);
         }
 
+        @Override
         public ExtensionDeserializer queryDeserializer(Class parentType, QName elementType) throws WSDLException {
             if (SchemaUtil.isSchema(elementType)) return delegate.getDefaultDeserializer();
             return delegate.queryDeserializer(parentType, elementType);
         }
 
+        @Override
         public ExtensionSerializer querySerializer(Class parentType, QName elementType) throws WSDLException {
             if (SchemaUtil.isSchema(elementType)) return delegate.getDefaultSerializer();
             return delegate.querySerializer(parentType, elementType);
         }
 
+        @Override
         public void registerDeserializer(Class parentType, QName elementType, ExtensionDeserializer ed) {
             delegate.registerDeserializer(parentType, elementType, ed);
         }
 
+        @Override
         public void registerSerializer(Class parentType, QName elementType, ExtensionSerializer es) {
             delegate.registerSerializer(parentType, elementType, es);
         }
 
+        @Override
         public void setDefaultDeserializer(ExtensionDeserializer defaultDeser) {
             if (delegate != null)
                 delegate.setDefaultDeserializer(defaultDeser);
         }
 
+        @Override
         public void setDefaultSerializer(ExtensionSerializer defaultSer) {
            if (delegate != null)
                delegate.setDefaultSerializer(defaultSer);

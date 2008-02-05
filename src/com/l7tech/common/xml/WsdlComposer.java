@@ -65,6 +65,15 @@ public class WsdlComposer {
         initialise(null);
     }
 
+    /**
+     * Create a WSDL composer to edit the given wsdl.
+     *
+     * <p>If the given wsdl uses imports then it MUST have been parsed in a way
+     * that will have set the documents base URI. If this is not done then any
+     * relative imports will fail.</p>
+     *
+     * @param origWsdl The WSDL DOM
+     */
     public WsdlComposer(Document origWsdl) throws WSDLException {
         initialise(origWsdl);
     }
@@ -104,10 +113,9 @@ public class WsdlComposer {
 
         Definition def = originalWsdl.getDefinition();
         setTargetNamespace(def.getTargetNamespace());
-        for (Object o : def.getNamespaces().keySet()) {
-            String key = (String) o;
-            String value = (String) def.getNamespaces().get(key);
-            addNamespace(key, value);
+        Map<String,String> namespaces = findNamespaces(def, new HashMap<String,String>());
+        for (Map.Entry<String,String> namespaceEntry : namespaces.entrySet()) {
+            addNamespace(namespaceEntry.getKey(), namespaceEntry.getValue());
         }
 
         for (Object o : def.getMessages().values() ) {
@@ -573,7 +581,7 @@ public class WsdlComposer {
                 return sb.getStyle();
             }
         }
-        
+
         return null;
     }
 
@@ -684,7 +692,7 @@ public class WsdlComposer {
             binding = createBinding();
             binding.setPortType(getOrCreatePortType());
             binding.setUndefined(false);
-            binding.setQName(new QName(getTargetNamespace(), DEFAULT_BINDING_NAME)); 
+            binding.setQName(new QName(getTargetNamespace(), DEFAULT_BINDING_NAME));
             setBinding(binding);
         }
 
@@ -838,6 +846,27 @@ public class WsdlComposer {
             }
         }
         return null;
+    }
+
+    private static Map<String,String> findNamespaces( final Definition definition, final Map<String,String> namespaces) {
+        // Add namespaces from imports first so these are overridden by
+        // namespaces from the main WSDL
+        //noinspection unchecked
+        Map<String, List<Import>> imports = (Map<String, List<Import>>) definition.getImports();
+        for ( List<Import> importList : imports.values() ) {
+            for ( Import imp : importList ) {
+                Definition importedDef = imp.getDefinition();
+                findNamespaces( importedDef, namespaces );
+            }
+        }
+
+        for (Object o : definition.getNamespaces().keySet()) {
+            String key = (String) o;
+            String value = (String) definition.getNamespaces().get(key);
+            namespaces.put(key, value);
+        }
+
+        return namespaces;
     }
 
     public static class WsdlHolder {
@@ -1018,7 +1047,7 @@ public class WsdlComposer {
 
             //noinspection unchecked
             for (BindingOperation bindingOperation : (List<BindingOperation>) destinationBinding.getBindingOperations()) {
-                opMap.put(bindingOperation.getName(), bindingOperation);                
+                opMap.put(bindingOperation.getName(), bindingOperation);
             }
 
             for (Set<BindingOperation> bops: bindingOperationsToAdd.values()) {
