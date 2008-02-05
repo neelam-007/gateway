@@ -215,18 +215,20 @@ public class WSDLCompositionPanel extends WizardStepPanel{
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
 
-        Wsdl wsdl = dlg.getSelectedWsdl();
-        if (!dlg.wasCancelled() && wsdl != null) {
-            if (wsdl.getServices().isEmpty()) {
-                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
-                        "The WSDL does not contain any services.", null);
+        if (!dlg.wasCancelled()) {
+            Wsdl wsdl = dlg.getSelectedWsdl();
+            if ( wsdl != null ) {
+                if (wsdl.getServices().isEmpty()) {
+                    DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
+                            "The WSDL does not contain any services.", null);
 
-            } else {
-                String wsdlLocation = dlg.getWsdlLocation();
-                WsdlComposer.WsdlHolder holder = new WsdlComposer.WsdlHolder(wsdl, wsdlLocation);
-                sourceWsdlListModel.addWsdl(holder);
-                wsdlComposer.addSourceWsdl(holder);
-                ensureSourceSelected();
+                } else {
+                    String wsdlLocation = dlg.getWsdlLocation();
+                    WsdlComposer.WsdlHolder holder = new WsdlComposer.WsdlHolder(wsdl, wsdlLocation);
+                    sourceWsdlListModel.addWsdl(holder);
+                    wsdlComposer.addSourceWsdl(holder);
+                    ensureSourceSelected();
+                }
             }
         }
         enableAddSourceButton();
