@@ -29,6 +29,10 @@ public class Managers {
     private static AssertionRegistry assertionRegistry = null;
     private static final String PROP_ASSERTION_CLASSNAMES = "com.l7tech.proxy.policy.modularAssertionClassnames";
 
+    public static final String[] BUNDLED_MODULAR_ASSERTIONS = new String[] {
+        "com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion"
+    };
+
     /**
      * Get the CredentialManager.
      * @return the current CredentialManager instance.
@@ -86,6 +90,10 @@ public class Managers {
                 WspConstants.setTypeMappingFinder(assertionRegistry);
             }
 
+            for (String assname : BUNDLED_MODULAR_ASSERTIONS) {
+                loadModularAssertion(assname);
+            }
+
             loadModularAssertionsFromJars();
             loadModularAssertionsFromSystemProperty();
         }
@@ -97,14 +105,19 @@ public class Managers {
         if (assnames == null) return;
         String[] names = assnames.split(",\\s*");
         if (names == null || names.length == 0) return;
-        for (String name : names) {
-            try {
-                Class assclass = Class.forName(name);
-                assertionRegistry.registerAssertion(assclass);
-                logger.info("Registered modular assertion " + assclass.getName());
-            } catch (ClassNotFoundException e) {
-                logger.warning("Unable to load " + name + "; modular assertion will not be available");
-            }
+        for (String assname : names) {
+            loadModularAssertion(assname);
+        }
+    }
+
+    private static void loadModularAssertion(String name) {
+        try {
+            Class assclass = Class.forName(name);
+            if (assclass == null) return;
+            assertionRegistry.registerAssertion(assclass);
+            logger.info("Registered modular assertion " + assclass.getName());
+        } catch (ClassNotFoundException e) {
+            logger.warning("Unable to load " + name + "; modular assertion will not be available");
         }
     }
 
@@ -123,13 +136,7 @@ public class Managers {
                     if (asses == null) continue;
                     for (Object o : asses.values()) {
                         String assname = (String) o;
-                        try {
-                            Class assclass = Class.forName(assname);
-                            assertionRegistry.registerAssertion(assclass);
-                            logger.log(Level.INFO, "Found modular assertion " + assname);
-                        } catch (ClassNotFoundException e) {
-                            logger.log(Level.WARNING, "Unable to load " + assname + "; modular assertion will not be available");
-                        }
+                        loadModularAssertion(assname);
                     }
                 } catch (IOException e) {
                     logger.log(Level.WARNING, "Unable to load manifest " + url.toString() + "; modular assertions in that jar will not be available");

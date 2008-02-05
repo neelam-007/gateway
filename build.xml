@@ -1695,7 +1695,7 @@
       Package the SSB (JAR)
     -->
     <target name="package.client" unless="ssg.only" depends="package.client.jar, obfuscate.client"/>
-    <target name="package.client.jar" unless="ssg.only" depends="compile">
+    <target name="package.client.jar" unless="ssg.only" depends="compile, package.modules">
         <!-- the client proxy jar -->
         <generate-manifest propertyPrefix="client" filename="Client.mf">
             <section>
@@ -1785,7 +1785,7 @@
             </fileset>
             <!-- TODO find some more declarative way to do this -->
             <fileset dir="${src.root}/modules/assertions/WsAddressingAssertion/build/classes">
-                <include name="com/l7tech/external/assertions/wsaddressing/WsAddressingAssertion.class"/>
+                <include name="com/l7tech/external/assertions/wsaddressing/WsAddressingAssertion*.class"/>
                 <include name="com/l7tech/external/assertions/wsaddressing/client/**/*.class"/>
             </fileset>
         </jar>
