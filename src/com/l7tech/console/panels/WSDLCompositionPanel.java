@@ -2,10 +2,12 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.WsdlComposer;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
+import com.l7tech.console.util.TopComponents;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -209,10 +211,14 @@ public class WSDLCompositionPanel extends WizardStepPanel{
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
 
-        if (!dlg.wasCancelled()) {
-            Wsdl wsdl = dlg.getSelectedWsdl();
-            String wsdlLocation = dlg.getWsdlLocation();
-            if (wsdl != null) {
+        Wsdl wsdl = dlg.getSelectedWsdl();
+        if (!dlg.wasCancelled() && wsdl != null) {
+            if (wsdl.getServices().isEmpty()) {
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
+                        "The WSDL does not contain any services.", null);
+
+            } else {
+                String wsdlLocation = dlg.getWsdlLocation();
                 WsdlComposer.WsdlHolder holder = new WsdlComposer.WsdlHolder(wsdl, wsdlLocation);
                 sourceWsdlListModel.addWsdl(holder);
                 wsdlComposer.addSourceWsdl(holder);

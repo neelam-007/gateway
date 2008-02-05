@@ -378,7 +378,11 @@ public class Wsdl {
      *         is not found
      */
     public String getServiceName() {
-        Service svc = getServices().iterator().next();
+        Collection<Service> services = getServices();
+        if (services.isEmpty()) {
+            return null;
+        }
+        Service svc = services.iterator().next();
         return svc == null ? null : svc.getQName().getLocalPart();
     }
 
