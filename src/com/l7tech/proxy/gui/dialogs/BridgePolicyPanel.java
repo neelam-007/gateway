@@ -117,13 +117,14 @@ class BridgePolicyPanel extends JPanel {
         }
     };
 
-    private void edit(String name, String value) {
+    private void edit(final String name, final String value) {
         final BridgePolicyPropertyDialog dlg = new BridgePolicyPropertyDialog(parentDialog, name, value);
         dlg.pack();
         Utilities.centerOnParent(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (dlg.isOk()) {
+                    properties.remove(name);
                     properties.put(dlg.getName(), dlg.getValue());
                     tableModel.fireTableDataChanged();
                     enableButtons();

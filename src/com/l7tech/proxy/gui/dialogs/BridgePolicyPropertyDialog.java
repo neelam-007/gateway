@@ -23,17 +23,8 @@ public class BridgePolicyPropertyDialog extends JDialog {
 
     private boolean ok;
 
-    public BridgePolicyPropertyDialog(Frame owner, String name, String value) {
-        super(owner, "Bridge Policy Property", true);
-        initialize(name, value);
-    }
-
     public BridgePolicyPropertyDialog(Dialog owner, String name, String value) {
-        super(owner, "Bridge Policy Property", true);
-        initialize(name, value);
-    }
-
-    private void initialize(String name, String value) {
+        super(owner, "Client Policy Property", true);
         this.name = name;
         this.value = value;
 
