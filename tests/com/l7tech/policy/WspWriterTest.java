@@ -13,10 +13,13 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml2;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.skunkworks.schemavalidation.Validator;
 import com.l7tech.skunkworks.wsp.pre32.Pre32WspReader;
+import com.l7tech.test.BugNumber;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -299,6 +302,19 @@ public class WspWriterTest extends TestCase {
         Assertion got = WspReader.getDefault().parsePermissively(xml);
         assertTrue(got instanceof BridgeRoutingAssertion);
         assertEquals((long)((BridgeRoutingAssertion)got).getServerCertificateOid(), 232L);
+    }
+
+    @BugNumber(4752)
+    public void testBug4752SamlVersion() throws Exception {
+        RequestWssSaml ass = new RequestWssSaml();
+        ass.setVersion(1);
+        assertTrue(WspWriter.getPolicyXml(ass).contains("TokenType>urn:oasis:names:tc:SAML:1.0:assertion#Assertion<"));
+        assertFalse(WspWriter.getPolicyXml(ass).contains(":SAML:2.0:"));
+
+        RequestWssSaml2 ass2 = new RequestWssSaml2();
+        ass2.setVersion(2);
+        assertFalse(WspWriter.getPolicyXml(ass2).contains("SAML:1.0:"));
+        assertTrue(WspWriter.getPolicyXml(ass2).contains("TokenType>urn:oasis:names:tc:SAML:2.0:assertion#Assertion<"));
     }
 
     public void testDisappearingXslt() throws Exception {
