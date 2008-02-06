@@ -11,6 +11,7 @@
 
 
 KERNELSOURCEROOT="/usr/src/kernels"
+SCADRVDIR="/opt/sun/sca6000/bin/drv/"
 ALLKERNELS=`cat supported_kernels`
 RPM_TOP="rpmbuild"
 RPM_SPEC="sca6000drv.spec"
@@ -35,6 +36,7 @@ do_clean() {
 		echo "********************************************************"
 		(KERNEL_VER=${WHICHKERNEL} make clean)
 	done
+	rm -f ${SCADRVDIR}/*.ko
 }
 
 #
@@ -53,11 +55,18 @@ do_make() {
 		echo "installing drivers for ${WHICHKERNEL}"
 		echo "********************************************************"
 		(KERNEL_VER=${WHICHKERNEL} make install)
+		
+		echo "********************************************************"
+		echo "cleaning up build for ${WHICHKERNEL}"
+		echo "********************************************************"
+		(KERNEL_VER=${WHICHKERNEL} make clean)
 	done
         TAR_OUT=$RPM_SOURCE
 	pushd ${PWD}/.. &>/dev/null
-	        tar -czvhf "${TAR_OUT}" /etc/init.d/sca* /opt/sun/sca6000/bin/drv/*smp.ko
+	        tar -czvhf "${TAR_OUT}" /etc/init.d/sca* ${SCADRVDIR}/*smp.ko
 	popd &>/dev/null
+
+	unpatch_makefile
 }
 
 exitfail() {
@@ -68,6 +77,11 @@ exitfail() {
 patch_makefile() {
 	perl -i -pe 's/^(KERNEL_VER.*)/#$1/' ./driver/Makefile
 	perl -i -pe 's/^(KERNEL_VER.*)/#$1/' ./framework/Makefile
+}
+
+unpatch_makefile() {
+	perl -i -pe 's/^#(KERNEL_VER.*)/$1/' ./driver/Makefile
+	perl -i -pe 's/^#(KERNEL_VER.*)/$1/' ./framework/Makefile
 }
 
 case ${1} in
