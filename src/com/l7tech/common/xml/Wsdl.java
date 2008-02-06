@@ -389,7 +389,7 @@ public class Wsdl {
             return null;
         }
         Service svc = services.iterator().next();
-        return svc == null ? null : svc.getQName().getLocalPart();
+        return getLocalName(svc);
     }
 
     /**
@@ -701,7 +701,7 @@ public class Wsdl {
             throw new IllegalArgumentException();
         }
         for (Binding binding : getBindings()) {
-            if (localName.equals(binding.getQName().getLocalPart())) {
+            if (localName.equals(getLocalName(binding))) {
                 return binding;
             }
         }
@@ -945,9 +945,10 @@ public class Wsdl {
      *                                  use (mixed encoded and literal)
      */
     public String getSoapUse(Binding binding) throws IllegalArgumentException, WSDLException {
+        String soapUse;
         ExtensibilityElement ee = getBindingProtocol(binding);
         if (!(ee instanceof SOAPBinding)) {
-            throw new IllegalArgumentException("Must be SOAP binding. +( " + binding.getQName().getLocalPart() + " )");
+            throw new IllegalArgumentException("Must be SOAP binding. +( " + getLocalName(binding) + " )");
         }
         Set<String> soapUseSet = new HashSet<String>();
         //noinspection unchecked
@@ -956,10 +957,14 @@ public class Wsdl {
             soapUseSet.add(getSoapUse(bindingOperation));
         }
         if (soapUseSet.size() > 1) {
-            throw new WSDLException(WSDLException.INVALID_WSDL, "Mixed/unsupported uses in '" + binding.getQName().getLocalPart() + "' found in this WSDL.");
+            throw new WSDLException(WSDLException.INVALID_WSDL, "Mixed/unsupported uses in '" + getLocalName(binding) + "' found in this WSDL.");
+        } else if ( soapUseSet.isEmpty() ) {
+            soapUse = USE_LITERAL;
+        } else {
+            soapUse = soapUseSet.iterator().next();            
         }
 
-        return soapUseSet.iterator().next();
+        return soapUse;
     }
 
     /**
@@ -1192,8 +1197,13 @@ public class Wsdl {
 
     public Collection<ExtensibilityElement> getInputParameters(BindingOperation bindingOperation) {
         if (bindingOperation != null) {
-            //noinspection unchecked
-            return bindingOperation.getBindingInput().getExtensibilityElements();
+            BindingInput bin = bindingOperation.getBindingInput();
+            if ( bin != null ) {
+                //noinspection unchecked
+                return bin.getExtensibilityElements();
+            } else {
+                return Collections.emptySet();
+            }
         } else {
             throw new IllegalArgumentException("The argument bindingOperation is NULL");
         }
@@ -1203,10 +1213,15 @@ public class Wsdl {
         if (bindingOperation == null) {
             throw new IllegalArgumentException("The argument bindingOperation is NULL");
         }
-        //noinspection unchecked
-        return bindingOperation.getBindingOutput().getExtensibilityElements();
+        
+        BindingOutput bout = bindingOperation.getBindingOutput();
+        if ( bout != null ) {
+            //noinspection unchecked
+            return bout.getExtensibilityElements();
+        } else {
+            return Collections.emptySet();            
+        }
     }
-
 
     /**
      * Get a <i>MIME Multipart Related</i> container for the input parameters
@@ -1244,7 +1259,6 @@ public class Wsdl {
         return null;
     }
 
-
     public Collection getMimePartSubElements(MIMEPart mimePart) {
         if (mimePart != null) {
             return mimePart.getExtensibilityElements();
@@ -1270,7 +1284,6 @@ public class Wsdl {
 
         return baseURL;
     }
-
 
     public String getUriFromPort(Port wsdlPort) throws MalformedURLException {
         if (wsdlPort == null)
@@ -1395,7 +1408,7 @@ public class Wsdl {
                         if (resultDoc != null) {
                             NodeList nodeList = resultDoc.getElementsByTagName("schema");
 
-                            if (nodeList != null && nodeList.item(0) != null) {
+                            if (nodeList != null && nodeList.getLength()>0 && nodeList.item(0) != null) {
                                 // should only have one
                                 return (Element) nodeList.item(0);
                             }
@@ -1411,6 +1424,26 @@ public class Wsdl {
         }
 
         return schemaElement;
+    }
+
+    private String getLocalName( Service service ) {
+        String name = null;
+
+        if ( service != null && service.getQName() != null ) {
+            name = service.getQName().getLocalPart();
+        }
+
+        return name;
+    }
+
+    private String getLocalName( Binding binding ) {
+        String name = null;
+
+        if ( binding != null && binding.getQName() != null ) {
+            name = binding.getQName().getLocalPart();
+        }
+
+        return name;
     }
 
     private Definition definition;

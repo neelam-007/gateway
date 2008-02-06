@@ -56,6 +56,7 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      * @param columnIndex the column being queried
      * @return the column class
      */
+    @Override
     public Class getColumnClass(int columnIndex) {
         if (columnIndex == 0) {
             return String.class;
@@ -73,13 +74,14 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      * @param rowIndex    row of cell
      * @param columnIndex column of cell
      */
+    @Override
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
         if (rowIndex == parts.size()) {
             if (aValue == null) return;
             if (columnIndex == 0) {
                 String partName = (String) aValue;
-                if (partName.length() > 0) {
-                    addPart(partName);
+                if (partName.trim().length() > 0) {
+                    addPart(partName.trim());
                 }
             }
             else if (columnIndex == 1) {
@@ -93,12 +95,13 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
                 if (aValue == null) {
                     throw new IllegalArgumentException("value is null");
                 }
-                final String partName = p.getName();
                 final String newName = aValue.toString();
-                if (partName.equals(newName)) {
+                if ( newName.trim().length() == 0 ) {
+                    removePart( rowIndex );
                     return;
+                } else {
+                    p.setName(newName.trim());
                 }
-                p.setName(newName);
             } else if (columnIndex == 1) {
                 p.setTypeName((QName)aValue);
             }
@@ -218,6 +221,7 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      * @param columnIndex the column being queried
      * @return false
      */
+    @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
         return true;
     }
@@ -229,6 +233,7 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      * @param column the column being queried
      * @return a string containing the default name of <code>column</code>
      */
+    @Override
     public String getColumnName(int column) {
         if (column == 0) {
             return "Name";
@@ -250,7 +255,7 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
     }
 
     private String getNewMessagePartArgumentName() {
-        String newMessagePartName = null;
+        String newMessagePartName;
         boolean found;
         int suffixAdd = 0;
         while (true) {

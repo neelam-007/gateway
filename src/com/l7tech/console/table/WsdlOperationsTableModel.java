@@ -61,6 +61,7 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      * @param column  the column being queried
      * @return a string containing the default name of <code>column</code>
      */
+    @Override
     public String getColumnName(int column) {
         if (column == 0) {
             return "Name";
@@ -78,6 +79,7 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      *  @param column  the column being queried
      *  @return the corresponding class
      */
+    @Override
     public Class getColumnClass(int column) {
         if (column == 0) {
             return String.class;
@@ -119,14 +121,13 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      *
      */
     public Operation addOperation() {
-        Operation operation = null;
-        String newOperationName = null;
-        boolean found = false;
+        Operation operation;
+        String newOperationName;
         int suffixAdd = 0;
 
-        while (!found) {
+        while (true) {
             newOperationName = "NewOperation" + (getRowCount() + suffixAdd);
-            found = true;
+            boolean found = true;
             int rows = getRowCount();
             for (int i = 0; i < rows; i++) {
                 String name = (String) getValueAt(i, 0);
@@ -162,8 +163,7 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      * @param operation the message to add
      */
     public void addOperation(Operation operation) {
-        operation.setInput(composer.createInput());
-        operation.setOutput(composer.createOutput());
+        ensureInputOutputMessages( operation );
         portType.addOperation(operation);
 
         this.fireTableStructureChanged();
@@ -206,6 +206,7 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      *  @param  columnIndex the column being queried
      *  @return false
      */
+    @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
         return true;
     }
@@ -217,6 +218,7 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      *  @param  rowIndex   row of cell
      *  @param  columnIndex  column of cell
      */
+    @Override
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
         if (rowIndex == portType.getOperations().size()) {
             if (aValue != null) {
@@ -226,7 +228,8 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
                     if (name.length() > 0) operation = addOperation(name);
                 } else if (columnIndex == 1) {
                     operation = addOperation();
-                    operation.getInput().setMessage((Message)aValue);
+                    if (operation.getInput() != null)
+                        operation.getInput().setMessage((Message)aValue);
                 } else if (columnIndex == 2) {
                     operation = addOperation();
                     if (operation.getOutput() != null)
@@ -245,18 +248,16 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
                 op.setName((String)aValue);
             } else if (columnIndex == 1) {
                 if (aValue == null) {
-                    op.getInput().setMessage(null);
-                    return;
+                    op.setInput(null);
+                } else {
+                    setInputMessage(op, (Message) aValue);
                 }
-                op.getInput().setMessage((Message)aValue);
             } else if (columnIndex == 2) {
                 if (aValue == null) {
-                    if (op.getOutput() != null)
-                        op.getOutput().setMessage(null);
-                    return;
+                    op.setOutput(null);
+                } else {
+                    setOutputMessage(op, (Message) aValue);
                 }
-                if (op.getOutput() != null)
-                    op.getOutput().setMessage((Message)aValue);
             } else {
                 throw new IndexOutOfBoundsException("" + rowIndex + " > " + portType.getOperations().size());
             }
@@ -276,8 +277,7 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
         while (it.hasNext()) {
             Object o = it.next();
             if (row++ == rowIndex) {
-                Operation op = (Operation)o;
-                return op;
+                return (Operation) o;
             }
         }
         throw new IndexOutOfBoundsException("" + rowIndex + " > " + portType.getOperations().size());
@@ -294,11 +294,51 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
         if(messages != null && !messages.isEmpty()) {
             Message defaultMessage = (Message) messages.values().iterator().next();
 
-            if (operation.getInput().getMessage() == null)
-                operation.getInput().setMessage(defaultMessage);
+            if ( operation.getInput() == null ||
+                 operation.getInput().getMessage() == null) {
+                setInputMessage( operation, defaultMessage );
+            }
 
-            if (operation.getOutput().getMessage() == null)
-                operation.getOutput().setMessage(defaultMessage);
+            if ( operation.getOutput() == null ||
+                 operation.getOutput().getMessage() == null ) {
+                setOutputMessage( operation, defaultMessage );
+            }
         }
+    }
+
+    private void setInputMessage( Operation operation, Message message ) {
+        // create input if it does not exist
+        if ( operation.getInput() == null ) {
+            Input input = composer.createInput();
+            operation.setInput( input );
+        }
+
+        // set input message and also name if available
+        operation.getInput().setMessage( message );
+
+        // todo: set name and binding operation input name
+        /*if ( message.getQName() != null ) {
+            operation.getInput().setName(message.getQName().getLocalPart());
+        } else {
+            operation.getInput().setName( null ); // name is optional
+        }*/
+    }
+
+    private void setOutputMessage( Operation operation, Message message ) {
+        // create output if it does not exist
+        if ( operation.getOutput() == null ) {
+            Output output = composer.createOutput();
+            operation.setOutput( output );
+        }
+
+        // set output message and also name if available
+        operation.getOutput().setMessage( message );
+
+        // todo: set name and binding operation output name
+        /*if ( message.getQName() != null ) {
+            operation.getOutput().setName(message.getQName().getLocalPart());
+        } else {
+            operation.getOutput().setName( null ); // name is optional
+        }*/
     }
 }

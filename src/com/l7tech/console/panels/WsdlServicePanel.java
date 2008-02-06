@@ -26,6 +26,7 @@ public class WsdlServicePanel extends WizardStepPanel {
     private JTextField nameField;
     private JTextField portNameField;
     private JTextField portAddressField;
+    @SuppressWarnings({"FieldCanBeLocal"})
     private WsdlComposer wsdlComposer;
     private JLabel panelHeader;
 
@@ -40,6 +41,7 @@ public class WsdlServicePanel extends WizardStepPanel {
     /**
      * @return the wizard step description
      */
+    @Override
     public String getDescription() {
         return "<html>" +
                "The \"service\" element defines the Web service endpoint URL and connection port." +
@@ -55,8 +57,9 @@ public class WsdlServicePanel extends WizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
-        WsdlComposer wsdlComposer = null;
+        WsdlComposer wsdlComposer;
         if (settings instanceof WsdlComposer) {
             wsdlComposer = (WsdlComposer) settings;
         } else {
@@ -78,6 +81,10 @@ public class WsdlServicePanel extends WizardStepPanel {
                     break;
                 }
             }
+        }
+
+        if (StringUtils.isBlank(address)) {
+            address = WsdlComposer.getDefaultPortAddress();
         }
         portAddressField.setText(address);
 
@@ -102,6 +109,7 @@ public class WsdlServicePanel extends WizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
         if (settings instanceof WsdlComposer) {
             wsdlComposer = (WsdlComposer)settings;
@@ -123,6 +131,7 @@ public class WsdlServicePanel extends WizardStepPanel {
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "Service";
     }
@@ -143,7 +152,11 @@ public class WsdlServicePanel extends WizardStepPanel {
           new QName(Wsdl.WSDL_SOAP_NAMESPACE, "address"));
         if (ee instanceof SOAPAddress) {
             SOAPAddress sa = (SOAPAddress)ee;
-            sa.setLocationURI(portAddressField.getText());
+            String address = portAddressField.getText();
+            if (StringUtils.isBlank(address)) {
+                address = WsdlComposer.getDefaultPortAddress();
+            }
+            sa.setLocationURI(address);
         } else {
             throw new RuntimeException("expected SOAPOperation, received " + ee.getClass());
         }
