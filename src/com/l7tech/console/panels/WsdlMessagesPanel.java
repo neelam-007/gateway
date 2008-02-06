@@ -102,8 +102,8 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         partTypesComboBox = new JComboBox(XmlSchemaConstants.QNAMES.toArray());
         partTypesComboBox.setBackground(partsTable.getBackground());
         partTypesComboBox.setRenderer(new DefaultListCellRenderer() {
-            public Component
-              getListCellRendererComponent(JList list,
+            @Override
+            public Component getListCellRendererComponent(JList list,
                                            Object value,
                                            int index,
                                            boolean isSelected,
@@ -130,6 +130,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
     /**
      * @return the wizard step description
      */
+    @Override
     public String getDescription() {
         return "<html>" +
                "The \"message\" element of a Web service provides a common abstraction for messages passed " +
@@ -141,6 +142,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "Messages";
     }
@@ -153,6 +155,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         if (!(settings instanceof WsdlComposer)) {
             throw new IllegalArgumentException("Unexpected type. " + settings.getClass() + ". Expected " + WsdlComposer.class);
@@ -185,6 +188,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
         if (settings instanceof WsdlComposer) {
             wsdlComposer = (WsdlComposer)settings;
@@ -214,15 +218,15 @@ public class WsdlMessagesPanel extends WizardStepPanel {
            * @param column     the column of the cell to render
            * @return the default table cell renderer
            */
-          public Component
-            getTableCellRendererComponent(JTable table,
+          @Override
+          public Component getTableCellRendererComponent(JTable table,
                                           Object value,
                                           boolean isSelected,
                                           boolean hasFocus,
                                           int row, int column) {
               super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
-              String text = null;
+              String text;
               if (value instanceof QName) {
                   QName qName = (QName)value;
                   text = WsdlCreateWizard.prefixedName(qName, wsdlComposer);
@@ -234,7 +238,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
 
               return this;
           }
-      };
+      }
 
     private ListSelectionListener
       messagesTableSelectionListener = new ListSelectionListener() {
@@ -283,16 +287,16 @@ public class WsdlMessagesPanel extends WizardStepPanel {
            * Invoked when an action occurs.
            */
           public void actionPerformed(ActionEvent e) {
-              String newMessageName = null;
-              boolean found = false;
+              String newMessageName;
+              boolean found;
               int suffixAdd = 0;
-              while (!found) {
+              while (true) {
                   int msgSuffix = messagesTableModel.getRowCount() + suffixAdd;
                   newMessageName = "NewMessage" + msgSuffix;
                   found = true;
                   int rows = messagesTableModel.getRowCount();
                   for (int i = 0; i < rows; i++) {
-                      String messageName = (String) messagesTableModel.getValueAt(i, 0);
+                      String messageName = messagesTableModel.getValueAt(i, 0);
                       if (messageName != null && messageName.equals(newMessageName)) {
                           found = false;
                           break;
@@ -346,6 +350,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
             this.warningMessage = warningMessage;
         }
 
+        @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             JComponent component = (JComponent) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (!isUnique(row, value)) {
@@ -401,9 +406,12 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         // update and add new
         final String defTargetNamespace = composer.getTargetNamespace();
         for (Message message : messages) {
-            if (!defTargetNamespace.equals(message.getQName().getNamespaceURI())) {
+
+            if ( message.getQName() != null &&
+                 !defTargetNamespace.equals(message.getQName().getNamespaceURI())) {
                 message.setQName(new QName(defTargetNamespace, message.getQName().getLocalPart()));
             }
+            
             composer.addMessage(message);
         }
     }

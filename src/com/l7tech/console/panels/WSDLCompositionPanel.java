@@ -550,7 +550,7 @@ public class WSDLCompositionPanel extends WizardStepPanel{
             boolean found = false;
 
             for (BindingOperation bindingOperation : operations) {
-                if (operation.getName().equals(bindingOperation.getName())) {
+                if (operation.getName() != null && operation.getName().equals(bindingOperation.getName())) {
                     found = true;
                 }
             }

@@ -68,6 +68,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
     /**
      * @return the wizard step description
      */
+    @Override
     public String getDescription() {
 
         return "<html>" +
@@ -81,6 +82,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "Port Type and Operations";
     }
@@ -93,6 +95,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         if (settings instanceof WsdlComposer) {
             wsdlCompser = (WsdlComposer)settings;
@@ -101,20 +104,20 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         }
 
         PortType portType = wsdlCompser.getOrCreatePortType();
-        portTypeNameField.setText(portType.getQName().getLocalPart());
+        portTypeNameField.setText(getLocalName(portType.getQName()));
         validate(wsdlCompser);
 
         operationsModel = new WsdlOperationsTableModel(wsdlCompser, portType);
         operationsTable.setModel(operationsModel);
         operationsTable.getTableHeader().setReorderingAllowed(false);
 
-        Collection cm = new ArrayList(wsdlCompser.getMessages().values());
+        Collection<Message> cm = new ArrayList<Message>(wsdlCompser.getMessages().values());
         cm.add(null);
         final Object[] messages = cm.toArray();
         messagesComboBox.setModel(new DefaultComboBoxModel(messages));
         messagesComboBox.setRenderer(new DefaultListCellRenderer() {
-            public Component
-              getListCellRendererComponent(JList list,
+            @Override
+            public Component getListCellRendererComponent(JList list,
                                            Object value,
                                            int index,
                                            boolean isSelected,
@@ -123,7 +126,11 @@ public class WsdlPortTypePanel extends WizardStepPanel {
 
                 if (value != null) {
                     QName qName = ((Message)value).getQName();
-                    setText(WsdlCreateWizard.prefixedName(qName, wsdlCompser));
+                    if ( qName != null ) {
+                        setText(WsdlCreateWizard.prefixedName(qName, wsdlCompser));
+                    } else {
+                        setText("             ");                        
+                    }
                 } else {
                     setText("             ");
                 }
@@ -135,6 +142,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         DefaultCellEditor messageEditor = new DefaultCellEditor(messagesComboBox) {
             boolean canEdit = messages.length > 0;
 
+            @Override
             public boolean stopCellEditing() {
                 if (canEdit) {
                     return super.stopCellEditing();
@@ -164,6 +172,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
         if (settings instanceof WsdlComposer) {
             wsdlCompser = (WsdlComposer)settings;
@@ -191,7 +200,6 @@ public class WsdlPortTypePanel extends WizardStepPanel {
               int selectedRow = operationsTable.getSelectedRow();
               if (selectedRow != -1) {
                   operationsModel.removeOperation(selectedRow);
-                  return;
               }
           }
       };
@@ -210,6 +218,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
            * @param column     the column of the cell to render
            * @return the default table cell renderer
            */
+          @Override
           public Component getTableCellRendererComponent(
                                 JTable table,
                                 Object value,
@@ -232,7 +241,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
           }
 
           private void renderMessage(Message msg) {
-              String text = msg == null ?
+              String text = msg == null || msg.getQName() == null ?
                       "" :
                       WsdlCreateWizard.prefixedName(msg.getQName(), wsdlCompser);
 
@@ -260,8 +269,8 @@ public class WsdlPortTypePanel extends WizardStepPanel {
 
     private boolean needPortTypeUpdate(WsdlComposer def, PortType p) {
         return
-          !def.getTargetNamespace().equals(p.getQName().getNamespaceURI()) ||
-          !portTypeNameField.getText().equals(p.getQName().getLocalPart());
+          !def.getTargetNamespace().equals(getNamespaceURI(p.getQName())) ||
+          !portTypeNameField.getText().equals(getLocalName(p.getQName()));
 
     }
 
@@ -277,6 +286,27 @@ public class WsdlPortTypePanel extends WizardStepPanel {
 //            p.addOperation(op);
 //        }
 //        composer.addPortType(newPortType, null);
+    }
+
+
+    private String getLocalName(QName qname) {
+        String name = null;
+
+        if ( qname != null ) {
+            name = qname.getLocalPart();
+        }
+
+        return name;
+    }
+
+    private String getNamespaceURI(QName qname) {
+        String name = null;
+
+        if ( qname != null ) {
+            name = qname.getNamespaceURI();
+        }
+
+        return name;
     }
 
     private void validateOperations(WsdlComposer composer) {

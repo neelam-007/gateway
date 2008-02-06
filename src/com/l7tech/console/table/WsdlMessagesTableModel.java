@@ -73,7 +73,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @return the list of rows in the model
      */
     public List<Message> getMessages() {
-        List<Message> messages = new ArrayList();
+        List<Message> messages = new ArrayList<Message>();
 
         for (MessageInfo messageInfo : messageList) {
             Message message = wsdlComposer.createMessage();
@@ -116,7 +116,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @return	the value Object at the specified cell
      */
     public String getValueAt(int rowIndex, int columnIndex) {
-        return rowIndex==messageList.size() ? null : messageList.get(rowIndex).message.getQName().getLocalPart();
+        return rowIndex==messageList.size() ? null : getLocalName(messageList.get(rowIndex).message.getQName());
     }
 
     /**
@@ -219,7 +219,10 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
     public int indexOf(QName qn) {
         for (int i = messageList.size() - 1; i >= 0; --i) {
             MessageInfo messageInfo = messageList.get(i);
-            if (qn.equals(messageInfo.message.getQName())) return i;
+            if ( (messageInfo.message.getQName() == null && qn == null) ||
+                 (qn != null && qn.equals(messageInfo.message.getQName()))) {
+                return i;
+            }
         }
         return -1;
     }
@@ -231,10 +234,12 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @param columnIndex the column being queried
      * @return true
      */
+    @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
         return true;
     }
 
+    @Override
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
         if (aValue == null) {
             throw new IllegalArgumentException("value is null");
@@ -265,6 +270,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @param column the column being queried
      * @return a string containing the default name of <code>column</code>
      */
+    @Override
     public String getColumnName(int column) {
         if (column == 0) {
             return "Name";
@@ -272,9 +278,19 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
         throw new IndexOutOfBoundsException("column may be 0 only. received " + column);
     }
 
-
+    @Override
     public Class<?> getColumnClass(int columnIndex) {
         return String.class;
+    }
+
+    private String getLocalName(QName qname) {
+        String name = null;
+
+        if ( qname != null ) {
+            name = qname.getLocalPart();
+        }
+
+        return name;
     }
 
     private static final class MessageInfo {

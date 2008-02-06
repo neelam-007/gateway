@@ -67,7 +67,7 @@ public class WsdlServicePanel extends WizardStepPanel {
         }
 
         Service svc = wsdlComposer.getOrCreateService();
-        nameField.setText(svc.getQName().getLocalPart());
+        nameField.setText(getLocalName(svc.getQName(), "Service"));
 
         Port port = wsdlComposer.getSupportedSoapPort(svc);
         String address = "";
@@ -91,9 +91,9 @@ public class WsdlServicePanel extends WizardStepPanel {
         if (port != null && StringUtils.isNotEmpty(port.getName()))
             portNameField.setText(port.getName());
         else
-            portNameField.setText(svc.getQName().getLocalPart() + "Port");
+            portNameField.setText(getLocalName(svc.getQName(), "Service") + "Port");
 
-        bindingLabel.setText(wsdlComposer.getBinding().getQName().getLocalPart());       
+        bindingLabel.setText(getLocalName(wsdlComposer.getBinding().getQName(),""));       
     }
 
     /**
@@ -161,5 +161,19 @@ public class WsdlServicePanel extends WizardStepPanel {
             throw new RuntimeException("expected SOAPOperation, received " + ee.getClass());
         }
         port.addExtensibilityElement(ee);
+    }
+
+    private String getLocalName(QName qname, String defaultValue) {
+        String name = null;
+
+        if ( qname != null ) {
+            name = qname.getLocalPart();
+        }
+
+        if ( name == null ) {
+            name = defaultValue;
+        }
+
+        return name;
     }
 }
