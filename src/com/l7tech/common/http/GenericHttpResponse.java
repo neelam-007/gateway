@@ -55,6 +55,7 @@ public abstract class GenericHttpResponse implements GenericHttpResponseParams {
             GuessedEncodingResult result = getXmlEncoding(bytes);
             if(result.encoding == null) {
                 result.encoding = ctype == null ? ContentTypeHeader.DEFAULT_HTTP_ENCODING : ctype.getEncoding();
+                result.bytesToSkip = 0;
             }
             return new String(bytes, result.bytesToSkip, bytes.length - result.bytesToSkip, result.encoding);
         } else {
@@ -65,6 +66,10 @@ public abstract class GenericHttpResponse implements GenericHttpResponseParams {
 
     /**
      * Tries to determine the charset for the supplied XML byte array.
+     *
+     * The following charsets are known to fail to be recognized by this method. They are still supported,
+     * but only if the proper encoding was specified in the Content-type header.
+     * <b>JIS_X0212-1990, x-IBM834, x-IBM930, x-JIS0208, x-MacDingbat, x-MacSymbol</b>
      * @param bytes The byte array to examine
      * @return The charset encoding if it could be determined, or null
      */
@@ -120,11 +125,14 @@ public abstract class GenericHttpResponse implements GenericHttpResponseParams {
      */
     private static String getDeclaredEncoding(byte[] bytes, String possibleEncoding) {
         try {
-            String xmlString = new String(bytes, possibleEncoding);
-            Pattern pattern = Pattern.compile("<\\?\\s*xml\\s+version=\"[^\"]+\"\\s+encoding=\"([^\"]+)\"\\s*\\?>", Pattern.MULTILINE);
+            // Only look for the XML declaration in the first 1kB
+            String xmlString = new String(bytes, 0, 1024 > bytes.length ? bytes.length : 1024, possibleEncoding);
+            // With some charsets, our guess at this point could have messed up the quotes, so we need to find what
+            // character is used for quotes
+            Pattern pattern = Pattern.compile("^<\\?xml\\s+version=(.).*\\s+encoding=\\1(.*?)\\1\\s*(?:\\s+standalone=.*\\s*)?\\?>", Pattern.MULTILINE);
             Matcher matcher = pattern.matcher(xmlString);
             if(matcher.find()) {
-                return matcher.group(1);
+                return matcher.group(2);
             } else {
                 return possibleEncoding;
             }

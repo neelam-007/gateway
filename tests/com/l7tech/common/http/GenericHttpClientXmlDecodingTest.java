@@ -5,8 +5,10 @@ import junit.framework.TestCase;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.io.InputStream;
 import java.io.ByteArrayInputStream;
+import java.nio.charset.Charset;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 
@@ -48,14 +50,28 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         }
     }
 
-    private static final String XML_MESSAGE = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n" +
-                                              "<test_document>\n" +
-                                              "    <test_element myattribute=\"value\">Text</test_element>\n" +
-                                              "</test_document>";
+    // Use a large message (> 1024 bytes), since no more than 1024 bytes are examined
+    private static final String XML_MESSAGE;
+    static {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n");
+        sb.append("<test_document>\n");
+        for(int i = 0;i < 1024;i++) {
+            sb.append("    <test_element myattribute=\"value\">Text</test_element>\n");
+        }
+        sb.append("</test_document>");
+
+        XML_MESSAGE = sb.toString();
+    }
+
     private static final String ENCODING_PATTERN = "^<\\?xml.*encoding=\".*\"\\?>";
 
     private static String getMessageWithEncoding(String encoding) {
         return XML_MESSAGE.replaceFirst(ENCODING_PATTERN, "<?xml version=\"1.0\" encoding=\"" + encoding + "\"?>");
+    }
+
+    private static String replaceEncoding(String xml, String encoding) {
+        return xml.replaceFirst(ENCODING_PATTERN, "<?xml version=\"1.0\" encoding=\"" + encoding + "\"?>");
     }
 
     public void testUTF32BEWithBOM() throws Exception {
@@ -248,5 +264,45 @@ public class GenericHttpClientXmlDecodingTest  extends TestCase {
         ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue("text/xml; charset=UTF-8");
         MockHttpResponse response = new MockHttpResponse(messageBytes, contentTypeHeader);
         assertEquals(message, response.getAsString(true));
+    }
+
+    public void testAllEncodings() throws Exception {
+        String smallXmlMessage = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>" +
+                "<test_document>\n" +
+                "    <test_element myattribute=\"value\">Text</test_element>\n" +
+                "</test_document>";
+        // The following charsets cannot be determined by examining the bytes
+        HashSet<String> unsupportedEncodings = new HashSet<String>();
+        unsupportedEncodings.add("JIS_X0212-1990");
+        unsupportedEncodings.add("x-IBM834");
+        unsupportedEncodings.add("x-IBM930");
+        unsupportedEncodings.add("x-JIS0208");
+        unsupportedEncodings.add("x-MacDingbat");
+        unsupportedEncodings.add("x-MacSymbol");
+
+        for(String charsetName : Charset.availableCharsets().keySet()) {
+            if(unsupportedEncodings.contains(charsetName)) {
+                continue;
+            }
+
+            // Try the large message
+            String msg = getMessageWithEncoding(charsetName);
+            byte[] bytes;
+            try {
+                bytes = msg.getBytes(charsetName);
+            } catch(UnsupportedOperationException e) {
+                continue; // Cannot test this charset
+            }
+            GenericHttpResponse.GuessedEncodingResult guessedEncodingResult = GenericHttpResponse.getXmlEncoding(bytes);
+            String decodedMessage = new String(bytes, guessedEncodingResult.bytesToSkip, bytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
+            assertEquals("Big message (charset = " + charsetName + ")", msg, decodedMessage);
+
+            // Try the small message
+            msg = replaceEncoding(smallXmlMessage, charsetName);
+            bytes = msg.getBytes(charsetName);
+            guessedEncodingResult = GenericHttpResponse.getXmlEncoding(bytes);
+            decodedMessage = new String(bytes, guessedEncodingResult.bytesToSkip, bytes.length - guessedEncodingResult.bytesToSkip, guessedEncodingResult.encoding);
+            assertEquals("Small message (charset = " + charsetName + ")", msg, decodedMessage);
+        }
     }
 }
