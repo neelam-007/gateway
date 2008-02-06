@@ -134,7 +134,9 @@ public abstract class GenericHttpResponse implements GenericHttpResponseParams {
             if(matcher.find()) {
                 return matcher.group(2);
             } else {
-                return possibleEncoding;
+                // There isn't an XML declaration, or it doesn't specify the encoding, so fallback to using
+                // the HTTP "Content-type" header.
+                return null;
             }
         } catch(java.io.UnsupportedEncodingException e) {
             return possibleEncoding;
