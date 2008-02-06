@@ -86,7 +86,7 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
             wsa200403RadioButton.setSelected(true);
         } else if (SoapUtil.WSA_NAMESPACE2.equals(wsaNs)) {
             wsa200408RadioButton.setSelected(true);
-        } else if (SoapUtil.WSA_NAMESPACE_10.equals(wsaNs)) {
+        } else if (wsaNs == null || SoapUtil.WSA_NAMESPACE_10.equals(wsaNs)) {
             wsa10RadioButton.setSelected(true);
         } else {
             wsaOtherRadioButton.setSelected(true);
@@ -186,10 +186,15 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
         samlTemplateField.setEnabled(samlTemplateRadioButton.isSelected());
         wsaOtherTextField.setEnabled(wsaOtherRadioButton.isSelected());
 
-        boolean ok = true;
-        if (wsaOtherRadioButton.isSelected() && wsaOtherTextField.getText().isEmpty()) ok = false;
-        if (samlTemplateRadioButton.isSelected() && samlTemplateField.getText().isEmpty()) ok = false;
-        okButton.setEnabled(ok);
+        final boolean someSamlSelected = !samlNoneRadioButton.isSelected();
+        samlStrDereferenceRadioButton.setEnabled(someSamlSelected);
+        samlWsuIdRadioButton.setEnabled(someSamlSelected);
+
+        boolean canOk = true;
+        if (wsaOtherRadioButton.isSelected() && wsaOtherTextField.getText().isEmpty()) canOk = false;
+        if (samlTemplateRadioButton.isSelected() && samlTemplateField.getText().isEmpty()) canOk = false;
+
+        okButton.setEnabled(canOk);
     }
 
     boolean ok = false;

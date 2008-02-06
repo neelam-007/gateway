@@ -297,7 +297,7 @@
                 <children>
                   <component id="3ec61" class="javax.swing.JRadioButton" binding="samlStrDereferenceRadioButton">
                     <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <text value="&amp;STR Dereference Transform (standards compliant)"/>
@@ -305,7 +305,7 @@
                   </component>
                   <component id="4169f" class="javax.swing.JRadioButton" binding="samlWsuIdRadioButton">
                     <constraints>
-                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <text value="wsu:&amp;Id in Assertion (NCES compliant)"/>
