@@ -48,7 +48,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     private List<PolicyValidatorResult.Message> validatorMessages = new ArrayList<PolicyValidatorResult.Message>();
     private List<PolicyValidatorResult.Message> viewValidatorMessages = null;
 
-    protected final AT assertion;
+    protected AT assertion;
 
     /**
      * package private constructor accepting the asseriton
@@ -69,6 +69,13 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     @Override
     public final AT asAssertion() {
         return assertion;
+    }
+
+    public void setUserObject(Object userObject) {
+        // TODO we don't do a proper type check here because SAML assertion may try to replace
+        // a RequestWssSaml2 with a RequestWssSaml
+        assertion = (AT)userObject;
+        super.setUserObject(userObject);
     }
 
     /**

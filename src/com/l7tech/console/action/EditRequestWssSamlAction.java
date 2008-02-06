@@ -6,10 +6,8 @@
  */
 package com.l7tech.console.action;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.common.util.Functions;
-import com.l7tech.console.MainWindow;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.saml.RequestWssSamlPropertiesPanel;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
@@ -18,8 +16,8 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml2;
 
 import javax.swing.*;
-import java.util.logging.Level;
 import java.awt.*;
+import java.util.logging.Level;
 
 /**
  * Action that invokes the editor for the {@link com.l7tech.policy.assertion.xmlsec.RequestWssSaml}
@@ -52,10 +50,14 @@ public class EditRequestWssSamlAction extends NodeAction {
 
     protected void performAction() {
         final Frame mw = TopComponents.getInstance().getTopParent();
-        editSamlAssertion(requestWssSaml, mw, new Functions.UnaryVoid<Boolean>() {
-            public void call(Boolean assertionChanged) {
-                if (assertionChanged) {
-                    RequestWssSaml updatedAssertion;
+        final RequestWssSamlPropertiesPanel dlg =
+          new RequestWssSamlPropertiesPanel(requestWssSaml, mw, true, !node.canEdit());
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.hasAssertionChanged()) {
+                    final RequestWssSaml updatedAssertion;
                     if (requestWssSaml.getVersion()==null ||
                         requestWssSaml.getVersion().intValue()==1) {
                         updatedAssertion = new RequestWssSaml(requestWssSaml);
@@ -68,9 +70,9 @@ public class EditRequestWssSamlAction extends NodeAction {
                         requestWssSaml.getParent().replaceChild(requestWssSaml, updatedAssertion);
                     }
 
-                    JTree tree = TopComponents.getInstance().getPolicyTree();
+                    final JTree tree = TopComponents.getInstance().getPolicyTree();
                     if (tree != null) {
-                        PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                        final PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
                         model.assertionTreeNodeChanged((AssertionTreeNode)node);
                     } else {
                         log.log(Level.WARNING, "Unable to reach the palette tree.");
@@ -79,20 +81,4 @@ public class EditRequestWssSamlAction extends NodeAction {
             }
         });
     }
-
-    private void editSamlAssertion(RequestWssSaml samlAuthenticationStatement,
-                                   Frame parent,
-                                   final Functions.UnaryVoid<Boolean> callback)
-    {
-        final RequestWssSamlPropertiesPanel dlg =
-          new RequestWssSamlPropertiesPanel(samlAuthenticationStatement, parent, true, !node.canEdit());
-        dlg.pack();
-        Utilities.centerOnScreen(dlg);
-        DialogDisplayer.display(dlg, new Runnable() {
-            public void run() {
-                callback.call(dlg.hasAssertionChanged());
-            }
-        });
-    }
-
 }

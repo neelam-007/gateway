@@ -72,6 +72,7 @@ public interface AssertionPropertiesEditor<AT extends Assertion> {
     /**
      * Get a parameter of the view.
      *
+     * @param name the name of the parameter.  Required.
      * @return The parameter value or null.
      */
     Object getParameter(String name);
