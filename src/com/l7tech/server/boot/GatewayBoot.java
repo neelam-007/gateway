@@ -2,16 +2,22 @@ package com.l7tech.server.boot;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.Component;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.server.BootProcess;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.log.JdkLogConfig;
+import com.mchange.v2.c3p0.C3P0Registry;
+import com.mchange.v2.c3p0.PooledDataSource;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.File;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.sql.SQLException;
 
 /**
  * Object that represents a complete, running Gateway instance.
@@ -21,6 +27,7 @@ public class GatewayBoot {
     protected static final Logger logger = Logger.getLogger(GatewayBoot.class.getName());
     public static final String SHUTDOWN_FILENAME = "SHUTDOWN.NOW";
     private static final long SHUTDOWN_POLL_INTERVAL = 1987L;
+    private static final long DB_CHECK_DELAY = 10;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
@@ -49,6 +56,7 @@ public class GatewayBoot {
         // This thread is responsible for attempting to start the server, and for clearing "running" flag if it fails
         boolean itworked = false;
         try {
+            spawnDbWarner();
             createApplicationContext();
             String ipAddress = startBootProcess();
             startListeners(ipAddress);
@@ -103,6 +111,37 @@ public class GatewayBoot {
         } while (!shutFile.exists());
 
         logger.info("SHUTDOWN.NOW file detected - treating as shutdown request");
+    }
+
+    // Launch a background thread that warns if no DB connections appear within a reasonable period of time (Bug #4271)
+    private static void spawnDbWarner() {
+        Thread dbcheck = new Thread("Database Check") {
+            public void run() {
+                try {
+                    Thread.sleep(DB_CHECK_DELAY * 1000L);
+                    int connections = getNumDbConnections();
+                    if (connections >= 1) {
+                        logger.log(Level.FINE, "Database check: " + connections + " database connections open after " + DB_CHECK_DELAY + " seconds");
+                        return;
+                    }
+
+                    logger.log(Level.SEVERE, "WARNING: No database connections open after " + DB_CHECK_DELAY + " seconds; possible DB connection failure?");
+                } catch (Throwable t) {
+                    logger.log(Level.SEVERE, "Unable to check for database connections: " + ExceptionUtils.getMessage(t), t);
+                }
+            }
+        };
+        dbcheck.setDaemon(true);
+        dbcheck.start();
+    }
+
+    private static int getNumDbConnections() throws SQLException {
+        int connections = 0;
+        //noinspection unchecked
+        Set<PooledDataSource> pools = C3P0Registry.getPooledDataSources();
+        for ( PooledDataSource pool : pools )
+            connections += pool.getNumConnectionsAllUsers();
+        return connections;
     }
 
     private void createApplicationContext() {
