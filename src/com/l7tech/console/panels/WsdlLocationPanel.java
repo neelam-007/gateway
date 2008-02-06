@@ -468,7 +468,10 @@ public class WsdlLocationPanel extends JPanel {
                             Collection<ResourceTrackingWSDLLocator.WSDLResource> wsdls = wloc.getWSDLResources();
                             String document = wsdls.iterator().next().getWsdl();
 
-                            wsdlDocument = XmlUtil.stringToDocument(document);
+                            // parse in a way that sets the base URI for the document
+                            InputSource parseSource = new InputSource(baseUri);
+                            parseSource.setCharacterStream( new StringReader(document) );
+                            wsdlDocument = XmlUtil.parse(parseSource, false);
                             wsdlResources = wsdls;
                         }
                         return wsdl;
