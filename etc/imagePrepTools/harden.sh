@@ -85,6 +85,7 @@ auth        required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root r
   # GEN002960
   touch /etc/cron.allow
   chmod 600 /etc/cron.allow
+  echo 'ssgconfig' >> /etc/cron.deny
 
   # GEN003080
   chmod 600 /etc/crontab
@@ -95,6 +96,7 @@ auth        required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root r
   # GEN003320
   touch /etc/at.allow
   chmod 600 /etc/at.allow
+  echo 'ssgconfig' >> /etc/at.deny
 
   # GEN003540
   chmod 700 /var/crash
@@ -108,6 +110,9 @@ auth        required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root r
   # GEN004000
   chmod 4700 /bin/traceroute*
 
+  # GEN004540
+  mv /etc/mail/helpfile /etc/mail/helpfile.old
+
   # GEN005360
   chgrp sys /etc/snmp/snmpd.conf
 
@@ -120,6 +125,9 @@ auth        required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root r
   echo 'sshdfwd-x11: ALL' >> /etc/hosts.deny
   echo "sshd2: LOCAL" >> /etc/hosts.allow
 
+  # GEN006620
+  echo 'ALL: ALL' >> /etc/hosts.deny
+
   # LNX00340
   userdel news
   userdel games
@@ -130,6 +138,12 @@ auth        required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root r
 
   # LNX00520
   chmod 600 /etc/sysctl.conf
+
+  # GEN001280
+  find /usr/share/man -type f -a -perm +133 | xargs chmod 644
+
+  # GEN004560
+  sed -i -e 's/O SmtpGreetingMessage=\$j Sendmail \$v\/\$Z; \$b/O SmtpGreetingMessage= Mail Server Ready ; $b/' /etc/mail/sendmail.cf
 }
 
 soften() {
@@ -258,6 +272,7 @@ halt:*:13637:0:99999:7:::' /etc/shadow
 
   # GEN002960
   rm -f /etc/cron.allow
+  sed -i -e '/ssgconfig/d' /etc/cron.deny
 
   # GEN003080
   chmod 644 /etc/crontab
@@ -267,6 +282,7 @@ halt:*:13637:0:99999:7:::' /etc/shadow
 
   # GEN003320
   rm -f /etc/at.allow
+  sed -i -e '/ssgconfig/d' /etc/at.deny
 
   # GEN003540
   chmod 755 /var/crash
@@ -276,6 +292,9 @@ halt:*:13637:0:99999:7:::' /etc/shadow
 
   # GEN004000
   chmod 4755 /bin/traceroute*
+
+  # GEN004540
+  mv /etc/mail/helpfile.old /etc/mail/helpfile
 
   # GEN005360
   chgrp root /etc/snmp/snmpd.conf
@@ -290,6 +309,9 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   # GEN005540
   sed -i -e '/sshd1: ALL/d' -e '/sshd2: ALL/d' -e '/sshdfwd-x11: ALL/d' /etc/hosts.deny
   sed -i -e '/sshd2: LOCAL/d' /etc/hosts.allow
+
+  # GEN006620
+  sed -i -e '/ALL: ALL/d' /etc/hosts.deny
 
   # LNX00340
   sed -i -e 's/news:x:13:/news:x:13:news/' /etc/group
@@ -324,6 +346,9 @@ gopher:*:13637:0:99999:7:::' /etc/shadow
 
   # LNX00520
   chmod 644 /etc/sysctl.conf
+
+  # GEN004560
+  sed -i -e 's/O SmtpGreetingMessage= Mail Server Ready ; \$b/O SmtpGreetingMessage=$j Sendmail $v\/$Z; $b/' /etc/mail/sendmail.cf
 }
 
 if [ "$1" = "-r" ]; then
