@@ -108,8 +108,10 @@ elif [ "$1" = "stop" ] ; then
     if [ ! -z "$GATEWAY_PID" ]; then
        echo "Killing: `cat $GATEWAY_PID`"
        kill -9 `cat $GATEWAY_PID`
+       exit 21
     else
        echo "Kill failed: \$GATEWAY_PID not set"
+       exit 21;
     fi
   fi
 fi

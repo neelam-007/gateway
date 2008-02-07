@@ -13,7 +13,7 @@
 ORIGINAL_JAVA_OPTS="${JAVA_OPTS}"
 
 prog="SSG"
-tries=3
+tries=2
 count=0
 
 USER=$(whoami)
@@ -111,20 +111,24 @@ stop_ssg() {
     (sh "${PARTITION_CONTROL}" "stop" "${which_partition}" &> /dev/null)
     RETVAL=$?
 
-    if [ ${RETVAL} -eq 0 ] ; then
+    if [ ! ${RETVAL} -eq 0 ] ; then
         sleep 5;
         (sh "${PARTITION_CONTROL}" "status" "${which_partition}" &> /dev/null)
-        if [ ${?} -eq 0 ] ; then
+        RET=${?}
+        while [ ${RET} -eq 0 ]
+        do
             count=$((count + 1))
-            if [ "$count" -ge "$tries" ]; then
-                (sh "${PARTITION_CONTROL}" "stop -force" "${which_partition}" &> /dev/null)
-                RETVAL=$?
+            if [ "$count" -ge "$tries" ] ; then
+                (sh "${PARTITION_CONTROL}" forcestop "${which_partition}" &> /dev/null)
                 # sleep ensures TCP cleanup if process was killed
+                RET=${?}
                 sleep 5;
             else
-                stop_ssg "${which_partition}" silent
-            fi            
-        fi
+                (sh "${PARTITION_CONTROL}" "status" "${which_partition}" &> /dev/null)
+                RET=${?}
+            fi
+        done
+        RETVAL=0
     fi
 
     if [ "${2}" != "silent" ] ; then

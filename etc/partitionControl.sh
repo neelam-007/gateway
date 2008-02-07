@@ -24,6 +24,7 @@ usage() {
     echo "  start - start the given partition and detach from the console"
     echo "  run - start the given partition but do not detach from the console"
     echo "  stop - stop the given partition"
+    echo "  forcestop - forcibly stop the given partition. The partition will shutdown immediately, ungracefully."
     echo "  status - query the status of the given partition (check the running state)."
     echo "  usage - show this message"
     echo "  partition-name - the name of the partition to control"
@@ -144,6 +145,11 @@ control_single_partition() {
                 return 1
             fi
             (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND}") <&- &>/dev/null &
+        elif [ "${COMMAND}" == "forcestop" ] ; then
+            (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh stop -force") <&- &>/dev/null
+            GATEWAY_RET=$?
+            do_firewall
+            return $GATEWAY_RET
         else
             (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND}")
             GATEWAY_RET=$?
@@ -195,6 +201,10 @@ case "$COMMAND" in
         control_one_or_more_partitions
         ;;
     stop)
+        check_user
+        control_one_or_more_partitions
+        ;;
+    forcestop)
         check_user
         control_one_or_more_partitions
         ;;
