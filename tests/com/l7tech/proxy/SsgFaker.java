@@ -17,6 +17,7 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.xml.soap.SOAPConstants;
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.PasswordAuthentication;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
@@ -40,6 +41,7 @@ public class SsgFaker implements Closeable {
     private String sslUrl = "https://localhost:" + sslPort;
     private boolean destroyed = false;
     private String wsdlProxyResponseBody = "";
+    private PasswordAuthentication gotCreds;
 
     /**
      * Create an SsgFaker with default settings.
@@ -221,6 +223,8 @@ public class SsgFaker implements Closeable {
                 String authStuff = new String(HexUtils.decodeBase64(authHeader.substring(6)));
                 log.info("Found HTTP Basic auth stuff: " + authStuff);
                 isBasicAuth = true;
+                String[] stuffs = authStuff.split(":");
+                gotCreds = new PasswordAuthentication(stuffs[0], stuffs[1].toCharArray());
             }
             return isBasicAuth;
         }
@@ -239,6 +243,10 @@ public class SsgFaker implements Closeable {
     public void setWsdlProxyResponseBody(String wsdlProxyResponseBody) {
         if (wsdlProxyResponseBody == null) throw new NullPointerException();
         this.wsdlProxyResponseBody = wsdlProxyResponseBody;
+    }
+
+    public PasswordAuthentication getGotCreds() {
+        return gotCreds;
     }
 
     protected void handleWsdlProxyRequest(HttpResponse response) throws IOException {
