@@ -403,20 +403,13 @@ public class HttpForwardingRuleEnforcer {
         // handle cookies separately
         if (passIncomingCookies) {
             List setCookieValues = sourceOfResponseHeaders.getHeaders().getValues(HttpConstants.HEADER_SET_COOKIE);
-            List<HttpCookie> newCookies = new ArrayList<HttpCookie>();
             for (Object setCookieValue1 : setCookieValues) {
                 String setCookieValue = (String) setCookieValue1;
                 try {
-                    newCookies.add(new HttpCookie(routedRequestParams.getTargetUrl(), setCookieValue));
+                    context.addCookie(new HttpCookie(routedRequestParams.getTargetUrl(), setCookieValue));
                 } catch (HttpCookie.IllegalFormatException hcife) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, new String[]{setCookieValue});
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, setCookieValue);
                 }
-            }
-            for (HttpCookie routedCookie : newCookies) {
-                HttpCookie ssgResponseCookie = new HttpCookie(routedCookie.getCookieName(),
-                                                              routedCookie.getCookieValue(),
-                                                              routedCookie.getVersion(), null, null);
-                context.addCookie(ssgResponseCookie);
             }
         }
     }
@@ -446,10 +439,9 @@ public class HttpForwardingRuleEnforcer {
         for (HttpCookie ssgc : contextCookies) {
             if (CookieUtils.isPassThroughCookie(ssgc)) {
                 if (ssgc.isNew()) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION,
-                                        new String[]{ssgc.getCookieName(), String.valueOf(ssgc.getVersion())});
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION, ssgc.getCookieName(), String.valueOf(ssgc.getVersion()));
                 } else {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_UPDATECOOKIE, new String[]{ssgc.getCookieName()});
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_UPDATECOOKIE, ssgc.getCookieName());
                 }
                 HttpCookie newCookie = new HttpCookie(
                         ssgc.getCookieName(),

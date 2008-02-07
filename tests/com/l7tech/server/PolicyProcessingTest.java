@@ -2,7 +2,6 @@ package com.l7tech.server;
 
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.common.ApplicationContexts;
-import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.http.*;
 import com.l7tech.common.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -19,7 +18,6 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.audit.AuditContextStubInt;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.tomcat.ResponseKillerValve;
@@ -104,6 +102,7 @@ public class PolicyProcessingTest extends TestCase {
         System.setProperty("com.l7tech.server.serviceResolution.strictSoap", "false");
     }
 
+    @Override
     protected void setUp() throws Exception {
         // Software-only TransformerFactory to ignore the alluring Tarari impl, even if tarari_raxj.jar is sitting right there
         System.setProperty("javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl");
@@ -114,8 +113,9 @@ public class PolicyProcessingTest extends TestCase {
      */
     public static Test suite() {
          final TestSuite suite = new TestSuite(PolicyProcessingTest.class);
-         TestSetup wrapper = new TestSetup(suite) {
+         return new TestSetup(suite) {
 
+             @Override
              protected void setUp() throws Exception {
                  // Ordinarily, the application context would take care of configuring the registry,
                  // but it has to be done before buildServices() is called, and buildServices() has
@@ -136,12 +136,7 @@ public class PolicyProcessingTest extends TestCase {
 
                  auditContext.flush(); // ensure clear
              }
-
-             protected void tearDown() throws Exception {
-                 ;
-             }
          };
-         return wrapper;
     }
 
     /**
@@ -300,7 +295,7 @@ public class PolicyProcessingTest extends TestCase {
         Result result = processMessage("/httproutecookie", requestMessage1, 0);
 
         assertTrue("Outbound request cookie missing", headerExists(mockClient.getParams().getExtraHeaders(), "Cookie", "cookie=invalue"));
-        assertTrue("Outbound response cookie missing", cookieExists(result.context.getCookies(),"cookie", "outvalue"));
+        assertTrue("Outbound response cookie missing", newCookieExists(result.context.getCookies(),"cookie", "outvalue"));
 
         MockGenericHttpClient mockClient2 = buildMockHttpClient(responseHeaders, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient2);
@@ -308,7 +303,7 @@ public class PolicyProcessingTest extends TestCase {
         Result result2 = processMessage("/httproutenocookie", requestMessage1, 0);
 
         assertFalse("Outbound request cookie present", headerExists(mockClient2.getParams().getExtraHeaders(), "Cookie", "cookie=invalue"));
-        assertFalse("Outbound response cookie present", cookieExists(result2.context.getCookies(),"cookie", "outvalue"));
+        assertFalse("Outbound response cookie present", newCookieExists(result2.context.getCookies(),"cookie", "outvalue"));
     }
 
     /**
@@ -522,6 +517,7 @@ public class PolicyProcessingTest extends TestCase {
                 logger.info("500 (none 200?) result.");
             }
         } catch (Throwable e) {
+            //noinspection StringEquality
             if (e instanceof CausedIOException && e.getMessage() == ResponseKillerValve.ATTRIBUTE_FLAG_NAME) {
                 // not an error
             } else {
@@ -550,7 +546,7 @@ public class PolicyProcessingTest extends TestCase {
             assertEquals("Policy status", expectedStatus, status.getNumeric());
         }
 
-        return new Result(context, hresponse, ((AuditContextStubInt)auditContext).getLastRecord());
+        return new Result(context);
     }
 
     /**
@@ -615,6 +611,7 @@ public class PolicyProcessingTest extends TestCase {
                 logger.info("500 (none 200?) result.");
             }
         } catch (Throwable e) {
+            //noinspection StringEquality
             if (e instanceof CausedIOException && e.getMessage() == ResponseKillerValve.ATTRIBUTE_FLAG_NAME) {
                 // not an error
             } else {
@@ -641,7 +638,7 @@ public class PolicyProcessingTest extends TestCase {
             assertEquals("Policy status", expectedStatus, status.getNumeric());
         }
 
-        return new Result(context, null, ((AuditContextStubInt)auditContext).getLastRecord());
+        return new Result(context);
     }
 
     /**
@@ -655,13 +652,12 @@ public class PolicyProcessingTest extends TestCase {
             headers = new GenericHttpHeaders(responseHeaders);
         }
 
-        MockGenericHttpClient mockClient = new MockGenericHttpClient(200,
-                                                                     headers,
-                                                                     ContentTypeHeader.XML_DEFAULT,
-                                                                     new Long(message.length),
-                                                                     message);
+        return new MockGenericHttpClient(200,
+                                         headers,
+                                         ContentTypeHeader.XML_DEFAULT,
+                                         (long)message.length,
+                                         message);
 
-        return mockClient;
     }
 
     /**
@@ -671,12 +667,11 @@ public class PolicyProcessingTest extends TestCase {
         boolean exists = false;
 
         if (headers != null) {
-            for (Iterator headerIter = headers.iterator(); headerIter.hasNext(); ) {
-                Object headerObj = headerIter.next();
-                if (headerObj instanceof HttpHeader) {
+            for( Object headerObj : headers ) {
+                if( headerObj instanceof HttpHeader ) {
                     HttpHeader header = (HttpHeader) headerObj;
-                    if (headername.equals(header.getName()) &&
-                        (headervaluecontains == null || (header.getFullValue()!=null && header.getFullValue().indexOf(headervaluecontains)>=0))) {
+                    if( headername.equals( header.getName() ) &&
+                            ( headervaluecontains == null || ( header.getFullValue() != null && header.getFullValue().indexOf( headervaluecontains ) >= 0 ) ) ) {
                         exists = true;
                         break;
                     }
@@ -688,14 +683,15 @@ public class PolicyProcessingTest extends TestCase {
     }
 
     /**
-     *
+     * Check that there is a new cookie with the given name / value
      */
-    private static boolean cookieExists(Set<HttpCookie> cookies, String name, String value) {
+    private static boolean newCookieExists(Set<HttpCookie> cookies, String name, String value) {
         boolean exists = false;
 
         if (cookies != null) {
             for (HttpCookie cookie : cookies) {
-                if (name.equals(cookie.getCookieName()) &&
+                if (cookie.isNew() &&
+                    name.equals(cookie.getCookieName()) &&
                     (value == null || value.equals(cookie.getCookieValue()))) {
                     exists = true;
                     break;
@@ -711,13 +707,9 @@ public class PolicyProcessingTest extends TestCase {
      */
     private static final class Result {
         private PolicyEnforcementContext context;
-        private MockHttpServletResponse response;
-        private AuditRecord audit;
 
-        Result(PolicyEnforcementContext context, MockHttpServletResponse response, AuditRecord audit) {
+        Result(PolicyEnforcementContext context) {
             this.context = context;
-            this.response = response;
-            this.audit = audit;
         }
     }
 }

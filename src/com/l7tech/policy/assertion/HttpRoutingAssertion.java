@@ -72,7 +72,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     }
 
     /**
-     * Constructor.
+     * Full constructor.
      *
      * @param protectedServiceUrl the service url
      * @param login               protected service login
@@ -80,19 +80,6 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
      * @param realm               protected servcie realm
      */
     public HttpRoutingAssertion(String protectedServiceUrl, String login, String password, String realm, int maxConnections) {
-        this(protectedServiceUrl, login, password, realm, maxConnections, true);
-    }
-
-    /**
-     * Full constructor.
-     *
-     * @param protectedServiceUrl the service url
-     * @param login               protected service login
-     * @param password            protected service password
-     * @param realm               protected servcie realm
-     * @param copyCookies         true to copy cookies to the service request
-     */
-    public HttpRoutingAssertion(String protectedServiceUrl, String login, String password, String realm, int maxConnections, boolean copyCookies) {
         this.protectedServiceUrl = protectedServiceUrl;
         this.login = login;
         this.password = password;
@@ -252,6 +239,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.userAgent = userAgent;
     }
 
+    @Override
     public String toString() {
         return super.toString() + " url=" + getProtectedServiceUrl() + " login=" + getLogin() + " realm=" + getRealm();
     }
@@ -318,12 +306,12 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         if (requestMsgSrc != null) tmp.append(Syntax.SYNTAX_PREFIX).append(requestMsgSrc).append(Syntax.SYNTAX_SUFFIX);
 
         HttpPassthroughRuleSet[] ruleset = {responseHeaderRules, requestHeaderRules, requestParamRules};
-        for (int i = 0; i < ruleset.length; i++) {
-            HttpPassthroughRuleSet rules = ruleset[i];
-            if (!rules.isForwardAll()) {
-                for (int j = 0; j < rules.getRules().length; j++) {
-                    HttpPassthroughRule rule = rules.getRules()[j];
-                    if (!StringUtils.isEmpty(rule.getCustomizeValue())) tmp.append(rule.getCustomizeValue());
+        for( HttpPassthroughRuleSet rules : ruleset ) {
+            if( !rules.isForwardAll() ) {
+                for( HttpPassthroughRule rule : rules.getRules() ) {
+                    if( !StringUtils.isEmpty( rule.getCustomizeValue() ) ) {
+                        tmp.append( rule.getCustomizeValue() );
+                    }
                 }
             }
         }
