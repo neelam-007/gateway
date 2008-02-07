@@ -53,6 +53,7 @@ mkdir -p %{buildroot}/ssg/appliance/libexec/
 mkdir -p %{buildroot}/ssg/appliance/bin
 mkdir -p %{buildroot}/ssg/etc/profile.d/
 mkdir -p %{buildroot}/ssg/migration/cfg/
+mkdir -p %{buildroot}/ssg/bin/samples
 
 mv %{buildroot}/ssg/bin/ssg-initd %{buildroot}/etc/init.d/ssg
 mv %{buildroot}/ssg/bin/sysconfigscript-initd %{buildroot}/etc/init.d/ssgsysconfig
@@ -65,7 +66,9 @@ mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
 mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
 mv %{buildroot}/ssg/bin/configuser_profile %{buildroot}/home/ssgconfig/.bash_profile
 mv %{buildroot}/ssg/bin/pkcs11_linux.cfg %{buildroot}/ssg/appliance/pkcs11.cfg
+mv %{buildroot}/ssg/bin/fix_banner.sh %{buildroot}/ssg/bin/samples/
 mv %{buildroot}/ssg/bin/* %{buildroot}/ssg/appliance/bin/
+mv %{buildroot}/ssg/appliance/bin/samples %{buildroot}/ssg/bin/
 mv %{buildroot}/ssg/libexec/* %{buildroot}/ssg/appliance/libexec
 mv %{buildroot}/ssg/appliance/bin/grandmaster_flash %{buildroot}/ssg/migration/cfg/
 
@@ -110,6 +113,7 @@ chmod 711 %{buildroot}/ssg/appliance/libexec/*
 %attr(0775,gateway,gateway) %dir /ssg/etc/profile.d
 %attr(0775,gateway,gateway) /ssg/etc/profile.d/appliancedefs.sh
 %attr(0775,gateway,gateway) /ssg/etc/profile.d/tarari.sh
+%attr(0764,gateway,gateway) /ssg/bin/samples/fix_banner.sh
 
 # JDK
 %dir /ssg/jdk

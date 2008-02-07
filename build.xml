@@ -3909,6 +3909,7 @@
                 <include name="pkcs11_linux.cfg"/>
                 <include name="systeminfo.sh"/>
                 <include name="tarari.sh"/>
+                <include name="fix_banner.sh"/>
             </fileset>
             <fileset dir="${src.root}/etc">
                 <include name="grandmaster_flash"/>
