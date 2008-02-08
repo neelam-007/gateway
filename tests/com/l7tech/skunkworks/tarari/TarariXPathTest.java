@@ -6,6 +6,7 @@ import com.tarari.xml.rax.cursor.RaxCursorFactory;
 import com.tarari.xml.rax.fastxpath.XPathCompiler;
 import com.tarari.xml.rax.fastxpath.XPathProcessor;
 import com.tarari.xml.rax.fastxpath.XPathResult;
+import com.tarari.xml.rax.fastxpath.XPathLoader;
 import com.tarari.xml.XmlSource;
 import com.tarari.xml.xpath10.expr.Expression;
 import com.tarari.xml.xpath10.parser.ExpressionParser;
@@ -39,25 +40,35 @@ import javax.xml.XMLConstants;
 public class TarariXPathTest {
 
     public static void main(String[] args) throws Exception {
-        if ( args.length != 2 ) {
-            System.out.println("Usage:\n\tTarariXPathTest <xml-file> <xpath>");
+        if ( args.length != 2 && args.length != 3 ) {
+            System.out.println("Usage:\n\tTarariXPathTest <xml-file> <xpath> [<compiledxpaths-file>]");
         } else {
             String filename = args[0];
             String expression = args[1];
 
+            System.out.println("Creating RAX document.");
+            RaxDocument document = RaxDocument.createDocument(new XmlSource(new FileInputStream(filename)));
+
             System.out.println("Trying as Fast XPath");
             try {
-                XPathCompiler.compile(new String[]{expression});
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+                if ( args.length == 3 ) {
+                    String precompiledFile = args[2];
+                    XPathCompiler.reset();
+                    XPathCompiler.compile( new String[]{expression} );
 
-            RaxDocument document = RaxDocument.createDocument(new XmlSource(new FileInputStream(filename)));
-            try {
-                final XPathProcessor xpathProcessor = new XPathProcessor(document);
+                    // These steps do not seem to do anything ... (works without)
+                    XPathCompiler.write( precompiledFile );
+                    XPathLoader.preCompiledLoad( precompiledFile );
+                } else {
+                    XPathLoader.unload();
+                    XPathLoader.load( new String[]{expression} );
+                }
+
+                XPathProcessor xpathProcessor = new XPathProcessor(document);
                 XPathResult xpathResult = xpathProcessor.processXPaths();
+                int count = xpathResult.getCount( 1 );
 
-                System.out.println( "Result count:" + xpathResult.getCount( 1 ) );
+                System.out.println( "Result count: " + count );
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -83,12 +94,17 @@ public class TarariXPathTest {
 
                     if (attValue != null && attValue.trim().length() > 0) {
                         if ("xmlns".equals(attPrefix) && XMLConstants.XMLNS_ATTRIBUTE_NS_URI.equals(attNsUri)) {
+                            System.out.println("Declaring namespace: " + attLocalName + " = " + attValue);
                             parseContext.declareNamespace(attLocalName, attValue);
                         } else if ("xmlns".equals(attLocalName)) {
-                            parseContext.declareNamespace("", attValue);
+                            // For our test we just use namespaces from the document so
+                            // warn if there is a namespace that cannot be used in the
+                            // XPath. The test document should be re-written to use a
+                            // prefix for this namespace to allow it to be used in the
+                            // XPath expression.
+                            System.out.println("WARNING default namespace cannot be XPathed (no prefix): " + attValue);
                         }
                     }
-
                 }
                 
                 Expression expr = expressionParser.parseExpression(expression);
