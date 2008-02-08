@@ -119,14 +119,9 @@ auth        required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root r
   # GEN005400
   chmod 640 /etc/syslog.conf
 
-  # GEN005540
-  echo 'sshd1: ALL' >> /etc/hosts.deny
-  echo 'sshd2: ALL' >> /etc/hosts.deny
-  echo 'sshdfwd-x11: ALL' >> /etc/hosts.deny
-  echo "sshd2: LOCAL" >> /etc/hosts.allow
-
-  # GEN006620
+  # GEN005540, GEN006620
   echo 'ALL: ALL' >> /etc/hosts.deny
+  echo 'sshd: ALL' >> /etc/hosts.allow
 
   # LNX00340
   userdel news

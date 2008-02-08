@@ -26,6 +26,9 @@ harden() {
 kill -USR1 `cat /var/run/auditd.pid`
 EOF
   chmod u+x /etc/cron.daily/auditd-rotate
+
+  # GEN005540
+  sed -i -e '/sshd: ALL/d' /etc/hosts.allow
 }
 
 soften() {
