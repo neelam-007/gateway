@@ -8,16 +8,15 @@ import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.util.Decorator;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.event.PolicyCacheEvent;
 import com.l7tech.server.event.system.ServiceCacheEvent;
 import com.l7tech.server.event.system.ServiceReloadEvent;
 import com.l7tech.server.event.system.Started;
-import com.l7tech.server.event.PolicyCacheEvent;
 import com.l7tech.server.policy.*;
 import com.l7tech.server.service.resolution.*;
 import com.l7tech.service.PublishedService;
@@ -33,13 +32,14 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.*;
 
+import java.text.MessageFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 
 /**
  * Contains cached services, with corresponding pre-parsed server-side policies and
@@ -97,6 +97,7 @@ public class ServiceCache
     private boolean hasCatchAllService = false;
     private SoapOperationResolver soapOperationResolver;
     private final PolicyCache policyCache;
+    private final AtomicBoolean needXpathCompile = new AtomicBoolean(true);
 
 
     /**
@@ -161,8 +162,10 @@ public class ServiceCache
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         if (applicationEvent instanceof ServiceCacheEvent.Updated) {
             doCacheUpdate((ServiceCacheEvent.Updated) applicationEvent);
+            needXpathCompile.set(true);
         } else if (applicationEvent instanceof ServiceCacheEvent.Deleted) {
             doCacheDelete((ServiceCacheEvent.Deleted) applicationEvent);
+            needXpathCompile.set(true);
         } else if (applicationEvent instanceof PolicyCacheEvent.Invalid) {
             PolicyCacheEvent.Invalid invalidEvent = (PolicyCacheEvent.Invalid) applicationEvent;
             final Lock write = rwlock.writeLock();
@@ -172,6 +175,7 @@ public class ServiceCache
             } finally {
                 write.unlock();
             }
+            needXpathCompile.set(true);
         } else if (applicationEvent instanceof PolicyCacheEvent.Updated) {
             PolicyCacheEvent.Updated validEvent = (PolicyCacheEvent.Updated) applicationEvent;
             final Lock write = rwlock.writeLock();
@@ -181,6 +185,7 @@ public class ServiceCache
             } finally {
                 write.unlock();
             }
+            needXpathCompile.set(true);
         } else if (applicationEvent instanceof Started) {
             new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
                 @Override
@@ -192,6 +197,7 @@ public class ServiceCache
                     }
                 }
             });
+            needXpathCompile.set(true);
         }
     }
 
@@ -717,6 +723,9 @@ public class ServiceCache
     }
 
     private void checkIntegrity() {
+        if (needXpathCompile.getAndSet(false))
+            TarariLoader.compile();
+
         Lock ciReadLock = rwlock.readLock();
         ciReadLock.lock();
         try {

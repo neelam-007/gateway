@@ -67,13 +67,8 @@ class XpathHandle {
             firstCompilerGeneration = compilerGeneration;
     }
 
-    /** @return true iff. this xpath has been installed in the hardware already. */
-    private boolean isInstalled() {
-        return firstCompilerGeneration >= 0;
-    }
-
     /** @return true iff. this xpath was present in the specified GlobalTarariContext compiler generation number. */
     public boolean isInstalled(long targetCompilerGeneration) {
-        return targetCompilerGeneration >= firstCompilerGeneration;
+        return firstCompilerGeneration >=0 && targetCompilerGeneration >= firstCompilerGeneration;
     }
 }

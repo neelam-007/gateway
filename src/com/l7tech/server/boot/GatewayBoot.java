@@ -3,6 +3,8 @@ package com.l7tech.server.boot;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.Component;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.server.BootProcess;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
@@ -13,11 +15,11 @@ import com.mchange.v2.c3p0.PooledDataSource;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.File;
+import java.sql.SQLException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.SQLException;
 
 /**
  * Object that represents a complete, running Gateway instance.
@@ -56,6 +58,7 @@ public class GatewayBoot {
         // This thread is responsible for attempting to start the server, and for clearing "running" flag if it fails
         boolean itworked = false;
         try {
+            doEarlyInitialization();
             spawnDbWarner();
             createApplicationContext();
             String ipAddress = startBootProcess();
@@ -91,6 +94,16 @@ public class GatewayBoot {
         start();
         waitForShutdown();
         destroy();
+    }
+
+    private void doEarlyInitialization() {
+        GlobalTarariContext context = TarariLoader.getGlobalContext();
+        if (context != null) {
+            logger.log(Level.INFO, "Found XML acceleration hardware");
+            TarariLoader.compile();
+        } else {
+            logger.log(Level.FINE, "No XML acceleration hardware found");
+        }
     }
 
     private void waitForShutdown() {
