@@ -65,9 +65,9 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
      */
     public void compileAllXpaths() {
         logger.fine("compiling xpath expressions");
-        while (true) {
-            tarariLock.writeLock().lock();
-            try {
+        tarariLock.writeLock().lock();
+        try {
+            while (true) {
                 if (!xpathChangedSinceLastCompilation) {
                     logger.fine("skipping compilation since no changes to xpath expressions were detected");
                     return;
@@ -93,9 +93,9 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
                         /* FALLTHROUGH and try compiling again */
                     }
                 }
-            } finally {
-                tarariLock.writeLock().unlock();
             }
+        } finally {
+            tarariLock.writeLock().unlock();
         }
     }
 
