@@ -889,7 +889,7 @@
 
     <target name="test.intensive"
             description="Run intensive JUnit tests."
-            depends="clean.test, test.work, test.intensive.work, test.modules, test.report">
+            depends="clean.test, test.work, test.intensive.work, test.tarari.work, test.modules, test.report">
         <checkfail/>
     </target>
 
@@ -964,6 +964,26 @@
             <!--
               Add possibly-slow intensive nightly tests here **
             -->
+        </junit>
+    </target>
+
+    <target name="test.tarari.work" depends="clean.test, dev">
+        <available file="/usr/local/Tarari/lib" type="dir" property="tarariraxj.present"/>
+
+        <junit printsummary="yes" haltonfailure="yes" fork="off" errorproperty="test.error" failureproperty="test.failure">
+            <classpath>
+                <path refid="project.test.classpath"/>
+                <pathelement location="${build.test.classes}"/>
+            </classpath>
+
+            <formatter type="plain" unless="build.junit.xmlformat"/>
+            <formatter type="xml" if="build.junit.xmlformat"/>
+            <sysproperty key="src.root" value="${src.root}"/>
+
+            <!--
+              Tests.  All these tests must run with fork="yes"
+            -->
+            <test name="com.l7tech.common.xml.tarari.TarariXpathTest" haltonfailure="no" fork="yes" if="tarariraxj.present"/>
         </junit>
     </target>
 
