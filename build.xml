@@ -1010,11 +1010,11 @@
         </subant>
     </target>
 
-    <target name="test.all" description="Run testpackage and test.intensive" depends="test.work, test.intensive.work, test.modules, testpackage.work, test.report, testpackage.report">
+    <target name="test.all" description="Run testpackage and test.intensive" depends="test.work, test.tarari.work, test.intensive.work, test.modules, testpackage.work, test.report, testpackage.report">
         <checkfail/>
     </target>
 
-    <target name="test.junit" description="Run all JUnit tests" depends="test.work, test.intensive.work, test.modules, test.report, report.jdepend, report.findbugs, javadoc">
+    <target name="test.junit" description="Run all JUnit tests" depends="test.work, test.tarari.work, test.intensive.work, test.modules, test.report, report.jdepend, report.findbugs, javadoc">
         <checkfail/>
     </target>
 
