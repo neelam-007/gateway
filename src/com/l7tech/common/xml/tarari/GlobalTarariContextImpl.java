@@ -205,7 +205,12 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
      */
     public int getXpathIndex(String expression, long targetCompilerGeneration) {
         if (expression == null) return -1;
-        return currentXpaths.getIndex(expression, targetCompilerGeneration) + 1;
+        tarariLock.readLock().lock();
+        try {
+            return currentXpaths.getIndex(expression, targetCompilerGeneration) + 1;
+        } finally {
+            tarariLock.readLock().unlock();
+        }
     }
 
     public Map setHardwareSchemas(final LinkedHashMap hardwareSchemas)
