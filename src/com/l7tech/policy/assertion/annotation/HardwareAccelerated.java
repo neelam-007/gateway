@@ -20,5 +20,5 @@ public @interface HardwareAccelerated {
 
     Type[] type();
     
-    enum Type { SCHEMA, XSLT }
+    enum Type { SCHEMA, XSLT, TOKENSCAN }
 }

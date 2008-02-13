@@ -983,12 +983,14 @@
                     <formatter type="plain" unless="build.junit.xmlformat"/>
                     <formatter type="xml" if="build.junit.xmlformat"/>
                     <sysproperty key="src.root" value="${src.root}"/>
+                    <sysproperty key="com.l7tech.common.xml.tarari.enable" value="true"/>
 
                     <!--
                       Tests.  All these tests must run with fork="yes"
                     -->
                     <test name="com.l7tech.common.xml.tarari.TarariXpathTest" haltonfailure="no" fork="yes"/>
-                    <test name="com.l7tech.server.AllTarariTests" haltonfailure="no" fork="yes"/>
+                    <test name="com.l7tech.server.PolicyProcessingTest" haltonfailure="no" fork="yes"/>
+                    <test name="com.l7tech.common.message.KnobblyMessageTest" haltonfailure="no" fork="yes"/>
                 </junit>
             </then>
             <else>
