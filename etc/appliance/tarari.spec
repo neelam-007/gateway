@@ -3,7 +3,7 @@ Name: ssg-tarari
 Version: 3.7
 Release: 4
 Group: Applications/Internet
-License: Copyright Layer 7 Technologies. Portions copyright Tarari 2003-2007
+License: Copyright Layer 7 Technologies. Portions copyright Tarari 2003-2008
 URL: http://www.layer7tech.com
 Packager: Layer 7 Technologies, <support@layer7tech.com>
 Source0: /tmp/tarari.tar.gz

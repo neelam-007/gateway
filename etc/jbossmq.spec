@@ -3,7 +3,7 @@ Name: ssg-jbossmq
 Version: 3.7
 Release: 1
 Group: Applications/Internet
-License: Copyright Layer7 Technologies 2003-2006
+License: Copyright Layer7 Technologies 2003-2008
 URL: http://www.layer7tech.com
 Packager: Layer7 Technologies, <support@layer7tech.com>
 Source0: ~/rpm/SOURCES/jbossmq.tar.gz
