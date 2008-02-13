@@ -988,6 +988,7 @@
                       Tests.  All these tests must run with fork="yes"
                     -->
                     <test name="com.l7tech.common.xml.tarari.TarariXpathTest" haltonfailure="no" fork="yes"/>
+                    <test name="com.l7tech.server.AllTarariTests" haltonfailure="no" fork="yes"/>
                 </junit>
             </then>
             <else>
