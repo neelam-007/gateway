@@ -37,7 +37,7 @@ import java.util.logging.Logger;
  * A CompiledXpath implementation that uses Tarari RAXJ features directly, and which will set up a fastXpath
  * expression if possible, but will fall back (lazily) to a DOM-based Jaxen xpath if all else fails.
  */
-class TarariCompiledXpath extends CompiledXpath {
+class TarariCompiledXpath extends DomCompiledXpath {
     private static final Logger logger = Logger.getLogger(TarariCompiledXpath.class.getName());
     private static final RaxCursorFactory raxCursorFactory = new RaxCursorFactory();
 
