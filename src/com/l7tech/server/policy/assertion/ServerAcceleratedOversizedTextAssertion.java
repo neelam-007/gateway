@@ -113,7 +113,7 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
         Message mess = context.getRequest();
         try {
             // Force Tarari evaluation to have occurred
-            mess.isSoap();
+            mess.isSoap(false);
 
             if (accelTestsPresent) {
                 // At least one accelerated test is enabled.  We'll neeed a RaxDocument.

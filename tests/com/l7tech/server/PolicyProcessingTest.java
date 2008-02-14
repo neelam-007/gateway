@@ -13,6 +13,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.identity.UserBean;
 import com.l7tech.policy.AssertionRegistry;
@@ -220,9 +221,10 @@ public class PolicyProcessingTest extends TestCase {
      * Test rejection of messages with dubious structure
      */
     public void testDocumentStructure() throws Exception {
-        if (TarariLoader.getGlobalContext() != null) {
-            // TODO Reenable this test as soon as we figure out why it fails in Tarari mode
-            return;
+        GlobalTarariContext tgc = TarariLoader.getGlobalContext();
+        if (tgc != null) {
+            // Make sure document statistics collection is initialized
+            tgc.compileAllXpaths();
         }
 
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
