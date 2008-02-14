@@ -81,7 +81,6 @@
             <include name="spring-context.jar"/>
             <include name="spring-beans.jar"/>
             <include name="spring-core.jar"/>
-            <include name="junit*.jar"/>
             <include name="spring-webmvc.jar"/>
             <include name="spring-orm.jar"/>
             <include name="spring-dao.jar"/>
@@ -97,6 +96,9 @@
             <include name="forms_rt.jar"/>
             <include name="xss4j.jar"/>
             <include name="commons-*.jar"/>
+        </fileset>
+        <fileset dir="${UneasyRooster.dir}/lib/tools">
+            <include name="junit*.jar"/>            
         </fileset>
         <fileset dir=".">
             <include name="lib/*.jar"/>
