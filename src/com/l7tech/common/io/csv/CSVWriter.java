@@ -201,7 +201,7 @@ public class CSVWriter {
      * @return quoted and/or escaped value; or original string if no treatment neccessary
      */
     protected static String quote(final CSVPreference preference, final String s) {
-        if (s.isEmpty()) return s;
+        if (s.length() == 0) return s;
 
         final char quote = preference.getQuote();
         final char separator = preference.getSeparator();

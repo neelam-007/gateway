@@ -128,7 +128,7 @@ public class CSVPreference {
             if (endOfRecord.charAt(i) == quote) throw new IllegalArgumentException("End-of-record cannot contain the quote character: " + quote);
             if (endOfRecord.charAt(i) == separator) throw new IllegalArgumentException("End-of-record cannot contain the separator character: " + separator);
         }
-        if (endOfRecord.isEmpty()) throw new IllegalArgumentException("End-of-record cannot be empty string.");
+        if (endOfRecord.length() == 0) throw new IllegalArgumentException("End-of-record cannot be empty string.");
         if (endOfRecord.contains(" ")) throw new IllegalArgumentException("End-of-record cannot be contain the space character.");
 
         _separator = separator;
