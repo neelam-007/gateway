@@ -10,7 +10,7 @@ harden() {
   service sshd restart
 
   # GEN000460
-  sed -i -e 's/\(auth  *required  *.*\/pam_tally.so deny\)=[0-9]\( no_magic_root reset\)/\1=3\2/' /etc/pam.d/system-auth
+  sed -i -e 's/\(account  *required  *.*\/pam_tally.so deny\)=[0-9]\( no_magic_root reset\)/\1=3\2/' /etc/pam.d/system-auth
 
   # GEN002720
   chkconfig --level 3 auditd on

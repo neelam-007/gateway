@@ -29,7 +29,10 @@ harden() {
   if ! grep -Eq 'auth +required +.*/pam_tally.so deny=[0-9] no_magic_root reset' /etc/pam.d/system-auth; then
     sed -i -e '
 /auth\s*required\s*.*\/pam_env\.so/ i\
-auth        required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root reset' /etc/pam.d/system-auth
+auth        required      /lib/security/$ISA/pam_tally.so onerr=fail no_magic_root' /etc/pam.d/system-auth
+    sed -i -e '
+/account\s*sufficient\s*.*\/pam_succeed_if\.so/ i\
+account     required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root reset' /etc/pam.d/system-auth
   fi
 
   # GEN000480
@@ -45,7 +48,7 @@ auth        required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root r
 
   # GEN000580, GEN000600, GEN000620 GEN000640
   sed -i -e 's/PASS_MIN_LEN\t5/PASS_MIN_LEN\t9/' /etc/login.defs
-  sed -i -e 's/\(password\s*requisite\s*.*\/pam_cracklib.so\s.*\)/\1 minlen=9 ucredit=2 lcredit=2 dcredit=2 ocredit=2/' /etc/pam.d/system-auth
+  sed -i -e 's/\(password\s*requisite\s*.*\/pam_cracklib.so\s.*\)/\1 minlen=9 ucredit=-2 lcredit=-2 dcredit=-2 ocredit=-2/' /etc/pam.d/system-auth
 
   # GEN000800
   sed -i -e 's/\(password\s*sufficient\s*.*\/pam_unix.so\s.*\)/\1 remember=5/' /etc/pam.d/system-auth

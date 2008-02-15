@@ -131,9 +131,6 @@ seal)
   # Clear the /etc/resolv.conf file
   echo "" > /etc/resolv.conf
 
-  # Force root to change her password every 365 days.
-  chage -M 365 root
-
   # Force root to change her password the next time she logs in.
   chage -d 0 root
 
