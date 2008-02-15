@@ -1,10 +1,10 @@
-package com.l7tech.external.assertions.@assertion@.server;
+package com.l7tech.external.assertions.cache.server;
 
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
-import com.l7tech.external.assertions.@assertion@.@ASSERTION@Assertion;
+import com.l7tech.external.assertions.cache.CacheLookupAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
@@ -14,18 +14,18 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Server side implementation of the @ASSERTION@Assertion.
+ * Server side implementation of the CacheLookupAssertion.
  *
- * @see com.l7tech.external.assertions.@assertion@.@ASSERTION@Assertion
+ * @see com.l7tech.external.assertions.cache.CacheLookupAssertion
  */
-public class Server@ASSERTION@Assertion extends AbstractServerAssertion<@ASSERTION@Assertion> {
-    private static final Logger logger = Logger.getLogger(Server@ASSERTION@Assertion.class.getName());
+public class ServerCacheLookupAssertion extends AbstractServerAssertion<CacheLookupAssertion> {
+    private static final Logger logger = Logger.getLogger(ServerCacheLookupAssertion.class.getName());
 
-    private final @ASSERTION@Assertion assertion;
+    private final CacheLookupAssertion assertion;
     private final Auditor auditor;
     private final String[] variablesUsed;
 
-    public Server@ASSERTION@Assertion(@ASSERTION@Assertion assertion, ApplicationContext context) throws PolicyAssertionException {
+    public ServerCacheLookupAssertion(CacheLookupAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
 
         this.assertion = assertion;
@@ -44,6 +44,6 @@ public class Server@ASSERTION@Assertion extends AbstractServerAssertion<@ASSERTI
     public static void onModuleUnloaded() {
         // This assertion doesn't have anything to do in response to this, but it implements this anyway
         // since it will be used as an example by future modular assertion authors
-        logger.log(Level.INFO, "Server@ASSERTION@Assertion is preparing itself to be unloaded");
+        logger.log(Level.INFO, "ServerCacheLookupAssertion is preparing itself to be unloaded");
     }
 }

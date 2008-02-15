@@ -16,7 +16,7 @@ public class @ASSERTION@Assertion extends Assertion implements UsesVariables {
     protected static final Logger logger = Logger.getLogger(@ASSERTION@Assertion.class.getName());
 
     public String[] getVariablesUsed() {
-        return new String[0]; //ExpandVariables.getReferencedNames(...);
+        return new String[0]; //Syntax.getReferencedNames(...);
     }
 
     //

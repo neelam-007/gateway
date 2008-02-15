@@ -180,7 +180,9 @@ public class GatewayFeatureSets {
         fsr("set:experimental", "Enable experimental features",
             "Enables features that are only present during development, and that will be moved or renamed before shipping.",
             srv(SERVICE_BRIDGE, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"),
-            ass(WsspAssertion.class));
+            ass(WsspAssertion.class),
+            mass("assertion:CacheLookup"),
+            mass("assertion:CacheStorage"));
 
         GatewayFeatureSet uiPublishServiceWizard = ui(UI_PUBLISH_SERVICE_WIZARD, "Enable the SSM Publish SOAP Service Wizard");
         GatewayFeatureSet uiPublishXmlWizard = ui(UI_PUBLISH_XML_WIZARD, "Enable the SSM Publish XML Service Wizard");
@@ -620,7 +622,7 @@ public class GatewayFeatureSets {
         return fsr(name, desc, null, deps);
     }
 
-    /** Create and register a new root-level GatewayFeatureSet. */
+    /** Create and register a new non-leaf GatewayFeatureSet. */
     private static GatewayFeatureSet fsr(String name, String desc, String note, GatewayFeatureSet... deps) throws IllegalArgumentException {
         if (!name.startsWith("set:")) throw new IllegalArgumentException("Non-leaf feature set name must start with \"set:\": " + name);
         GatewayFeatureSet newset = new GatewayFeatureSet(name, desc, note, deps);
