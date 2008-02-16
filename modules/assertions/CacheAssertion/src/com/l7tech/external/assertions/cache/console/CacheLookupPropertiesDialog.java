@@ -71,9 +71,24 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
         validator.constrainTextFieldToNumberRange("Maximum age", maxAgeField, 0, 1000000L);
         maxAgeField.setText("86400");
 
+        ActionListener updateAction = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                updateEnableState();
+            }
+        };
+        useRequestRadioButton.addActionListener(updateAction);
+        useResponseRadioButton.addActionListener(updateAction);
+        useVariableRadioButton.addActionListener(updateAction);
+
         Utilities.enableGrayOnDisabled(variableNameField);
 
         Utilities.setEscKeyStrokeDisposes(this);
+        
+        updateEnableState();
+    }
+
+    private void updateEnableState() {
+        variableNameField.setEnabled(useVariableRadioButton.isSelected());
     }
 
     private void onOk() {
