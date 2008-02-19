@@ -2,11 +2,7 @@
 
 harden() {
   # GEN000400, GEN000420
-  mv -f /etc/issue /etc/issue.orig
-  cp -f /ssg/etc/issue /etc/issue
-  mv -f /etc/issue.net /etc/issue.net.orig
-  cp -f /ssg/etc/issue /etc/issue.net
-  sed -i -e 's/#Banner \/some\/path/Banner \/etc\/issue.net/' /etc/ssh/sshd_config
+  /ssg/bin/samples/fix_banner.sh
   service sshd restart
 
   # GEN000460

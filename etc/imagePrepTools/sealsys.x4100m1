@@ -119,6 +119,7 @@ seal)
   # Delete all log files.
   rm -f /var/log/*/*
   rm -f /var/log/*
+  touch /var/log/btmp
   rm -f ~/ks-post.chroot
   rm -f ~/ks-post.nochroot
 

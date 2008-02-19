@@ -2590,7 +2590,6 @@
         <mkdir dir="${build.rpm}/SOURCES/temp/ssg"/>
         <mkdir dir="${build.rpm}/SOURCES/temp/ssg/etc"/>
         <mkdir dir="${build.rpm}/SOURCES/temp/ssg/bin"/>
-        <copy file="etc/stig/issue" todir="${build.rpm}/SOURCES/temp/ssg/etc"/>
         <copy file="etc/stig/harden.sh" todir="${build.rpm}/SOURCES/temp/ssg/bin"/>
         <tar destfile="${build.rpm}/SOURCES/ssg-security.tar.gz" basedir="${build.rpm}/SOURCES/temp" compression="gzip"/>
         <delete dir="${build.rpm}/SOURCES/temp"/>

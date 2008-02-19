@@ -29,7 +29,6 @@ rm -fr %{buildroot}
 %build
 
 %files
-/ssg/etc/issue
 # Ssg bin
 %dir /ssg/bin
 %attr(0700,root,root) /ssg/bin/harden.sh
