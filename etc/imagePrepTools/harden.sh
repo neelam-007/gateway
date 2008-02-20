@@ -32,7 +32,7 @@ harden() {
 auth        required      /lib/security/$ISA/pam_tally.so onerr=fail no_magic_root' /etc/pam.d/system-auth
     sed -i -e '
 /account\s*sufficient\s*.*\/pam_succeed_if\.so/ i\
-account     required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root reset' /etc/pam.d/system-auth
+account     required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root even_deny_root_account reset' /etc/pam.d/system-auth
   fi
 
   # GEN000480
@@ -61,8 +61,8 @@ account     required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root r
 
   # GEN000980
   echo 'console' > /etc/securetty
-  echo 'tty1' > /etc/securetty
-  echo 'ttyS0' > /etc/securetty
+  echo 'tty1' >> /etc/securetty
+  echo 'ttyS0' >> /etc/securetty
 
   # GEN002480
   find / -type f -perm -002 -printf '%p %m\n' | grep -v '^/tmp/' | grep -v '^/var/tmp/' > /root/original_permissions
