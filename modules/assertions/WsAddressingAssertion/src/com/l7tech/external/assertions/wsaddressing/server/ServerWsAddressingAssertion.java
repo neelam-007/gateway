@@ -75,6 +75,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                 auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_HEADERS_OK);
                 status = AssertionStatus.NONE;
             } else {
+                context.setRequestPolicyViolated();
                 if ( assertion.isRequireSignature() ) {
                     auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_NO_SIGNED_HEADERS);                    
                 } else {
