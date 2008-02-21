@@ -2912,7 +2912,8 @@
     </target>
 
     <target name="managerapi.javadoc" depends="init">
-        <mkdir dir="${build.dir}/docs"/>
+        <delete dir="${build.dir}/docs/manager-api"/>
+        <mkdir dir="${build.dir}/docs/manager-api"/>
         <javadoc
                 destdir="${build.dir}/docs/manager-api"
                 version="true"
@@ -2929,7 +2930,19 @@
         </javadoc>
     </target>
 
-    <target name="zip.api" depends="package.api,bridgeapi.javadoc">
+    <target name="package.managerapi" depends="package.manager.jar,managerapi.javadoc" description="Package the Manager API for distribution.">
+        <zip destfile="${build.dir}/ManagerAPI-${build.version}.zip">
+            <zipfileset dir="${src.root}/tests/com/l7tech/example/manager/apidemo" includes="readme.txt"/>
+            <zipfileset dir="${src.root}/tests" includes="com/l7tech/example/manager/apidemo/**/*.java" prefix="sample/src"/>
+            <zipfileset dir="${build.dir}" includes="Manager.jar" prefix="lib"/>
+            <zipfileset dir="${build.lib}" casesensitive="yes" prefix="lib">
+                <patternset refid="manager.libs"/>
+            </zipfileset>
+            <zipfileset dir="${build.dir}/docs/manager-api" prefix="javadoc"/>
+        </zip>
+    </target>
+
+    <target name="zip.api" depends="package.api,bridgeapi.javadoc,package.managerapi">
         <!-- package bridge api for distribution -->
         <zip destfile="${build.dir}/BridgeAPI-${build.version}.zip" basedir="${build.dir}/docs" includes="bridge-api/**" />
 
