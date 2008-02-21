@@ -15,11 +15,11 @@ import java.util.logging.Logger;
 public class CacheLookupAssertion extends Assertion implements UsesVariables, SetsVariables {
     protected static final Logger logger = Logger.getLogger(CacheLookupAssertion.class.getName());
 
-    private String cacheId;
-    private String cacheEntryKey;
+    private String cacheId = "defaultCache";
+    private String cacheEntryKey = "${request.url}";
     private long maxEntryAgeMillis = Long.MAX_VALUE;
-    private String targetVariableName;
-    private boolean useRequest;
+    private String targetVariableName = null;
+    private boolean useRequest = false;
 
 
     public String[] getVariablesUsed() {
@@ -135,9 +135,9 @@ public class CacheLookupAssertion extends Assertion implements UsesVariables, Se
         meta.put(AssertionMetadata.SHORT_NAME, "Cache Lookup");
         meta.put(AssertionMetadata.LONG_NAME, "Look up value in cache");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/load16.gif");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/load16.png");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/load16.gif");
+        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/load16.png");
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);

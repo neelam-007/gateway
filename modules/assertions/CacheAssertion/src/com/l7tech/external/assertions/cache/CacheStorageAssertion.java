@@ -17,13 +17,13 @@ import java.util.logging.Logger;
 public class CacheStorageAssertion extends Assertion implements UsesVariables {
     protected static final Logger logger = Logger.getLogger(CacheLookupAssertion.class.getName());
 
-    private String sourceVariableName;
-    private boolean useRequest;
-    private String cacheId;
+    private String sourceVariableName = null;
+    private boolean useRequest = false;
+    private String cacheId = "defaultCache";
     private int maxEntries;
     private long maxEntryAgeMillis;
     private long maxEntrySizeBytes;
-    private String cacheEntryKey;
+    private String cacheEntryKey = "${request.url}";
 
 
     public String[] getVariablesUsed() {
@@ -87,7 +87,7 @@ public class CacheStorageAssertion extends Assertion implements UsesVariables {
      * If the cache named by cacheId already exists, its maxEntries will already have been configured
      * when it was created and this value will be ignored.
      *
-     * @param maxEntries maximum number of entries allowed in the cache (if a new cache is created).
+     * @param maxEntries maximum number of entries allowed in the cache (if a new cache is created), or zero for unlimited.
      */
     public void setMaxEntries(int maxEntries) {
         this.maxEntries = maxEntries;
@@ -155,9 +155,9 @@ public class CacheStorageAssertion extends Assertion implements UsesVariables {
         meta.put(AssertionMetadata.SHORT_NAME, "Cache Storage");
         meta.put(AssertionMetadata.LONG_NAME, "Store value in cache");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/store16.gif");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/store16.png");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/store16.gif");
+        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/cache/console/resources/store16.png");
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
