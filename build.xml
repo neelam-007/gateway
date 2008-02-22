@@ -249,7 +249,11 @@
         <include name="com/l7tech/common/alert/AdminAlertEvent.java"/>
         <include name="com/l7tech/common/alert/AlertAdmin.java"/>
         <include name="com/l7tech/common/audit/AuditAdmin*.java"/>
+        <include name="com/l7tech/common/audit/AuditDetail.java"/>
+        <include name="com/l7tech/common/audit/AuditDetailMessage.java"/>
+        <include name="com/l7tech/common/audit/AuditRecord.java"/>
         <include name="com/l7tech/common/audit/LogonEvent.java"/>
+        <include name="com/l7tech/common/policy/*.java"/>
         <include name="com/l7tech/common/security/rbac/RbacAdmin.java"/>
         <include name="com/l7tech/common/security/TrustedCertAdmin.java"/>
         <include name="com/l7tech/common/transport/jms/JmsAdmin*.java"/>
