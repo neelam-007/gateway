@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -201,7 +202,7 @@ public class ContentTypeHeader extends MimeHeader {
             this.mimeCharset = getParam("charset");
 
             if (mimeCharset == null) {
-                logger.finest("No charset value found in Content-Type header; using " + DEFAULT_HTTP_ENCODING);
+                if (logger.isLoggable(Level.FINEST)) logger.finest("No charset value found in Content-Type header; using " + DEFAULT_HTTP_ENCODING);
                 javaEncoding = DEFAULT_HTTP_ENCODING;
             } else {
                 String tmp = MimeUtility.javaCharset(mimeCharset);
