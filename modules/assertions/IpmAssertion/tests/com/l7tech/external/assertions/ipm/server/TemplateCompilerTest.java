@@ -4,26 +4,15 @@ import com.l7tech.common.util.XmlUtil;
 import static com.l7tech.external.assertions.ipm.server.ServerIpmAssertionTest.*;
 import com.l7tech.external.assertions.ipm.server.resources.CompiledTemplate;
 import com.l7tech.skunkworks.BenchmarkRunner;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 
 /**
- *
+ * Unit tests for {@link TemplateCompiler}.
  */
 public class TemplateCompilerTest {
-    private static final Logger log = Logger.getLogger(TemplateCompilerTest.class.getName());
-
-    @Before
-    public void setUp() throws Exception {
-    }
-
-    @After
-    public void tearDown() throws Exception {
-    }
+    public static final int BUFFSIZE = 131040;
 
     @Test
     public void testTemplateCompiler() throws Exception {
@@ -32,15 +21,13 @@ public class TemplateCompilerTest {
         try {
             ct = templateCompiler.compile();
         } finally {
-            //log.info("Generated Java source: " + templateCompiler.getJavaSource());
+            //System.out.println("Generated Java source: " + templateCompiler.getJavaSource());
         }
 
         String requestSoapStr = loadFile(SOAP_PAC_REPLY);
         String requestStr = extractDataBuff(requestSoapStr);
 
-        ct.init(requestStr.toCharArray());
-        ct.expand();
-        String expandedStr = new String(ct.getResult(), 0, ct.getResultSize());
+        String expandedStr = ct.expand(requestStr.toCharArray(), new char[BUFFSIZE]);
 
         assertTrue(expandedStr.length() > 0);
         //log.info("Expansion result:\n" + expandedStr);
@@ -54,7 +41,7 @@ public class TemplateCompilerTest {
                                     "</PREMIER-ACCESS-QUERY-REPLY>"));
     }
     
-    //@Test
+    @Test
     public void testPerformance() throws Exception {
         final TemplateCompiler templateCompiler = new TemplateCompiler(loadFile(TEMPLATE_PAC_REPLY));
         final CompiledTemplate compiledTemplate;
@@ -71,7 +58,6 @@ public class TemplateCompilerTest {
             }
         }, 1000, "donothing").run();
 
-        compiledTemplate.close();
         final Class<? extends CompiledTemplate> ctClass = compiledTemplate.getClass();
         final ThreadLocal<CompiledTemplate> testCt = new ThreadLocal<CompiledTemplate>() {
             protected CompiledTemplate initialValue() {
@@ -88,25 +74,24 @@ public class TemplateCompilerTest {
         final Runnable expansionRunnable = new Runnable() {
             public void run() {
                 CompiledTemplate ct = testCt.get();
+                char[] out = new char[BUFFSIZE];
                 for (int i = 0; i < 1000; ++i) {
-                    expandOne(ct);
+                    expandOne(ct, out);
                 }
             }
 
-            private void expandOne(CompiledTemplate ct) {
+            private void expandOne(CompiledTemplate ct, char[] out) {
                 try {
-                    ct.init(requestStr.toCharArray());
-                    ct.expand();
                     //noinspection UnusedDeclaration
-                    String expandedStr = new String(ct.getResult(), 0, ct.getResultSize());
+                    String expandedStr = ct.expand(requestStr.toCharArray(), out);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }
         };
 
-        new BenchmarkRunner(expansionRunnable, 10, "expansion burn-in").run();
-        new BenchmarkRunner(expansionRunnable, 10, "expansion").run();
+        new BenchmarkRunner(expansionRunnable, 25, "expansion burn-in").run();
+        new BenchmarkRunner(expansionRunnable, 25, "expansion").run();
     }
 
     @Test
@@ -115,9 +100,7 @@ public class TemplateCompilerTest {
         String requestStr = extractDataBuff(requestSoapStr);
 
         CompiledTemplate ct = new PreCompiledTemplate();
-        ct.init(requestStr.toCharArray());
-        ct.expand();
-        String expandedStr = new String(ct.getResult(), 0, ct.getResultSize());
+        String expandedStr = ct.expand(requestStr.toCharArray(), new char[BUFFSIZE]);
 
         assertTrue(expandedStr.length() > 0);
         //log.info("Expansion result:\n" + expandedStr);

@@ -14,67 +14,49 @@ import java.io.IOException;
  * Instances of this class are not threadsafe.  Users are responsible for any needed synchronization/thread-locality.
  */
 public abstract class CompiledTemplate {
-    protected char buf[] = new char[256];
     protected char[] in;
     protected int ip;
     protected char[] out;
     protected int op;
 
-    private int outputBufferSize = 131020;
-
     /**
-     * Change the maximum output buffer size.  Takes effect on next call to init().
+     * Expand the input buffer, expected to be an IPM DATA_BUFF, into the output buffer as XML
+     * according to the template implemented by this CompiledTemplate.
+     * <p/>
+     * <b>Note:</b> Only one thread at a time may call this method on the same CompiledTemplate instance,
+     * even if it is using different buffers, because internal state is kept in member fields during
+     * the expansion.
      *
-     * @param outputBufferSize the new maximum output buffer size.
+     * @param in  the input buffer. Required.
+     * @param out  the output buffer.  Required.
+     * @return the expanded result String.  Never null.
+     * @throws java.io.IOException  if there is a problem with the input format, the input is too short, or there is not
+     *                              enough room in the output buffer.
+     * @noinspection AssignmentToCollectionOrArrayFieldFromParameter
      */
-    public void setOutputBufferSize(int outputBufferSize) {
-        this.outputBufferSize = outputBufferSize;
-    }
+    public String expand(char[] in, char[] out) throws IOException {
+        if (in == null || out == null)
+            throw new NullPointerException();
 
-    /**
-     * Initialize an expansion job.  No other thread may use this CompiledTemplate instance
-     * during the expansion job.
-     * @param in input buffer.  This object takes ownership of this buffer until init() or close() is next called.
-     */
-    public void init(char[] in) {
-        if (buf == null)
-            buf = new char[256];
-        if (out == null || out.length != outputBufferSize)
-            out = new char[outputBufferSize];
-        //noinspection AssignmentToCollectionOrArrayFieldFromParameter
         this.in = in;
-        ip = 0;
-        op = 0;
-    }
+        this.out = out;
+        this.ip = 0;
+        this.op = 0;
 
-    /** Free all resources being used by this CompiledTemplate. */
-    public void close() {
-        buf = null;
-        in = null;
-        out = null;
-    }
-
-    public void expand() throws IOException {
-        if (in == null || out == null) throw new IllegalStateException("Must call init() first");
         try {
             doExpand();
+            return new String(out, 0, op);
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new IOException("Unable to expand template: ran out of input characters, or filled output or temporary buffer: " + e.getMessage(), e);
+        } finally {
+            this.in = null;
+            this.out = null;
+            this.ip = 0;
+            this.op = 0;
         }
     }
 
     protected abstract void doExpand() throws IOException;
-
-    /** @return the number of characters in the result buffer. */
-    public int getResultSize() {
-        return op;
-    }
-
-    /** @return the result buffer.  Caller must immediately copy the data elsewhere -- the buffer only remains valid until init() is called again. */
-    public char[] getResult() {
-        //noinspection ReturnOfCollectionOrArrayField
-        return out;
-    }
 
     private static final char[] ENTAMP = "&amp;".toCharArray();
     private static final char[] ENTLT = "&lt;".toCharArray();

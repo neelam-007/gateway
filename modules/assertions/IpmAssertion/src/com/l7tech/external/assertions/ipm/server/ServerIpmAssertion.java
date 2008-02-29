@@ -15,7 +15,6 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -27,35 +26,30 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
     private static final Logger logger = Logger.getLogger(ServerIpmAssertion.class.getName());
     private static final int DEFAULT_BUFF_SIZE = 131040;
 
-    private final IpmAssertion assertion;
+    private static final ThreadLocal<char[]> outBuffs = new ThreadLocal<char[]>();
+
     private final Auditor auditor;
     private final String varname;
     private final ThreadLocal<CompiledTemplate> compiledTemplate;
-    private final int buffSize;
+    private final ServerConfig serverConfig;
 
     public ServerIpmAssertion(IpmAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
 
-        this.assertion = assertion;
+        //noinspection ThisEscapedInObjectConstruction
         this.auditor = context != null ? new Auditor(this, context, logger) : new LogOnlyAuditor(logger);
         varname = assertion.getSourceVariableName();
 
         Class<? extends CompiledTemplate> ctClass = null;
         try {
             CompiledTemplate ct = new TemplateCompiler(assertion.template()).compile();
-            ct.close();
             ctClass = ct.getClass();
         } catch (TemplateCompilerException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                                 new String[] { "Unable to compile template; assertion will always fail: " + ExceptionUtils.getMessage(e) }, e);
         }
 
-        if (context != null) {
-            ServerConfig serverConfig = (ServerConfig)context.getBean("serverConfig", ServerConfig.class);
-            buffSize = serverConfig.getIntPropertyCached(IpmAssertion.PARAM_IPM_OUTPUTBUFFER, DEFAULT_BUFF_SIZE, 120000L);
-        } else {
-            buffSize = DEFAULT_BUFF_SIZE;
-        }
+        serverConfig = context == null ? null : (ServerConfig)context.getBean("serverConfig", ServerConfig.class);
 
         if (ctClass == null) {
             compiledTemplate = null;
@@ -90,26 +84,25 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
             return AssertionStatus.FAILED;
         }
 
-        CompiledTemplate ct = compiledTemplate.get();
-        ct.setOutputBufferSize(buffSize);
-        ct.init(databuff.toCharArray());
-        ct.expand();
 
-        int size = ct.getResultSize();
-        char[] resultChars = ct.getResult();
-        String result = new String(resultChars, 0, size);
+        CompiledTemplate ct = compiledTemplate.get();
+        String result = ct.expand(databuff.toCharArray(), getOutputBuffer());
         context.setVariable(assertion.getTargetVariableName(), result);
 
         return AssertionStatus.NONE;
     }
 
-    /*
-     * Called reflectively by module class loader when module is unloaded, to ask us to clean up any globals
-     * that would otherwise keep our instances from getting collected.
-     */
-    public static void onModuleUnloaded() {
-        // This assertion doesn't have anything to do in response to this, but it implements this anyway
-        // since it will be used as an example by future modular assertion authors
-        logger.log(Level.INFO, "ServerIpmAssertion is preparing itself to be unloaded");
+    private char[] getOutputBuffer() {
+        int buffSize = serverConfig == null
+                       ? DEFAULT_BUFF_SIZE
+                       : serverConfig.getIntPropertyCached(IpmAssertion.PARAM_IPM_OUTPUTBUFFER, DEFAULT_BUFF_SIZE, 120000L);
+
+        char[] out = outBuffs.get();
+        if (out == null || out.length != buffSize) {
+            out = new char[buffSize];
+            outBuffs.set(out);
+        }
+
+        return out;
     }
 }
