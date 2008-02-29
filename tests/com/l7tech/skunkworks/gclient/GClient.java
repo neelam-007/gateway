@@ -138,6 +138,8 @@ public class GClient {
     private JButton stripDecorationButton;
     private JButton serverCertButton;
     private JLabel serverCertLabel;
+    private JRadioButton textMessageRadioButton;
+    private JRadioButton bytesMessageRadioButton;
 
 
     //
@@ -896,7 +898,9 @@ public class GClient {
             if (loginField.getText() != null && loginField.getText().length() > 0) {
                 credentials = new PasswordAuthentication(loginField.getText(), passwordField.getPassword());
             }
-            JmsClient client = new JmsClient(new URI(targetUrl), credentials);
+            
+            boolean isBytes = bytesMessageRadioButton.isSelected();
+            JmsClient client = new JmsClient(new URI(targetUrl), credentials, isBytes);
             String response = client.getResponse(new String(requestBytes), true);
             if (response != null) {
                 return new String[]{"0",

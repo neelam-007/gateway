@@ -2026,6 +2026,15 @@
         <include name="**/xercesImpl.jar"/>
         <include name="**/xml4j.jar"/>
         <include name="**/xss4j*.jar"/>
+        <include name="**/antlr*.jar"/>
+        <include name="**/jcalendar*.jar"/>
+        <include name="**/jcommon*.jar"/>
+        <include name="**/jfreechart*.jar"/>
+        <include name="**/BrowserLauncher2*.jar"/>
+        <include name="**/systinet-*.jar"/>
+        <include name="**/nachocalendar*.jar"/>
+        <include name="**/spring-remoting.jar"/>
+        <include name="**/systray4j*.jar"/>
     </patternset>
     <target name="package.gclient" depends="compile-test-forms, testpackage.init">
         <mkdir dir="${build.dir}/gclient"/>
@@ -2040,6 +2049,12 @@
             </fileset>
         </copy>
 
+        <copy todir="${build.classes}">
+            <fileset dir="${build.test.classes}">
+                <include name="com/l7tech/skunkworks/gclient/**/*"/>
+            </fileset>
+        </copy>
+
         <echo level="info">Generating manifest for GClient.jar</echo>
         <generate-manifest propertyPrefix="gclient" filename="GClient.mf">
             <section>
@@ -2047,43 +2062,26 @@
             </section>
         </generate-manifest>
         <echo level="info">Creating GClient.jar</echo>
-        <jar jarfile="${build.dir}/gclient/GClient.jar" manifest="${build.etc}/GClient.mf">
-            <fileset dir="${build.classes}">
-                <include name="com/l7tech/common/**/*"/>
-                <include name="com/l7tech/console/util/**/*"/>
-                <include name="com/l7tech/policy/**/*"/>
-                <include name="com/l7tech/proxy/**/*"/>
+        <classfileset id="package.gclient.classfileset" dir="${build.classes}">
+            <!-- Entry points, GUI, console and API -->
+            <root classname="com.l7tech.skunkworks.gclient.GClient" />
 
-                <exclude name="com/l7tech/common/Authorizer*.class"/>
-                <exclude name="com/l7tech/common/alert/**/*"/>
-                <exclude name="com/l7tech/common/audit/**/*"/>
-                <exclude name="com/l7tech/common/gui/util/HelpUtil*.class"/>
-                <exclude name="com/l7tech/common/security/TrustedCert*.class"/>
-                <exclude name="com/l7tech/common/security/X509Entity*.class"/>
-                <exclude name="com/l7tech/common/security/keystore/**/*"/>
-                <exclude name="com/l7tech/common/security/prov/luna/**/*"/>
-                <exclude name="com/l7tech/common/security/prov/ncipher/**/*"/>
-                <exclude name="com/l7tech/common/security/prov/rsa/**/*"/>
-                <exclude name="com/l7tech/common/security/rbac/**/*"/>
-                <exclude name="com/l7tech/common/transport/jms/**/*"/>
-                <exclude name="com/l7tech/common/xml/tarari/**/*"/>
-                <exclude name="com/l7tech/common/xml/schema/**/*"/>
-                <exclude name="com/l7tech/console/util/ClusterLogWorker*.class"/>
-                <exclude name="com/l7tech/console/util/ClusterStatusWorker*.class"/>
-                <exclude name="com/l7tech/console/util/IconManager*.class"/>
-                <exclude name="com/l7tech/console/util/TopComponents*.class"/>
-                <exclude name="com/l7tech/console/util/jcalendar/**/*"/>
-                <exclude name="com/l7tech/console/util/jfree/**/*"/>
-                <exclude name="com/l7tech/policy/assertion/ext/**/*"/>
-                <exclude name="com/l7tech/policy/wssp/**/*"/>
-                <exclude name="com/l7tech/proxy/BridgeServlet*.class"/>
-                <exclude name="com/l7tech/proxy/ClientProxy*.class"/>
-                <exclude name="com/l7tech/proxy/RequestHandler*.class"/>
-                <exclude name="com/l7tech/proxy/gui/**/*"/>
-                <exclude name="com/l7tech/proxy/resources/**/*"/>
-            </fileset>
-            <fileset dir="${build.test.classes}">
-                <include name="com/l7tech/skunkworks/gclient/**/*"/>
+            <!-- Providers -->
+            <root classname="com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine" />
+            <root classname="com.l7tech.common.util.DnParserBc" />
+            <root classname="com.l7tech.common.util.ConfigurableLogFormatter" />
+        </classfileset>
+        <jar jarfile="${build.dir}/gclient/GClient.jar" manifest="${build.etc}/GClient.mf">
+            <fileset refid="package.gclient.classfileset"/>
+            <fileset dir="${build.classes}">
+                <include name="ssglog.properties"/>
+                <include name="serverconfig.properties"/>
+                <include name="ehcache.xml"/>
+                <include name="**/*.xsd"/>
+                <include name="**/*.dtd"/>
+                <include name="com/l7tech/console/**/resources/**/*"/>
+                <include name="com/l7tech/console/**/*.properties"/>
+                <include name="com/l7tech/common/resources/**/*"/>
             </fileset>
         </jar>
 

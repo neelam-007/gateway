@@ -37,6 +37,7 @@ import java.util.Set;
  * @version $Revision$
  */
 public class JmsClient {
+    private boolean isBytesMessage;
 
     //- PUBLIC
 
@@ -45,12 +46,14 @@ public class JmsClient {
      *
      * @param jmsUrl The JMS url
      * @param credentials Connection credentials may be null
+     * @param isBytesMessage
      */
-    public JmsClient(URI jmsUrl, PasswordAuthentication credentials) {
+    public JmsClient(URI jmsUrl, PasswordAuthentication credentials, boolean isBytesMessage) {
+
         if (!jmsUrl.getScheme().equals("jms")) {
             throw new IllegalArgumentException("Not a JMS URL: " + jmsUrl);
         }
-
+        this.isBytesMessage = isBytesMessage;
         this.credentials = credentials;
         data = new LinkedHashMap();
         ParameterizedString ps = new ParameterizedString(jmsUrl.getQuery());
@@ -272,10 +275,16 @@ public class JmsClient {
         javax.jms.Message outboundRequestMsg = null;
 
         if (outboundRequestMsg == null) {
-            // Default to BytesMessage
-            BytesMessage bmsg = bag.getSession().createBytesMessage();
-            bmsg.writeBytes(text.getBytes("UTF-8"));
-            outboundRequestMsg = bmsg;
+            if (!isBytesMessage) {
+                TextMessage txtMessage = bag.getSession().createTextMessage();
+                txtMessage.setText(text);
+                outboundRequestMsg = txtMessage;
+            } else {
+                // Default to BytesMessage
+                BytesMessage bmsg = bag.getSession().createBytesMessage();
+                bmsg.writeBytes(text.getBytes("UTF-8"));
+                outboundRequestMsg = bmsg;
+            }
         }
 
         JmsReplyType replyType = endpoint.getReplyType();
