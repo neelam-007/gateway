@@ -125,7 +125,7 @@ public class TemplateCompiler {
     }
 
     private void collectElement(ElementCursor cursor, int indent, final int depth) throws TemplateCompilerException {
-        String type = cursor.getAttributeValue("type");
+        String type = cursor.getAttributeValue("pic");
         Integer occurs = getIntAttr(cursor, "occurs");
         if (occurs == null) occurs = 1;
 

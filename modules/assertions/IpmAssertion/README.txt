@@ -10,19 +10,19 @@ The template controls how the IPM data buffer is to be converted into XML.  It i
 similar to the following:
 
     <PREMIER-ACCESS-QUERY-REPLY>
-        <PACQUERY-ORDER-NBR type="9(9)"/>
-        <PACQUERY-TIE-NUM type="9(3)"/>
-        <PACQUERY-CONTRACT-STATUS type="X(5)"/>
-        <PACQUERY-SYSTEM-TYPE type="X(5)"/>
-        <PACQUERY-ORDER-SKU-INFO-NBR type="9(3)"/>
+        <PACQUERY-ORDER-NBR pic="9(9)"/>
+        <PACQUERY-TIE-NUM pic="9(3)"/>
+        <PACQUERY-CONTRACT-STATUS pic="X(5)"/>
+        <PACQUERY-SYSTEM-TYPE pic="X(5)"/>
+        <PACQUERY-ORDER-SKU-INFO-NBR pic="9(3)"/>
         <PACQUERY-ORDER-SKU-INFO occurs="200">
-            <PACQUERY-DETAIL-SEQ-NBR type="9(3)"/>
-            <PACQUERY-SKU-NBR type="X(13)"/>
-            <PACQUERY-SKU-DESC type="X(40)"/>
-            <PACQUERY-SKU-QTY type="9(7)"/>
-            <PACQUERY-SKU-QTY-SIGN type="X(1)"/>
+            <PACQUERY-DETAIL-SEQ-NBR pic="9(3)"/>
+            <PACQUERY-SKU-NBR pic="X(13)"/>
+            <PACQUERY-SKU-DESC pic="X(40)"/>
+            <PACQUERY-SKU-QTY pic="9(7)"/>
+            <PACQUERY-SKU-QTY-SIGN pic="X(1)"/>
         </PACQUERY-ORDER-SKU-INFO>
-        <PACQUERY-MORE-ORDER-SKU-INFO type="X(1)"/>
+        <PACQUERY-MORE-ORDER-SKU-INFO pic="X(1)"/>
     </PREMIER-ACCESS-QUERY-REPLY>
 
 The source variable name is the name of a context variable which is expected to already contain the IPM data buffer,

@@ -21,7 +21,7 @@ public class TemplateCompilerTest {
         try {
             ct = templateCompiler.compile();
         } finally {
-            //System.out.println("Generated Java source: " + templateCompiler.getJavaSource());
+            System.out.println("Generated Java source: " + templateCompiler.getJavaSource());
         }
 
         String requestSoapStr = loadFile(SOAP_PAC_REPLY);
