@@ -35,3 +35,8 @@ template is invalid, it audits an error message and fails with the assertion sta
 source variable does not exist, it audits an error message fails with the assertion status FAILED (501).  Finally,
 it can also fail if the input data buffer is too short for the current template, or if the currently configured
 output buffer size is not big enough to expand this request.
+
+The IPM output buffer size is configured by the cluster property "ipm.outputBuffer".  It defaults to 131071 characters.
+Changes to this value will take effect within 120 seconds.  Sizing advice: there will be one output buffer per thread,
+so the maximum total memory usage will be the output buffer size times the value of the "io.httpMaxConcurrency" cluster
+property, plus one output buffer per active inbound JMS queue.
