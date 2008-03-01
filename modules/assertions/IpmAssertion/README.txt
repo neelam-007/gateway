@@ -50,10 +50,12 @@ Elements in the template that do not contain "pic" or "occurs" attributes will b
 Error reporting
 ===============
 At runtime this assertion returns success if it is able to expand the input into the output variable.  If the
-template is invalid, it audits an error message and fails with the assertion status SERVER_ERROR (500).  If the
-source variable does not exist, it audits an error message fails with the assertion status FAILED (501).  Finally,
-it can also fail if the input data buffer is too short for the current template, or if the currently configured
-output buffer size is not big enough to expand this request.
+template is invalid, it fails with the assertion status SERVER_ERROR (500).  If the source variable does not exist,
+it fails with the assertion status FAILED (501).  Finally, it can also fail if the input data buffer is too short
+for the current template, or if the currently configured output buffer size is not big enough to expand the current
+request using the current template.
+
+Any unsuccessful assertion result will produce an error message in the audit log.
 
 
 Buffers and memory usage
