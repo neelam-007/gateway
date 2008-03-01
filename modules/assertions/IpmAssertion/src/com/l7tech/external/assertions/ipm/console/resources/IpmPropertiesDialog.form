@@ -3,7 +3,7 @@
   <grid id="27dc6" binding="mainPanel" layout-manager="GridLayoutManager" row-count="5" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="6" left="6" bottom="3" right="6"/>
     <constraints>
-      <xy x="20" y="45" width="498" height="432"/>
+      <xy x="20" y="45" width="754" height="521"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -68,31 +68,75 @@
               <text value="&amp;Source Variable Name:"/>
             </properties>
           </component>
-          <component id="a862" class="javax.swing.JLabel">
+          <grid id="5ffde" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="8a702" class="com.l7tech.common.gui.widgets.SquigglyTextField" binding="sourceVarField">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false">
+                    <minimum-size width="240" height="12"/>
+                  </grid>
+                </constraints>
+                <properties/>
+              </component>
+            </children>
+          </grid>
+          <component id="f27f5" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <labelFor value="5dcbd"/>
-              <text value="&amp;Destination Variable Name:"/>
+              <text value="Destination:"/>
             </properties>
           </component>
-          <component id="8a702" class="com.l7tech.common.gui.widgets.SquigglyTextField" binding="sourceVarField">
+          <grid id="619e6" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false">
-                <minimum-size width="240" height="12"/>
-              </grid>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
-          </component>
-          <component id="5dcbd" class="com.l7tech.common.gui.widgets.SquigglyTextField" binding="destVarField">
-            <constraints>
-              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false">
-                <minimum-size width="240" height="12"/>
-              </grid>
-            </constraints>
-            <properties/>
-          </component>
+            <border type="none"/>
+            <children>
+              <component id="90c6d" class="javax.swing.JRadioButton" binding="defaultRequestRadioButton" default-binding="true">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="Default Re&amp;quest"/>
+                </properties>
+              </component>
+              <component id="d23e1" class="javax.swing.JRadioButton" binding="defaultResponseRadioButton" default-binding="true">
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="Default Res&amp;ponse"/>
+                </properties>
+              </component>
+              <component id="c1be" class="javax.swing.JRadioButton" binding="contextVariableRadioButton" default-binding="true">
+                <constraints>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <selected value="true"/>
+                  <text value="Context &amp;Variable:"/>
+                </properties>
+              </component>
+              <component id="5dcbd" class="com.l7tech.common.gui.widgets.SquigglyTextField" binding="destVarField">
+                <constraints>
+                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false">
+                    <minimum-size width="240" height="12"/>
+                  </grid>
+                </constraints>
+                <properties/>
+              </component>
+            </children>
+          </grid>
         </children>
       </grid>
       <vspacer id="f1d7">
@@ -109,6 +153,13 @@
       </hspacer>
     </children>
   </grid>
+  <buttonGroups>
+    <group name="destGroup">
+      <member id="90c6d"/>
+      <member id="d23e1"/>
+      <member id="c1be"/>
+    </group>
+  </buttonGroups>
   <inspectionSuppressions>
     <suppress inspection="NoLabelFor" id="8142"/>
   </inspectionSuppressions>

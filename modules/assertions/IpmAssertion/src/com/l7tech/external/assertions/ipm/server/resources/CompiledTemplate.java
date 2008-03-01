@@ -1,6 +1,12 @@
 package com.l7tech.external.assertions.ipm.server.resources;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CharacterCodingException;
+import java.nio.CharBuffer;
+import java.nio.ByteBuffer;
 
 /**
  * Interface implemented by compiled templates.
@@ -17,7 +23,15 @@ public abstract class CompiledTemplate {
     protected char[] in;
     protected int ip;
     protected char[] out;
+    protected byte[] bout;
     protected int op;
+    private final CharsetEncoder utf8Encoder = Charset.forName("UTF-8").newEncoder();
+
+    /** Exception thrown if the input buffer is too short for this template. */
+    public static class InputBufferEmptyException extends Exception {}
+
+    /** Exception thrown if the output buffer is too small to expand the current input with this template. */
+    public static class OutputBufferFullException extends Exception {}
 
     /**
      * Expand the input buffer, expected to be an IPM DATA_BUFF, into the output buffer as XML
@@ -30,47 +44,108 @@ public abstract class CompiledTemplate {
      * @param in  the input buffer. Required.
      * @param out  the output buffer.  Required.
      * @return the expanded result String.  Never null.
-     * @throws java.io.IOException  if there is a problem with the input format, the input is too short, or there is not
-     *                              enough room in the output buffer.
+     * @throws InputBufferEmptyException if the input buffer is too short for this template.
+     * @throws OutputBufferFullException if the output buffer is too small to expand the current input with this template.
      * @noinspection AssignmentToCollectionOrArrayFieldFromParameter
      */
-    public String expand(char[] in, char[] out) throws IOException {
+    public String expand(char[] in, char[] out) throws InputBufferEmptyException, OutputBufferFullException {
         if (in == null || out == null)
             throw new NullPointerException();
 
         this.in = in;
         this.out = out;
+        this.bout = null;
         this.ip = 0;
         this.op = 0;
 
         try {
             doExpand();
             return new String(out, 0, op);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw new IOException("Unable to expand template: ran out of input characters, or filled output or temporary buffer: " + e.getMessage(), e);
         } finally {
             this.in = null;
             this.out = null;
+            this.bout = null;
             this.ip = 0;
             this.op = 0;
         }
     }
 
-    protected abstract void doExpand() throws IOException;
+    protected abstract void doExpand() throws InputBufferEmptyException, OutputBufferFullException;
+
+    /**
+     * Expand the input buffer, expected to be an IPM DATA_BUFF, into the output byte buffer as XML
+     * according to the template implemented by this CompiledTemplate.
+     * <p/>
+     *
+     * <p/>
+     * <b>Note:</b> Only one thread at a time may call this method on the same CompiledTemplate instance,
+     * even if it is using different buffers, because internal state is kept in member fields during
+     * the expansion.
+     *
+     * @param in  the input buffer. Required.
+     * @param out  the output buffer.  Required.
+     * @return the expanded result String.  Never null.
+     * @throws InputBufferEmptyException if the input buffer is too short for this template.
+     * @throws OutputBufferFullException if the output buffer is too small to expand the current input with this template.
+     * @throws IOException if an invalid or unmappable character, or a character outside the basic multilingual plane, is found in the input buffer.
+     * @noinspection AssignmentToCollectionOrArrayFieldFromParameter
+     */
+    public int expandBytes(char[] in, byte[] out) throws InputBufferEmptyException, OutputBufferFullException, IOException {
+        if (in == null || out == null)
+            throw new NullPointerException();
+
+        this.in = in;
+        this.bout = out;
+        this.out = null;
+        this.ip = 0;
+        this.op = 0;
+
+        try {
+            doExpandBytes();
+            return op;
+        } finally {
+            this.in = null;
+            this.out = null;
+            this.bout = null;
+            this.ip = 0;
+            this.op = 0;
+        }
+    }
+
+    protected abstract void doExpandBytes() throws InputBufferEmptyException, OutputBufferFullException, IOException;
 
     private static final char[] ENTAMP = "&amp;".toCharArray();
     private static final char[] ENTLT = "&lt;".toCharArray();
     private static final char[] ENTGT = "&gt;".toCharArray();
 
+    private static final byte[] BENTAMP;
+    private static final byte[] BENTLT;
+    private static final byte[] BENTGT;
+    static {
+        try {
+            BENTAMP = "&amp;".getBytes("UTF-8");
+            BENTLT = "&lt;".getBytes("UTF-8");
+            BENTGT = "&gt;".getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // can't happen
+        }
+    }
+
     /**
      * Copy count characters from in to out.
-     * Output characters ampersand, greater-than and less-than will be replaced by XML entities.
-     * Always either succeeds or throws IOException.
+     * Input characters ampersand, greater-than and less-than will be replaced by XML entities.
+     * Always either succeeds or throws ArrayIndexOutOfBoundsException.
      *
      * @param count  number of characters to copy
-     * @throws ArrayIndexOutOfBoundsException if we lack temporary buffer space, run out of input characters, or run out of room in the output buffer.
+     * @throws InputBufferEmptyException if we have fewer than count characters remaining in the input buffer.
+     * @throws OutputBufferFullException if we run out of room in the output buffer.
      */
-    protected final void copy(int count) {
+    protected final void copy(int count) throws InputBufferEmptyException, OutputBufferFullException {
+        if (ip + count >= in.length)
+            throw new InputBufferEmptyException();
+        if (op + count >= out.length)
+            throw new OutputBufferFullException();
+
         while (count-- > 0) {
             char c = in[ip++];
             switch (c) {
@@ -90,16 +165,97 @@ public abstract class CompiledTemplate {
     }
 
     /**
+     * Copy count characters from the input buffer to the byte output buffer, converting characters to bytes
+     * as we go.
+     * Input characters ampersand, greater-than and less-than will be replaced by XML entities.
+     * Always either succeeds or throws ArrayIndexOutOfBoundsException.
+     *
+     * @param count number of characters to copy
+     * @throws InputBufferEmptyException if we have fewer than count characters remaining in the input buffer.
+     * @throws OutputBufferFullException if we run out of room in the output buffer.
+     * @throws IOException if an invalid or unmappable character, or a character outside the basic multilingual plane, is found in the input buffer.
+     */
+    protected final void cpyb(int count) throws InputBufferEmptyException, OutputBufferFullException, IOException {
+        if (ip + count >= in.length)
+            throw new InputBufferEmptyException();
+
+        while (count-- > 0) {
+            char c = in[ip++];
+            switch (c) {
+                case '&':
+                    writb(BENTAMP);
+                    break;
+                case '<':
+                    writb(BENTLT);
+                    break;
+                case '>':
+                    writb(BENTGT);
+                    break;
+                default:
+                    if (op >= bout.length)
+                        throw new OutputBufferFullException();
+                    if (c >= 0 && c < 128) {
+                        bout[op++] = (byte)(c & 0xff);
+                    } else {
+                        if (Character.isHighSurrogate(c) || Character.isLowSurrogate(c))
+                            throw new IOException("Unable to process input character outside the Basic Multilingual Plane: " + (((int)c) & 0xFFFF));
+                        // Fallback to real UTF-8 encoder for this one character
+                        // TODO this assumes non-ASCII characters will be rare; otherwise, this will be incredibly slow
+                        byte[] bytes = encodeCharacter(c);
+                        writb(bytes);
+                    }
+            }
+        }
+    }
+
+    /**
+     * Encode a single character as UTF-8.  Converting characters one at a time will never be very fast, but the
+     * performance of this particular implementation is particularly terrible.
+     *
+     * @param c char to convert
+     * @return a byte array representing this char encoded as UTF-8
+     * @throws CharacterCodingException if this char isn't a complete character
+     */
+    private byte[] encodeCharacter(char c) throws CharacterCodingException {
+        ByteBuffer bbuf= utf8Encoder.encode(CharBuffer.wrap(new char[] { c }));
+        int num = bbuf.limit();
+        byte[] bytes = new byte[num];
+        bbuf.get(bytes);
+        return bytes;
+    }
+
+    /**
      * Copy the specified string into the output buffer.
      * Output characters are NOT XML escaped -- caller is responsible for any needed escaping.
-     * Always either succeeds or throws IOException.
+     * Always either succeeds or throws ArrayIndexOutOfBoundsException.
      *
      * @param what the string to emit.  Required.
-     * @throws ArrayIndexOutOfBoundsException if we lack temporary buffer space, run out of input characters, or run out of room in the output buffer.
+     * @throws OutputBufferFullException if we run out of room in the output buffer.
      */
-    protected final void write(char[] what) {
+    protected final void write(char[] what) throws OutputBufferFullException {
         final int len = what.length;
+        if (op + len >= out.length)
+            throw new OutputBufferFullException();
         System.arraycopy(what, 0, out, op, len);
         op += len;
+    }
+
+    /**
+     * Copy the specified byte array into the byte output buffer.
+     * Output bytes are not XML escaped or otherwise inspected in any way.
+     * Always either succeeds or throws ArrayIndexOutOfBoundsException.
+     *
+     * @param what the bytes to append to the byte output buffer.  Required.
+     * @throws OutputBufferFullException if we run out of room in the output buffer.
+     */
+    protected final void writb(byte[] what) throws OutputBufferFullException {
+        writb(what, 0, what.length);
+    }
+
+    private void writb(byte[] what, int start, int count) throws OutputBufferFullException {
+        if (op + count >= bout.length)
+            throw new OutputBufferFullException();
+        System.arraycopy(what, start, bout, op, count);
+        op += count;
     }
 }

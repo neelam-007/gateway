@@ -32,6 +32,9 @@ public class IpmPropertiesDialog extends AssertionPropertiesEditorSupport<IpmAss
     private JTextPane templateField;
     private SquigglyTextField sourceVarField;
     private SquigglyTextField destVarField;
+    private JRadioButton defaultRequestRadioButton;
+    private JRadioButton defaultResponseRadioButton;
+    private JRadioButton contextVariableRadioButton;
 
     /** @noinspection ThisEscapedInObjectConstruction*/
     private final InputValidator validator = new InputValidator(this, TITLE);
@@ -64,6 +67,17 @@ public class IpmPropertiesDialog extends AssertionPropertiesEditorSupport<IpmAss
                 dispose();
             }
         });
+
+
+        ActionListener updateListener = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                updateEnableState();
+            }
+        };
+        contextVariableRadioButton.addActionListener(updateListener);
+        defaultRequestRadioButton.addActionListener(updateListener);
+        defaultResponseRadioButton.addActionListener(updateListener);
+        Utilities.enableGrayOnDisabled(destVarField);
 
         validator.constrainTextFieldToBeNonEmpty("Source Variable Name", sourceVarField, null);
         validator.constrainTextFieldToBeNonEmpty("Destination Variable Name", destVarField, null);
@@ -111,16 +125,37 @@ public class IpmPropertiesDialog extends AssertionPropertiesEditorSupport<IpmAss
         return confirmed;
     }
 
+    private void updateEnableState() {
+        destVarField.setEnabled(contextVariableRadioButton.isSelected());
+    }
+
     public void setData(IpmAssertion assertion) {
         templateField.setText(assertion.template());
         sourceVarField.setText(assertion.getSourceVariableName());
-        destVarField.setText(assertion.getTargetVariableName());
+        final String targetVar = assertion.getTargetVariableName();
+        if (targetVar == null) {
+            if (assertion.isUseResponse()) {
+                defaultResponseRadioButton.setSelected(true);
+            } else {
+                defaultRequestRadioButton.setSelected(true);
+            }
+            destVarField.setText("");
+        } else {
+            contextVariableRadioButton.setSelected(true);
+            destVarField.setText(targetVar);
+        }
+        updateEnableState();
     }
 
     public IpmAssertion getData(IpmAssertion assertion) {
         assertion.template(templateField.getText());
         assertion.setSourceVariableName(sourceVarField.getText());
-        assertion.setTargetVariableName(destVarField.getText());
+        if (contextVariableRadioButton.isSelected()) {
+            assertion.setTargetVariableName(destVarField.getText());
+        } else {
+            assertion.setTargetVariableName(null);
+            assertion.setUseResponse(defaultResponseRadioButton.isSelected());
+        }
         return assertion;
     }
 

@@ -24,6 +24,7 @@ public class IpmAssertion extends Assertion implements UsesVariables, SetsVariab
     private String templateb64 = null;
     private String sourceVariableName = "requestXpath.result";
     private String targetVariableName = "ipmResult";
+    private boolean useResponse = false;
 
     private transient String template;
 
@@ -91,14 +92,22 @@ public class IpmAssertion extends Assertion implements UsesVariables, SetsVariab
         this.sourceVariableName = sourceVariableName;
     }
 
+    /** @return name of variable in which to store output, or null to store in request or response.  Required. */
     public String getTargetVariableName() {
         return targetVariableName;
     }
 
-    /** @param targetVariableName name of variable in which to store output.  Required. */
+    /** @param targetVariableName name of variable in which to store output, or null to store in request or response.  Required. */
     public void setTargetVariableName(String targetVariableName) {
-        if (targetVariableName == null) throw new NullPointerException();
         this.targetVariableName = targetVariableName;
+    }
+
+    public boolean isUseResponse() {
+        return useResponse;
+    }
+
+    public void setUseResponse(boolean useResponse) {
+        this.useResponse = useResponse;
     }
 
     public String[] getVariablesUsed() {
@@ -108,7 +117,7 @@ public class IpmAssertion extends Assertion implements UsesVariables, SetsVariab
     }
 
     public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[] {
+        return targetVariableName == null ? new VariableMetadata[0] : new VariableMetadata[] {
                 new VariableMetadata(targetVariableName, false, false, targetVariableName, true, DataType.STRING),
         };
     }
@@ -119,6 +128,8 @@ public class IpmAssertion extends Assertion implements UsesVariables, SetsVariab
     private static final String META_INITIALIZED = IpmAssertion.class.getName() + ".metadataInitialized";
 
     public static final String PARAM_IPM_OUTPUTBUFFER = "ipmOutputBuffer";
+    public static final String PARAM_IPM_MAXBUFFERS = "ipmMaxBuffers";
+    public static final String PARAM_IPM_SHAREBYTEBUFFERS = "ipmSharedByteBuffers";
 
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -130,6 +141,14 @@ public class IpmAssertion extends Assertion implements UsesVariables, SetsVariab
         props.put("ipm.outputBuffer", new String[] {
                 "Maximum number of characters that can be output by the IPM To XML assertion in a single conversion.",
                 "131071"
+        });
+        props.put("ipm.maxBuffers", new String[] {
+                "Maximum number of character output buffers that can exist at any one time.  This limits both memory usage and the number of conversions that can run concurrently.",
+                "120"
+        });
+        props.put("ipm.sharedByteBuffers", new String[] {
+                "If set to \"true\", IPM expansion directly into a message will use byte buffers that are shared with the rest of the Gateway.  Otherwise, IPM expansion will use its own private buffers.  Enabling this option can reduce memory usage.",
+                "false"
         });
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 

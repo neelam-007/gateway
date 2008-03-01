@@ -47,7 +47,7 @@ public class ServerIpmAssertionTest extends TestCase {
         return new String(got);
     }
 
-    public void testUnpackIpm() throws Exception {
+    public void testUnpackToVariable() throws Exception {
         String template = loadFile(TEMPLATE_PAC_REPLY);
         String requestStr = loadFile(SOAP_PAC_REPLY);
 
@@ -67,6 +67,31 @@ public class ServerIpmAssertionTest extends TestCase {
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
         String ipmresult = context.getVariable("ipmresult").toString();
+        assertTrue(ipmresult.length() > 0);
+        XmlUtil.stringToDocument(ipmresult);
+    }
+    
+    public void testUnpackToMessage() throws Exception {
+        String template = loadFile(TEMPLATE_PAC_REPLY);
+        String requestStr = loadFile(SOAP_PAC_REPLY);
+
+        IpmAssertion ass = new IpmAssertion();
+        ass.template(template);
+        ass.setSourceVariableName("databuff");
+        ass.setTargetVariableName(null);
+        ass.setUseResponse(true);
+
+        ServerIpmAssertion sass = new ServerIpmAssertion(ass, null);
+
+        Message request = new Message();
+        request.initialize(ContentTypeHeader.XML_DEFAULT, requestStr.getBytes("UTF-8"));
+        Message response = new Message();
+        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        context.setVariable("databuff", extractDataBuff(requestStr));
+
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        String ipmresult = new String(HexUtils.slurpStream(response.getMimeKnob().getFirstPart().getInputStream(false)));
         assertTrue(ipmresult.length() > 0);
         XmlUtil.stringToDocument(ipmresult);
     }
