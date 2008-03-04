@@ -61,9 +61,34 @@ if [ -z "${CARD}" ]; then
         exit 
 fi
 
+driverlink() {
+	# Check to see if we're a 5.1 build
+	# FIXME: This is crude
+	if [ ! -e /usr/local/Tarari/drivers/cpp_base* ]; then 
+		# cpp_base is the file for 5.1, 4.x is different
+		return 0;
+	fi
+	# check version number
+	ver=`uname -r`
+	curlink=`ls -l /usr/local/Tarari/drivers/cpp_base.ko`
+	if [ -n `echo $curlink | grep $ver ` || ]; then
+		# symlink points to wrong version
+		if [ -e /usr/local/Tarari/drivers/cpp_base-$ver.ko ]; then
+			# Fix the symlink to point to current OS driver
+			cd /usr/local/Tarari/drivers/
+			rm -f cpp_base.ko
+			ln -sf cpp_base-$ver.ko  cpp_base.ko
+		else
+			echo "This kernel version ($ver) not supported with this driver kit"
+			exit 
+		fi
+	fi
+}
 
 
 start() {
+
+	driverlink()
         echo -n $"Starting Tarari: "
 	if [ "$USER" = "root" ]; then
         	$tarariStart > /dev/null 2>&1
