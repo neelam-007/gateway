@@ -71,8 +71,9 @@ driverlink() {
 	# check version number
 	ver=`uname -r`
 	curlink=`ls -l /usr/local/Tarari/drivers/cpp_base.ko`
-	if [ -n `echo $curlink | grep $ver ` || ]; then
+	if [ -n `echo $curlink | grep $ver ` || -z $curlink ]; then
 		# symlink points to wrong version
+		# or its not present at all
 		if [ -e /usr/local/Tarari/drivers/cpp_base-$ver.ko ]; then
 			# Fix the symlink to point to current OS driver
 			cd /usr/local/Tarari/drivers/
