@@ -2922,7 +2922,8 @@
                 author="false"
                 use="true"
                 public="true"
-                windowtitle="Layer 7 Manager API">
+                windowtitle="Layer 7 Manager API"
+                maxmemory="1024m">
 
             <fileset dir="${src.root}/src/" defaultexcludes="yes">
                 <patternset refid="managerapi.sources"/>
