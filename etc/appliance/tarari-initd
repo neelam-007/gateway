@@ -17,14 +17,14 @@ if [ ! -e /usr/local/Tarari/bin/load_xmlcp ]; then
 fi
 
 if [ -e /etc/profile.d/ssgruntimedefs.sh ]; then
-    # this is 4.2 or lower
-    . /etc/profile.d/ssgruntimedefs.sh
+	# this is 4.2 or lower
+	. /etc/profile.d/ssgruntimedefs.sh
 elif [ -e /ssg/etc/profile.d/tarari.sh ]; then
-    # this is 4.3 or higher with the appliance rpm
-    . /ssg/etc/profile
+	# this is 4.3 or higher with the appliance rpm
+	. /ssg/etc/profile
 else
-    echo "This is not a Layer 7 Appliance"
-    exit
+	echo "This is not a Layer 7 Appliance"
+	exit
 fi
 
 tarariStart="/usr/local/Tarari/bin/load_xmlcp"
@@ -40,7 +40,9 @@ else
     exit 1
 fi
 
-if [ "$RELEASE" = "4.3" ] || [ "$RELEASE" = "4.4" ]; then
+if [ "$RELEASE" = "5.1" ]; then
+	CARD_ID="0004"
+elif [ "$RELEASE" = "4.3" ] || [ "$RELEASE" = "4.4" ]; then
         CARD_ID="0203"
 elif [ "$RELEASE" = "4.2" ]; then
         CARD_ID="0103";
@@ -50,66 +52,66 @@ fi
 # FIXME: need to add other card ID's if we get new ones
 
 if [ -z "`/sbin/lspci -nv |grep Subsystem |grep 1863`" ]; then
-    echo "No Tarari card was found in this system"
-    exit
+	# try using "Class" instead
+	if [ -z "`/sbin/lspci -nv |grep Class |grep 1863`" ]; then     
+		echo "No Tarari card was found in this system"
+    	exit
+	else 
+		CARD=`/sbin/lspci -nv |grep "Class" |grep "1863" |grep "${CARD_ID}"`
+	fi
+else
+	CARD=`/sbin/lspci -nv |grep "Subsystem" |grep "1863" |grep "${CARD_ID}"`
 fi
-
-CARD=`/sbin/lspci -nv |grep "Subsystem" |grep "1863" |grep "${CARD_ID}"`
 
 if [ -z "${CARD}" ]; then
         echo "This release (${RELEASE}) does not support this card (${CARD_ID})"
         exit 
 fi
 
-driverlink() {
-	# Check to see if we're a 5.1 build
-	# FIXME: This is crude
-	if [ ! -e /usr/local/Tarari/drivers/cpp_base* ]; then 
-		# cpp_base is the file for 5.1, 4.x is different
-		return 0;
-	fi
-	# check version number
-	ver=`uname -r`
-	curlink=`ls -l /usr/local/Tarari/drivers/cpp_base.ko`
-	if [ -n `echo $curlink | grep $ver ` || -z $curlink ]; then
-		# symlink points to wrong version
-		# or its not present at all
-		if [ -e /usr/local/Tarari/drivers/cpp_base-$ver.ko ]; then
-			# Fix the symlink to point to current OS driver
-			cd /usr/local/Tarari/drivers/
-			rm -f cpp_base.ko
-			ln -sf cpp_base-$ver.ko  cpp_base.ko
-		else
-			echo "This kernel version ($ver) not supported with this driver kit"
-			exit 
-		fi
-	fi
-}
-
-
 start() {
-
-	driverlink()
         echo -n $"Starting Tarari: "
 	if [ "$USER" = "root" ]; then
-        	$tarariStart > /dev/null 2>&1
+		# Check to see if we're a 5.1 build
+		if [ "$RELEASE" = "5.1" ]; then 
+			ver=`uname -r`
+			if [ -e /usr/local/Tarari/drivers/cpp_base-$ver.ko ]; then
+				# Fix the symlink to point to current OS driver
+				cd /usr/local/Tarari/drivers/
+				rm -f cpp_base.ko
+				ln -sf cpp_base-$ver.ko  cpp_base.ko
+			else
+				echo "This kernel version ($ver) not supported with this driver kit"
+				exit 
+			fi
+		fi
+
+		$tarariStart > /dev/null 2>&1
 		RETVAL=$?
 		if [ $RETVAL != 0 ]; then 
 			return $RETVAL
 		fi
-
-		if [ -e /dev/cpp ]; then
-			chown gateway.gateway /dev/cpp /dev/cpp_jam
-			chmod 600  /dev/cpp /dev/cpp_jam
+		if [ "$RELEASE" = "5.1" ]; then
+			if [ -e /dev/cpp_user ]; then
+				chown gateway.gateway /dev/cpp_*
+				chmod 600  /dev/cpp_*
+			else
+				RETVAL=2 # enoent
+			fi
 		else
-			RETVAL=2 # enoent
+			if [ -e /dev/cpp ]; then
+				chown gateway.gateway /dev/cpp /dev/cpp_jam
+				chmod 600  /dev/cpp /dev/cpp_jam
+			else
+				RETVAL=2 # enoent
+			fi
 		fi
 	else
 		echo "Need to be root to run this script";
 		exit
 	fi	
-        return $RETVAL
+	return $RETVAL
 }
+
 stop() {
 	echo -n $"Stopping Tarari: "
 	if [ "$USER" = "root" ]; then
