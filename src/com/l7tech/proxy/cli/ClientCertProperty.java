@@ -25,7 +25,7 @@ class ClientCertProperty extends NounProperty {
     private SsgNoun ssgNoun;
 
     public ClientCertProperty(SsgNoun ssgNoun) {
-        super(ssgNoun.ssg, "clientCert", "ClientCertificate", Constants.APP_NAME+" X.509 client ceritifcate");
+        super(ssgNoun.ssg, "clientCert", "ClientCertificate", Constants.APP_NAME+" X.509 client certificate");
         this.ssgNoun = ssgNoun;
     }
 
