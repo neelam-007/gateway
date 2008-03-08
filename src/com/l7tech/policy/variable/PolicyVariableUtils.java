@@ -16,7 +16,7 @@ import java.util.*;
 public final class PolicyVariableUtils {
     public static Map<String, VariableMetadata> getVariablesSetByPredecessorsAndSelf(Assertion assertion) {
         Assertion ancestor = assertion.getPath()[0];
-        Map<String, VariableMetadata> vars = new TreeMap<String, VariableMetadata>();
+        Map<String, VariableMetadata> vars = new TreeMap<String, VariableMetadata>(String.CASE_INSENSITIVE_ORDER);
         for (Iterator i = ancestor.preorderIterator(); i.hasNext(); ) {
             Assertion ass = (Assertion) i.next();
             if (ass instanceof SetsVariables) {
