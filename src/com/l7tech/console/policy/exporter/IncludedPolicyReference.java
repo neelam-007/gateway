@@ -9,6 +9,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
+import com.l7tech.policy.wsp.WspWriter;
 import org.w3c.dom.Element;
 
 import java.io.StringReader;
@@ -27,7 +28,7 @@ public class IncludedPolicyReference extends ExternalReference {
     private static final String ATTR_SOAP = "soap";
     private static final String ATTR_INCLUDED = "included";
 
-    private static enum UseType {
+    public static enum UseType {
         IMPORT,
         USE_EXISTING,
         UPDATE
@@ -40,6 +41,8 @@ public class IncludedPolicyReference extends ExternalReference {
     private PolicyType type;
     private Boolean soap;
     private String xml;
+
+    private boolean fromImport = false;
 
     private UseType useType;
 
@@ -79,14 +82,24 @@ public class IncludedPolicyReference extends ExternalReference {
 
     boolean verifyReference() {
         try {
-            Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(oid);
+            Policy policy = null;
+            if(fromImport) {
+                policy = Registry.getDefault().getPolicyAdmin().findPolicyByUniqueName(name);
+            }
+
+            if(policy == null) {
+                policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(oid);
+            }
+            
             if (policy == null) {
                 logger.log(Level.INFO, MessageFormat.format("Policy #{0} ({1}) does not exist on this system; importing", oid, name));
                 useType = UseType.IMPORT;
                 return true;
             }
 
-            if (policy.getType() == type && policy.getXml().equals(xml) && policy.isSoap() == soap) {
+            Policy tempPolicy = new Policy(type, name, xml, soap);
+            String comparableXml = WspWriter.getPolicyXml(tempPolicy.getAssertion());
+            if (policy.getType() == type && policy.getXml().equals(comparableXml) && policy.isSoap() == soap) {
                 logger.log(Level.INFO, "Existing Policy #{0} ({1}) is essentially identical to the imported version, using existing version", new Object[] { oid, name });
                 useType = UseType.USE_EXISTING;
                 return true;
@@ -129,5 +142,33 @@ public class IncludedPolicyReference extends ExternalReference {
             }
         }
         return ipr;
+    }
+
+    public Long getOid() {
+        return oid;
+    }
+    
+    public PolicyType getType() {
+        return type;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getXml() {
+        return xml;
+    }
+
+    public Boolean isSoap() {
+        return soap;
+    }
+
+    public void setFromImport(boolean fromImport) {
+        this.fromImport = fromImport;
+    }
+
+    public UseType getUseType() {
+        return useType;
     }
 }

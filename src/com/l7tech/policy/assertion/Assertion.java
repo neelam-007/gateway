@@ -646,6 +646,9 @@ public abstract class Assertion implements Cloneable, Serializable {
             rest = rest.substring(0, rest.length() - "Assertion".length());
         return rest;
     }
+
+    public void updateTemporaryData(Assertion assertion) {
+    }
 }
 
 

@@ -31,6 +31,8 @@ import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.Include;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
@@ -679,6 +681,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         final boolean soap;
         final PolicyType type;
         final PublishedService service;
+        final HashMap<String, Policy> includedFragments = new HashMap<String, Policy>();
         try {
             service = getPublishedService();
             if (service == null) {
@@ -694,6 +697,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             throw new RuntimeException("Couldn't parse policy or WSDL", e);
         }
 
+        extractFragmentsFromAssertion(getCurrentRoot().asAssertion(), includedFragments);
+
         final ConsoleLicenseManager licenseManager = Registry.getDefault().getLicenseManager();
         Callable<PolicyValidatorResult> callable;
         if (isPolicyValidationOn()) {
@@ -703,7 +708,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     if (getPublishedService() != null) {
                         ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
                         AsyncAdminMethods.JobId<PolicyValidatorResult> result2Job = serviceAdmin.
-                                validatePolicy(policyXml, type, soap, service.getWsdlXml());
+                                validatePolicy(policyXml, type, soap, service.getWsdlXml(), includedFragments);
                         PolicyValidatorResult result2 = null;
                         double delay = DELAY_INITIAL;
                         Thread.sleep((long)delay);
@@ -1145,7 +1150,19 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                         String xml = fullValidate();
                         if (xml != null) {
                             this.node = rootAssertion;
-                            super.performAction(xml);
+                            HashMap<String, Policy> includedFragments = new HashMap<String, Policy>();
+                            extractFragmentsFromAssertion(rootAssertion.asAssertion(), includedFragments);
+                            super.performAction(xml, includedFragments);
+
+                            if(getFragmentNameOidMap() != null && !getFragmentNameOidMap().isEmpty()) {
+                                try {
+                                    updateIncludeAssertions(PolicyEditorPanel.this.subject.getPolicyNode().getPolicy().getAssertion(), getFragmentNameOidMap());
+                                    PolicyEditorPanel.this.renderPolicy(false);
+                                    PolicyEditorPanel.this.topComponents.refreshPoliciesFolderNode();
+                                } catch(Exception e) {
+                                    log.log(Level.SEVERE, "Cannot update policy with new fragment OIDs", e);
+                                }
+                            }
                         }
                     } finally {
                         validating = false;
@@ -1159,6 +1176,37 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                    : ActionEvent.ALT_MASK;
         ret.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_S, mask));
         return ret;
+    }
+
+    private void extractFragmentsFromAssertion(Assertion rootAssertion, HashMap<String, Policy> fragments) {
+        if(rootAssertion instanceof CompositeAssertion) {
+            CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
+            for(Iterator it = compAssertion.children();it.hasNext();) {
+                Assertion child = (Assertion)it.next();
+                extractFragmentsFromAssertion(child, fragments);
+            }
+        } else if(rootAssertion instanceof Include) {
+            Include includeAssertion = (Include)rootAssertion;
+            if(includeAssertion.retrieveFragmentPolicy() != null) {
+                fragments.put(includeAssertion.getPolicyName(), includeAssertion.retrieveFragmentPolicy());
+            }
+        }
+    }
+
+    private void updateIncludeAssertions(Assertion rootAssertion, HashMap<String, Long> fragmentNameOidMap) {
+        if(rootAssertion instanceof CompositeAssertion) {
+            CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
+            for(Iterator it = compAssertion.children();it.hasNext();) {
+                Assertion child = (Assertion)it.next();
+                updateIncludeAssertions(child, fragmentNameOidMap);
+            }
+        } else if(rootAssertion instanceof Include) {
+            Include includeAssertion = (Include)rootAssertion;
+            if(fragmentNameOidMap.containsKey(includeAssertion.getPolicyName())) {
+                includeAssertion.setPolicyOid(fragmentNameOidMap.get(includeAssertion.getPolicyName()));
+                includeAssertion.replaceFragmentPolicy(null);
+            }
+        }
     }
 
     private SecureAction makeExportAction() {

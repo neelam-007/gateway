@@ -17,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.HashMap;
+import java.io.Serializable;
 
 /**
  * Remote admin interface for managing {@link Policy} instances on the Gateway.
@@ -25,6 +27,20 @@ import java.util.Set;
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types=POLICY)
 public interface PolicyAdmin {
+    /**
+     * This is a container for a PolicyCheckpointState for the just saved policy and a map of the new policy
+     * fragment names to their new OIDs.
+     */
+    public static class SavePolicyWithFragmentsResult implements Serializable {
+        public PolicyCheckpointState policyCheckpointState;
+        public HashMap<String, Long> fragmentNameOidMap;
+
+        public SavePolicyWithFragmentsResult(PolicyCheckpointState policyCheckpointState, HashMap<String, Long> fragmentNameMapOidMap) {
+            this.policyCheckpointState = policyCheckpointState;
+            this.fragmentNameOidMap = fragmentNameMapOidMap;
+        }
+    }
+
     String ROLE_NAME_TYPE_SUFFIX = "Policy";
     String ROLE_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
 
@@ -37,6 +53,16 @@ public interface PolicyAdmin {
     @Transactional(readOnly=true)
     @Administrative(licensed = false)
     Policy findPolicyByPrimaryKey(long oid) throws FindException;
+
+    /**
+     * Finds a particular {@link Policy} with the specified OID, or null if no such policy can be found.
+     * @param name the unique name of the Policy to retrieve
+     * @return the Policy with the specified OID, or null if no such policy can be found.
+     */
+    @Secured(stereotype=FIND_ENTITY_BY_ATTRIBUTE)
+    @Transactional(readOnly=true)
+    @Administrative(licensed = false)
+    Policy findPolicyByUniqueName(String name) throws FindException;
 
     /**
      * Finds all policies in the system with the given type.
@@ -90,6 +116,25 @@ public interface PolicyAdmin {
      */
     @Secured(stereotype=SAVE_OR_UPDATE, relevantArg=0)
     PolicyCheckpointState savePolicy(Policy policy, boolean activateAsWell) throws PolicyAssertionException, SaveException;
+
+    /**
+     * Saves or updates the specified policy.
+     * <p/>
+     * The policy XML will be made the active version of this policy if activateAsWell is true.
+     *
+     * @param policy the policy to be saved.
+     * @param activateAsWell if true, the new version of the policy XML will take effect immediately
+     *                       as the active version of the policy XML.
+     *                       if false, the new version of the policy XML will be stored as a new revision
+     *                       but will not take effect.
+     *                       (<b>NOTE:</b> Any other changes to the Policy bean, aside from policy XML, will
+     *                       ALWAYS take effect immediately.)
+     * @param fragments the policy fragments that may need to be saved along with this policy
+     * @return PolicyCheckpointState describing the status of the policy after the save operation completed
+     * @throws PolicyAssertionException if there is a problem with the policy
+     */
+    @Secured(stereotype=SAVE_OR_UPDATE, relevantArg=0)
+    SavePolicyWithFragmentsResult savePolicy(Policy policy, boolean activateAsWell, HashMap<String, Policy> fragments) throws PolicyAssertionException, SaveException;
 
     @Secured(stereotype = MethodStereotype.FIND_HEADERS)
     Set<Policy> findUsages(long oid) throws FindException;

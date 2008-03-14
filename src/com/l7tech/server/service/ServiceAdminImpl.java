@@ -3,9 +3,7 @@ package com.l7tech.server.service;
 import com.l7tech.common.AsyncAdminMethodsImpl;
 import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.io.ByteLimitInputStream;
-import com.l7tech.common.policy.Policy;
-import com.l7tech.common.policy.PolicyType;
-import com.l7tech.common.policy.PolicyVersion;
+import com.l7tech.common.policy.*;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.common.uddi.UDDIRegistryInfo;
 import com.l7tech.common.uddi.WsdlInfo;
@@ -20,6 +18,8 @@ import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.Include;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
@@ -224,6 +224,10 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
             throw new RuntimeException("Cannot parse passed WSDL XML: " + ExceptionUtils.getMessage(e), e);
         }
 
+        return validatePolicy(assertion, policyType, soap, wsdl);
+    }
+
+    private JobId<PolicyValidatorResult> validatePolicy(final Assertion assertion, final PolicyType policyType, final boolean soap, final Wsdl wsdl) {
         return asyncSupport.registerJob(validatorExecutor.submit(AdminInfo.find().wrapCallable(new Callable<PolicyValidatorResult>() {
             public PolicyValidatorResult call() throws Exception {
                 try {
@@ -234,6 +238,38 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
                 }
             }
         })), PolicyValidatorResult.class);
+    }
+
+    public JobId<PolicyValidatorResult> validatePolicy(final String policyXml, final PolicyType policyType, final boolean soap, final String wsdlXml, HashMap<String, Policy> fragments) {
+        final Assertion assertion;
+        final Wsdl wsdl;
+        try {
+            assertion = wspReader.parsePermissively(policyXml);
+            wsdl = wsdlXml == null ? null : Wsdl.newInstance(null, new StringReader(wsdlXml));
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot parse passed Policy XML: " + ExceptionUtils.getMessage(e), e);
+        } catch (WSDLException e) {
+            throw new RuntimeException("Cannot parse passed WSDL XML: " + ExceptionUtils.getMessage(e), e);
+        }
+
+        addPoliciesToIncludeAssertions(assertion, fragments);
+
+        return validatePolicy(assertion, policyType, soap, wsdl);
+    }
+
+    private void addPoliciesToIncludeAssertions(Assertion rootAssertion, HashMap<String, Policy> fragments) {
+        if(rootAssertion instanceof CompositeAssertion) {
+            CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
+            for(Iterator it = compAssertion.children();it.hasNext();) {
+                Assertion child = (Assertion)it.next();
+                addPoliciesToIncludeAssertions(child, fragments);
+            }
+        } else if(rootAssertion instanceof Include) {
+            Include includeAssertion = (Include)rootAssertion;
+            if(fragments.containsKey(includeAssertion.getPolicyName())) {
+                includeAssertion.replaceFragmentPolicy(fragments.get(includeAssertion.getPolicyName()));
+            }
+        }
     }
 
     private static boolean isDefaultOid(PersistentEntity entity) {

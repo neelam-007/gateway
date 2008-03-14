@@ -1034,6 +1034,10 @@ public class MainWindow extends JFrame implements SheetHolder {
         return refreshAction;
     }
 
+    public void refreshPoliciesFolderNode() {
+        servicesAndPoliciesTree.refresh(policiesFolderNode);
+    }
+
     /**
      * create the Action (the component that is used by several controls)
      *

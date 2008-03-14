@@ -425,7 +425,8 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         if (policyNode == null)
             throw new IllegalArgumentException("No edited policy specified");
         try {
-            Assertion newRoot = PolicyImporter.importPolicy(templateNode.getFile());
+            PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(templateNode.getFile());
+            Assertion newRoot = result.assertion;
             // for some reason, the PublishedService class does not allow to set a policy
             // directly, it must be set through the XML
             if (newRoot != null) {

@@ -91,7 +91,12 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
                 circularImport = true;
             } else {
                 try {
-                    policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(assertion.getPolicyOid());
+                    if(assertion instanceof Include) {
+                        policy = ((Include)assertion).retrieveFragmentPolicy();
+                    }
+                    if(policy == null) {
+                        policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(assertion.getPolicyOid());
+                    }
                 } catch ( PermissionDeniedException pde ) {
                     logger.log(Level.WARNING, "Couldn't load included policy [permission denied]");
                     permissionDenied = true;

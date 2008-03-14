@@ -2,6 +2,7 @@ package com.l7tech.service;
 
 import com.l7tech.common.AsyncAdminMethodsImpl;
 import com.l7tech.common.policy.PolicyType;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.common.uddi.UDDIRegistryInfo;
 import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.common.xml.Wsdl;
@@ -22,6 +23,7 @@ import java.io.Serializable;
 import java.io.StringReader;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -135,6 +137,15 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
             }
         });
         return asyncSupport.registerJob(future, PolicyValidatorResult.class);
+    }
+
+    public JobId<PolicyValidatorResult> validatePolicy(final String policyXml,
+                                                       final PolicyType policyType,
+                                                       final boolean soap,
+                                                       final String wsdlXml,
+                                                       HashMap<String, Policy> fragments)
+    {
+        return validatePolicy(policyXml, policyType, soap, wsdlXml);
     }
 
     /**

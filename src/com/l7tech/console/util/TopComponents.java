@@ -75,6 +75,10 @@ public class TopComponents {
         return getMainWindow().getPoliciesFolderNode();
     }
 
+    public void refreshPoliciesFolderNode() {
+        getMainWindow().refreshPoliciesFolderNode();
+    }
+
     public ServicesFolderNode getServicesFolderNode() {
         return getMainWindow().getServicesFolderNode();
     }

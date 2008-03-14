@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.HashMap;
 
 /**
  * PolicyAdmin wrapper that fires invalidation events for the active policy.
@@ -27,6 +28,10 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
         return delegate.findPolicyByPrimaryKey( oid );
     }
 
+    public Policy findPolicyByUniqueName(String name) throws FindException {
+        return delegate.findPolicyByUniqueName(name);
+    }
+
     public Collection<PolicyHeader> findPolicyHeadersByType( PolicyType type ) throws FindException {
         return delegate.findPolicyHeadersByType( type );
     }
@@ -45,6 +50,12 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
     public PolicyCheckpointState savePolicy( Policy policy, boolean activateAsWell ) throws PolicyAssertionException, SaveException {
         PolicyCheckpointState result = delegate.savePolicy( policy, activateAsWell );
         fireEntityUpdate( result.getPolicyOid() );
+        return result;
+    }
+
+    public SavePolicyWithFragmentsResult savePolicy(Policy policy, boolean activateAsWell, HashMap<String, Policy> fragments) throws PolicyAssertionException, SaveException {
+        SavePolicyWithFragmentsResult result = delegate.savePolicy(policy, activateAsWell, fragments);
+        fireEntityUpdate( result.policyCheckpointState.getPolicyOid() );
         return result;
     }
 

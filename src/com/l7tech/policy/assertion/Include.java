@@ -5,6 +5,7 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.common.policy.Policy;
 
 /**
  * A reference to a {@link com.l7tech.common.policy.Policy} with {@link com.l7tech.common.policy.Policy#getType()} ==
@@ -16,6 +17,7 @@ import com.l7tech.objectmodel.EntityType;
 public class Include extends Assertion implements UsesEntities {
     private Long policyOid;
     private String policyName;
+    private transient Policy fragmentPolicy;
 
     public Include() {
     }
@@ -51,5 +53,23 @@ public class Include extends Assertion implements UsesEntities {
         return new EntityHeader[] {
             new EntityHeader(Long.toString(policyOid), EntityType.POLICY, policyName, null)
         };
+    }
+
+    public Policy retrieveFragmentPolicy() {
+        return fragmentPolicy;
+    }
+
+    public void replaceFragmentPolicy(Policy policy) {
+        fragmentPolicy = policy;
+    }
+
+    @Override
+    public void updateTemporaryData(Assertion assertion) {
+        if(!(assertion instanceof Include)) {
+            return;
+        }
+
+        Include includeAssertion = (Include)assertion;
+        fragmentPolicy = includeAssertion.retrieveFragmentPolicy();
     }
 }

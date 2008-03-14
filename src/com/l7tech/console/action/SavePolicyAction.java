@@ -6,6 +6,7 @@ package com.l7tech.console.action;
 import com.l7tech.common.policy.CircularPolicyException;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyCheckpointState;
+import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.panels.WorkSpacePanel;
@@ -25,6 +26,7 @@ import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
 
 /**
  * The <code>SavePolicyAction</code> action saves the policy and it's
@@ -33,6 +35,7 @@ import java.io.ByteArrayOutputStream;
 public class SavePolicyAction extends PolicyNodeAction {
     protected AssertionTreeNode node;
     private final boolean activateAsWell;
+    private HashMap<String, Long> fragmentNameOidMap;
 
     public SavePolicyAction(boolean activateAsWell) {
         super(null);
@@ -106,6 +109,10 @@ public class SavePolicyAction extends PolicyNodeAction {
     }
 
     protected void performAction(String xml) {
+        performAction(xml, null);
+    }
+
+    protected void performAction(String xml, HashMap<String, Policy> fragments) {
         if (node == null) {
             throw new IllegalStateException("no node specified");
         }
@@ -126,7 +133,9 @@ public class SavePolicyAction extends PolicyNodeAction {
                 policyOid = policy.getOid();
             }
 
-            PolicyCheckpointState checkpointState = updatePolicyXml(policyOid, xml, activateAsWell);
+            PolicyAdmin.SavePolicyWithFragmentsResult result = updatePolicyXml(policyOid, xml, fragments, activateAsWell);
+            fragmentNameOidMap = result.fragmentNameOidMap;
+            PolicyCheckpointState checkpointState = result.policyCheckpointState;
             final long newVersionOrdinal = checkpointState.getPolicyVersionOrdinal();
             final boolean activationState = checkpointState.isPolicyVersionActive();
 
@@ -154,10 +163,14 @@ public class SavePolicyAction extends PolicyNodeAction {
         }
     }
 
-    private static PolicyCheckpointState updatePolicyXml(long policyOid, String xml, boolean activateAsWell) throws FindException, SaveException, PolicyAssertionException {
+    private static PolicyAdmin.SavePolicyWithFragmentsResult updatePolicyXml(long policyOid, String xml, HashMap<String, Policy> fragments, boolean activateAsWell) throws FindException, SaveException, PolicyAssertionException {
         Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(policyOid);
         if (policy == null) throw new SaveException("Unable to save policy -- this policy no longer exists");
         policy.setXml(xml);
-        return Registry.getDefault().getPolicyAdmin().savePolicy(policy, activateAsWell);
+        return Registry.getDefault().getPolicyAdmin().savePolicy(policy, activateAsWell, fragments);
+    }
+
+    public HashMap<String, Long> getFragmentNameOidMap() {
+        return fragmentNameOidMap;
     }
 }

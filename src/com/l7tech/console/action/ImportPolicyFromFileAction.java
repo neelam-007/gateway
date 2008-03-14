@@ -10,6 +10,8 @@ import com.l7tech.console.policy.exporter.PolicyImporter;
 import com.l7tech.console.tree.PolicyTemplatesFolderNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.Include;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 
 import javax.swing.*;
@@ -19,6 +21,8 @@ import java.io.IOException;
 import java.security.AccessControlException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  * The SSM action type that imports a policy from a file.
@@ -109,12 +113,14 @@ public abstract class ImportPolicyFromFileAction extends PolicyNodeAction {
         if (JFileChooser.APPROVE_OPTION != ret) return false;
 
         try {
-            Assertion newRoot = PolicyImporter.importPolicy(chooser.getSelectedFile());
+            PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(chooser.getSelectedFile());
+            Assertion newRoot = (result != null) ? result.assertion : null;
             // for some reason, the PublishedService class does not allow to set a policy
             // directly, it must be set through the XML
             if (newRoot != null) {
                 String newPolicyXml = WspWriter.getPolicyXml(newRoot);
                 policy.setXml(newPolicyXml);
+                addPoliciesToIncludeAssertions(policy.getAssertion(), result.policyFragments);
                 return true;
             }
         } catch (IOException e) {
@@ -126,5 +132,20 @@ public abstract class ImportPolicyFromFileAction extends PolicyNodeAction {
         }
 
         return false;
+    }
+
+    private void addPoliciesToIncludeAssertions(Assertion rootAssertion, HashMap<String, Policy> fragments) {
+        if(rootAssertion instanceof CompositeAssertion) {
+            CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
+            for(Iterator it = compAssertion.children();it.hasNext();) {
+                Assertion child = (Assertion)it.next();
+                addPoliciesToIncludeAssertions(child, fragments);
+            }
+        } else if(rootAssertion instanceof Include) {
+            Include includeAssertion = (Include)rootAssertion;
+            if(fragments.containsKey(includeAssertion.getPolicyName())) {
+                includeAssertion.replaceFragmentPolicy(fragments.get(includeAssertion.getPolicyName()));
+            }
+        }
     }
 }

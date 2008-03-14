@@ -13,15 +13,17 @@ import static com.l7tech.common.util.Functions.map;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.Include;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.wsp.WspWriter;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -50,6 +52,17 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
         Policy policy = policyManager.findByPrimaryKey(oid);
         if (policy == null) return null;
         PolicyVersion activeVersion = policyVersionManager.findActiveVersionForPolicy(oid);
+        if (activeVersion != null) {
+            policy.setVersionOrdinal(activeVersion.getOrdinal());
+            policy.setVersionActive(true);
+        }
+        return policy;
+    }
+
+    public Policy findPolicyByUniqueName(String name) throws FindException {
+        Policy policy = policyManager.findByUniqueName(name);
+        if (policy == null) return null;
+        PolicyVersion activeVersion = policyVersionManager.findActiveVersionForPolicy(policy.getOid());
         if (activeVersion != null) {
             policy.setVersionOrdinal(activeVersion.getOrdinal());
             policy.setVersionActive(true);
@@ -97,6 +110,61 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
             }
         } catch (ObjectModelException e) {
             throw new SaveException("Couldn't update policy", e);
+        }
+    }
+
+    public SavePolicyWithFragmentsResult savePolicy(Policy policy, boolean activateAsWell, HashMap<String, Policy> fragments) throws SaveException {
+        try {
+            HashMap<String, Long> fragmentNameOidMap = new HashMap<String, Long>();
+            for(Policy fragmentPolicy : fragments.values()) {
+                boolean create = false;
+
+                try {
+                    Policy p = policyManager.findByUniqueName(fragmentPolicy.getName());
+                    if(p == null) {
+                        create = true;
+                    } else if(p.getOid() != fragmentPolicy.getOid()) {
+                        fragmentNameOidMap.put(fragmentPolicy.getName(), p.getOid());
+                    }
+                } catch(FindException e) {
+                    create = true;
+                }
+
+                if(create) {
+                    fragmentPolicy.setOid(Policy.DEFAULT_OID);
+                    long oid = policyManager.save(fragmentPolicy);
+                    policyVersionManager.checkpointPolicy(fragmentPolicy, activateAsWell, true);
+                    policyManager.addManagePolicyRole(fragmentPolicy);
+                    fragmentNameOidMap.put(fragmentPolicy.getName(), oid);
+                }
+            }
+
+            if(fragmentNameOidMap.size() > 0) {
+                Assertion rootAssertion = policy.getAssertion();
+                correctIncludeAssertions(rootAssertion, fragmentNameOidMap);
+                policy.setXml(WspWriter.getPolicyXml(rootAssertion));
+            }
+
+            return new SavePolicyWithFragmentsResult(savePolicy(policy, activateAsWell), fragmentNameOidMap);
+        } catch(SaveException e) {
+            throw e;
+        } catch(Exception e) {
+            throw new SaveException("Couldn't update policy", e);
+        }
+    }
+
+    private void correctIncludeAssertions(Assertion rootAssertion, HashMap<String, Long> fragmentNameOidMap) {
+        if(rootAssertion instanceof CompositeAssertion) {
+            CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
+            for(Iterator it = compAssertion.children();it.hasNext();) {
+                Assertion child = (Assertion)it.next();
+                correctIncludeAssertions(child, fragmentNameOidMap);
+            }
+        } else if(rootAssertion instanceof Include) {
+            Include includeAssertion = (Include)rootAssertion;
+            if(fragmentNameOidMap.containsKey(includeAssertion.getPolicyName())) {
+                includeAssertion.setPolicyOid(fragmentNameOidMap.get(includeAssertion.getPolicyName()));
+            }
         }
     }
 

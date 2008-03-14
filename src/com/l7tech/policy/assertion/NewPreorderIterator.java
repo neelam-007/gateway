@@ -31,6 +31,7 @@ public class NewPreorderIterator implements Iterator {
         final Assertion root;
         try {
             root = WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(origRoot));
+            updateAssertionTemporaryData(root, origRoot);
         } catch (IOException e) {
             throw new RuntimeException(e); // Can't happen
         }
@@ -47,6 +48,26 @@ public class NewPreorderIterator implements Iterator {
         results.add(root);
         collect(comp, results);
         this.delegate = results.iterator();
+    }
+
+    private void updateAssertionTemporaryData(Assertion newAssertion, Assertion oldAssertion) {
+        if(!newAssertion.getClass().equals(oldAssertion.getClass())) {
+            return;
+        }
+
+        if(newAssertion instanceof CompositeAssertion) {
+            CompositeAssertion newCompAssertion = (CompositeAssertion)newAssertion;
+            CompositeAssertion oldCompAssertion = (CompositeAssertion)oldAssertion;
+            Iterator itOld = oldCompAssertion.children();
+
+            for(Iterator itNew = newCompAssertion.children();itNew.hasNext() && itOld.hasNext();) {
+                Assertion newChild = (Assertion)itNew.next();
+                Assertion oldChild = (Assertion)itOld.next();
+                updateAssertionTemporaryData(newChild, oldChild);
+            }
+        } else {
+            newAssertion.updateTemporaryData(oldAssertion);
+        }
     }
 
     private void collect(final CompositeAssertion root,
