@@ -143,7 +143,7 @@ public class PolicyServiceClient {
             Element sid = XmlUtil.findOnlyOneChildElementByName(header, SoapUtil.L7_MESSAGEID_NAMESPACE,
                                                                 SoapUtil.L7_SERVICEID_ELEMENT);
             sid.appendChild(XmlUtil.createTextNode(msg, serviceId));
-            SoapUtil.setL7aMessageId(msg, SoapUtil.generateUniqueUri(null)); // correlation ID
+            SoapUtil.setL7aMessageId(msg, SoapUtil.generateUniqueUri(null, false)); // correlation ID
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
         } catch (InvalidDocumentFormatException e) {

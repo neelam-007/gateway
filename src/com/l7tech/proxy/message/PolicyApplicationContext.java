@@ -545,7 +545,7 @@ public class PolicyApplicationContext extends ProcessingContext {
                 SoapUtil.getL7aMessageId(getRequest().getXmlKnob().getOriginalDocument());
 
         if (id == null) {
-            id = SoapUtil.generateUniqueUri(messageIdPrefix);
+            id = SoapUtil.generateUniqueUri(messageIdPrefix, useWsa);
         } else if (id.trim().length() < 1)
             throw new InvalidDocumentFormatException("Request has existing L7a:MessageID field that is empty or contains only whitespace");
 

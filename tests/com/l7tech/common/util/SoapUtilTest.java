@@ -111,6 +111,17 @@ public class SoapUtilTest extends TestCase {
         assertTrue(SoapUtil.isSoapMessage(doc));
     }
 
+    public void testUuidFormat() throws Exception {
+        String id = SoapUtil.generateUniqueUri("prefix:", true);
+        assertTrue(id.startsWith("prefix:"));
+        String[] bits = id.split(":")[1].split("-");
+        assertEquals(8, bits[0].length());
+        assertEquals(4, bits[1].length());
+        assertEquals(4, bits[2].length());
+        assertEquals(4, bits[3].length());
+        assertEquals(12, bits[4].length());
+    }
+
     public static final String SOAP_MESSAGE_WITH_PROCESSING_INSTRUCTION_BEFORE_CONTENT =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<?xml-stylesheet type=\"text/xsl\"\n" +

@@ -808,7 +808,8 @@ public class SoapUtil {
      *
      * @param soapMsg   the soap message to modify
      * @param wsaNamespaceUri the WS-Addressing namespace URI to use for the element, or null to use {@link #WSA_NAMESPACE2}.
-     * @param messageId the new wsa:MessageID value @throws InvalidDocumentFormatException if the message isn't soap, has more than one header, or already has
+     * @param messageId the new wsa:MessageID value
+     * @throws InvalidDocumentFormatException if the message isn't soap, has more than one header, or already has
      *                                        a MessageID
      */
     public static Element setWsaMessageId(Document soapMsg, String wsaNamespaceUri, String messageId) throws InvalidDocumentFormatException {
@@ -1129,14 +1130,29 @@ public class SoapUtil {
     }
 
     /** @return a new unique URI in the form &lt;prefix&gt; + XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, where the
-     * Xes stand for random hexadecimal digits.  The default prefix is {@link #DEFAULT_UUID_PREFIX}.
-     * @param messageIdPrefix an alternate message ID prefix, or null to use {@link #DEFAULT_UUID_PREFIX}.
+     * Xes stand for random hexadecimal digits.  The default prefix is {@link #DEFAULT_UUID_PREFIX}. @param messageIdPrefix an alternate message ID prefix, or null to use {@link #DEFAULT_UUID_PREFIX}.
+     * @param includeUuidDashes
      */
-    public static String generateUniqueUri(final String messageIdPrefix) {
+    public static String generateUniqueUri(final String messageIdPrefix, boolean includeUuidDashes) {
+        StringBuilder sb = new StringBuilder(messageIdPrefix == null ? DEFAULT_UUID_PREFIX : messageIdPrefix);
         byte[] randbytes = new byte[16];
         rand.nextBytes(randbytes);
-        StringBuilder sb = new StringBuilder(messageIdPrefix == null ? DEFAULT_UUID_PREFIX : messageIdPrefix);
-        sb.append(HexUtils.hexDump(randbytes));
+        final String hex = HexUtils.hexDump(randbytes);
+        if (includeUuidDashes) {
+            // 8 4 4 4 12
+            int i = 0;
+            sb.append(hex.substring(0, 8));
+            sb.append("-");
+            sb.append(hex.substring(8, 12));
+            sb.append("-");
+            sb.append(hex.substring(12, 16));
+            sb.append("-");
+            sb.append(hex.substring(16, 20));
+            sb.append("-");
+            sb.append(hex.substring(20, 32));
+        } else {
+            sb.append(hex);
+        }
         return sb.toString();
     }
 
