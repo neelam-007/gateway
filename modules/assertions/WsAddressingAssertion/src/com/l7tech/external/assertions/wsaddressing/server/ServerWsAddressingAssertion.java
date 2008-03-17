@@ -31,6 +31,17 @@ import java.util.logging.Logger;
  * @see com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion
  */
 public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddressingAssertion> {
+    private final String otherNamespaceUri = assertion.getEnableOtherNamespace();
+    private final String[] acceptableNamespaces;
+    {
+        if (otherNamespaceUri != null && otherNamespaceUri.length() > 0) {
+            this.acceptableNamespaces = new String[NS_ADDRESSING.length+1];
+            System.arraycopy(NS_ADDRESSING, 0, this.acceptableNamespaces, 0, NS_ADDRESSING.length);
+            this.acceptableNamespaces[NS_ADDRESSING.length] = otherNamespaceUri;
+        } else {
+            this.acceptableNamespaces = NS_ADDRESSING;
+        }
+    }
 
     //- PUBLIC
 
@@ -40,8 +51,6 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     public ServerWsAddressingAssertion(final WsAddressingAssertion assertion,
                                        final ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
-
-        this.assertion = assertion;
         this.auditor = new Auditor(this, context, logger);
     }
 
@@ -74,6 +83,13 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
 
                 auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_HEADERS_OK);
                 status = AssertionStatus.NONE;
+            } else if (otherNamespaceUri != null && otherNamespaceUri.length() > 0 && addressingPresent(addressingProperties, otherNamespaceUri) ) {
+                if ( assertion.getVariablePrefix() != null) {
+                    setVariables(addressingProperties, otherNamespaceUri, context);
+                }
+
+                auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_HEADERS_OK);
+                status = AssertionStatus.NONE;
             } else {
                 context.setRequestPolicyViolated();
                 if ( assertion.isRequireSignature() ) {
@@ -98,8 +114,6 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     public ServerWsAddressingAssertion(final WsAddressingAssertion assertion,
                                        final Auditor auditor) throws PolicyAssertionException {
         super(assertion);
-
-        this.assertion = assertion;
         this.auditor = auditor;
     }
 
@@ -113,7 +127,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
             moveToSoapHeader(cursor);
             final ElementCursor.Visitor visitor = new ElementCursor.Visitor(){
                 public void visit(final ElementCursor ec) throws InvalidDocumentFormatException {
-                    if ( ArrayUtils.contains(NS_ADDRESSING, ec.getNamespaceUri()) ) {
+                    if ( ArrayUtils.contains(acceptableNamespaces, ec.getNamespaceUri()) ) {
                         QName name = new QName(ec.getNamespaceUri(), ec.getLocalName());
 
                         if ( !addressingProperties.containsKey(name) ) {
@@ -146,7 +160,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
         for (SignedElement signedElement : signedElements ) {
             Element element = signedElement.asElement();
 
-            if ( ArrayUtils.contains(NS_ADDRESSING, element.getNamespaceURI()) && isSoapHeader(element.getParentNode()) ) {
+            if ( ArrayUtils.contains(acceptableNamespaces, element.getNamespaceURI()) && isSoapHeader(element.getParentNode()) ) {
                 QName name = new QName(element.getNamespaceURI(), element.getLocalName());
 
                 if ( addressingProperties.containsKey(name) ) {
@@ -200,7 +214,6 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     private static final String WSA_REPLYTO = "ReplyTo";
     private static final String WSA_TO = "To";
 
-    private final WsAddressingAssertion assertion;
     private final Auditor auditor;
 
     /**

@@ -112,6 +112,14 @@ public class WsAddressingAssertion extends Assertion implements SetsVariables {
         this.variablePrefix = variablePrefix;
     }
 
+    public String getEnableOtherNamespace() {
+        return enableOtherNamespace;
+    }
+
+    public void setEnableOtherNamespace(String enableOtherNamespace) {
+        this.enableOtherNamespace = enableOtherNamespace;
+    }
+
     /**
      * If a prefix is set then this will return a full set of addressing variables.
      *
@@ -160,9 +168,11 @@ public class WsAddressingAssertion extends Assertion implements SetsVariables {
     private boolean enableWsAddressing200408 = false;
     private String variablePrefix;
     private boolean requireSignature;
+    private String enableOtherNamespace = null;
+
 
     /**
-     * Populate the given metadata. 
+     * Populate the given metadata.
      */
     private void populateMeta(final DefaultAssertionMetadata meta) {
         // Set description for GUI
@@ -194,7 +204,7 @@ public class WsAddressingAssertion extends Assertion implements SetsVariables {
                 Set<ValidatorFlag> flags = Collections.emptySet();
 
                 if ( assertion.isRequireSignature() ) {
-                    flags = Collections.singleton(ValidatorFlag.REQUIRE_SIGNATURE);                    
+                    flags = Collections.singleton(ValidatorFlag.REQUIRE_SIGNATURE);
                 }
 
                 return flags;

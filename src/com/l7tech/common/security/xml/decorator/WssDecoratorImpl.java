@@ -166,7 +166,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 signList.add(relatesTo);
         }
         {
-            Element messageId = SoapUtil.getWsaMessageIdElement(soapMsg);
+            Element messageId = SoapUtil.getWsaMessageIdElement(soapMsg, null);
             if (messageId != null && !signList.isEmpty())
                 signList.add(messageId);
             Element relatesTo = SoapUtil.getWsaRelatesToElement(soapMsg);

@@ -81,6 +81,7 @@ public class PolicyApplicationContext extends ProcessingContext {
     private String encryptedKeySha1 = null;
     private LoginCredentials requestCredentials = null;
     private boolean usedKerberosTicketReference = false;
+    private String wsaNamespaceUri;
 
     // Policy settings, filled in by traversing policy tree, and which can all be rolled back by reset()
     private static class PolicySettings {
@@ -524,15 +525,23 @@ public class PolicyApplicationContext extends ProcessingContext {
         }
     }
 
+    public String getWsaNamespaceUri() {
+        return wsaNamespaceUri;
+    }
+
+    public void setWsaNamespaceUri(String wsaNamespaceUri) {
+        this.wsaNamespaceUri = wsaNamespaceUri;
+    }
+
     /**
      * Ensure that there is a Wsa message ID in this request.
      */
-    public String prepareWsaMessageId(final boolean useWsa, final String messageIdPrefix) throws InvalidDocumentFormatException, SAXException, IOException {
+    public String prepareWsaMessageId(final boolean useWsa, String wsaNamespaceUri, final String messageIdPrefix) throws InvalidDocumentFormatException, SAXException, IOException {
         final String existingId = getMessageId();
         if (existingId != null) return existingId;
 
         String id = useWsa ?
-                SoapUtil.getWsaMessageId(getRequest().getXmlKnob().getOriginalDocument()) :
+                SoapUtil.getWsaMessageId(getRequest().getXmlKnob().getOriginalDocument(), wsaNamespaceUri) :
                 SoapUtil.getL7aMessageId(getRequest().getXmlKnob().getOriginalDocument());
 
         if (id == null) {
@@ -541,6 +550,7 @@ public class PolicyApplicationContext extends ProcessingContext {
             throw new InvalidDocumentFormatException("Request has existing L7a:MessageID field that is empty or contains only whitespace");
 
         setUseWsaMessageId(useWsa);
+        setWsaNamespaceUri(wsaNamespaceUri);
         setMessageId(id);
         return id;
     }

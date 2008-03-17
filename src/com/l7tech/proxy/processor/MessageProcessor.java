@@ -391,13 +391,15 @@ public class MessageProcessor {
                     // Ensure L7a:MessageID exists if we are supposed to have one
                     final Message request = context.getRequest();
                     final Document requestDoc = request.getXmlKnob().getDocumentReadOnly();
-                    if (context.getMessageId() != null) {
+                    final String messageId = context.getMessageId();
+                    if (messageId != null) {
                         if (context.isUseWsaMessageId()) {
-                            if (SoapUtil.getWsaMessageId(requestDoc) == null)
-                                SoapUtil.setWsaMessageId(requestDoc, context.getMessageId());
+                            final String otherWsaNamespaceUri = context.getWsaNamespaceUri();
+                            if (SoapUtil.getWsaMessageId(requestDoc, otherWsaNamespaceUri) == null)
+                                SoapUtil.setWsaMessageId(requestDoc, otherWsaNamespaceUri, messageId);
                         } else {
                             if (SoapUtil.getL7aMessageId(requestDoc) == null)
-                                SoapUtil.setL7aMessageId(requestDoc, context.getMessageId());
+                                SoapUtil.setL7aMessageId(requestDoc, messageId);
                         }
 
                     }

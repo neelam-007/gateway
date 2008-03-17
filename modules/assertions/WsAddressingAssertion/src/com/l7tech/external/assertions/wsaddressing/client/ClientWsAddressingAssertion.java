@@ -42,13 +42,25 @@ public class ClientWsAddressingAssertion extends ClientAssertion {
     }
 
     public AssertionStatus decorateRequest(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException, ConfigurationException {
-        Map<String, String> props = context.getSsg().getProperties();
+        final Map<String, String> props = context.getSsg().getProperties();
 
         // TODO make the MessageID prefix configurable in the assertion instead of just locally?
-        String uuidPrefix = props.get("wsAddressing.uuidPrefix");
+        final String uuidPrefix = props.get("wsAddressing.uuidPrefix");
 
-        final String id = context.prepareWsaMessageId(true, uuidPrefix);
-        Element wsaMessageIdEl = SoapUtil.setWsaMessageId(context.getRequest().getXmlKnob().getDocumentWritable(), id);
+        // Figure out which WSA NS to use (Always use "other" if specified)
+        final String other = assertion.getEnableOtherNamespace();
+        final String ns;
+        if (other != null && other.length() > 0) {
+            ns = other;
+        } else if (assertion.isEnableWsAddressing10()) {
+            ns = SoapUtil.WSA_NAMESPACE_10;
+        } else if (assertion.isEnableWsAddressing200408()) {
+            ns = SoapUtil.WSA_NAMESPACE2;
+        } else {
+            throw new PolicyAssertionException(assertion, "Unable to select WS-Addressing namespace URI");
+        }
+        final String id = context.prepareWsaMessageId(true, ns, uuidPrefix);
+        Element wsaMessageIdEl = SoapUtil.setWsaMessageId(context.getRequest().getXmlKnob().getDocumentWritable(), ns, id);
         if (assertion.isRequireSignature()) {
             context.getDefaultWssRequirements().getElementsToSign().add(wsaMessageIdEl);
         }

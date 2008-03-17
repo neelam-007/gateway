@@ -1,15 +1,15 @@
 package com.l7tech.external.assertions.wsaddressing.console;
 
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.Frame;
-import java.awt.Dialog;
-import java.util.ResourceBundle;
-import javax.swing.*;
-
-import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
-import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.RunOnChangeListener;
+import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
+import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ResourceBundle;
 
 /**
  * Properties dialog for WS-Addressing assertion.
@@ -24,8 +24,15 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
     private JCheckBox wsAddressing10CheckBox;
     private JCheckBox wsAddressing082004CheckBox;
     private JTextField variablePrefixTextField;
+    private JCheckBox otherNamespaceCheckBox;
+    private JTextField otherNamespaceTextField;
 
     private boolean ok;
+    private final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
+        public void run() {
+            configureView();
+        }
+    });
 
     static {
         resources = ResourceBundle.getBundle("com/l7tech/external/assertions/wsaddressing/console/resources/WsAddressingPropertiesDialog");
@@ -77,7 +84,11 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
 
     @Override
     protected void configureView() {
-        buttonOK.setEnabled( !isReadOnly() );
+        otherNamespaceTextField.setEnabled(otherNamespaceCheckBox.isSelected());
+        final String other = otherNamespaceTextField.getText();
+        boolean ok = !otherNamespaceCheckBox.isSelected() || (other != null && other.length() > 0);
+        ok &= !isReadOnly();
+        buttonOK.setEnabled(ok);
     }
 
     /**
@@ -99,6 +110,16 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
                 onCancel();
             }
         });
+
+        otherNamespaceCheckBox.addActionListener(changeListener);
+        otherNamespaceCheckBox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (otherNamespaceCheckBox.isSelected()) {
+                    otherNamespaceTextField.requestFocusInWindow();
+                }
+            }
+        });
+        otherNamespaceTextField.getDocument().addDocumentListener(changeListener);
 
         Utilities.setEscKeyStrokeDisposes(this);
     }
@@ -125,6 +146,11 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
         requireSignatureCheckBox.setSelected(assertion.isRequireSignature());
         wsAddressing10CheckBox.setSelected(assertion.isEnableWsAddressing10());
         wsAddressing082004CheckBox.setSelected(assertion.isEnableWsAddressing200408());
+        final String other = assertion.getEnableOtherNamespace();
+        if (other != null) {
+            otherNamespaceCheckBox.setSelected(true);
+            otherNamespaceTextField.setText(other);
+        }
         if ( assertion.getVariablePrefix() != null ) {
             variablePrefixTextField.setText(assertion.getVariablePrefix());
         }
@@ -137,6 +163,14 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
         assertion.setRequireSignature(requireSignatureCheckBox.isSelected());
         assertion.setEnableWsAddressing10(wsAddressing10CheckBox.isSelected());
         assertion.setEnableWsAddressing200408(wsAddressing082004CheckBox.isSelected());
+
+        final String other = otherNamespaceCheckBox.isSelected() ? otherNamespaceTextField.getText() : null;
+        if (other != null && other.length() > 0) {
+            assertion.setEnableOtherNamespace(other);
+        } else {
+            assertion.setEnableOtherNamespace(null);
+        }
+
         if ( variablePrefixTextField.getText().trim().length() > 0 ) {
             assertion.setVariablePrefix(variablePrefixTextField.getText().trim());
         } else {

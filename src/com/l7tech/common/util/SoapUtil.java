@@ -97,10 +97,12 @@ public class SoapUtil {
     public static final String WSA_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/03/addressing";
     public static final String WSA_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2004/08/addressing"; // FIM
     public static final String WSA_NAMESPACE_10 = "http://www.w3.org/2005/08/addressing";
+    public static final String WSA_NAMESPACE_200303 = "http://schemas.xmlsoap.org/ws/2003/03/addressing";
     public static final String[] WSA_NAMESPACE_ARRAY = {
         WSA_NAMESPACE,
         WSA_NAMESPACE2,
         WSA_NAMESPACE_10,
+        WSA_NAMESPACE_200303
     };
 
     public static final String L7_MESSAGEID_NAMESPACE = "http://www.layer7tech.com/ws/addr";
@@ -745,13 +747,22 @@ public class SoapUtil {
      * Get the wsa:MesageID element from the specified message, or null if there isn't one.
      *
      * @param soapMsg the soap envelope to examine
-     * @return the /Envelope/Header/L7a:MessageID element, or null if there isn't one.
+     * @param otherWsaNamespaceUri an additional WS-Addressing namespace URI to use in the search, or null to use the default URIs
+     * @return the /Envelope/Header/wsa:MessageID element, or null if there isn't one.
      * @throws InvalidDocumentFormatException if the message isn't soap, or there is more than one Header or MessageID
      */
-    public static Element getWsaMessageIdElement(Document soapMsg) throws InvalidDocumentFormatException {
+    public static Element getWsaMessageIdElement(Document soapMsg, String otherWsaNamespaceUri) throws InvalidDocumentFormatException {
         Element header = getHeaderElement(soapMsg);
         if (header == null) return null;
-        return XmlUtil.findOnlyOneChildElementByName(header, SoapUtil.WSA_NAMESPACE_ARRAY, MESSAGEID_EL_NAME);
+        final String[] namespaces;
+        if (otherWsaNamespaceUri == null) {
+            namespaces = SoapUtil.WSA_NAMESPACE_ARRAY;
+        } else {
+            namespaces = new String[SoapUtil.WSA_NAMESPACE_ARRAY.length+1];
+            System.arraycopy(SoapUtil.WSA_NAMESPACE_ARRAY, 0, namespaces, 0, SoapUtil.WSA_NAMESPACE_ARRAY.length);
+            namespaces[SoapUtil.WSA_NAMESPACE_ARRAY.length] = otherWsaNamespaceUri;
+        }
+        return XmlUtil.findOnlyOneChildElementByName(header, namespaces, MESSAGEID_EL_NAME);
     }
 
     /**
@@ -768,8 +779,8 @@ public class SoapUtil {
         return XmlUtil.getTextValue(messageId);
     }
 
-    public static String getWsaMessageId(Document soapMsg) throws InvalidDocumentFormatException {
-        Element messageId = getWsaMessageIdElement(soapMsg);
+    public static String getWsaMessageId(Document soapMsg, String otherWsaNamespaceUri) throws InvalidDocumentFormatException {
+        Element messageId = getWsaMessageIdElement(soapMsg, otherWsaNamespaceUri);
         if (messageId == null) return null;
         return XmlUtil.getTextValue(messageId);
     }
@@ -796,17 +807,18 @@ public class SoapUtil {
      * Set the wsaa:MessageID URI for the specified message, which must not already have a wsa:MessageID element.
      *
      * @param soapMsg   the soap message to modify
-     * @param messageId the new wsa:MessageID value
-     * @throws InvalidDocumentFormatException if the message isn't soap, has more than one header, or already has
+     * @param wsaNamespaceUri the WS-Addressing namespace URI to use for the element, or null to use {@link #WSA_NAMESPACE2}.
+     * @param messageId the new wsa:MessageID value @throws InvalidDocumentFormatException if the message isn't soap, has more than one header, or already has
      *                                        a MessageID
      */
-    public static Element setWsaMessageId(Document soapMsg, String messageId) throws InvalidDocumentFormatException {
-        Element idEl = getWsaMessageIdElement(soapMsg);
+    public static Element setWsaMessageId(Document soapMsg, String wsaNamespaceUri, String messageId) throws InvalidDocumentFormatException {
+        Element idEl = getWsaMessageIdElement(soapMsg, wsaNamespaceUri);
         if (idEl != null)
             throw new ElementAlreadyExistsException("This message already has a wsa:MessageID");
 
         Element header = getOrMakeHeader(soapMsg);
-        idEl = XmlUtil.createAndPrependElementNS(header, MESSAGEID_EL_NAME, WSA_NAMESPACE2, "wsa");
+        final String uri = wsaNamespaceUri == null ? WSA_NAMESPACE2 : wsaNamespaceUri;
+        idEl = XmlUtil.createAndPrependElementNS(header, MESSAGEID_EL_NAME, uri, "wsa");
         idEl.appendChild(XmlUtil.createTextNode(idEl, messageId));
         return idEl;
     }

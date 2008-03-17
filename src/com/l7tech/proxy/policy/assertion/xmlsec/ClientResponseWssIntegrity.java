@@ -50,7 +50,7 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
             context.getPendingDecorations().put(this, new ClientDecorator() {
                 public AssertionStatus decorateRequest(PolicyApplicationContext context) throws InvalidDocumentFormatException, IOException, SAXException {
                     log.log(Level.FINER, "Expecting a signed reply; will be sure to include L7a:MessageID");
-                    context.prepareWsaMessageId(false, null);
+                    context.prepareWsaMessageId(false, null, null);
                     return AssertionStatus.NONE;
                 }
             });
