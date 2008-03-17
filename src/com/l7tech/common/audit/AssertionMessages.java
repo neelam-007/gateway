@@ -562,5 +562,8 @@ public class AssertionMessages extends Messages {
     public static final M NCESVALID_NO_MESSAGEID    = m(8705, Level.WARNING, "{0} did not contain a signed wsa:MessageID");
     public static final M NCESVALID_BODY_NOT_SIGNED = m(8706, Level.WARNING, "{0} SOAP Body was not signed");
     public static final M NCESVALID_DIFF_SIGNATURES = m(8707, Level.WARNING, "{0} contained the expected elements, but they were covered by different Signatures");
-
+    public static final M NCESVALID_NO_CERTIFICATE  = m(8708, Level.WARNING, "{0} does not use an X.509 certificate for signing");
+    public static final M NCESVALID_CERT_NOT_USED   = m(8709, Level.WARNING, "{0} signing X.509 certificate does not cover expected elements");
+    public static final M NCESVALID_CERT_VAL_ERROR  = m(8710, Level.WARNING, "{0} signing X.509 certificate validation error");
+    public static final M NCESVALID_CERT_UNTRUSTED  = m(8711, Level.WARNING, "{0} signing X.509 certificate is not trusted");
 }

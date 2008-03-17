@@ -5,6 +5,7 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.CertificateValidationType;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.TimeUnit;
 import com.l7tech.common.wsdl.BindingInfo;
@@ -18,6 +19,7 @@ import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.CertificateInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -42,6 +44,7 @@ import org.w3c.dom.NodeList;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.math.BigInteger;
 
 /**
  * Contains the registry of types we can freeze to a policy.
@@ -147,6 +150,7 @@ public class WspConstants {
             }
         },
         new BasicTypeMapping(Boolean.class, "boxedBooleanValue"),
+        new BasicTypeMapping(BigInteger.class, "bigIntegerValue"),
 
         // Typesafe enumerations
         new WspEnumTypeMapping(WsTrustRequestType.class, "requestType"),
@@ -162,6 +166,7 @@ public class WspConstants {
         // Container types
         new ArrayTypeMapping(new Object[0], "arrayValue"),
         new ArrayTypeMapping(new String[0], "stringArrayValue"),
+        new ArrayTypeMapping(new CertificateInfo[0], "certificateInfoArrayValue"),
         new MapTypeMapping(),
         new CollectionTypeMapping(Set.class, String.class, HashSet.class, "stringSetValue"),
         new CollectionTypeMapping(List.class, String.class, ArrayList.class, "stringListValue"),
@@ -296,6 +301,7 @@ public class WspConstants {
         new ArrayTypeMapping(new String[0], "fieldNames"),
         new BeanTypeMapping(AuthenticationProperties.class, "authenticationInfo"),
         new BeanTypeMapping(SoapFaultLevel.class, "soapFaultLevel"),
+        new BeanTypeMapping(CertificateInfo.class, "certificateInfo"),
 
         new AbstractClassTypeMapping(AssertionResourceInfo.class, "resourceInfo"),
         new BeanTypeMapping(StaticResourceInfo.class, "staticResourceInfo"),
@@ -313,6 +319,7 @@ public class WspConstants {
         new BeanTypeMapping(JmsMessagePropertyRuleSet.class, "jmsMessagePropertyRuleSet"),
 
         new Java5EnumTypeMapping(TargetMessageType.class, "target"),
+        new Java5EnumTypeMapping(CertificateValidationType.class, "certificateValidation"),
 
         // Make sure we get equal instances of built-in attributes (analogous to readResolve())
         new BeanTypeMapping(AttributeHeader.class, "header") {

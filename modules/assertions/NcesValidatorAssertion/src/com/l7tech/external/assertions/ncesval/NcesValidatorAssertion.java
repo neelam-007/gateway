@@ -2,6 +2,8 @@ package com.l7tech.external.assertions.ncesval;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.CertificateInfo;
+import com.l7tech.common.security.CertificateValidationType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +25,8 @@ public class NcesValidatorAssertion extends Assertion implements UsesVariables {
     private boolean samlRequired;
     private TargetMessageType target = TargetMessageType.REQUEST;
     private String otherMessageVariableName;
+    private CertificateValidationType certificateValidationType;
+    private CertificateInfo[] trustedCertificateInfo;
 
     public TargetMessageType getTarget() {
         return target;
@@ -48,6 +52,22 @@ public class NcesValidatorAssertion extends Assertion implements UsesVariables {
         this.samlRequired = samlRequired;
     }
 
+    public CertificateValidationType getCertificateValidationType() {
+        return certificateValidationType;
+    }
+
+    public void setCertificateValidationType( CertificateValidationType certificateValidationType ) {
+        this.certificateValidationType = certificateValidationType;
+    }
+
+    public CertificateInfo[] getTrustedCertificateInfo() {
+        return trustedCertificateInfo;
+    }
+
+    public void setTrustedCertificateInfo( CertificateInfo[] trustedCertificateInfo ) {
+        this.trustedCertificateInfo = trustedCertificateInfo;
+    }
+
     public String[] getVariablesUsed() {
         if (otherMessageVariableName != null) return new String[] { otherMessageVariableName };
         return new String[0];
@@ -58,6 +78,7 @@ public class NcesValidatorAssertion extends Assertion implements UsesVariables {
     //
     private static final String META_INITIALIZED = NcesValidatorAssertion.class.getName() + ".metadataInitialized";
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))

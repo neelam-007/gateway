@@ -21,8 +21,6 @@ public class NcesValidatorAssertionValidator implements AssertionValidator {
     }
 
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
-        if (!samlRequired) return;
-
         int firstSaml = -1;
         for (int i = 0; i < path.getPath().length; i++) {
             Assertion ass = path.getPath()[i];
@@ -31,11 +29,20 @@ public class NcesValidatorAssertionValidator implements AssertionValidator {
             } else if (ass instanceof NcesValidatorAssertion) {
                 if (ass != assertion) continue;
 
-                if (firstSaml == -1 || firstSaml > i) {
+                if ( samlRequired ) {
+                    if (firstSaml == -1 || firstSaml > i) {
+                        result.addWarning(
+                            new PolicyValidatorResult.Warning(assertion, path,
+                              "Detailed SAML Assertion validation must be done by a separate SAML Validation Assertion", null));
+                    }
+                }
+
+                if ( assertion.getTrustedCertificateInfo() == null || assertion.getTrustedCertificateInfo().length == 0 ) {
                     result.addWarning(
                         new PolicyValidatorResult.Warning(assertion, path,
-                          "Detailed SAML Assertion validation must be done by a separate SAML Validation Assertion", null));
+                          "No certificate issuers selected, assertion will always fail", null));                    
                 }
+
                 return;
             }
         }
