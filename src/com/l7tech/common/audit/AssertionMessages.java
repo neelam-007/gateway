@@ -162,27 +162,27 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_WSS_X509_NO_PROVEN_CERT         = m(4806, Level.INFO, "This assertion did not find a proven X.509 certificate to use as credentials - returning AUTH_REQUIRED");
 
     // ServerRequestWssReplayProtection messages
-    public static final M REQUEST_WSS_REPLAY_NON_SOAP                       = m(4900, Level.INFO, "Request not SOAP; cannot check for replayed signed WS-Security message");
-    /** @deprecated */ @Deprecated public static final M _UNUSED_REQUEST_WSS_REPLAY_NO_WSS_LEVEL_SECURITY = m(4901, Level.INFO, "This request did not contain any WSS level security");
-    public static final M REQUEST_WSS_REPLAY_NO_TIMESTAMP                   = m(4902, Level.INFO, "Assertion has failed because no timestamp present in request");
-    public static final M REQUEST_WSS_REPLAY_TIMESTAMP_NOT_SIGNED           = m(4903, Level.INFO, "Assertion has failed because no signed timestamp present in request");
-    public static final M REQUEST_WSS_REPLAY_TIMESTAMP_NO_CREATED_ELEMENT   = m(4904, Level.INFO, "Timestamp in request has no Created element");
-    public static final M REQUEST_WSS_REPLAY_TIMESTAMP_NO_EXPIRES_ELEMENT   = m(4905, Level.INFO, "Timestamp in request has no Expires element; assuming expiry {0}ms after creation");
-    public static final M REQUEST_WSS_REPLAY_CLOCK_SKEW                     = m(4906, Level.FINE, "Clock skew: message creation time is in the future: {0}; continuing anyway");
-    public static final M REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_CERT     = m(4907, Level.FINER, "Timestamp was signed with an X.509 certificate");
-    public static final M REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_SAML_HOK = m(4908, Level.FINER, "Timestamp was signed with a SAML holder-of-key assertion");
-    public static final M REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_SC_KEY   = m(4909, Level.FINER, "Timestamp was signed with a WS-SecureConversation derived key");
-    public static final M REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED           = m(4910, Level.FINEST, "Message ID {0} has not been seen before unique; assertion does not fail");
-    public static final M REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_ENC_KEY  = m(4911, Level.FINER, "Timestamp was signed with an EncryptedKey");
-    public static final M REQUEST_WSS_REPLAY_REPLAY                         = m(4912, Level.WARNING, "Message ID {0} is a replay");
-    public static final M REQUEST_WSS_REPLAY_STALE_TIMESTAMP                = m(4913, Level.WARNING, "Request timestamp contained stale Expires date");
-    public static final M REQUEST_WSS_REPLAY_CREATED_TOO_OLD                = m(4914, Level.WARNING, "Request timestamp contained Created older than the maximum message age hard cap");
-    public static final M REQUEST_WSS_REPLAY_NO_SKI                         = m(4915, Level.WARNING, "Unable to generate replay-protection ID; a SKI cannot be derived from signing cert ''{0}''");
-    public static final M REQUEST_WSS_REPLAY_UNSUPPORTED_TOKEN_TYPE         = m(4916, Level.WARNING, "Unable to generate replay-protection ID for timestamp -- it was signed, but with the unsupported token type {0}");
-    public static final M REQUEST_WSS_REPLAY_MULTIPLE_SENDER_IDS            = m(4917, Level.WARNING, "Found multiple eligible sender identity tokens; unable to proceed");
-    public static final M REQUEST_WSS_REPLAY_MULTIPLE_MESSAGE_IDS           = m(4918, Level.WARNING, "Found multiple signed wsa:MessageID values; unable to proceed");
-    public static final M REQUEST_WSS_REPLAY_GOT_SIGNED_MESSAGE_ID          = m(4919, Level.FINE, "Found signed wsa:MessageID ''{0}''");
-    public static final M REQUEST_WSS_REPLAY_NO_SIGNED_MESSAGE_ID           = m(4920, Level.FINE, "No signed wsa:MessageID was present in the request; using Timestamp instead");
+    public static final M REQUEST_WSS_REPLAY_NON_SOAP                       = m(4900, Level.INFO, "{0} not SOAP; cannot check for replayed signed WS-Security message");
+    public static final M REQUEST_WSS_REPLAY_NO_WSS_LEVEL_SECURITY          = m(4901, Level.INFO, "{0} did not contain any WSS level security");
+    public static final M REQUEST_WSS_REPLAY_NO_TIMESTAMP                   = m(4902, Level.INFO, "No timestamp present in {0}");
+    public static final M REQUEST_WSS_REPLAY_TIMESTAMP_NOT_SIGNED           = m(4903, Level.INFO, "No signed timestamp present in {0}");
+    public static final M REQUEST_WSS_REPLAY_TIMESTAMP_NO_CREATED_ELEMENT   = m(4904, Level.INFO, "Timestamp in {0} has no Created element");
+    public static final M REQUEST_WSS_REPLAY_TIMESTAMP_NO_EXPIRES_ELEMENT   = m(4905, Level.INFO, "Timestamp in {0} has no Expires element; assuming expiry {1}ms after creation");
+    public static final M REQUEST_WSS_REPLAY_CLOCK_SKEW                     = m(4906, Level.FINE, "Clock skew: {0} message creation time is in the future: {1}; continuing anyway");
+    public static final M REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_CERT     = m(4907, Level.FINER, "Timestamp in {0} was signed with an X.509 certificate");
+    public static final M REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_SAML_HOK = m(4908, Level.FINER, "Timestamp in {0} was signed with a SAML holder-of-key assertion");
+    public static final M REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_SC_KEY   = m(4909, Level.FINER, "Timestamp in {0} was signed with a WS-SecureConversation derived key");
+    public static final M REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED           = m(4910, Level.FINEST, "Message ID {0} in {1} has not been seen before");
+    public static final M REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_ENC_KEY  = m(4911, Level.FINER, "Timestamp in {0} was signed with an EncryptedKey");
+    public static final M REQUEST_WSS_REPLAY_REPLAY                         = m(4912, Level.WARNING, "Message ID {0} in {1} is a replay");
+    public static final M REQUEST_WSS_REPLAY_STALE_TIMESTAMP                = m(4913, Level.WARNING, "{0} timestamp contained stale Expires date");
+    public static final M REQUEST_WSS_REPLAY_CREATED_TOO_OLD                = m(4914, Level.WARNING, "{0} timestamp contained Created older than the maximum message age hard cap");
+    public static final M REQUEST_WSS_REPLAY_NO_SKI                         = m(4915, Level.WARNING, "Unable to generate replay-protection ID for {0}; a SKI cannot be derived from signing cert ''{1}''");
+    public static final M REQUEST_WSS_REPLAY_UNSUPPORTED_TOKEN_TYPE         = m(4916, Level.WARNING, "Unable to generate replay-protection ID for {0} timestamp -- it was signed, but with the unsupported token type {1}");
+    public static final M REQUEST_WSS_REPLAY_MULTIPLE_SENDER_IDS            = m(4917, Level.WARNING, "Found multiple eligible sender identity tokens in {0}; unable to proceed");
+    public static final M REQUEST_WSS_REPLAY_MULTIPLE_MESSAGE_IDS           = m(4918, Level.WARNING, "Found multiple signed wsa:MessageID values in {0}; unable to proceed");
+    public static final M REQUEST_WSS_REPLAY_GOT_SIGNED_MESSAGE_ID          = m(4919, Level.FINE, "Found signed wsa:MessageID in {0}: ''{1}''");
+    public static final M REQUEST_WSS_REPLAY_NO_SIGNED_MESSAGE_ID           = m(4920, Level.FINE, "No signed wsa:MessageID was present in {0}; using Timestamp instead");
 
     // ServerCustomAssertionHolder
     public static final M CA_CREDENTIAL_INFO                                = m(5000, Level.FINE, "Service:{0}, custom assertion: {1}, principal:{2}");
@@ -497,15 +497,15 @@ public class AssertionMessages extends Messages {
     public static final M WSI_SAML_RESPONSE_FAIL          = m(7705, Level.INFO, "Failing non WS-I SAML Token Profile compliant response");
     public static final M WSI_SAML_XPATH_ERROR            = m(7706, Level.WARNING, "Server WS-I SAML Token Profile rules are incorrect");
 
-    public static final M REQUEST_WSS_TIMESTAMP_NOTAPPLICABLE   = m(7800, Level.INFO, true, false, "The assertion is not applicable because the request is not XML or SOAP");
-    public static final M REQUEST_WSS_TIMESTAMP_NOTIMESTAMP     = m(7801, Level.INFO, "No Timestamp found in the request");
-    public static final M REQUEST_WSS_TIMESTAMP_NOT_SIGNED      = m(7802, Level.WARNING, "Timestamp found in the request, but was not signed");
-    public static final M REQUEST_WSS_TIMESTAMP_CREATED_FUTURE  = m(7803, Level.WARNING, "Timestamp found in the request, but Created time was too far in the future");
-    public static final M REQUEST_WSS_TIMESTAMP_EXPIRED         = m(7804, Level.WARNING, "Timestamp found in the request, but expired too long ago");
-    public static final M REQUEST_WSS_TIMESTAMP_NO_EXPIRES      = m(7805, Level.WARNING, "Timestamp found in the request, but has no Expires time");
-    public static final M REQUEST_WSS_TIMESTAMP_EXPIRES_TOOLATE = m(7806, Level.FINE, "Timestamp found in the request exceeds maximimum allowed lifetime, constraining to maximum");
-    public static final M REQUEST_WSS_TIMESTAMP_NO_CREATED      = m(7807, Level.WARNING, "Timestamp found in the request, but has no Created time");
-    public static final M REQUEST_WSS_TIMESTAMP_EXPIRED_TRUNC   = m(7809, Level.WARNING, "Timestamp found in the request, but is expired when constrained to maximum allowed lifetime");
+    public static final M REQUEST_WSS_TIMESTAMP_NOTAPPLICABLE   = m(7800, Level.INFO, true, false, "The assertion is not applicable because {0} is not XML or SOAP");
+    public static final M REQUEST_WSS_TIMESTAMP_NOTIMESTAMP     = m(7801, Level.INFO, "No Timestamp found in {0}");
+    public static final M REQUEST_WSS_TIMESTAMP_NOT_SIGNED      = m(7802, Level.WARNING, "Timestamp found in {0}, but was not signed");
+    public static final M REQUEST_WSS_TIMESTAMP_CREATED_FUTURE  = m(7803, Level.WARNING, "Timestamp found in {0}, but Created time was too far in the future");
+    public static final M REQUEST_WSS_TIMESTAMP_EXPIRED         = m(7804, Level.WARNING, "Timestamp found in {0}, but expired too long ago");
+    public static final M REQUEST_WSS_TIMESTAMP_NO_EXPIRES      = m(7805, Level.WARNING, "Timestamp found in {0}, but has no Expires time");
+    public static final M REQUEST_WSS_TIMESTAMP_EXPIRES_TOOLATE = m(7806, Level.FINE, "Timestamp found in {0} exceeds maximimum allowed lifetime, constraining to maximum");
+    public static final M REQUEST_WSS_TIMESTAMP_NO_CREATED      = m(7807, Level.WARNING, "Timestamp found in {0}, but has no Created time");
+    public static final M REQUEST_WSS_TIMESTAMP_EXPIRED_TRUNC   = m(7809, Level.WARNING, "Timestamp found in {0}, but is expired when constrained to maximum allowed lifetime");
 
     public static final M RESPONSE_WSS_TOKEN_UNSUPPORTED_TYPE = m(7900, Level.WARNING, "Unsupported security token type: {0}");
     public static final M RESPONSE_WSS_TOKEN_NO_CREDS         = m(7901, Level.WARNING, true, false, "No credentials were available from the request");

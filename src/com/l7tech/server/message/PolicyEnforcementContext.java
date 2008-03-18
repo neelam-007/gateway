@@ -9,9 +9,9 @@ import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Audit;
 import com.l7tech.common.audit.AuditDetail;
 import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
-import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.util.Pair;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -20,6 +20,7 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -43,6 +44,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
+import java.text.MessageFormat;
 
 /**
  * Holds message processing state needed by policy enforcement server (SSG) message processor and policy assertions.
@@ -536,37 +538,33 @@ public class PolicyEnforcementContext extends ProcessingContext {
         return assertionResultList;
     }
 
-    /**
-     * @param variableName
-     * @return a request message object as configured by this assertion
-     */
-    public Message getRequestMessage(final String variableName) {
-        if (variableName == null) {
-            return getRequest();
-        } else {
-            try {
+    public Message getTargetMessage(final MessageTargetable targetable) throws NoSuchVariableException {
+        switch(targetable.getTarget()) {
+            case REQUEST:
+                return getRequest();
+            case RESPONSE:
+                return getResponse();
+            case OTHER:
+                final String variableName = targetable.getOtherTargetMessageVariable();
+                if (variableName == null) throw new IllegalArgumentException("Target is OTHER but no variable name was set");
+
                 final Object messageSrc = getVariable(variableName);
                 if (!(messageSrc instanceof Message)) {
                     // Should never happen.
-                    throw new RuntimeException("Request message source (\"" + variableName +
-                            "\") is a context variable of the wrong type (expected=" + Message.class + ", actual=" + messageSrc.getClass() + ").");
+                    throw new RuntimeException(MessageFormat.format("Request message source (\"{0}\") is a context variable of the wrong type (expected={1}, actual={2}).", variableName, Message.class, messageSrc.getClass()));
                 }
-
-                Message msg = (Message)messageSrc;
+                final Message msg = (Message)messageSrc;
                 final HttpRequestKnob existingHrk = (HttpRequestKnob) msg.getKnob(HttpRequestKnob.class);
-                if (existingHrk != null) return msg;
-
-                // Inherits the HttpRequestKnob from the default request if present.
-                final HttpRequestKnob defaultHRK = (HttpRequestKnob)getRequest().getKnob(HttpRequestKnob.class);
-                if (defaultHRK != null) {
-                    msg.attachHttpRequestKnob(defaultHRK);
+                if (existingHrk == null) {
+                    // Inherits the HttpRequestKnob from the default request if present.
+                    final HttpRequestKnob defaultHRK = (HttpRequestKnob)getRequest().getKnob(HttpRequestKnob.class);
+                    if (defaultHRK != null) {
+                        msg.attachHttpRequestKnob(defaultHRK);
+                    }
                 }
-
                 return msg;
-            } catch (NoSuchVariableException e) {
-                // Should never happen.
-                throw new RuntimeException("Request message source is a non-existent context variable (\"" + variableName + "\").");
-            }
+            default:
+                throw new IllegalArgumentException("Unsupported message target: " + targetable.getTarget());
         }
     }
 

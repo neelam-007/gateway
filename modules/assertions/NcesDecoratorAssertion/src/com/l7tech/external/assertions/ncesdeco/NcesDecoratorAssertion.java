@@ -33,11 +33,12 @@ import java.util.List;
  * </ul> 
  */
 @RequiresSOAP
-public class NcesDecoratorAssertion extends Assertion implements PrivateKeyable, UsesVariables {
+public class NcesDecoratorAssertion
+    extends MessageTargetableAssertion
+    implements PrivateKeyable, UsesVariables 
+{
     private static final String META_INITIALIZED = NcesDecoratorAssertion.class.getName() + ".metadataInitialized";
 
-    private TargetMessageType target = TargetMessageType.REQUEST;
-    private String otherTargetMessageVariable;
     private String messageIdUriPrefix;
     private int samlAssertionVersion;
     private String wsaNamespaceUri;
@@ -93,30 +94,14 @@ public class NcesDecoratorAssertion extends Assertion implements PrivateKeyable,
      * @deprecated use {@link #getTarget} instead TODO DELETE
      */
     public boolean isOperateOnResponse() {
-        return target == TargetMessageType.RESPONSE;
+        return getTarget() == TargetMessageType.RESPONSE;
     }
 
     /**
      * @deprecated use {@link #setTarget} instead TODO DELETE
      */
     public void setOperateOnResponse(boolean operateOnResponse) {
-        this.target = operateOnResponse ? TargetMessageType.RESPONSE : TargetMessageType.REQUEST;
-    }
-
-    public TargetMessageType getTarget() {
-        return target;
-    }
-
-    public void setTarget(TargetMessageType target) {
-        this.target = target;
-    }
-
-    public String getOtherTargetMessageVariable() {
-        return otherTargetMessageVariable;
-    }
-
-    public void setOtherTargetMessageVariable(String otherTargetMessageVariable) {
-        this.otherTargetMessageVariable = otherTargetMessageVariable;
+        setTarget(operateOnResponse ? TargetMessageType.RESPONSE : TargetMessageType.REQUEST);
     }
 
     public String getSamlAssertionTemplate() {
@@ -129,8 +114,8 @@ public class NcesDecoratorAssertion extends Assertion implements PrivateKeyable,
 
     public String[] getVariablesUsed() {
         List<String> vars = new ArrayList<String>();
+        vars.addAll(Arrays.asList(super.getVariablesUsed()));
         if (samlIncluded && samlAssertionTemplate != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(samlAssertionTemplate)));
-        if (otherTargetMessageVariable != null) vars.add(otherTargetMessageVariable);
         return vars.toArray(new String[0]);
     }
 

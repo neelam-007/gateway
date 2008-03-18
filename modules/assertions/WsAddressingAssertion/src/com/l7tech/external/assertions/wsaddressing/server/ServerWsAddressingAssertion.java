@@ -7,9 +7,11 @@ import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.message.Message;
 import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -57,16 +59,22 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     /**
      * 
      */
-    public AssertionStatus checkRequest(final PolicyEnforcementContext context)
-            throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         AssertionStatus status = AssertionStatus.FALSIFIED;
+        final Message msg;
+        try {
+            msg = context.getTargetMessage(assertion);
+        } catch (NoSuchVariableException e) {
+            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+            return AssertionStatus.FAILED;
+        }
 
         try {
             Map<QName, String> addressingProperties = new HashMap();
             if ( assertion.isRequireSignature() ) {
-                populateAddressingFromSignedElements(getSignedElements(context), addressingProperties);
+                populateAddressingFromSignedElements(getSignedElements(msg), addressingProperties);
             } else {
-                populateAddressingFromMessage(getElementCursor(context), addressingProperties);
+                populateAddressingFromMessage(getElementCursor(msg), addressingProperties);
             }
 
             if ( assertion.isEnableWsAddressing10() && addressingPresent(addressingProperties, SoapUtil.WSA_NAMESPACE_10) ) {
@@ -219,17 +227,17 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     /**
      * Get signed elements for request message of given context. 
      */
-    private SignedElement[] getSignedElements(final PolicyEnforcementContext context)
+    private SignedElement[] getSignedElements(final Message msg)
             throws AddressingProcessingException, IOException {
         ProcessorResult wssResults;
 
         try {
-            if (!context.getRequest().isSoap()) {
+            if (!msg.isSoap()) {
                 auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP);
                 throw new AddressingProcessingException("Request is not SOAP", AssertionStatus.NOT_APPLICABLE);
             }
 
-            wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
+            wssResults = msg.getSecurityKnob().getProcessorResult();
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }
@@ -245,9 +253,9 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     /**
      * Get the ElementCursor for the request message
      */
-    private ElementCursor getElementCursor(final PolicyEnforcementContext context) throws IOException {
+    private ElementCursor getElementCursor(final Message msg) throws IOException {
         try {
-            return context.getRequest().getXmlKnob().getElementCursor();
+            return msg.getXmlKnob().getElementCursor();
         } catch (SAXException se) {
              throw new CausedIOException(se);    
         }

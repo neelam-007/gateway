@@ -1,9 +1,9 @@
 package com.l7tech.external.assertions.ncesval;
 
+import com.l7tech.common.security.CertificateValidationType;
+import com.l7tech.policy.CertificateInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
-import com.l7tech.policy.CertificateInfo;
-import com.l7tech.common.security.CertificateValidationType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,30 +19,12 @@ import java.util.logging.Logger;
  * </ul>
  */
 @RequiresSOAP(wss=true)
-public class NcesValidatorAssertion extends Assertion implements UsesVariables {
+public class NcesValidatorAssertion extends MessageTargetableAssertion implements UsesVariables {
     protected static final Logger logger = Logger.getLogger(NcesValidatorAssertion.class.getName());
 
     private boolean samlRequired;
-    private TargetMessageType target = TargetMessageType.REQUEST;
-    private String otherMessageVariableName;
     private CertificateValidationType certificateValidationType;
     private CertificateInfo[] trustedCertificateInfo;
-
-    public TargetMessageType getTarget() {
-        return target;
-    }
-
-    public void setTarget(TargetMessageType target) {
-        this.target = target;
-    }
-
-    public String getOtherMessageVariableName() {
-        return otherMessageVariableName;
-    }
-
-    public void setOtherMessageVariableName(String otherMessageVariableName) {
-        this.otherMessageVariableName = otherMessageVariableName;
-    }
 
     public boolean isSamlRequired() {
         return samlRequired;
@@ -68,17 +50,11 @@ public class NcesValidatorAssertion extends Assertion implements UsesVariables {
         this.trustedCertificateInfo = trustedCertificateInfo;
     }
 
-    public String[] getVariablesUsed() {
-        if (otherMessageVariableName != null) return new String[] { otherMessageVariableName };
-        return new String[0];
-    }
-
     //
     // Metadata
     //
     private static final String META_INITIALIZED = NcesValidatorAssertion.class.getName() + ".metadataInitialized";
 
-    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -96,9 +72,9 @@ public class NcesValidatorAssertion extends Assertion implements UsesVariables {
         meta.put(AssertionMetadata.SHORT_NAME, "NCES Validator");
         meta.put(AssertionMetadata.LONG_NAME, "Validate Message for NCES Compliance");
 
-        // Add to palette folder(s) 
-        //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
-        //   misc, audit, policyLogic, threatProtection 
+        // Add to palette folder(s)
+        //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,
+        //   misc, audit, policyLogic, threatProtection
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
 
@@ -119,4 +95,10 @@ public class NcesValidatorAssertion extends Assertion implements UsesVariables {
         return meta;
     }
 
+    /**
+     * @deprecated this is only for backward compatibility with the old property name
+     */
+    public void setOtherMessageVariableName(String otherMessageVariableName) {
+        setOtherTargetMessageVariable(otherMessageVariableName);
+    }
 }

@@ -9,9 +9,15 @@ import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.token.EncryptedKey;
 import com.l7tech.common.security.token.KerberosSecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.message.SecurityKnob;
+import com.l7tech.common.audit.Audit;
+import com.l7tech.common.audit.MessageProcessingMessages;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -51,6 +57,29 @@ public class WssProcessorUtil {
         random.nextBytes(rand);
         String id = "VirtualBinarySecurityToken-1-" + HexUtils.hexDump(rand);
         return new KerberosSecurityTokenImpl(ticket, id);
+    }
+
+    public static ProcessorResult getWssResults(final Message msg, final String what, 
+                                                final SecurityTokenResolver securityTokenResolver, final Audit audit)
+    {
+        final ProcessorResult wssResults;
+        final SecurityKnob sk = (SecurityKnob)msg.getKnob(SecurityKnob.class);
+        if (sk != null) {
+            wssResults = sk.getProcessorResult();
+            if (wssResults == null && audit != null) audit.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_NO_WSS, what);
+            return wssResults;
+        } else {
+            try {
+                final WssProcessorImpl impl = new WssProcessorImpl(msg);
+                impl.setSecurityTokenResolver(securityTokenResolver);
+                wssResults = impl.processMessage();
+                msg.getSecurityKnob().setProcessorResult(wssResults); // In case someone else needs it later
+                return wssResults;
+            } catch (Exception e) {
+                if (audit != null) audit.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_BAD_WSS, new String[] { what, ExceptionUtils.getMessage(e) }, e);
+                return null;
+            }
+        }
     }
 
     /**

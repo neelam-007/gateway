@@ -3,43 +3,40 @@
  */
 package com.l7tech.external.assertions.ncesval.console;
 
-import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
-import com.l7tech.console.panels.NewTrustedCertificateAction;
-import com.l7tech.console.panels.CertSearchPanel;
-import com.l7tech.console.panels.CertPropertiesWindow;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.event.CertListener;
-import com.l7tech.console.event.CertEvent;
-import com.l7tech.external.assertions.ncesval.NcesValidatorAssertion;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.CertificateInfo;
-import com.l7tech.common.gui.util.RunOnChangeListener;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.widgets.TargetMessagePanel;
+import com.l7tech.common.security.CertificateValidationType;
+import com.l7tech.common.security.RevocationCheckPolicy;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.RevocationCheckPolicy;
-import com.l7tech.common.security.CertificateValidationType;
-import com.l7tech.common.util.ResolvingComparator;
-import com.l7tech.common.util.Resolver;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.Resolver;
+import com.l7tech.common.util.ResolvingComparator;
+import com.l7tech.console.event.CertEvent;
+import com.l7tech.console.event.CertListener;
+import com.l7tech.console.panels.*;
+import com.l7tech.console.util.Registry;
+import com.l7tech.external.assertions.ncesval.NcesValidatorAssertion;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.CertificateInfo;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.text.SimpleDateFormat;
+import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.security.cert.CertificateException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /** @author alex */
 public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesEditorSupport<NcesValidatorAssertion> {
-
-    //- PUBLIC
+    private NcesValidatorAssertion assertion;
 
     public NcesValidatorAssertionPropertiesDialog(Dialog owner) {
         super(owner, "NCES Validator Properties", true);
@@ -56,20 +53,8 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
     }
 
     public void setData(NcesValidatorAssertion assertion) {
-        switch(assertion.getTarget()) {
-            case REQUEST:
-                requestRadioButton.setSelected(true);
-                break;
-            case RESPONSE:
-                responseRadioButton.setSelected(true);
-                break;
-            case OTHER:
-                otherRadioButton.setSelected(true);
-                otherMessageVariableTextfield.setText(assertion.getOtherMessageVariableName());
-                break;
-            default:
-                throw new IllegalStateException();
-        }
+        this.assertion = assertion;
+        targetMessagePanel.setModel(assertion);
         samlCheckbox.setSelected(assertion.isSamlRequired());
         validationOptionComboBox.setSelectedItem(assertion.getCertificateValidationType());
         try {
@@ -82,23 +67,7 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
     }
 
     public NcesValidatorAssertion getData(NcesValidatorAssertion assertion) {
-        final TargetMessageType target;
-        final String messageName;
-        if (requestRadioButton.isSelected()) {
-            target = TargetMessageType.REQUEST;
-            messageName = null;
-        } else if (responseRadioButton.isSelected()) {
-            target = TargetMessageType.RESPONSE;
-            messageName = null;
-        } else if (otherRadioButton.isSelected()) {
-            target = TargetMessageType.OTHER;
-            messageName = otherMessageVariableTextfield.getText();
-        } else {
-            throw new IllegalStateException();
-        }
-
-        assertion.setTarget(target);
-        assertion.setOtherMessageVariableName(messageName);
+        targetMessagePanel.updateModel(assertion);
         assertion.setSamlRequired(samlCheckbox.isSelected());
         assertion.setCertificateValidationType((CertificateValidationType) validationOptionComboBox.getSelectedItem());
         assertion.setTrustedCertificateInfo(getTrustedSigners(trustedCertificates));
@@ -118,12 +87,8 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
     private static final String RES_VALTYPE_DEFAULT = "default";
 
     private JCheckBox samlCheckbox;
-    private JTextField otherMessageVariableTextfield;
     private JButton okButton;
     private JButton cancelButton;
-    private JRadioButton requestRadioButton;
-    private JRadioButton responseRadioButton;
-    private JRadioButton otherRadioButton;
     private JPanel mainPanel;
     private JTable trustedCertsTable;
     private JButton addButton;
@@ -131,20 +96,17 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
     private JButton propertiesButton;
     private JButton createButton;
     private JComboBox validationOptionComboBox;
+    private TargetMessagePanel targetMessagePanel;
 
     private volatile boolean ok = false;
     private Collection<RevocationCheckPolicy> policies;
     private final java.util.List<TrustedCert> trustedCertificates = new ArrayList<TrustedCert>();
-    private final RunOnChangeListener enableDisableListener = new RunOnChangeListener(new Runnable() {
-        public void run() {
-            enableDisable();
-        }
-    });
 
     private void initialize() {
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ok = true;
+                targetMessagePanel.updateModel(assertion);
                 dispose();
             }
         });
@@ -153,6 +115,12 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
             public void actionPerformed(ActionEvent e) {
                 ok = false;
                 dispose();
+            }
+        });
+
+        targetMessagePanel.addPropertyChangeListener("valid", new PropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent evt) {
+                okButton.setEnabled(Boolean.TRUE.equals(evt.getNewValue()));
             }
         });
 
@@ -180,11 +148,6 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
             }
         }, createButton.getText()));
 
-        requestRadioButton.addActionListener(enableDisableListener);
-        responseRadioButton.addActionListener(enableDisableListener);
-        otherRadioButton.addActionListener(enableDisableListener);
-        otherMessageVariableTextfield.getDocument().addDocumentListener(enableDisableListener);
-
         DefaultComboBoxModel model = new DefaultComboBoxModel(CertificateValidationType.values());
         model.insertElementAt(null, 0);
         validationOptionComboBox.setModel(model);
@@ -194,14 +157,7 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
         trustedCertsTable.setSelectionMode( ListSelectionModel.SINGLE_SELECTION );
         Utilities.setDoubleClickAction(trustedCertsTable, propertiesButton);
 
-        enableDisable();
-
         add(mainPanel);
-    }
-
-    private void enableDisable() {
-        otherMessageVariableTextfield.setEnabled(otherRadioButton.isSelected());
-        okButton.setEnabled(!otherRadioButton.isSelected() || otherMessageVariableTextfield.getText().length() > 0);
     }
 
     /**
@@ -262,7 +218,7 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
             try {
                 signers.add( new CertificateInfo(cert.getCertificate()) );
             } catch ( CertificateException ce ) {
-                logger.log( Level.WARNING, "Error processing trusted certificate '"+cert.getName()+"'.", ce );          
+                logger.log( Level.WARNING, "Error processing trusted certificate '"+cert.getName()+"'.", ce );
             }
         }
 
@@ -412,7 +368,7 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
             names.put("validation.option.CERTIFICATE_ONLY","Validate Certificate Path");
             names.put("validation.option.PATH_VALIDATION","Validate Certificate Path");
             names.put("validation.option.REVOCATION","Revocation Checking");
-            names.put("validation.option.default","Use Default");        
+            names.put("validation.option.default","Use Default");
         }
 
         public Component getListCellRendererComponent( JList list,
@@ -445,5 +401,12 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
 
             return this;
         }
-    }    
+    }
+
+    public static void main(String[] args) {
+        NcesValidatorAssertionPropertiesDialog dlg = new NcesValidatorAssertionPropertiesDialog(new JFrame());
+        dlg.setData(new NcesValidatorAssertion());
+        dlg.pack();
+        dlg.setVisible(true);
+    }
 }

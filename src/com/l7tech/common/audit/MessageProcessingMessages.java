@@ -37,6 +37,9 @@ public class MessageProcessingMessages extends Messages {
     public static final M METHOD_NOT_ALLOWED_FAULT    = m(3024, Level.INFO, "HTTP method {0} not allowed");
     public static final M ERROR_WSS_SIGNATURE         = m(3025, Level.INFO, "Error in WSS signature processing: {0}");
     public static final M MESSAGE_NO_WSS              = m(3026, Level.INFO, "Message did not contain any WSS level security");
+    public static final M MESSAGE_VAR_NOT_SOAP        = m(3027, Level.INFO, "{0} is not SOAP");
+    public static final M MESSAGE_VAR_NO_WSS          = m(3028, Level.INFO, "{0} did not contain any WSS level security");
+    public static final M MESSAGE_VAR_BAD_WSS         = m(3029, Level.INFO, "{0} WSS processing failed: {1}");    
 
     // Service resolver messages
     public static final M SR_HTTPURI_CACHEDFAIL      = m(3100, Level.FINE, "Using cached failure @\"{0}\"");

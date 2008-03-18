@@ -1,9 +1,9 @@
 package com.l7tech.external.assertions.wsaddressing;
 
 import com.l7tech.common.util.Functions;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.policy.variable.DataType;
@@ -19,8 +19,7 @@ import java.util.Set;
  *
  * <p>Optionally sets variables for the message properties found.</p> 
  */
-public class WsAddressingAssertion extends Assertion implements SetsVariables {
-
+public class WsAddressingAssertion extends MessageTargetableAssertion implements SetsVariables {
     //- PUBLIC
     
     public static final String VAR_SUFFIX_TO = "to";

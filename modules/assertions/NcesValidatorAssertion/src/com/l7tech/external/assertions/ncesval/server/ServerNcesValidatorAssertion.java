@@ -3,43 +3,40 @@ package com.l7tech.external.assertions.ncesval.server;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.SecurityKnob;
-import com.l7tech.common.security.token.SignedElement;
-import com.l7tech.common.security.token.SigningSecurityToken;
-import com.l7tech.common.security.token.XmlSecurityToken;
-import com.l7tech.common.security.token.X509SecurityToken;
-import com.l7tech.common.security.token.X509SigningSecurityToken;
+import com.l7tech.common.security.CertificateValidationResult;
+import com.l7tech.common.security.CertificateValidationType;
+import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssProcessorImpl;
-import com.l7tech.common.security.CertificateValidationResult;
-import com.l7tech.common.security.CertificateValidationType;
-import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.external.assertions.ncesval.NcesValidatorAssertion;
+import com.l7tech.identity.cert.TrustedCertManager;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.CertificateInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.CertificateInfo;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.security.cert.CertValidationProcessor;
-import com.l7tech.identity.cert.TrustedCertManager;
-import com.l7tech.objectmodel.FindException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
 /**
@@ -67,28 +64,13 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Message msg;
-        final String what;
-        switch(assertion.getTarget()) {
-            case REQUEST:
-                what = "request";
-                msg = context.getRequest();
-                break;
-            case RESPONSE:
-                what = "response";
-                msg = context.getResponse();
-                break;
-            case OTHER:
-                what = assertion.getOtherMessageVariableName();
-                if (what == null) throw new PolicyAssertionException(assertion, "Target is OTHER but OtherMessageVariableName is null");
-                msg = context.getRequestMessage(what);
-                if (msg == null) {
-                    auditor.logAndAudit(AssertionMessages.NCESVALID_NO_MSG, what);
-                    return AssertionStatus.FAILED;
-                }
-                break;
-            default:
-                throw new IllegalStateException("Unsupported TargetMessageType: " + assertion.getTarget());
+        try {
+            msg = context.getTargetMessage(assertion);
+        } catch (NoSuchVariableException e) {
+            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+            return AssertionStatus.FAILED;
         }
+        final String what = assertion.getTargetName();
 
         try {
             if (!msg.isSoap(true)) {
@@ -209,7 +191,7 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
     }
 
     /**
-     * Ensure signing certificate is valid / trusted 
+     * Ensure signing certificate is valid / trusted
      */
     private boolean certificateValid( final X509Certificate cert, final String what ) {
         boolean valid = false;

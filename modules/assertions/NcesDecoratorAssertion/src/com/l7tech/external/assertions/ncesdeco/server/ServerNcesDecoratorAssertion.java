@@ -19,6 +19,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.external.assertions.ncesdeco.NcesDecoratorAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -73,23 +74,13 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Message msg;
-        final String what;
-        switch(assertion.getTarget()) {
-            case REQUEST:
-                msg = context.getRequest();
-                what = "request";
-                break;
-            case RESPONSE:
-                msg = context.getResponse();
-                what = "response";
-                break;
-            case OTHER:
-                msg = context.getRequestMessage(assertion.getOtherTargetMessageVariable());
-                what = assertion.getOtherTargetMessageVariable();
-                break;
-            default:
-                throw new PolicyAssertionException(assertion, "Unsupported decoration target: " + assertion.getTarget());
+        try {
+            msg = context.getTargetMessage(assertion);
+        } catch (NoSuchVariableException e) {
+            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+            return AssertionStatus.FAILED;
         }
+        final String what = assertion.getTargetName();
 
         try {
             if (!msg.isSoap()) {

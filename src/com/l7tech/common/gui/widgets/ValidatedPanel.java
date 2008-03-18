@@ -188,7 +188,7 @@ public abstract class ValidatedPanel<V> extends JPanel {
     /**
      * Called when the OK button is pressed; it's now time to update the model from the view.
      */
-    void updateModel() {
+    public void updateModel() {
         doUpdateModel();
     }
 

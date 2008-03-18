@@ -4,10 +4,10 @@
 package com.l7tech.external.assertions.ncesdeco.console;
 
 import com.l7tech.common.gui.util.RunOnChangeListener;
+import com.l7tech.common.gui.widgets.TargetMessagePanel;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.external.assertions.ncesdeco.NcesDecoratorAssertion;
-import com.l7tech.policy.assertion.TargetMessageType;
 
 import javax.swing.*;
 import java.awt.*;
@@ -24,8 +24,6 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
     private JRadioButton samlInternalRadioButton;
     private JTextField samlTemplateField;
     private JTextField uuidUriPrefixTextField;
-    private JRadioButton requestRadioButton;
-    private JRadioButton responseRadioButton;
     private JRadioButton macBasedUuidRadioButton;
     private JRadioButton randomUuidRadioButton;
     private JButton okButton;
@@ -34,14 +32,13 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
     private JRadioButton samlWsuIdRadioButton;
     private JRadioButton saml11RadioButton;
     private JRadioButton saml20RadioButton;
-    private JRadioButton otherRadioButton;
-    private JTextField messageSourceVariableTextField;
     private JRadioButton wsa200403RadioButton;
     private JRadioButton wsa10RadioButton;
     private JRadioButton wsa200408RadioButton;
     private JRadioButton samlNoneRadioButton;
     private JRadioButton wsaOtherRadioButton;
     private JTextField wsaOtherTextField;
+    private TargetMessagePanel targetMessagePanel;
 
     private final RunOnChangeListener enableDisableListener = new RunOnChangeListener(new Runnable() {
         public void run() {
@@ -77,7 +74,6 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
         }
 
         addEnableListener(samlInternalRadioButton, samlTemplateRadioButton, samlNoneRadioButton,
-                          requestRadioButton, responseRadioButton,
                           wsa10RadioButton, wsa200403RadioButton, wsa200408RadioButton, wsaOtherRadioButton);
 
         uuidUriPrefixTextField.setText(assertion.getMessageIdUriPrefix());
@@ -93,18 +89,8 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
             wsaOtherTextField.setText(wsaNs);
         }
 
-        switch(assertion.getTarget()) {
-        case REQUEST:
-            requestRadioButton.setSelected(true);
-            break;
-        case RESPONSE:
-            responseRadioButton.setSelected(true);
-            break;
-        case OTHER:
-            otherRadioButton.setSelected(true);
-            messageSourceVariableTextField.setText(assertion.getOtherTargetMessageVariable());
-            break;
-        }
+        targetMessagePanel.setTitle("Apply NCES Decoration To");
+        targetMessagePanel.setModel(assertion);
 
         if (assertion.isNodeBasedUuid()) {
             macBasedUuidRadioButton.setSelected(true);
@@ -122,16 +108,7 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
             public void actionPerformed(ActionEvent e) {
                 assertion.setMessageIdUriPrefix(uuidUriPrefixTextField.getText());
                 assertion.setNodeBasedUuid(macBasedUuidRadioButton.isSelected());
-                if (requestRadioButton.isSelected()) {
-                    assertion.setTarget(TargetMessageType.REQUEST);
-                    assertion.setOtherTargetMessageVariable(null);
-                } else if (responseRadioButton.isSelected()) {
-                    assertion.setTarget(TargetMessageType.RESPONSE);
-                    assertion.setOtherTargetMessageVariable(null);
-                } else if (otherRadioButton.isSelected()) {
-                    assertion.setTarget(TargetMessageType.OTHER);
-                    assertion.setOtherTargetMessageVariable(messageSourceVariableTextField.getText());
-                } else throw new IllegalStateException();
+                targetMessagePanel.updateModel(assertion);
 
                 if (samlNoneRadioButton.isSelected()) {
                     assertion.setSamlIncluded(false);

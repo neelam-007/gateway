@@ -50,14 +50,16 @@
         <attribute name="include" default="**/*.form"/>
         <sequential>
             <javac2t
-                    srcdir="@{srcdir}"
                     destdir="@{destdir}"
                     debug="@{debug}"
                     target="@{target}"
                     optimize="@{optimize}"
                     source="@{source}"
                     classpathref="@{classpathref}">
+                <src path="@{srcdir}"/>
+                <src path="${UneasyRooster.dir}/src/com/l7tech/common/gui/widgets"/>
                 <include name="@{include}"/>
+                <include name="**/*.java"/>
             </javac2t>
         </sequential>
     </macrodef>
@@ -161,7 +163,7 @@
         </javac>
 
         <!-- IntelliJ forms -->
-        <javac2 srcdir="src" destdir="${build.classes}"/>
+        <javac2 destdir="${build.classes}" srcdir="src"/>
     </target>
 
     <target name="checkobf">
@@ -225,7 +227,10 @@
                 <!-- space-separated list of filename patterns, with simple * and ? support, ie:  "foov?-L7*.jar blatch*.jar" -->
                 <attribute name="ModularAssertion-Private-Libraries" value="${privateLibraries}"/>
             </manifest>
-            <fileset dir="build/classes" excludes="**/*.form"/>
+            <fileset dir="build/classes">
+                <exclude name="**/*.form"/>
+                <exclude name="com/l7tech/common/**/*"/>
+            </fileset>
             <fileset dir="build" includes="AAR-INF/**/*"/>
         </jar>
     </target>
