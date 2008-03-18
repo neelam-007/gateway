@@ -1,10 +1,7 @@
 package com.l7tech.external.assertions.wsaddressing;
 
 import com.l7tech.common.util.Functions;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.MessageTargetableAssertion;
-import com.l7tech.policy.assertion.SetsVariables;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -192,7 +189,8 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
                     sb.append("signed ");
                 }
 
-                sb.append("WS-Addressing in request");
+                sb.append("WS-Addressing in ");
+                sb.append(addressingAssertion.getTargetName());
 
                 return sb.toString();
             }
@@ -202,7 +200,7 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
             public Set<ValidatorFlag> call(WsAddressingAssertion assertion) {
                 Set<ValidatorFlag> flags = Collections.emptySet();
 
-                if ( assertion.isRequireSignature() ) {
+                if ( assertion.getTarget() == TargetMessageType.REQUEST && assertion.isRequireSignature() ) {
                     flags = Collections.singleton(ValidatorFlag.REQUIRE_SIGNATURE);
                 }
 

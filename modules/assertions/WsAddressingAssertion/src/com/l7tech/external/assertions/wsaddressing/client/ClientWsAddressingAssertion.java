@@ -8,6 +8,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
@@ -42,6 +43,9 @@ public class ClientWsAddressingAssertion extends ClientAssertion {
     }
 
     public AssertionStatus decorateRequest(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException, ConfigurationException {
+        // No useful SSB behaviour if target != request
+        if (assertion.getTarget() != TargetMessageType.REQUEST) return AssertionStatus.NONE;
+
         final Map<String, String> props = context.getSsg().getProperties();
 
         // TODO make the MessageID prefix configurable in the assertion instead of just locally?

@@ -2,12 +2,14 @@ package com.l7tech.external.assertions.wsaddressing.server;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.MessageProcessingMessages;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.security.token.SignedElement;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.WssProcessorUtil;
+import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.message.Message;
 import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -35,6 +37,8 @@ import java.util.logging.Logger;
 public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddressingAssertion> {
     private final String otherNamespaceUri = assertion.getEnableOtherNamespace();
     private final String[] acceptableNamespaces;
+    private final SecurityTokenResolver securityTokenResolver;
+
     {
         if (otherNamespaceUri != null && otherNamespaceUri.length() > 0) {
             this.acceptableNamespaces = new String[NS_ADDRESSING.length+1];
@@ -54,6 +58,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                                        final ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
         this.auditor = new Auditor(this, context, logger);
+        this.securityTokenResolver = (SecurityTokenResolver)context.getBean("securityTokenResolver");
     }
 
     /**
@@ -72,7 +77,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
         try {
             Map<QName, String> addressingProperties = new HashMap();
             if ( assertion.isRequireSignature() ) {
-                populateAddressingFromSignedElements(getSignedElements(msg), addressingProperties);
+                populateAddressingFromSignedElements(getSignedElements(msg, null), addressingProperties);
             } else {
                 populateAddressingFromMessage(getElementCursor(msg), addressingProperties);
             }
@@ -123,6 +128,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                                        final Auditor auditor) throws PolicyAssertionException {
         super(assertion);
         this.auditor = auditor;
+        this.securityTokenResolver = null;
     }
 
     /**
@@ -227,7 +233,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     /**
      * Get signed elements for request message of given context. 
      */
-    private SignedElement[] getSignedElements(final Message msg)
+    private SignedElement[] getSignedElements(final Message msg, String what)
             throws AddressingProcessingException, IOException {
         ProcessorResult wssResults;
 
@@ -237,7 +243,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                 throw new AddressingProcessingException("Request is not SOAP", AssertionStatus.NOT_APPLICABLE);
             }
 
-            wssResults = msg.getSecurityKnob().getProcessorResult();
+            wssResults = WssProcessorUtil.getWssResults(msg, what, securityTokenResolver, auditor);
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }

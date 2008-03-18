@@ -2,6 +2,7 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.*;
@@ -39,6 +40,8 @@ public class ClientRequestWssReplayProtection extends ClientAssertion {
             GeneralSecurityException, IOException, KeyStoreCorruptException, HttpChallengeRequiredException,
             PolicyRetryableException, ClientCertificateException
     {
+        // Not applicable if target is not request
+        if (requestWssReplayProtection.getTarget() != TargetMessageType.REQUEST) return AssertionStatus.NONE;
         context.getSsg().getServerCertificateAlways();
 
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds

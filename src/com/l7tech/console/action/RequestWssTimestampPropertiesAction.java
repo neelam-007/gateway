@@ -3,8 +3,8 @@
  */
 package com.l7tech.console.action;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.RequestWssTimestampDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
@@ -13,9 +13,9 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.xmlsec.RequestWssTimestamp;
 
 import javax.swing.*;
+import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.awt.*;
 
 /**
  * Edits the {@link com.l7tech.policy.assertion.xmlsec.RequestWssTimestamp} properties.
@@ -32,7 +32,7 @@ public class RequestWssTimestampPropertiesAction extends NodeAction {
      */
     @Override
     public String getName() {
-        return "Require Timestamp in Request Properties";
+        return "Timestamp Properties";
     }
 
     /**
@@ -40,7 +40,7 @@ public class RequestWssTimestampPropertiesAction extends NodeAction {
      */
     @Override
     public String getDescription() {
-        return "View/Edit Require Timestamp Assertion Properties";
+        return "View/Edit Timestamp Assertion Properties";
     }
 
     /**
@@ -48,7 +48,7 @@ public class RequestWssTimestampPropertiesAction extends NodeAction {
      */
     @Override
     protected String iconResource() {
-        return "com/l7tech/console/resources/About16.gif";
+        return "com/l7tech/console/resources/Properties16.gif";
     }
 
     /**

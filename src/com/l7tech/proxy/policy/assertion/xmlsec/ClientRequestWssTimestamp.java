@@ -7,6 +7,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xmlsec.RequestWssTimestamp;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.exceptions.*;
@@ -32,6 +33,9 @@ public class ClientRequestWssTimestamp extends ClientAssertion {
     }
 
     public AssertionStatus decorateRequest(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException, ConfigurationException {
+        // No useful SSB behaviour when target != request
+        if (assertion.getTarget() != TargetMessageType.REQUEST) return AssertionStatus.NONE;
+
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException, ConfigurationException {
                 DecorationRequirements wssReqs;

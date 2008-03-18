@@ -19,6 +19,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.external.assertions.ncesdeco.NcesDecoratorAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -92,9 +93,17 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
             return AssertionStatus.BAD_REQUEST;
         }
 
-        if (context.getLastCredentials() == null) {
+        final String template = assertion.getSamlAssertionTemplate();
+        if (assertion.isSamlIncluded() && (template == null || template.length() == 0) && context.getLastCredentials() == null) {
             auditor.logAndAudit(AssertionMessages.NCESDECO_NO_CREDS);
-            return AssertionStatus.AUTH_REQUIRED;
+            if (assertion.getTarget() == TargetMessageType.REQUEST) {
+                // No point setting these flags for creds missing from non-request 
+                context.setAuthenticationMissing();
+                context.setRequestPolicyViolated();
+                return AssertionStatus.AUTH_REQUIRED;
+            } else {
+                return AssertionStatus.FAILED;
+            }
         }
 
         DecorationRequirements decoReq = new DecorationRequirements();

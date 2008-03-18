@@ -7,17 +7,20 @@ import com.l7tech.console.action.RequestWssTimestampPropertiesAction;
 import com.l7tech.policy.assertion.xmlsec.RequestWssTimestamp;
 
 import javax.swing.*;
+import java.text.MessageFormat;
 
 /**
  * Specifies the policy element that represents the soap response timestamp requirement.
  */
-public class RequestWssTimestampPolicyNode extends LeafAssertionTreeNode {
+public class RequestWssTimestampPolicyNode extends LeafAssertionTreeNode<RequestWssTimestamp> {
     public RequestWssTimestampPolicyNode(RequestWssTimestamp assertion) {
         super(assertion);
     }
 
     public String getName() {
-        return "Require Timestamp in Request";
+        return MessageFormat.format("Require {0}Timestamp in {1}",
+                                    assertion.isSignatureRequired() ? "signed " : "",
+                                    assertion.getTargetName());
     }
 
     public Action getPreferredAction() {

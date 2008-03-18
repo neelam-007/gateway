@@ -71,6 +71,8 @@ public class RequestWssTimestamp extends MessageTargetableAssertion implements S
         this.maxExpiryMilliseconds = other.maxExpiryMilliseconds;
         this.signatureRequired = other.signatureRequired;
         this.recipientContext = other.recipientContext;
+        this.setTarget(other.getTarget());
+        this.setOtherTargetMessageVariable(other.getOtherTargetMessageVariable());
     }
 
     private TimeUnit timeUnit = TimeUnit.MINUTES;

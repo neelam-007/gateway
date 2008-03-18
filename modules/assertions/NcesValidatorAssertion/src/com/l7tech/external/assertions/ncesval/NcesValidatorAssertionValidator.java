@@ -37,10 +37,11 @@ public class NcesValidatorAssertionValidator implements AssertionValidator {
                     }
                 }
 
-                if ( assertion.getTrustedCertificateInfo() == null || assertion.getTrustedCertificateInfo().length == 0 ) {
+                if ( (assertion.getTrustedCertificateInfo() == null || assertion.getTrustedCertificateInfo().length == 0) &&
+                     (assertion.getTrustedIssuerCertificateInfo() == null || assertion.getTrustedIssuerCertificateInfo().length == 0) ) {
                     result.addWarning(
                         new PolicyValidatorResult.Warning(assertion, path,
-                          "No certificate issuers selected, assertion will always fail", null));                    
+                          "No trusted certificates or trusted certificate issuers selected, assertion will always fail", null));                    
                 }
 
                 return;

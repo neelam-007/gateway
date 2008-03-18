@@ -36,7 +36,8 @@ import java.util.logging.Logger;
 
 /** @author alex */
 public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesEditorSupport<NcesValidatorAssertion> {
-    private NcesValidatorAssertion assertion;
+
+    //- PUBLIC
 
     public NcesValidatorAssertionPropertiesDialog(Dialog owner) {
         super(owner, "NCES Validator Properties", true);
@@ -63,6 +64,12 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
         } catch (FindException fe) {
             logger.log( Level.WARNING, "Error loading trusted certificates", fe );
         }
+        try {
+            trustedIssuerCertificates.clear();
+            populateTrustedCerts(trustedIssuerCertificates, assertion.getTrustedIssuerCertificateInfo());
+        } catch (FindException fe) {
+            logger.log( Level.WARNING, "Error loading trusted certificates", fe );
+        }
         sortTrustedCerts();
     }
 
@@ -71,6 +78,7 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
         assertion.setSamlRequired(samlCheckbox.isSelected());
         assertion.setCertificateValidationType((CertificateValidationType) validationOptionComboBox.getSelectedItem());
         assertion.setTrustedCertificateInfo(getTrustedSigners(trustedCertificates));
+        assertion.setTrustedIssuerCertificateInfo(getTrustedSigners(trustedIssuerCertificates));
 
         return assertion;
     }
@@ -79,10 +87,6 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
 
     private static final Logger logger = Logger.getLogger(NcesValidatorAssertionPropertiesDialog.class.getName());
 
-    /**
-     * Maximum allowed number of trusted certificates
-     */
-    private static final int MAXIMUM_ITEMS = 20;
     private static final String RES_VALTYPE_PREFIX = "validation.option.";
     private static final String RES_VALTYPE_DEFAULT = "default";
 
@@ -90,17 +94,27 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
     private JButton okButton;
     private JButton cancelButton;
     private JPanel mainPanel;
+
+    private TargetMessagePanel targetMessagePanel;
+    private JComboBox validationOptionComboBox;
+
     private JTable trustedCertsTable;
+    private JButton addCertButton;
+    private JButton removeCertButton;
+    private JButton propertiesCertButton;
+    private JButton createCertButton;
+
+    private JTable trustedCertIssuersTable;
     private JButton addButton;
     private JButton removeButton;
     private JButton propertiesButton;
     private JButton createButton;
-    private JComboBox validationOptionComboBox;
-    private TargetMessagePanel targetMessagePanel;
 
     private volatile boolean ok = false;
+    private NcesValidatorAssertion assertion;
     private Collection<RevocationCheckPolicy> policies;
     private final java.util.List<TrustedCert> trustedCertificates = new ArrayList<TrustedCert>();
+    private final java.util.List<TrustedCert> trustedIssuerCertificates = new ArrayList<TrustedCert>();
 
     private void initialize() {
         okButton.addActionListener(new ActionListener() {
@@ -124,38 +138,67 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
             }
         });
 
+        addCertButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                onAdd(true);
+            }
+        });
+
+        removeCertButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                onRemove(true);
+            }
+        });
+
+        propertiesCertButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                onProperties(true);
+            }
+        });
+
+        createCertButton.setAction(new NewTrustedCertificateAction(new CertListener(){
+            public void certSelected( CertEvent ce) {
+                addTrustedCert(true, ce.getCert());
+            }
+        }, createButton.getText()));
+
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                onAdd();
+                onAdd(false);
             }
         });
 
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                onRemove();
+                onRemove(false);
             }
         });
 
         propertiesButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                onProperties();
+                onProperties(false);
             }
         });
 
         createButton.setAction(new NewTrustedCertificateAction(new CertListener(){
             public void certSelected( CertEvent ce) {
-                addTrustedCert(ce.getCert());
+                addTrustedCert(false, ce.getCert());
             }
         }, createButton.getText()));
 
-        DefaultComboBoxModel model = new DefaultComboBoxModel(CertificateValidationType.values());
-        model.insertElementAt(null, 0);
+        DefaultComboBoxModel model = new DefaultComboBoxModel(
+            new Object[]{null, CertificateValidationType.PATH_VALIDATION, CertificateValidationType.REVOCATION}
+        );
         validationOptionComboBox.setModel(model);
         validationOptionComboBox.setRenderer(new CertificateValidationTypeRenderer());
 
         trustedCertsTable.setModel(new TrustedCertTableModel(trustedCertificates));
         trustedCertsTable.setSelectionMode( ListSelectionModel.SINGLE_SELECTION );
-        Utilities.setDoubleClickAction(trustedCertsTable, propertiesButton);
+        Utilities.setDoubleClickAction( trustedCertsTable, propertiesCertButton);
+
+        trustedCertIssuersTable.setModel(new TrustedCertTableModel(trustedIssuerCertificates));
+        trustedCertIssuersTable.setSelectionMode( ListSelectionModel.SINGLE_SELECTION );
+        Utilities.setDoubleClickAction( trustedCertIssuersTable, propertiesButton);
 
         add(mainPanel);
     }
@@ -163,11 +206,11 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
     /**
      * Add a trusted cert to the list
      */
-    private void onAdd() {
+    private void onAdd(final boolean isCertificate) {
         CertSearchPanel sp = new CertSearchPanel(this);
         sp.addCertListener(new CertListener(){
             public void certSelected(CertEvent ce) {
-                addTrustedCert(ce.getCert());
+                addTrustedCert(isCertificate, ce.getCert());
             }
         });
         sp.pack();
@@ -178,21 +221,41 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
     /**
      * Remove the selected trusted cert from the list
      */
-    private void onRemove() {
-        int row = trustedCertsTable.getSelectedRow();
+    private void onRemove(final boolean isCertificate) {
+        JTable certTable;
+        java.util.List<TrustedCert> certificates;
+        if ( isCertificate ) {
+            certTable = trustedCertsTable;
+            certificates = trustedCertificates;
+        } else {
+            certTable = trustedCertIssuersTable;
+            certificates = trustedIssuerCertificates;
+        }
+
+        int row = certTable.getSelectedRow();
         if (row >= 0) {
-            trustedCertificates.remove(row);
-            ((AbstractTableModel)trustedCertsTable.getModel()).fireTableDataChanged();
+            certificates.remove(row);
+            ((AbstractTableModel) certTable.getModel()).fireTableDataChanged();
         }
     }
 
     /**
      * View properties of the selected trusted cert
      */
-    private void onProperties() {
-        int row = trustedCertsTable.getSelectedRow();
+    private void onProperties(final boolean isCertificate) {
+        JTable certTable;
+        java.util.List<TrustedCert> certificates;
+        if ( isCertificate ) {
+            certTable = trustedCertsTable;
+            certificates = trustedCertificates;
+        } else {
+            certTable = trustedCertIssuersTable;
+            certificates = trustedIssuerCertificates;
+        }
+
+        int row = certTable.getSelectedRow();
         if (row >= 0) {
-            CertPropertiesWindow cpw = new CertPropertiesWindow(this, trustedCertificates.get(row), false, getRevocationCheckPolicies());
+            CertPropertiesWindow cpw = new CertPropertiesWindow(this, certificates.get(row), false, getRevocationCheckPolicies());
             DialogDisplayer.display(cpw);
         }
     }
@@ -228,28 +291,40 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
     /**
      * Add a trusted cert to the table.
      */
-    private void addTrustedCert( TrustedCert trustedCert ) {
-        if ( trustedCertificates.size() < MAXIMUM_ITEMS &&
-             !isTrusted( getTrustedSigners(trustedCertificates), trustedCert) ) {
-            trustedCertificates.add(trustedCert);
+    private void addTrustedCert( final boolean isCertificate, final TrustedCert trustedCert ) {
+        JTable certTable;
+        java.util.List<TrustedCert> certificates;
+        if ( isCertificate ) {
+            certTable = trustedCertsTable;
+            certificates = trustedCertificates;
+        } else {
+            certTable = trustedCertIssuersTable;
+            certificates = trustedIssuerCertificates;
+        }
+
+        if ( !isTrusted( getTrustedSigners(certificates), trustedCert) ) {
+            certificates.add(trustedCert);
             sortTrustedCerts();
-            ((AbstractTableModel)trustedCertsTable.getModel()).fireTableDataChanged();
+            ((AbstractTableModel) certTable.getModel()).fireTableDataChanged();
         }
     }
 
     /**
      * Sort trusted certs by name
      */
+    @SuppressWarnings( { "unchecked" } )
     private void sortTrustedCerts() {
-        //noinspection unchecked
-        Collections.sort(trustedCertificates, new ResolvingComparator(new Resolver<TrustedCert, String>(){
+        Comparator comparator = new ResolvingComparator(new Resolver<TrustedCert, String>(){
             public String resolve(TrustedCert key) {
                 String name = key.getName();
                 if (name == null)
                     name = "";
                 return name.toLowerCase();
             }
-        }, false));
+        }, false);
+
+        Collections.sort(trustedCertificates, comparator);
+        Collections.sort(trustedIssuerCertificates, comparator);
     }
 
     /**

@@ -25,6 +25,7 @@ public class NcesValidatorAssertion extends MessageTargetableAssertion implement
     private boolean samlRequired;
     private CertificateValidationType certificateValidationType;
     private CertificateInfo[] trustedCertificateInfo;
+    private CertificateInfo[] trustedIssuerCertificateInfo;
 
     public boolean isSamlRequired() {
         return samlRequired;
@@ -48,6 +49,14 @@ public class NcesValidatorAssertion extends MessageTargetableAssertion implement
 
     public void setTrustedCertificateInfo( CertificateInfo[] trustedCertificateInfo ) {
         this.trustedCertificateInfo = trustedCertificateInfo;
+    }
+
+    public CertificateInfo[] getTrustedIssuerCertificateInfo() {
+        return trustedIssuerCertificateInfo;
+    }
+
+    public void setTrustedIssuerCertificateInfo( CertificateInfo[] trustedIssuerCertificateInfo ) {
+        this.trustedIssuerCertificateInfo = trustedIssuerCertificateInfo;
     }
 
     //

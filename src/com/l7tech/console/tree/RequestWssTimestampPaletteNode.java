@@ -7,7 +7,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssTimestamp;
 
 public class RequestWssTimestampPaletteNode extends AbstractLeafPaletteNode {
-    private static final String DEFAULT_NAME = "Require Timestamp in Request";
+    private static final String DEFAULT_NAME = "Require Timestamp in Message";
 
     public RequestWssTimestampPaletteNode(String name) {
         super(name, "com/l7tech/console/resources/xmlencryption.gif");

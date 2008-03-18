@@ -380,7 +380,7 @@ class PathValidator {
 
         } else if (a instanceof RequestWssIntegrity ||
                     a instanceof ResponseWssConfidentiality ||
-                   (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired()) ||
+                   (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired() && ((RequestWssTimestamp)a).getTarget() == TargetMessageType.REQUEST) ||
                    (a instanceof RequestSwAAssertion && ((RequestSwAAssertion)a).requiresSignature()) ||
                    (hasFlag(a, ValidatorFlag.REQUIRE_SIGNATURE))) {
             // REASONS FOR THIS RULE
@@ -411,7 +411,7 @@ class PathValidator {
             }
             // REASON FOR THIS RULE:
             // it makes no sense to check something about the request after it's routed
-            if (a instanceof RequestWssIntegrity || a instanceof RequestWssTimestamp) {
+            if (a instanceof RequestWssIntegrity || (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).getTarget() == TargetMessageType.REQUEST)) {
                 if (seenRouting && isDefaultActor(a)) {
                     result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                       "This assertion should occur before the request is routed.", null));
@@ -437,13 +437,6 @@ class PathValidator {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion will not work because there is no response yet. " +
                   "Move this assertion after a routing assertion.", null));
-            }
-        } else if (a instanceof RequestWssReplayProtection) {
-            if (!seenWssSignature(a) && !haveSeen(ASSERTION_SECURECONVERSATION) && !seenSamlSecurity(a) &&
-                    !haveSeen(ASSERTION_ENCRYPTEDUSERNAMETOKEN)) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceded by a WSS Signature assertion, " +
-                  "a WS Secure Conversation assertion, or a SAML assertion.", null));
             }
         } else if(a instanceof WsTrustCredentialExchange) {
             if(!seenUsernamePasswordCredentials()
@@ -700,7 +693,7 @@ class PathValidator {
                a instanceof RequestWssIntegrity ||
                a instanceof RequestWssX509Cert ||
                a instanceof ResponseWssIntegrity ||
-              (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired());
+              (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired() && ((RequestWssTimestamp)a).getTarget() == TargetMessageType.REQUEST);
     }
 
     private boolean onlyForSoap(Assertion a) {

@@ -550,7 +550,7 @@ public class AssertionMessages extends Messages {
 
     public static final M NCESDECO_NOT_SOAP  = m(8650, Level.WARNING, "{0} is not SOAP");
     public static final M NCESDECO_BAD_XML   = m(8651, Level.WARNING, "{0} parse failure: {1}");
-    public static final M NCESDECO_NO_CREDS  = m(8652, Level.WARNING, "No credentials have been collected");
+    public static final M NCESDECO_NO_CREDS  = m(8652, Level.WARNING, "Credentials are required for internal SAML generation, but no credentials have been collected");
     public static final M NCESDECO_IDFE      = m(8653, Level.WARNING, "Invalid {0} message Format: {1}");
     public static final M NCESDECO_WARN_MISC = m(8654, Level.WARNING, "Unable to decorate {0}: {1}");
 

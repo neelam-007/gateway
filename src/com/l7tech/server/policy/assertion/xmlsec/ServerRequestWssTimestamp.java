@@ -1,11 +1,10 @@
 /**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
+ * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.message.Message;
-import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssProcessorUtil;
@@ -56,12 +55,6 @@ public class ServerRequestWssTimestamp extends AbstractServerAssertion<RequestWs
         } catch (NoSuchVariableException e) {
             auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
             return AssertionStatus.FAILED;
-        }
-
-        final XmlKnob xmlKnob = (XmlKnob)msg.getKnob(XmlKnob.class);
-        if (xmlKnob == null) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_NOTAPPLICABLE, what);
-            return AssertionStatus.NOT_APPLICABLE;
         }
 
         try {

@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.wsaddressing.console;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.RunOnChangeListener;
+import com.l7tech.common.gui.widgets.TargetMessagePanel;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
 
@@ -10,6 +11,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 /**
  * Properties dialog for WS-Addressing assertion.
@@ -26,6 +29,7 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
     private JTextField variablePrefixTextField;
     private JCheckBox otherNamespaceCheckBox;
     private JTextField otherNamespaceTextField;
+    private TargetMessagePanel targetMessagePanel;
 
     private boolean ok;
     private final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
@@ -98,6 +102,12 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setContentPane(contentPane);
         getRootPane().setDefaultButton(buttonOK);
+
+        targetMessagePanel.addPropertyChangeListener("valid", new PropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent evt) {
+                buttonOK.setEnabled(Boolean.TRUE.equals(evt.getNewValue()));
+            }
+        });
         
         buttonOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -143,6 +153,7 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
      * Initialize form from data
      */
     private void initData(final WsAddressingAssertion assertion) {
+        targetMessagePanel.setModel(assertion);
         requireSignatureCheckBox.setSelected(assertion.isRequireSignature());
         wsAddressing10CheckBox.setSelected(assertion.isEnableWsAddressing10());
         wsAddressing082004CheckBox.setSelected(assertion.isEnableWsAddressing200408());
@@ -176,5 +187,7 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
         } else {
             assertion.setVariablePrefix(null);            
         }
+
+        targetMessagePanel.updateModel(assertion);
     }
 }

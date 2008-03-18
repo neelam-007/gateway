@@ -2,16 +2,13 @@ package com.l7tech.external.assertions.ncesval.server;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.message.Message;
-import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.common.security.CertificateValidationResult;
 import com.l7tech.common.security.CertificateValidationType;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
-import com.l7tech.common.security.xml.processor.BadSecurityContextException;
-import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.security.xml.processor.WssProcessorImpl;
+import com.l7tech.common.security.xml.processor.WssProcessorUtil;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -82,28 +79,10 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
             return AssertionStatus.BAD_REQUEST;
         }
 
-        SecurityKnob sk = (SecurityKnob)msg.getKnob(SecurityKnob.class);
-
-        final ProcessorResult wssResult;
-        if (sk != null) {
-            wssResult = sk.getProcessorResult();
-        } else {
-            // Need to Trogdor this message before we can validate it
-            try {
-                WssProcessorImpl trogdor = new WssProcessorImpl(msg);
-                trogdor.setSecurityTokenResolver(securityTokenResolver);
-                wssResult = trogdor.processMessage();
-            } catch (InvalidDocumentFormatException e) {
-                throw new RuntimeException(e); // Can't happen
-            } catch (ProcessorException e) {
-                throw new RuntimeException(e); // Can't happen
-            } catch (GeneralSecurityException e) {
-                throw new RuntimeException(e); // Can't happen
-            } catch (BadSecurityContextException e) {
-                throw new RuntimeException(e); // Can't happen
-            } catch (SAXException e) {
-                throw new RuntimeException(e); // Can't happen
-            }
+        final ProcessorResult wssResult = WssProcessorUtil.getWssResults(msg, what, securityTokenResolver, auditor);
+        if (wssResult == null) {
+            // WssProcessorUtil.getWssResults() has already audited the message
+            return AssertionStatus.NOT_APPLICABLE;
         }
 
         SamlAssertion saml = null;
@@ -171,6 +150,7 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
             return AssertionStatus.BAD_REQUEST;
         }
 
+        // Check certificate was used for signing and that it is a certificate trusted by this assertion
         if ( cert == null ) {
             auditor.logAndAudit(AssertionMessages.NCESVALID_NO_CERTIFICATE, what);
             return AssertionStatus.FALSIFIED;
@@ -182,12 +162,14 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
             if ( !CertUtils.certsAreEqual( cert, signingCertificate )) {
                 auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_NOT_USED, what);
                 return AssertionStatus.FALSIFIED;
-            } if (!certificateValid( cert, what )) {
+            }
+
+            if ( certificateValid( cert, what ) ) {
+                return AssertionStatus.NONE;
+            } else {
                 return AssertionStatus.FALSIFIED;
             }
         }
-
-        return AssertionStatus.NONE;
     }
 
     /**
@@ -199,39 +181,59 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
         // This can be null, in which case the facilities value is used
         CertificateValidationType validationType = assertion.getCertificateValidationType();
 
-        // Find trusted issuer
+        CertificateInfo[] trustedCertificates = assertion.getTrustedCertificateInfo();
+        if ( trustedCertificates == null ) {
+            trustedCertificates = new CertificateInfo[0];
+        }
+
+        CertificateInfo[] trustedCertificateIssuers = assertion.getTrustedIssuerCertificateInfo();
+        if ( trustedCertificateIssuers == null ) {
+            trustedCertificateIssuers = new CertificateInfo[0];    
+        }
+
+        // Ensure trusted / unrevoked issuer
         String issuerDn = cert.getIssuerDN().getName();
-        if ( assertion.getTrustedCertificateInfo() != null && assertion.getTrustedCertificateInfo().length > 0 ) {
-            try {
+        try {
+            // Determine if certificate or issuer is trusted
+            X509Certificate trustedIssuerCert = null;
+            boolean isTrustedSubject = false;
+            if ( isTrusted( trustedCertificates, cert ) ) {
+                isTrustedSubject = true;
+            } else {
                 TrustedCert trustedCert = trustedCertManager.getCachedCertBySubjectDn( issuerDn, MAX_CACHE_AGE );
 
-                if ( trustedCert == null ||
-                     !isTrusted( assertion.getTrustedCertificateInfo(), trustedCert ) ) {
-                    auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_UNTRUSTED, what);
-                } else {
-                    X509Certificate signerParent = trustedCert.getCertificate();
-
-                    try {
-                        CertificateValidationResult cvr = certValidationProcessor.check(
-                                new X509Certificate[]{cert, signerParent},
-                                CertificateValidationType.PATH_VALIDATION,
-                                validationType,
-                                CertValidationProcessor.Facility.IDENTITY,
-                                auditor);
-                        if ( cvr == CertificateValidationResult.OK ) {
-                            valid = true;
-                        }
-                    } catch ( GeneralSecurityException gse ) {
-                        auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_VAL_ERROR, new String[]{what}, gse);
+                if ( trustedCert != null ) {
+                    X509Certificate issuerCert = trustedCert.getCertificate();
+                    if ( isTrusted( trustedCertificateIssuers, issuerCert ) ) {
+                        trustedIssuerCert = issuerCert;
                     }
                 }
-            } catch ( CertificateException ce ) {
-                auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_VAL_ERROR, new String[]{what}, ce);
-            } catch ( FindException fe ) {
-                auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_VAL_ERROR, new String[]{what}, fe);
             }
-        } else {
-            auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_UNTRUSTED, what);
+
+            // Validate and optionally check revocation
+            if ( !isTrustedSubject && trustedIssuerCert==null ) {
+                auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_UNTRUSTED, what);
+            } else {
+                try {
+                    CertificateValidationResult cvr = certValidationProcessor.check(
+                            isTrustedSubject ?
+                                    new X509Certificate[]{cert} :
+                                    new X509Certificate[]{cert, trustedIssuerCert},
+                            CertificateValidationType.PATH_VALIDATION,
+                            validationType,
+                            CertValidationProcessor.Facility.IDENTITY,
+                            auditor);
+                    if ( cvr == CertificateValidationResult.OK ) {
+                        valid = true;
+                    }
+                } catch ( GeneralSecurityException gse ) {
+                    auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_VAL_ERROR, new String[]{what}, gse);
+                }
+            }
+        } catch ( CertificateException ce ) {
+            auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_VAL_ERROR, new String[]{what}, ce);
+        } catch ( FindException fe ) {
+            auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_VAL_ERROR, new String[]{what}, fe);
         }
 
         return valid;
@@ -240,22 +242,17 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
     /**
      * Is the given trustedCert one of the given certificateInfos
      */
-    private boolean isTrusted( final CertificateInfo[] certificateInfos, final TrustedCert trustedCert ) {
+    private boolean isTrusted( final CertificateInfo[] certificateInfos, final X509Certificate certificate ) {
         boolean trusted = false;
 
         for ( CertificateInfo info : certificateInfos ) {
-            try {
-                X509Certificate certificate = trustedCert.getCertificate();
-                if ( info != null && info.getSubjectDn() != null &&
-                     info.getIssuerDn() != null && info.getSerialNumber() !=null &&
-                     info.getSubjectDn().equals( certificate.getSubjectDN().getName() ) &&
-                     info.getIssuerDn().equals( certificate.getIssuerDN().getName() ) &&
-                     info.getSerialNumber().equals( certificate.getSerialNumber() )) {
-                    trusted = true;
-                    break;
-                }
-            } catch ( CertificateException ce ) {
-                // so not trusted
+            if ( info != null && info.getSubjectDn() != null &&
+                 info.getIssuerDn() != null && info.getSerialNumber() !=null &&
+                 info.getSubjectDn().equals( certificate.getSubjectDN().getName() ) &&
+                 info.getIssuerDn().equals( certificate.getIssuerDN().getName() ) &&
+                 info.getSerialNumber().equals( certificate.getSerialNumber() )) {
+                trusted = true;
+                break;
             }
         }
 
