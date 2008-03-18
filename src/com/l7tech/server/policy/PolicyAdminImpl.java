@@ -25,6 +25,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
  * @author alex
@@ -116,27 +117,50 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
     public SavePolicyWithFragmentsResult savePolicy(Policy policy, boolean activateAsWell, HashMap<String, Policy> fragments) throws SaveException {
         try {
             HashMap<String, Long> fragmentNameOidMap = new HashMap<String, Long>();
-            for(Policy fragmentPolicy : fragments.values()) {
-                boolean create = false;
+            Set<PolicyDependencyTreeNode> dependencyTree = generateIncludeDependencyTree(fragments);
 
-                try {
-                    Policy p = policyManager.findByUniqueName(fragmentPolicy.getName());
-                    if(p == null) {
+            // The policies are saved by going across the tree, then down. No node will be visited twice.
+            while(!dependencyTree.isEmpty()) {
+                Set<PolicyDependencyTreeNode> newRoots = new HashSet<PolicyDependencyTreeNode>();
+
+                // Work across the top level of the tree
+                for (PolicyDependencyTreeNode dependencyNode : dependencyTree) {
+                    boolean create = false;
+
+                    try {
+                        Policy p = policyManager.findByUniqueName(dependencyNode.policy.getName());
+                        if (p == null) {
+                            create = true;
+                        } else if (p.getOid() != dependencyNode.policy.getOid()) {
+                            fragmentNameOidMap.put(dependencyNode.policy.getName(), p.getOid());
+                        }
+                    } catch (FindException e) {
                         create = true;
-                    } else if(p.getOid() != fragmentPolicy.getOid()) {
-                        fragmentNameOidMap.put(fragmentPolicy.getName(), p.getOid());
                     }
-                } catch(FindException e) {
-                    create = true;
+
+                    if (create) {
+                        if(dependencyNode.dirty) {
+                            dependencyNode.policy.setXml(WspWriter.getPolicyXml(dependencyNode.policy.getAssertion()));
+                        }
+                        dependencyNode.policy.setOid(Policy.DEFAULT_OID);
+                        long oid = policyManager.save(dependencyNode.policy);
+                        policyVersionManager.checkpointPolicy(dependencyNode.policy, activateAsWell, true);
+                        policyManager.addManagePolicyRole(dependencyNode.policy);
+                        fragmentNameOidMap.put(dependencyNode.policy.getName(), oid);
+                    }
+
+                    // Update dependants with the new policy oid for this policy
+                    for(PolicyDependencyTreeNode child : dependencyNode.dependants) {
+                        if(!child.visited) {
+                            correctIncludeAssertions(child.policy.getAssertion(), fragmentNameOidMap);
+                            child.dirty = true;
+                            newRoots.add(child);
+                        }
+                    }
                 }
 
-                if(create) {
-                    fragmentPolicy.setOid(Policy.DEFAULT_OID);
-                    long oid = policyManager.save(fragmentPolicy);
-                    policyVersionManager.checkpointPolicy(fragmentPolicy, activateAsWell, true);
-                    policyManager.addManagePolicyRole(fragmentPolicy);
-                    fragmentNameOidMap.put(fragmentPolicy.getName(), oid);
-                }
+                // Switch to the next level down
+                dependencyTree = newRoots;
             }
 
             if(fragmentNameOidMap.size() > 0) {
@@ -153,6 +177,76 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
         }
     }
 
+    private static class PolicyDependencyTreeNode {
+        Policy policy;
+        boolean visited = false;
+        boolean dirty = false;
+        Set<PolicyDependencyTreeNode> dependants = new HashSet<PolicyDependencyTreeNode>();
+
+        public PolicyDependencyTreeNode(Policy policy) {
+            this.policy = policy;
+        }
+    }
+
+    /**
+     * Generates a policy dependency tree. The root nodes do not depend on other policies. This is used to
+     * determine the order to save the policies.
+     * @param policies A HashMap of the policies
+     * @return A set of roots for the policy dependency tree
+     * @throws IOException If the XML for a policy cannot be converted to an Assertion tree
+     */
+    private Set<PolicyDependencyTreeNode> generateIncludeDependencyTree(HashMap<String, Policy> policies) throws IOException {
+        HashMap<String, PolicyDependencyTreeNode> dependencyNodes = new HashMap<String, PolicyDependencyTreeNode>();
+        Set<PolicyDependencyTreeNode> treeRoots = new HashSet<PolicyDependencyTreeNode>();
+
+        for(Map.Entry<String, Policy> entry : policies.entrySet()) {
+            dependencyNodes.put(entry.getKey(), new PolicyDependencyTreeNode(entry.getValue()));
+        }
+
+        for(Map.Entry<String, PolicyDependencyTreeNode> entry : dependencyNodes.entrySet()) {
+            Set<String> requiredPolicies = new HashSet<String>();
+            updatePolicyDependencyTree(entry.getValue().policy.getAssertion(), requiredPolicies);
+
+            if(requiredPolicies.isEmpty()) {
+                treeRoots.add(entry.getValue());
+            } else {
+                for(String requiredPolicy : requiredPolicies) {
+                    if(dependencyNodes.containsKey(requiredPolicy)) {
+                        dependencyNodes.get(requiredPolicy).dependants.add(entry.getValue());
+                    }
+                }
+            }
+        }
+
+        return treeRoots;
+    }
+
+    /**
+     * Recursively scans an Assertion tree and adds all policies that the Assertion tree depends on to the
+     * provided Set.
+     * @param rootAssertion The root of the Assertion tree to scan
+     * @param requiredPolicies The set to add required policy names to
+     */
+    private void updatePolicyDependencyTree(Assertion rootAssertion, Set<String> requiredPolicies) {
+        if(rootAssertion instanceof CompositeAssertion) {
+            CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
+            for(Iterator it = compAssertion.children();it.hasNext();) {
+                Assertion child = (Assertion)it.next();
+                updatePolicyDependencyTree(child, requiredPolicies);
+            }
+        } else if(rootAssertion instanceof Include) {
+            Include includeAssertion = (Include)rootAssertion;
+            requiredPolicies.add(includeAssertion.getPolicyName());
+        }
+    }
+
+    /**
+     * Recursively looks for Include assertions in the provided Assertion tree. When an Include assertion is
+     * found, the policy oid field is updated with the value from the provided policy name/oid map. It looks
+     * up the new policy oid based on the policy's name.
+     * @param rootAssertion The root of the Assertion tree to scan
+     * @param fragmentNameOidMap The map of policy names to policy oid's
+     */
     private void correctIncludeAssertions(Assertion rootAssertion, HashMap<String, Long> fragmentNameOidMap) {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;

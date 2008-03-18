@@ -4,6 +4,7 @@
 package com.l7tech.console.policy.exporter;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
@@ -118,6 +119,14 @@ public class PolicyExporter {
             }
         } else if (assertion instanceof Include) {
             ref = new IncludedPolicyReference((Include) assertion);
+            IncludedPolicyReference includedReference = (IncludedPolicyReference)ref;
+            Policy fragmentPolicy = new Policy(includedReference.getType(), includedReference.getName(), includedReference.getXml(), includedReference.isSoap());
+            try {
+                traverseAssertionTreeForReferences(fragmentPolicy.getAssertion(), refs);
+            } catch(IOException e) {
+                // Ignore and continue with the export
+                logger.log(Level.WARNING, "Failed to create policy from include reference (policy OID = " + includedReference.getOid() + ")");
+            }
         }
 
         // if an assertion was created and it's not already recorded, add it

@@ -10,12 +10,16 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionTranslator;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 
 import java.text.MessageFormat;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.io.IOException;
 
 /**
  * @author alex
@@ -72,10 +76,58 @@ public class IncludeAssertionDereferenceTranslator implements AssertionTranslato
             if ( readOnly ) {
                 return policy.getAssertion();
             } else {
-                return WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(policy.getAssertion()));
+                HashMap<String, Policy> policyFragments = new HashMap<String, Policy>();
+                Assertion returnValue = WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(policy.getAssertion()));
+                if(include.retrieveFragmentPolicy() != null) {
+                    extractPolicyFragments(include.retrieveFragmentPolicy().getAssertion(), policyFragments);
+                    setPolicyFragments(returnValue, policyFragments);
+                }
+                return returnValue;
             }
         } catch (Exception e) {
             throw new PolicyAssertionException(include, "Unable to load Included policy: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    /**
+     * Recursively scans the Assertion tree looking for Include assertions. When an Include assertion is encountered
+     * that contains a temporary policy object, that policy object is added to the provided HashMap.
+     * @param rootAssertion The root of the Assertion tree to scan
+     * @param policyFragments The HashMap to add the temporary policy objects to
+     */
+    private void extractPolicyFragments(Assertion rootAssertion, HashMap<String, Policy> policyFragments) {
+        if(rootAssertion instanceof CompositeAssertion) {
+            CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
+            for(Iterator it = compAssertion.children();it.hasNext();) {
+                Assertion child = (Assertion)it.next();
+                extractPolicyFragments(child, policyFragments);
+            }
+        } else if(rootAssertion instanceof Include) {
+            Include includeAssertion = (Include)rootAssertion;
+            if(includeAssertion.retrieveFragmentPolicy() != null) {
+                policyFragments.put(includeAssertion.getPolicyName(), includeAssertion.retrieveFragmentPolicy());
+            }
+        }
+    }
+
+    /**
+     * Recursively scans the Assertion tree looking for Include assertions. When an Include assertion is encountered,
+     * its temporary policy object is updated if the provided HashMap contained one for it.
+     * @param rootAssertion The root of the Assertion tree
+     * @param policyFragments The Map of temporary policy objects, keyed by policy name
+     */
+    private void setPolicyFragments(Assertion rootAssertion, HashMap<String, Policy> policyFragments) {
+        if(rootAssertion instanceof CompositeAssertion) {
+            CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
+            for(Iterator it = compAssertion.children();it.hasNext();) {
+                Assertion child = (Assertion)it.next();
+                setPolicyFragments(child, policyFragments);
+            }
+        } else if(rootAssertion instanceof Include) {
+            Include includeAssertion = (Include)rootAssertion;
+            if(policyFragments.containsKey(includeAssertion.getPolicyName())) {
+                includeAssertion.replaceFragmentPolicy(policyFragments.get(includeAssertion.getPolicyName()));
+            }
         }
     }
 }

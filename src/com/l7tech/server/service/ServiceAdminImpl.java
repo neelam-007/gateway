@@ -246,18 +246,18 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         try {
             assertion = wspReader.parsePermissively(policyXml);
             wsdl = wsdlXml == null ? null : Wsdl.newInstance(null, new StringReader(wsdlXml));
+
+            addPoliciesToIncludeAssertions(assertion, fragments);
         } catch (IOException e) {
             throw new RuntimeException("Cannot parse passed Policy XML: " + ExceptionUtils.getMessage(e), e);
         } catch (WSDLException e) {
             throw new RuntimeException("Cannot parse passed WSDL XML: " + ExceptionUtils.getMessage(e), e);
         }
 
-        addPoliciesToIncludeAssertions(assertion, fragments);
-
         return validatePolicy(assertion, policyType, soap, wsdl);
     }
 
-    private void addPoliciesToIncludeAssertions(Assertion rootAssertion, HashMap<String, Policy> fragments) {
+    private void addPoliciesToIncludeAssertions(Assertion rootAssertion, HashMap<String, Policy> fragments) throws IOException {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
             for(Iterator it = compAssertion.children();it.hasNext();) {
@@ -268,6 +268,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
             Include includeAssertion = (Include)rootAssertion;
             if(fragments.containsKey(includeAssertion.getPolicyName())) {
                 includeAssertion.replaceFragmentPolicy(fragments.get(includeAssertion.getPolicyName()));
+                addPoliciesToIncludeAssertions(includeAssertion.retrieveFragmentPolicy().getAssertion(), fragments);
             }
         }
     }

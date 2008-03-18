@@ -1156,7 +1156,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
                             if(getFragmentNameOidMap() != null && !getFragmentNameOidMap().isEmpty()) {
                                 try {
-                                    updateIncludeAssertions(PolicyEditorPanel.this.subject.getPolicyNode().getPolicy().getAssertion(), getFragmentNameOidMap());
+                                    updateIncludeAssertions(rootAssertion.asAssertion(), getFragmentNameOidMap());
                                     PolicyEditorPanel.this.renderPolicy(false);
                                     PolicyEditorPanel.this.topComponents.refreshPoliciesFolderNode();
                                 } catch(Exception e) {
@@ -1189,6 +1189,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             Include includeAssertion = (Include)rootAssertion;
             if(includeAssertion.retrieveFragmentPolicy() != null) {
                 fragments.put(includeAssertion.getPolicyName(), includeAssertion.retrieveFragmentPolicy());
+                try {
+                    extractFragmentsFromAssertion(includeAssertion.retrieveFragmentPolicy().getAssertion(), fragments);
+                } catch(IOException e) {
+                    // Ignore. If there was a real error with the include, it should have been exposed during the import
+                }
             }
         }
     }

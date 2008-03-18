@@ -134,7 +134,7 @@ public abstract class ImportPolicyFromFileAction extends PolicyNodeAction {
         return false;
     }
 
-    private void addPoliciesToIncludeAssertions(Assertion rootAssertion, HashMap<String, Policy> fragments) {
+    private void addPoliciesToIncludeAssertions(Assertion rootAssertion, HashMap<String, Policy> fragments) throws IOException {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
             for(Iterator it = compAssertion.children();it.hasNext();) {
@@ -145,6 +145,7 @@ public abstract class ImportPolicyFromFileAction extends PolicyNodeAction {
             Include includeAssertion = (Include)rootAssertion;
             if(fragments.containsKey(includeAssertion.getPolicyName())) {
                 includeAssertion.replaceFragmentPolicy(fragments.get(includeAssertion.getPolicyName()));
+                addPoliciesToIncludeAssertions(includeAssertion.retrieveFragmentPolicy().getAssertion(), fragments);
             }
         }
     }
