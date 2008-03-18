@@ -7,6 +7,7 @@ import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.widgets.BetterComboBox;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.MetricsChartPanel;
@@ -45,9 +46,9 @@ public class ServiceMetricsPanel extends JPanel {
     private JPanel mainPanel;
     private JPanel chartPanel;
     private JLabel statusLabel;
-    private JComboBox clusterNodeCombo;
-    private JComboBox publishedServiceCombo;
-    private JComboBox resolutionCombo;
+    private BetterComboBox clusterNodeCombo;
+    private BetterComboBox publishedServiceCombo;
+    private BetterComboBox resolutionCombo;
     private JTabbedPane rightTabbedPane;
 
     private JLabel selectionFromTimeLabel;
