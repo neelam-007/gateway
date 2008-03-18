@@ -10,6 +10,7 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.ElementCursor;
+import com.l7tech.common.xml.DomElementCursor;
 import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.common.xml.xpath.XpathResult;
 import com.l7tech.common.xml.xpath.XpathResultIterator;
@@ -118,8 +119,14 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
                 return AssertionStatus.NOT_APPLICABLE;
             }
 
+            if( vmultipleElements != null ) {
+                // Use a cursor backed by DOM so we can have Element results
+                auditor.logAndAudit(AssertionMessages.XPATH_NOT_ACCELERATED);
+                cursor = new DomElementCursor(message.getXmlKnob().getDocumentReadOnly());
+            } else {
             final XmlKnob xmlKnob = message.getXmlKnob();
             cursor = xmlKnob.getElementCursor();
+            }
 
         } catch (SAXException e) {
             auditNotXml();

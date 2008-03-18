@@ -146,6 +146,7 @@ public class AssertionMessages extends Messages {
     public static final M XPATH_PATTERN_INVALID_MORE_INFO         = m(4714, Level.WARNING, "Cannot evaluate XPath expression: XPath pattern is invalid ''{0}''.");
     public static final M XPATH_PATTERN_NOT_MATCHED_REQUEST_MI    = m(4715, Level.INFO, "XPath pattern didn''t match request; assertion therefore fails; XPath is ''{0}''." );
     public static final M XPATH_PATTERN_NOT_MATCHED_RESPONSE_MI   = m(4716, Level.INFO, "XPath pattern didn''t match response; assertion therefore fails; XPath is ''{0}''." );
+    public static final M XPATH_NOT_ACCELERATED                   = m(4717, Level.FINE, "Multiple result elements expected, using non-accelerated XPath." );
 
     // ServerRequestAcceleratedXpathAssertion & ServerResponseAcceleratedXpathAssertion messages
     public static final M ACCEL_XPATH_NO_HARDWARE                 = m(4750, Level.INFO, "Hardware acceleration not available; falling back to software XPath processing");

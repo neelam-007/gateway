@@ -13,6 +13,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -104,7 +105,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                 auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_HEADERS_OK);
                 status = AssertionStatus.NONE;
             } else {
-                context.setRequestPolicyViolated();
+                if (assertion.getTarget() == TargetMessageType.REQUEST) context.setRequestPolicyViolated();
                 if ( assertion.isRequireSignature() ) {
                     auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_NO_SIGNED_HEADERS);                    
                 } else {

@@ -37,6 +37,7 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
     private static final Logger logger = Logger.getLogger(ServerAcceleratedOversizedTextAssertion.class.getName());
     private final Auditor auditor;
     private final ServerOversizedTextAssertion delegate;  // Non-Tarari-specific impl to handle the stuff that can just use XPath
+    private final ServerOversizedTextAssertion fallBackDelegate;  // Non-Tarari-specific impl to handle the stuff that can just use XPath
     private final OversizedTextAssertion ota;
     private final boolean lengthLimitTestsPresent;  // true if limiting lengths: that is, if LimitAttrChars or LimitTextChars
     private final boolean accelTestsPresent;        // true if doing any accelerated tets: that is, if lengthLimitTestsPresent or LimitNestingDepth
@@ -47,6 +48,7 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
         // The delegate will do all the checking except for oversized text and attr nodes, which we can do
         // specially by just scanning the token buffer in one pass.
         delegate = new ServerOversizedTextAssertion(data, springContext, true);
+        fallBackDelegate = new ServerOversizedTextAssertion(data, springContext, false);
         this.ota = data;
         this.lengthLimitTestsPresent = ota.isLimitAttrChars() || ota.isLimitTextChars() || ota.isLimitAttrNameChars();
         this.accelTestsPresent = lengthLimitTestsPresent || ota.isLimitNestingDepth();
@@ -113,7 +115,7 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
         Message mess = context.getRequest();
         try {
             // Force Tarari evaluation to have occurred
-            mess.isSoap(false);
+            mess.isSoap();
 
             if (accelTestsPresent) {
                 // At least one accelerated test is enabled.  We'll neeed a RaxDocument.
@@ -228,6 +230,6 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
 
     /** Give up on Tarari-specific processing and fall back to using general processing (CompiledXpath) which may still be accelerated somewhat. */
     private AssertionStatus fallbackToDelegate(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
-        return delegate.checkRequest(context);
+        return fallBackDelegate.checkRequest(context);
     }
 }
