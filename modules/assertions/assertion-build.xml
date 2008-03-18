@@ -98,6 +98,7 @@
             <include name="forms_rt.jar"/>
             <include name="xss4j.jar"/>
             <include name="commons-*.jar"/>
+            <include name="whirlycache-1.0.1.jar"/>
         </fileset>
         <fileset dir="${UneasyRooster.dir}/lib/tools">
             <include name="junit*.jar"/>            
