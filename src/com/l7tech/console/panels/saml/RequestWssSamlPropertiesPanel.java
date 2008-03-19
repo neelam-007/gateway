@@ -63,7 +63,7 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
 
     private void initialize(final boolean readOnly) {
         Utilities.setAlwaysOnTop(this, true);
-        setResizable(false);
+        setResizable(true);
 
         final Border emptyBorder = BorderFactory.createEmptyBorder(10, 10, 5, 10);
         Collection panels = new ArrayList();
