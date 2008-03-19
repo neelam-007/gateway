@@ -84,7 +84,7 @@
       Classpath for obfuscation
     -->
     <path id="zelix.classpath">
-        <fileset dir="${src.root}/etc/obfuscation">
+        <fileset dir="${src.root}/lib/tools">
             <include name="ZKM.jar"/>
         </fileset>
     </path>

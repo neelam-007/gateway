@@ -47,7 +47,7 @@ for arg in "$@" ; do
   fi
 done
 
-ANT_JARS="$SRC_ROOT/lib/ant.jar:$SRC_ROOT/lib/optional.jar:$SRC_ROOT/lib/xercesImpl.jar:$SRC_ROOT/lib/xml-apis.jar:$SRC_ROOT/lib/junit.jar:$SRC_ROOT/lib/ant-contrib.jar"
+ANT_JARS="$SRC_ROOT/lib/ant.jar:$SRC_ROOT/lib/ant-launcher.jar:$SRC_ROOT/lib/ant-nodeps.jar:$SRC_ROOT/lib/xercesImpl.jar:$SRC_ROOT/lib/xml-apis.jar:$SRC_ROOT/lib/tools/junit-4.4.jar:$SRC_ROOT/lib/ant-junit.jar:$SRC_ROOT/lib/ant-contrib-1.0b3.jar:$SRC_ROOT/lib/xalan-2.5.2.jar:$SRC_ROOT/lib/ant-apache-bcel.jar:$SRC_ROOT/lib/tools/ant-trax.jar:$SRC_ROOT/lib/tools/bcel-5.2.jar"
 CLASSPATH="${JDK_CLASSES}:${ANT_JARS}"
 export CLASSPATH
 
