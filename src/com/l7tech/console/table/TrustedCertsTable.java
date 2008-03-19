@@ -3,9 +3,14 @@ package com.l7tech.console.table;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.*;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -98,4 +103,27 @@ public class TrustedCertsTable extends JTable {
         th.addMouseListener(listMouseListener);
     }
 
+    /**
+     * Find all expired certificates and highlight them using red color.
+     */
+    @Override
+    public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+        Component cell = super.prepareRenderer(renderer, row, column);
+        try {
+            String dateStr =  getModel().getValueAt(row, TrustedCertTableSorter.CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX).toString();
+            Date expiryDate = new SimpleDateFormat("MM/dd/yyyy").parse(dateStr);
+            Date today = new Date(System.currentTimeMillis());
+
+            if (expiryDate.before(today)) {
+                cell.setBackground(Color.RED);
+            } else if (isCellSelected(row, column)) {
+                cell.setBackground(selectionBackground);
+            } else {
+                cell.setBackground(Color.WHITE);
+            }
+        } catch (ParseException e) {
+            return null;
+        }
+        return cell;
+    }
 }
