@@ -117,6 +117,10 @@
                 <include name="com/l7tech/skunkworks/saml/**/*"/>
             </fileset>
             <fileset dir="${build.dir}/classes">
+                <!--
+                    NOTE: The contents of this fileset are just a copy of that used in package.client.jar target
+                          in the main build.xml
+                -->
                 <exclude name="**/*.form"/>
                 <exclude name="com/l7tech/internal/**/*"/>
 
@@ -126,16 +130,20 @@
                 <exclude name="com/l7tech/common/security/prov/entrust/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/tarari/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/luna/**/*"/>
+                <exclude name="com/l7tech/common/security/prov/pkcs11/**/*"/>
                 <!-- goes in lib/ext -->
                 <exclude name="com/l7tech/common/security/TrustedCert**"/>
+                <exclude name="com/l7tech/common/security/RevocationCheckPolicy**"/>
                 <exclude name="com/l7tech/common/security/CertEntity**"/>
                 <exclude name="com/l7tech/common/security/X509Entity**"/>
+                <exclude name="com/l7tech/common/security/keystore/**/*"/>
 
                 <!-- Tarari drivers not available in standalone Agent -->
                 <exclude name="com/l7tech/common/xml/tarari/TarariUtil*.class"/>
                 <exclude name="com/l7tech/common/xml/tarari/TarariFactories*.class"/>
                 <exclude name="com/l7tech/common/xml/tarari/TarariMessageContextImpl*.class"/>
                 <exclude name="com/l7tech/common/xml/tarari/GlobalTarariContextImpl*.class"/>
+                <exclude name="com/l7tech/common/xml/tarari/SecureXsltSecurityManager.class"/>
                 <exclude name="com/l7tech/common/xml/tarari/TarariElementCursor*.class"/>
                 <exclude name="com/l7tech/common/xml/tarari/TarariCompiledXpath*.class"/>
                 <exclude name="com/l7tech/common/xml/tarari/TarariCompiledStylesheetImpl*.class" />
@@ -149,20 +157,44 @@
                 <!-- Exclude unless Log4j is used -->
                 <exclude name="com/l7tech/common/util/Log4jJdkLogAppender.class"/>
 
-                <exclude name="com/l7tech/common/audit/**/*"/>
+                <!-- UDDI not required -->
+                <exclude name="com/l7tech/common/uddi/**/*"/>
+
+                <include name="com/l7tech/common/audit/Audit.class"/>
+                <include name="com/l7tech/common/audit/AuditDetailMessage*.class"/>
+                <include name="com/l7tech/common/audit/Messages.class"/>
+                <include name="com/l7tech/common/audit/CommonMessages.class"/>
+                <!-- We really need some subpackages of common.audit... -->
+                <exclude name="com/l7tech/common/audit/AuditAdmin.class"/>
+                <exclude name="com/l7tech/common/audit/AuditSearchCriteria.class"/>
+                <exclude name="com/l7tech/common/audit/AuditRecord.class"/>
+                <exclude name="com/l7tech/common/audit/LogonEvent.class"/>
+                <exclude name="com/l7tech/common/audit/MessageSummaryAuditRecord.class"/>
+                <exclude name="com/l7tech/common/audit/MessageSummaryAuditDetail.class"/>
+                <exclude name="com/l7tech/common/audit/AdminAuditRecord.class"/>
+                <exclude name="com/l7tech/common/audit/SystemAuditRecord.class"/>
+                <exclude name="com/l7tech/common/audit/AuditDetail.class"/>
                 <exclude name="com/l7tech/common/alert/**/*"/>
 
                 <exclude name="com/l7tech/policy/server/**/*"/>
                 <exclude name="com/l7tech/policy/exporter/**/*"/>
                 <exclude name="com/l7tech/policy/validator/RequestXpathAssertionValidator.class"/>
                 <exclude name="com/l7tech/policy/validator/ValidatorFactory.class"/>
+                <exclude name="com/l7tech/policy/validator/DefaultPolicyValidator.class"/>
 
                 <include name="com/l7tech/proxy/**/*"/>
-                <exclude name="com/l7tech/common/transport/jms/*"/>
+                <exclude name="com/l7tech/common/transport/**/*"/>
+                <exclude name="com/l7tech/common/security/rbac/**/*"/>
                 <include name="com/l7tech/common/**/*"/>
-                <include name="com/l7tech/logging/**/*"/>
                 <include name="com/l7tech/policy/**/*"/>
+                <include name="com/l7tech/identity/mapping/**/*"/>
+                <include name="com/l7tech/objectmodel/imp/**/*"/>
+                <include name="com/l7tech/objectmodel/NamedEntity.class"/>
+                <include name="com/l7tech/objectmodel/Entity.class"/>
+                <include name="com/l7tech/objectmodel/PersistentEntity.class"/>
                 <exclude name="com/l7tech/policy/assertion/ext/**/*"/>
+                <exclude name="com/l7tech/common/Authorizer.class"/>
+                <exclude name="com/l7tech/common/policy/**/*"/>
             </fileset>
             <fileset dir="${src.root}/etc">
                 <include name="login.config"/>
