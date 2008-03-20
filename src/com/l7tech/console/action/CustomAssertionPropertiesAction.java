@@ -89,7 +89,7 @@ public class CustomAssertionPropertiesAction extends NodeAction {
         final CustomAssertion ca = cah.getCustomAssertion();
         BeanEditor.Options options = new BeanEditor.Options();
         options.setDescription(ca.getName());
-        options.setExcludeProperties(new String[]{"name"});
+        options.setExcludeProperties(new String[]{"name", "variablesUsed", "variablesSet"});
         BeanEditor be = new BeanEditor(dialog, ca, Object.class, options);
         be.addBeanListener(new BeanAdapter() {
             public void onEditAccepted(Object source, Object bean) {
