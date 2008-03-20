@@ -7,6 +7,8 @@ import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.lang.StringUtils;
 import org.xml.sax.SAXException;
 
@@ -173,42 +175,68 @@ public class Importer {
             osFunctions = OSDetector.getOSSpecificFunctions(partitionName);
             passwordCrypto = osFunctions.getPasswordPropertyCrypto();
 
-            Map<String, String> dbProps = PropertyHelper.getProperties(tempDirectory + File.separator + "hibernate.properties", new String[] {
+            final String hibernatePropertiesTempPath = tempDirectory + File.separator + "hibernate.properties";
+            Map<String, String> dbProps = PropertyHelper.getProperties(hibernatePropertiesTempPath, new String[] {
                 DBInformation.PROP_DB_USERNAME,
                 DBInformation.PROP_DB_PASSWORD,
                 DBInformation.PROP_DB_URL,
             });
-            databaseURL = dbProps.get(DBInformation.PROP_DB_URL);
+            final String oldDatabaseURL = dbProps.get(DBInformation.PROP_DB_URL);
             databaseUser = dbProps.get(DBInformation.PROP_DB_USERNAME);
             String imageDbPasswdRaw = dbProps.get(DBInformation.PROP_DB_PASSWORD);
             databasePasswd = passwordCrypto.decryptIfEncrypted(imageDbPasswdRaw);
-            logger.info("using database url " + databaseURL);
-            logger.info("using database user " + databaseUser);
-            logger.info("using database passwd " + databasePasswd);
+            logger.info("Using original database username: " + databaseUser);
+            logger.info("Using original database password: " + databasePasswd);
             // get root db username and password
             rootDBUsername = arguments.get(DB_USER.name);
             rootDBPasswd = arguments.get(DB_PASSWD.name);
             if (rootDBUsername == null) {
-                throw new FlashUtilityLauncher.InvalidArgumentException("Please provide options " + DB_USER.name +
+                throw new FlashUtilityLauncher.InvalidArgumentException("Please provide options: " + DB_USER.name +
                                 " and " + DB_PASSWD.name);
             }
             if (rootDBPasswd == null) rootDBPasswd = ""; // totally legit
 
-            // extract db host and name from url
-            dbHost = null;
-            dbName = null;
-            Matcher matcher = Pattern.compile("^.*//(.*)/(.*)\\?.*$").matcher(databaseURL);
+            // Replace database host name and database name in URL by those from command line options.
+            dbHost = arguments.get(DB_HOST_NAME.name);
+            if (dbHost == null) {
+                throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option: " + DB_HOST_NAME.name);
+            }
+            dbName = arguments.get(DB_NAME.name);
+            if (dbHost == null) {
+                throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option: " + DB_NAME.name);
+            }
+            Matcher matcher = Pattern.compile("^.+//(.+)/(.+)\\?.+$").matcher(oldDatabaseURL);
             if (matcher.matches()) {
-                dbHost = matcher.group(1);
-                if (dbHost.indexOf(',') >= 0) {
-                    dbHost = dbHost.substring(0, dbHost.indexOf(','));
+                final String oldHost = matcher.group(1);
+                final String oldName = matcher.group(2);
+                logger.info("Old database hostname: " + oldHost + ", new database hostname: " + dbHost);
+                logger.info("Old database name: " + oldName + ", new database name: " + dbName);
+
+                final int hostStart = matcher.start(1);
+                final int hostEnd = matcher.end(1);
+                final int nameStart = matcher.start(2);
+                final int nameEnd = matcher.end(2);
+                databaseURL = oldDatabaseURL.substring(0, hostStart)
+                            + dbHost
+                            + oldDatabaseURL.substring(hostEnd, nameStart)
+                            + dbName
+                            + oldDatabaseURL.substring(nameEnd);
+                logger.info("Old database url: " + oldDatabaseURL + ", new database url: " + databaseURL);
+                // Replace the database URL in our temporary copy of hibernate.properties.
+                try {
+                    final PropertiesConfiguration dbConfig = new PropertiesConfiguration(hibernatePropertiesTempPath);
+                    dbConfig.setProperty(DBInformation.PROP_DB_URL, databaseURL);
+                    dbConfig.save(hibernatePropertiesTempPath);
+                } catch (ConfigurationException e) {
+                    throw new IOException("Cannot replace database URL in \"" + hibernatePropertiesTempPath + "\".", e);
                 }
-                dbName = matcher.group(2);
+            } else {
+                logger.warning("Cannot parse JDBC URL in file hibernate.properties in image.");
+                throw new IOException("Cannot parse JDBC URL in \"" + hibernatePropertiesTempPath + "\".");
             }
             if (StringUtils.isEmpty(dbHost) || StringUtils.isEmpty(dbName)) {
                 logger.warning("cannot parse host and name from " + databaseURL);
-                throw new IOException("cannot resolve host name or database name from jdbc url in " +
-                                      tempDirectory + File.separator + "hibernate.properties");
+                throw new IOException("cannot resolve host name or database name from jdbc url in " + hibernatePropertiesTempPath);
             }
             if (dbHost.equalsIgnoreCase(InetAddress.getLocalHost().getCanonicalHostName()) ||
                 dbHost.equals(InetAddress.getLocalHost().getHostAddress())) {
