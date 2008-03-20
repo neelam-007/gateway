@@ -21,7 +21,7 @@
         <property name="ignoreResourceNotFound" value="true"/>
         <property name="locations">
             <list>
-                <value>classpath:hibernate_default.properties</value>
+                <value>classpath:com/l7tech/server/resources/hibernate_default.properties</value>
                 <value>classpath:hibernate.properties</value>
                 <value>file:${com.l7tech.server.configDirectory}${file.separator}hibernate.properties</value>
             </list>
@@ -34,9 +34,9 @@
     <bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
         <property name="mappingResources">
             <list>
-                <value>SSG.hbm.xml</value>
-                <value>audit.hbm.xml</value>
-                <value>rbac.hbm.xml</value>
+                <value>com/l7tech/server/resources/SSG.hbm.xml</value>
+                <value>com/l7tech/server/resources/audit.hbm.xml</value>
+                <value>com/l7tech/server/resources/rbac.hbm.xml</value>
             </list>
         </property>
         <property name="hibernateProperties" ref="hibernateProperties"/>

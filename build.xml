@@ -1212,6 +1212,7 @@
             <exclude name="com.incors.*"/>
             <exclude name="com.ibm.*"/>
             <exclude name="com.chrysalisits.*"/>
+            <exclude name="com.vladium.*"/>
             <exclude name="antlr"/>
             <exclude name="antlr.*"/>
 
@@ -1379,6 +1380,7 @@
       Perform compilation of the main sources
     -->
     <target name="compile.main" depends="init, prepare, compile13, compile14">
+        <!-- Compile -->
         <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
                deprecation="on" verbose="no" target="1.5" source="1.5">
             <compilerarg value="-Xlint" compiler="modern"/>
@@ -1388,18 +1390,30 @@
             <compilerarg value="-Xlint:-dep-ann" compiler="modern"/>
             <classpath refid="project.classpath"/>
         </javac>
+
+        <!-- Copy Resources -->
         <copy todir="${build.classes}">
             <fileset dir="${src.root}/etc">
-                <include name="ssglog.properties"/>
-                <include name="serverconfig.properties"/>
-                <include name="ehcache.xml"/>
+                <include name="keystore.properties" if="dev.build" unless="no.dev.build"/>
             </fileset>
+
             <fileset dir="${src.root}/src">
-                <include name="**/XMLSchema.xsd"/>
-                <include name="**/xml.xsd"/>
-                <include name="**/datatypes.dtd"/>
-                <include name="**/XMLSchema.dtd"/>
+                <include name="**/resources/**/*"/>
+                <include name="com/l7tech/console/**/*.properties"/>
+                <include name="com/l7tech/server/**/*.properties"/>
                 <include name="**/*.aegis.xml"/>
+            </fileset>
+
+            <fileset dir="${src.root}/tests">
+                <include name="com/l7tech/**/*.properties" if="dev.build" unless="no.dev.build"/>
+                <include name="com/l7tech/common/security/xml/test_*" if="dev.build" unless="no.dev.build"/>
+                <include name="com/l7tech/**/*.xml" if="dev.build" unless="no.dev.build"/>
+                <include name="com/l7tech/**/*.pfx" if="dev.build" unless="no.dev.build"/>
+                <include name="com/l7tech/**/*.crt" if="dev.build" unless="no.dev.build"/>
+                <include name="com/l7tech/**/*.xsd" if="dev.build" unless="no.dev.build"/>
+                <include name="com/l7tech/**/*.wsdl" if="dev.build" unless="no.dev.build"/>
+                <include name="**/resources/*" if="dev.build" unless="no.dev.build"/>
+                <include name="**/resources/**/*" if="dev.build" unless="no.dev.build"/>
             </fileset>
         </copy>
     </target>
@@ -2136,14 +2150,13 @@
         <jar jarfile="${build.dir}/gclient/GClient.jar" manifest="${build.etc}/GClient.mf">
             <fileset refid="package.gclient.classfileset"/>
             <fileset dir="${build.classes}">
-                <include name="ssglog.properties"/>
-                <include name="serverconfig.properties"/>
                 <include name="ehcache.xml"/>
                 <include name="**/*.xsd"/>
                 <include name="**/*.dtd"/>
                 <include name="com/l7tech/console/**/resources/**/*"/>
                 <include name="com/l7tech/console/**/*.properties"/>
                 <include name="com/l7tech/common/resources/**/*"/>
+                <include name="com/l7tech/server/resources/**/*"/>
             </fileset>
         </jar>
 
@@ -3404,48 +3417,6 @@
         <copy todir="${build.etc}">
             <fileset dir="${src.root}/etc">
                 <include name="testweb.xml"/>
-            </fileset>
-        </copy>
-
-        <!-- Resources -->
-        <copy todir="${build.classes}">
-            <fileset dir="${src.root}/etc/db">
-                <include name="SSG.hbm.xml"/>
-                <include name="rbac.hbm.xml"/>
-                <include name="audit.hbm.xml"/>
-                <include name="identityMapping.hbm.xml"/>
-                <include name="c3p0.properties"/>
-                <include name="hibernate_default.properties"/>
-            </fileset>
-
-            <fileset dir="${src.root}/etc">
-                <include name="keystore.properties" if="dev.build" unless="no.dev.build"/>
-                <include name="uddi.properties"/>
-                <include name="treecache-service.xml"/>
-            </fileset>
-
-            <fileset dir="${src.root}/src">
-                <include name="**/resources/*"/>
-                <include name="**/resources/**/*"/>
-            </fileset>
-
-            <fileset dir="${src.root}/src">
-                <include name="com/l7tech/console/**/*.properties"/>
-                <include name="com/l7tech/console/resources/helpset/**/*"/>
-                <include name="com/l7tech/proxy/resources/**"/>
-                <include name="com/l7tech/server/**/*.properties"/>
-            </fileset>
-
-            <fileset dir="${src.root}/tests">
-                <include name="com/l7tech/**/*.properties" if="dev.build" unless="no.dev.build"/>
-                <include name="com/l7tech/common/security/xml/test_*" if="dev.build" unless="no.dev.build"/>
-                <include name="com/l7tech/**/*.xml" if="dev.build" unless="no.dev.build"/>
-                <include name="com/l7tech/**/*.pfx" if="dev.build" unless="no.dev.build"/>
-                <include name="com/l7tech/**/*.crt" if="dev.build" unless="no.dev.build"/>
-                <include name="com/l7tech/**/*.xsd" if="dev.build" unless="no.dev.build"/>
-                <include name="com/l7tech/**/*.wsdl" if="dev.build" unless="no.dev.build"/>
-                <include name="**/resources/*" if="dev.build" unless="no.dev.build"/>
-                <include name="**/resources/**/*" if="dev.build" unless="no.dev.build"/>
             </fileset>
         </copy>
 

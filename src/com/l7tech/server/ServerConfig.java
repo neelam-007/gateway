@@ -146,7 +146,7 @@ public class ServerConfig implements ClusterPropertyListener {
 
     public static final String PROPS_PATH_PROPERTY = "com.l7tech.server.serverConfigPropertiesPath";
     public static final String PROPS_PATH_DEFAULT = "/ssg/etc/conf/serverconfig.properties";
-    public static final String PROPS_RESOURCE_PATH = "serverconfig.properties";
+    public static final String PROPS_RESOURCE_PATH = "resources/serverconfig.properties";
 
     public static final String PROPS_OVER_PATH_PROPERTY = "com.l7tech.server.serverConfigOverridePropertiesPath";
     public static final String PROPS_OVER_PATH_DEFAULT =
@@ -730,7 +730,7 @@ public class ServerConfig implements ClusterPropertyListener {
             if (file.exists())
                 propStream = new FileInputStream(file);
             else
-                propStream = ServerConfig.class.getClassLoader().getResourceAsStream(PROPS_RESOURCE_PATH);
+                propStream = ServerConfig.class.getResourceAsStream(PROPS_RESOURCE_PATH);
 
             if (propStream != null) {
                 _properties.load(propStream);

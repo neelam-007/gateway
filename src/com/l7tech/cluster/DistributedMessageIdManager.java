@@ -57,7 +57,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
         dummyTransactionManager = new DummyTransactionManager();
         tree = new TreeCache();
         PropertyConfigurator config = new PropertyConfigurator();
-        config.configure(tree, "treecache-service.xml");
+        config.configure(tree, "com/l7tech/cluster/resources/treecache-service.xml" );
         String props = tree.getClusterProperties();
         props = props.replaceFirst("mcast_addr=0.0.0.0", "mcast_addr=" + address);
         props = props.replaceFirst("mcast_port=0", "mcast_port=" + port);
