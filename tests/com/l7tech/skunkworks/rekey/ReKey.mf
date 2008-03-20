@@ -1,0 +1,2 @@
+Main-Class: com.l7tech.skunkworks.rekey.ReKey
+Class-Path: Gateway.jar
