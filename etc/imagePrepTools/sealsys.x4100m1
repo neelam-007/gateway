@@ -132,6 +132,8 @@ seal)
   # Clear the /etc/resolv.conf file
   echo "" > /etc/resolv.conf
 
+  sed -i -e 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
+  
   # Force root to change her password the next time she logs in.
   chage -d 0 root
 
