@@ -1524,21 +1524,18 @@
     </target>
 
     <!--
-      Deploy SSG for development
+      Deploy SSG configuration files for development (to run with classes from IDE)
+      This will not deploy the Manager Applet or any modular assertions
     -->
-    <target name="deploy" description="Deploy a development SSG (run with ./run.sh gateway)" depends="package.gateway.ifrequired, deploy.keys">
+    <target name="deployconfig" description="Deploy configuration files for a development SSG (run from IDE)" depends="init,db.properties,deploy.keys">
         <echo level="info">Creating deployment directories</echo>
         <mkdir dir="${deploy.dir}/etc/inf/ssg/webadmin/applet/lib"/>
         <mkdir dir="${deploy.dir}/etc/conf/partitions/default_/var/attachments"/>
         <mkdir dir="${deploy.dir}/etc/conf/partitions/default_/var/modules"/>
         <mkdir dir="${deploy.dir}/etc/ldapTemplates"/>
         <mkdir dir="${deploy.dir}/etc/uddiTemplates"/>
-        <mkdir dir="${deploy.dir}/lib"/>
-        <mkdir dir="${deploy.dir}/logs"/>
-        <mkdir dir="${deploy.dir}/modules/assertions"/>
-        <mkdir dir="${deploy.dir}/modules/lib"/>
 
-        <echo level="info">Copying gateway files</echo>
+        <echo level="info">Copying gateway configuration files</echo>
         <echo level="info">Copying configuration files</echo>
         <copy file="${src.root}/etc/db/${database.type}/hibernate.properties" todir="${deploy.dir}/etc/conf/partitions/default_" overwrite="true">
             <filterchain>
@@ -1558,6 +1555,23 @@
             <fileset dir="${src.root}/etc/uddiTemplates"/>
         </copy>
         <copy file="${src.root}/etc/tomcat/truststore.jks" todir="${deploy.dir}/etc/conf" preservelastmodified="true"/>
+        <echo level="info">Copying web files</echo>
+        <copy file="${src.root}/web/index.html" todir="${deploy.dir}/etc/inf/ssg" preservelastmodified="true"/>
+
+        <echo level="info">Finished copying gateway configuration files</echo>
+    </target>
+
+    <!--
+      Deploy SSG for development
+    -->
+    <target name="deploy" description="Deploy a development SSG (run with ./run.sh gateway)" depends="package.gateway.ifrequired, deploy.keys, deployconfig">
+        <echo level="info">Creating deployment directories</echo>
+        <mkdir dir="${deploy.dir}/lib"/>
+        <mkdir dir="${deploy.dir}/logs"/>
+        <mkdir dir="${deploy.dir}/modules/assertions"/>
+        <mkdir dir="${deploy.dir}/modules/lib"/>
+
+        <echo level="info">Copying gateway files</echo>
         <echo level="info">Copying web files</echo>
         <copy file="${src.root}/web/index.html" todir="${deploy.dir}/etc/inf/ssg" preservelastmodified="true"/>
         <copy file="${build.dir}/Manager.jar" todir="${deploy.dir}/etc/inf/ssg/webadmin/applet/" preservelastmodified="true"/>
@@ -1584,6 +1598,11 @@
     </target>
     <target name="deploy.keys" unless="deploy.keys.notrequired" depends="deploy.keys.check">
         <echo level="info">Generating X.509 keys and configuration ...</echo>
+        <javac srcdir="src" destdir="${build.classes}" debug="on"
+               optimize="off" includes="**/*SetKeys*"
+               deprecation="off" verbose="no">
+            <classpath refid="project.classpath"/>
+        </javac>
         <mkdir dir="${deploy.dir}/etc/conf/partitions/default_/keys"/>
         <copy file="${src.root}/etc/keystore.properties" todir="${deploy.dir}/etc/conf/partitions/default_" overwrite="true">
             <filterchain>
