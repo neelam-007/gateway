@@ -1535,6 +1535,7 @@
         <mkdir dir="${deploy.dir}/etc/conf/partitions/default_/var/modules"/>
         <mkdir dir="${deploy.dir}/etc/ldapTemplates"/>
         <mkdir dir="${deploy.dir}/etc/uddiTemplates"/>
+        <mkdir dir="${deploy.dir}/logs"/>
 
         <echo level="info">Copying gateway configuration files</echo>
         <echo level="info">Copying configuration files</echo>
@@ -1599,8 +1600,9 @@
     </target>
     <target name="deploy.keys" unless="deploy.keys.notrequired" depends="deploy.keys.check">
         <echo level="info">Generating X.509 keys and configuration ...</echo>
+        <mkdir dir="${build.classes}"/>
         <javac srcdir="src" destdir="${build.classes}" debug="on"
-               optimize="off" includes="**/*SetKeys*"
+               optimize="off" includes="**/*SetKeys*,**/BouncyCastleJceProviderEngine*"
                deprecation="off" verbose="no">
             <classpath refid="project.classpath"/>
         </javac>
