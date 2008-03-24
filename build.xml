@@ -1139,6 +1139,7 @@
             <arg value="${test.perf.reports.dir}?today?-14D"/>  <!-- reportDir, include any Japex test report from last 14 days -->
             <!-- Add specific Japex test reports here. -->
             <arg value="${test.perf.reports.dir}/4.2_final.xml"/>
+            <arg value="${test.perf.reports.dir}/4.3_final.xml"/>
         </java>
         <echo level="info">Performance trend complete.</echo>
     </target>
