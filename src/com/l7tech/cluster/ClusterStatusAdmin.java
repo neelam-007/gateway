@@ -1,17 +1,17 @@
 package com.l7tech.cluster;
 
+import com.l7tech.admin.Administrative;
 import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.License;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.MethodStereotype;
 import com.l7tech.common.security.rbac.Secured;
+import com.l7tech.common.util.CollectionUpdate;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.service.MetricsSummaryBin;
-import com.l7tech.admin.Administrative;
-
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +34,19 @@ public interface ClusterStatusAdmin {
     @Secured(types=EntityType.CLUSTER_INFO, stereotype=MethodStereotype.FIND_ENTITIES)
     @Administrative(licensed=false)
     ClusterNodeInfo[] getClusterStatus() throws FindException;
+
+    /**
+     * Retrieves changes in list of cluster nodes.
+     *
+     * @param oldVersionID  version ID from previous retrieval
+     * @return collection changes; never null
+     * @throws FindException if there was a problem accessing the requested information
+     * @see CollectionUpdate
+     */
+    @Transactional(readOnly=true)
+    @Secured(types=EntityType.CLUSTER_INFO, stereotype=MethodStereotype.FIND_ENTITIES)
+    @Administrative(licensed=false)
+    CollectionUpdate<ClusterNodeInfo> getClusterNodesUpdate(int oldVersionID) throws FindException;
 
     /**
      * Get some usage statistics on a 'per-published-service' basis.

@@ -1,5 +1,6 @@
 package com.l7tech.cluster;
 
+import com.l7tech.admin.LicenseRuntimeException;
 import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.License;
 import com.l7tech.common.LicenseException;
@@ -7,6 +8,8 @@ import com.l7tech.common.LicenseManager;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.MethodStereotype;
 import com.l7tech.common.security.rbac.Secured;
+import com.l7tech.common.util.CollectionUpdate;
+import com.l7tech.common.util.CollectionUpdateProducer;
 import com.l7tech.common.util.TimeUnit;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.DeleteException;
@@ -22,7 +25,6 @@ import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.service.MetricsSummaryBin;
-import com.l7tech.admin.LicenseRuntimeException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -93,6 +95,10 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
             output[i] = (ClusterNodeInfo)resarray[i];
         }
         return output;
+    }
+
+    public CollectionUpdate<ClusterNodeInfo> getClusterNodesUpdate(int oldVersionID) throws FindException {
+        return clusterNodesUpdateProducer.createUpdate(oldVersionID);
     }
 
     /**
@@ -286,6 +292,13 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         if (!ClusterStatusAdmin.CAPABILITY_HWXPATH.equals(capability)) return null;
         return TarariLoader.getGlobalContext() != null ? ClusterStatusAdmin.CAPABILITY_HWXPATH_TARARI : null;
     }
+
+    private CollectionUpdateProducer<ClusterNodeInfo, FindException> clusterNodesUpdateProducer =
+            new CollectionUpdateProducer<ClusterNodeInfo, FindException>(5 * 60 * 1000, 100, null) {
+                protected Collection<ClusterNodeInfo> getCollection() throws FindException {
+                    return clusterInfoManager.retrieveClusterStatus();
+                }
+            };
 
     private final ClusterInfoManager clusterInfoManager;
     private final ServiceUsageManager serviceUsageManager;

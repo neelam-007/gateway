@@ -8,12 +8,16 @@ import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.widgets.BetterComboBox;
+import com.l7tech.common.util.CollectionUpdate;
+import com.l7tech.common.util.CollectionUpdateConsumer;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.MetricsChartPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ServiceHeader;
+import com.l7tech.objectmodel.ServiceHeaderDifferentiator;
 import com.l7tech.service.MetricsBin;
 import com.l7tech.service.MetricsSummaryBin;
 import com.l7tech.service.ServiceAdmin;
@@ -104,28 +108,90 @@ public class ServiceMetricsPanel extends JPanel {
     private Resolution _currentResolution;
     private final MetricsChartPanel _metricsChartPanel;
 
-    private final DefaultComboBoxModel _clusterNodeComboModel;
-    private final DefaultComboBoxModel _publishedServiceComboModel;
+    /** List of cluster nodes fetched from gateway. */
+    private Collection<ClusterNodeInfo> _clusterNodes = new ArrayList<ClusterNodeInfo>();
 
-    /** List of cluster nodes last fetched from gateway; sorted. */
-    private ClusterNodeInfo[] _clusterNodes;
+    private CollectionUpdateConsumer<ClusterNodeInfo, FindException> _clusterNodesUpdateConsumer =
+            new CollectionUpdateConsumer<ClusterNodeInfo, FindException>(null) {
+                protected CollectionUpdate<ClusterNodeInfo> getUpdate(final int oldVersionID) throws FindException {
+                    return getClusterStatusAdmin().getClusterNodesUpdate(oldVersionID);
+                }
+            };
 
-    /** Stands for cluster nodes selected. */
+    /** Combobox item to represent all cluster nodes selected. */
     private static final ClusterNodeInfo ALL_NODES = new ClusterNodeInfo() {
         public String toString() {
             return _resources.getString("clusterNodeCombo.allValue");
         }
     };
 
-    /** List of published services last fetched from gateway; sorted. */
-    private EntityHeader[] _publishedServices;
+    private final DefaultComboBoxModel _clusterNodesComboModel =
+            new DefaultComboBoxModel() {
+                {
+                    // First combo box element is permanently the "all node".
+                    super.addElement(ALL_NODES);
+                }
 
-    /** Stands for all services selected. */
-    private static final EntityHeader ALL_SERVICES = new EntityHeader() {
-        public String toString() {
-            return _resources.getString("publishedServiceCombo.allValue");
-        }
-    };
+                /**
+                 * Adds an element in alphabetical order (from the second element on).
+                 * @param o     a {@link ClusterNodeInfo} object to add
+                 */
+                @Override
+                public void addElement(Object o) {
+                    final ClusterNodeInfo newElement = (ClusterNodeInfo)o;
+                    int i = 1;
+                    while (i < getSize() && newElement.compareTo((ClusterNodeInfo)getElementAt(i)) >= 0) {
+                        ++i;
+                    }
+                    insertElementAt(newElement, i);
+                }
+            };
+
+    /** List of published services fetched from gateway. */
+    private Collection<ServiceHeader> _publishedServices = new ArrayList<ServiceHeader>();
+
+    private CollectionUpdateConsumer<ServiceHeader, FindException> _publishedServicesUpdateConsumer =
+            new CollectionUpdateConsumer<ServiceHeader, FindException>(new ServiceHeaderDifferentiator()) {
+                protected CollectionUpdate<ServiceHeader> getUpdate(final int oldVersionID) throws FindException {
+                    return getServiceAdmin().getPublishedServicesUpdate(oldVersionID);
+                }
+            };
+
+    /** Combobox item to represent all published services selected. */
+    private static final ServiceHeader ALL_SERVICES = new ServiceHeader(false, false,
+            _resources.getString("publishedServiceCombo.allValue"), null, null, null);
+
+    private final DefaultComboBoxModel _publishedServicesComboModel =
+            new DefaultComboBoxModel() {
+                {
+                    // First combo box element is permanently the "all services".
+                    super.addElement(ALL_SERVICES);
+                }
+
+                /**
+                 * Adds an element in alphabetical order (excluding the first
+                 * element since it is the "all services").
+                 * @param o     a {@link ServiceHeader} object to add
+                 */
+                @Override
+                public void addElement(Object o) {
+                    final ServiceHeader newElement = (ServiceHeader)o;
+                    int i = 1;
+                    while (i < getSize() && newElement.getDisplayName().compareToIgnoreCase(((ServiceHeader)getElementAt(i)).getDisplayName()) >= 0) {
+                        ++i;
+                    }
+                    insertElementAt(newElement, i);
+                    if (_logger.isLoggable(Level.FINE)) _logger.fine("Added published service \"" + newElement.getDisplayName() + "\" to combo box.");
+                }
+
+                @Override
+                public void removeElement(Object o) {
+                    super.removeElement(o);
+                    if (_logger.isLoggable(Level.FINE)) {
+                        _logger.fine("Removed published service \"" + ((ServiceHeader)o).getDisplayName() + "\" from combo box.");
+                    }
+                }
+            };
 
     private ClusterStatusAdmin _clusterStatusAdmin;
     private ServiceAdmin _serviceAdmin;
@@ -240,12 +306,8 @@ public class ServiceMetricsPanel extends JPanel {
         });
 
         try {
-            _clusterNodes = findAllClusterNodes();
-            ClusterNodeInfo[] comboItems = new ClusterNodeInfo[_clusterNodes.length + 1];
-            System.arraycopy(_clusterNodes, 0, comboItems, 1, _clusterNodes.length);
-            comboItems[0] = ALL_NODES;
-            _clusterNodeComboModel = new DefaultComboBoxModel(comboItems);
-            clusterNodeCombo.setModel(_clusterNodeComboModel);
+            _clusterNodesUpdateConsumer.update(_clusterNodes, _clusterNodesComboModel);
+            clusterNodeCombo.setModel(_clusterNodesComboModel);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -257,12 +319,8 @@ public class ServiceMetricsPanel extends JPanel {
         });
 
         try {
-            _publishedServices = findAllPublishedServices();
-            final EntityHeader[] comboItems = new EntityHeader[_publishedServices.length + 1];
-            System.arraycopy(_publishedServices, 0, comboItems, 1, _publishedServices.length);
-            comboItems[0] = ALL_SERVICES;
-            _publishedServiceComboModel = new DefaultComboBoxModel(comboItems);
-            publishedServiceCombo.setModel(_publishedServiceComboModel);
+            _publishedServicesUpdateConsumer.update(_publishedServices, _publishedServicesComboModel);
+            publishedServiceCombo.setModel(_publishedServicesComboModel);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -278,53 +336,15 @@ public class ServiceMetricsPanel extends JPanel {
         _refreshTimer.start();
     } /* constructor */
 
-    private ClusterNodeInfo[] findAllClusterNodes() throws FindException {
-        final ClusterNodeInfo[] result = getClusterStatusAdmin().getClusterStatus();
-        Arrays.sort(result);
-        return result;
-    }
-
-    private EntityHeader[] findAllPublishedServices() throws FindException {
-        final EntityHeader[] result = getServiceAdmin().findAllPublishedServices();
-        Arrays.sort(result, new Comparator<EntityHeader>() {
-            public int compare(EntityHeader eh1, EntityHeader eh2) {
-                String name1 = eh1.getName();
-                String name2 = eh2.getName();
-
-                if (name1 == null) name1 = "";
-                if (name2 == null) name2 = "";
-
-                return name1.toLowerCase().compareTo(name2.toLowerCase());
-            }
-        });
-        return result;
-    }
-
-    private void updateClusterNodesCombo() throws FindException {
-        final ClusterNodeInfo[] newNodes = findAllClusterNodes();
-        if (!Arrays.equals(_clusterNodes, newNodes)) {
-            updateComboModel(_clusterNodes, newNodes, _clusterNodeComboModel);
-        }
-        _clusterNodes = newNodes;
-    }
-
-    private void updatePublishedServicesCombo() throws FindException {
-            final EntityHeader[] newServices = findAllPublishedServices();
-            if (!Arrays.equals(_publishedServices, newServices)) {
-                updateComboModel(_publishedServices, newServices, _publishedServiceComboModel);
-            }
-            _publishedServices = newServices;
-    }
-
     public ClusterNodeInfo getClusterNodeSelected() {
-        ClusterNodeInfo result = (ClusterNodeInfo) _clusterNodeComboModel.getSelectedItem();
+        ClusterNodeInfo result = (ClusterNodeInfo) _clusterNodesComboModel.getSelectedItem();
         if (result == ALL_NODES)
             result = null;
         return result;
     }
 
     public EntityHeader getPublishedServiceSelected() {
-        EntityHeader result = (EntityHeader) _publishedServiceComboModel.getSelectedItem();
+        EntityHeader result = (EntityHeader) _publishedServicesComboModel.getSelectedItem();
         if (result == ALL_SERVICES)
             result = null;
         return result;
@@ -428,17 +448,43 @@ public class ServiceMetricsPanel extends JPanel {
                 return;
             }
 
-            updateClusterNodesCombo();
-            updatePublishedServicesCombo();
+            // Updates combo box with add/removed cluster nodes; taking care to preserve selection if only name changed.
+            final ClusterNodeInfo prevNode = (ClusterNodeInfo)_clusterNodesComboModel.getSelectedItem();
+            _clusterNodesUpdateConsumer.update(_clusterNodes, _clusterNodesComboModel);
+            if (_clusterNodesComboModel.getSelectedItem() != prevNode) {
+                for (int i = 1; i < _clusterNodesComboModel.getSize(); ++i) {
+                    final ClusterNodeInfo node = (ClusterNodeInfo)_clusterNodesComboModel.getElementAt(i);
+                    if (node.getOid() == prevNode.getOid()) {
+                        _clusterNodesComboModel.setSelectedItem(node);
+                        break;
+                    }
+                }
+            }
+
+            // Updates combo box with add/removed published services; taking care to preserve selection if only name changed.
+            final ServiceHeader prevService = (ServiceHeader)_publishedServicesComboModel.getSelectedItem();
+            _publishedServicesUpdateConsumer.update(_publishedServices, _publishedServicesComboModel);
+            if (_publishedServicesComboModel.getSelectedItem() != prevService) {
+                for (int i = 1; i < _publishedServicesComboModel.getSize(); ++i) {
+                    final ServiceHeader service = (ServiceHeader)_publishedServicesComboModel.getElementAt(i);
+                    if (service.getOid() == prevService.getOid()) {
+                        _publishedServicesComboModel.setSelectedItem(service);
+                        if (_logger.isLoggable(Level.FINE)) {
+                            _logger.fine("Reselected modified published service \"" + service.getDisplayName() + "\" in combo box.");
+                        }
+                        break;
+                    }
+                }
+            }
 
             String nodeId = null;
-            final ClusterNodeInfo node = (ClusterNodeInfo) _clusterNodeComboModel.getSelectedItem();
+            final ClusterNodeInfo node = (ClusterNodeInfo) _clusterNodesComboModel.getSelectedItem();
             if (node != ALL_NODES) {
                 nodeId = node.getNodeIdentifier();
             }
 
             long[] serviceOids = null;
-            final EntityHeader service = (EntityHeader) _publishedServiceComboModel.getSelectedItem();
+            final EntityHeader service = (EntityHeader) _publishedServicesComboModel.getSelectedItem();
             if (service != ALL_SERVICES) {
                 serviceOids = new long[]{service.getOid()};
             }
@@ -624,30 +670,6 @@ public class ServiceMetricsPanel extends JPanel {
 
         if (bringTabToFront) {
             rightTabbedPane.setSelectedIndex(SELECTION_TAB_INDEX);
-        }
-    }
-
-    private <T> void updateComboModel(T[] oldItems, T[] newItems, DefaultComboBoxModel comboModel) {
-        Set<T> news = new LinkedHashSet<T>(Arrays.asList(newItems));
-        Set<T> olds = new HashSet<T>(Arrays.asList(oldItems));
-        Set<T> olds2 = new HashSet<T>(Arrays.asList(oldItems));
-
-        // Remove deleted stuff from model
-        olds.removeAll(news);
-        for (T o : olds) {
-            comboModel.removeElement(o);
-            if (_logger.isLoggable(Level.FINE)) {
-                _logger.fine("Removed from ComboBox model:" + o);
-            }
-        }
-
-        // Add new stuff to model
-        news.removeAll(olds2);
-        for (T o : news) {
-            comboModel.addElement(o);
-            if (_logger.isLoggable(Level.FINE)) {
-                _logger.fine("Added to ComboBox model: " + o);
-            }
         }
     }
 

@@ -2,8 +2,8 @@ package com.l7tech.service;
 
 import com.l7tech.admin.Administrative;
 import com.l7tech.common.AsyncAdminMethods;
-import com.l7tech.common.policy.PolicyType;
 import com.l7tech.common.policy.Policy;
+import com.l7tech.common.policy.PolicyType;
 import static com.l7tech.common.security.rbac.EntityType.SAMPLE_MESSAGE;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
@@ -11,6 +11,7 @@ import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.uddi.UDDIRegistryInfo;
 import com.l7tech.common.uddi.WsdlInfo;
+import com.l7tech.common.util.CollectionUpdate;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -56,6 +57,19 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods {
     @Secured(stereotype=FIND_HEADERS)
     @Administrative(licensed=false)
     ServiceHeader[] findAllPublishedServicesByOffset(int offset, int windowSize) throws FindException;
+
+    /**
+     * Retrieves changes in list of published services.
+     *
+     * @param oldVersionID  version ID from previous retrieval
+     * @return collection changes; never null
+     * @throws FindException if there was a problem accessing the requested information
+     * @see CollectionUpdate
+     */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_HEADERS)
+    @Administrative(licensed=false)
+    CollectionUpdate<ServiceHeader> getPublishedServicesUpdate(final int oldVersionID) throws FindException;
 
     /**
      * Store the specified new or existing published service. If the specified {@link PublishedService} contains a

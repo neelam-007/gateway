@@ -2,6 +2,8 @@ package com.l7tech.cluster;
 
 import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.License;
+import com.l7tech.common.util.CollectionUpdate;
+import com.l7tech.common.util.CollectionUpdateProducer;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -11,10 +13,7 @@ import com.l7tech.service.MetricsSummaryBin;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 
 /*
  * Test stub for ClusterStatusAdmin interface
@@ -23,6 +22,13 @@ import java.util.Map;
 
 public class ClusterStatusAdminStub implements ClusterStatusAdmin{
     private static License license = null;
+
+    private CollectionUpdateProducer<ClusterNodeInfo, FindException> clusterNodesUpdateProducer =
+            new CollectionUpdateProducer<ClusterNodeInfo, FindException>(5000, 10, null) {
+                protected Collection<ClusterNodeInfo> getCollection() throws FindException {
+                    return Arrays.asList(getClusterStatus());
+                }
+            };
 
     public String getCurrentClusterTimeZone() {
         throw new UnsupportedOperationException();
@@ -58,6 +64,10 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         cluster[6] = c7;
         cluster[7] = c8;
         return cluster;
+    }
+
+    public CollectionUpdate<ClusterNodeInfo> getClusterNodesUpdate(int oldVersionID) throws FindException {
+        return clusterNodesUpdateProducer.createUpdate(oldVersionID);
     }
 
     public ServiceUsage[] getServiceUsage() {

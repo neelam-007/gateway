@@ -1,10 +1,12 @@
 package com.l7tech.service;
 
 import com.l7tech.common.AsyncAdminMethodsImpl;
-import com.l7tech.common.policy.PolicyType;
 import com.l7tech.common.policy.Policy;
+import com.l7tech.common.policy.PolicyType;
 import com.l7tech.common.uddi.UDDIRegistryInfo;
 import com.l7tech.common.uddi.WsdlInfo;
+import com.l7tech.common.util.CollectionUpdate;
+import com.l7tech.common.util.CollectionUpdateProducer;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.*;
@@ -39,6 +41,12 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     private PolicyValidator policyValidator;
     private ServiceManager serviceManager;
     private AsyncAdminMethodsImpl asyncSupport = new AsyncAdminMethodsImpl();
+    private CollectionUpdateProducer<ServiceHeader, FindException> publishedServicesUpdateProducer =
+            new CollectionUpdateProducer<ServiceHeader, FindException>(5000, 10, new ServiceHeaderDifferentiator()) {
+                protected Collection<ServiceHeader> getCollection() throws FindException {
+                    return serviceManager.findAllHeaders();
+                }
+            };
 
     /**
      * Retreive the actual PublishedService object from it's oid.
@@ -117,7 +125,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
 
     }
 
-    public JobId<PolicyValidatorResult> validatePolicy(final String policyXml, 
+    public JobId<PolicyValidatorResult> validatePolicy(final String policyXml,
                                                        final PolicyType policyType,
                                                        final boolean soap,
                                                        final String wsdlXml)
@@ -169,6 +177,10 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      */
     public ServiceHeader[] findAllPublishedServicesByOffset(int offset, int windowSize) {
         throw new RuntimeException("Not Implemented");
+    }
+
+    public CollectionUpdate<ServiceHeader> getPublishedServicesUpdate(int oldVersionID) throws FindException {
+        return publishedServicesUpdateProducer.createUpdate(oldVersionID);
     }
 
     /**

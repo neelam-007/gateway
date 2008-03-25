@@ -1912,6 +1912,7 @@
                 <exclude name="com/l7tech/policy/assertion/ext/**/*"/>
                 <exclude name="com/l7tech/common/Authorizer.class"/>
                 <exclude name="com/l7tech/common/policy/**/*"/>
+                <exclude name="com/l7tech/common/util/CollectionUpdateProducer*.class"/>
             </fileset>
             <fileset dir="${src.root}/etc">
                 <include name="login.config"/>
@@ -1972,6 +1973,7 @@
                 <exclude name="com/l7tech/common/util/Pkcs12*.class"/>
                 <exclude name="com/l7tech/common/util/CertificateDownloader.class"/>
                 <exclude name="com/l7tech/common/util/Log4jJdkLogAppender.class"/>
+                <exclude name="com/l7tech/common/util/CollectionUpdateProducer*.class"/>
                 <exclude name="com/l7tech/common/security/xml/decorator/**/*"/>
                 <exclude name="com/l7tech/common/security/xml/processor/*Encrypt*.class"/>
                 <exclude name="com/l7tech/common/security/xml/processor/*Sign*.class"/>
@@ -2012,6 +2014,7 @@
                 <include name="com/l7tech/objectmodel/EntityManager.class"/>
                 <include name="com/l7tech/objectmodel/PolicyHeader.class"/>
                 <include name="com/l7tech/objectmodel/ServiceHeader.class"/>
+                <include name="com/l7tech/objectmodel/ServiceHeaderDifferentiator.class"/>
                 <include name="com/l7tech/objectmodel/ObjectPermission.class"/>
                 <include name="com/l7tech/objectmodel/AnonymousEntityReference.class"/>
                 <include name="com/l7tech/objectmodel/PersistentEntity.class"/>
@@ -3504,6 +3507,12 @@
           <equals arg1="1.5" arg2="${java.specification.version}"/>
         </condition>
         <fail unless="compile15.versionOk">You must run this with a 1.5 JDK</fail>
+
+        <!-- This class causes mysterious 1.5 compiler error if compile together with other classes. Work around by compiling it separately first. -->
+        <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
+            deprecation="off" verbose="off" target="1.5" source="1.5">
+            <include name="com/l7tech/common/util/CollectionUpdateProducer.java"/>
+        </javac>
 
         <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
             deprecation="off" verbose="off" target="1.5" source="1.5">

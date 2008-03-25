@@ -3,22 +3,21 @@ package com.l7tech.server.service;
 import com.l7tech.common.AsyncAdminMethodsImpl;
 import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.io.ByteLimitInputStream;
-import com.l7tech.common.policy.*;
+import com.l7tech.common.policy.Policy;
+import com.l7tech.common.policy.PolicyType;
+import com.l7tech.common.policy.PolicyVersion;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.common.uddi.UDDIRegistryInfo;
 import com.l7tech.common.uddi.WsdlInfo;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.Resolver;
-import com.l7tech.common.util.ResolvingComparator;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Include;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
@@ -60,6 +59,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -95,6 +95,13 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     private final BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
     private final ExecutorService validatorExecutor;
     private Auditor auditor;
+
+    private CollectionUpdateProducer<ServiceHeader, FindException> publishedServicesUpdateProducer =
+            new CollectionUpdateProducer<ServiceHeader, FindException>(5 * 60 * 1000, 100, new ServiceHeaderDifferentiator()) {
+                protected Collection<ServiceHeader> getCollection() throws FindException {
+                    return serviceManager.findAllHeaders();
+                }
+            };
 
     public ServiceAdminImpl(AssertionLicense licenseManager,
                             RegistryPublicationManager registryPublicationManager,
@@ -210,6 +217,10 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
                     throws FindException {
             Collection<ServiceHeader> res = serviceManager.findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
+    }
+
+    public CollectionUpdate<ServiceHeader> getPublishedServicesUpdate(final int oldVersionID) throws FindException {
+        return publishedServicesUpdateProducer.createUpdate(oldVersionID);
     }
 
     public JobId<PolicyValidatorResult> validatePolicy(final String policyXml, final PolicyType policyType, final boolean soap, final String wsdlXml) {
