@@ -1148,11 +1148,12 @@ public class WsdlComposer {
                 Definition sourceDef = source.wsdl.getDefinition();
                 for (Object o : sourceDef.getNamespaces().keySet()) {
                     String key = (String) o;
+                    String namespace = sourceDef.getNamespace(key);
                     if (workingWsdl.getNamespace(key) != null) {
                         //noinspection unchecked
                         key = getNextNsPrefix(workingWsdl.getNamespaces().keySet());
                     }
-                    workingWsdl.addNamespace(key, sourceDef.getNamespace(key));
+                    workingWsdl.addNamespace(key, namespace);
                 }
             }
         }
