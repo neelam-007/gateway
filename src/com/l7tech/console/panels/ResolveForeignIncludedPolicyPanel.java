@@ -109,7 +109,7 @@ public class ResolveForeignIncludedPolicyPanel extends WizardStepPanel {
         } else if(overwriteRadio.isSelected()) {
             foreignIncludedPolicyReference.setUseType(IncludedPolicyReference.UseType.UPDATE);
         } else if(renameRadio.isSelected()) {
-            if(newName.getText().trim().isEmpty()) {
+            if(newName.getText().trim().length() == 0) {
                 JOptionPane.showMessageDialog(this, "No new name was entered.", "Error", JOptionPane.ERROR_MESSAGE);
                 return false;
             } else if(newName.getText().equals(foreignIncludedPolicyReference.getName())) {
