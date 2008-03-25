@@ -84,7 +84,7 @@ class ValidatorFactory {
         Class classNode = assertionMap.get(assclass);
         if (null == classNode) {
             if (useNullValidator.containsKey(assclass))
-                return new NullValidator(assertion);
+                return addValidationAspects(assertion, new NullValidator(assertion));
             String classname = (String)assertion.meta().get(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME);
             try {
                 classNode = assclass.getClassLoader().loadClass(classname);
@@ -94,10 +94,10 @@ class ValidatorFactory {
         }
         if (null == classNode) {
             useNullValidator.put(assclass, Boolean.TRUE);
-            return new NullValidator(assertion);
+            return addValidationAspects(assertion, new NullValidator(assertion));
         }
         try {
-            return makeValidator(classNode, assertion);
+            return addValidationAspects(assertion, makeValidator(classNode, assertion));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -128,6 +128,24 @@ class ValidatorFactory {
             return ctor.newInstance(assertion);
         }
         throw new RuntimeException("Cannot locate expected he constructor in " + classNode);
+    }
+
+    /**
+     * Decorate the given AssertionValidator with any additional AssertionValidators that are
+     * appropriate for the given assertion.
+     *
+     * @param assertion The assertions whose validation aspects are to be considered
+     * @param assertionValidator The underlying assertion validator
+     * @return The decorated AssertionValidator which may be the same as the given AssertionValidator
+     */
+    private static AssertionValidator addValidationAspects( final Assertion assertion, final AssertionValidator assertionValidator ) {
+        AssertionValidator decoratedValidator = assertionValidator;
+
+        if ( assertion instanceof UsesVariables ) {
+            decoratedValidator = new SequenceValidator( assertionValidator, new VariableUseValidator(assertion) );
+        }
+
+        return decoratedValidator;
     }
 
     /**

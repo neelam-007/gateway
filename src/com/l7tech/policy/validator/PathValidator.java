@@ -26,9 +26,6 @@ import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.validator.DefaultPolicyValidator.DeferredValidate;
-import com.l7tech.policy.variable.BuiltinVariables;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.WspReader;
 
 import javax.wsdl.BindingOperation;
@@ -77,7 +74,6 @@ class PathValidator {
     private Map<String, Boolean> seenCredentialsSinceModified = new HashMap<String, Boolean>();
     private Map<String, Boolean> seenWssSignature = new HashMap<String, Boolean>();
     private Map<String, Boolean> seenSamlSecurity = new HashMap<String, Boolean>();
-    private Map<String, Boolean> seenVariables = new HashMap<String, Boolean>();
     private boolean seenSpecificUserAssertion = false;
     private boolean seenAuthenticationAssertion = false;
     private boolean seenCustomAuth = false;
@@ -177,13 +173,6 @@ class PathValidator {
 
         if (parsesXML(a)) {
             seenParsing = true;
-        }
-
-        if (a instanceof SetsVariables) {
-            SetsVariables sv = (SetsVariables) a;
-            final VariableMetadata[] vars = sv.getVariablesSet();
-            for (VariableMetadata var : vars)
-                setSeenVariable(var.getName().toLowerCase());
         }
 
         if (a instanceof TrueAssertion) {
@@ -479,23 +468,6 @@ class PathValidator {
                                                           null));
             }
         }
-
-        if (a instanceof UsesVariables) {
-            UsesVariables ua = (UsesVariables)a;
-            try {
-                final String[] vars = ua.getVariablesUsed();
-                for (String var : vars) {
-                    if (!(BuiltinVariables.isPredefined(var) || seenVariable(var.toLowerCase()))) {
-                        result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                                                                            "This assertion refers to the variable '" + var + "', which is neither predefined " +
-                                                                            "nor set in the policy so far.", null));
-                    }
-                }
-            } catch (IllegalArgumentException iae) {
-                result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                  "This assertion uses invalid variable syntax.", null));
-            }
-        }
     }
 
     /**
@@ -754,21 +726,6 @@ class PathValidator {
         String actor = assertionToActor(context);
         Boolean currentvalue = seenSamlSecurity.get(actor);
         return currentvalue != null && currentvalue;
-    }
-
-    private boolean seenVariable(String var) {
-        Boolean cur = seenVariables.get(var);
-        if (cur == null) {
-            // Try matching as a prefix.
-            String prefix = Syntax.getMatchingName(var, seenVariables.keySet());
-            return prefix != null && seenVariables.get(prefix);
-        } else {
-            return cur;
-        }
-    }
-
-    private void setSeenVariable(String var) {
-        seenVariables.put(var, Boolean.TRUE);
     }
 
     private void setSeenSamlStatement(Assertion context, boolean value) {
