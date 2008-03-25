@@ -125,13 +125,61 @@ public class PolicyImporter {
         if (policy != null) {
             Assertion rootAssertion = resolver.localizePolicy(policy);
             if(references != null && fragments.size() > 0) {
-                updateExistingIncludes(rootAssertion, references, fragments);
+                try {
+                    updateIncludeAssertions(rootAssertion, references, fragments);
+
+                    for(ExternalReference reference : references) {
+                        if(reference instanceof IncludedPolicyReference) {
+                            IncludedPolicyReference ipr = (IncludedPolicyReference)reference;
+                            if(ipr.getUseType() == IncludedPolicyReference.UseType.USE_EXISTING && !doesFragmentRequireUpdate(fragments.get(ipr.getName()).getAssertion(), references, fragments)) {
+                                fragments.remove(ipr.getName());
+                            }
+                        }
+                    }
+                } catch(IOException e) {
+                    logger.log(Level.WARNING, "cannot parse references from document " + name, e);
+                }
             }
             return new PolicyImporterResult(rootAssertion, fragments);
         } else {
             logger.warning("The document " + name + " did not contain a policy at all.");
         }
         throw new InvalidPolicyStreamException("Document does not seem to include a policy.");
+    }
+
+    /**
+     * Updates the include assertions in a policy based on the results of the external references resolution.
+     * @param importedPolicyRootAssertion The root assertion of the policy to update
+     * @param references The external references array. Only uses the IncludedPolicyReference objects.
+     * @param fragments The map of policy fragments. This may be updated.
+     * @throws IOException
+     */
+    private static void updateIncludeAssertions(Assertion importedPolicyRootAssertion, ExternalReference[] references, HashMap<String, Policy> fragments) throws IOException {
+        updateExistingIncludes(importedPolicyRootAssertion, references, fragments);
+
+        for(ExternalReference reference : references) {
+            if(reference instanceof IncludedPolicyReference) {
+                IncludedPolicyReference ipr = (IncludedPolicyReference)reference;
+                Policy policy = null;
+                if(ipr.getUseType() == IncludedPolicyReference.UseType.RENAME) {
+                    policy = fragments.get(ipr.getOldName());
+                    policy.setName(ipr.getName());
+                    fragments.remove(ipr.getOldName());
+                    fragments.put(ipr.getName(), policy);
+                } else {
+                    policy = fragments.get(ipr.getName());
+                }
+
+                if(ipr.getUseType() == IncludedPolicyReference.UseType.USE_EXISTING || ipr.getUseType() == IncludedPolicyReference.UseType.UPDATE) {
+                    policy.setOid(ipr.getOid());
+                }
+
+                if(policy != null) {
+                    updateExistingIncludes(policy.getAssertion(), references, fragments);
+                    policy.setXml(WspWriter.getPolicyXml(policy.getAssertion()));
+                }
+            }
+        }
     }
 
     private static void updateExistingIncludes(Assertion rootAssertion, ExternalReference[] references, HashMap<String, Policy> fragments) {
@@ -147,13 +195,45 @@ public class PolicyImporter {
             for(ExternalReference reference : references) {
                 if(reference instanceof IncludedPolicyReference) {
                     IncludedPolicyReference x = (IncludedPolicyReference)reference;
-                    if(x.getUseType() == IncludedPolicyReference.UseType.USE_EXISTING && includeAssertion.getPolicyName().equals(x.getName())) {
+                    if(includeAssertion.getPolicyName().equals(x.getName())) {
                         includeAssertion.setPolicyOid(x.getOid());
-                        fragments.remove(includeAssertion.getPolicyName());
+                        break;
+                    } else if(x.getUseType() == IncludedPolicyReference.UseType.RENAME && includeAssertion.getPolicyName().equals(x.getOldName())) {
+                        includeAssertion.setPolicyName(x.getName());
+                        includeAssertion.setPolicyOid(x.getOid());
+                        break;
                     }
                 }
             }
         }
+    }
+
+    private static boolean doesFragmentRequireUpdate(Assertion rootAssertion, ExternalReference[] references, HashMap<String, Policy> fragments) throws IOException {
+        if(rootAssertion instanceof CompositeAssertion) {
+            CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
+            for(Iterator it = compAssertion.children();it.hasNext();) {
+                Assertion child = (Assertion)it.next();
+                if(doesFragmentRequireUpdate(child, references, fragments)) {
+                    return true;
+                }
+            }
+        } else if(rootAssertion instanceof Include) {
+            Include includeAssertion = (Include)rootAssertion;
+            // Find the matching reference
+            IncludedPolicyReference ipr = null;
+            for(ExternalReference reference : references) {
+                if(reference instanceof IncludedPolicyReference) {
+                    IncludedPolicyReference x = (IncludedPolicyReference)reference;
+                    if(x.getUseType() == IncludedPolicyReference.UseType.USE_EXISTING && includeAssertion.getPolicyName().equals(x.getName())) {
+                        return doesFragmentRequireUpdate(fragments.get(x.getName()).getAssertion(), references, fragments);
+                    } else if(includeAssertion.getPolicyName().equals(x.getName())) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     static final Logger logger = Logger.getLogger(PolicyImporter.class.getName());

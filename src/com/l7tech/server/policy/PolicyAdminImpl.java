@@ -114,54 +114,16 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
         }
     }
 
+    private static enum FragmentImportAction {
+        IGNORE,
+        CREATE,
+        UPDATE
+    }
+    
     public SavePolicyWithFragmentsResult savePolicy(Policy policy, boolean activateAsWell, HashMap<String, Policy> fragments) throws SaveException {
         try {
             HashMap<String, Long> fragmentNameOidMap = new HashMap<String, Long>();
-            Set<PolicyDependencyTreeNode> dependencyTree = generateIncludeDependencyTree(fragments);
-
-            // The policies are saved by going across the tree, then down. No node will be visited twice.
-            while(!dependencyTree.isEmpty()) {
-                Set<PolicyDependencyTreeNode> newRoots = new HashSet<PolicyDependencyTreeNode>();
-
-                // Work across the top level of the tree
-                for (PolicyDependencyTreeNode dependencyNode : dependencyTree) {
-                    boolean create = false;
-
-                    try {
-                        Policy p = policyManager.findByUniqueName(dependencyNode.policy.getName());
-                        if (p == null) {
-                            create = true;
-                        } else if (p.getOid() != dependencyNode.policy.getOid()) {
-                            fragmentNameOidMap.put(dependencyNode.policy.getName(), p.getOid());
-                        }
-                    } catch (FindException e) {
-                        create = true;
-                    }
-
-                    if (create) {
-                        if(dependencyNode.dirty) {
-                            dependencyNode.policy.setXml(WspWriter.getPolicyXml(dependencyNode.policy.getAssertion()));
-                        }
-                        dependencyNode.policy.setOid(Policy.DEFAULT_OID);
-                        long oid = policyManager.save(dependencyNode.policy);
-                        policyVersionManager.checkpointPolicy(dependencyNode.policy, activateAsWell, true);
-                        policyManager.addManagePolicyRole(dependencyNode.policy);
-                        fragmentNameOidMap.put(dependencyNode.policy.getName(), oid);
-                    }
-
-                    // Update dependants with the new policy oid for this policy
-                    for(PolicyDependencyTreeNode child : dependencyNode.dependants) {
-                        if(!child.visited) {
-                            correctIncludeAssertions(child.policy.getAssertion(), fragmentNameOidMap);
-                            child.dirty = true;
-                            newRoots.add(child);
-                        }
-                    }
-                }
-
-                // Switch to the next level down
-                dependencyTree = newRoots;
-            }
+            savePolicyFragments(activateAsWell, fragments, fragmentNameOidMap);
 
             if(fragmentNameOidMap.size() > 0) {
                 Assertion rootAssertion = policy.getAssertion();
@@ -189,6 +151,87 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
     }
 
     /**
+     * Saves the provided policy fragments.
+     * If there is not an existing policy fragment with the same name, then a new policy fragment is created.
+     * If there is an existing policy fragment with the same name but the provided policy fragment has an
+     * ID < 0, then the existing policy fragment is not modified.
+     * If there is an existing policy fragment with the same name but a different ID, then the existing
+     * policy fragment is not modified.
+     * If there is an existing policy fragment with the same name and ID, then the existing policy fragment
+     * is updated.
+     * @param activateAsWell If true, then the policy fragments are activated after they are created
+     * @param fragments The policy fragments to save. The keys are the policy fragment names, and the values
+     * are the policies.
+     * @param fragmentNameOidMap A map that is updated with the policy IDs. The keys are policy fragment
+     * names and the values are policy fragment OIDs.
+     * @throws IOException
+     * @throws SaveException
+     * @throws ObjectModelException
+     */
+    private void savePolicyFragments(boolean activateAsWell, HashMap<String, Policy> fragments, HashMap<String, Long> fragmentNameOidMap)
+    throws IOException, SaveException, ObjectModelException
+    {
+        Set<PolicyDependencyTreeNode> dependencyTree = generateIncludeDependencyTree(fragments);
+
+        // The policies are saved by going across the tree, then down. No node will be visited twice.
+        while(!dependencyTree.isEmpty()) {
+            Set<PolicyDependencyTreeNode> newRoots = new HashSet<PolicyDependencyTreeNode>();
+
+            // Work across the top level of the tree
+            for (PolicyDependencyTreeNode dependencyNode : dependencyTree) {
+                FragmentImportAction action = FragmentImportAction.IGNORE;
+
+                try {
+                    Policy p = policyManager.findByUniqueName(dependencyNode.policy.getName());
+                    if (p == null) {
+                        action = FragmentImportAction.CREATE;
+                    } else if (dependencyNode.policy.getOid() > 0) {
+                        if(p.getOid() != dependencyNode.policy.getOid()) {
+                            fragmentNameOidMap.put(dependencyNode.policy.getName(), p.getOid());
+                        } else {
+                            action = FragmentImportAction.UPDATE;
+                            dependencyNode.policy.setVersion(p.getVersion());
+                            dependencyNode.policy.setVersionActive(p.isVersionActive());
+                            dependencyNode.policy.setVersionOrdinal(p.getVersionOrdinal());
+                        }
+                    }
+                } catch (FindException e) {
+                    action = FragmentImportAction.CREATE;
+                }
+
+                if (action == FragmentImportAction.CREATE) {
+                    if(dependencyNode.dirty) {
+                        dependencyNode.policy.setXml(WspWriter.getPolicyXml(dependencyNode.policy.getAssertion()));
+                    }
+                    dependencyNode.policy.setOid(Policy.DEFAULT_OID);
+                    long oid = policyManager.save(dependencyNode.policy);
+                    policyVersionManager.checkpointPolicy(dependencyNode.policy, activateAsWell, true);
+                    policyManager.addManagePolicyRole(dependencyNode.policy);
+                    fragmentNameOidMap.put(dependencyNode.policy.getName(), oid);
+                } else if(action == FragmentImportAction.UPDATE) {
+                    if(dependencyNode.dirty) {
+                        dependencyNode.policy.setXml(WspWriter.getPolicyXml(dependencyNode.policy.getAssertion()));
+                    }
+                    policyManager.update(dependencyNode.policy);
+                    policyVersionManager.checkpointPolicy(dependencyNode.policy, activateAsWell, true);
+                }
+
+                // Update dependants with the new policy oid for this policy
+                for(PolicyDependencyTreeNode child : dependencyNode.dependants) {
+                    if(!child.visited) {
+                        correctIncludeAssertions(child.policy.getAssertion(), fragmentNameOidMap);
+                        child.dirty = true;
+                        newRoots.add(child);
+                    }
+                }
+            }
+
+            // Switch to the next level down
+            dependencyTree = newRoots;
+        }
+    }
+
+    /**
      * Generates a policy dependency tree. The root nodes do not depend on other policies. This is used to
      * determine the order to save the policies.
      * @param policies A HashMap of the policies
@@ -205,7 +248,7 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
 
         for(Map.Entry<String, PolicyDependencyTreeNode> entry : dependencyNodes.entrySet()) {
             Set<String> requiredPolicies = new HashSet<String>();
-            updatePolicyDependencyTree(entry.getValue().policy.getAssertion(), requiredPolicies);
+            updatePolicyDependencyTree(entry.getValue().policy.getAssertion(), requiredPolicies, policies);
 
             if(requiredPolicies.isEmpty()) {
                 treeRoots.add(entry.getValue());
@@ -227,16 +270,18 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
      * @param rootAssertion The root of the Assertion tree to scan
      * @param requiredPolicies The set to add required policy names to
      */
-    private void updatePolicyDependencyTree(Assertion rootAssertion, Set<String> requiredPolicies) {
+    private void updatePolicyDependencyTree(Assertion rootAssertion, Set<String> requiredPolicies, HashMap<String, Policy> policies) {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
             for(Iterator it = compAssertion.children();it.hasNext();) {
                 Assertion child = (Assertion)it.next();
-                updatePolicyDependencyTree(child, requiredPolicies);
+                updatePolicyDependencyTree(child, requiredPolicies, policies);
             }
         } else if(rootAssertion instanceof Include) {
             Include includeAssertion = (Include)rootAssertion;
-            requiredPolicies.add(includeAssertion.getPolicyName());
+            if(policies.containsKey(includeAssertion.getPolicyName())) {
+                requiredPolicies.add(includeAssertion.getPolicyName());
+            }
         }
     }
 

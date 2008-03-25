@@ -87,7 +87,7 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
         if (policy == null) {
             permissionDenied = false;
             circularImport = false;
-            if ( isParentPolicy(assertion.getPolicyOid()) ) {
+            if ( isParentPolicy(assertion.getPolicyOid(), assertion.getPolicyName()) ) {
                 circularImport = true;
             } else {
                 try {
@@ -108,14 +108,16 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
         return policy;
     }
 
-    private boolean isParentPolicy( final Long policyOid ) {
+    private boolean isParentPolicy( final Long policyOid, final String policyName ) {
         boolean found = false;
         TreeNode currentNode = getParent();
 
         while ( currentNode != null ) {
             if ( currentNode instanceof IncludeAssertionPolicyNode ) {
                 IncludeAssertionPolicyNode includeTreeNode = (IncludeAssertionPolicyNode) currentNode;
-                if ( includeTreeNode.asAssertion().getPolicyOid().equals( policyOid ) ) {
+                if ( (policyOid == null || 0 >= policyOid) && includeTreeNode.asAssertion().getPolicyName().equals(policyName) ||
+                     policyOid != null && policyOid > 0 && includeTreeNode.asAssertion().getPolicyOid().equals( policyOid ) )
+                {
                     found = true;
                     break;
                 }

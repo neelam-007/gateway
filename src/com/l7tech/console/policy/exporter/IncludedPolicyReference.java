@@ -9,6 +9,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import org.w3c.dom.Element;
 
@@ -17,6 +18,8 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Iterator;
+import java.util.HashMap;
 
 /**
  * @author alex
@@ -31,18 +34,20 @@ public class IncludedPolicyReference extends ExternalReference {
     public static enum UseType {
         IMPORT,
         USE_EXISTING,
-        UPDATE
+        UPDATE,
+        RENAME
     }
 
     private static final Logger logger = Logger.getLogger(IncludedPolicyReference.class.getName());
 
-    private final Long oid;
+    private Long oid;
     private String name;
     private PolicyType type;
     private Boolean soap;
     private String xml;
 
     private boolean fromImport = false;
+    private String oldName;
 
     private UseType useType;
 
@@ -92,6 +97,7 @@ public class IncludedPolicyReference extends ExternalReference {
             }
             
             if (policy == null) {
+                oid = Policy.DEFAULT_OID;
                 logger.log(Level.INFO, MessageFormat.format("Policy #{0} ({1}) does not exist on this system; importing", oid, name));
                 useType = UseType.IMPORT;
                 return true;
@@ -99,18 +105,54 @@ public class IncludedPolicyReference extends ExternalReference {
 
             Policy tempPolicy = new Policy(type, name, xml, soap);
             String comparableXml = WspWriter.getPolicyXml(tempPolicy.getAssertion());
-            if (policy.getType() == type && policy.getXml().equals(comparableXml) && policy.isSoap() == soap) {
-                logger.log(Level.INFO, "Existing Policy #{0} ({1}) is essentially identical to the imported version, using existing version", new Object[] { oid, name });
-                useType = UseType.USE_EXISTING;
-                return true;
+            if (policy.getType() == type && policy.isSoap() == soap) {
+                boolean matches = policy.getXml().equals(comparableXml);
+                if(!matches && fromImport) {
+                    updateIncludeAssertionOids(tempPolicy.getAssertion(), new HashMap<String, Long>());
+                    comparableXml = WspWriter.getPolicyXml(tempPolicy.getAssertion());
+                    updateIncludeAssertionOids(policy.getAssertion(), new HashMap<String, Long>());
+                    String otherXml = WspWriter.getPolicyXml(policy.getAssertion());
+
+                    matches = comparableXml.equals(otherXml);
+                }
+
+                if(matches) {
+                    oid = policy.getOid();
+                    logger.log(Level.INFO, "Existing Policy #{0} ({1}) is essentially identical to the imported version, using existing version", new Object[] { oid, name });
+                    useType = UseType.USE_EXISTING;
+                    return true;
+                }
             }
 
             useType = UseType.UPDATE;
+            oid = policy.getOid();
             logger.log(Level.INFO, "Existing Policy #{0} ({1}) found, but not the same, will need to merge");
             return false;
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unable to determine whether imported policy already present");
             return false;
+        }
+    }
+
+    /**
+     * Sets the policy OID for include assertions to dummy values in a systematic way. This is useful for
+     * comparing two policies that may have been created on different systems.
+     * @param rootAssertion The root assertion of the policy to update
+     * @param nameOidMap A map of policy OIDs. This is updated as this method is run.
+     */
+    private void updateIncludeAssertionOids(Assertion rootAssertion, HashMap<String, Long> nameOidMap) {
+        if(rootAssertion instanceof CompositeAssertion) {
+            CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
+            for(Iterator it = compAssertion.children();it.hasNext();) {
+                Assertion child = (Assertion)it.next();
+                updateIncludeAssertionOids(child, nameOidMap);
+            }
+        } else if(rootAssertion instanceof Include) {
+            Include includeAssertion = (Include)rootAssertion;
+            if(!nameOidMap.containsKey(includeAssertion.getPolicyName())) {
+                nameOidMap.put(includeAssertion.getPolicyName(), nameOidMap.size() + 1L);
+            }
+            includeAssertion.setPolicyOid(nameOidMap.get(includeAssertion.getPolicyName()));
         }
     }
 
@@ -156,6 +198,10 @@ public class IncludedPolicyReference extends ExternalReference {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getXml() {
         return xml;
     }
@@ -170,5 +216,26 @@ public class IncludedPolicyReference extends ExternalReference {
 
     public UseType getUseType() {
         return useType;
+    }
+
+    public void setUseType(UseType useType) {
+        this.useType = useType;
+        if(useType == UseType.RENAME) {
+            oid = -1L;
+        }
+    }
+
+    public String getOldName() {
+        if(useType != UseType.RENAME) {
+            return null;
+        } else {
+            return oldName;
+        }
+    }
+
+    public void setOldName(String oldName) {
+        if(useType == UseType.RENAME) {
+            this.oldName = oldName;
+        }
     }
 }

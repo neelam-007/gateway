@@ -48,42 +48,28 @@ public class RemoteReferenceResolver {
      */
     public boolean resolveReferences(ExternalReference[] references) {
         Collection unresolved = new ArrayList();
-        List<IncludedPolicyReference> conflictingIncludes = new ArrayList<IncludedPolicyReference>();
         for (ExternalReference reference : references) {
             if (!reference.verifyReference()) {
-                if(reference instanceof IncludedPolicyReference) {
-                    conflictingIncludes.add((IncludedPolicyReference)reference);
-                } else {
-                    // for all references not resolved automatically add a page in a wizard
-                    unresolved.add(reference);
-                }
+                // for all references not resolved automatically add a page in a wizard
+                unresolved.add(reference);
             }
-        }
-
-        if(!conflictingIncludes.isEmpty()) {
-            StringBuilder message = new StringBuilder("<html>The following included policies conflict with existing policies:<ul>");
-            for(IncludedPolicyReference reference : conflictingIncludes) {
-                message.append("<li>");
-                message.append(reference.getName());
-                message.append("</li>");
-            }
-            message.append("</ul>");
-            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                    message.toString(), "Import Failure", JOptionPane.ERROR_MESSAGE);
-            return false;
         }
 
         if (!unresolved.isEmpty()) {
             ExternalReference[] unresolvedRefsArray = (ExternalReference[])unresolved.toArray(new ExternalReference[0]);
             final Frame mw = TopComponents.getInstance().getTopParent();
-            ResolveExternalPolicyReferencesWizard wiz =
-                    ResolveExternalPolicyReferencesWizard.fromReferences(mw, unresolvedRefsArray);
-            wiz.pack();
-            Utilities.centerOnScreen(wiz);
-            wiz.setModal(true);
-            wiz.setVisible(true);
-            // if the wizard returns false, we must return
-            if (wiz.wasCanceled()) return false;
+            try {
+                ResolveExternalPolicyReferencesWizard wiz =
+                        ResolveExternalPolicyReferencesWizard.fromReferences(mw, unresolvedRefsArray);
+                wiz.pack();
+                Utilities.centerOnScreen(wiz);
+                wiz.setModal(true);
+                wiz.setVisible(true);
+                // if the wizard returns false, we must return
+                if (wiz.wasCanceled()) return false;
+            } catch(Exception e) {
+                return false;
+            }
         }
         resolvedReferences = references;
         return true;
