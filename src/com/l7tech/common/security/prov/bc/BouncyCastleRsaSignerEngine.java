@@ -110,7 +110,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         certgen.setSubjectDN(subject);
         certgen.setPublicKey(publicKey);
 
-        BasicConstraints bc = type == CertType.CA ? new BasicConstraints(2) : new BasicConstraints(false);
+        BasicConstraints bc = type == CertType.CA ? new BasicConstraints(0) : new BasicConstraints(false);
         certgen.addExtension(X509Extensions.BasicConstraints.getId(), true, bc);
 
         // Set key usage (signing only for CA certs)
