@@ -64,10 +64,22 @@ public class SchemaEntryManagerImpl
     @Override
     protected void initDao() throws Exception {
         super.initDao();
-        for (SchemaEntry entry : findAll()) {
+        Collection<SchemaEntry> schemaEntries = findAll();
+        for (SchemaEntry entry : schemaEntries) {
             long oid = entry.getOid();
             try {
-                compileAndCache(oid, entry);
+                compileAndCache(oid, entry, false);
+            } catch (SAXException e) {
+                logger.log(Level.WARNING, "Community schema #" + oid + " could not be compiled", e);
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Community schema #" + oid + " could not be compiled", e);
+            }
+        }
+
+        for (SchemaEntry entry : schemaEntries) {
+            long oid = entry.getOid();
+            try {
+                validateCachedSchema( getSystemId( oid, entry ) );
             } catch (SAXException e) {
                 logger.log(Level.WARNING, "Community schema #" + oid + " could not be compiled", e);
             } catch (IOException e) {
@@ -257,19 +269,34 @@ public class SchemaEntryManagerImpl
     }
 
     private void compileAndCache(long oid, SchemaEntry entry) throws SAXException, IOException {
-        String systemId = entry.getName();
-        if (systemId == null) systemId = "policy:SchemaEntry:" + oid;
+        compileAndCache(oid, entry, true);
+    }
+
+    private void compileAndCache(long oid, SchemaEntry entry, boolean validate) throws SAXException, IOException {
+        String systemId = getSystemId( oid, entry );
         String schemaString = entry.getSchema();
         if (schemaString == null) schemaString = "";
         schemaManager.registerSchema(systemId, schemaString);
 
-        // Make sure it compiles
-        SchemaHandle handle = schemaManager.getSchemaByUrl(systemId);
-        handle.close();
+        if ( validate ) {
+            validateCachedSchema( systemId );
+        }
 
         synchronized(this) {
             systemIdsByOid.put(oid, systemId);
         }
+    }
+
+    private String getSystemId(long oid, SchemaEntry entry) {
+        String systemId = entry.getName();
+        if (systemId == null) systemId = "policy:SchemaEntry:" + oid;
+        return systemId;
+    }
+
+    private void validateCachedSchema( String systemId ) throws SAXException, IOException {
+        // Make sure it compiles
+        SchemaHandle handle = schemaManager.getSchemaByUrl(systemId);
+        handle.close();
     }
 
     /**
