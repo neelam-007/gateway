@@ -8,11 +8,9 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
- * The Preferencs class is a console property manager, that is
+ * The Preferences class is a console property manager, that is
  * implemented as a light light wrapper arround
  * the <CODE>Properties</CODE> class.
  * It adds specific implementation for saving preferences,
@@ -40,9 +38,17 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
      */
     public static final String SSM_USER_HOME =
       System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
-    protected final String TRUST_STORE_FILE = SSM_USER_HOME + File.separator + "trustStore";
-    protected final String TRUST_STORE_PASSWORD = "password";
+    private static final String DEFAULT_TRUST_STORE_FILE = SSM_USER_HOME + File.separator + "trustStore";
+    private static final String DEFAULT_TRUST_STORE_PASS = "password";
+    private static final String DEFAULT_TRUST_STORE_TYPE = "JKS";
+    private static final String SYSPROP_TRUST_STORE_FILE = "javax.net.ssl.trustStore";
+    private static final String SYSPROP_TRUST_STORE_PASS = "javax.net.ssl.trustStorePassword";
+    private static final String SYSPROP_TRUST_STORE_TYPE = "javax.net.ssl.trustStoreType";
 
+    /**
+     * Deprecated properties will be removed from the properties file
+     */
+    private static final String[] DEPRECATED_PROPERTIES = { SYSPROP_TRUST_STORE_FILE, SYSPROP_TRUST_STORE_PASS };
 
     /**
      * private constructor use getPreferences to
@@ -56,7 +62,6 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
      */
     private void setupDefaults() {
         prepare();
-        configureProperties();
     }
 
     private void prepare() {
@@ -65,25 +70,6 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
           new File(SSM_USER_HOME);
         if (!home.exists()) {
             home.mkdir();
-        }
-    }
-
-
-    /**
-     * configure well known application properties.
-     * If the property has not been set use the default
-     * value.
-     * thrown if an I/O error occurs
-     */
-    private void configureProperties() {
-        Map<String, String> knownProps = new HashMap<String, String>();
-        knownProps.put("javax.net.ssl.trustStore", new File(TRUST_STORE_FILE).getAbsolutePath());
-        knownProps.put("javax.net.ssl.trustStorePassword", TRUST_STORE_PASSWORD);
-
-        for (String key : knownProps.keySet()) {
-            if (null == props.getProperty(key)) {
-                putProperty(key, knownProps.get(key));
-            }
         }
     }
 
@@ -122,6 +108,10 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
 
     public void updateSystemProperties() {
         System.getProperties().putAll(props);
+
+        System.setProperty( SYSPROP_TRUST_STORE_FILE, System.getProperty( SYSPROP_TRUST_STORE_FILE, DEFAULT_TRUST_STORE_FILE ) );
+        System.setProperty( SYSPROP_TRUST_STORE_PASS, System.getProperty( SYSPROP_TRUST_STORE_PASS, DEFAULT_TRUST_STORE_PASS ) );
+        System.setProperty( SYSPROP_TRUST_STORE_TYPE, System.getProperty( SYSPROP_TRUST_STORE_TYPE, DEFAULT_TRUST_STORE_TYPE ) );
     }
 
     public void store() throws IOException {
@@ -141,20 +131,20 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
     }
 
     public void importSsgCert(X509Certificate cert, String hostname) throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
-        KeyStore ks = KeyStore.getInstance("JKS");
-        HeavySsmPreferences preferences = HeavySsmPreferences.getPreferences();
-        char[] trustStorPassword = TRUST_STORE_PASSWORD.toCharArray();
-        String trustStoreFile = TRUST_STORE_FILE;
+        String trustStoreFile = System.getProperty( SYSPROP_TRUST_STORE_FILE, DEFAULT_TRUST_STORE_FILE );
+        char[] trustStorePass = System.getProperty( SYSPROP_TRUST_STORE_PASS, DEFAULT_TRUST_STORE_PASS ).toCharArray();
+        String trustStoreType = System.getProperty( SYSPROP_TRUST_STORE_TYPE, DEFAULT_TRUST_STORE_TYPE );
+        KeyStore ks = KeyStore.getInstance( trustStoreType );
         try {
             FileInputStream ksfis = new FileInputStream(trustStoreFile);
             try {
-                ks.load(ksfis, trustStorPassword);
+                ks.load(ksfis, trustStorePass);
             } finally {
                 ksfis.close();
             }
         } catch (FileNotFoundException e) {
             // Create a new one.
-            ks.load(null, trustStorPassword);
+            ks.load(null, trustStorePass);
         }
 
         logger.info("Adding certificate: " + cert);
@@ -163,7 +153,7 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
         FileOutputStream ksfos = null;
         try {
             ksfos = new FileOutputStream(trustStoreFile);
-            ks.store(ksfos, trustStorPassword);
+            ks.store(ksfos, trustStorePass);
         } finally {
             if (ksfos != null)
                 ksfos.close();
@@ -174,32 +164,32 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
         getTrustStore();
     }
 
-    private KeyStore getTrustStore()
-      throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
-        File storeFile = new File(TRUST_STORE_FILE);
-        String defaultKeystoreType = KeyStore.getDefaultType();
-        KeyStore ts = KeyStore.getInstance(defaultKeystoreType);
-        final char[] password = TRUST_STORE_PASSWORD.toCharArray();
+    private KeyStore getTrustStore() throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
+        String trustStoreFile = System.getProperty( SYSPROP_TRUST_STORE_FILE, DEFAULT_TRUST_STORE_FILE );
+        char[] trustStorePass = System.getProperty( SYSPROP_TRUST_STORE_PASS, DEFAULT_TRUST_STORE_PASS ).toCharArray();
+        String trustStoreType = System.getProperty( SYSPROP_TRUST_STORE_TYPE, DEFAULT_TRUST_STORE_TYPE );
+
+        File storeFile = new File(trustStoreFile);
+        KeyStore ts = KeyStore.getInstance( trustStoreType );
 
         if (!storeFile.exists()) {
             ts.load(null, null);
-            FileOutputStream fo = null;
-            fo = new FileOutputStream(storeFile);
+            FileOutputStream fo = new FileOutputStream(storeFile);
             try {
-                ts.store(fo, password);
+                ts.store(fo, trustStorePass);
             } finally {
                 fo.close();
             }
-            logger.fine("Emtpy Internal Admin trustStore created - " + TRUST_STORE_FILE);
+            logger.fine("Emtpy Internal Admin trustStore created - " + trustStoreFile);
             return ts;
         }
         final FileInputStream fis = new FileInputStream(storeFile);
         try {
-            ts.load(fis, password);
+            ts.load(fis, trustStorePass);
         } finally {
             fis.close();
         }
-        logger.fine("Internal admin trustStore opened - " + TRUST_STORE_FILE);
+        logger.fine("Internal admin trustStore opened - " + trustStoreFile);
         return ts;
     }
 
@@ -223,6 +213,10 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
                         log(ExceptionUtils.getMessage(e), e);
                     }
                 }
+            }
+
+            for ( String prop : DEPRECATED_PROPERTIES ) {
+                props.remove( prop );
             }
         }
     }
