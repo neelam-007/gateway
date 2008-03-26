@@ -6,6 +6,8 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.AccessControlException;
 import java.io.File;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 /**
  * Utilities for creating JFileChooser instances in a variety of situations.
@@ -27,6 +29,18 @@ public class FileChooserUtil {
     }
 
     /**
+     * Used to keep track of the last directory that the user visited with a JFileChooser.
+     */
+    private static class JFileChooserSelectionListener implements ActionListener {
+        public static File CURRENT_DIRECTORY = null;
+
+        public void actionPerformed(ActionEvent e) {
+            CURRENT_DIRECTORY = ((JFileChooser)e.getSource()).getCurrentDirectory();
+        }
+    }
+    private static JFileChooserSelectionListener FILE_CHOOSER_SELECTION_LISTENER = new JFileChooserSelectionListener();
+    
+    /**
      * A factory that creates a JFileChooser, working around Java bug parade #4711700.  Will retry
      * for up to one second.  Assumes that caller has already invoked doPrivileged.
      *
@@ -38,7 +52,8 @@ public class FileChooserUtil {
         int tries = 40;
         while (fc == null) {
             try {
-                fc = new JFileChooser();
+                fc = new JFileChooser(JFileChooserSelectionListener.CURRENT_DIRECTORY);
+                fc.addActionListener(FILE_CHOOSER_SELECTION_LISTENER);
                 break;
             } catch (NullPointerException nfe) {
                 // Bug parade 4711700 -- retry a few times before giving up
