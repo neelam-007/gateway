@@ -5,16 +5,12 @@ package com.l7tech.console.panels;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.RevocationCheckPolicy;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.console.event.*;
-import com.l7tech.console.table.TrustedCertTableSorter;
-import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -22,18 +18,12 @@ import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.List;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 
 /**
  * This class provides the step panel for the Federated Identity Provider dialog.
@@ -43,16 +33,11 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.FederatedIdentityProviderDialog");
 
     private JPanel mainPanel;
-    private JScrollPane certScrollPane;
-    private JButton addButton;
-    private JButton removeButton;
-    private JButton propertiesButton;
-    private JButton createCertButton;
+    private JPanel certPanel;
     private boolean x509CertSelected = false;
     private boolean limitationsAccepted = true;
 
-    private TrustedCertsTable trustedCertTable = null;
-    private Collection<RevocationCheckPolicy> revocationCheckPolicies;
+    private TrustedCertsPanel trustedCertsPanel = null;
     private X509Certificate ssgcert = null;
     private Collection<FederatedIdentityProviderConfig> fedIdProvConfigs = new ArrayList<FederatedIdentityProviderConfig>();
 
@@ -63,18 +48,19 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
      */
     public FederatedIPTrustedCertsPanel(WizardStepPanel next) {
         super(next);
-        initComponents();
+        initComponents(false);
     }
 
     public FederatedIPTrustedCertsPanel(WizardStepPanel next, boolean readOnly) {
         super(next, readOnly);
-        initComponents();
+        initComponents(readOnly);
     }
 
     /**
      * Get the description of the step
      * @return String The description of the step
      */
+    @Override
     public String getDescription() {
         return resources.getString("certPanelDescription");
     }
@@ -82,6 +68,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return resources.getString("certPanelStepLabel");
     }
@@ -92,6 +79,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
      * @param settings The current value of configuration items in the wizard input object.
      * @throws IllegalArgumentException if the data provided by the wizard are not valid.
      */
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         if (!(settings instanceof FederatedIdentityProviderConfig))
             throw new IllegalArgumentException("The settings object must be FederatedIdentityProviderConfig");
@@ -99,27 +87,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
         FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
 
         x509CertSelected = iProviderConfig.isX509Supported();
-
-        long[] oids = iProviderConfig.getTrustedCertOids();
-        List<TrustedCert> certs = new ArrayList<TrustedCert>();
-        TrustedCert cert;
-
-        for (long oid : oids) {
-            try {
-                cert = getTrustedCertAdmin().findCertByPrimaryKey(oid);
-                if (cert != null) certs.add(cert);
-            } catch (FindException e) {
-                JOptionPane.showMessageDialog(this, resources.getString("cert.find.error"),
-                        resources.getString("load.error.title"),
-                        JOptionPane.ERROR_MESSAGE);
-            }
-        }
-
-        if (certs.size() > 0) {
-            trustedCertTable.getTableSorter().setData(certs);
-            trustedCertTable.getTableSorter().getRealModel().setRowCount(certs.size());
-            trustedCertTable.getTableSorter().fireTableDataChanged();
-        }
+        trustedCertsPanel.setCertificateOids( iProviderConfig.getTrustedCertOids() );
     }
 
 
@@ -140,21 +108,13 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
      *
      * @param settings the object representing wizard panel state
      */
+    @Override
     public void storeSettings(Object settings) {
         if (!(settings instanceof FederatedIdentityProviderConfig))
             throw new IllegalArgumentException("The settings object must be FederatedIdentityProviderConfig");
 
         FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
-
-        List<TrustedCert> data = trustedCertTable.getTableSorter().getAllData();
-        long[] oids = new long[data.size()];
-
-        for (int i = 0; i < data.size(); i++) {
-            TrustedCert tc = data.get(i);
-            oids[i] = tc.getOid();
-        }
-
-        iProviderConfig.setTrustedCertOids(oids);
+        iProviderConfig.setTrustedCertOids(trustedCertsPanel.getCertificateOids());
 
     }
 
@@ -171,9 +131,10 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
      * @return true if it is safe to advance to the next step; false if not (and the user may have
      *            been pestered with an error dialog).
      */
-     public boolean onNextButton() {
+    @Override
+    public boolean onNextButton() {
         final JDialog owner = getOwner();
-        if (trustedCertTable.getModel().getRowCount() == 0) {
+        if (trustedCertsPanel.getCertificateOids().length == 0) {
             FederatedIPWarningDialog d = new FederatedIPWarningDialog(owner, createMsgPanel());
             d.pack();
             d.addWizardListener(wizardListener);
@@ -216,137 +177,58 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
     /**
      * Initialize the components of the Panel
      */
-    private void initComponents() {
+    private void initComponents(final boolean readOnly) {
 
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
 
-        if (trustedCertTable == null) {
-            trustedCertTable = new TrustedCertsTable();
-        }
-        certScrollPane.setViewportView(trustedCertTable);
-        certScrollPane.getViewport().setBackground(Color.white);
+        trustedCertsPanel = new TrustedCertsPanel(readOnly, 0, certListener);
 
-        // Hide the cert usage data column
-        trustedCertTable.hideColumn(TrustedCertTableSorter.CERT_TABLE_CERT_USAGE_COLUMN_INDEX);
-
-        // initialize the button states
-        enableOrDisableButtons();
-
-        trustedCertTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            /**
-             * Called whenever the value of the selection changes.
-             *
-             * @param e the event that characterizes the change.
-             */
-            public void valueChanged(ListSelectionEvent e) {
-
-                enableOrDisableButtons();
-            }
-        });
-
-
-        addButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-
-                CertSearchPanel sp = new CertSearchPanel(getOwner());
-                sp.addCertListener(certListener);
-                sp.pack();
-                Utilities.centerOnScreen(sp);
-                DialogDisplayer.display(sp);
-
-            }
-        });
-
-        removeButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                int row = trustedCertTable.getSelectedRow();
-                if (row >= 0) {
-                    trustedCertTable.getTableSorter().deleteRow(row);
-                }
-            }
-        });
-
-        propertiesButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-
-                int row = trustedCertTable.getSelectedRow();
-                if (row >= 0) {
-                    try {
-                        CertPropertiesWindow cpw = new CertPropertiesWindow(getOwner(), (TrustedCert) trustedCertTable.getTableSorter().getData(row), false, true, getRevocationCheckPolicies());
-                        DialogDisplayer.display(cpw);
-                    } catch (FindException fe) {
-                        logger.log(Level.WARNING, "Unable to load certificate data from server", fe);
-                        JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
-                                resources.getString("cert.load.error"),
-                                resources.getString("load.error.title"),
-                                JOptionPane.ERROR_MESSAGE);
-                    }
-                }
-            }
-        });
-
-        createCertButton.setAction(new NewTrustedCertificateAction(certListener, resources.getString("createCertButton.text")));
-
-        applyFormSecurity();
-    }
-
-    private void applyFormSecurity() {
-        boolean canEdit = !isReadOnly();
-        addButton.setEnabled(canEdit);
-    }
-
-    /**
-     * Enable or disable the fields based on the current selections.
-     */
-    private void enableOrDisableButtons() {
-        boolean hasEditPermission = !isReadOnly();
-        int row = trustedCertTable.getSelectedRow();
-        boolean removeAndPropertiesEnabled = (row >= 0);
-
-        removeButton.setEnabled(hasEditPermission && removeAndPropertiesEnabled);
-        propertiesButton.setEnabled(removeAndPropertiesEnabled);
+        certPanel.add( trustedCertsPanel, BorderLayout.CENTER );
     }
 
     /**
      * Listener for handling the event of adding a cert to the FIP
      */
-    private final CertListener certListener = new CertListenerAdapter() {
-        public void certSelected(CertEvent e) {
-            if(!trustedCertTable.getTableSorter().contains(e.getCert())) {
-                TrustedCert tc = e.getCert();
-                try {
-                    if (isCertRelatedToSSG(tc)) {
-                        JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
-                                                      "This cert cannot be used as a trusted cert in this " +
-                                                      "federated identity\nprovider because it is related to the " +
-                                                      "SecureSpan Gateway's root cert.",
-                                                      "Cannot add this cert",
-                                                      JOptionPane.ERROR_MESSAGE);
-                    } else if (isCertTrustedByAnotherProvider(tc)) {
-                        JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
-                                                      "This cert cannot be used as a trusted cert in this " +
-                                                      "federated identity\nprovider because it is already " +
-                                                      "trusted by another identity provider.",
-                                                      "Cannot add this cert",
-                                                      JOptionPane.ERROR_MESSAGE);
-                    } else {
-                        trustedCertTable.getTableSorter().addRow(tc);
-                    }
-
-                } catch (IOException e1) {
-                    throw new RuntimeException(e1); //  not expected to happen
-                } catch (CertificateException e1) {
-                    throw new RuntimeException(e1); //  not expected to happen
-                } catch (FindException e1) {
-                    throw new RuntimeException(e1); //  not expected to happen
+    private final TrustedCertsPanel.TrustedCertListener certListener = new TrustedCertsPanel.TrustedCertListenerSupport(this) {
+        @Override
+        public boolean addTrustedCert( final TrustedCert tc ) {
+            boolean addOk = true;
+            try {
+                if (isCertRelatedToSSG(tc)) {
+                    addOk = false;
+                    JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                  "This cert cannot be used as a trusted cert in this " +
+                                                  "federated identity\nprovider because it is related to the " +
+                                                  "SecureSpan Gateway's root cert.",
+                                                  "Cannot add this cert",
+                                                  JOptionPane.ERROR_MESSAGE);
+                } else if (isCertTrustedByAnotherProvider(tc)) {
+                    addOk = false;
+                    JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                  "This cert cannot be used as a trusted cert in this " +
+                                                  "federated identity\nprovider because it is already " +
+                                                  "trusted by another identity provider.",
+                                                  "Cannot add this cert",
+                                                  JOptionPane.ERROR_MESSAGE);
                 }
-            } else {
-                // cert alreay exsits
-                JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this, resources.getString("add.cert.duplicated"),
-                        resources.getString("add.cert.error"),
-                        JOptionPane.ERROR_MESSAGE);
+            } catch (IOException e1) {
+                throw new RuntimeException(e1); //  not expected to happen
+            } catch (CertificateException e1) {
+                throw new RuntimeException(e1); //  not expected to happen
+            } catch (FindException e1) {
+                throw new RuntimeException(e1); //  not expected to happen
             }
+
+            return addOk;
+        }
+
+        @Override
+        public void notifyError() {
+            JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                    resources.getString("cert.find.error"),
+                    resources.getString("load.error.title"),
+                    JOptionPane.ERROR_MESSAGE);
         }
 
     };
@@ -396,27 +278,13 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
         return true;
     }
 
-    private Collection<RevocationCheckPolicy> getRevocationCheckPolicies() throws FindException {
-         Collection<RevocationCheckPolicy> policies = revocationCheckPolicies;
-
-        if ( revocationCheckPolicies == null ) {
-            policies = loadRevocationCheckPolicies();
-            revocationCheckPolicies = policies;
-        }
-
-        return policies;
-    }
-
-    private Collection<RevocationCheckPolicy> loadRevocationCheckPolicies() throws FindException {
-        return getTrustedCertAdmin().findAllRevocationCheckPolicies();
-    }
-
     private WizardListener wizardListener = new WizardAdapter() {
         /**
          * Invoked when the dialog has finished.
          *
          * @param we the event describing the dialog finish
          */
+        @Override
         public void wizardFinished(WizardEvent we) {
             limitationsAccepted = true;
         }
@@ -426,6 +294,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
          *
          * @param we the event describing the dialog cancelled
          */
+        @Override
         public void wizardCanceled(WizardEvent we) {
             limitationsAccepted =false;
         }

@@ -54,6 +54,50 @@ public class ArrayUtils {
         return ret;
     }
 
+    /**
+     * Convert a long array to a Long array
+     *
+     * @param data The array to box
+     * @return The boxed array (never null)
+     */
+    public static Long[] box(final long[] data) {
+        Long[] boxedData;
+
+        if ( data != null ) {
+            boxedData = new Long[data.length];
+            //noinspection ManualArrayCopy
+            for ( int i=0; i<data.length; i++ ) {
+                boxedData[i] = data[i];
+            }
+        } else {
+            boxedData = new Long[0];
+        }
+
+        return boxedData;
+    }
+
+    /**
+     * Convert a Long array to a long array
+     *
+     * @param data The array to unbox
+     * @return The unboxed array (never null)
+     */
+    public static long[] unbox(final Long[] data) {
+        long[] unboxedData;
+
+        if ( data != null ) {
+            unboxedData = new long[data.length];
+            //noinspection ManualArrayCopy
+            for ( int i=0; i<data.length; i++ ) {
+                unboxedData[i] = data[i];
+            }
+        } else {
+            unboxedData = new long[0];
+        }
+
+        return unboxedData;
+    }
+
     /** @return true if the target Object is contained in the list. */
     public static boolean contains(Object[] list, Object target) {
         for (int i = 0; i < list.length; i++) {
@@ -64,6 +108,16 @@ public class ArrayUtils {
             } else {
                 if (s.equals(target))
                     return true;
+            }
+        }
+        return false;
+    }
+
+    /** @return true if the target value is contained in the list. */
+    public static boolean contains(long[] list, long target) {
+        for ( long value : list ) {
+            if ( value == target) {
+                return true;
             }
         }
         return false;
