@@ -97,6 +97,7 @@ public class SavePolicyTemplateAction extends SecureAction {
         }
 
         JFileChooser chooser = new JFileChooser((templateDir == null) ? FileChooserUtil.getStartingDirectory() : templateDir);
+        FileChooserUtil.addListenerToFileChooser(chooser);
         chooser.setDialogTitle("Save as ...");
         // Allow single selection only
         chooser.setMultiSelectionEnabled(false);

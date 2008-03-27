@@ -99,6 +99,7 @@ public abstract class ImportPolicyFromFileAction extends PolicyNodeAction {
         } else {
             chooser = new JFileChooser(FileChooserUtil.getStartingDirectory());
         }
+        FileChooserUtil.addListenerToFileChooser(chooser);
 
         chooser.setDialogTitle("Import Policy");
         chooser.setMultiSelectionEnabled(false);

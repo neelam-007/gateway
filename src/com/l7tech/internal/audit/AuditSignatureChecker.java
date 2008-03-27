@@ -538,6 +538,7 @@ public class AuditSignatureChecker extends JFrame {
                 startingPath = FileChooserUtil.getStartingDirectory();
             }
             final JFileChooser chooser = new JFileChooser(startingPath);
+            FileChooserUtil.addListenerToFileChooser(chooser);
             chooser.setDialogTitle("Select Audit Download File");
             chooser.setDialogType(JFileChooser.OPEN_DIALOG);
             chooser.setMultiSelectionEnabled(false);
@@ -569,6 +570,7 @@ public class AuditSignatureChecker extends JFrame {
                 startingPath = FileChooserUtil.getStartingDirectory();
             }
             final JFileChooser chooser = new JFileChooser(_certPathTextField.getText());
+            FileChooserUtil(chooser);
             chooser.setDialogTitle("Select Certificate File");
             chooser.setDialogType(JFileChooser.OPEN_DIALOG);
             chooser.setMultiSelectionEnabled(false);

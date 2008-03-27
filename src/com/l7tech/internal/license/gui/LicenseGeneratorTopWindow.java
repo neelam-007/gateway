@@ -352,6 +352,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 checkForChangedXml();
                 JFileChooser fc = new JFileChooser(FileChooserUtil.getStartingDirectory());
+                FileChooserUtil.addListenerToFileChooser(fc);
                 fc.setFileFilter(new XmlFileFilter());
                 fc.setMultiSelectionEnabled(false);
                 int result = fc.showSaveDialog(LicenseGeneratorTopWindow.this);
@@ -400,6 +401,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
         AbstractAction action = new AbstractAction("Open") {
             public void actionPerformed(ActionEvent e) {
                 JFileChooser fc = new JFileChooser(FileChooserUtil.getStartingDirectory());
+                FileChooserUtil.addListenerToFileChooser(fc);
                 fc.setFileFilter(new XmlFileFilter());
                 fc.setMultiSelectionEnabled(false);
                 int result = fc.showOpenDialog(LicenseGeneratorTopWindow.this);

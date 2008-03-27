@@ -259,6 +259,7 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
             try {
                 // Create a JFileChooser and setup it
                 final JFileChooser fileChooser = new JFileChooser(FileChooserUtil.getStartingDirectory()); // use the user's default directory
+                FileChooserUtil.addListenerToFileChooser(fileChooser);
 
                 fileChooser.setDialogTitle(resources.getString("save.dialog.title"));
                 fileChooser.setMultiSelectionEnabled(false);  // Allow single selection only

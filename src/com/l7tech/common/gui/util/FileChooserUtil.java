@@ -40,8 +40,21 @@ public class FileChooserUtil {
     }
     private static JFileChooserSelectionListener FILE_CHOOSER_SELECTION_LISTENER = new JFileChooserSelectionListener();
 
+    /**
+     * Returns the directory that shown in the last JFileChooser to be closed.
+     * @return The directory to start the JFileChooser at
+     */
     public static File getStartingDirectory() {
         return JFileChooserSelectionListener.CURRENT_DIRECTORY;
+    }
+
+    /**
+     * Adds a listener to the JFileChooser to remember the last directory that was
+     * shown.
+     * @param fileChooser The JFileChooser to add the listener to
+     */
+    public static void addListenerToFileChooser(JFileChooser fileChooser) {
+        fileChooser.addActionListener(FILE_CHOOSER_SELECTION_LISTENER);
     }
     
     /**

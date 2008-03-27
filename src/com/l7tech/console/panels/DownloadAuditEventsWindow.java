@@ -235,6 +235,7 @@ public class DownloadAuditEventsWindow extends JFrame {
             startingPath = FileChooserUtil.getStartingDirectory();
         }
         final JFileChooser chooser = new JFileChooser(startingPath);
+        FileChooserUtil.addListenerToFileChooser(chooser);
         chooser.setDialogTitle("Save Audit Events As");
         chooser.setDialogType(JFileChooser.SAVE_DIALOG);
         chooser.setMultiSelectionEnabled(false);

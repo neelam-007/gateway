@@ -222,6 +222,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 }
                 // save CSR to file
                 JFileChooser chooser = new JFileChooser(FileChooserUtil.getStartingDirectory());
+                FileChooserUtil.addListenerToFileChooser(chooser);
                 chooser.setDialogTitle("Save CSR to File");
                 chooser.setMultiSelectionEnabled(false);
                 chooser.setFileFilter(new FileFilter() {

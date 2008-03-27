@@ -115,6 +115,7 @@ public abstract class ExportPolicyToFileAction extends SecureAction {
         } else {
             chooser = new JFileChooser(FileChooserUtil.getStartingDirectory());
         }
+        FileChooserUtil.addListenerToFileChooser(chooser);
 
         chooser.setDialogTitle(title);
         // Allow single selection only
