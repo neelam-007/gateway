@@ -284,7 +284,8 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
 
         for (Iterator iterator = cookies.iterator(); iterator.hasNext();) {
             HttpCookie httpCookie = (HttpCookie) iterator.next();
-            CookieUtils.toServletCookie(httpCookie);
+            //CookieUtils.toServletCookie(httpCookie);
+            cookieVector.add(CookieUtils.toServletCookie(httpCookie));
         }
 
         return cookieVector;
