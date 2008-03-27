@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
@@ -220,7 +221,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     return;
                 }
                 // save CSR to file
-                JFileChooser chooser = new JFileChooser();
+                JFileChooser chooser = new JFileChooser(FileChooserUtil.getStartingDirectory());
                 chooser.setDialogTitle("Save CSR to File");
                 chooser.setMultiSelectionEnabled(false);
                 chooser.setFileFilter(new FileFilter() {

@@ -39,6 +39,10 @@ public class FileChooserUtil {
         }
     }
     private static JFileChooserSelectionListener FILE_CHOOSER_SELECTION_LISTENER = new JFileChooserSelectionListener();
+
+    public static File getStartingDirectory() {
+        return JFileChooserSelectionListener.CURRENT_DIRECTORY;
+    }
     
     /**
      * A factory that creates a JFileChooser, working around Java bug parade #4711700.  Will retry

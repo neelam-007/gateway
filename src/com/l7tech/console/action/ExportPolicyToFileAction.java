@@ -6,6 +6,7 @@ import com.l7tech.console.tree.*;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.gui.util.FileChooserUtil;
 
 import org.xml.sax.SAXException;
 
@@ -112,7 +113,7 @@ public abstract class ExportPolicyToFileAction extends SecureAction {
             }
             chooser = new JFileChooser(templateDir);
         } else {
-            chooser = new JFileChooser();
+            chooser = new JFileChooser(FileChooserUtil.getStartingDirectory());
         }
 
         chooser.setDialogTitle(title);

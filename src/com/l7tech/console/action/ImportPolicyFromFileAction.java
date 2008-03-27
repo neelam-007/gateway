@@ -4,6 +4,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.policy.exporter.PolicyImporter;
@@ -96,7 +97,7 @@ public abstract class ImportPolicyFromFileAction extends PolicyNodeAction {
             }
             chooser = new JFileChooser(templateDir);
         } else {
-            chooser = new JFileChooser();
+            chooser = new JFileChooser(FileChooserUtil.getStartingDirectory());
         }
 
         chooser.setDialogTitle("Import Policy");

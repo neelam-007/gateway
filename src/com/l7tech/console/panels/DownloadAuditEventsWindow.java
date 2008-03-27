@@ -6,6 +6,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.util.OpaqueId;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.util.Registry;
@@ -229,7 +230,11 @@ public class DownloadAuditEventsWindow extends JFrame {
      * Handles browse button click.
      */
     private void onBrowse() {
-        final JFileChooser chooser = new JFileChooser(filePathTextField.getText());
+        File startingPath = new File(filePathTextField.getText());
+        if(!startingPath.exists()) {
+            startingPath = FileChooserUtil.getStartingDirectory();
+        }
+        final JFileChooser chooser = new JFileChooser(startingPath);
         chooser.setDialogTitle("Save Audit Events As");
         chooser.setDialogType(JFileChooser.SAVE_DIALOG);
         chooser.setMultiSelectionEnabled(false);

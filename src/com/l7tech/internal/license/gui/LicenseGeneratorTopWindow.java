@@ -10,6 +10,7 @@ import com.l7tech.common.License;
 import com.l7tech.common.gui.widgets.LicensePanel;
 import com.l7tech.common.gui.widgets.EulaDialog;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.util.ExceptionUtils;
@@ -350,7 +351,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
         AbstractAction action = new AbstractAction("Save As") {
             public void actionPerformed(ActionEvent e) {
                 checkForChangedXml();
-                JFileChooser fc = new JFileChooser();
+                JFileChooser fc = new JFileChooser(FileChooserUtil.getStartingDirectory());
                 fc.setFileFilter(new XmlFileFilter());
                 fc.setMultiSelectionEnabled(false);
                 int result = fc.showSaveDialog(LicenseGeneratorTopWindow.this);
@@ -398,7 +399,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
         if (openAction != null) return openAction;
         AbstractAction action = new AbstractAction("Open") {
             public void actionPerformed(ActionEvent e) {
-                JFileChooser fc = new JFileChooser();
+                JFileChooser fc = new JFileChooser(FileChooserUtil.getStartingDirectory());
                 fc.setFileFilter(new XmlFileFilter());
                 fc.setMultiSelectionEnabled(false);
                 int result = fc.showOpenDialog(LicenseGeneratorTopWindow.this);

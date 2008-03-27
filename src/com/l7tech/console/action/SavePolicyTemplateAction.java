@@ -8,6 +8,7 @@ import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.common.gui.util.FileChooserUtil;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -95,7 +96,7 @@ public class SavePolicyTemplateAction extends SecureAction {
             return;
         }
 
-        JFileChooser chooser = new JFileChooser(templateDir);
+        JFileChooser chooser = new JFileChooser((templateDir == null) ? FileChooserUtil.getStartingDirectory() : templateDir);
         chooser.setDialogTitle("Save as ...");
         // Allow single selection only
         chooser.setMultiSelectionEnabled(false);

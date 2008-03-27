@@ -4,6 +4,7 @@
 package com.l7tech.internal.audit;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.util.CertUtils;
 
 import javax.net.ssl.*;
@@ -532,7 +533,11 @@ public class AuditSignatureChecker extends JFrame {
 
         /** Handles browse audit button click. */
         private void onBrowseAudit() {
-            final JFileChooser chooser = new JFileChooser(_auditPathTextField.getText());
+            File startingPath = new File(_auditPathTextField.getText());
+            if(!startingPath.exists()) {
+                startingPath = FileChooserUtil.getStartingDirectory();
+            }
+            final JFileChooser chooser = new JFileChooser(startingPath);
             chooser.setDialogTitle("Select Audit Download File");
             chooser.setDialogType(JFileChooser.OPEN_DIALOG);
             chooser.setMultiSelectionEnabled(false);
@@ -559,6 +564,10 @@ public class AuditSignatureChecker extends JFrame {
 
         /** Handles browse cert button click. */
         private void onBrowseCert() {
+            File startingPath = new File(_certPathTextField.getText());
+            if(!startingPath.exists()) {
+                startingPath = FileChooserUtil.getStartingDirectory();
+            }
             final JFileChooser chooser = new JFileChooser(_certPathTextField.getText());
             chooser.setDialogTitle("Select Certificate File");
             chooser.setDialogType(JFileChooser.OPEN_DIALOG);

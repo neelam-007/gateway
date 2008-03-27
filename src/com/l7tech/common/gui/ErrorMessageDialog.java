@@ -3,6 +3,7 @@ package com.l7tech.common.gui;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.console.AppletMain;
@@ -257,7 +258,7 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
         private JFileChooser getFileChooser() {
             try {
                 // Create a JFileChooser and setup it
-                final JFileChooser fileChooser = new JFileChooser(); // use the user's default directory
+                final JFileChooser fileChooser = new JFileChooser(FileChooserUtil.getStartingDirectory()); // use the user's default directory
 
                 fileChooser.setDialogTitle(resources.getString("save.dialog.title"));
                 fileChooser.setMultiSelectionEnabled(false);  // Allow single selection only
