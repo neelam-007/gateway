@@ -2970,7 +2970,6 @@
                 version="true"
                 author="false"
                 use="true"
-                public="true"
                 windowtitle="Layer 7 External API">
 
             <fileset dir="${src.root}/src/" defaultexcludes="yes">
