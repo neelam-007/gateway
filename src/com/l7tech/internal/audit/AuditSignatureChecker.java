@@ -570,7 +570,7 @@ public class AuditSignatureChecker extends JFrame {
                 startingPath = FileChooserUtil.getStartingDirectory();
             }
             final JFileChooser chooser = new JFileChooser(_certPathTextField.getText());
-            FileChooserUtil(chooser);
+            FileChooserUtil.addListenerToFileChooser(chooser);
             chooser.setDialogTitle("Select Certificate File");
             chooser.setDialogType(JFileChooser.OPEN_DIALOG);
             chooser.setMultiSelectionEnabled(false);
