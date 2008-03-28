@@ -41,9 +41,20 @@ public interface ServiceResponse {
     SecurityContext getSecurityContext();
 
     /**
-     * @return A <code>Map</code> to store and retrieve data pertaining to the scope of the
-     * request at hand. Custom Assertions may use this map to share objects between themselves within
-     * a policy execution context.
+     * Returns a <code>java.util.Map</code> of objects representing the current policy execution context.
+     *
+     * <p>The <code>Map</code> is populated with the following key/value pairs:
+     *
+     * <p><b>request.http.headerValues</b> -- a <code>java.lang.String</code> array of request header values
+     * <p><b>httpRequest</b> -- <code>javax.servlet.http.HttpServletRequest</code> object
+     * <p><b>httpResponse</b> -- <code>javax.servlet.http.HttpServletResponse</code> object
+     * <p><b>messageparts</b> -- a two-dimensional <code>java.lang.Object</code> array containing the response mime parts and associated content-types.
+     * The size of the 2D array is [number of mime parts][2], where the content-types appear in indeces [i][0] and the associated mime parts appear in indeces [i][1].
+     *
+     *
+     * <p>Note that the <code>HttpServletResponse</code> object is actually a wrapper around <code>javax.servlet.http.HttpServletResponse</code> 
+     * with an additional method called <code>addCookie</code> which provides the ability to insert cookies into the response.
+     * @return a <code>java.util.Map</code> of data representing the current policy execution context
      */
     Map getContext();
 
