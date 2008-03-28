@@ -1,10 +1,10 @@
 package com.l7tech.console;
 
+import com.l7tech.common.audit.LogonEvent;
+import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.FileChooserUtil;
-import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.TopComponents;
@@ -15,11 +15,11 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.util.ResourceBundle;
-import java.util.Date;
-import java.text.SimpleDateFormat;
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.ResourceBundle;
 
 /**
  * To display log records.
@@ -35,7 +35,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
      * Create a disconnected log window.
      */
     public GatewayLogWindow() {
-        this("[from file]", "", false);
+        this(null, null, false);
     }
 
     /**
@@ -55,8 +55,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
      * @param nodeId the id of the node for which logs are to be displayed
      */
     private GatewayLogWindow(String nodeName, String nodeId, boolean connected) {
-
-        super("SecureSpan Manager - Gateway Log Events for " + nodeName);
+        super(WINDOW_TITLE + (nodeName == null ? "" : " for " + nodeName));
 
         this.startConnected = connected;
         this.nodeName = nodeName;
@@ -128,6 +127,8 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
      * @throws IOException on error
      */
     public boolean displayLogs(File logFile) throws IOException {
+        setTitle(WINDOW_TITLE + " (" + logFile.getName() + ")");
+        gatewayLogTitle.setText(BANNER_TITLE + " (" + logFile.getName() + ")");
         return getLogPane().importView(logFile);
     }
 
@@ -155,6 +156,8 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
     private static final String RESOURCE_PATH = "com/l7tech/console/resources";
     private static final ResourceBundle resapplication =
             ResourceBundle.getBundle("com.l7tech.console.resources.console");
+    private static final String WINDOW_TITLE = "SecureSpan Manager - Gateway Log Events";
+    private static final String BANNER_TITLE = " Log Events";
 
     private boolean startConnected;
     private String nodeName = null;
@@ -366,7 +369,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         mainPane.setLayout(new BorderLayout());
 
         gatewayLogTitle.setFont(new Font("Dialog", 1, 18));
-        gatewayLogTitle.setText(" Log Events for " + getNodeName());
+        gatewayLogTitle.setText(BANNER_TITLE + (nodeName == null ? "" : " for " + nodeName));
         gatewayLogTitle.setMaximumSize(new Dimension(136, 40));
         gatewayLogTitle.setMinimumSize(new Dimension(136, 40));
         gatewayLogTitle.setPreferredSize(new Dimension(136, 40));

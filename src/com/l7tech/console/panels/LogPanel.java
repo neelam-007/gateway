@@ -29,6 +29,11 @@ import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.logging.LogMessage;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.FindException;
+import org.apache.xml.serialize.OutputFormat;
+import org.apache.xml.serialize.XMLSerializer;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -48,12 +53,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.Element;
-import org.apache.xml.serialize.XMLSerializer;
-import org.apache.xml.serialize.OutputFormat;
 
 /**
  * A panel for displaying either logs or audit events.
@@ -169,15 +168,15 @@ public class LogPanel extends JPanel {
         TIME_RANGE
     };
     private RetrievalMode retrievalMode;
-    /** Duration in milliseconds (for {@link RetrievalMode#DURATION} mode). */
+    /** Duration in milliseconds. Applies when {@link #retrievalMode} == {@link RetrievalMode#DURATION}. */
     private long durationMillis;
-    /** Whether to auto-refresh (for {@link RetrievalMode#DURATION} mode). */
+    /** Whether to auto-refresh. Applies when {@link #retrievalMode} == {@link RetrievalMode#DURATION}. */
     private boolean durationAutoRefresh;
-    /** Start time (for {@link RetrievalMode#TIME_RANGE} mode). */
+    /** Start time. Applies when {@link #retrievalMode} == {@link RetrievalMode#TIME_RANGE}. */
     private Date timeRangeStart;
-    /** End time (for {@link RetrievalMode#TIME_RANGE} mode). */
+    /** End time. Applies when {@link #retrievalMode} == {@link RetrievalMode#TIME_RANGE}. */
     private Date timeRangeEnd;
-    /** Time zone (for {@link RetrievalMode#TIME_RANGE} mode). */
+    /** Time zone. Applies when {@link #retrievalMode} == {@link RetrievalMode#TIME_RANGE}. */
     private TimeZone timeRangeTimeZone;
 
     /**
@@ -307,9 +306,6 @@ public class LogPanel extends JPanel {
             }
         });
 
-        if (! isAuditType) {
-            retrievalMode = RetrievalMode.DURATION;
-        }
         applyPreferences();
     }
 
@@ -369,7 +365,7 @@ public class LogPanel extends JPanel {
         controlPanel.autoRefreshCheckBox.setSelected(durationAutoRefresh);
         controlPanel.timeRangePicker.setStartTime(timeRangeStart);
         controlPanel.timeRangePicker.setEndTime(timeRangeEnd);
-        controlPanel.timeRangePicker.setTimeZone(timeRangeTimeZone, true);
+        if (timeRangeTimeZone != null) controlPanel.timeRangePicker.setTimeZone(timeRangeTimeZone, true);
         enableOrDisableComponents();
     }
 
@@ -425,10 +421,12 @@ public class LogPanel extends JPanel {
                     timeRangeTimeZone = TimeZone.getTimeZone(timeZoneId);
                 }
             }
-
-            setControlPanelFromData();
+        } else { // We are displaying logs.
+            retrievalMode = RetrievalMode.DURATION;
+            durationAutoRefresh = true;
         }
 
+        setControlPanelFromData();
         updateControlState();
     }
 
@@ -544,7 +542,6 @@ public class LogPanel extends JPanel {
         Window pWin = SwingUtilities.getWindowAncestor(this);
         return pWin != null
                 && pWin.isVisible()
-                && isAuditType
                 && retrievalMode == RetrievalMode.DURATION
                 && durationAutoRefresh;
     }
@@ -1594,6 +1591,20 @@ public class LogPanel extends JPanel {
         onDisconnect();
         getFilteredLogTableSorter().setLogs(this, logs);
         getLastUpdateTimeLabel().setVisible(false);    // It's not applicable in static view.
+        setDynamicData(false);
+    }
+
+    /**
+     * Reset UI according to whether data is dynamic or static.
+     * @param b     <code>true</code> for dynamic, <code>false</code> for static
+     */
+    public void setDynamicData(final boolean dynamic) {
+        if (dynamic) durationAutoRefresh = false;
+        if (selectionSplitPane != null) {
+            // No time range controls for static data.
+            selectionSplitPane.setTopComponent(dynamic ? getControlPane() : null);
+            selectionSplitPane.setOneTouchExpandable(dynamic);
+        }
     }
 
     /**
@@ -1962,7 +1973,7 @@ public class LogPanel extends JPanel {
     }
 
     public boolean importView(File file) throws IOException {
-        controlPanel.timeRangeButton.setSelected(true);
+        setDynamicData(false);
 
         InputStream in = null;
         ObjectInputStream ois = null;

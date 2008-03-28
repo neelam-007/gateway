@@ -41,6 +41,8 @@ import java.util.*;
 public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHolder {
 
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
+    private static final String WINDOW_TITLE = "SecureSpan Manager - Gateway Audit Events";
+    private static final String BANNER_TITLE = " Audit Events";
     private JLabel gatewayLogTitle = null;
     private JPanel gatewayLogPane = null;
     private JPanel mainPane = null;
@@ -73,7 +75,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
      * Constructor
      */
     public GatewayAuditWindow(boolean connected) {
-        super("SecureSpan Manager - Gateway Audit Events");
+        super(WINDOW_TITLE);
         startConnected = connected;
         ImageIcon imageIcon =
           new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
@@ -161,6 +163,9 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
      * @throws IOException on error
      */
     public boolean displayAudits(File auditFile) throws IOException {
+        setTitle(WINDOW_TITLE + " (" + auditFile.getName() + ")");
+        gatewayLogTitle.setText(BANNER_TITLE + " (" + auditFile.getName() + ")");
+        getViewControlsMenuItem().setEnabled(false);
         return getLogPane().importView(auditFile);
     }
 
@@ -219,6 +224,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         }
 
         getLogPane().setLogs(map);
+        getViewControlsMenuItem().setEnabled(false);
     }
 
     /**
@@ -434,7 +440,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         mainPane.setLayout(new java.awt.BorderLayout());
 
         gatewayLogTitle.setFont(new java.awt.Font("Dialog", 1, 18));
-        gatewayLogTitle.setText(" Audit Events");
+        gatewayLogTitle.setText(BANNER_TITLE);
         gatewayLogTitle.setMaximumSize(new java.awt.Dimension(136, 40));
         gatewayLogTitle.setMinimumSize(new java.awt.Dimension(136, 40));
         gatewayLogTitle.setPreferredSize(new java.awt.Dimension(136, 40));
