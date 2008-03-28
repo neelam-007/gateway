@@ -212,6 +212,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         URLConnection gconn = url.openConnection();
         if (gconn instanceof HttpsURLConnection) {
             HttpsURLConnection conn = (HttpsURLConnection)gconn;
+            conn.setConnectTimeout( 20000 );
             conn.setSSLSocketFactory(sslContext.getSocketFactory());
             final String[] sawHost = new String[] { null };
             if (ignoreHostname) {
