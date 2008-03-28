@@ -34,21 +34,27 @@ public interface ServiceRequest {
     SecurityContext getSecurityContext();
 
     /**
-     * Returns a <code>java.util.Map</code> of objects representing the current policy execution context.
+     * Returns a {@link java.util.Map Map} of objects representing the current policy execution context.
      *
-     * <p>The <code>Map</code> is populated with the following key/value pairs:
+     * <p>The {@link java.util.Map Map} is populated with the following key/value pairs:
      *
-     * <p><b>request.http.headerValues</b> -- a <code>java.lang.String</code> array of request header values
-     * <p><b>httpRequest</b> -- <code>javax.servlet.http.HttpServletRequest</code> object
-     * <p><b>httpResponse</b> -- <code>javax.servlet.http.HttpServletResponse</code> object
-     * <p><b>updatedCookies</b> -- a <code>java.util.Vector</code> of request cookies
-     * <p><b>originalCookies</b> -- an unmodifiable <code>java.util.Collection</code> of the request cookies
-     * <p><b>messageparts</b> -- a two-dimensional <code>java.lang.Object</code> array containing the request mime parts and associated content-types.
+     * <p><b>request.http.headerValues.[header name]</b> -- a <code>java.lang.String</code> array of request header value(s) for the given [header name].
+     * <p><b>httpRequest</b> -- {@link javax.servlet.http.HttpServletRequest HttpServletRequest} object that can be used to modify the request
+     * <p><b>httpResponse</b> -- {@link javax.servlet.http.HttpServletResponse HttpServletResponse} object that can be used to modify the response
+     * <p><b>updatedCookies</b> -- an immutable <code>java.util.Vector</code> of request {@link javax.servlet.http.Cookie Cookie} objects
+     * <p><b>originalCookies</b> -- an immutable <code>java.util.Collection</code> of the request {@link javax.servlet.http.Cookie Cookie} objects
+     * <p><b>messageparts</b> -- an immutable two-dimensional <code>java.lang.Object</code> array containing the request mime parts and associated content-types.
+     * 
      * The size of the 2D array is [number of mime parts][2], where the content-types appear in indeces [i][0] and the associated mime parts appear in indeces [i][1].
+     * Content-types are of type <code>java.lang.String</code> and mime parts are <code>byte</code> arrays and can be cast as such.
      *
-     * <p>Note that the <code>HttpServletResponse</code> object is actually a wrapper around <code>javax.servlet.http.HttpServletResponse</code> 
-     * with an additional method called <code>addCookie</code> which provides the ability to insert cookies into the response.
-     * @return a <code>java.util.Map</code> of data representing the current policy execution context
+     *
+     * <p><b>Notes</b> The {@link javax.servlet.http.HttpServletResponse HttpServletResponse} object is actually a wrapper around {@link javax.servlet.http.HttpServletResponse HttpServletResponse}
+     * with an additional method called <code>addCookie</code> which provides the ability to insert {@link javax.servlet.http.Cookie Cookie} objects into the response.
+     * <p> <i>Header values</i>, <i>httpRequests</i> and <i>httpResponses</i> are not guaranteed to exist in the <code>Map</Map>.
+     * <p> The <i>messageparts</i> object is guaranteed to exist but may not contain any useful data if no mime parts exist in the message.
+     *
+     * @return a {@link java.util.Map Map} of data representing the current policy execution context
      */
     Map getContext();
 

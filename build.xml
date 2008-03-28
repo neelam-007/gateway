@@ -2972,6 +2972,10 @@
                 use="true"
                 windowtitle="Layer 7 External API">
 
+            <!-- links to j2se & j2ee javadocs provided so they can be linked to from within the layer7-api javadoc -->
+            <link href="http://java.sun.com/javase/6/docs/api/"/>
+            <link href="http://java.sun.com/javaee/5/docs/api/"/>
+                
             <fileset dir="${src.root}/src/" defaultexcludes="yes">
                 <patternset refid="layer7api.sources"/>
                 <!--
