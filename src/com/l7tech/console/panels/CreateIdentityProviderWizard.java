@@ -26,16 +26,23 @@ public class CreateIdentityProviderWizard extends IdentityProviderWizard {
      *
      * @param parent The parent frame object reference.
      * @param panel  The panel attached to this wizard. This is the panel to be displayed when the wizard is shown.
+     * @param wizardInput Can be used to pass in initial settings for the wizard to use
      */
-    public CreateIdentityProviderWizard(Frame parent, final WizardStepPanel panel) {
+    public CreateIdentityProviderWizard(Frame parent, final WizardStepPanel panel, LdapIdentityProviderConfig wizardInput) {
         super(parent, panel);
         setResizable(true);
         setTitle("Create LDAP Identity Provider Wizard");
         setShowDescription(false);
         Utilities.setEscKeyStrokeDisposes(this);
 
-        wizardInput = new LdapIdentityProviderConfig();
-        ((IdentityProviderConfig)wizardInput).setTypeVal(IdentityProviderType.LDAP.toVal());
+        if(wizardInput == null) {
+            this.wizardInput = new LdapIdentityProviderConfig();
+            ((IdentityProviderConfig)this.wizardInput).setTypeVal(IdentityProviderType.LDAP.toVal());
+        } else {
+            this.wizardInput = wizardInput;
+            ((IdentityProviderConfig)this.wizardInput).setTypeVal(IdentityProviderType.LDAP.toVal());
+            panel.readSettings(wizardInput, true);
+        }
 
         pack();
 

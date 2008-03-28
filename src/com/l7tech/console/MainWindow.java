@@ -941,7 +941,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private NewLdapProviderAction getNewProviderAction() {
         if (newLDAPProviderAction != null) return newLDAPProviderAction;
-        newLDAPProviderAction = new NewLdapProviderAction(null) {
+        newLDAPProviderAction = new NewLdapProviderAction() {
             public void onLogon(LogonEvent e) {
                 super.onLogon(e);
                 final DefaultMutableTreeNode root =

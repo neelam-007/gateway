@@ -609,14 +609,21 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     }
 
     /** populate the form from the provider beans */
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
+        readSettings(settings, false);
+    }
+
+    /** populate the form from the provider beans, possibly accepting new beans */
+    @Override
+    public void readSettings(Object settings, boolean acceptNewProvider) {
         if (settings != null) {
 
             if (settings instanceof LdapIdentityProviderConfig) {
 
                 LdapIdentityProviderConfig iProviderConfig = (LdapIdentityProviderConfig) settings;
 
-                if (iProviderConfig.getOid() != -1) {
+                if (acceptNewProvider || iProviderConfig.getOid() != -1) {
 
                     getProviderNameTextField().setText(iProviderConfig.getName());
                     getLdapBindPasswordField().setText(iProviderConfig.getBindPasswd());

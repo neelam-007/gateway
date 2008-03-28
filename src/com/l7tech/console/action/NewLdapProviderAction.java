@@ -12,6 +12,7 @@ import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -34,8 +35,19 @@ import java.util.logging.Logger;
 public class NewLdapProviderAction extends NewProviderAction {
     static final Logger log = Logger.getLogger(NewLdapProviderAction.class.getName());
 
+    private LdapIdentityProviderConfig ldapConfig;
+
+    public NewLdapProviderAction() {
+        super(null);
+    }
+    
     public NewLdapProviderAction(AbstractTreeNode node) {
         super(node);
+    }
+
+    public NewLdapProviderAction(LdapIdentityProviderConfig ldapConfig) {
+        super(null);
+        this.ldapConfig = ldapConfig;
     }
 
     /**
@@ -76,7 +88,7 @@ public class NewLdapProviderAction extends NewProviderAction {
 
 
                 Frame f = TopComponents.getInstance().getTopParent();
-                Wizard w = new CreateIdentityProviderWizard(f, configPanel);
+                Wizard w = new CreateIdentityProviderWizard(f, configPanel, ldapConfig);
                 w.addWizardListener(wizardListener);
 
                 // register itself to listen to the addEvent

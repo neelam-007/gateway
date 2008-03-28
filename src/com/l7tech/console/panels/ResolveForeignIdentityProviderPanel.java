@@ -9,6 +9,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.gui.util.DialogDisplayer;
@@ -162,7 +163,10 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         };
         // start the process to create the type of id provider based on the saved info
         if (IdentityProviderType.LDAP.toVal() == unresolvedRef.getIdProviderTypeVal()) {
-            NewLdapProviderAction action = new NewLdapProviderAction(null);
+            LdapIdentityProviderConfig ldapConfig = new LdapIdentityProviderConfig();
+            ldapConfig.setName(unresolvedRef.getProviderName());
+            ldapConfig.setSerializedProps(unresolvedRef.getIdProviderConfProps());
+            NewLdapProviderAction action = new NewLdapProviderAction(ldapConfig);
             action.addEntityListener(updateProviderListCallback);
             action.invoke();
         } else if (IdentityProviderType.FEDERATED.toVal() == unresolvedRef.getIdProviderTypeVal()) {
@@ -185,7 +189,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
                                     action.addEntityListener(updateProviderListCallback);
                                     action.invoke();
                                 } else {
-                                    NewLdapProviderAction action = new NewLdapProviderAction(null);
+                                    NewLdapProviderAction action = new NewLdapProviderAction();
                                     action.addEntityListener(updateProviderListCallback);
                                     action.invoke();
                                 }

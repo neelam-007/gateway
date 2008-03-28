@@ -19,7 +19,7 @@ public class TestCreateIdentityProviderWizard {
         //
         LdapIdentityProviderConfigPanel configPanel = (
                   new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(null)), true));
-        Wizard w = new CreateIdentityProviderWizard(null, configPanel);
+        Wizard w = new CreateIdentityProviderWizard(null, configPanel, null);
         w.pack();
         w.setSize(780, 560);
         Utilities.centerOnScreen(w);

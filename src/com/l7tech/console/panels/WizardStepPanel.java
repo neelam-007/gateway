@@ -168,6 +168,22 @@ public abstract class WizardStepPanel extends JPanel {
       throws IllegalArgumentException {
     }
 
+    /**
+     * Provides the wizard with the current data--either
+     * the default data or already-modified settings. This is a
+     * noop version that subclasses implement.
+     *
+     * @param settings the object representing wizard panel state
+     * @param acceptNewProvider if true, then settings will be read
+     * the input settings have a valid OID or not
+     * @throws IllegalArgumentException if the the data provided
+     *                                  by the wizard are not valid.
+     */
+    public void readSettings(Object settings, boolean acceptNewProvider)
+      throws IllegalArgumentException {
+        readSettings(settings);
+    }
+
 
     public String getDescription() {
         return "";
