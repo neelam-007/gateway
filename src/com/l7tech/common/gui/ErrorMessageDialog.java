@@ -25,6 +25,8 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
     private WrappingLabel messageLabel;
 
     private Throwable throwable;
+    private SaveErrorStrategy defaultSaveStrategy = new DefaultSaveErrorStrategy();
+    private static SaveErrorStrategy browserSaveStrategy;
     private static Runnable shutdownHandler;
     public static final ResourceBundle resources;
     static {
@@ -49,6 +51,14 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
         super(parent, true);
         this.throwable = throwable;
         initialize(errorMessage);
+    }
+
+    /**
+     * If the SSM is an untrusted applet, we need one other save strategy - BrowserSaveErrorStrategy.
+     * @param strategy The browser save strategy to be set in ErrorMessageDialog.
+     */
+    public static void setBrowserSaveErrorStrategy(SaveErrorStrategy strategy) {
+        browserSaveStrategy = strategy;
     }
 
     public synchronized static void setShutdownHandler(Runnable handler) {
@@ -104,10 +114,26 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
             //setVisible(false);
             dispose();
         } else if (source == reportButton) {
+            // Try to use the default save strategy first.  If there exists any problem, try the browser save strategy.
             try {
-                new DefaultSaveErrorStrategy(this, throwable).saveErrorReportFile();
-            } catch (Exception ex) {
-                new UntrustedAppletSaveErrorStrategy(this, throwable).saveErrorReportFile();
+                defaultSaveStrategy.setErrorMessageDialog(this);
+                defaultSaveStrategy.setThrowable(throwable);
+                defaultSaveStrategy.saveErrorReportFile();
+            } catch (Exception ex1) {
+                if (browserSaveStrategy == null) {
+                    JOptionPane.showMessageDialog(this,
+                            "Cannot save a report due to an internal error.  Please contact to your administrator.",
+                            "Warning",
+                            JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                try {
+                    browserSaveStrategy.setErrorMessageDialog(this);
+                    browserSaveStrategy.setThrowable(throwable);
+                    browserSaveStrategy.saveErrorReportFile();
+                } catch (Exception ex2) {
+                    // Any problems have been handled in BrowserSaveErrorStrategy.
+                }
             }
         }
     }

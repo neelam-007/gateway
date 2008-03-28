@@ -16,8 +16,8 @@ import java.awt.*;
  */
 
 /**
- * The class provides a strategy to save an error report.
- * The subclasses are {@link DefaultSaveErrorStrategy} and {@link UntrustedAppletSaveErrorStrategy}
+ * The class specifies a save-error strategy to save error into a file.
+ * The subclasses are {@link DefaultSaveErrorStrategy} and {@link com.l7tech.console.util.BrowserSaveErrorStrategy}
  */
 public abstract class SaveErrorStrategy {
     protected final static ResourceBundle resources =
@@ -32,8 +32,11 @@ public abstract class SaveErrorStrategy {
             "os.arch",
     };
 
-    public SaveErrorStrategy(Window errorMessageDialog, Throwable throwable) {
+    public void setErrorMessageDialog(Window errorMessageDialog) {
         this.errorMessageDialog = errorMessageDialog;
+    }
+
+    public void setThrowable(Throwable throwable) {
         this.throwable = throwable;
     }
 

@@ -1,5 +1,8 @@
-package com.l7tech.common.gui.util;
+package com.l7tech.console.util;
 
+import com.l7tech.common.gui.util.SaveErrorStrategy;
+import com.l7tech.common.gui.util.SheetHolder;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.GenericHttpRequestParams;
@@ -7,7 +10,6 @@ import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import com.l7tech.common.mime.ContentTypeHeader;
 
 import javax.swing.*;
-import java.awt.*;
 import java.applet.Applet;
 import java.net.URL;
 import java.io.IOException;
@@ -17,18 +19,10 @@ import java.io.IOException;
  */
 
 /**
- * The class is for saving a error report file in the client side using a browser save as dialog.
- * The super class is {@link SaveErrorStrategy}
+ * The class specifies a save-error strategy using a browser to save error into a file.
+ * The super class is {@link com.l7tech.common.gui.util.SaveErrorStrategy}
  */
-public class UntrustedAppletSaveErrorStrategy extends SaveErrorStrategy {
-    /**
-     * Constructor of the saving strategy for untrusted applets.
-     * @param errorMessageDialog The parent window
-     * @param throwable The exception/error to be reported
-     */
-    public UntrustedAppletSaveErrorStrategy(Window errorMessageDialog, Throwable throwable) {
-        super(errorMessageDialog, throwable);
-    }
+public class BrowserSaveErrorStrategy extends SaveErrorStrategy {
 
     public void saveErrorReportFile() {
         Applet applet;
@@ -37,7 +31,7 @@ public class UntrustedAppletSaveErrorStrategy extends SaveErrorStrategy {
             applet = (Applet)holder;
         } else {
             JOptionPane.showMessageDialog(errorMessageDialog,
-                    "Cannot save a report due to an internal error.  Try it again.",
+                    "Cannot save a report due to an internal error.  Please contact your to administrator.",
                     "Warning",
                     JOptionPane.WARNING_MESSAGE);
             return;

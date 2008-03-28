@@ -9,6 +9,7 @@ import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.ErrorMessageDialog;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.SheetHolder;
+import com.l7tech.common.gui.util.SaveErrorStrategy;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.WeakSet;
 import com.l7tech.console.panels.AppletContentStolenPanel;
@@ -98,6 +99,16 @@ public class AppletMain extends JApplet implements SheetHolder {
         validate();
 
         initHelpKeyBinding();
+        initBrowserSaveErrorStrategy();
+    }
+
+    /**
+     * Just in case, if the applet is untrusted, we need one other save-error strategy.
+     */
+    private void initBrowserSaveErrorStrategy() {
+        logger.finer("Initialize a browser-save-error strategy");
+        SaveErrorStrategy strategy = (SaveErrorStrategy)getApplicationContext().getBean("browserSaveErrorStategy");
+        ErrorMessageDialog.setBrowserSaveErrorStrategy(strategy);
     }
 
     private boolean looksLikeWindows() {

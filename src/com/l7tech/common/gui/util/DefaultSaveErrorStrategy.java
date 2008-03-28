@@ -2,7 +2,6 @@ package com.l7tech.common.gui.util;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
-import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -15,19 +14,10 @@ import java.io.IOException;
  */
 
 /**
- * The class is used to save error reports using default saving strategy.
+ * The class specifies a default save-error strategy using Save As dialog to save error into a file.
  * The super class is {@link SaveErrorStrategy}
  */
 public class DefaultSaveErrorStrategy extends SaveErrorStrategy {
-    /**
-     * Constructor for default saving strategy.
-     * @param errorMessageDialog The parent window
-     * @param throwable The exception/error to be reported
-     */
-    public DefaultSaveErrorStrategy(Window errorMessageDialog, Throwable throwable) {
-        super(errorMessageDialog, throwable);
-    }
-
     /**
      * Helper method to save an error report via a Saving-file dialog
      */

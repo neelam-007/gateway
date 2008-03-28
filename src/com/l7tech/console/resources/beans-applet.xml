@@ -16,5 +16,6 @@
             <ref bean="httpRequestExecutor"/>
         </property>
     </bean>
-    
+    <bean id="browserSaveErrorStategy" class="com.l7tech.console.util.BrowserSaveErrorStrategy">
+    </bean>
 </beans>
