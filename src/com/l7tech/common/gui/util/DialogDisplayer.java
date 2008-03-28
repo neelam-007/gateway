@@ -202,7 +202,7 @@ public class DialogDisplayer {
         suppressSheetDisplayClasses.put(dialogClass, new Object());
     }
 
-    private static SheetHolder getSheetHolderAncestor(Component c) {
+    public static SheetHolder getSheetHolderAncestor(Component c) {
         for (; c != null; c = c.getParent()) {
             if (c instanceof SheetHolder)
                 return (SheetHolder)c;

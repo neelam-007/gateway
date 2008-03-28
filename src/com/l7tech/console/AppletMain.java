@@ -11,11 +11,6 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.gui.util.SheetHolder;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.WeakSet;
-import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.SimpleHttpClient;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
-import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.panels.AppletContentStolenPanel;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.util.TopComponents;
@@ -29,7 +24,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.UnsupportedEncodingException;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -376,46 +370,6 @@ public class AppletMain extends JApplet implements SheetHolder {
         }
         catch(SecurityException se) {
             logger.warning("Could not install AWT exception handler.");
-        }
-    }
-
-    /**
-     * The class is for saving a error report file in the client side using a browser save as dialog.
-     * The super class is {@link com.l7tech.common.gui.ErrorMessageDialog.SaveStrategy}
-     */
-    public class AppletSaveStrategy extends ErrorMessageDialog.SaveStrategy {
-
-        public void saveErrorReportFile() {
-            String fileContent = getReportContent();
-            String urlStr = getBasicURL(AppletMain.this.getDocumentBase().toString()) + "/ssg/webadmin/filedownload";
-
-            try {
-                // Uploading the report
-                URL url = new URL(urlStr + "?filename=" + getSuggestedFileName());
-                GenericHttpClient client = new UrlConnectionHttpClient();
-                SimpleHttpClient sClient = new SimpleHttpClient(client);
-                GenericHttpRequestParams params = new GenericHttpRequestParams(url);
-                params.setContentType(ContentTypeHeader.TEXT_DEFAULT);
-                SimpleHttpClient.SimpleHttpResponse response = sClient.post(params, fileContent.getBytes("UTF-8"));
-                // Check for a 200 response code (on POST)
-                if (response.getStatus() != 200) {
-                    DialogDisplayer.showMessageDialog(AppletMain.this, null, "The report cannot be saved.  Try it again.", null);
-                    return;
-                }
-                String key = new String(response.getBytes());
-
-                // Downloading the report
-                url = new URL(urlStr + "?key=" + key);
-                AppletMain.this.getAppletContext().showDocument(url, "_self");
-            }
-            catch (IOException ex) {
-                logger.warning("Could not make request to upload or download an error report file.");
-            }
-        }
-
-        private String getBasicURL(String currURL) {
-            int idx = currURL.indexOf("9443");
-            return currURL.substring(0, (idx + 4));
         }
     }
 }
