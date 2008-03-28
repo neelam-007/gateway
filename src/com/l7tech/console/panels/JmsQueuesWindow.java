@@ -32,6 +32,37 @@ import java.util.List;
  * @author mike
  */
 public class JmsQueuesWindow extends JDialog {
+    private static enum StringFilterTarget {
+        NAME("Name Contains"),
+        URL("URL Contains");
+
+        private String name;
+
+        private StringFilterTarget(String name) {
+            this.name = name;
+        }
+
+        public String toString() {
+            return name;
+        }
+    }
+
+    private static enum DirectionFilterType {
+        BOTH("Both"),
+        IN("In"),
+        OUT("Out");
+
+        private String name;
+
+        private DirectionFilterType(String name) {
+            this.name = name;
+        }
+
+        public String toString() {
+            return name;
+        }
+    }
+
     public static final int MESSAGE_SOURCE_COL = 2;
 
     private JButton closeButton;
@@ -71,18 +102,24 @@ public class JmsQueuesWindow extends JDialog {
             GridBagConstraints.NONE,
             new Insets(5, 5, 5, 5), 0, 0));
 
+        p.add(getFilterPanel(that),
+          new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(5, 5, 5, 5), 0, 0));
+        
         JScrollPane sp = new JScrollPane(that.getJmsQueueTable(),
           JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
           JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         sp.setPreferredSize(new Dimension(400, 200));
         p.add(sp,
-          new GridBagConstraints(0, 1, 1, 1, 10.0, 10.0,
+          new GridBagConstraints(0, 2, 1, 1, 10.0, 10.0,
             GridBagConstraints.CENTER,
             GridBagConstraints.BOTH,
             new Insets(5, 5, 5, 5), 0, 0));
 
         p.add(that.getSideButtonPanel(),
-          new GridBagConstraints(1, 1, 1, GridBagConstraints.REMAINDER, 0.0, 1.0,
+          new GridBagConstraints(1, 2, 1, GridBagConstraints.REMAINDER, 0.0, 1.0,
             GridBagConstraints.NORTH,
             GridBagConstraints.VERTICAL,
             new Insets(5, 5, 5, 5), 0, 0));
@@ -94,15 +131,41 @@ public class JmsQueuesWindow extends JDialog {
         return that;
     }
 
+    private static JPanel getFilterPanel(final JmsQueuesWindow queuesWindow) {
+        JPanel filterPanel = new JPanel();
+        filterPanel.setLayout(new BoxLayout(filterPanel, BoxLayout.X_AXIS));
+        final JComboBox filterTarget = new JComboBox(StringFilterTarget.values());
+        filterPanel.add(filterTarget);
+        final JTextField filterString = new JTextField();
+        filterPanel.add(filterString);
+        final JComboBox direction = new JComboBox(DirectionFilterType.values());
+        filterPanel.add(direction);
+        JButton filterButton = new JButton("Filter");
+
+        filterButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                queuesWindow.getJmsQueueTable().clearSelection();
+                queuesWindow.getJmsQueueTableModel().filterJmsQueues(
+                        (StringFilterTarget)filterTarget.getSelectedItem(),
+                        filterString.getText(),
+                        (DirectionFilterType)direction.getSelectedItem());
+            }
+        });
+        filterPanel.add(filterButton);
+
+        return filterPanel;
+    }
+
     private class JmsQueueTableModel extends AbstractTableModel {
         private java.util.List jmsQueues = JmsUtilities.loadJmsQueues(false);
+        private java.util.List filteredQueues = new java.util.ArrayList(jmsQueues);
 
         public int getColumnCount() {
             return 3;
         }
 
         public int getRowCount() {
-            return getJmsQueues().size();
+            return filteredQueues.size();
         }
 
         public String getColumnName(int column) {
@@ -118,7 +181,7 @@ public class JmsQueuesWindow extends JDialog {
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
-            JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueues().get(rowIndex);
+            JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)filteredQueues.get(rowIndex);
             JmsConnection conn = i.getConnection();
             JmsEndpoint end = i.getEndpoint();
             switch (columnIndex) {
@@ -134,6 +197,44 @@ public class JmsQueuesWindow extends JDialog {
 
         public List getJmsQueues() {
             return jmsQueues;
+        }
+
+        public JmsAdmin.JmsTuple getJmsQueueAt(int row) {
+            return (JmsAdmin.JmsTuple)filteredQueues.get(row);
+        }
+
+        public void filterJmsQueues(StringFilterTarget filterTarget, String filter, DirectionFilterType direction) {
+            java.util.List newQueueList = new java.util.ArrayList(getJmsQueues());
+            for(java.util.Iterator it = newQueueList.iterator();it.hasNext();) {
+                JmsAdmin.JmsTuple tuple = (JmsAdmin.JmsTuple)it.next();
+
+                if(filter.length() > 0) {
+                    switch(filterTarget) {
+                    case URL:
+                        if(!tuple.getConnection().getJndiUrl().contains(filter)) {
+                            it.remove();
+                            continue;
+                        }
+                        break;
+                    case NAME:
+                        if(!tuple.getEndpoint().getName().contains(filter)) {
+                            it.remove();
+                            continue;
+                        }
+                        break;
+                    }
+                }
+
+                if(direction == DirectionFilterType.IN && !tuple.getEndpoint().isMessageSource() ||
+                        direction == DirectionFilterType.OUT && tuple.getEndpoint().isMessageSource())
+                {
+                    it.remove();
+                }
+            }
+
+            filteredQueues = newQueueList;
+
+            fireTableDataChanged();
         }
 
     }
