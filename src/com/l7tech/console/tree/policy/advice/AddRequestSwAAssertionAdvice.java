@@ -6,6 +6,7 @@ import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.console.util.SoapMessageGenerator;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.XpathEvaluator;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
@@ -13,7 +14,6 @@ import com.l7tech.policy.assertion.RequestSwAAssertion;
 import com.l7tech.service.PublishedService;
 import org.xml.sax.SAXException;
 
-import javax.swing.*;
 import javax.wsdl.Binding;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.WSDLException;
@@ -56,7 +56,8 @@ public class AddRequestSwAAssertionAdvice implements Advice {
         RequestSwAAssertion swaAssertion = (RequestSwAAssertion)assertions[0];
         final PublishedService service = pc.getService();
         if (service == null || !(service.isSoap())) {
-            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), "The 'SOAP Request with Attachment' assertion is not supported by non-SOAP services or policies not attached to a WSDL.");
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
+                    "The 'SOAP Request with Attachment' assertion is not supported by non-SOAP services or policies not attached to a WSDL.", null);
             return;
         }
 

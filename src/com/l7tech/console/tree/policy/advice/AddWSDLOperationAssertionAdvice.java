@@ -10,7 +10,6 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Operation;
 import com.l7tech.service.PublishedService;
 
-import javax.swing.*;
 import javax.wsdl.WSDLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,8 +38,8 @@ public class AddWSDLOperationAssertionAdvice implements Advice {
 
         PublishedService svc = pc.getService();
         if (svc == null || !(svc.isSoap())) {
-            String msg = "This assertion is not supported by non-SOAP services or policies not attached to a WSDL.";
-            JOptionPane.showMessageDialog(f, msg, "Not applicable", JOptionPane.ERROR_MESSAGE);
+            DialogDisplayer.showMessageDialog(f, null,
+                    "The 'WSDL Operation' assertion is not supported by non-SOAP services or policies not attached to a WSDL.", null);
             return;
         }
 
@@ -51,7 +50,7 @@ public class AddWSDLOperationAssertionAdvice implements Advice {
         } catch (WSDLException e) {
             String msg = "Error retrieving wsdl details";
             logger.log(Level.WARNING, msg, e);
-            JOptionPane.showMessageDialog(f, msg, "Error", JOptionPane.ERROR_MESSAGE);
+            DialogDisplayer.showMessageDialog(f, null, msg, null);
             return;
         }
 
