@@ -1559,6 +1559,7 @@
         <copy file="${src.root}/etc/tomcat/truststore.jks" todir="${deploy.dir}/etc/conf" preservelastmodified="true"/>
         <echo level="info">Copying web files</echo>
         <copy file="${src.root}/web/index.html" todir="${deploy.dir}/etc/inf/ssg" preservelastmodified="true"/>
+        <copy file="${src.root}/src/com/l7tech/common/resources/wsil2xhtml.xml" todir="${deploy.dir}/etc/inf/ssg" preservelastmodified="true"/>
 
         <echo level="info">Finished copying gateway configuration files</echo>
     </target>
@@ -1913,10 +1914,6 @@
                 <exclude name="com/l7tech/common/Authorizer.class"/>
                 <exclude name="com/l7tech/common/policy/**/*"/>
                 <exclude name="com/l7tech/common/util/CollectionUpdateProducer*.class"/>
-            </fileset>
-            <fileset dir="${src.root}/etc">
-                <include name="login.config"/>
-                <include name="bridgePolicyTemplates/*"/>
             </fileset>
             <!-- TODO find some more declarative way to do this -->
             <fileset dir="${src.root}/modules/assertions/WsAddressingAssertion/build/classes">

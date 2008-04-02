@@ -124,7 +124,7 @@ class KerberosConfig {
     private static final String PATH_LOGINCFG = "/login.config";
     private static final String PATH_KRB5CFG = "/krb5.conf";
 
-    private static final String RESOURCE_SSB_LOGINCFG = "/login.config";
+    private static final String RESOURCE_SSB_LOGINCFG = "/com/l7tech/proxy/resources/login.config";
     private static final String FILE_NAME_KRB5CFG = "krb5.conf";
 
     // Keep the detected values for reporting later

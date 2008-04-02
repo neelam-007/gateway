@@ -128,7 +128,7 @@ public class SsgPolicyImportDialog extends JDialog {
 
     //- PRIVATE
 
-    private String TEMPLATE_DIRECTORY = "bridgePolicyTemplates";
+    private String TEMPLATE_DIRECTORY = "com/l7tech/proxy/resources/bridgePolicyTemplates";
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
