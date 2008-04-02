@@ -98,7 +98,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
         Utilities.centerOnScreen(this);
         modelToView();
 
-        okButton.setEnabled(false);
+        updateEnableDisableState();
         final DocumentListener dl = new DocumentListener() {
             public void changedUpdate(DocumentEvent e) { updateEnableDisableState(); }
             public void insertUpdate(DocumentEvent e) { updateEnableDisableState(); }
