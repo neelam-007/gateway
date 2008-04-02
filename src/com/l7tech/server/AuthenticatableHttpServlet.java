@@ -116,7 +116,8 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * @param req the request.  required
      * @return a Map&lt;User, X509Certificate&gt; containing authenticated users, and their cert from the database if any.
      *          May be empty, but never null.
-     * @throws BadCredentialsException  if authorized credentials were not presented with the request
+     * @throws BadCredentialsException  if credentials were not presented with the request but could not be authenticated or authorized
+     * @throws MissingCredentialsException  if credentials were not presented with the request
      * @throws IssuedCertNotPresentedException  if the identity in question is recorded as possessing a client
      *                                          certificate, and the connection came in over SSL, but the
      *                                          client failed to present this client certificate during the
@@ -128,16 +129,20 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      *                            access to the {@link Endpoint} returned by {@link #getRequiredEndpoint}.
      */
     protected AuthenticationResult[] authenticateRequestBasic(HttpServletRequest req)
-            throws BadCredentialsException, IssuedCertNotPresentedException, LicenseException, TransportModule.ListenerException {
+            throws BadCredentialsException, MissingCredentialsException, IssuedCertNotPresentedException, LicenseException, TransportModule.ListenerException {
 
         licenseManager.requireFeature(getFeature());
 
         try {
-            AuthenticationResult[] results = authenticateRequestAgainstAllIdProviders(req);
+            AhsAuthResult ahsResult = authenticateRequestAgainstAllIdProviders(req);
+            AuthenticationResult[] results = ahsResult.getAuthResults();
             if (results == null || results.length < 1) {
                 String msg = "Creds do not authenticate against any registered id provider.";
                 logger.warning(msg);
-                throw new BadCredentialsException(msg);
+                if (ahsResult.isSawCredentials())
+                    throw new BadCredentialsException(msg);
+                else
+                    throw new MissingCredentialsException();
             }
             return results;
         } catch (FindException e) {
@@ -146,21 +151,43 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         }
     }
 
+    protected static class AhsAuthResult {
+        private final boolean sawCredentials;
+        private final AuthenticationResult[] authResults;
+
+        public AhsAuthResult(boolean sawCredentials, AuthenticationResult[] authResults) {
+            if (authResults == null) throw new IllegalArgumentException();
+            this.sawCredentials = sawCredentials;
+            this.authResults = authResults;
+        }
+
+        /** @return true if credentials were found in the request; false if credentials were missing. */
+        public boolean isSawCredentials() {
+            return sawCredentials;
+        }
+
+        /** @return an array of authentication results.  Never null. If empty, no identies were authenticated. */
+        public AuthenticationResult[] getAuthResults() {
+            return authResults;
+        }
+    }
+
     /**
      * @return a list of auth results.
      * @noinspection UnnecessaryLabelOnContinueStatement
      */
-    private AuthenticationResult[] authenticateRequestAgainstAllIdProviders(HttpServletRequest req) throws FindException, IssuedCertNotPresentedException {
+    private AhsAuthResult authenticateRequestAgainstAllIdProviders(HttpServletRequest req) throws FindException, IssuedCertNotPresentedException {
         Collection<AuthenticationResult> authResults = new ArrayList<AuthenticationResult>();
         Collection<IdentityProvider> providers = providerConfigManager.findAllIdentityProviders();
         LoginCredentials creds = findCredentialsBasic(req);
+        boolean sawCreds = creds != null;
         if (creds == null) {
-            return new AuthenticationResult[0];
+            return new AhsAuthResult(sawCreds, new AuthenticationResult[0]);
         }
 
         if (!req.isSecure() && !isCleartextAllowed()) {
             logger.info("HTTP Basic authentication is not allowed without SSL");
-            return new AuthenticationResult[0];
+            return new AhsAuthResult(sawCreds, new AuthenticationResult[0]);
         }
 
         boolean userAuthenticatedButDidNotPresentHisCert = false;
@@ -228,7 +255,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             logger.warning(msg);
             throw new IssuedCertNotPresentedException(msg);
         }
-        return authResults.toArray(new AuthenticationResult[0]);
+        return new AhsAuthResult(sawCreds, authResults.toArray(new AuthenticationResult[0]));
     }
 
     /**
@@ -259,6 +286,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * @throws java.io.IOException on io error
      * @throws com.l7tech.identity.BadCredentialsException
      *                             on invalid credentials
+     * @throws MissingCredentialsException if the request did not include any credentials
      * @throws com.l7tech.identity.IssuedCertNotPresentedException
      *                            if this user is known to have a client cert, and had the opportunity to present it
      *                            in an SSL handshake, but failed to do so
@@ -268,14 +296,16 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      *                            access to the {@link Endpoint} returned by {@link #getRequiredEndpoint}.
      */
     protected AuthenticationResult[] authenticateRequestBasic(HttpServletRequest req, PublishedService service)
-            throws IOException, BadCredentialsException, IssuedCertNotPresentedException, LicenseException, TransportModule.ListenerException {
+            throws IOException, BadCredentialsException, MissingCredentialsException, IssuedCertNotPresentedException, LicenseException, TransportModule.ListenerException {
         licenseManager.requireFeature(getFeature());
         HttpTransportModule.requireEndpoint(req, getRequiredEndpoint());
 
         // Try to authenticate against identity providers
+        final boolean sawCreds;
         try {
-            AuthenticationResult[] results = authenticateRequestAgainstAllIdProviders(req);
-
+            AhsAuthResult ahsResult = authenticateRequestAgainstAllIdProviders(req);
+            sawCreds = ahsResult.isSawCredentials();
+            AuthenticationResult[] results = ahsResult.getAuthResults();
             if (results != null && results.length > 0) {
                 return results;
             }
@@ -309,7 +339,11 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
         String msg = "Creds do not authenticate against any registered id provider or custom assertion.";
         logger.warning(msg);
-        throw new BadCredentialsException(msg);
+
+        if (sawCreds)
+            throw new BadCredentialsException(msg);
+        else
+            throw new MissingCredentialsException();
     }
 
     /**

@@ -143,6 +143,7 @@ class WsdlProxy {
         PasswordAuthentication pw;
         for (int retries = 0; retries < 3; ++retries) {
             pw = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
+            if (isAnonCreds(pw)) pw = null;
             params.setPasswordAuthentication(pw);
             log.info("WsdlProxy: Attempting download from Gateway from URL: " + url);
             SimpleHttpClient.SimpleHttpResponse result = null;
@@ -188,5 +189,9 @@ class WsdlProxy {
         if (error != null)
             throw new DownloadException("WsdlProxy: " + error.getMessage(), error);
         throw new DownloadException("WsdlProxy: download from Gateway failed with HTTP status " + status);
+    }
+
+    private static boolean isAnonCreds(PasswordAuthentication pw) {
+        return pw == null || pw.getUserName() == null || pw.getUserName().length() < 1;
     }
 }

@@ -16,10 +16,7 @@ import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.ProcResult;
 import com.l7tech.common.util.ProcUtils;
 import com.l7tech.common.util.TextUtils;
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.identity.BadCredentialsException;
-import com.l7tech.identity.IssuedCertNotPresentedException;
-import com.l7tech.identity.User;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -272,6 +269,8 @@ public class PingServlet extends AuthenticatableHttpServlet {
         try {
             results = authenticateRequestBasic(request);
         } catch (BadCredentialsException e) {
+            return false;
+        } catch (MissingCredentialsException e) {
             return false;
         } catch (IssuedCertNotPresentedException e) {
             return false;

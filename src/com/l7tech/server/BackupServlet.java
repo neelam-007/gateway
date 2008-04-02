@@ -16,6 +16,7 @@ import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.IssuedCertNotPresentedException;
+import com.l7tech.identity.MissingCredentialsException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -108,6 +109,10 @@ public class BackupServlet extends AuthenticatableHttpServlet {
         } catch (BadCredentialsException e) {
             logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_BAD_CREDENTIALS, e);
             respondError(response, HttpServletResponse.SC_FORBIDDEN, "Bad credentials");
+            return;
+        } catch (MissingCredentialsException e) {
+            logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_BAD_CREDENTIALS, e);
+            respondError(response, HttpServletResponse.SC_FORBIDDEN, "Missing credentials");
             return;
         } catch (IssuedCertNotPresentedException e) {
             logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_NO_CLIENT_CERT, e);

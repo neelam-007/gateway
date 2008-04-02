@@ -9,6 +9,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.IssuedCertNotPresentedException;
 import com.l7tech.identity.User;
+import com.l7tech.identity.MissingCredentialsException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.GatewayFeatureSets;
@@ -182,6 +183,10 @@ public class WSMFServlet extends AuthenticatableHttpServlet {
             } catch (BadCredentialsException e) {
                 logger.warning("Request blocked: invalid credentials: " + e.toString());
                 returnError(res, "Bad credentials", HttpServletResponse.SC_FORBIDDEN);
+                return false;
+            } catch (MissingCredentialsException e) {
+                logger.warning("Request blocked: missing credentials: " + e.toString());
+                returnError(res, "Missing credentials", HttpServletResponse.SC_FORBIDDEN);
                 return false;
             } catch (IssuedCertNotPresentedException e) {
                 logger.warning("Request blocked: no client cert provided: " + e.toString());

@@ -6,8 +6,10 @@ import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.BadCredentialsException;
+import com.l7tech.identity.MissingCredentialsException;
 import com.l7tech.identity.User;
+import com.l7tech.identity.IssuedCertNotPresentedException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
@@ -123,13 +125,24 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             } else {
                 results = authenticateRequestBasic(req);
             }
-        } catch (AuthenticationException e) {
+        } catch (BadCredentialsException e) {
             // Authentication failed (bug #4338)
             logger.log(Level.INFO, "WSDL proxy request authentication failed: " + ExceptionUtils.getMessage(e), e);
             res.setStatus(HttpServletResponse.SC_FORBIDDEN);
             res.getOutputStream().print("Authentication failed");
             res.flushBuffer();
             return;
+        } catch (IssuedCertNotPresentedException e) {
+            // Authentication failed (bug #4338)
+            logger.log(Level.INFO, "WSDL proxy request authentication failed: " + ExceptionUtils.getMessage(e), e);
+            res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            res.getOutputStream().print("Authentication failed");
+            res.flushBuffer();
+            return;
+        } catch (MissingCredentialsException e) {
+            logger.log(Level.INFO, "Credentials do not authenticate against any of the providers, assuming anonymous");
+            results = null;
+            /* FALLTHROUGH and handle anonymous download */
         } catch (LicenseException e) {
             logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
             res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);

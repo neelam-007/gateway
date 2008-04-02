@@ -10,6 +10,7 @@ import com.l7tech.server.KeystoreUtils;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.IssuedCertNotPresentedException;
 import com.l7tech.identity.User;
+import com.l7tech.identity.MissingCredentialsException;
 import com.l7tech.identity.cert.RsaCertificateSigner;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
@@ -100,6 +101,10 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         try {
             results = authenticateRequestBasic(request);
         } catch (BadCredentialsException e) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
+            logger.log(Level.SEVERE, "Failed authentication", e);
+            return;
+        } catch (MissingCredentialsException e) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
             logger.log(Level.SEVERE, "Failed authentication", e);
             return;
