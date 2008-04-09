@@ -241,10 +241,10 @@ class PathValidator {
                   "authentication scheme.", null));
             } else {
                 // if the credential source is not HTTP Basic
-                if (!haveSeen(ASSERTION_HTTPBASIC) && !haveSeen(ASSERTION_COOKIECREDS)){
+                if (!haveSeen(ASSERTION_HTTPBASIC) && !haveSeen(ASSERTION_COOKIECREDS) && !haveSeen(ASSERTION_XPATHCREDENTIALS)){
                     result.addWarning(new PolicyValidatorResult.
-                      Warning(a, assertionPath, "HTTP Basic Authentication (or HTTP Cookie session token) is usually used as the authentication " +
-                        "scheme when a policy contains a Custom Assertion.", null));
+                      Warning(a, assertionPath, "HTTP Basic Authentication, HTTP Cookie session token or XPath Credentials are usually used as the authentication " +
+                        "schemes when a policy contains a Custom Assertion.", null));
                 }
             }
 
