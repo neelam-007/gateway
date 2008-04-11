@@ -642,6 +642,7 @@
                 <ref bean="ssgConnectorManager"/>
                 <ref bean="sinkManager"/>
                 <ref bean="policyManager"/>
+                <ref bean="keystoreFileManager"/>
             </list>
         </property>
         <property name="timer">

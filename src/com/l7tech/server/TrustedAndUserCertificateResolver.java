@@ -13,30 +13,35 @@ import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.WhirlycacheFactory;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.WhirlycacheFactory;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.whirlycott.cache.Cache;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.TimerTask;
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Bean that can look up any certificate known to the SSG by thumbprint.
  */
-public class TrustedAndUserCertificateResolver implements SecurityTokenResolver {
+public class TrustedAndUserCertificateResolver implements SecurityTokenResolver, ApplicationListener {
     private static final Logger logger = Logger.getLogger(TrustedAndUserCertificateResolver.class.getName());
     private final TrustedCertManager trustedCertManager;
     private final ClientCertManager clientCertManager;
@@ -54,9 +59,7 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
 
     private final SsgKeyStoreManager keyStoreManager;
 
-    private SimpleSecurityTokenResolver keyCache = null;
-    private long keyCacheLastLoaded = 0;
-    private final long keyCacheMaxAge;
+    private final AtomicReference<SimpleSecurityTokenResolver> keyCache = new AtomicReference<SimpleSecurityTokenResolver>();
 
 
     /**
@@ -119,8 +122,6 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
         } catch (CertificateException e) {
             throw new RuntimeException("Invalid SSL or root certificate", e);
         }
-
-        keyCacheMaxAge = serverConfig.getLongProperty(ServerConfig.PARAM_PRIVATE_KEY_CACHE_MAX_AGE, 120000);
     }
 
     public X509Certificate lookup(String thumbprint) {
@@ -184,54 +185,53 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
 
         SignerInfo si = lookupPrivateKeyByKeyName(keyName);
         if (si != null) return si.getCertificateChain()[0];
-        
+
         return null;
     }
 
-    // TODO proper caching of SignerInfo by lookup keys, with LRU as well as expiry if they get "too stale"
-    // XXX possible invalidation upcalls from the keystores? addListener() on the keystores?
-    // For now we just do the stupidest thing that could possibly work -- load all keys and cert chains,
-    // and do a linear search.
-    private synchronized SecurityTokenResolver getKeyCache() {
-        if (keyCache == null || keyCacheLastLoaded + keyCacheMaxAge > System.currentTimeMillis()) {
-            List<SignerInfo> infos = new ArrayList<SignerInfo>();
+    private SecurityTokenResolver getKeyCache() {
+        SimpleSecurityTokenResolver kc = keyCache.get();
+        return kc != null ? kc : rebuildKeyCache();
+    }
 
-            final List<SsgKeyFinder> found;
-            try {
-                found = keyStoreManager.findAll();
-            } catch (FindException e) {
-                logger.log(Level.WARNING, "Unable to access key store: " + ExceptionUtils.getMessage(e), e);
-                return keyCache = null;
-            } catch (KeyStoreException e) {
-                logger.log(Level.WARNING, "Unable to access key store: " + ExceptionUtils.getMessage(e), e);
-                return keyCache = null;
-            }
+    private synchronized SecurityTokenResolver rebuildKeyCache() {
+        List<SignerInfo> infos = new ArrayList<SignerInfo>();
 
-            for (SsgKeyFinder keyFinder : found) {
-                final List<String> aliases;
-                try {
-                    aliases = keyFinder.getAliases();
-                } catch (KeyStoreException e) {
-                    logger.log(Level.WARNING, "Unable to access key store " + keyFinder.getName() + ": " + ExceptionUtils.getMessage(e), e);
-                    continue;
-                }
-                for (String alias : aliases) {
-                    try {
-                        SsgKeyEntry entry = keyFinder.getCertificateChain(alias);
-                        if (entry.isPrivateKeyAvailable())
-                            infos.add(new SignerInfo(entry.getPrivateKey(), entry.getCertificateChain()));
-                    } catch (KeyStoreException e) {
-                        logger.log(Level.WARNING, "Unable to access private key alias " + alias + " in key store " + keyFinder.getName() + ": " + ExceptionUtils.getMessage(e), e);
-                    } catch (UnrecoverableKeyException e) {
-                        logger.log(Level.WARNING, "Unable to access private key alias " + alias + " in key store " + keyFinder.getName() + ": " + ExceptionUtils.getMessage(e), e);
-                    }
-                }
-            }
-
-            keyCacheLastLoaded = System.currentTimeMillis();
-            keyCache = new SimpleSecurityTokenResolver(null, infos.toArray(new SignerInfo[0]));
+        final List<SsgKeyFinder> found;
+        try {
+            found = keyStoreManager.findAll();
+        } catch (FindException e) {
+            String mess = "Unable to access key store: " + ExceptionUtils.getMessage(e);
+            throw new RuntimeException(mess, e);
+        } catch (KeyStoreException e) {
+            String mess = "Unable to access key store: " + ExceptionUtils.getMessage(e);
+            throw new RuntimeException(mess, e);
         }
-        return keyCache;
+
+        for (SsgKeyFinder keyFinder : found) {
+            final List<String> aliases;
+            try {
+                aliases = keyFinder.getAliases();
+            } catch (KeyStoreException e) {
+                logger.log(Level.WARNING, "Unable to access key store " + keyFinder.getName() + ": " + ExceptionUtils.getMessage(e), e);
+                continue;
+            }
+            for (String alias : aliases) {
+                try {
+                    SsgKeyEntry entry = keyFinder.getCertificateChain(alias);
+                    if (entry.isPrivateKeyAvailable())
+                        infos.add(new SignerInfo(entry.getPrivateKey(), entry.getCertificateChain()));
+                } catch (KeyStoreException e) {
+                    logger.log(Level.WARNING, "Unable to access private key alias " + alias + " in key store " + keyFinder.getName() + ": " + ExceptionUtils.getMessage(e), e);
+                } catch (UnrecoverableKeyException e) {
+                    logger.log(Level.WARNING, "Unable to access private key alias " + alias + " in key store " + keyFinder.getName() + ": " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+        }
+
+        SimpleSecurityTokenResolver kc = new SimpleSecurityTokenResolver(null, infos.toArray(new SignerInfo[infos.size()]));
+        keyCache.set(kc);
+        return kc;
     }
 
     public SignerInfo lookupPrivateKeyByCert(X509Certificate cert) {
@@ -266,5 +266,15 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver 
      */
     public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
         return null;
+    }
+
+    public void onApplicationEvent(ApplicationEvent applicationEvent) {
+        if (applicationEvent instanceof EntityInvalidationEvent) {
+            EntityInvalidationEvent event = (EntityInvalidationEvent)applicationEvent;
+            if (KeystoreFile.class.equals(event.getEntityClass())) {
+                // Invalidate key cache so it gets rebuilt on next use
+                keyCache.set(null);
+            }
+        }
     }
 }
