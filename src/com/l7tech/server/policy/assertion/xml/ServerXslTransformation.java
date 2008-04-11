@@ -236,49 +236,51 @@ public class ServerXslTransformation
             }
         };
 
-        final TransformInput transformInput;
+        TransformInput transformInput = null;
         final TransformOutput transformOutput;
-        if (whichMimePart == 0) {
-            // Special case for part zero
-            final XmlKnob xmlKnob;
-            try {
-                xmlKnob = message.getXmlKnob();
-            } catch (SAXException e) {
-                auditor.logAndAudit(isrequest ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
-                return AssertionStatus.BAD_REQUEST;
-            }
-            transformInput = makeFirstPartTransformInput(xmlKnob, variableGetter);
-            transformOutput = new TransformOutput() {
-                public void setBytes(byte[] bytes) throws IOException {
-                    message.getMimeKnob().getFirstPart().setBodyBytes(bytes);
+        try {
+            if (whichMimePart == 0) {
+                // Special case for part zero
+                final XmlKnob xmlKnob;
+                try {
+                    xmlKnob = message.getXmlKnob();
+                } catch (SAXException e) {
+                    auditor.logAndAudit(isrequest ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
+                    return AssertionStatus.BAD_REQUEST;
                 }
-            };
-        } else {
-            // Make a new PartInfo based input and/or output
-            final PartInfo partInfo;
-            try {
-                partInfo = message.getMimeKnob().getPart(whichMimePart);
-            } catch (NoSuchPartException e) {
-                auditor.logAndAudit(AssertionMessages.XSLT_NO_SUCH_PART, Integer.toString(whichMimePart));
-                return AssertionStatus.BAD_REQUEST;
+                transformInput = makeFirstPartTransformInput(xmlKnob, variableGetter);
+                transformOutput = new TransformOutput() {
+                    public void setBytes(byte[] bytes) throws IOException {
+                        message.getMimeKnob().getFirstPart().setBodyBytes(bytes);
+                    }
+                };
+            } else {
+                // Make a new PartInfo based input and/or output
+                final PartInfo partInfo;
+                try {
+                    partInfo = message.getMimeKnob().getPart(whichMimePart);
+                } catch (NoSuchPartException e) {
+                    auditor.logAndAudit(AssertionMessages.XSLT_NO_SUCH_PART, Integer.toString(whichMimePart));
+                    return AssertionStatus.BAD_REQUEST;
+                }
+
+                transformInput = makePartInfoTransformInput(partInfo, variableGetter);
+                transformOutput = new TransformOutput() {
+                    public void setBytes(byte[] bytes) throws IOException {
+                        partInfo.setBodyBytes(bytes);
+                    }
+                };
             }
 
-            transformInput = makePartInfoTransformInput(partInfo, variableGetter);
-            transformOutput = new TransformOutput() {
-                public void setBytes(byte[] bytes) throws IOException {
-                    partInfo.setBodyBytes(bytes);
-                }
-            };
+            // These variables are used ONLY for interpolation into a remote URL; variables used inside
+            // the stylesheet itself are fed in via the variableGetter inside TransformInput
+            Map urlVars = context.getVariableMap(urlVarsUsed, auditor);
+            return transform(transformInput, transformOutput, isrequest, urlVars);
+        } finally {
+            if (transformInput instanceof Closeable) {
+                ((Closeable)transformInput).close();
+            }
         }
-
-        // These variables are used ONLY for interpolation into a remote URL; variables used inside
-        // the stylesheet itself are fed in via the variableGetter inside TransformInput
-        Map urlVars = context.getVariableMap(urlVarsUsed, auditor);
-        final AssertionStatus status = transform(transformInput, transformOutput, isrequest, urlVars);
-        if (transformInput instanceof Closeable) {
-            ((Closeable)transformInput).close();
-        }
-        return status;
     }
 
     //  Get a stylesheet from the resourceGetter and transform input into output
@@ -472,11 +474,6 @@ public class ServerXslTransformation
     private static abstract class CloseableTransformInput extends TransformInput implements Closeable {
         public CloseableTransformInput(ElementCursor elementCursor, Functions.Unary<Object, String> variableGetter) {
             super(elementCursor, variableGetter);
-        }
-
-        @Override
-        protected void finalize() throws Throwable {
-            close();
         }
     }
 }
