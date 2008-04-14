@@ -7,6 +7,9 @@
     Do not invoke it directly.
   -->
 
+    <!-- override configuration with user properties -->
+    <property file="${user.home}/build.properties"/>
+
     <property name="moduleFileExtension" value="aar"/>
 
     <!-- Compose the version number; if not already assigned. -->
