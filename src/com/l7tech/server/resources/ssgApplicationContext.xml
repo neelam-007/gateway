@@ -185,6 +185,8 @@
         <constructor-arg ref="policyCache"/>
         <constructor-arg ref="transactionManager"/>
         <constructor-arg ref="serviceManager"/>
+        <constructor-arg ref="serviceUsageManager"/>
+        <constructor-arg ref="clusterInfoManager"/>
         <constructor-arg>
             <list>
                 <bean class="com.l7tech.server.service.SafeWsdlPublishedServiceDecorator">

@@ -8,6 +8,16 @@ public class ServiceStatistics implements Serializable {
         _serviceOid = serviceOid;
     }
 
+    public ServiceStatistics(long serviceOid,
+                             int attemptedRequestCount,
+                             int authorizedRequestCount,
+                             int completedRequestCount) {
+        _serviceOid = serviceOid;
+        _attemptedRequestCount = attemptedRequestCount;
+        _authorizedRequestCount = authorizedRequestCount;
+        _completedRequestCount = completedRequestCount;
+    }
+
     public long getServiceOid() {
         return _serviceOid;
     }

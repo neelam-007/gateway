@@ -3,19 +3,19 @@ package com.l7tech.cluster;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
-import org.hibernate.FlushMode;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.orm.hibernate3.HibernateCallback;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.SQLException;
 
 /**
  * Hibernate abstraction of the service_usage table.
@@ -31,7 +31,7 @@ import java.sql.SQLException;
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class ServiceUsageManagerImpl extends HibernateDaoSupport implements ServiceUsageManager {
-    private final String HQL_DELETE_BY_MAC =
+    private final String HQL_FIND_BY_NODE =
             "from " + TABLE_NAME +
                     " in class " + ServiceUsage.class.getName() +
                     " where " + TABLE_NAME + "." + NODE_ID_COLUMN_NAME + " = ?";
@@ -67,6 +67,26 @@ public class ServiceUsageManagerImpl extends HibernateDaoSupport implements Serv
         } finally {
             if (session != null && old != null) session.setFlushMode(old);
             releaseSession(session);
+        }
+    }
+
+    @Transactional(readOnly=true)
+    public ServiceUsage[] findByNode(String nodeId) throws FindException {
+        Session s = null;
+        FlushMode old = null;
+        try {
+            s = getSession();
+            old = s.getFlushMode();
+            s.setFlushMode(FlushMode.NEVER);
+            Query q = s.createQuery(HQL_FIND_BY_NODE);
+            q.setString(0, nodeId);
+            List results = q.list();
+            return (ServiceUsage[])results.toArray(new ServiceUsage[0]);
+        } catch (HibernateException e) {
+            throw new FindException("Couldn't retrieve ServiceUsage", e);
+        } finally {
+            if (s != null && old != null) s.setFlushMode(old);
+            releaseSession(s);
         }
     }
 
@@ -114,7 +134,7 @@ public class ServiceUsageManagerImpl extends HibernateDaoSupport implements Serv
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                    Query q = session.createQuery(HQL_DELETE_BY_MAC);
+                    Query q = session.createQuery(HQL_FIND_BY_NODE);
                     q.setString(0, nodeid);
                     for (Iterator i = q.iterate(); i.hasNext();) {
                         session.delete(i.next());

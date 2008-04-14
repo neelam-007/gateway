@@ -9,8 +9,9 @@ package com.l7tech.cluster;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.LifecycleException;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerComponentLifecycle;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.service.ServiceCache;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -80,6 +81,9 @@ public class ClusterBootProcess implements ServerComponentLifecycle, Application
             logger.info("Initializing DistributedMessageIdManager");
             distributedMessageIdManager.initialize(multicastAddress, PORT, myInfo.getAddress());
             logger.info("Initialized DistributedMessageIdManager");
+
+            final ServiceCache serviceCache = (ServiceCache)applicationContext.getBean("serviceCache");
+            serviceCache.initializeServiceStatistics();
         } catch (UpdateException e) {
             final String msg = "error updating boot time of node.";
             logger.log(Level.WARNING, msg, e);

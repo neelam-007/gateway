@@ -22,6 +22,9 @@ public interface ServiceUsageManager {
     Collection<ServiceUsage> getAll() throws FindException;
 
     @Transactional(readOnly=true)
+    ServiceUsage[] findByNode(String nodeId) throws FindException;
+
+    @Transactional(readOnly=true)
     ServiceUsage[] findByServiceOid(long serviceOid) throws FindException;
 
     void record(ServiceUsage data) throws UpdateException;

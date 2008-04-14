@@ -1,5 +1,8 @@
 package com.l7tech.server.service;
 
+import com.l7tech.cluster.ClusterInfoManager;
+import com.l7tech.cluster.ServiceUsage;
+import com.l7tech.cluster.ServiceUsageManager;
 import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.message.Message;
@@ -72,6 +75,8 @@ public class ServiceCache
 
     private final PlatformTransactionManager transactionManager;
     private final ServiceManager serviceManager;
+    private final ServiceUsageManager serviceUsageManager;
+    private final ClusterInfoManager clusterInfoManager;
 
     // TODO replace with Jgroups notifications
     private final Timer checker; // Don't use Background since this is high priority
@@ -106,6 +111,8 @@ public class ServiceCache
     public ServiceCache(PolicyCache policyCache,
                         PlatformTransactionManager transactionManager,
                         ServiceManager serviceManager,
+                        ServiceUsageManager serviceUsageManager,
+                        ClusterInfoManager clusterInfoManager,
                         Collection<Decorator<PublishedService>> decorators,
                         Timer timer)
     {
@@ -120,6 +127,8 @@ public class ServiceCache
         this.checker = timer;
         this.transactionManager = transactionManager;
         this.serviceManager = serviceManager;
+        this.serviceUsageManager = serviceUsageManager;
+        this.clusterInfoManager = clusterInfoManager;
     }
 
     @Override
@@ -277,6 +286,28 @@ public class ServiceCache
         }
     }
 
+    public void initializeServiceStatistics() throws ObjectModelException {
+        try {
+            final Collection<PublishedService> services = serviceManager.findAll();
+            final Set<Long> serviceOids = new HashSet<Long>(services.size());
+            for (PublishedService s : services) {
+                serviceOids.add(s.getOid());
+            }
+            final ServiceUsage[] sus = serviceUsageManager.findByNode(clusterInfoManager.thisNodeId());
+            for (ServiceUsage su : sus) {
+                final long serviceOid = su.getServiceid();
+                final ServiceStatistics stats = new ServiceStatistics(su.getServiceid(),
+                                                                      (int)su.getRequests(),
+                                                                      (int)su.getAuthorized(),
+                                                                      (int)su.getCompleted());
+                if (serviceOids.contains(serviceOid)) {
+                    serviceStatistics.put(stats.getServiceOid(), stats);
+                }
+            }
+        } catch (FindException e) {
+            throw new ObjectModelException("Failed to initialize service statistics.", e);
+        }
+    }
 
     /**
      * a service manager can use this to determine whether the cache has been populated or not

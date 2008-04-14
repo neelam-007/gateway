@@ -77,7 +77,7 @@ public class ClusterStatusPanel extends JPanel {
     private static final String RESOURCE_PATH = "com/l7tech/console/resources";
     private static final ResourceBundle resapplication = ResourceBundle.getBundle("com.l7tech.console.resources.console");
     private static final ResourceBundle dsnDialogResources = ResourceBundle.getBundle("com.l7tech.console.resources.DeleteStaleNodeDialog");
-    private static final String CLUSTER_STARTUP = "cluster startup";
+    private static final String CLUSTER_INSTALL = "cluster install";
 
     private static final Icon UP_ARROW_ICON = new ArrowIcon(ArrowIcon.UP);
     private static final Icon DOWN_ARROW_ICON = new ArrowIcon(ArrowIcon.DOWN);
@@ -129,7 +129,7 @@ public class ClusterStatusPanel extends JPanel {
             }
         });
 
-        countingSinceField.setText(CLUSTER_STARTUP);
+        countingSinceField.setText(CLUSTER_INSTALL);
 
         sinceNowButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -154,7 +154,7 @@ public class ClusterStatusPanel extends JPanel {
                         // For a snappier UI experience, instead of waiting for the next timer
                         // round to refresh the display, we manually invoke the update.
                         statisticsPanel.updateStatisticsTable(getStatisticsList());
-                        countingSinceField.setText(CLUSTER_STARTUP);
+                        countingSinceField.setText(CLUSTER_INSTALL);
                     }
                 };
 
