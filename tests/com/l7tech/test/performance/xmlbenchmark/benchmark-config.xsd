@@ -1,0 +1,52 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://l7tech.com/xmlbench" xmlns="http://l7tech.com/xmlbench" elementFormDefault="qualified">
+
+    <xs:element name="benchmark-config" type="BenchmarkConfiguration"/>
+
+    <!-- Benchmark Configuration Type -->
+    <xs:complexType name="BenchmarkConfiguration">
+        <xs:sequence>
+            <xs:element name="benchmark-test" type="TestConfiguration" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+
+    <!-- Test Configuration Type -->
+    <xs:complexType name="TestConfiguration">
+        <xs:sequence minOccurs="1">
+            <xs:element name="xmlMessage" type="TestMessage" minOccurs="1"/>
+            <xs:element name="schemaLocation" type="xs:string" minOccurs="1"/>
+            <xs:element name="xsltLocation" type="xs:string" minOccurs="1"/>
+            <xs:element name="xpathQueries" minOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="query" type="XPathQuery" minOccurs="1" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+
+        <xs:attribute name="name" type="xs:string"/>
+    </xs:complexType>
+
+    <!-- Test Message Type -->
+    <xs:complexType name="TestMessage">
+        <xs:choice minOccurs="1">
+            <xs:element name="data" type="xs:string" maxOccurs="1"/>
+            <xs:element name="location" type="xs:string" maxOccurs="1"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <!-- XPath Query Type -->
+    <xs:complexType name="XPathQuery">
+        <xs:sequence minOccurs="1">
+            <xs:element name="xpath" type="NonEmptyString" minOccurs="1"/>
+            <xs:element name="value" type="NonEmptyString" minOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="NonEmptyString">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>

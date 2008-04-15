@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<benchmark-config xmlns="http://l7tech.com/xmlbench"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://l7tech.com/xmlbench benchmark-config.xsd">
+  <benchmark-test name="SimpleTest">
+    <xmlMessage>
+        <data><![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="yes"?><mySampleTest>dummyData</mySampleTest>]]></data>
+        <!--<location>xmlLocation.xml</location>-->
+    </xmlMessage>
+    <schemaLocation>mySchemaFile.xsd</schemaLocation>
+    <xsltLocation>myXSLTFile.xsl</xsltLocation>
+      <xpathQueries>
+          <query>
+              <xpath>hello/world</xpath>
+              <value>hello</value>
+          </query>
+          <query>
+              <xpath>/my/xpath/test</xpath>
+              <value>value</value>
+          </query>
+      </xpathQueries>
+  </benchmark-test>
+</benchmark-config>
