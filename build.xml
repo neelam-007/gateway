@@ -1245,6 +1245,7 @@
         <findbugs home="${findbugs.home}"
                   output="html"
                   outputFile="${build.reports}/findbugs/index.html"
+                  timeout="1200000"
                   jvmargs="-Xmx512m">
             <auxClasspath refid="project.classpath" />
             <sourcePath path="src" />
