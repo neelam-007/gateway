@@ -51,7 +51,7 @@ public abstract class XMLBenchmarking {
         }
     }
 
-    protected void initialize() {
+    protected void initialize() throws BenchmarkException {
         /* Placeholder for any initialization code  */
     }
 
