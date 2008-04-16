@@ -245,13 +245,13 @@ halt:*:13637:0:99999:7:::' /etc/shadow
 
   # GEN001880
   if [ -e /home/ssgconfig/.bash_logout ]; then
-    chmod 744 /home/ssgconfig/.bash_logout
+    chmod 740 /home/ssgconfig/.bash_logout
   fi
   if [ -e /home/ssgconfig/.bash_profile ]; then
-    chmod 744 /home/ssgconfig/.bash_profile
+    chmod 740 /home/ssgconfig/.bash_profile
   fi
   if [ -e /home/ssgconfig/.bashrc ]; then
-    chmod 764 /home/ssgconfig/.bashrc
+    chmod 740 /home/ssgconfig/.bashrc
   fi
 
   # GEN002740
