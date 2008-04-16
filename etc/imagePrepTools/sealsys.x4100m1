@@ -134,6 +134,9 @@ seal)
 
   sed -i -e 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
   
+  # Force the expiry of the root password 60 days after it has been changed (STIG requirement).
+  chage -M 60 root
+
   # Force root to change her password the next time she logs in.
   chage -d 0 root
 
