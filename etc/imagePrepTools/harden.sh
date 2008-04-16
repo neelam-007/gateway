@@ -64,6 +64,17 @@ account     required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root e
   echo 'tty1' >> /etc/securetty
   echo 'ttyS0' >> /etc/securetty
 
+  # GEN001880
+  if [ -e /home/ssgconfig/.bash_logout ]; then
+    chmod 740 /home/ssgconfig/.bash_logout
+  fi
+  if [ -e /home/ssgconfig/.bash_profile ]; then
+    chmod 740 /home/ssgconfig/.bash_profile
+  fi
+  if [ -e /home/ssgconfig/.bashrc ]; then
+    chmod 740 /home/ssgconfig/.bashrc
+  fi
+
   # GEN002480
   find / -type f -perm -002 -printf '%p %m\n' | grep -v '^/tmp/' | grep -v '^/var/tmp/' > /root/original_permissions
   find / -type d -perm -002 -printf '%p %m\n' | grep -v '^/tmp ' | grep -v '^/tmp/' | grep -v '^/var/tmp ' | grep -v '^/var/tmp/' | grep -v '^/dev/' >> /root/original_permissions
@@ -245,13 +256,13 @@ halt:*:13637:0:99999:7:::' /etc/shadow
 
   # GEN001880
   if [ -e /home/ssgconfig/.bash_logout ]; then
-    chmod 740 /home/ssgconfig/.bash_logout
+    chmod 744 /home/ssgconfig/.bash_logout
   fi
   if [ -e /home/ssgconfig/.bash_profile ]; then
-    chmod 740 /home/ssgconfig/.bash_profile
+    chmod 744 /home/ssgconfig/.bash_profile
   fi
   if [ -e /home/ssgconfig/.bashrc ]; then
-    chmod 740 /home/ssgconfig/.bashrc
+    chmod 764 /home/ssgconfig/.bashrc
   fi
 
   # GEN002740
