@@ -83,6 +83,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private long routingEndTime;
     private long routingTotalTime;
     private AssertionStatus policyoutcome;
+    private Long hardwiredService = null;
     private static ThreadLocal<PolicyEnforcementContext> instanceHolder = new ThreadLocal<PolicyEnforcementContext>();
 
     public PolicyEnforcementContext(Message request, Message response) {
@@ -598,5 +599,14 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public void setPolicyResult(AssertionStatus policyoutcome) {
         this.policyoutcome = policyoutcome;
+    }
+
+
+    public Long getHardwiredService() {
+        return hardwiredService;
+}
+
+    public void setHardwiredService(Long hardwiredService) {
+        this.hardwiredService = hardwiredService;
     }
 }

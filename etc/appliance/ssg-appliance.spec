@@ -1,6 +1,6 @@
 Summary: SecureSpan Gateway, Copyright Layer 7 Technologies 2003-2008
 Name: ssg-appliance
-Version: 4.3
+Version: 4.4
 Release: 1
 Group: Applications/Internet
 License: Commercial
@@ -10,7 +10,7 @@ Packager: Layer 7 Technologies, <support@layer7tech.com>
 source0: ssg-appliance.tar.gz
 source1: jdk.tar.gz
 buildroot: %{_builddir}/%{name}-%{version}
-requires: ssg >= 4.3
+requires: ssg >= 4.4
 
 # Prevents rpm build from erroring and halting
 #%undefine       __check_files

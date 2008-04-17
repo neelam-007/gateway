@@ -48,7 +48,12 @@
                     <map>
                         <entry key="serviceMetricsManager"><list><value>serviceMetricsEnabled</value></list></entry>
                         <entry key="certValidationProcessor"><list><value>pkixTrust.useDefaultAnchors</value></list></entry>
-                        <entry key="jmsBootProcess"><list><value>ioJmsErrorSleep</value></list></entry>
+                        <entry key="jmsBootProcess">
+                            <list>
+                                <value>ioJmsErrorSleep</value>
+                                <value>ioJmsMessageMaxBytes</value>
+                            </list>
+                        </entry>
                         <entry key="trustedCertManager"><list><value>trustedCert.expiryCheckPeriod</value></list></entry>
                         <entry key="httpTransportModule"><list><value>ioHttpPoolMaxConcurrency</value></list></entry>
                         <entry key="trafficLogger">
@@ -241,10 +246,19 @@
     </bean>
     <bean id="clientSocketFactoryKeyManagerInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.transport.http.SslClientSocketFactory"/>
-        <property name="targetMethod" value="setKeyManagers"/>
+        <property name="targetMethod" value="setDefaultKeyManagers"/>
         <property name="arguments">
             <list>
                 <ref bean="sslKeyManagers"/>
+            </list>
+        </property>
+    </bean>
+    <bean id="clientSocketFactorySsgKeystoreManagerInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.transport.http.SslClientSocketFactory"/>
+        <property name="targetMethod" value="setSsgKeyStoreManager"/>
+        <property name="arguments">
+            <list>
+                <ref bean="ssgKeyStoreManager"/>
             </list>
         </property>
     </bean>

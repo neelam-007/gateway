@@ -39,6 +39,7 @@ public final class License implements Serializable {
     private final String licenseeContactEmail;
     private final String eulaText;
     private final Set allEnabledFeatures;
+    private final Set<String> attributes;
 
     // Grant information -- details of how grants are expressed and stored is not exposed in the License interface.
     private final LicenseGrants g;
@@ -286,6 +287,7 @@ public final class License implements Serializable {
         expiryDateUt = expiryDate != null ? expiryDate.getTime() : Long.MAX_VALUE;
         final String desc = parseWildcardStringElement(ld, "description");
         description = "*".equals(desc) ? null : desc;
+        attributes = parseWildcardStringLicenseAttributes(ld, "licenseAttributes", "attribute");
         String hostname = parseWildcardStringAttribute(ld, "host", "name");
         String ip = parseWildcardStringAttribute(ld, "ip", "address");
         String product = parseWildcardStringAttribute(ld, "product", "name");
@@ -330,7 +332,34 @@ public final class License implements Serializable {
             validSignature = false;
             trustedIssuer = null;
         }
+    }
 
+    /**
+     * Parse the document and find all license attributes.
+     * @param licenseDoc: a document containing all license information
+     * @param parentElemName: refer to the element name, "licenseAttributes".
+     * @param childElemName: refers to the sub-element name, "attribute".
+     * @return all license attribute name.
+     * @throws TooManyChildElementsException
+     */
+    private Set<String> parseWildcardStringLicenseAttributes(Document licenseDoc, String parentElemName, String childElemName) throws TooManyChildElementsException {
+        Set<String> attrList = new HashSet<String>();
+        Element lic = licenseDoc.getDocumentElement();
+        Element licAttrs = XmlUtil.findOnlyOneChildElementByName(lic, lic.getNamespaceURI(), parentElemName);
+        if (licAttrs == null) {
+            return attrList;
+        }
+        List<Element> elems = XmlUtil.findChildElementsByName(licAttrs, licAttrs.getNamespaceURI(), childElemName);
+        for (Element elem: elems) {
+            if (elem != null) {
+                attrList.add(XmlUtil.getTextValue(elem));
+            }
+        }
+        return attrList;
+    }
+
+    public Set<String> getAttributes() {
+        return attributes;
     }
 
     private String parseEulaText(Document ld) throws TooManyChildElementsException, InvalidLicenseException {

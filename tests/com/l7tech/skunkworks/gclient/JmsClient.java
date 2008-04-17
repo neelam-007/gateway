@@ -32,9 +32,6 @@ import java.util.Set;
  * <code>jms:/queue?destination=queue&connectionFactory=ConnectionFactory&initialContextFactory=org.apache.activemq.jndi.ActiveMQInitialContextFactory&jndiProviderURL=tcp://localhost:61616</code>
  *
  * <p>This class is poorly written and minimally tested.</p>
- *
- * @author $Author$
- * @version $Revision$
  */
 public class JmsClient {
     private boolean isBytesMessage;
@@ -249,15 +246,10 @@ public class JmsClient {
     private Destination getEndpointResponseDestination() throws JMSException, NamingException, JmsConfigException {
         if ( endpointResponseDestination == null ) {
             JmsEndpoint requestEndpoint = getRoutedRequestEndpoint();
-            JmsEndpoint replyEndpoint = requestEndpoint.getReplyEndpoint();
+            String replyQueueName = requestEndpoint.getReplyToQueueName();
 
-            if ( requestEndpoint.getConnectionOid() != replyEndpoint.getConnectionOid() ) {
-                String msg = "Request and reply endpoints must belong to the same connection";
-                throw new JMSException( msg );
+            endpointResponseDestination = (Destination)getJmsBag().getJndiContext().lookup(replyQueueName);
             }
-
-            endpointResponseDestination = (Destination)getJmsBag().getJndiContext().lookup( replyEndpoint.getDestinationName() );
-        }
         return endpointResponseDestination;
     }
 
@@ -322,7 +314,7 @@ public class JmsClient {
             JmsEndpoint endpoint = getRoutedRequestEndpoint();
             if ( endpoint == null ) throw new JMSException( "JmsEndpoint could not be located! It may have been deleted" );
 
-            bag = JmsUtil.connect( conn, credentials, null, true, null);
+            bag = JmsUtil.connect( conn, credentials, null, false, Session.AUTO_ACKNOWLEDGE );
             bag.getConnection().start();
         }
         return bag;

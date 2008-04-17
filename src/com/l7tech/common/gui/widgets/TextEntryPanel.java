@@ -29,6 +29,11 @@ public abstract class TextEntryPanel extends ValidatedPanel<String> {
         this("Prompt:", null, null);
     }
 
+    public void setEnabled(boolean enable) {
+        textField.setEnabled(enable);
+        super.setEnabled(enable);
+    }
+
     public TextEntryPanel(String label, String propertyName, String initialValue) {
         super(propertyName);
         setStatusLabel(statusLabel);

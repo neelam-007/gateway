@@ -1,9 +1,9 @@
 package com.l7tech.server.transport.jms;
 
-import org.springframework.context.ApplicationContext;
+import com.l7tech.common.transport.jms.JmsConnection;
 
-import javax.naming.Context;
 import javax.jms.ConnectionFactory;
+import javax.naming.Context;
 
 /**
  * A ConnectionFactoryCustomizer can be used to perform additional setup on a
@@ -16,11 +16,14 @@ public interface ConnectionFactoryCustomizer {
     /**
      * Configure the given connection factory.
      *
+     * @param jmsConnection the JmsConnection bean with the configuration for the desired connection
      * @param connectionFactory The factory to configure
-     * @param context Contextual configuration items
-     * @param spring
+     * @param jndiContext Contextual configuration items
      * @throws JmsConfigException if an error occurs
      */
-    void configureConnectionFactory(ConnectionFactory connectionFactory, Context context, ApplicationContext spring) 
+    void configureConnectionFactory(JmsConnection jmsConnection,
+                                    ConnectionFactory connectionFactory,
+                                    Context jndiContext
+    )
             throws JmsConfigException;
 }

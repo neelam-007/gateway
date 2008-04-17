@@ -1,9 +1,6 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.cluster.ClusterPropertyManager;
@@ -29,20 +26,15 @@ import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import javax.jms.*;
+import javax.jms.Queue;
+import javax.naming.NamingException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * @author alex
- * @version $Revision$
- */
 class JmsRequestHandler {
     final private ApplicationContext springContext;
     final private MessageProcessor messageProcessor;
@@ -84,225 +76,256 @@ class JmsRequestHandler {
         final ContentTypeHeader ctype;
         final Map<String, Object> reqJmsMsgProps;
         final String soapAction;
+
+        AssertionStatus status = AssertionStatus.UNDEFINED;
+        boolean responseSuccess = false;
+        boolean messageTooLarge = false;
         try {
-            // Init content and type            
-            if ( jmsRequest instanceof TextMessage ) {
-                requestStream = new ByteArrayInputStream(((TextMessage)jmsRequest).getText().getBytes("UTF-8"));
-                ctype = ContentTypeHeader.XML_DEFAULT;
-            } else if ( jmsRequest instanceof BytesMessage ) {
-                requestStream = new BytesMessageInputStream((BytesMessage)jmsRequest);
-                String requestCtype = jmsRequest.getStringProperty("Content-Type");
-                if (requestCtype != null)
-                    ctype = ContentTypeHeader.parseValue(requestCtype);
-                else
+            try {
+                // Init content and type
+                long size = 0;
+                if ( jmsRequest instanceof TextMessage ) {
+                    size = ((TextMessage)jmsRequest).getText().length() * 2;
+                    requestStream = new ByteArrayInputStream(((TextMessage)jmsRequest).getText().getBytes("UTF-8"));
                     ctype = ContentTypeHeader.XML_DEFAULT;
-            } else {
-                handleInvalidMessageType(receiver, jmsRequest);
-                // not reached
-                ctype = null;
-                requestStream = null;
-            }
-
-            // Copies the request JMS message properties into the request JmsKnob.
-            final Map<String, Object> msgProps = new HashMap<String, Object>();
-            for (Enumeration e = jmsRequest.getPropertyNames(); e.hasMoreElements() ;) {
-                final String name = (String)e.nextElement();
-                final Object value = jmsRequest.getObjectProperty(name);
-                msgProps.put(name, value);
-            }
-            reqJmsMsgProps = Collections.unmodifiableMap(msgProps);
-
-            // Gets the JMS message property to use as SOAPAction, if present.
-            String soapActionValue = null;
-            final String jmsMsgPropWithSoapAction = (String)receiver.getConnection().properties().get(JmsConnection.JMS_MSG_PROP_WITH_SOAPACTION);
-            if (jmsMsgPropWithSoapAction != null) {
-                soapActionValue = (String)reqJmsMsgProps.get(jmsMsgPropWithSoapAction);
-                if (_logger.isLoggable(Level.FINER))
-                _logger.finer("Found JMS message property to use as SOAPAction value: " + jmsMsgPropWithSoapAction + "=" + soapActionValue);
-            }
-            soapAction = soapActionValue;
-        } catch (IOException ioe) {
-            throw new JmsRuntimeException("Error processing request message", ioe);
-        } catch (JMSException jmse) {
-            throw new JmsRuntimeException("Error processing request message", jmse);
-        }
-
-        try {
-            jmsResponse = buildMessageFromTemplate(bag, receiver, jmsRequest);
-        } catch (JMSException e) {
-            throw new JmsRuntimeException("Couldn't create response message!", e);
-        }
-
-        try {
-            com.l7tech.common.message.Message request = new com.l7tech.common.message.Message();
-            request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream );
-            request.attachJmsKnob(new JmsKnob() {
-                public boolean isBytesMessage() {
-                    return jmsRequest instanceof BytesMessage;
+                } else if ( jmsRequest instanceof BytesMessage ) {
+                    size = ((BytesMessage)jmsRequest).getBodyLength();
+                    requestStream = new BytesMessageInputStream((BytesMessage)jmsRequest);
+                    String requestCtype = jmsRequest.getStringProperty("Content-Type");
+                    if (requestCtype != null)
+                        ctype = ContentTypeHeader.parseValue(requestCtype);
+                    else
+                        ctype = ContentTypeHeader.XML_DEFAULT;
+                } else {
+                    handleInvalidMessageType(receiver, jmsRequest);
+                    // not reached
+                    ctype = null;
+                    requestStream = null;
                 }
-                public Map<String, Object> getJmsMsgPropMap() {
-                    return reqJmsMsgProps;
-                }
-                public String getSoapAction() {
-                    return soapAction;
-                }
-            });
 
-            final PolicyEnforcementContext context = new PolicyEnforcementContext(request,
-                                                                                  new com.l7tech.common.message.Message());
-            AssertionStatus status = AssertionStatus.UNDEFINED;
+                // enforce size restriction
+                int sizeLimit = receiver.getMessageMaxSize();
+                if ( sizeLimit > 0 && size > sizeLimit ) {
+                    messageTooLarge = true;
+                }
 
-            String faultMessage = null;
-            String faultCode = null;
+                // Copies the request JMS message properties into the request JmsKnob.
+                final Map<String, Object> msgProps = new HashMap<String, Object>();
+                for (Enumeration e = jmsRequest.getPropertyNames(); e.hasMoreElements() ;) {
+                    final String name = (String)e.nextElement();
+                    final Object value = jmsRequest.getObjectProperty(name);
+                    msgProps.put(name, value);
+                }
+                reqJmsMsgProps = Collections.unmodifiableMap(msgProps);
+
+                // Gets the JMS message property to use as SOAPAction, if present.
+                String soapActionValue = null;
+                final String jmsMsgPropWithSoapAction = (String)receiver.getConnection().properties().get(JmsConnection.JMS_MSG_PROP_WITH_SOAPACTION);
+                if (jmsMsgPropWithSoapAction != null) {
+                    soapActionValue = (String)reqJmsMsgProps.get(jmsMsgPropWithSoapAction);
+                    if (_logger.isLoggable(Level.FINER))
+                    _logger.finer("Found JMS message property to use as SOAPAction value: " + jmsMsgPropWithSoapAction + "=" + soapActionValue);
+                }
+                soapAction = soapActionValue;
+            } catch (IOException ioe) {
+                throw new JmsRuntimeException("Error processing request message", ioe);
+            } catch (JMSException jmse) {
+                throw new JmsRuntimeException("Error processing request message", jmse);
+            }
 
             try {
-                context.setAuditContext(auditContext);
-                context.setSoapFaultManager(soapFaultManager);
-                context.setClusterPropertyManager(clusterPropertyManager);
+                jmsResponse = buildMessageFromTemplate(bag, receiver, jmsRequest);
+            } catch (JMSException e) {
+                throw new JmsRuntimeException("Couldn't create response message!", e);
+            }
 
-                // WebSphere MQ doesn't like this with AUTO_ACKNOWLEDGE
-                // jmsRequest.acknowledge(); // TODO parameterize acknowledge semantics?
+            try {
+                com.l7tech.common.message.Message request = new com.l7tech.common.message.Message();
+                request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream );
+                request.attachJmsKnob(new JmsKnob() {
+                    public boolean isBytesMessage() {
+                        return jmsRequest instanceof BytesMessage;
+                    }
+                    public Map<String, Object> getJmsMsgPropMap() {
+                        return reqJmsMsgProps;
+                    }
+                    public String getSoapAction() {
+                        return soapAction;
+                    }
+                });
 
-                if(jmsRequest.getJMSReplyTo() != null || jmsRequest.getJMSCorrelationID() != null) {
-                    context.setReplyExpected(true);
-                } else {
-                    context.setReplyExpected(false);
+                final PolicyEnforcementContext context = new PolicyEnforcementContext(request,
+                                                                                      new com.l7tech.common.message.Message());
+
+                try {
+                    Properties props = receiver.getConnection().properties();
+                    String tmp = props.getProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE);
+                    if (tmp != null) {
+                        if (Boolean.parseBoolean(tmp)) {
+                            tmp = props.getProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID);
+                            long hardwiredserviceid = Long.parseLong(tmp);
+                            context.setHardwiredService(hardwiredserviceid);
+                        }
+                    }
+                } catch (Exception e) {
+                    _logger.log(Level.WARNING, "problem testing for hardwired service", e);
                 }
 
-                boolean stealthMode = false;
-                InputStream responseStream = null;
+                String faultMessage = null;
+                String faultCode = null;
+
                 try {
-                    status = messageProcessor.processMessage(context);
-                    context.setPolicyResult(status);
-                    _logger.finest("Policy resulted in status " + status);
-                    if (context.getResponse().getKnob(XmlKnob.class) != null ||
-                        context.getResponse().getKnob(MimeKnob.class) != null) {
-                        // if the policy is not successful AND the stealth flag is on, drop connection
-                        if (status != AssertionStatus.NONE && context.isStealthResponseMode()) {
-                            _logger.info("Policy returned error and stealth mode is set. " +
+                    context.setAuditContext(auditContext);
+                    context.setSoapFaultManager(soapFaultManager);
+                    context.setClusterPropertyManager(clusterPropertyManager);
+
+                    final Destination replyToDest = jmsRequest.getJMSReplyTo();
+                    if (replyToDest != null || jmsRequest.getJMSCorrelationID() != null) {
+                        context.setReplyExpected(true);
+                    } else {
+                        context.setReplyExpected(false);
+                    }
+
+                    boolean stealthMode = false;
+                    InputStream responseStream = null;
+                    if ( !messageTooLarge ) {
+                        try {
+                            status = messageProcessor.processMessage(context);
+                            context.setPolicyResult(status);
+                            _logger.finest("Policy resulted in status " + status);
+                            if (context.getResponse().getKnob(XmlKnob.class) != null ||
+                                context.getResponse().getKnob(MimeKnob.class) != null) {
+                                // if the policy is not successful AND the stealth flag is on, drop connection
+                                if (status != AssertionStatus.NONE && context.isStealthResponseMode()) {
+                                    _logger.info("Policy returned error and stealth mode is set. " +
+                                                "Not sending response message.");
+                                    stealthMode = true;
+                                } else {
+                                    responseStream = new ByteArrayInputStream(XmlUtil.nodeToString(context.getResponse().getXmlKnob().getDocumentReadOnly()).getBytes());
+                                }
+                            } else {
+                                _logger.finer("No response received");
+                                responseStream = null;
+                            }
+                        } catch ( PolicyVersionException pve ) {
+                            String msg1 = "Request referred to an outdated version of policy";
+                            _logger.log( Level.INFO, msg1 );
+                            faultMessage = msg1;
+                            faultCode = SoapFaultUtils.FC_CLIENT;
+                        } catch ( Throwable t ) {
+                            _logger.log( Level.WARNING, "Exception while processing JMS message", t );
+                            faultMessage = t.getMessage();
+                            if ( faultMessage == null ) faultMessage = t.toString();
+                        }
+                    } else {
+                        String msg1 = "Request message too large";
+                        _logger.log( Level.INFO, msg1 );
+                        faultMessage = msg1;
+                        faultCode = SoapFaultUtils.FC_CLIENT;
+                    }
+
+                    if ( responseStream == null ) {
+                        if (context.isStealthResponseMode()) {
+                            _logger.info("No response data available and stealth mode is set. " +
                                         "Not sending response message.");
                             stealthMode = true;
-                        }
-                        else {
-                            responseStream = new ByteArrayInputStream(XmlUtil.nodeToString(context.getResponse().getXmlKnob().getDocumentReadOnly()).getBytes());
-                        }
-                    }
-                    else {
-                        _logger.finer("No response received");
-                        responseStream = null;
-                    }
-                } catch ( PolicyVersionException pve ) {
-                    String msg1 = "Request referred to an outdated version of policy";
-                    _logger.log( Level.INFO, msg1 );
-                    faultMessage = msg1;
-                    faultCode = SoapFaultUtils.FC_CLIENT;
-                } catch ( Throwable t ) {
-                    _logger.log( Level.WARNING, "Exception while processing JMS message", t );
-                    faultMessage = t.getMessage();
-                    if ( faultMessage == null ) faultMessage = t.toString();
-                }
-
-                if ( responseStream == null ) {
-                    if (context.isStealthResponseMode()) {
-                        _logger.info("No response data available and stealth mode is set. " +
-                                    "Not sending response message.");
-                        stealthMode = true;
-                    }
-                    else {
-                        if ( faultMessage == null ) faultMessage = status.getMessage();
-                        try {
-                            String faultXml = SoapFaultUtils.generateSoapFaultXml(
-                                    faultCode == null ? SoapFaultUtils.FC_SERVER : faultCode,
-                                    faultMessage, null, "");
-
-                            responseStream = new ByteArrayInputStream(faultXml.getBytes("UTF-8"));
-
-                            if (faultXml != null)
-                                springContext.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
-                        } catch (SAXException e) {
-                            throw new JmsRuntimeException(e);
-                        }
-                    }
-                }
-
-                boolean responseSuccess;
-                if (!stealthMode) {
-                    BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
-                    final byte[] responseBytes;
-                    try {
-                        HexUtils.copyStream(responseStream, baos);
-                        responseBytes = baos.toByteArray();
-                    } finally {
-                        baos.close();
-                    }
-
-                    if (jmsResponse instanceof BytesMessage) {
-                        BytesMessage bresp = (BytesMessage)jmsResponse;
-                        bresp.writeBytes(responseBytes);
-                    } else if ( jmsResponse instanceof TextMessage ) {
-                        TextMessage tresp = (TextMessage)jmsResponse;
-                        tresp.setText(new String(responseBytes, JmsUtil.DEFAULT_ENCODING));
-                    } else {
-                        throw new JmsRuntimeException( "Can't send a " + jmsResponse.getClass().getName() +
-                                                       ". Only BytesMessage and TextMessage are supported" );
-                    }
-
-                    // Copies the JMS message properties from the response JmsKnob to the response JMS message.
-                    // Propagation rules has already been enforced in the knob by the JMS routing assertion.
-                    final JmsKnob jmsResponseKnob = (JmsKnob)context.getResponse().getKnob(JmsKnob.class);
-                    if (jmsResponseKnob != null) {
-                        final Map<String, Object> respJmsMsgProps = jmsResponseKnob.getJmsMsgPropMap();
-                        for (String name : respJmsMsgProps.keySet()) {
-                            jmsResponse.setObjectProperty(name, respJmsMsgProps.get(name));
-                        }
-                    }
-
-                    responseSuccess = sendResponse( jmsRequest, jmsResponse, bag, receiver, status );
-                } else { // is stealth mode
-                    responseSuccess = true;
-                }
-
-                if ( transacted ) {
-                    boolean handledAnyFailure;
-                    if ( status!=AssertionStatus.NONE ) {
-                        if ( failureQueue!=null ) {
-                            handledAnyFailure = postMessageToFailureQueue( jmsRequest, failureQueue );
                         } else {
-                            handledAnyFailure = false;
+                            if ( faultMessage == null ) faultMessage = status.getMessage();
+                            try {
+                                String faultXml = SoapFaultUtils.generateSoapFaultXml(
+                                        faultCode == null ? SoapFaultUtils.FC_SERVER : faultCode,
+                                        faultMessage, null, "");
+
+                                responseStream = new ByteArrayInputStream(faultXml.getBytes("UTF-8"));
+
+                                if (faultXml != null)
+                                    springContext.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+                            } catch (SAXException e) {
+                                throw new JmsRuntimeException(e);
+                            }
                         }
-                    } else {
-                        handledAnyFailure = true; //nothing to handle    
                     }
 
-                    Session session = bag.getSession();
-                    if ( responseSuccess && handledAnyFailure ) {
-                        session.commit();
-                    } else {
-                        session.rollback();
+                    if (!stealthMode) {
+                        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+                        final byte[] responseBytes;
+                        try {
+                            HexUtils.copyStream(responseStream, baos);
+                            responseBytes = baos.toByteArray();
+                        } finally {
+                            baos.close();
+                        }
+
+                        if (jmsResponse instanceof BytesMessage) {
+                            BytesMessage bresp = (BytesMessage)jmsResponse;
+                            bresp.writeBytes(responseBytes);
+                        } else if ( jmsResponse instanceof TextMessage ) {
+                            TextMessage tresp = (TextMessage)jmsResponse;
+                            tresp.setText(new String(responseBytes, JmsUtil.DEFAULT_ENCODING));
+                        } else {
+                            throw new JmsRuntimeException( "Can't send a " + jmsResponse.getClass().getName() +
+                                                           ". Only BytesMessage and TextMessage are supported" );
+                        }
+
+                        // Copies the JMS message properties from the response JmsKnob to the response JMS message.
+                        // Propagation rules has already been enforced in the knob by the JMS routing assertion.
+                        final JmsKnob jmsResponseKnob = (JmsKnob)context.getResponse().getKnob(JmsKnob.class);
+                        if (jmsResponseKnob != null) {
+                            final Map<String, Object> respJmsMsgProps = jmsResponseKnob.getJmsMsgPropMap();
+                            for (String name : respJmsMsgProps.keySet()) {
+                                jmsResponse.setObjectProperty(name, respJmsMsgProps.get(name));
+                            }
+                        }
+
+                        responseSuccess = sendResponse( jmsRequest, jmsResponse, bag, receiver, status );
+                    } else { // is stealth mode
+                        responseSuccess = true;
+                    }
+                } catch (IOException e) {
+                    throw new JmsRuntimeException(e);
+                } catch (JMSException e) {
+                    throw new JmsRuntimeException("Couldn't acknowledge message!", e);
+                } finally {
+                    try {
+                        auditContext.flush();
+                    }
+                    finally {
+                        if (context != null) {
+                            try {
+                                context.close();
+                            } catch (Throwable t) {
+                                _logger.log(Level.SEVERE, "soapRequest cleanup threw", t);
+                            }
+                        }
                     }
                 }
+            } catch (NoSuchPartException e) {
+                throw new RuntimeException(e); // can't happen
             } catch (IOException e) {
-                throw new JmsRuntimeException(e);
-            } catch (JMSException e) {
-                throw new JmsRuntimeException("Couldn't acknowledge message!", e);
-            } finally {
-                try {
-                    auditContext.flush();
-                }
-                finally {
-                    if (context != null) {
-                        try {
-                            context.close();
-                        } catch (Throwable t) {
-                            _logger.log(Level.SEVERE, "soapRequest cleanup threw", t);
-                        }
+                throw new RuntimeException(e); // can't happen
+            }
+        } finally {
+            if ( transacted ) {
+                boolean handledAnyFailure;
+                handledAnyFailure = status == AssertionStatus.NONE || failureQueue != null && postMessageToFailureQueue(jmsRequest, failureQueue);
+
+                Session session = bag.getSession();
+                if ( responseSuccess && handledAnyFailure ) {
+                    try {
+                        _logger.log( Level.FINE, "Committing JMS session." );
+                        session.commit();
+                    } catch (Exception e) {
+                        _logger.log( Level.WARNING, "Error committing JMS session.", e );
+                    }
+                } else {
+                    try {
+                        _logger.log( Level.FINE, "Rolling back JMS session." );
+                        session.rollback();
+                    } catch (Exception e) {
+                        _logger.log( Level.WARNING, "Error during JMS session rollback.", e );
                     }
                 }
             }
-        } catch (NoSuchPartException e) {
-            throw new RuntimeException(e); // can't happen
-        } catch (IOException e) {
-            throw new RuntimeException(e); // can't happen
         }
     }
 
@@ -330,7 +353,7 @@ class JmsRequestHandler {
     private boolean sendResponse(Message jmsRequestMsg, Message jmsResponseMsg, JmsBag bag, JmsReceiver receiver, AssertionStatus status ) {
         boolean sent = false;
         try {
-            Destination jmsReplyDest = receiver.getOutboundResponseDestination( jmsRequestMsg, jmsResponseMsg );
+            Destination jmsReplyDest = receiver.getOutboundResponseDestination(jmsRequestMsg, bag);
             if ( status != AssertionStatus.NONE ) {
                 // TODO send response to failure endpoint if defined
             }
@@ -349,7 +372,11 @@ class JmsRequestHandler {
                     } else {
                         producer = session.createProducer( jmsReplyDest );
                     }
-                    jmsResponseMsg.setJMSCorrelationID( jmsRequestMsg.getJMSCorrelationID() );
+
+                    final String newCorrId = receiver.getInboundRequestEndpoint().isUseMessageIdForCorrelation() ?
+                            jmsRequestMsg.getJMSMessageID() :
+                            jmsRequestMsg.getJMSCorrelationID();
+                    jmsResponseMsg.setJMSCorrelationID(newCorrId);
                     producer.send( jmsResponseMsg );
                     _logger.fine( "Sent response to " + jmsReplyDest );
                 } finally {
@@ -359,15 +386,21 @@ class JmsRequestHandler {
             sent = true;
         } catch ( JMSException e ) {
             _logger.log( Level.WARNING, "Caught JMS exception while sending response", e );
+        } catch (NamingException e ) {
+            _logger.log(Level.WARNING, "Error trying to lookup the destination endpoint from preset reply-to queue name", e );
         }
         return sent;
     }
 
-    private boolean postMessageToFailureQueue(Message message, QueueSender sender) throws JMSException {
+    private boolean postMessageToFailureQueue(Message message, QueueSender sender) {
         boolean posted = false;
 
-        sender.send(message);
-        posted = true;
+        try {
+            sender.send(message);
+            posted = true;
+        } catch (JMSException jmse) {
+            _logger.log( Level.WARNING, "Error sending message to failure queue", jmse);
+        }
 
         return posted;
     }

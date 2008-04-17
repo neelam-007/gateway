@@ -50,12 +50,35 @@ public class JmsBag implements Closeable {
 
     public void close() {
         try {
-            if ( session != null ) session.close();
-            if ( connection != null ) connection.stop();
-            if ( connection != null ) connection.close();
-            if ( jndiContext != null ) jndiContext.close();
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Exception while closing JmsBag", e);
+            if ( session != null ) {
+                try {
+                    session.close();
+                } catch ( Exception e ) {
+                    logger.log(Level.WARNING, "Exception while closing JmsBag (session)", e);
+                }
+            }
+
+            if ( connection != null ) {
+                try {
+                     connection.stop();
+                } catch ( Exception e ) {
+                    logger.log(Level.WARNING, "Exception while closing JmsBag (stop connection)", e);
+                }
+
+                try {
+                    connection.close();
+                } catch ( Exception e ) {
+                    logger.log(Level.WARNING, "Exception while closing JmsBag (connection)", e);
+                }
+            }
+
+            if ( jndiContext != null ) {
+                try {
+                     jndiContext.close();
+                } catch ( Exception e ) {
+                    logger.log(Level.WARNING, "Exception while closing JmsBag (jndi)", e);
+                }
+            }
         } finally {
             closed = true;
         }

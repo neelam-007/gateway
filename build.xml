@@ -3912,6 +3912,7 @@
             <fileset dir="${src.root}/modules/assertions/WsAddressingAssertion/build" includes="*.aar"/>
             <fileset dir="${src.root}/modules/assertions/NcesDecoratorAssertion/build" includes="*.aar"/>
             <fileset dir="${src.root}/modules/assertions/NcesValidatorAssertion/build" includes="*.aar"/>
+            <fileset dir="${src.root}/modules/assertions/LDAPQueryAssertion/build" includes="*.aar"/>
         </copy>
 
         <!-- Copy LDAP templates -->

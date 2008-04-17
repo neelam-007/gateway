@@ -484,13 +484,13 @@ public class LicenseGeneratorTopWindow extends JFrame {
         } catch (RuntimeException e) {
             // Unchecked exceptions are probably bugs -- we'll log them
             final String msg = ExceptionUtils.getMessage(e);
-            logger.log(Level.WARNING, "Unchecked license exception: " + msg, e);
-            licensePanel.setLicenseError(pad(e.getClass().getName() + ": " + msg));
+            logger.log(Level.WARNING, "Unchecked license exception: " + msg, ExceptionUtils.unnestToRoot(e));
+            licensePanel.setLicenseError(pad(ExceptionUtils.unnestToRoot(e).getClass().getName() + ": " + msg));
             getSignLicenseAction().setEnabled(false);
             // Leave spec panel alone if theres an error
             //pack();
         } catch (Exception e) {
-            licensePanel.setLicenseError(pad(e.getClass().getName() + ": " + ExceptionUtils.getMessage(e)));
+            licensePanel.setLicenseError(pad(ExceptionUtils.unnestToRoot(e).getClass().getName() + ": " + ExceptionUtils.getMessage(e)));
             getSignLicenseAction().setEnabled(false);
             // Leave spec panel alone if theres an error
             //pack();

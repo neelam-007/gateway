@@ -41,6 +41,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     protected int maxConnections;
     protected boolean passthroughHttpAuthentication;
     protected String[] customIpAddresses = null;
+    protected String[] customURLs = null;
     protected String failoverStrategyName = "ordered";
     private boolean taiCredentialChaining = false;
     protected Integer connectionTimeout;
@@ -247,6 +248,15 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     /** @return the custom IP addresses to use as an array of String, or null if no custom IP address list is configured. */
     public String[] getCustomIpAddresses() {
         return customIpAddresses;
+    }
+
+
+    public String[] getCustomURLs() {
+        return customURLs;
+    }
+
+    public void setCustomURLs(String[] customURLs) {
+        this.customURLs = customURLs;
     }
 
     /** @param customIpAddresses custom addresses to use, or null if no custom addresses should be used. */

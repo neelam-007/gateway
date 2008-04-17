@@ -1171,6 +1171,18 @@ public class SoapUtil {
         return sb.toString();
     }
 
+    private static String makeBit(Random rand, final int len) {
+        StringBuilder sb = new StringBuilder();
+        byte[] randbytes = new byte[len];
+        rand.nextBytes(randbytes);
+        for (int i = 0; i < len; i++) {
+            final String s = Integer.toHexString(randbytes[i] & 0xff);
+            if (s.length() == 1) sb.append("0");
+            sb.append(s);
+        }
+        return sb.toString();
+    }
+
     private static final SecureRandom rand = new SecureRandom();
 
     /**

@@ -6,13 +6,12 @@
 
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.common.gui.util.Utilities;
 import static com.l7tech.common.security.rbac.EntityType.JMS_ENDPOINT;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
 
@@ -23,6 +22,8 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 
 /**
@@ -190,7 +191,14 @@ public class JmsQueuesWindow extends JDialog {
                 case 1:
                     return end.getName();
                 case MESSAGE_SOURCE_COL:
-                    return end.isMessageSource() ? "Inbound (Monitored)" : "Outbound from Gateway";
+                    String direction_msg = "";
+                    if (end.isMessageSource()) {
+                        if (end.isDisabled()) direction_msg = "Inbound (Un-monitored)";
+                        else direction_msg = "Inbound (Monitored)";
+                    } else {
+                        direction_msg = "Outbound from Gateway";
+                    }
+                    return direction_msg;
             }
             return "?";
         }
@@ -362,27 +370,31 @@ public class JmsQueuesWindow extends JDialog {
             propertiesButton = new JButton("Properties");
             propertiesButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    int row = getJmsQueueTable().getSelectedRow();
-                    if (row >= 0) {
-                        JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueueTableModel().getJmsQueues().get(row);
-                        if (i != null) {
-                            final JmsQueuePropertiesDialog pd =
-                              JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, i.getConnection(), i.getEndpoint(), false);
-                            pd.pack();
-                            Utilities.centerOnScreen(pd);
-                            DialogDisplayer.display(pd, new Runnable() {
-                                public void run() {
-                                    if (!pd.isCanceled()) {
-                                        updateEndpointList(pd.getEndpoint());
-                                    }
-                                }
-                            });
-                        }
-                    }
+                    showPropertiesDialog();
                 }
             });
         }
         return propertiesButton;
+    }
+
+    private void showPropertiesDialog() {
+        int row = getJmsQueueTable().getSelectedRow();
+        if (row >= 0) {
+            JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueueTableModel().getJmsQueues().get(row);
+            if (i != null) {
+                final JmsQueuePropertiesDialog pd =
+                  JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, i.getConnection(), i.getEndpoint(), false);
+                pd.pack();
+                Utilities.centerOnScreen(pd);
+                DialogDisplayer.display(pd, new Runnable() {
+                    public void run() {
+                        if (!pd.isCanceled()) {
+                            updateEndpointList(pd.getEndpoint());
+                        }
+                    }
+                });
+            }
+        }
     }
 
     private JTable getJmsQueueTable() {
@@ -394,6 +406,7 @@ public class JmsQueuesWindow extends JDialog {
                     enableOrDisableButtons();
                 }
             });
+            Utilities.setDoubleClickAction(jmsQueueTable, getPropertiesButton());
         }
         return jmsQueueTable;
     }

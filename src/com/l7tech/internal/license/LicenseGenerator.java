@@ -73,6 +73,10 @@ public final class LicenseGenerator {
 
         de.setAttribute("Id", Long.toString(id));
         appendSimpleElementIfNonEmpty(de, "description", spec.getDescription());
+        Element licenseAttributes = appendSimpleElement(de, "licenseAttributes", null);
+        for (String attribute: spec.getAttributes()) {
+            appendSimpleElementIfNonEmpty(licenseAttributes, "attribute", attribute);
+        }
         appendSimpleElementIfNonEmpty(de, "valid", spec.getStartDate());
         appendSimpleElementIfNonEmpty(de, "expires", spec.getExpiryDate());
         Element host = appendSimpleElement(de, "host", null);

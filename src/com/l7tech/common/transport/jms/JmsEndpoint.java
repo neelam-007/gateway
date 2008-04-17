@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.common.transport.jms;
@@ -17,10 +15,7 @@ import java.net.PasswordAuthentication;
  * A reference to a preconfigured JMS Destination (i.e. a Queue or Topic).
  *
  * Persistent.
- *
- * @author alex
- * @version $Revision$
- */
+  */
 public class JmsEndpoint extends NamedEntityImp implements Serializable, Comparable {
     public static final int DEFAULT_MAX_CONCURRENT_REQUESTS = 1;
 
@@ -33,10 +28,10 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     private String _password;
     private int _maxConcurrentRequests = DEFAULT_MAX_CONCURRENT_REQUESTS;
     private boolean _messageSource;
-    /** Optional, set only if {@link #_replyType} is {@link com.l7tech.common.transport.jms.JmsReplyType#REPLY_TO_OTHER} */
-    private JmsEndpoint _replyEndpoint;
-    /** Optional */
-    private JmsEndpoint _failureEndpoint;
+    private String replyToQueueName;
+    private JmsOutboundMessageType outboundMessageType = JmsOutboundMessageType.AUTOMATIC;
+    private boolean disabled;
+    private boolean useMessageIdForCorrelation;
 
     public void copyFrom( JmsEndpoint other ) {
         setOid( other.getOid() );
@@ -51,15 +46,17 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         setPassword( other.getPassword() );
         setMaxConcurrentRequests( other.getMaxConcurrentRequests() );
         setMessageSource( other.isMessageSource() );
-        setReplyEndpoint( other.getReplyEndpoint() );
-        setFailureEndpoint( other.getFailureEndpoint() );
+        setReplyToQueueName( other.getReplyToQueueName() );
+        setOutboundMessageType( other.getOutboundMessageType() );
+        setDisabled(other.isDisabled());
+        setUseMessageIdForCorrelation(other.isUseMessageIdForCorrelation());
     }
 
     /**
      * May be null.
      */
     public PasswordAuthentication getPasswordAuthentication() {
-        return _username != null && _password != null 
+        return _username != null && _password != null
                ? new PasswordAuthentication( _username, _password.toCharArray() )
                : null;
     }
@@ -158,20 +155,45 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         _replyType = replyType;
     }
 
-    public JmsEndpoint getReplyEndpoint() {
-        return _replyEndpoint;
+    public String getReplyToQueueName() {
+        return replyToQueueName;
     }
 
-    public void setReplyEndpoint(JmsEndpoint replyTo) {
-        _replyEndpoint = replyTo;
+    /** @param replyTo Optional, set only if {@link #getReplyType} is {@link com.l7tech.common.transport.jms.JmsReplyType#REPLY_TO_OTHER} */
+    public void setReplyToQueueName(String replyTo) {
+        replyToQueueName = replyTo;
     }
 
-    public JmsEndpoint getFailureEndpoint() {
-        return _failureEndpoint;
+    public JmsOutboundMessageType getOutboundMessageType() {
+        return outboundMessageType;
     }
 
-    public void setFailureEndpoint(JmsEndpoint failureEndpoint) {
-        _failureEndpoint = failureEndpoint;
+    public void setOutboundMessageType(JmsOutboundMessageType outboundMessageType) {
+        if (outboundMessageType == null) outboundMessageType = JmsOutboundMessageType.AUTOMATIC;
+        this.outboundMessageType = outboundMessageType;
+    }
+
+    public boolean isDisabled() {
+        return disabled;
+    }
+
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
+    }
+
+    /**
+     * True if {@link #_replyType} is {@link JmsReplyType#REPLY_TO_OTHER} and requests sent to this endpoint should not
+     * have a JMSCorrelationID set (i.e. the receiver is expected to copy the reqest JMSMessageID into the response's
+     * JMSCorrelationID field).  If false and {@link #_replyType} is {@link JmsReplyType#REPLY_TO_OTHER, a random
+     * JMSCorrelationID value will be generated for the request, and the receiver will be expected to copy it into the
+     * response's JMSCorrelationID field.
+     */
+    public boolean isUseMessageIdForCorrelation() {
+        return useMessageIdForCorrelation;
+    }
+
+    public void setUseMessageIdForCorrelation(boolean useMessageIdForCorrelation) {
+        this.useMessageIdForCorrelation = useMessageIdForCorrelation;
     }
 
     public int compareTo(Object o) {

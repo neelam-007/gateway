@@ -17,6 +17,10 @@
         <param name="identifierMethod">getNum</param>
         <param name="valueOfMethod">getByNum</param>
     </typedef>
+
+    <typedef class="com.l7tech.objectmodel.GenericEnumUserType" name="jms_message_type">
+        <param name="enumClass">com.l7tech.common.transport.jms.JmsOutboundMessageType</param>
+    </typedef>
     
     <typedef class="com.l7tech.objectmodel.GenericEnumUserType" name="jms_acknowledgement_type">
         <param name="enumClass">com.l7tech.common.transport.jms.JmsAcknowledgementType</param>
@@ -246,10 +250,14 @@
         <property name="failureDestinationName" column="failure_destination_name" type="string"/>
         <property name="acknowledgementType" column="acknowledgement_type" type="jms_acknowledgement_type"/>        
         <property name="replyType" column="reply_type" type="jms_reply_type"/>
+        <property name="replyToQueueName" column="reply_to_queue_name"/>
+        <property name="disabled" column="disabled" type="boolean"/>
         <property name="username"/>
         <property name="password"/>
         <property name="maxConcurrentRequests" column="max_concurrent_requests"/>
         <property name="messageSource" column="is_message_source"/>
+        <property name="outboundMessageType" column="outbound_message_type" type="jms_message_type"/>
+        <property name="useMessageIdForCorrelation" column="use_message_id_for_correlation" type="boolean"/>
     </class>
 
     <class name="com.l7tech.common.security.TrustedCert" table="trusted_cert" lazy="false">

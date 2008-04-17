@@ -261,6 +261,10 @@
         </constructor-arg>
         <constructor-arg ref="keystore"/>
     </bean>
+    
+    <bean id="jmsEndpointManager" class="com.l7tech.server.transport.jms.JmsEndpointManagerStub"/>
+
+    <bean id="jmsConnectionManager" class="com.l7tech.server.transport.jms.JmsConnectionManagerStub"/>
 
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy"/>
 

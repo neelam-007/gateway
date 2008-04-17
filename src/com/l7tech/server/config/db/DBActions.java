@@ -66,6 +66,7 @@ public class DBActions {
     private OSSpecificFunctions osFunctions;
 
     private DbVersionChecker[] dbCheckers = new DbVersionChecker[] {
+        new DbVersion44Checker(),
         new DbVersion43Checker(),
         new DbVersion42Checker(),
         new DbVersion40Checker(),

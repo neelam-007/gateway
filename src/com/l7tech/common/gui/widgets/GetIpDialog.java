@@ -23,6 +23,8 @@ public class GetIpDialog extends JDialog {
     private String retval = null;
     private SquigglyTextField ipRangeTextField = null;
     private JButton okButton;
+    private boolean validateIPFormat = true;
+    private JLabel mainLabel;
 
     /** Create modal dialog using the specified title. */
     public GetIpDialog(Frame owner, String title) {
@@ -54,7 +56,8 @@ public class GetIpDialog extends JDialog {
     private void init() {
         Container p = getContentPane();
         p.setLayout(new GridBagLayout());
-        p.add(new JLabel("IP Address: "),
+        mainLabel = new JLabel("IP Address: ");
+        p.add(mainLabel,
               new GridBagConstraints(0, 0, 3, 1, 1.0, 1.0,
                                      GridBagConstraints.NORTHWEST,
                                      GridBagConstraints.BOTH,
@@ -106,6 +109,10 @@ public class GetIpDialog extends JDialog {
 
     /** Check for valid IP, attempting to narrow in on the invalid portion if it isn't valid. */
     private boolean isValidIp(String s) {
+        if (!validateIPFormat) {
+            getIpRangeTextField().setNone();
+            return true;// we dont care
+        }
         boolean ret = false;
         int pos = -1;
         int end = -1;
@@ -141,7 +148,11 @@ public class GetIpDialog extends JDialog {
     }
 
     private void checkValid() {
-        okButton.setEnabled(isValidIp(getIpRangeTextField().getText()));
+        if (validateIPFormat) {
+            okButton.setEnabled(isValidIp(getIpRangeTextField().getText()));
+        } else {
+            okButton.setEnabled(getIpRangeTextField().getText() != null && getIpRangeTextField().getText().length() > 0);
+        }
     }
 
     private SquigglyTextField getIpRangeTextField() {
@@ -150,12 +161,19 @@ public class GetIpDialog extends JDialog {
             // Block bad inserts immediately
             ipRangeTextField.getDocument().addUndoableEditListener(new UndoableEditListener() {
                 public void undoableEditHappened(UndoableEditEvent e) {
-                    if (badIpChars.matcher(ipRangeTextField.getText()).find())
-                        e.getEdit().undo();
+                    if (validateIPFormat) {
+                        if (badIpChars.matcher(ipRangeTextField.getText()).find())
+                            e.getEdit().undo();
+                    }
                     checkValid();
                 }
             });
         }
         return ipRangeTextField;
+    }
+
+    public void noValidateFormat() {
+        validateIPFormat = false;
+        mainLabel.setText("URL");
     }
 }

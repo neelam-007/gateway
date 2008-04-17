@@ -273,7 +273,7 @@ public class AssertionMessages extends Messages {
     // ServerJmsRoutingAssertion
     public static final M JMS_ROUTING_CONNECT_FAILED                  = m(6000, Level.INFO, "Failed to establish JMS connection on try #{0}: Will retry after {1}ms");
     public static final M JMS_ROUTING_INBOUD_REQUEST_QUEUE_NOT_EMPTY  = m(6001, Level.FINE,  "Inbound request queue is not temporary; using selector to filter responses to our message");
-    public static final M JMS_ROUTING_TOPIC_NOT_SUPPORTED             = m(6002, Level.WARNING, "Topics not supported!");
+    public static final M JMS_ROUTING_NO_TOPIC_WITH_REPLY             = m(6002, Level.WARNING, "Topics not supported when reply type is not NO_REPLY");
     public static final M JMS_ROUTING_REQUEST_ROUTED                  = m(6003, Level.FINER, "Routing request to protected service");
     public static final M JMS_ROUTING_GETTING_RESPONSE                = m(6004, Level.FINEST, "Getting response from protected service");
     public static final M JMS_ROUTING_NO_RESPONSE                     = m(6005, Level.WARNING, "Did not receive a routing reply within the timeout period of {0} ms; empty response being returned");
@@ -281,19 +281,21 @@ public class AssertionMessages extends Messages {
     public static final M JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE   = m(6007, Level.WARNING, "Received JMS reply with unsupported message type {0}");
     public static final M JMS_ROUTING_NO_RESPONSE_EXPECTED            = m(6008, Level.INFO, "No response expected from protected service");
     public static final M JMS_ROUTING_DELETE_TEMPORARY_QUEUE          = m(6009, Level.FINER, "Deleting temporary queue" );
-    public static final M JMS_ROUTING_RETURN_NO_REPLY                 = m(6010, Level.FINER, "Returning NO_REPLY (null) for {0}");
-    public static final M JMS_ROUTING_RETURN_AUTOMATIC                = m(6011, Level.FINER, "Returning AUTOMATIC {0} for {1}");
-    public static final M JMS_ROUTING_RETURN_REPLY_TO_OTHER           = m(6012, Level.FINER, "Returning REPLY_TO_OTHER {0} for {1}");
+    @Deprecated public static final M __UNUSED_JMS_ROUTING_RETURN_NO_REPLY        = m(6010, Level.FINER, "Returning NO_REPLY (null) for {0}");
+    @Deprecated public static final M __UNUSED_JMS_ROUTING_RETURN_AUTOMATIC       = m(6011, Level.FINER, "Returning AUTOMATIC {0} for {1}");
+    @Deprecated public static final M __UNUSED_JMS_ROUTING_RETURN_REPLY_TO_OTHER  = m(6012, Level.FINER, "Returning REPLY_TO_OTHER {0} for {1}");
     public static final M JMS_ROUTING_UNKNOW_JMS_REPLY_TYPE           = m(6013, Level.WARNING, "Unknown JmsReplyType {0}");
-    public static final M JMS_ROUTING_ENDPOINTS_ON_SAME_CONNECTION    = m(6014, Level.WARNING, "Request and reply endpoints must belong to the same connection");
+    @Deprecated public static final M __UNUSED_JMS_ROUTING_ENDPOINTS_ON_SAME_CONNECTION    = m(6014, Level.WARNING, "Request and reply endpoints must belong to the same connection");
     public static final M JMS_ROUTING_CREATE_REQUEST_AS_TEXT_MESSAGE  = m(6015, Level.FINER, "Creating request as TextMessage");
     public static final M JMS_ROUTING_CREATE_REQUEST_AS_BYTES_MESSAGE = m(6016, Level.FINER, "Creating request as BytesMessage");
-    public static final M JMS_ROUTING_ROUTE_REQUEST_WITH_NO_REPLY     = m(6017, Level.FINE, "As routed request endpoint specified NO_REPLY, JMSReplyTo and JMSCorrelationID will not be set");
-    public static final M JMS_ROUTING_SET_REPLYTO_CORRELCTIONID       = m(6018, Level.FINE, "Setting JMSReplyTo and JMSCorrelationID");
+    public static final M JMS_ROUTING_REQUEST_WITH_NO_REPLY           = m(6017, Level.FINE, "Outbound request endpoint {0} specifies NO_REPLY");
+    public static final M JMS_ROUTING_REQUEST_WITH_REPLY_TO_OTHER     = m(6018, Level.FINE, "Outbound request endpoint {0} specifies REPLY_TO_OTHER, setting JMSReplyTo to {1}");
     public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT           = m(6019, Level.WARNING, "JMS Routing Assertion contains a reference to nonexistent JmsEndpoint #{0}");
     public static final M JMS_ROUTING_NO_SAML_SIGNER                  = m(6020, Level.WARNING, "JMS Routing Assertion cannot access SAML signing information");
     public static final M JMS_ROUTING_CANT_CONNECT_RETRYING           = m(6021, Level.WARNING, "Failed to establish JMS connection on try #{0}.  Will retry after {1}ms.");
     public static final M JMS_ROUTING_CANT_CONNECT_NOMORETRIES        = m(6022, Level.WARNING, "Tried {0} times to establish JMS connection and failed.");
+    public static final M JMS_ROUTING_REQUEST_WITH_AUTOMATIC          = m(6023, Level.FINE, "Outbound request endpoint {0} specifies AUTOMATIC, using temporary queue");
+    public static final M JMS_ROUTING_REQUEST_TOO_LARGE               = m(6024, Level.WARNING, "Request message too large.");
 
     // ServerFtpRoutingAssertion
     public static final M FTP_ROUTING_FAILED_UPLOAD = m(6050, Level.WARNING, "Failed to upload request to {0}: {1}");

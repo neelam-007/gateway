@@ -124,8 +124,8 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
                 auditor.logAndAudit(AssertionMessages.XPATH_NOT_ACCELERATED);
                 cursor = new DomElementCursor(message.getXmlKnob().getDocumentReadOnly());
             } else {
-            final XmlKnob xmlKnob = message.getXmlKnob();
-            cursor = xmlKnob.getElementCursor();
+                final XmlKnob xmlKnob = message.getXmlKnob();
+                cursor = xmlKnob.getElementCursor();
             }
 
         } catch (SAXException e) {

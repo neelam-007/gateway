@@ -7,7 +7,6 @@
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.transport.jms.JmsConnection;
-import org.springframework.context.ApplicationContext;
 
 import javax.jms.*;
 import javax.naming.Context;
@@ -40,26 +39,26 @@ public class JmsUtil {
      * to connect to a JMS provider.
      * @param auth overrides the username and password from the connection if present.  May be null.
      * @param mapper property mapper for initial context properties. May be null.
-     * @param autoAcknowledge True to use Session.AUTO_ACKNOWLEDGE for sessions
-     * @param spring
+     * @param transactional True to create a transactional session
+     * @param acknowledgeMode The session acknowledgement mode (Session.AUTO_ACKNOWLEDGE) or 0 if transactional
      * @return a {@link JmsBag} containing the resulting {@link ConnectionFactory}, {@link Connection} and {@link Session}.
      * @throws JMSException
      * @throws NamingException
      * @throws JmsConfigException if no connection factory URL could be found for this connection
      */
-    public static JmsBag connect(JmsConnection connection,
-                                 PasswordAuthentication auth,
-                                 JmsPropertyMapper mapper,
-                                 boolean autoAcknowledge,
-                                 ApplicationContext spring)
+    public static JmsBag connect(final JmsConnection connection,
+                                 final PasswordAuthentication auth,
+                                 final JmsPropertyMapper mapper,
+                                 final boolean transactional,
+                                 final int acknowledgeMode)
             throws JmsConfigException, JMSException, NamingException
     {
         logger.fine( "Connecting to " + connection.toString() );
-        String icf = connection.getInitialContextFactoryClassname();
-        String url = connection.getJndiUrl();
-        String dcfUrl = connection.getDestinationFactoryUrl();
-        String qcfUrl = connection.getQueueFactoryUrl();
-        String tcfUrl = connection.getTopicFactoryUrl();
+        final String icf = connection.getInitialContextFactoryClassname();
+        final String url = connection.getJndiUrl();
+        final String dcfUrl = connection.getDestinationFactoryUrl();
+        final String qcfUrl = connection.getQueueFactoryUrl();
+        final String tcfUrl = connection.getTopicFactoryUrl();
 
         String username = null;
         String password = null;
@@ -102,6 +101,7 @@ public class JmsUtil {
                 throw new JmsConfigException( msg );
             }
 
+            logger.fine("Looking up " + cfUrl);
             Object o = jndiContext.lookup( cfUrl );
             if ( o instanceof Reference ) {
                 String msg = "The ConnectionFactory lookup returned a reference to the class\n"
@@ -120,6 +120,7 @@ public class JmsUtil {
 
             connFactory = (ConnectionFactory) o;
 
+            //noinspection SuspiciousMethodCalls
             String customizerClassname = (String) jndiContext.getEnvironment().get(JmsConnection.PROP_CUSTOMIZER);
             if (customizerClassname != null) {
                 try {
@@ -127,7 +128,7 @@ public class JmsUtil {
                     Object instance = customizerClass.newInstance();
                     if (instance instanceof ConnectionFactoryCustomizer) {
                         ConnectionFactoryCustomizer customizer = (ConnectionFactoryCustomizer) instance;
-                        customizer.configureConnectionFactory(connFactory, jndiContext, spring);
+                        customizer.configureConnectionFactory(connection, connFactory, jndiContext);
                     }
                     else {
                         throw new JmsConfigException("Could not configure connection factory, customizer does not implement the correct interface.");
@@ -144,28 +145,27 @@ public class JmsUtil {
                 }
             }
 
-            boolean transactional = !autoAcknowledge;
             if ( username != null && password != null ) {
                 if ( connFactory instanceof QueueConnectionFactory ) {
                     conn = ((QueueConnectionFactory)connFactory).createQueueConnection(username, password);
-                    sess = ((QueueConnection)conn).createQueueSession( transactional, Session.AUTO_ACKNOWLEDGE );
+                    sess = ((QueueConnection)conn).createQueueSession( transactional, acknowledgeMode );
                 } else if ( connFactory instanceof TopicConnectionFactory ) {
                     conn = ((TopicConnectionFactory)connFactory).createTopicConnection(username, password);
-                    sess = ((TopicConnection)conn).createTopicSession( transactional, Session.AUTO_ACKNOWLEDGE );
+                    sess = ((TopicConnection)conn).createTopicSession( transactional, acknowledgeMode );
                 } else {
                     conn = connFactory.createConnection( username, password );
-                    sess = conn.createSession( transactional, Session.AUTO_ACKNOWLEDGE );
+                    sess = conn.createSession( transactional, acknowledgeMode );
                 }
             } else {
                 if ( connFactory instanceof QueueConnectionFactory ) {
                     conn = ((QueueConnectionFactory)connFactory).createQueueConnection();
-                    sess = ((QueueConnection)conn).createQueueSession( transactional, Session.AUTO_ACKNOWLEDGE );
+                    sess = ((QueueConnection)conn).createQueueSession( transactional, acknowledgeMode );
                 } else if ( connFactory instanceof TopicConnectionFactory ) {
                     conn = ((TopicConnectionFactory)connFactory).createTopicConnection();
-                    sess = ((TopicConnection)conn).createTopicSession( transactional, Session.AUTO_ACKNOWLEDGE );
+                    sess = ((TopicConnection)conn).createTopicSession( transactional, acknowledgeMode );
                 } else {
                     conn = connFactory.createConnection( username, password );
-                    sess = conn.createSession( transactional, Session.AUTO_ACKNOWLEDGE );
+                    sess = conn.createSession( transactional, acknowledgeMode );
                 }
             }
 
@@ -193,10 +193,10 @@ public class JmsUtil {
     }
 
     /**
-     * Equivalent to {@link JmsUtil#connect(com.l7tech.common.transport.jms.JmsConnection,java.net.PasswordAuthentication, JmsPropertyMapper,boolean,org.springframework.context.ApplicationContext) JmsUtil#connect(JmsConnection, null, null, true, spring)}
+     * Equivalent to {@link JmsUtil#connect(com.l7tech.common.transport.jms.JmsConnection,java.net.PasswordAuthentication, JmsPropertyMapper,boolean,int) JmsUtil#connect(JmsConnection, null, null, false, Session.AUTO_ACKNOWLEDGE)}
      */
-    public static JmsBag connect(JmsConnection connection, ApplicationContext spring) throws JMSException, NamingException, JmsConfigException {
-        return connect(connection, null, null, true, spring);
+    public static JmsBag connect(JmsConnection connection) throws JMSException, NamingException, JmsConfigException {
+        return connect(connection, null, null, false, Session.AUTO_ACKNOWLEDGE);
     }
 
     static void closeQuietly(MessageConsumer consumer) {

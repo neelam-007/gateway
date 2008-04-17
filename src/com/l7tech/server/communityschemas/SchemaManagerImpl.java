@@ -680,6 +680,12 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                                 "Unable to resolve url ''{0}'', relative to base url ''{1}''.",
                                 new String[]{systemId, baseURI});
                     }
+                } catch (IllegalArgumentException e) {
+                    if (logger.isLoggable(Level.FINE)) {
+                        logger.log(Level.FINE,
+                                "Unable to resolve url ''{0}'', relative to base url ''{1}''.",
+                                new String[]{systemId, baseURI});
+                    }
                 }
             }
 

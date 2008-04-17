@@ -178,7 +178,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     new SecurityProcessingResolutionListener(context, wssOutput, securityProcessingAssertionStatus, securityProcessingIOException);
 
             // Policy Verification Step
-            PublishedService service = serviceCache.resolve(context.getRequest(), securityProcessingResolutionListener);
+            PublishedService service;
+            if ( context.getHardwiredService() == null ) {
+                // resolve it
+                service = serviceCache.resolve(context.getRequest(), securityProcessingResolutionListener);
+            } else {
+                // resolve to hardwired
+                service = serviceCache.resolve(context.getRequest(), securityProcessingResolutionListener, context.getHardwiredService());
+            }
+
             if (service == null) {
                 if (securityProcessingIOException[0] != null) {
                     throw securityProcessingIOException[0]; 

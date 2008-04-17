@@ -14,6 +14,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.security.cert.X509Certificate;
 import java.util.Date;
+import java.util.Set;
 
 /**
  * Panel that displays License details.
@@ -51,6 +52,8 @@ public class LicensePanel extends JPanel {
     private JPanel grantsPanel;
     private JLabel eulaField;
     private JButton eulaButton;
+    private JLabel licAttrLabel;
+    private JTextArea attrTextArea;
 
     private String statusNone = DEFAULT_STATUS_NONE;
     private String statusInvalid = DEFAULT_STATUS_INVALID;
@@ -67,6 +70,7 @@ public class LicensePanel extends JPanel {
     private JLabel[] licenseLabels = new JLabel[] {
             licenseIdLabel,
             descriptionLabel,
+            licAttrLabel,
             issuerLabel,
             licenseeLabel,
             contactEmailLabel,
@@ -75,9 +79,10 @@ public class LicensePanel extends JPanel {
             grantsLabel,
     };
 
-    private JLabel[] licenseFields = new JLabel[] {
+    private JComponent[] licenseFields = new JComponent[] {
             licenseIdField,
             descriptionField,
+            attrTextArea,
             issuerField,
             licenseeField,
             contactEmailField,
@@ -99,6 +104,7 @@ public class LicensePanel extends JPanel {
                 licenseErrorsLabel,
                 licenseIdLabel,
                 descriptionLabel,
+                licAttrLabel,
                 issuerLabel,
                 licenseeLabel,
                 contactEmailLabel,
@@ -272,6 +278,7 @@ public class LicensePanel extends JPanel {
         contactEmailField.setText(n(license.getLicenseeContactEmail()));
         displayStartDate(startField, license);
         displayExpiryDate(license);
+        displayLiceseAttributes(license);
 
         grantsPanel.removeAll();
         grantsPanel.setLayout(new BoxLayout(grantsPanel, BoxLayout.Y_AXIS));
@@ -293,15 +300,38 @@ public class LicensePanel extends JPanel {
         expiresField.setText(n(date == null ? null : date.toString()) + m);
     }
 
+    /**
+     * Form a displaying message containing all selected license attributes and display
+     * it in the attribute text area in the license panel.
+     * @param license: the license containing all license infomation.
+     */
+    private void displayLiceseAttributes(License license) {
+        Set<String> attrList = license.getAttributes();
+        StringBuilder sb = new StringBuilder();
+        int i = 0;
+        for (String attr: attrList) {
+            sb.append(attr);
+            if (i++ < attrList.size() - 1) {
+                sb.append("\n");
+            }
+        }
+        attrTextArea.setFont(licAttrLabel.getFont());
+        attrTextArea.setText(sb.toString());
+    }
+
     /* Clears license fields and sets their visibility. */
     private void setLicenseFieldsVisible(boolean visibility) {
         for (JLabel licenseLabel : licenseLabels) {
             licenseLabel.setVisible(visibility);
         }
 
-        for (JLabel licenseField : licenseFields) {
+        for (JComponent licenseField : licenseFields) {
             licenseField.setVisible(visibility);
-            licenseField.setText("");
+            if (licenseField instanceof JLabel) {
+                ((JLabel)licenseField).setText("");
+            } else if (licenseField instanceof JTextArea) {
+                ((JTextArea)licenseField).setText("");
+            }
         }
 
         boolean eulaVis = visibility && showEulaInfo;

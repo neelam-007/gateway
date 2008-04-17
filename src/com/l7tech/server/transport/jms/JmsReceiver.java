@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.server.transport.jms;
@@ -13,11 +11,9 @@ import com.l7tech.common.transport.jms.JmsAcknowledgementType;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.TimeUnit;
 import com.l7tech.server.LifecycleException;
-import com.l7tech.server.ServerComponentLifecycle;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.JMSEvent;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -33,22 +29,22 @@ import java.beans.PropertyChangeEvent;
  * Message processing runtime support for JMS messages.
  * <p/>
  * Publically Immutable but not thread-safe.
- *
- * @author alex
- * @version $Revision$
  */
-public class JmsReceiver implements ServerComponentLifecycle, ApplicationContextAware, PropertyChangeListener {
+public class JmsReceiver implements PropertyChangeListener {
     // Statics
     private static final Logger _logger = Logger.getLogger(JmsReceiver.class.getName());
     private static final String PROPERTY_ERROR_SLEEP = "ioJmsErrorSleep";    
+    private static final String PROPERTY_MAX_SIZE = "ioJmsMessageMaxBytes";
     private static final int MAXIMUM_OOPSES = 5;
     /** Set to five seconds so that the uninterruptible (!) poll doesn't pause server shutdown for too long. */
     private static final long RECEIVE_TIMEOUT = 5 * 1000;
+    private static final long SHUTDOWN_TIMEOUT = 7 * 1000;
     public static final int OOPS_RETRY = 5000; // Five seconds
     public static final int DEFAULT_OOPS_SLEEP = 60 * 1000; // One minute
     public static final int MIN_OOPS_SLEEP = 10 * 1000; // 10 seconds
     public static final int MAX_OOPS_SLEEP = TimeUnit.DAYS.getMultiplier(); // 24 hours
     public static final int OOPS_AUDIT = 15 * 60 * 1000; // 15 mins;
+    public static final int DEFAULT_MAX_SIZE = 5242880; 
 
     // Persistence stuff
     private final JmsReplyType _replyType;
@@ -56,14 +52,13 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
     private final JmsEndpoint _inboundRequestEndpoint;
     private final JmsPropertyMapper _jmsPropertyMapper;
 
-    // JMS stuff
-
     // Runtime stuff
+    private final JmsRequestHandler _handler;
+    private final MessageLoop _loop;
     private final Object syncRecv = new Object();
     private final AtomicInteger oopsSleep = new AtomicInteger(DEFAULT_OOPS_SLEEP);
-    private boolean _initialized = false;
-    private ApplicationContext applicationContext;
-    private long lastAuditErrorTime = 0L;
+    private final AtomicInteger maxMessageSize = new AtomicInteger(DEFAULT_MAX_SIZE);
+    private final ApplicationContext applicationContext;
 
     /**
      * Complete constructor
@@ -71,15 +66,36 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
      * @param inbound   The {@link com.l7tech.common.transport.jms.JmsEndpoint} from which to receive requests
      * @param replyType A {@link com.l7tech.common.transport.jms.JmsReplyType} value indicating this receiver's
      */
-    public JmsReceiver(JmsConnection connection, JmsEndpoint inbound, JmsReplyType replyType, JmsPropertyMapper jmsPropertyMapper) {
-        _connection = connection;
-        _inboundRequestEndpoint = inbound;
-        if (replyType == null) replyType = JmsReplyType.AUTOMATIC;
-        _replyType = replyType;
-        _jmsPropertyMapper = jmsPropertyMapper;
+    public JmsReceiver(final JmsConnection connection,
+                       final JmsEndpoint inbound,
+                       final JmsReplyType replyType,
+                       final JmsPropertyMapper jmsPropertyMapper,
+                       final ApplicationContext applicationContext) {
+        this._connection = connection;
+        this._inboundRequestEndpoint = inbound;
+        if (replyType == null) {
+            this._replyType = JmsReplyType.AUTOMATIC;
+        } else {
+            this._replyType = replyType;
+        }
+        this._jmsPropertyMapper = jmsPropertyMapper;
+        this.applicationContext = applicationContext;
+
+
+        if ( applicationContext == null ) {
+            _logger.warning("Application context set to null");
+        }
+
+        _logger.info( "Initializing " + toString() + "..." );
+        _handler = new JmsRequestHandler(applicationContext);
+        _loop = new MessageLoop();
+        _logger.info( toString() + " initialized successfully" );
 
         String stringValue = ServerConfig.getInstance().getProperty(PROPERTY_ERROR_SLEEP);
         setErrorSleepTime(stringValue);
+
+        String stringValueMax = ServerConfig.getInstance().getProperty(PROPERTY_MAX_SIZE);
+        setMessageMaxSize(stringValueMax);
     }
 
     /**
@@ -91,10 +107,14 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
      *
      * @param inbound The {@link com.l7tech.common.transport.jms.JmsEndpoint} from which to receive requests
      */
-    public JmsReceiver(JmsConnection connection, JmsEndpoint inbound, JmsPropertyMapper jmsPropertyMapper) {
-        this( connection, inbound, inbound.getReplyType(), jmsPropertyMapper);
+    public JmsReceiver(final JmsConnection connection,
+                       final JmsEndpoint inbound,
+                       final JmsPropertyMapper jmsPropertyMapper,
+                       final ApplicationContext applicationContext) {
+        this( connection, inbound, inbound.getReplyType(), jmsPropertyMapper, applicationContext);
     }
 
+    @Override
     public String toString() {
         return "jmsReceiver:" + getDisplayName();
     }
@@ -103,6 +123,10 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
         if (PROPERTY_ERROR_SLEEP.equals(evt.getPropertyName())) {
             String stringValue = (String) evt.getNewValue();
             setErrorSleepTime(stringValue);
+        }
+        else if (PROPERTY_MAX_SIZE.equals(evt.getPropertyName())) {
+            String stringValue = (String) evt.getNewValue();
+            setMessageMaxSize(stringValue);
         }
     }
 
@@ -123,12 +147,10 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
      * <li>If the ReplyType is {@link com.l7tech.common.transport.jms.JmsReplyType#AUTOMATIC} but the
      * incoming request specified no ReplyTo queue.
      *
-     * @param request
-     * @param response
      * @return The JMS Destination to which responses should be sent, possibly null.
      * @throws JMSException
      */
-    Destination getOutboundResponseDestination(Message request, Message response) throws JMSException {
+    Destination getOutboundResponseDestination(Message request, JmsBag bag) throws JMSException, NamingException {
         if (_replyType == JmsReplyType.NO_REPLY) {
             _logger.finer("Returning NO_REPLY (null) for '" + toString() + "'");
             return null;
@@ -138,14 +160,11 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
                   "' for '" + toString() + "'");
                 return request.getJMSReplyTo();
             } else if (_replyType == JmsReplyType.REPLY_TO_OTHER) {
-                String msg = "REPLY_TO_OTHER not currently supported";
-                _logger.severe(msg);
-                throw new IllegalStateException(msg);
-/*
-                _logger.finer("Returning REPLY_TO_OTHER '" + _inboundRequestEndpoint.getDestinationName() +
-                  "' for '" + toString() + "'");
-                return getJmsOutboundQueue();
-*/
+                // use bag's jndi context to lookup the the destination and create the sender
+                Context jndiContext = bag.getJndiContext();
+                String replyToQueueName = _inboundRequestEndpoint.getReplyToQueueName();
+                _logger.fine("looking up destination name " + replyToQueueName);
+                return (Destination)jndiContext.lookup(replyToQueueName);
             } else {
                 String msg = "Unknown JmsReplyType " + _replyType.toString();
                 _logger.severe(msg);
@@ -154,47 +173,9 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
         }
     }
 
-    JmsReplyType getReplyType() {
-        return _replyType;
+    int getMessageMaxSize() {
+        return this.maxMessageSize.get();
     }
-
-    /**
-     * Set the context to use.
-     *
-     * @param applicationContext the spring application context
-     */
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        synchronized(syncRecv) {
-            this.applicationContext = applicationContext;
-            if (_logger.isLoggable(Level.FINE)) {
-                _logger.log(Level.FINE, "Application context set.");
-            }
-            if (applicationContext == null) {
-                _logger.warning("Application context set to null");
-            }
-        }
-    }
-
-    /**
-     * Initializes the JMS receiver.
-     *
-     * @param config
-     * @throws LifecycleException
-     */
-    public void setServerConfig(ServerConfig config) throws LifecycleException {
-        synchronized(syncRecv) {
-            _logger.info( "Initializing " + toString() + "..." );
-            try {
-                _initialized = true;
-                _handler = new JmsRequestHandler(applicationContext);
-                _loop = new MessageLoop();
-                _logger.info( toString() + " initialized successfully" );
-            } finally {
-                if ( !_initialized && _loop != null ) _loop.close();
-            }
-        }
-    }
-
 
     /**
      * Starts the receiver.
@@ -202,8 +183,6 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
     public void start() throws LifecycleException {
         synchronized(syncRecv) {
             _logger.info( "Starting " + toString() + "..." );
-
-            if (!_initialized) throw new LifecycleException("Can't start '" + _inboundRequestEndpoint.toString() + "', it has not been successfully initialized!");
 
             try {
                 _loop.start();
@@ -217,6 +196,28 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
         }
     }
 
+    /**
+     * Stops the receiver, e.g. temporarily.
+     */
+    public void stop() {
+        synchronized(syncRecv) {
+            _logger.info( "Stopping " + toString() + "..." );
+            _loop.stop();
+        }
+    }
+
+    /**
+     * Closes the receiver, and any resources it may have allocated.  Note that
+     * a receiver that has been closed cannot be restarted.
+     * <p/>
+     * Nulls all references to runtime objects.
+     */
+    public void ensureStopped() {
+        synchronized(syncRecv) {
+            _loop.ensureStopped();
+        }
+    }
+    
     private String getDisplayName() {
         return getConnection().getJndiUrl()  + "/" + getConnection().getName();
     }
@@ -242,32 +243,22 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
         oopsSleep.set((int)newErrorSleepTime);
     }
 
-    private void fireConnected() {
-        lastAuditErrorTime = 0L;
-        fireEvent(new JMSEvent(this, Level.INFO, null, "Connected to '"+getDisplayName()+"'"));
-    }
+    private void setMessageMaxSize(String stringValue) {
+        int newMaxSize = DEFAULT_MAX_SIZE;
 
-    private void fireConnectError(String message) {
-        fireEvent(new JMSEvent(this, Level.WARNING,  null, "Error connecting to '"+getDisplayName()+"'; " + message));
-    }
-
-    private void fireEvent(JMSEvent event) {
-        ApplicationContext context;
-        synchronized(syncRecv) {
-           context = applicationContext;
+        try {
+            newMaxSize = Integer.parseInt( stringValue );
+        } catch (NumberFormatException nfe) {
+            _logger.log(Level.WARNING, "Ignoring invalid JMS message max size ''{0}'' (using default).", stringValue);
         }
-        if (context != null) {
-            long timeNow = System.currentTimeMillis();
-            if ((lastAuditErrorTime+OOPS_AUDIT) < timeNow) {
-                lastAuditErrorTime = timeNow;
-                context.publishEvent(event);
-            } else {
-                _logger.info("Not publishing event due to recent failure.");
-            }
 
-        } else {
-            _logger.warning("Event not published, message is: " + event.getMessage());
+        if ( newMaxSize < 0 ) {
+            _logger.log(Level.WARNING, "Ignoring invalid JMS message max size ''{0}'' (using 0).", stringValue);
+            newMaxSize = 0;
         }
+
+        _logger.log(Level.CONFIG, "Updated JMS message max size to {0}.", newMaxSize);
+        maxMessageSize.set(newMaxSize);
     }
 
     private class MessageLoop implements Runnable {
@@ -280,12 +271,13 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
             synchronized(sync) {
                 if ( _bag == null ) {
                     _logger.finest( "Getting new JmsBag" );
+                    boolean transactional = _inboundRequestEndpoint.getAcknowledgementType()==JmsAcknowledgementType.ON_COMPLETION;
                     _bag = JmsUtil.connect(
                             _connection,
                             _inboundRequestEndpoint.getPasswordAuthentication(),
                             _jmsPropertyMapper,
-                            _inboundRequestEndpoint.getAcknowledgementType()==JmsAcknowledgementType.AUTOMATIC,
-                            applicationContext);
+                            transactional,
+                            Session.CLIENT_ACKNOWLEDGE);
                 }
                 return _bag;
             }
@@ -431,6 +423,7 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
             }
         }
 
+        @Override
         public String toString() {
             StringBuffer s = new StringBuffer( "MessageLoop-" );
             s.append( _connection.getOid() );
@@ -451,15 +444,7 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
             synchronized(sync) {
                 _logger.fine( "Stopping " + toString() );
                 _stop = true;
-            }
-            _thread.interrupt();
-            try {
-                _thread.join();
-            } catch ( InterruptedException e ) {
-                Thread.currentThread().interrupt();
-            } finally {
-                cleanup();
-                _logger.fine( "Stopped " + toString() );
+                lastStopRequestedTime = System.currentTimeMillis();
             }
         }
 
@@ -516,18 +501,17 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
                         boolean isTransacted = _inboundRequestEndpoint.getAcknowledgementType()==JmsAcknowledgementType.ON_COMPLETION;
 
                         Message jmsMessage = receiver.receive( RECEIVE_TIMEOUT );
-                        if ( jmsMessage != null ) {
+                        if ( jmsMessage != null && !isStop() ) {
+                            if ( !isTransacted ) jmsMessage.acknowledge();
                             _logger.fine( "Received a message on " + _inboundRequestEndpoint.getDestinationName() );
                             oopses = 0;
                             // todo support concurrent JMS messages some day
-                            JmsRequestHandler jrh;
-                            synchronized(syncRecv) {
-                                jrh = _handler;
-                            }
-                            jrh.onMessage( JmsReceiver.this, getBag(), isTransacted, sender, jmsMessage );
-
+                            _handler.onMessage( JmsReceiver.this, getBag(), isTransacted, sender, jmsMessage );
                         }
                     } catch ( Throwable e ) {
+                        if (ExceptionUtils.causedBy(e, InterruptedException.class)) {
+                            continue;
+                        }
                         _logger.log( Level.WARNING,
                                      "Unable to receive message from JMS endpoint " +
                                      _inboundRequestEndpoint, e );
@@ -539,7 +523,6 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
                                 Thread.sleep(OOPS_RETRY);
                             } catch ( InterruptedException e1 ) {
                                 _logger.info( "Interrupted during retry interval" );
-                                Thread.currentThread().interrupt();
                             }
                         } else {
                             int sleepTime = oopsSleep.get();
@@ -548,22 +531,59 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
                                 Thread.sleep(sleepTime);
                             } catch ( InterruptedException e1 ) {
                                 _logger.info( "Interrupted during sleep interval" );
-                                Thread.currentThread().interrupt();
                             }
                         }
                     }
                 }
             } finally {
                 _logger.info( "Stopped JMS poller on " + _inboundRequestEndpoint.getDestinationName() );
+                cleanup();
             }
         }
 
-        public void close() {
+        public void ensureStopped() {
+            long stopRequestedTime;
+
             synchronized(sync) {
-                _logger.fine( "Closing " + toString() );
                 stop();
-                if ( _bag != null ) _bag.close();
-                _logger.fine( "Closed " + toString() );
+                stopRequestedTime = lastStopRequestedTime;
+            }
+
+            try {
+                long waitTime = SHUTDOWN_TIMEOUT - (System.currentTimeMillis() - stopRequestedTime);
+                if ( waitTime > 10 ) {
+                    _thread.join( SHUTDOWN_TIMEOUT );
+                }
+            } catch ( InterruptedException ie ) {
+                Thread.currentThread().interrupt();
+            }
+
+            if ( _thread.isAlive() ) {
+                _logger.warning( this + " did not shutdown on request." );
+            }
+        }
+
+        private void fireConnected() {
+            lastAuditErrorTime = 0L;
+            fireEvent(new JMSEvent(this, Level.INFO, null, "Connected to '"+getDisplayName()+"'"));
+        }
+
+        private void fireConnectError(String message) {
+            fireEvent(new JMSEvent(this, Level.WARNING,  null, "Error connecting to '"+getDisplayName()+"'; " + message));
+        }
+
+        private void fireEvent(JMSEvent event) {
+            if (applicationContext != null) {
+                long timeNow = System.currentTimeMillis();
+                if ((lastAuditErrorTime+OOPS_AUDIT) < timeNow) {
+                    lastAuditErrorTime = timeNow;
+                    applicationContext.publishEvent(event);
+                } else {
+                    _logger.info("Not publishing event due to recent failure.");
+                }
+
+            } else {
+                _logger.warning("Event not published, message is: " + event.getMessage());
             }
         }
 
@@ -576,33 +596,10 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
         private Queue _failureQueue;
 
         // Runtime stuff
-        private volatile boolean _stop = false;
+        private boolean _stop = false;
         private final Object sync = new Object();
         private final Thread _thread;
+        private long lastStopRequestedTime;
+        private long lastAuditErrorTime = 0L;
     }
-
-    /**
-     * Stops the receiver, e.g. temporarily.
-     */
-    public void stop() throws LifecycleException {
-        synchronized(syncRecv) {
-            if ( _loop != null ) _loop.stop();
-        }
-    }
-
-    /**
-     * Closes the receiver, and any resources it may have allocated.  Note that
-     * a receiver that has been closed cannot be restarted.
-     * <p/>
-     * Nulls all references to runtime objects.
-     */
-    public void close() throws LifecycleException {
-        synchronized(syncRecv) {
-            _initialized = false;
-            if ( _loop != null ) _loop.close();
-        }
-    }
-
-    private JmsRequestHandler _handler;
-    private MessageLoop _loop;
 }

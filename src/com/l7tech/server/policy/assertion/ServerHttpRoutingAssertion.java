@@ -80,6 +80,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     private final SSLSocketFactory socketFactory;
     private final boolean urlUsesVariables;
     private final URL protectedServiceUrl;
+    private boolean customURLList;
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) {
         super(assertion, ctx, logger);
@@ -152,6 +153,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         stashManagerFactory = smFactory;
 
         final String[] addrs = data.getCustomIpAddresses();
+        customURLList = false;
         if (addrs != null && addrs.length > 0 && areValidUrlHostnames(addrs)) {
             final String stratName = assertion.getFailoverStrategyName();
             FailoverStrategy strat;
@@ -163,6 +165,18 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
             failoverStrategy = AbstractFailoverStrategy.makeSynchronized(strat);
             maxFailoverAttempts = addrs.length;
+        } else if (data.getCustomURLs() != null && data.getCustomURLs().length > 0) {
+            customURLList = true;
+            final String stratName = assertion.getFailoverStrategyName();
+            FailoverStrategy strat;
+            try {
+                strat = FailoverStrategyFactory.createFailoverStrategy(stratName, data.getCustomURLs());
+            } catch (IllegalArgumentException e) {
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_BAD_STRATEGY_NAME, new String[] { stratName }, e);
+                strat = new StickyFailoverStrategy(data.getCustomURLs());
+            }
+            failoverStrategy = AbstractFailoverStrategy.makeSynchronized(strat);
+            maxFailoverAttempts = data.getCustomURLs().length;
         } else {
             failoverStrategy = null;
             maxFailoverAttempts = 1;
@@ -211,7 +225,12 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 if (failedHost != null)
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_FAILOVER_FROM_TO,
                             failedHost, host);
-                URL url = new URL(u.getProtocol(), host, u.getPort(), u.getFile());
+                URL url;
+                if (customURLList) {
+                    url = new URL(host);
+                } else {
+                    url = new URL(u.getProtocol(), host, u.getPort(), u.getFile());
+                }
                 AssertionStatus result = tryUrl(context, url);
                 if (result == AssertionStatus.NONE) {
                     failoverStrategy.reportSuccess(host);

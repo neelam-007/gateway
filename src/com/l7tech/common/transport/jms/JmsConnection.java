@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.common.transport.jms;
@@ -21,9 +19,6 @@ import java.util.logging.Logger;
  * A reference to a preconfigured connection to a JMS provider.
  *
  * Persistent.
- *
- * @author alex
- * @version $Revision$
  */
 public class JmsConnection extends NamedEntityImp implements Serializable {
     private static final Logger logger = Logger.getLogger(JmsConnection.class.getName());
@@ -49,9 +44,12 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     public static final String PROP_KEYSTORE_ALIAS = PREFIX + ".keystore.alias";
     public static final String PROP_JNDI_SSG_KEYSTORE_ID = PREFIX + ".jndi.ssgKeystoreId";
     public static final String PROP_JNDI_SSG_KEY_ALIAS = PREFIX + ".jndi.ssgKeyAlias";
+    public static final String PROP_QUEUE_USE_CLIENT_AUTH = PREFIX + ".queue.useClientAuth";
     public static final String PROP_QUEUE_SSG_KEYSTORE_ID = PREFIX + ".queue.ssgKeystoreId";
     public static final String PROP_QUEUE_SSG_KEY_ALIAS = PREFIX + ".queue.ssgKeyAlias";
     public static final String PROP_CUSTOMIZER = PREFIX + ".customizer.class";
+    public static final String PROP_IS_HARDWIRED_SERVICE = PREFIX + ".hardwired.service.bool";
+    public static final String PROP_HARDWIRED_SERVICE_ID = PREFIX + ".hardwired.service.id";
 
     /** Name of String property (in returned value of {@link #properties()}) that
         contains the name of JMS message property to be used as SOAPAction value

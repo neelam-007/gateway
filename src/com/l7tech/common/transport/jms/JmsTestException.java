@@ -19,4 +19,8 @@ public class JmsTestException extends Exception {
     public JmsTestException( String message ) {
         super( message );
     }
+
+    public JmsTestException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

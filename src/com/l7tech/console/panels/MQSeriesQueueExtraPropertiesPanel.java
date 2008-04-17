@@ -8,8 +8,8 @@ import com.l7tech.common.transport.jms.JmsConnection;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.Properties;
 
 /**
@@ -25,18 +25,23 @@ public class MQSeriesQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
     private PrivateKeysComboBox keystoreComboBox;
     private JCheckBox clientAuthCheckbox;
     private JCheckBox sslCheckbox;
-    private JLabel keystoreLabel;
     private JCheckBox enforceHostnameVerificationCheckBox;
+    private JLabel keystoreLabel;
+
+    private final ActionListener enableDisableListener = new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+            enableOrDisableComponents();
+        }
+    };
 
     public MQSeriesQueueExtraPropertiesPanel(final Properties properties) {
         setLayout(new BorderLayout());
         add(mainPanel);
 
-        sslCheckbox.addItemListener(new ItemListener() {
-            public void itemStateChanged(ItemEvent e) {
-                enableOrDisableComponents();
-            }
-        });
+        sslCheckbox.addActionListener(enableDisableListener);
+        clientAuthCheckbox.addActionListener(enableDisableListener);
+        keystoreComboBox.addActionListener(enableDisableListener);
+        keystoreComboBox.select(0, "SSL");
 
         setProperties(properties);
     }
@@ -45,6 +50,15 @@ public class MQSeriesQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
     public void setProperties(final Properties properties) {
         if (properties != null) {
             sslCheckbox.setSelected(properties.getProperty(JmsConnection.PROP_CUSTOMIZER) != null);
+            final String sclientAuth = properties.getProperty(JmsConnection.PROP_QUEUE_USE_CLIENT_AUTH);
+            final boolean clientAuth = sclientAuth == null || "true".equals(sclientAuth);
+            clientAuthCheckbox.setSelected(clientAuth);
+            final String skid = properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID);
+            if (skid != null) {
+                final String alias = properties.getProperty(JmsConnection.PROP_QUEUE_SSG_KEY_ALIAS);
+                final Long keystoreId = Long.valueOf(skid);
+                keystoreComboBox.select(keystoreId, alias);
+            }
         }
 
         enableOrDisableComponents();
@@ -56,12 +70,30 @@ public class MQSeriesQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
 
         if (sslCheckbox.isSelected()) {
             properties.setProperty(JmsConnection.PROP_CUSTOMIZER, "com.l7tech.server.transport.jms.prov.MQSeriesCustomizer");
+            if (clientAuthCheckbox.isSelected()) {
+                properties.setProperty(JmsConnection.PROP_QUEUE_USE_CLIENT_AUTH, "true");
+                String keyAlias = keystoreComboBox.getSelectedKeyAlias();
+                long keyStoreId = keystoreComboBox.getSelectedKeystoreId();
+                if ( keyAlias != null && keyStoreId != -1 ) {
+                    properties.setProperty(JmsConnection.PROP_QUEUE_SSG_KEY_ALIAS, keyAlias);
+                    properties.setProperty(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID, Long.toString(keyStoreId));
+                }
+            } else {
+                properties.setProperty(JmsConnection.PROP_QUEUE_USE_CLIENT_AUTH, "false"); // Null is a special case
+            }
         }
 
         return properties;
     }
 
     private void enableOrDisableComponents() {
+        final boolean ssl = sslCheckbox.isSelected();
+        clientAuthCheckbox.setEnabled(ssl);
+
+        final boolean client = ssl && clientAuthCheckbox.isSelected();
+        keystoreLabel.setEnabled(client);
+        keystoreComboBox.setEnabled(client);
+
         fireStateChanged();
     }
 

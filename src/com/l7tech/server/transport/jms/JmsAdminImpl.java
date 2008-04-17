@@ -1,16 +1,11 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.transport.jms.*;
 import com.l7tech.objectmodel.*;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import javax.jms.*;
 import javax.naming.Context;
@@ -21,18 +16,12 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * @author alex
- * @version $Revision$
- */
-public class JmsAdminImpl implements JmsAdmin, ApplicationContextAware {
+public class JmsAdminImpl implements JmsAdmin {
     private static final Logger logger = Logger.getLogger(JmsAdminImpl.class.getName());
 
     private final JmsConnectionManager jmsConnectionManager;
     private final JmsEndpointManager jmsEndpointManager;
     private final JmsPropertyMapper jmsPropertyMapper;
-
-    private ApplicationContext spring;
 
     public JmsAdminImpl(JmsConnectionManager jmsConnectionManager,
                         JmsEndpointManager jmsEndpointManager,
@@ -43,7 +32,8 @@ public class JmsAdminImpl implements JmsAdmin, ApplicationContextAware {
     }
 
     public JmsProvider[] getProviderList() throws FindException {
-        return jmsConnectionManager.findAllProviders().toArray(new JmsProvider[0]);
+        Collection<JmsProvider> providers = jmsConnectionManager.findAllProviders();
+        return providers.toArray(new JmsProvider[providers.size()]);
     }
 
     /**
@@ -61,7 +51,7 @@ public class JmsAdminImpl implements JmsAdmin, ApplicationContextAware {
             results.add(conn);
         }
 
-        return results.toArray(new JmsConnection[0]);
+        return results.toArray(new JmsConnection[results.size()]);
     }
 
     public JmsAdmin.JmsTuple[] findAllTuples() throws FindException {
@@ -74,7 +64,7 @@ public class JmsAdminImpl implements JmsAdmin, ApplicationContextAware {
             }
         }
 
-        return result.toArray(new JmsTuple[0]);
+        return result.toArray(new JmsTuple[result.size()]);
     }
 
     /**
@@ -113,7 +103,7 @@ public class JmsAdminImpl implements JmsAdmin, ApplicationContextAware {
     /**
      * Returns an array of {@link JmsEndpoint}s that belong to the {@link JmsConnection} with the provided OID.
      *
-     * @param connectionOid
+     * @param connectionOid The connection OID
      * @return an array of {@link JmsEndpoint}s
      * @throws FindException
      */
@@ -131,7 +121,7 @@ public class JmsAdminImpl implements JmsAdmin, ApplicationContextAware {
      */
     public void testConnection(JmsConnection connection) throws JmsTestException {
         try {
-            JmsUtil.connect(connection, spring).close();
+            JmsUtil.connect(connection).close();
         } catch (JMSException e) {
             logger.log(Level.INFO, "Caught JMSException while testing connection", e);
             throw new JmsTestException(e.toString());
@@ -164,7 +154,7 @@ public class JmsAdminImpl implements JmsAdmin, ApplicationContextAware {
         try {
             logger.finer("Connecting to connection " + conn);
             bag = JmsUtil.connect(conn, endpoint.getPasswordAuthentication(),
-                    jmsPropertyMapper, endpoint.getAcknowledgementType()==JmsAcknowledgementType.AUTOMATIC, spring);
+                    jmsPropertyMapper, endpoint.getAcknowledgementType()==JmsAcknowledgementType.ON_COMPLETION, Session.AUTO_ACKNOWLEDGE);
 
             Context jndiContext = bag.getJndiContext();
             jmsConnection = bag.getConnection();
@@ -177,27 +167,62 @@ public class JmsAdminImpl implements JmsAdmin, ApplicationContextAware {
                 QueueSession qs = ((QueueSession)jmsSession);
                 // inbound queue
                 Object o = jndiContext.lookup(endpoint.getDestinationName());
-                if (!(o instanceof Queue)) throw new JmsTestException(endpoint.getDestinationName() + " is not a Queue");
+                if (!(o instanceof Queue))
+                    throw new JmsTestException(endpoint.getDestinationName() + " is not a Queue");
                 Queue q = (Queue)o;
-                logger.fine("Creating queue receiver for " + q);
-                jmsQueueReceiver = qs.createReceiver(q);
+
+                // we either try to create a received or a sender. some queues can only be opened in one mode and that's cool with us
+                boolean canreceive = false;
+                JMSException laste = null;
+                try {
+                    // if this is outbound, we should NOT create a receiver
+                    logger.fine("Creating queue receiver for " + q);
+                    jmsQueueReceiver = qs.createReceiver(q);
+                    canreceive = true;
+                } catch (JMSException e) {
+                    logger.info("This queue cannot be opened for receiving, will test for sending");
+                    laste = e;
+                }
+                if (!canreceive) {
+                    try {
+                        logger.fine("Unable to receive with this queue, will try to open a sender");
+                        jmsQueueSender = qs.createSender(q);
+                    } catch (JMSException e) {
+                        logger.log(Level.INFO, "This queue cannot be opened for sending nor receiving", e);
+                        if (laste != null) throw laste;
+                        else throw e;
+                    }
+                }
+                // Reply to the specified queue
+                if (endpoint.getReplyToQueueName() != null) {
+                    Object rq = jndiContext.lookup(endpoint.getReplyToQueueName());
+                    if (!(rq instanceof Queue))
+                        throw new JmsTestException(endpoint.getReplyToQueueName() + " is not a Queue");
+                    Queue fq = (Queue)rq;
+                    logger.fine("Creating queue receiver for " + fq);
+                    jmsQueueSender = qs.createSender(fq);
+                }
                 // failure queue
                 if (endpoint.getFailureDestinationName() != null) {
                     Object fo = jndiContext.lookup(endpoint.getFailureDestinationName());
-                    if (!(fo instanceof Queue)) throw new JmsTestException(endpoint.getFailureDestinationName() + " is not a Queue");
+                    if (!(fo instanceof Queue))
+                        throw new JmsTestException(endpoint.getFailureDestinationName() + " is not a Queue");
                     Queue fq = (Queue)fo;
                     logger.fine("Creating queue receiver for " + fq);
                     jmsQueueSender = qs.createSender(fq);
                 }
             } else if (jmsSession instanceof TopicSession) {
-                TopicSession ts = ((TopicSession)jmsSession);
+                throw new JmsNotSupportTopicException(conn.getName() + " is a JMS Topic.  However, JMS Topics are not supported by the SSG.");
+                // Since we don't support TOPIC in the SSG, this is why we comment the below code.
+                /*TopicSession ts = ((TopicSession)jmsSession);
                 Object o = jndiContext.lookup(endpoint.getDestinationName());
-                if (!(o instanceof Topic)) throw new JmsTestException(endpoint.getDestinationName() + " is not a Topic");
+                if (!(o instanceof Topic))
+                    throw new JmsTestException(endpoint.getDestinationName() + " is not a Topic");
                 Topic t = (Topic)o;
                 logger.fine("Creating topic subscriber for " + t);
-                jmsTopicSubscriber = ts.createSubscriber(t);
+                jmsTopicSubscriber = ts.createSubscriber(t);*/
             } else {
-                // Not much we can do here
+                throw new JMSException("Unknown JMS session.");
             }
         } catch (JMSException e) {
             logger.log(Level.INFO, "Caught JMSException while testing endpoint", e);
@@ -208,6 +233,9 @@ public class JmsAdminImpl implements JmsAdmin, ApplicationContextAware {
         } catch (JmsConfigException e) {
             logger.log(Level.INFO, "Caught JmsConfigException while testing endpoint", e);
             throw new JmsTestException(e.toString());
+        } catch (JmsNotSupportTopicException e) {
+            logger.log(Level.INFO, "Caught JmsNotSupportTopicException while testing endpoint", e);
+            throw new JmsTestException(e.getMessage(), e);
         } catch (Throwable t) {
             logger.log(Level.INFO, "Caught Throwable while testing endpoint", t);
             throw new JmsTestException(t.toString());
@@ -257,9 +285,5 @@ public class JmsAdminImpl implements JmsAdmin, ApplicationContextAware {
         if (jmsConnectionManager == null) {
             throw new IllegalArgumentException("jms connection manager is required");
         }
-    }
-
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.spring = applicationContext;
     }
 }

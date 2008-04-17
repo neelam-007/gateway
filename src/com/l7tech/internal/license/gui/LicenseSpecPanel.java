@@ -6,6 +6,7 @@
 package com.l7tech.internal.license.gui;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.util.*;
@@ -14,10 +15,7 @@ import com.l7tech.server.GatewayFeatureSet;
 import com.l7tech.server.GatewayFeatureSets;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
+import javax.swing.event.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.tree.*;
 import java.awt.*;
@@ -48,7 +46,6 @@ public class LicenseSpecPanel extends JPanel {
      * We wait this long because firing an update can cause the cursor to move to the end of the text field.
      */
     private static final long INACTIVITY_UPDATE_MILLIS = 2000;
-
 
     private JPanel rootPanel;
     private JTextField idField;
@@ -83,6 +80,7 @@ public class LicenseSpecPanel extends JPanel {
     private JLabel detailsLabel;
     private JTextField featureLabelField;
     private JButton defaultFeatureLabelButton;
+    private JList attributesList;
 
     private JTextField defaultTextField = new JTextField();
     private JComboBox defaultComboBox = new JComboBox();
@@ -125,18 +123,27 @@ public class LicenseSpecPanel extends JPanel {
             EULA_NONE,
             EULA_CUSTOM
     };
-
-    // ----
-    // Contstructor
-    // ----
+    private final Set<String> allLicAttrNames;
 
     public LicenseSpecPanel() {
+        ResourceBundle resources = ResourceBundle.getBundle("com/l7tech/internal/license/gui/resources/licenseAttributes");
+        allLicAttrNames = resources.keySet();
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         add(rootPanel);
         init();
     }
 
     private void init() {
+        DefaultListModel attributesListModel = new DefaultListModel();
+        for (String attr: allLicAttrNames) attributesListModel.addElement(attr);
+        attributesList.setModel(attributesListModel);
+        attributesList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        attributesList.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                fireUpdate();
+            }
+        });
+
         idField.addFocusListener(getFocusListener());
         descriptionField.addFocusListener(getFocusListener());
         licenseeEmailField.addFocusListener(getFocusListener());
@@ -368,11 +375,28 @@ public class LicenseSpecPanel extends JPanel {
         if (spec == null) spec = new LicenseSpec();
         setText(idField, tt(spec.getLicenseId()));
         setText(descriptionField, tt(spec.getDescription()));
+        updateLicenseAttributeList(spec);
         setText(licenseeEmailField, tt(spec.getLicenseeContactEmail()));
         setText(licenseeNameField, tt(spec.getLicenseeName()));
 
-        setText(startField, tt(spec.getStartDate()));
-        setText(expiryField, tt(spec.getExpiryDate()));
+        String start = tt(spec.getStartDate());
+        String expiry = tt(spec.getExpiryDate());
+        setText(startField, start);
+        setText(expiryField, expiry);
+        // Check if "Start Date" or "Expiry Date" is specified or not for a special license attribute, "Subscription".
+        Set<String> attrs = spec.getAttributes();
+        if (attrs.contains("Subscription")) {
+            if ("".equals(start) && "".equals(expiry)) {
+                throw new RuntimeException("For a Subscription license, Start Date and Expiry Date are mandatory requirements.",
+                    new InvalidLicenseException());
+            } else if ("".equals(start)) {
+                throw new RuntimeException("For a Subscription license, Start Date is a mandatory requirement.",
+                    new InvalidLicenseException());
+            } else if ("".equals(expiry)) {
+                throw new RuntimeException("For a Subscription license, Expiry Date is a mandatory requirement.",
+                    new InvalidLicenseException());
+            }
+        }
 
         setText(productField, tt(spec.getProduct()));
         setText(majorVersionField, tt(spec.getVersionMajor()));
@@ -398,6 +422,63 @@ public class LicenseSpecPanel extends JPanel {
         getSpec(); // update all field colors
     }
 
+    /**
+     * Update the attribute list in the spec panel.
+     * @param spec: the license spec
+     * @return an error message.  Null if no errors exist.
+     */
+    private void updateLicenseAttributeList(LicenseSpec spec) {
+        Set<String> newAttrList = spec.getAttributes();
+        List<String> notSuchAttrs = new ArrayList<String>();
+        // Remove all list-selection listeners.  Otherwise, spec panel will update xml and cause infinite loop.
+        ListSelectionListener listeners[] = attributesList.getListSelectionListeners();
+        for (ListSelectionListener listener: listeners) attributesList.removeListSelectionListener(listener);
+        // Before updating the attribute JList, clean all selections in the JList.
+        attributesList.clearSelection();
+
+        // Check if new attribute list is empty or not.  If not, update the attribute JList in the license spec panel.
+        if (! newAttrList.isEmpty()) {
+            Vector<Integer> indexVector = new Vector<Integer>(newAttrList.size());
+            DefaultListModel model = (DefaultListModel)attributesList.getModel();
+            for (String attr: newAttrList) {
+                int index = model.indexOf(attr);
+                // No such attribute exists
+                if (index == -1) {
+                    notSuchAttrs.add(attr);
+                }
+                // This is one that will be selected in the attribute JList.
+                else {
+                    indexVector.add(index);
+                }
+            }
+
+            // Update the attribute JList in the spec panel if applicable.
+            if (!indexVector.isEmpty()) {
+                int indices[] = new int[indexVector.size()];
+                for (int i = 0; i < indexVector.size(); i++) indices[i] = indexVector.get(i);
+                attributesList.setSelectedIndices(indices);
+            }
+
+            // Check if there are existing some unknown attributes.  If so, report an error.
+            if (!notSuchAttrs.isEmpty()) {
+                StringBuilder errMsg = new StringBuilder();
+                for (int i = 0; i < notSuchAttrs.size(); i++) {
+                    errMsg.append(" ").append(notSuchAttrs.get(i));
+                    if (i < notSuchAttrs.size() - 1) {
+                        errMsg.append(",");
+                    }
+                }
+                // Before throwing an exception, add back all list-selection listeners.
+                for (ListSelectionListener listener: listeners) attributesList.addListSelectionListener(listener);
+
+                throw new RuntimeException("The license attribute(s)," + errMsg.toString()  + " not existing.",
+                        new InvalidLicenseException());
+            }
+        }
+        // Add back all list-selection listeners, since we remove them at the beginning of the method.
+        for (ListSelectionListener listener: listeners) attributesList.addListSelectionListener(listener);
+    }
+
     private void setText(JTextField field, String val) {
         field.setText(val);
         oldFieldValues.put(field, val);
@@ -421,6 +502,7 @@ public class LicenseSpecPanel extends JPanel {
         spec.setHostname(fts(hostField));
         spec.setIp(fts(ipField));
         spec.setFeatureLabel(fts(featureLabelField));
+        spec.setAttributes(getAttributes());
 
         Object ecb = eulaComboBox.getSelectedItem();
         if (EULA_CUSTOM.equals(ecb)) {
@@ -436,6 +518,22 @@ public class LicenseSpecPanel extends JPanel {
     }
 
     /**
+     * Get all names of selected attributes from the JList
+     * @return a list of the names of selected attributes.
+     */
+    private Set<String> getAttributes() {
+        Set<String> attributes = new HashSet<String>(allLicAttrNames.size());
+        ListModel model = attributesList.getModel();
+        for(int i = 0; i < model.getSize(); i++) {
+            if (attributesList.isSelectedIndex(i)) {
+                attributes.add((String)model.getElementAt(i));
+            }
+        }
+        return attributes;
+    }
+    
+    /**
+     *
      * Find all checked features and make sure they get added to spec.
      * @param spec the LicenseSpec to update.  Required.
      */

@@ -33,9 +33,14 @@ public class IpListPanel extends JPanel {
     private JRadioButton rbSpecify;
     private JRadioButton rbLookupInDns;
     private JComboBox cbStrategy;
+    private JRadioButton useDifferentURLsRadioButton;
 
     public IpListPanel() {
         init();
+    }
+
+    public void alsoEnableDiffURLS() {
+        useDifferentURLsRadioButton.setVisible(true);
     }
 
     private void init() {
@@ -54,6 +59,9 @@ public class IpListPanel extends JPanel {
         ipBg.add(rbLookupInDns);
         rbSpecify.addChangeListener(changeListener);
         ipBg.add(rbSpecify);
+        useDifferentURLsRadioButton.addChangeListener(changeListener);
+        ipBg.add(useDifferentURLsRadioButton);
+        useDifferentURLsRadioButton.setVisible(false);
 
         ipList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         ipList.addListSelectionListener(new ListSelectionListener() {
@@ -85,6 +93,10 @@ public class IpListPanel extends JPanel {
                 else
                     dlg = new GetIpDialog((Frame)null);
 
+                if (!rbSpecify.isSelected()) {
+                    dlg.noValidateFormat();
+                    dlg.setTitle("Add URL");
+                }
                 dlg.pack();
                 Utilities.centerOnScreen(dlg);
 
@@ -112,13 +124,38 @@ public class IpListPanel extends JPanel {
         updateEnableState();
     }
 
+    public static final int DNS = 0;
+    public static final int CUSTOM_IPS = 1;
+    public static final int CUSTOM_URLS = 2;
+    public interface StateCallback {
+        void stateChanged(int newState);
+    }
+    private StateCallback stateCallback;
+    public void registerStateCallback (StateCallback callback) {
+        this.stateCallback = callback;
+    }
+    private JRadioButton lastmode = null;
+
     /** Check for any widgets that should be enabled or disabled after a GUI state change. */
     private void updateEnableState() {
-        boolean ips = rbSpecify.isSelected();
+        boolean ips = rbSpecify.isSelected() || useDifferentURLsRadioButton.isSelected();
+        JRadioButton newmode = null;
+        if (useDifferentURLsRadioButton.isSelected()) newmode = useDifferentURLsRadioButton;
+        if (rbSpecify.isSelected()) newmode = rbSpecify;
+        if (newmode != null && newmode != lastmode) {
+            // clear list if switch between incompatible modes
+            ipList.setListData(new String[0]);
+        }
+        if (newmode != null) lastmode = newmode;
         ipList.setEnabled(ips);
         addButton.setEnabled(ips);
         cbStrategy.setEnabled(ips);
         removeButton.setEnabled(ips && ipList.getSelectedValue() != null);
+        if (stateCallback != null) {
+            if (rbSpecify.isSelected()) stateCallback.stateChanged(CUSTOM_IPS);
+            else if (useDifferentURLsRadioButton.isSelected()) stateCallback.stateChanged(CUSTOM_URLS);
+            else stateCallback.stateChanged(DNS);
+        }
     }
 
     private java.util.List getAddressesList() {
@@ -151,9 +188,21 @@ public class IpListPanel extends JPanel {
         return rbSpecify.isSelected();
     }
 
+    public boolean isURLsEnabled() {
+        return useDifferentURLsRadioButton.isSelected();
+    }
+
     /** @param enableAddresses true if the "Specify IP addresses" radio buttons should be selected; otherwise, false. */
     public void setAddressesEnabled(boolean enableAddresses) {
+        useDifferentURLsRadioButton.setSelected(!enableAddresses);
         rbSpecify.setSelected(enableAddresses);
+        rbLookupInDns.setSelected(!enableAddresses);
+        updateEnableState();
+    }
+
+    public void setURLsEnabled(boolean enableAddresses) {
+        useDifferentURLsRadioButton.setSelected(enableAddresses);
+        rbSpecify.setSelected(!enableAddresses);
         rbLookupInDns.setSelected(!enableAddresses);
         updateEnableState();
     }

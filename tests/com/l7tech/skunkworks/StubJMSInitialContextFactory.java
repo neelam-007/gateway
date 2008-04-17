@@ -6,9 +6,11 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
+import java.util.StringTokenizer;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.Serializable;
+import java.net.URL;
 import javax.naming.spi.InitialContextFactory;
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -56,7 +58,7 @@ import javax.jms.MessageListener;
  *
  * To configure the JMS Stub:
  * Direction: Outbound
- * JNDI Connection URL: *
+ * JNDI Connection URL: http://localhost/?sendFailureFrequency=5&receiveFailureFrequency=10
  * Initial Context Factory Class: com.l7tech.skunkworks.StubJMSInitialContextFactory
  * Queue Connection Factory Name: QueueConnectionFactory
  * Queue Name: *
@@ -71,10 +73,41 @@ public class StubJMSInitialContextFactory implements InitialContextFactory {
 
     public static final class StubJMSContext implements Context {
 
-        private Hashtable<?, ?> environment;
+        private Hashtable environment;
 
-        public StubJMSContext(Hashtable<?, ?> environment) {
+        public StubJMSContext(Hashtable environment) {
             this.environment = environment;
+        }
+
+        @SuppressWarnings( { "unchecked" } )
+        private void populateEnv() {
+            String urlStr = (String) environment.get(Context.PROVIDER_URL);
+            if ( urlStr != null ) {
+                try {
+                    URL url = new URL(urlStr);
+                    String qs = url.getQuery();
+                    if ( qs != null ) {
+                        StringTokenizer strtok = new StringTokenizer(qs, "&");
+                        while( strtok.hasMoreTokens() ) {
+                            String token = strtok.nextToken();
+                            if ( token != null ) {
+                                int index = token.indexOf( '=' );
+                                if ( index > 0 ) {
+                                    String name = token.substring( 0, index );
+                                    String value = token.substring( index+1 );
+                                    System.out.println("StubJMS property " + name + " = " + value);
+                                    environment.put( name, value );
+                                } else {
+                                    environment.put( token, "" );
+                                }
+                            }
+                        }
+
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         public Object addToEnvironment(String propName, Object propVal) throws NamingException {
@@ -153,7 +186,8 @@ public class StubJMSInitialContextFactory implements InitialContextFactory {
             logger.log(Level.INFO, "Performing lookup for '"+name+"'.");
 
             if (name.toLowerCase().endsWith("connectionfactory")) {
-                return new StubJMSQueueConnectionFactory();
+                populateEnv();
+                return new StubJMSQueueConnectionFactory(environment);
             }
             else {
                 return new StubJMSQueueDestination();    
@@ -193,28 +227,40 @@ public class StubJMSInitialContextFactory implements InitialContextFactory {
 
     public static final class StubJMSQueueConnectionFactory implements QueueConnectionFactory {
         
+        private Hashtable<?, ?> environment;
+
+        private StubJMSQueueConnectionFactory( Hashtable<?, ?> environment ) {
+            this.environment = environment;
+        }
+
         public QueueConnection createQueueConnection() throws JMSException {
             logger.info("Creating QueueConnection");
-            return new StubJMSQueueConnection();
+            return new StubJMSQueueConnection(environment);
         }
 
         public QueueConnection createQueueConnection(String string, String string1) throws JMSException {
             logger.info("Creating QueueConnection");
-            return new StubJMSQueueConnection();
+            return new StubJMSQueueConnection(environment);
         }
 
         public Connection createConnection() throws JMSException {
             logger.info("Creating QueueConnection");
-            return new StubJMSQueueConnection();
+            return new StubJMSQueueConnection(environment);
         }
 
         public Connection createConnection(String string, String string1) throws JMSException {
             logger.info("Creating QueueConnection");
-            return new StubJMSQueueConnection();
+            return new StubJMSQueueConnection(environment);
         }
     }
 
     public static final class StubJMSQueueConnection implements QueueConnection {
+
+        private Hashtable<?, ?> environment;
+
+        private StubJMSQueueConnection( Hashtable<?, ?> environment ) {
+            this.environment = environment;
+        }
 
         public void close() throws JMSException {
         }
@@ -229,7 +275,7 @@ public class StubJMSInitialContextFactory implements InitialContextFactory {
 
         public Session createSession(boolean b, int i) throws JMSException {
             logger.info("Creating Session");
-            return new StubJMSQueueSession();
+            return new StubJMSQueueSession(environment);
         }
 
         public String getClientID() throws JMSException {
@@ -258,7 +304,7 @@ public class StubJMSInitialContextFactory implements InitialContextFactory {
 
         public QueueSession createQueueSession(boolean b, int i) throws JMSException {
             logger.info("Creating QueueSession");
-            return new StubJMSQueueSession();
+            return new StubJMSQueueSession(environment);
         }
 
         public ConnectionConsumer createConnectionConsumer(Queue queue, String string, ServerSessionPool serverSessionPool, int i) throws JMSException {
@@ -267,8 +313,56 @@ public class StubJMSInitialContextFactory implements InitialContextFactory {
     }
 
     public static class StubJMSQueueSession implements QueueSession {
+        private int sendCount = 0;
+        private int receiveCount = 0;
 
         private Message message;
+
+        private Hashtable environment;
+
+        private StubJMSQueueSession( Hashtable environment ) {
+            this.environment = environment;
+        }
+
+        boolean doSendFailure() {
+            boolean fail = false;
+
+            try {
+                String value = (String) environment.get( "sendFailureFrequency" );
+                if ( value != null ) {
+                    int failures = Integer.parseInt( value );
+                    System.out.println( "JMSStub using send failure frequency: " + failures );
+
+                    if ( failures > 0 && ++sendCount%failures==0 ) {
+                        fail = true;
+                    }                    
+                }
+            } catch (NumberFormatException nfe) {
+                nfe.printStackTrace();
+            }
+
+            return fail;
+        }
+
+        boolean doReceiveFailure() {
+            boolean fail = false;
+
+            try {
+                String value = (String) environment.get( "receiveFailureFrequency" );
+                if ( value != null ) {
+                    int failures = Integer.parseInt( value );
+                    System.out.println( "JMSStub using receive failure frequency: " + failures );
+
+                    if ( failures > 0 && ++receiveCount%failures==0 ) {
+                        fail = true;
+                    }
+                }
+            } catch (NumberFormatException nfe) {
+                nfe.printStackTrace();
+            }
+
+            return fail;
+        }
 
         Message getMessage() {
             return message;
@@ -421,7 +515,13 @@ public class StubJMSInitialContextFactory implements InitialContextFactory {
         private StubJMSQueueSession stubSession;
 
         public StubJMSQueueReceiver(StubJMSQueueSession session) {
-            stubSession = session;
+            this.stubSession = session;
+        }
+
+        private void checkFail() throws JMSException {
+            if ( stubSession.doReceiveFailure() ) {
+                throw new JMSException("Simulated JMS receive failure");
+            }
         }
 
         public Queue getQueue() throws JMSException {
@@ -440,14 +540,17 @@ public class StubJMSInitialContextFactory implements InitialContextFactory {
         }
 
         public Message receive() throws JMSException {
+            checkFail();
             return stubSession.getMessage();
         }
 
         public Message receive(long l) throws JMSException {
+            checkFail();
             return stubSession.getMessage();
         }
 
         public Message receiveNoWait() throws JMSException {
+            checkFail();
             return stubSession.getMessage();
         }
 
@@ -456,11 +559,16 @@ public class StubJMSInitialContextFactory implements InitialContextFactory {
     }
 
     public static class StubJMSQueueSender implements QueueSender {
-        
         private StubJMSQueueSession stubSession;
 
         public StubJMSQueueSender(StubJMSQueueSession session) {
             stubSession = session;
+        }
+
+        private void checkFail() throws JMSException {
+            if ( stubSession.doSendFailure() ) {
+                throw new JMSException("Simulated JMS send failure");
+            }
         }
 
         public Queue getQueue() throws JMSException {
@@ -468,18 +576,22 @@ public class StubJMSInitialContextFactory implements InitialContextFactory {
         }
 
         public void send(Message message) throws JMSException {
+            checkFail();
             stubSession.setMessage(message);
         }
 
         public void send(Message message, int i, int i1, long l) throws JMSException {
+            checkFail();
             stubSession.setMessage(message);
         }
 
         public void send(Queue queue, Message message) throws JMSException {
+            checkFail();
             stubSession.setMessage(message);
         }
 
         public void send(Queue queue, Message message, int i, int i1, long l) throws JMSException {
+            checkFail();
             stubSession.setMessage(message);
         }
 
@@ -538,7 +650,7 @@ public class StubJMSInitialContextFactory implements InitialContextFactory {
         private String messageText = "";
         private Destination replyTo;
         private String correlationID = "";
-        private Map<String,Object> properties = new HashMap();
+        private Map<String,Object> properties = new HashMap<String,Object>();
 
         public long getBodyLength() throws JMSException {
             return messageText.length();

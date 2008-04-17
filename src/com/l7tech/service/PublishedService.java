@@ -255,7 +255,7 @@ public class PublishedService extends NamedEntityImp {
         final PublishedService publishedService = (PublishedService)o;
 
         if (_wsdlUrl != null ? !_wsdlUrl.equals(publishedService._wsdlUrl) : publishedService._wsdlUrl != null) return false;
-        if (_oid != DEFAULT_OID ? _oid == publishedService._oid : publishedService._oid != DEFAULT_OID) return false;
+        if (_oid != DEFAULT_OID ? _oid != publishedService._oid : publishedService._oid != DEFAULT_OID) return false;
 
         return true;
     }

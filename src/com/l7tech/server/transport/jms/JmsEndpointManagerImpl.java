@@ -37,7 +37,7 @@ public class JmsEndpointManagerImpl
     }
 
     public JmsEndpoint[] findEndpointsForConnection(long connectionOid) throws FindException {
-        StringBuffer sql = new StringBuffer("select endpoint.oid, endpoint.name, endpoint.destinationName ");
+        StringBuffer sql = new StringBuffer("select endpoint.oid, endpoint.name, endpoint.destinationName, endpoint.disabled ");
         sql.append("from endpoint in class ");
         sql.append(JmsEndpoint.class.getName());
         sql.append(" where endpoint.connectionOid = ?");

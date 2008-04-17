@@ -32,6 +32,7 @@ public class LicenseSpec {
     private String eulaText = null;
     private String featureLabel = null;
     private Set<String> rootFeatures = new LinkedHashSet<String>();
+    private Set<String> attributes = new HashSet<String>();
 
     /**
      * Create a LicenseSpec for generating an unsigned license.  Primarily useful for testing, since unsigned
@@ -78,6 +79,7 @@ public class LicenseSpec {
         this.setStartDate(license.getStartDate());
         this.setExpiryDate(license.getExpiryDate());
         this.setEulaText(license.getEulaText());
+        this.setAttributes(license.getAttributes());
 
         this.setIp(grants.getIp());
         this.setHostname(grants.getHostname());
@@ -295,5 +297,21 @@ public class LicenseSpec {
     /** @param featureLabel A string to show instead of the generated feature grants string, or null to just use the generated string. */
     public void setFeatureLabel(String featureLabel) {
         this.featureLabel = featureLabel;
+    }
+
+    /**
+     * A setter for the license attribute list.
+     * @param attributes: the updated(or new) license attribute list.
+     */
+    public void setAttributes(Set<String> attributes) {
+        this.attributes = attributes;
+    }
+
+    /**
+     * A getter to return the current license attribute list.
+     * @return the current license attribute list.
+     */
+    public Set<String> getAttributes() {
+        return attributes;
     }
 }

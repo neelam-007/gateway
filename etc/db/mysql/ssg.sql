@@ -287,10 +287,14 @@ CREATE TABLE jms_endpoint(
   failure_destination_name varchar(128),
   acknowledgement_type varchar(128),    
   reply_type integer default '0',
+  reply_to_queue_name varchar(128),
+  disabled tinyint(1) NOT NULL default 0,
   username varchar(32) default '',
   password varchar(32) default '',
   max_concurrent_requests integer default '1',
   is_message_source tinyint default '0',
+  outbound_message_type varchar(128),
+  use_message_id_for_correlation tinyint(1) NOT NULL DEFAULT 0,
   primary key(objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 

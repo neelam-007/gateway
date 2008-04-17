@@ -170,8 +170,19 @@ public class HttpRoutingAssertionDialog extends JDialog {
             }
         };
 
+        ipListPanel.alsoEnableDiffURLS();
         initComponents(readOnly);
         initFormData();
+
+        ipListPanel.registerStateCallback(new IpListPanel.StateCallback() {
+            public void stateChanged(int newState) {
+                if (newState == IpListPanel.CUSTOM_URLS) {
+                    urlPanel.setEnabled(false);
+                } else {
+                    urlPanel.setEnabled(true);
+                }
+            }
+        });
     }
 
     /**
@@ -544,10 +555,16 @@ public class HttpRoutingAssertionDialog extends JDialog {
         assertion.setTaiCredentialChaining(authTaiRadio.isSelected());
         assertion.setPassthroughHttpAuthentication(authPassthroughRadio.isSelected());
 
-        if (ipListPanel.isAddressesEnabled()) {
+        if (ipListPanel.isURLsEnabled()) {
+            assertion.setCustomURLs(ipListPanel.getAddresses());
+            assertion.setCustomIpAddresses(null);
+            assertion.setFailoverStrategyName(ipListPanel.getFailoverStrategyName());
+        } else if (ipListPanel.isAddressesEnabled()) {
+            assertion.setCustomURLs(null);
             assertion.setCustomIpAddresses(ipListPanel.getAddresses());
             assertion.setFailoverStrategyName(ipListPanel.getFailoverStrategyName());
         } else {
+            assertion.setCustomURLs(null);
             assertion.setCustomIpAddresses(null);
             assertion.setFailoverStrategyName(ipListPanel.getFailoverStrategyName());
         }
@@ -625,8 +642,15 @@ public class HttpRoutingAssertionDialog extends JDialog {
         which.setSelected(true);
 
         authSamlRadio.setSelected(assertion.isAttachSamlSenderVouches());
-        ipListPanel.setAddressesEnabled(assertion.getCustomIpAddresses() != null);
-        ipListPanel.setAddresses(assertion.getCustomIpAddresses());
+        if (assertion.getCustomURLs() != null) {
+            ipListPanel.setURLsEnabled(true);
+            ipListPanel.setAddresses(assertion.getCustomURLs());
+        } else if (assertion.getCustomIpAddresses() != null) {
+            ipListPanel.setAddressesEnabled(true);
+            ipListPanel.setAddresses(assertion.getCustomIpAddresses());
+        } else {
+            ipListPanel.setAddressesEnabled(false);
+        }
         ipListPanel.setFailoverStrategyName(assertion.getFailoverStrategyName());
 
         Integer connectTimeout = assertion.getConnectionTimeout();

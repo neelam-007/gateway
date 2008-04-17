@@ -358,98 +358,126 @@ public class ServiceCache
 
     /**
      * @param req the soap request to resolve the service from
+     * @param serviceOid the OID of the service to resolve to
+     * @return the cached version of the service that this request resolve to. null if no match
+     * @throws ServiceResolutionException
+     */
+    public PublishedService resolve(Message req, ResolutionListener rl, Long serviceOid) throws ServiceResolutionException {
+        rwlock.readLock().lock();
+        try {
+            Collection<PublishedService> serviceSet;
+            PublishedService service = services.get( serviceOid );
+            if ( service == null ) {
+                serviceSet = Collections.emptySet();
+            } else {
+                serviceSet = Collections.singleton(service);
+            }
+
+            return resolve( req, rl, serviceSet );
+        } finally {
+            rwlock.readLock().unlock();
+        }
+    }
+
+    /**
+     * @param req the soap request to resolve the service from
      * @return the cached version of the service that this request resolve to. null if no match
      * @throws ServiceResolutionException
      */
     public PublishedService resolve(Message req, ResolutionListener rl) throws ServiceResolutionException {
-        Collection<PublishedService> serviceSet;
         rwlock.readLock().lock();
         try {
-            serviceSet = Collections.unmodifiableCollection(services.values());
-
-            if (serviceSet.isEmpty()) {
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NO_SERVICES);
-                return null;
-            }
-
-            boolean notified = false;
-            for (ServiceResolver resolver : activeResolvers) {
-                if (rl != null && resolver.usesMessageContent() && !notified) {
-                    notified = true;
-                    if (!rl.notifyPreParseServices(req, getPolicyMetadata(serviceSet)))
-                        return null;
-                }
-
-                Set<PublishedService> resolvedServices;
-                Result result = resolver.resolve(req, serviceSet);
-                if (result == Result.NOT_APPLICABLE) {
-                    // next resolver gets the same subset
-                    continue;
-                } else if (result == Result.NO_MATCH) {
-                    // Early failure
-                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_FAILED_EARLY, resolver.getClass().getSimpleName());
-                    return null;
-                } else {
-                    // Matched at least one... Next resolver can narrow it down
-                    resolvedServices = result.getMatches();
-                }
-
-                int size = resolvedServices.size();
-                // if remaining services are 0 or 1, we are done
-                if (size == 1) {
-                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED_EARLY, resolver.getClass().getSimpleName());
-                    serviceSet = resolvedServices;
-                    break;
-                } else if (size == 0) {
-                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_FAILED_EARLY, resolver.getClass().getSimpleName());
-                    return null;
-                }
-
-                // otherwise, try to narrow down further using next resolver
-                serviceSet = resolvedServices;
-            }
-
-            if (serviceSet.isEmpty()) {
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NO_MATCH);
-                return null;
-            } else if (serviceSet.size() == 1) {
-                Set<PolicyMetadata> metadatas = getPolicyMetadata(serviceSet);
-                if (rl != null && !notified) {
-                    if (!rl.notifyPreParseServices(req, metadatas))
-                        return null;
-                }
-
-                PublishedService service = serviceSet.iterator().next();
-                XmlKnob xk = (XmlKnob) req.getKnob(XmlKnob.class);
-
-                if (!service.isSoap() || service.isLaxResolution()) {
-                    if (xk != null) xk.setTarariWanted(metadatas.iterator().next().isTarariWanted());
-                    return service;
-                }
-
-                // If this service is set to strict mode, validate that the message is soap, and that it matches an
-                // operation supported in the WSDL.
-                if (req.getKnob(SoapKnob.class) == null) {
-                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NOT_SOAP);
-                    return null;
-                } else {
-                    // avoid re-Tarari-ing request that's already DOM parsed unless some assertions need it bad
-                    if (xk != null) xk.setTarariWanted(metadatas.iterator().next().isTarariWanted());
-                    Result services = soapOperationResolver.resolve(req, serviceSet);
-                    if (services.getMatches().isEmpty()) {
-                        auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_OPERATION_MISMATCH, service.getName(), service.getId());
-                        return null;
-                    } else {
-                        auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED, service.getName(), service.getId());
-                        return service;
-                    }
-                }
-            } else {
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_MULTI);
-                return null;
-            }
+            Collection<PublishedService> serviceSet = Collections.unmodifiableCollection(services.values());
+            return resolve( req, rl, serviceSet );
         } finally {
             rwlock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Caller must hold read lock
+     */
+    private PublishedService resolve(Message req, ResolutionListener rl, Collection<PublishedService> serviceSet) throws ServiceResolutionException {
+        if (serviceSet.isEmpty()) {
+            auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NO_SERVICES);
+            return null;
+        }
+
+        boolean notified = false;
+        for (ServiceResolver resolver : activeResolvers) {
+            if (rl != null && resolver.usesMessageContent() && !notified) {
+                notified = true;
+                if (!rl.notifyPreParseServices(req, getPolicyMetadata(serviceSet)))
+                    return null;
+            }
+
+            Set<PublishedService> resolvedServices;
+            Result result = resolver.resolve(req, serviceSet);
+            if (result == Result.NOT_APPLICABLE) {
+                // next resolver gets the same subset
+                continue;
+            } else if (result == Result.NO_MATCH) {
+                // Early failure
+                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_FAILED_EARLY, resolver.getClass().getSimpleName());
+                return null;
+            } else {
+                // Matched at least one... Next resolver can narrow it down
+                resolvedServices = result.getMatches();
+            }
+
+            int size = resolvedServices.size();
+            // if remaining services are 0 or 1, we are done
+            if (size == 1) {
+                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED_EARLY, resolver.getClass().getSimpleName());
+                serviceSet = resolvedServices;
+                break;
+            } else if (size == 0) {
+                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_FAILED_EARLY, resolver.getClass().getSimpleName());
+                return null;
+            }
+
+            // otherwise, try to narrow down further using next resolver
+            serviceSet = resolvedServices;
+        }
+
+        if (serviceSet.isEmpty()) {
+            auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NO_MATCH);
+            return null;
+        } else if (serviceSet.size() == 1) {
+            Set<PolicyMetadata> metadatas = getPolicyMetadata(serviceSet);
+            if (rl != null && !notified) {
+                if (!rl.notifyPreParseServices(req, metadatas))
+                    return null;
+            }
+
+            PublishedService service = serviceSet.iterator().next();
+            XmlKnob xk = (XmlKnob) req.getKnob(XmlKnob.class);
+
+            if (!service.isSoap() || service.isLaxResolution()) {
+                if (xk != null) xk.setTarariWanted(metadatas.iterator().next().isTarariWanted());
+                return service;
+            }
+
+            // If this service is set to strict mode, validate that the message is soap, and that it matches an
+            // operation supported in the WSDL.
+            if (req.getKnob(SoapKnob.class) == null) {
+                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NOT_SOAP);
+                return null;
+            } else {
+                // avoid re-Tarari-ing request that's already DOM parsed unless some assertions need it bad
+                if (xk != null) xk.setTarariWanted(metadatas.iterator().next().isTarariWanted());
+                Result services = soapOperationResolver.resolve(req, serviceSet);
+                if (services.getMatches().isEmpty()) {
+                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_OPERATION_MISMATCH, service.getName(), service.getId());
+                    return null;
+                } else {
+                    auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED, service.getName(), service.getId());
+                    return service;
+                }
+            }
+        } else {
+            auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_MULTI);
+            return null;
         }
     }
 
