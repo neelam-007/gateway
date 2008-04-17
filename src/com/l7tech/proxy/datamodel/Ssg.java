@@ -385,34 +385,28 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
         return url;
     }
 
+    /** @return URL of this Gateway's password change service, or null if this service isn't available from this Gateway. */
     public URL getServerPasswordChangeUrl() {
-        URL url = null;
+        if (!isPasswordChangeServiceSupported())
+            return null;
         try {
-            url = new URL("https", getSsgAddress(), getSslPort(), SecureSpanConstants.PASSWD_SERVICE_FILE);
+            return new URL("https", getSsgAddress(), getSslPort(), SecureSpanConstants.PASSWD_SERVICE_FILE);
         } catch (MalformedURLException e) {
             log.log(Level.SEVERE, "Unable to build valid URL for Gateway's password changing service", e);
-            try {
-                return new URL("");
-            } catch (MalformedURLException e1) {
-                throw new RuntimeException(e1); // can't happen
-            }
+            return null;
         }
-        return url;
     }
 
+    /** @return URL of this Gateway's CA service, or null if this service isn't available from this Gateway. */
     public URL getServerCertificateSigningRequestUrl() {
-        URL url = null;
+        if (isGeneric())
+            return null;
         try {
-            url = new URL("https", getSsgAddress(), getSslPort(), SecureSpanConstants.CERT_REQUEST_FILE);
+            return new URL("https", getSsgAddress(), getSslPort(), SecureSpanConstants.CERT_REQUEST_FILE);
         } catch (MalformedURLException e) {
             log.log(Level.SEVERE, "Unable to build valid URL for Gateway's certificate signing service", e);
-            try {
-                return new URL("");
-            } catch (MalformedURLException e1) {
-                throw new RuntimeException(e1); // can't happen
-            }
+            return null;
         }
-        return url;
     }
 
     public String getSsgFile() {
@@ -873,5 +867,20 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     /** @return properties a map of generic properties to store in this Ssg */
     public Map<String, String> getProperties() {
         return properties;
+    }
+
+    /** @return true if WSDL lookups may be proxyable through this Gateway account. */
+    public boolean isWsdlProxySupported() {
+        return !isGeneric();
+    }
+
+    /** @return true if automatic policy downloads can be attempted using this Gateway account. */
+    public boolean isPolicyDiscoverySupported() {
+        return !isGeneric();
+    }
+
+    /** @return true if a password change service may be available using this Gateway account. */
+    public boolean isPasswordChangeServiceSupported() {
+        return !isGeneric();
     }
 }

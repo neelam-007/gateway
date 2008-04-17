@@ -36,7 +36,7 @@ class BridgePolicyPanel extends JPanel {
 
     private Map<String, String> properties = new LinkedHashMap<String, String>();
 
-    public BridgePolicyPanel(final Dialog parent) {
+    public BridgePolicyPanel(final Dialog parent, final boolean allowUseSsl) {
         this.parentDialog = parent;
         setLayout(new BorderLayout());
         addButton.addActionListener(new ActionListener() {
@@ -72,6 +72,12 @@ class BridgePolicyPanel extends JPanel {
             }
         });
         enableButtons();
+
+        if (!allowUseSsl) {
+            cbUseSsl.setEnabled(false);
+            cbUseSsl.setSelected(false);
+            cbUseSsl.setVisible(false);
+        }
 
         propertiesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         propertiesTable.setModel(tableModel);
@@ -120,7 +126,7 @@ class BridgePolicyPanel extends JPanel {
     private void edit(final String name, final String value) {
         final BridgePolicyPropertyDialog dlg = new BridgePolicyPropertyDialog(parentDialog, name, value);
         dlg.pack();
-        Utilities.centerOnParent(dlg);
+        Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (dlg.isOk()) {

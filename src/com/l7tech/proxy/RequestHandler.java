@@ -196,7 +196,7 @@ public class RequestHandler extends AbstractHttpHandler {
         log.fine("Mapped to Gateway: " + ssg);
         CurrentSslPeer.clear();
 
-        if (isWsdl) {
+        if (isWsdl && ssg.isWsdlProxySupported()) {
             handleWsdlRequest(httpRequest, httpResponse, ssg);
             return;
         }
@@ -410,9 +410,11 @@ public class RequestHandler extends AbstractHttpHandler {
             o.println("<p>SecureSpan "+ Constants.APP_NAME+" is ready to proxy services provided by the following Gateways:</p><ul>");
             int port = clientProxy.getBindPort();
             for (Ssg ssg : ssgs) {
-                String wsilUrl = "http://" + request.getHost() + ":" + port + "/" +
-                        ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX;
-                o.println("<li><a href=\"" + wsilUrl + "\">" + ssg.getSsgAddress() + " (" + ssg.getUsername() + ")</a></li>");
+                if (ssg.isWsdlProxySupported()) {
+                    String wsilUrl = "http://" + request.getHost() + ":" + port + "/" +
+                                     ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX;
+                    o.println("<li><a href=\"" + wsilUrl + "\">" + ssg.getSsgAddress() + " (" + ssg.getUsername() + ")</a></li>");
+                }
             }
             o.println("</ul>");
         }

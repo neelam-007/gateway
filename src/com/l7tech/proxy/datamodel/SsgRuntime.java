@@ -362,6 +362,8 @@ public class SsgRuntime {
         synchronized (ssg) {
             if (tokenStrategiesByType == null) {
                 tokenStrategiesByType = new HashMap();
+                if (ssg.isGeneric()) // Generic account does not support any security token strategies
+                    return tokenStrategiesByType;
                 TokenStrategy samlStrat1 = ssg.getWsTrustSamlTokenStrategy();
                 TokenStrategy samlStrat2 = null;
                 if (samlStrat1 == null) {

@@ -3,6 +3,7 @@
  */
 package com.l7tech.server;
 
+import com.l7tech.admin.LicenseRuntimeException;
 import com.l7tech.common.AsyncAdminMethodsImpl;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
@@ -13,19 +14,16 @@ import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.keystore.SsgKeyEntry;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.SslCertificateSniffer;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
-import com.l7tech.admin.LicenseRuntimeException;
 
-import javax.net.ssl.*;
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -182,68 +180,11 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
     public X509Certificate[] retrieveCertFromUrl(String purl, boolean ignoreHostname)
       throws IOException, HostnameMismatchException {
         checkLicenseHeavy();
-        if (!purl.startsWith("https://")) throw new IllegalArgumentException("Can't load certificate from non-https URLs");
-        URL url = new URL(purl);
-
-        SSLContext sslContext;
         try {
-            sslContext = SSLContext.getInstance("SSL");
-            sslContext.init(null,
-              new X509TrustManager[]{new X509TrustManager() {
-                  public X509Certificate[] getAcceptedIssuers() {
-                      return new X509Certificate[0];
-                  }
-
-                  public void checkClientTrusted(X509Certificate[] x509Certificates, String s) {
-                  }
-
-                  public void checkServerTrusted(X509Certificate[] x509Certificates, String s) {
-                  }
-              }},
-              null);
-        } catch (NoSuchAlgorithmException e) {
-            logger.log(Level.INFO, e.getMessage(), e);
-            throw new IOException(e.getMessage());
-        } catch (KeyManagementException e) {
-            logger.log(Level.INFO, e.getMessage(), e);
-            throw new IOException(e.getMessage());
+            return SslCertificateSniffer.retrieveCertFromUrl(purl, ignoreHostname);
+        } catch (SslCertificateSniffer.HostnameMismatchException e) {
+            throw new HostnameMismatchException(e.getCertname(), e.getHostname());
         }
-
-        URLConnection gconn = url.openConnection();
-        if (gconn instanceof HttpsURLConnection) {
-            HttpsURLConnection conn = (HttpsURLConnection)gconn;
-            conn.setConnectTimeout( 20000 );
-            conn.setSSLSocketFactory(sslContext.getSocketFactory());
-            final String[] sawHost = new String[] { null };
-            if (ignoreHostname) {
-                conn.setHostnameVerifier(new HostnameVerifier() {
-                    public boolean verify(String s, SSLSession sslSession) {
-                        sawHost[0] = s;
-                        return true;
-                    }
-                });
-            }
-
-            try {
-                conn.connect();
-            } catch (IOException e) {
-                logger.log(Level.INFO, "Unable to connect to: " + purl);
-
-                // rethrow it
-                throw e;
-            }
-
-            try {
-                return (X509Certificate[])conn.getServerCertificates();
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "SSL server hostname didn't match cert", e);
-                if (e.getMessage().startsWith("HTTPS hostname wrong")) {
-                    throw new HostnameMismatchException(sawHost[0], url.getHost());
-                }
-                throw e;
-            }
-        } else
-            throw new IOException("URL resulted in a non-HTTPS connection");
     }
 
     public X509Certificate getSSGRootCert() throws IOException, CertificateException {

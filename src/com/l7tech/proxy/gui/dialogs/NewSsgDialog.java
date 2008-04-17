@@ -22,7 +22,6 @@ import java.util.logging.Logger;
  */
 public class NewSsgDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(NewSsgDialog.class.getName());
-    private static final String PROP_GENERIC_ENABLE = "com.l7tech.proxy.gui.dialogs.enableGenericWebService";
     private JPanel rootPanel;
     private JRadioButton radioTokenOther;
     private JRadioButton radioTokenTrustedGateway;
@@ -30,7 +29,6 @@ public class NewSsgDialog extends JDialog {
     private JRadioButton radioTokenFederatedPassive;
     private JRadioButton radioTrustedGateway;
     private JRadioButton radioRawUrl;
-    private JLabel genericWebServiceLabel;
     private JLabel imageLabel;
     private JPanel imagePanel;
     private JComboBox trustedSsgComboBox;
@@ -134,17 +132,6 @@ public class NewSsgDialog extends JDialog {
         radioTokenTrustedGateway.addActionListener(radioChanged);
         radioTokenFederatedPassive.addActionListener(radioChanged);
         radioRawUrl.addActionListener(radioChanged);
-
-        if(!Boolean.getBoolean(PROP_GENERIC_ENABLE)) {
-            radioRawUrl.setVisible(false);
-            radioRawUrl.setEnabled(false);
-            genericWebServiceLabel.setVisible(false);
-            genericWebServiceLabel.setEnabled(false);
-            Container radioParent = radioRawUrl.getParent();
-            //if (radioParent != null) radioParent.remove(radioRawUrl);
-            Container labelParent = genericWebServiceLabel.getParent();
-            //if (labelParent != null) labelParent.remove(genericWebServiceLabel);
-        }
 
         checkButtonState();
 

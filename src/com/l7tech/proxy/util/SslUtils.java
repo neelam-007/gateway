@@ -142,6 +142,8 @@ public class SslUtils {
             return;
         }
         URL url = ssg.getServerPasswordChangeUrl();
+        if (url == null)
+            throw new UnsupportedOperationException("Password change service is not available for Gateway account " + ssg);
         SimpleHttpClient client = ssg.getRuntime().getHttpClient();
         GenericHttpRequestParams params = new GenericHttpRequestParams(url);
         params.setPreemptiveAuthentication(true);
@@ -185,7 +187,8 @@ public class SslUtils {
      * @throws SignatureException           if the resulting cert was not signed by the correct CA key
      * @throws BadCredentialsException if the username or password was rejected by the CSR signer
      * @throws CertificateAlreadyIssuedException if the Gateway has already issued a certificate for this account
-     * @throws ServerFeatureUnavailableException if the Gateway isn't licensed for a CSR service
+     * @throws ServerFeatureUnavailableException if the Gateway isn't licensed for a CSR service; or,
+     *                                           if the given Ssg type doesn't offer CA services.
      */
     public static X509Certificate obtainClientCertificate(Ssg ssg, String username, char[] password,
                                                           CertificateRequest csr,
@@ -195,6 +198,8 @@ public class SslUtils {
                    SignatureException, CertificateAlreadyIssuedException, ServerFeatureUnavailableException
     {
         URL url = ssg.getServerCertificateSigningRequestUrl();
+        if (url == null)
+            throw new ServerFeatureUnavailableException("No certificate signing service available for Gateway account " + ssg);
         SimpleHttpClient client = ssg.getRuntime().getHttpClient();
         GenericHttpRequestParams params = new GenericHttpRequestParams(url);
         params.setContentType(ContentTypeHeader.parseValue("application/pkcs10"));

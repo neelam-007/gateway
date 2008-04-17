@@ -145,11 +145,12 @@ class SsgListPanel extends JPanel {
     }
 
     private void updateEnableDisableState() {
-        boolean haveSsg = getSelectedSsg() != null;
+        final Ssg ssg = getSelectedSsg();
+        boolean haveSsg = ssg != null;
         getActionDeleteSsg().setEnabled(haveSsg);
         getActionEditSsg().setEnabled(haveSsg);
         getActionSetDefaultSsg().setEnabled(haveSsg);
-        getChangePasswordAction().setEnabled(haveSsg);
+        getChangePasswordAction().setEnabled(haveSsg && ssg.isPasswordChangeServiceSupported());
     }
 
     /**

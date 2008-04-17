@@ -54,16 +54,27 @@ class SsgNetworkPanel extends JPanel {
     private JPanel proxyUrlLabelPanel;
     private JPanel wsdlUrlPanel;
     private JPanel proxyUrlPanel;
+    private JLabel configureNonstandardPortsLabel;
     private JLabel defaultSsgPortLabel;
     private JLabel defaultSslPortLabel;
+    private JLabel defaultSsgPortLabelLabel;
+    private JLabel defaultSslPortLabelLabel;
     private JPanel sslPortFieldPanel;
     private JPanel ssgPortFieldPanel;
     private JPanel ipListPanel;
     private JPanel outgoingRequestsPanel;
     private JTextField customLabelField;
     private JCheckBox customLabelCb;
+    private JLabel ssgPortFieldLabel;
+    private JLabel sslPortFieldLabel;
+    private JPanel configureNonstandardPortsSpacerPanel;
+    private JLabel wsdlUrlLabel;
+    private JPanel wsdlUrlSpacerPanel;
+    private JLabel configureIpAddressesLabel;
     private IpListPanel ipList;
-    private boolean enableOutgoingRequestsPanel;
+
+    private boolean allowCustomPorts;
+    private boolean allowWsdlProxy;
 
     private String endpointBase;
     private String defaultEndpoint;
@@ -73,15 +84,20 @@ class SsgNetworkPanel extends JPanel {
     private final Ssg ssg;
     private final SsgFinder ssgFinder;
 
-    public SsgNetworkPanel(InputValidator validator, Ssg ssg, SsgFinder ssgFinder, boolean enableOutgoingRequestsPanel) {
+    public SsgNetworkPanel(InputValidator validator, Ssg ssg, SsgFinder ssgFinder, boolean allowWsdlProxy, boolean allowCustomPorts) {
         this.validator = validator;
         this.ssg = ssg;
         this.ssgFinder = ssgFinder;
-        this.enableOutgoingRequestsPanel = enableOutgoingRequestsPanel;
-        initialize(enableOutgoingRequestsPanel);
+        this.allowWsdlProxy = allowWsdlProxy;
+        this.allowCustomPorts = allowCustomPorts;
+        initialize();
     }
 
-    private void initialize(boolean enableOutgoingRequestsPanel) {
+    private String serverType() {
+        return ssg.isGeneric() ? "Web service" : "SecureSpan Gateway";
+    }
+
+    private void initialize() {
         setLayout(new BorderLayout());
         add(networkPane);
 
@@ -89,9 +105,9 @@ class SsgNetworkPanel extends JPanel {
 
         // Endpoint panel
 
-        WrappingLabel splain01 = new WrappingLabel("The SecureSpan "+ Constants.APP_NAME +" listens for incoming messages at the " +
-                                                   "following local proxy URL, then routes the messages to the " +
-                                                   "SecureSpan Gateway:", 2);
+        JLabel splain01 = new JLabel("<HTML>The SecureSpan "+ Constants.APP_NAME +" listens for incoming messages at the " +
+                                                   "following<br/>local proxy URL, then routes the messages to the " +
+                                                   serverType() + ':');
         //x,y,rows,col,anchor,fill,sizex,sizey,minsize,prefsize,maxsize
         GridConstraints gc = new GridConstraints(0, 0, 1, 1,
                                                  GridConstraints.ANCHOR_NORTHWEST,
@@ -176,8 +192,8 @@ class SsgNetworkPanel extends JPanel {
             }
         }));
 
-        WrappingLabel splain02 = new WrappingLabel("The SecureSpan "+ Constants.APP_NAME +" offers proxied WSDL lookups at the " +
-                                                   "following local WSDL URL:", 1);
+        JLabel splain02 = new JLabel("<HTML>The SecureSpan "+ Constants.APP_NAME +" offers proxied WSDL lookups at the " +
+                                                   "following<br/>local WSDL URL:");
         wsdlUrlLabelPanel.add(splain02, gc);
 
         fieldWsdlEndpoint = new WrappingLabel("");
@@ -217,16 +233,45 @@ class SsgNetworkPanel extends JPanel {
         ipListPanel.setLayout(new BorderLayout());
         ipListPanel.add(ipList, BorderLayout.CENTER);
 
-        if (!enableOutgoingRequestsPanel) {
-            sslPortFieldPanel.setEnabled(false);
-            ssgPortFieldPanel.setEnabled(false);
-            radioNonstandardPorts.setEnabled(false);
-            radioNonstandardPorts.setSelected(false);
-            radioStandardPorts.setEnabled(false);
-            radioStandardPorts.setSelected(false);
+        if (!allowWsdlProxy) {
+            hideDeselectAndDisable(wsdlUrlLabel,
+                                   wsdlUrlLabelPanel,
+                                   wsdlUrlPanel,
+                                   wsdlUrlSpacerPanel);
         }
 
+        if (!allowCustomPorts) {
+            hideDeselectAndDisable(configureNonstandardPortsLabel,
+                                   configureNonstandardPortsSpacerPanel,
+                                   sslPortFieldLabel,
+                                   sslPortFieldPanel,
+                                   ssgPortFieldPanel,
+                                   ssgPortFieldLabel,
+                                   radioNonstandardPorts,
+                                   radioStandardPorts,
+                                   defaultSsgPortLabel,
+                                   defaultSsgPortLabelLabel,
+                                   defaultSslPortLabel,
+                                   defaultSslPortLabelLabel);
+        }
+
+        if (ssg.isGeneric()) {
+            JLabel[] labels = new JLabel[]{configureIpAddressesLabel, configureNonstandardPortsLabel};
+            for (JLabel lab : labels)
+                lab.setText(lab.getText().replaceAll("SecureSpan Gateway", "Web service"));
+        }
+
+
         updateCustomPortsEnableState();
+    }
+
+    private static void hideDeselectAndDisable(JComponent... comps) {
+        for (JComponent comp : comps) {
+            comp.setVisible(false);
+            comp.setEnabled(false);
+            if (comp instanceof AbstractButton)
+                ((AbstractButton)comp).setSelected(false);
+        }
     }
 
     String getLocalEndpoint() {
@@ -257,7 +302,7 @@ class SsgNetworkPanel extends JPanel {
     }
 
     void updateCustomPortsEnableState() {
-        boolean en = enableOutgoingRequestsPanel && radioNonstandardPorts.isSelected();
+        boolean en = allowCustomPorts && radioNonstandardPorts.isSelected();
         fieldSsgPort.setEnabled(en);
         fieldSslPort.setEnabled(en);
     }

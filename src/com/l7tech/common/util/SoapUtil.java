@@ -752,6 +752,11 @@ public class SoapUtil {
      * @throws InvalidDocumentFormatException if the message isn't soap, or there is more than one Header or MessageID
      */
     public static Element getWsaMessageIdElement(Document soapMsg, String otherWsaNamespaceUri) throws InvalidDocumentFormatException {
+        final String elName = MESSAGEID_EL_NAME;
+        return getWsaElement(soapMsg, elName, otherWsaNamespaceUri);
+    }
+
+    private static Element getWsaElement(Document soapMsg, String elName, String otherWsaNamespaceUri) throws InvalidDocumentFormatException {
         Element header = getHeaderElement(soapMsg);
         if (header == null) return null;
         final String[] namespaces;
@@ -762,7 +767,7 @@ public class SoapUtil {
             System.arraycopy(SoapUtil.WSA_NAMESPACE_ARRAY, 0, namespaces, 0, SoapUtil.WSA_NAMESPACE_ARRAY.length);
             namespaces[SoapUtil.WSA_NAMESPACE_ARRAY.length] = otherWsaNamespaceUri;
         }
-        return XmlUtil.findOnlyOneChildElementByName(header, namespaces, MESSAGEID_EL_NAME);
+        return XmlUtil.findOnlyOneChildElementByName(header, namespaces, elName);
     }
 
     /**
@@ -865,9 +870,19 @@ public class SoapUtil {
      * @throws InvalidDocumentFormatException if the message isn't soap, or there is more than one Header or RelatesTo
      */
     public static Element getWsaRelatesToElement(Document soapMsg) throws InvalidDocumentFormatException {
-        Element header = getHeaderElement(soapMsg);
-        if (header == null) return null;
-        return XmlUtil.findOnlyOneChildElementByName(header, WSA_NAMESPACE, RELATESTO_EL_NAME);
+        return getWsaRelatesToElement(soapMsg, null);
+    }
+
+    /**
+     * Get the L7a:RelatesTo element from the specified message, or null if there isn't one.
+     *
+     * @param soapMsg the soap envelope to examine
+     * @param otherNs an additional WS-Addressing namespace URI to recognize (optional, may be null)
+     * @return the /Envelope/Header/L7a:RelatesTo element, or null if there wasn't one
+     * @throws InvalidDocumentFormatException if the message isn't soap, or there is more than one Header or RelatesTo
+     */
+    public static Element getWsaRelatesToElement(Document soapMsg, String otherNs) throws InvalidDocumentFormatException {
+        return getWsaElement(soapMsg, RELATESTO_EL_NAME, otherNs);
     }
 
     /**
@@ -1758,6 +1773,22 @@ public class SoapUtil {
             }
         }
         return value;
+    }
+
+    /**
+     * Remove any empty SOAP Header from the specified SOAP document.
+     *
+     * @param doc the document to examine and possibly modify.  Required.
+     * @throws com.l7tech.common.xml.InvalidDocumentFormatException if the document is not a SOAP envelope or if there is more than one Header element
+     * @return true if an empty Header element was removed; or, false if the document was not modified.
+     */
+    public static boolean removeEmptySoapHeader(Document doc) throws InvalidDocumentFormatException {
+        Element header = getHeaderElement(doc);
+        if (header != null && XmlUtil.elementIsEmpty(header)) {
+            header.getParentNode().removeChild(header);
+            return true;
+        }
+        return false;
     }
 
     private interface OperationSearchContext {

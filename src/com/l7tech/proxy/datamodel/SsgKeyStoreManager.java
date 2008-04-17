@@ -112,7 +112,9 @@ public abstract class SsgKeyStoreManager {
             throws IOException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException,
                    CertificateException, KeyStoreException
     {
-        logger.log(Level.FINER, "Discovering server certificate for Gateway " + ssg + " (" + ssg.getLocalEndpoint() + ")");
+        if (ssg.isGeneric())
+            throw new OperationCanceledException("Unable to perform automatic certificate discovery for Generic Gateway " + ssg);
+        logger.log(Level.FINER, "Discovering server certificate for Gateway " + ssg + " (" + ssg.getLocalEndpoint() + ')');
         CertificateDownloader cd = new CertificateDownloader(ssg.getRuntime().getHttpClient(),
                                                              new URL(ssg.getServerUrl()),
                                                              credentials != null ? credentials.getUserName() : null,

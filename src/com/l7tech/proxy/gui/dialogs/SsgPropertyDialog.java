@@ -84,12 +84,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         tabbedPane.add("General", getGeneralPane(ssg));
         tabbedPane.add("Identity", getIdentityPane(ssg));
         tabbedPane.add("Network", getNetworkPane());
-        if (ssg.isGeneric()) {
-            ssg.setUseSslByDefault(false);
-            getBridgePolicyPane(); // hide the bridge policy pane for generic services
-        } else {
-            tabbedPane.add(Constants.APP_NAME +" Policy", getBridgePolicyPane());
-        }
+        tabbedPane.add(Constants.APP_NAME +" Policy", getBridgePolicyPane());
         tabbedPane.add("Service Policies", getPoliciesPane());
         ssg.addSsgListener(this);
         modelToView();
@@ -114,7 +109,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     private BridgePolicyPanel getBridgePolicyPane() {
         if (bridgePolicyPane == null) {
-            bridgePolicyPane = new BridgePolicyPanel(this);
+            bridgePolicyPane = new BridgePolicyPanel(this, !ssg.isGeneric());
         }
         return bridgePolicyPane;
     }
@@ -238,7 +233,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 try {
                     X509Certificate cert = ssg.getClientCertificate();
                     if (cert == null) {
-                        NoClientCert dlg = new NoClientCert(SsgPropertyDialog.this, ssgName(), !ssg.isGeneric());
+                        NoClientCert dlg = new NoClientCert(SsgPropertyDialog.this, serverName(), !ssg.isGeneric());
                         dlg.pack();
                         Utilities.centerOnScreen(dlg);
                         dlg.setVisible(true);
@@ -260,23 +255,23 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                 }
                                 /* FALLTHROUGH and display newly-acquired client certificate */
                             } catch (CertificateAlreadyIssuedException csrex) {
-                                final String msg = "Unable to obtain certificate from the SecureSpan Gateway " +
-                                        ssgName() + " because this account already has a valid " +
-                                        "certificate. Contact the gateway administrator for more information";
+                                final String msg = "Unable to obtain certificate from the " +
+                                        serverName() + " because this account already has a valid " +
+                                        "certificate. Contact the server administrator for more information";
                                 log.log(Level.WARNING, msg, csrex);
                                 Gui.errorMessage(msg);
                                 return;
                             } catch (ServerFeatureUnavailableException sfue) {
-                                final String msg = "Unable to obtain certificate from the SecureSpan Gateway " +
-                                        ssgName() + " because the certificate signing service is not available " +
-                                        "on this Gateway.";
+                                final String msg = "Unable to obtain certificate from the " +
+                                        serverName() + " because the certificate signing service is not available " +
+                                        "on this server.";
                                 log.log(Level.WARNING, msg, sfue);
                                 Gui.errorMessage(msg);
                                 return;
                             } catch (BadCredentialsException csrex) {
-                                final String msg = "Unable to obtain certificate from the SecureSpan Gateway " +
-                                        ssgName() + " because of credentials provided. Contact the " +
-                                        "gateway administrator for more information.";
+                                final String msg = "Unable to obtain certificate from the " +
+                                        serverName() + " because of credentials provided. Contact the " +
+                                        "server administrator for more information.";
                                 log.log(Level.WARNING, msg, csrex);
                                 ssg.getRuntime().setCachedPassword(null); // Bug #1592
                                 Gui.errorMessage(msg);
@@ -296,7 +291,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                             utf.setText(ssg.getRuntime().getSsgKeyStoreManager().lookupClientCertUsername());
                             utf.setEditable(false);
                         }
-                        new CertDialog(cert, "Client Certificate", "Client Certificate for Gateway " + ssgName()).setVisible(true);
+                        new CertDialog(cert, "Client Certificate", "Client Certificate for " + serverName()).setVisible(true);
                     }
                 } catch (OperationCanceledException e1) {
                     return;
@@ -305,7 +300,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     if (mess == null) mess = "An exception occurred.";
                     log.log(Level.SEVERE, "Unable to access client certificate: " + mess, e1);
                     Gui.errorMessage("Unable to Access Client Certificate",
-                                         "Unable to access client certificate for the SecureSpan Gateway " + ssgName() + ".",
+                                         "Unable to access client certificate for the " + serverName() + '.',
                                          mess,
                                          e1);
                     return;
@@ -319,18 +314,22 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                         try {
                             X509Certificate cert = ssg.getServerCertificate();
                             if (cert == null) {
-                                JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                        "A certificate for the SecureSpan Gateway " + ssgName() + "\n" +
-                                        "was not found.",
-                                        "Gateway Server Certificate Not Found",
-                                        JOptionPane.INFORMATION_MESSAGE);
-                                return;
+                                NoServerCertDialog dlg = new NoServerCertDialog(SsgPropertyDialog.this, ssg, serverName());
+                                dlg.pack();
+                                Utilities.centerOnScreen(dlg);
+                                dlg.setModal(true);
+                                dlg.setVisible(true);
+                                if (!dlg.wasNewCertSaved())
+                                    return;
+                                cert = ssg.getServerCertificate();
+                                if (cert == null)
+                                    return;
                             }
-                            new CertDialog(cert, "View Server Certificate", "Server Certificate for the SecureSpan Gateway " + ssgName()).setVisible(true);
+                            new CertDialog(cert, "View Server Certificate", "Server Certificate for " + serverName()).setVisible(true);
                         } catch (Exception e1) {
                             log.log(Level.SEVERE, "Unable to access server certificate", e1);
                             Gui.criticalErrorMessage("Unable to access server certificate",
-                                    "Unable to access server certificate for Gateway " + ssgName(),
+                                    "Unable to access server certificate for  " + serverName(),
                                     e1);
                         }
                     }
@@ -424,7 +423,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         char[] ssgPass = trustPane.getUserPasswordField().getPassword();
         if (ssgPass == null || ssgPass.length < 1) {
             ssgPass = PasswordDialog.getPassword(Gui.getInstance().getFrame(),
-                                                 "Enter new password for Gateway " + ssgName());
+                                                 "Enter new password for " + serverName());
             if (ssgPass == null)
                 return;
             trustPane.getUserPasswordField().setText(new String(ssgPass));
@@ -515,8 +514,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     }
 
     private SsgNetworkPanel getNetworkPane() {
-        if (networkPane == null)
-            networkPane = new SsgNetworkPanel(validator, ssg, ssgFinder, !ssg.isGeneric());
+        if (networkPane == null) {
+            final boolean wsdlAndPorts = !ssg.isGeneric();
+            networkPane = new SsgNetworkPanel(validator, ssg, ssgFinder, wsdlAndPorts, wsdlAndPorts);
+        }
         return networkPane;
     }
 
@@ -545,8 +546,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                             GridBagConstraints.NONE,
                                             new Insets(25, 5, 0, 0), 0, 0));
 
-            String splaintext = "Enter the host name or Internet address of the SecureSpan " +
-                    "Gateway that will process service requests.";
+            String splaintext = "Enter the host name or IP address of the " + serverType() + " that will process service requests.";
             WrappingLabel splain01 = new WrappingLabel(splaintext, 3);
             pane.add(splain01,
                      new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
@@ -794,6 +794,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     ssg.setSsgFile(url.getFile());
                     ssg.setSslPort(url.getPort());
                     ssg.setSsgAddress(url.getHost());
+                    ssg.setUseSslByDefault("https".equalsIgnoreCase(url.getProtocol()));
                 } else {
                     ssg.setSsgAddress(getFieldServerAddress().getText().trim().toLowerCase());
                     commitPorts();
@@ -831,7 +832,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 }
 
                 // applicable to both trusted and federated SSG
-                ssg.setUseSslByDefault(!ssg.isGeneric() && getBridgePolicyPane().isUseSslByDefault());
+                if (!ssg.isGeneric())
+                    ssg.setUseSslByDefault(getBridgePolicyPane().isUseSslByDefault());
                 ssg.setProperties(getBridgePolicyPane().getProperties());
                 ssg.setHttpHeaderPassthrough(getBridgePolicyPane().isHeaderPassthrough());
                 ssg.setUseOverrideIpAddresses(getNetworkPane().isUseOverrideIpAddresses());
@@ -950,9 +952,19 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         strat.setTimestamp(fp.getWsFedTimestampCheckBox().isSelected());
     }
 
+    /** @return serverType followed by a space and ssgName. */
+    private String serverName() {
+        return serverType() + ' ' + ssgName();
+    }
+
+    /** @return either "SecureSpan Gateway" or "Web service" depending on whether Ssg is generic. */
+    private String serverType() {
+        return ssg.isGeneric() ? "Web service" : "SecureSpan Gateway";
+    }
+
     /**
      * Find the SSG name to display.  Uses the name from the SSG, if any; otherwise, the typed
-     * in name; otherwise the string "&lt;New Gateway&gt;".
+     * in name; otherwise the string "&lt;New Gateway&gt;" or the string "&lt;New Service&gt;".
      */
     private String ssgName() {
         String result =  ssg.getSsgAddress();
@@ -961,7 +973,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         result = getFieldServerAddress().getText();
         if (result != null && result.length() > 0)
             return result;
-        return "<New Gateway>";
+        return ssg.isGeneric() ? "<New Web Service>" : "<New Gateway>";
     }
 
     /**

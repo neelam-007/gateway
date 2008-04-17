@@ -557,8 +557,11 @@ public class PolicyApplicationContext extends ProcessingContext {
 
     private String establishSecureConversationSession()
             throws OperationCanceledException, GeneralSecurityException,
-            BadCredentialsException, IOException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException, HttpChallengeRequiredException {
+                   BadCredentialsException, IOException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException, HttpChallengeRequiredException, ConfigurationException {
         Ssg ssg = getSsg();
+        if (ssg.isGeneric())
+            throw new ConfigurationException("No WS-SecureConversation token service is available for Gateway " + ssg);
+
         TokenServiceClient.SecureConversationSession s;
 
         WsTrustConfig wstConfig = WsTrustConfigFactory.getDefaultWsTrustConfig();
@@ -954,6 +957,8 @@ public class PolicyApplicationContext extends ProcessingContext {
             ConfigurationException, PolicyLockedException
     {
         final Ssg ssg = getSsg();
+        if (!ssg.isPolicyDiscoverySupported())
+            throw new OperationCanceledException("Unable to download policy: Gateway " + ssg + " does not support automatic policy discovery");
         final PolicyAttachmentKey pak = new PolicyAttachmentKey(getPolicyAttachmentKey());
         // TODO replace this mess of exceptions with an exception base interface that sports a handle() method
         try {

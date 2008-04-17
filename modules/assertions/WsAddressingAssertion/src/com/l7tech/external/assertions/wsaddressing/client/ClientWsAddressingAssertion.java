@@ -5,6 +5,7 @@ package com.l7tech.external.assertions.wsaddressing.client;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.message.Message;
 import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -14,6 +15,7 @@ import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.w3c.dom.Element;
+import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -28,10 +30,6 @@ public class ClientWsAddressingAssertion extends ClientAssertion {
 
     public ClientWsAddressingAssertion(WsAddressingAssertion assertion) {
         this.assertion = assertion;
-    }
-
-    public AssertionStatus unDecorateReply(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException, InvalidDocumentFormatException {
-        return AssertionStatus.NONE;
     }
 
     public String getName() {
@@ -52,6 +50,16 @@ public class ClientWsAddressingAssertion extends ClientAssertion {
         final String uuidPrefix = props.get("wsAddressing.uuidPrefix");
 
         // Figure out which WSA NS to use (Always use "other" if specified)
+        final String ns = getWsaNamespaceUri();
+        final String id = context.prepareWsaMessageId(true, ns, uuidPrefix);
+        Element wsaMessageIdEl = SoapUtil.setWsaMessageId(context.getRequest().getXmlKnob().getDocumentWritable(), ns, id);
+        if (assertion.isRequireSignature()) {
+            context.getDefaultWssRequirements().getElementsToSign().add(wsaMessageIdEl);
+        }
+        return AssertionStatus.NONE;
+    }
+
+    private String getWsaNamespaceUri() throws PolicyAssertionException {
         final String other = assertion.getEnableOtherNamespace();
         final String ns;
         if (other != null && other.length() > 0) {
@@ -63,11 +71,27 @@ public class ClientWsAddressingAssertion extends ClientAssertion {
         } else {
             throw new PolicyAssertionException(assertion, "Unable to select WS-Addressing namespace URI");
         }
-        final String id = context.prepareWsaMessageId(true, ns, uuidPrefix);
-        Element wsaMessageIdEl = SoapUtil.setWsaMessageId(context.getRequest().getXmlKnob().getDocumentWritable(), ns, id);
-        if (assertion.isRequireSignature()) {
-            context.getDefaultWssRequirements().getElementsToSign().add(wsaMessageIdEl);
-        }
+        return ns;
+    }
+
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException, InvalidDocumentFormatException {
+        // Find and strip any MessageID headers from the response.
+        Message response = context.getResponse();
+        if (!response.isSoap())
+            return AssertionStatus.NONE; // Success, instead of NOT_APPLICABLE, since there's nothing that needs to be undecorated
+
+        final String ns = getWsaNamespaceUri();
+
+        Document doc = response.getXmlKnob().getDocumentWritable();
+
+        Element messageIdElement = SoapUtil.getWsaMessageIdElement(doc, ns);
+        if (messageIdElement != null) messageIdElement.getParentNode().removeChild(messageIdElement);
+
+        Element relatesToElement = SoapUtil.getWsaRelatesToElement(doc, ns);
+        if (relatesToElement != null) relatesToElement.getParentNode().removeChild(relatesToElement);
+
+        SoapUtil.removeEmptySoapHeader(doc);
+
         return AssertionStatus.NONE;
     }
 }

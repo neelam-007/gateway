@@ -60,12 +60,18 @@ class GatewaysNoun extends Noun {
             out.print(' ');
             out.print(TextUtils.pad(ssg.getSsgAddress(), 30));
             out.print(' ');
-            out.print(TextUtils.pad((ssg.isFederatedGateway() ? "Federated" : "Trusted"), 9));
+            out.print(TextUtils.pad(getGatewayType(ssg), 9));
             out.print(' ');
             out.print(TextUtils.pad(ssg.getUsername(), 15));
             out.println();
         }
         if (sawDefault) out.println("\n* Default Gateway Account");
+    }
+
+    private static String getGatewayType(Ssg ssg) {
+        if (ssg.isGeneric())
+            return "Generic";
+        return ssg.isFederatedGateway() ? "Federated" : "Trusted";
     }
 
     public void create(PrintStream out, String[] args) throws CommandException {

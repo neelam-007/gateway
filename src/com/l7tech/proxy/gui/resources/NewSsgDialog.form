@@ -1,59 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.proxy.gui.dialogs.NewSsgDialog">
-  <grid id="3611a" binding="rootPanel" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="3611a" binding="rootPanel" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="50" y="33" width="553" height="678"/>
-      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+      <xy x="50" y="33" width="561" height="686"/>
     </constraints>
     <properties/>
     <border type="none"/>
     <children>
-      <grid id="34ff1" binding="imagePanel" row-count="3" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="34ff1" binding="imagePanel" layout-manager="GridLayoutManager" row-count="3" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="0" y="0" width="553" height="273"/>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
         <border type="none"/>
         <children>
           <hspacer id="5c4bb">
             <constraints>
-              <xy x="533" y="131" width="20" height="11"/>
-              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
                 <minimum-size width="12" height="-1"/>
               </grid>
             </constraints>
           </hspacer>
           <hspacer id="88967">
             <constraints>
-              <xy x="0" y="131" width="20" height="11"/>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
                 <minimum-size width="12" height="-1"/>
               </grid>
             </constraints>
           </hspacer>
           <vspacer id="2ef86">
             <constraints>
-              <xy x="271" y="253" width="11" height="20"/>
-              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
                 <minimum-size width="-1" height="10"/>
               </grid>
             </constraints>
           </vspacer>
           <vspacer id="1340b">
             <constraints>
-              <xy x="271" y="0" width="11" height="20"/>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
                 <minimum-size width="-1" height="10"/>
               </grid>
             </constraints>
           </vspacer>
           <component id="a1634" class="javax.swing.JLabel" binding="imageLabel">
             <constraints>
-              <xy x="25" y="20" width="502" height="233"/>
-              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="1" fill="0">
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="1" fill="0" indent="0" use-parent-layout="false">
                 <minimum-size width="502" height="233"/>
                 <preferred-size width="502" height="233"/>
               </grid>
@@ -64,11 +57,10 @@
           </component>
         </children>
       </grid>
-      <grid id="71c42" row-count="14" column-count="7" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="71c42" layout-manager="GridLayoutManager" row-count="14" column-count="7" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="12" left="56" bottom="0" right="0"/>
         <constraints>
-          <xy x="0" y="278" width="553" height="400"/>
-          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="7" anchor="0" fill="3">
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
             <minimum-size width="-1" height="400"/>
           </grid>
         </constraints>
@@ -77,8 +69,7 @@
         <children>
           <component id="78863" class="javax.swing.JLabel">
             <constraints>
-              <xy x="56" y="16" width="324" height="14"/>
-              <grid row="0" column="0" row-span="1" col-span="5" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+              <grid row="0" column="0" row-span="1" col-span="5" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="Select the type of Gateway Account for the SecureSpan Gateway:"/>
@@ -86,8 +77,7 @@
           </component>
           <component id="da694" class="javax.swing.JRadioButton" binding="radioTrustedGateway">
             <constraints>
-              <xy x="56" y="40" width="110" height="22"/>
-              <grid row="1" column="0" row-span="1" col-span="4" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+              <grid row="1" column="0" row-span="1" col-span="4" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="Trusted Gateway"/>
@@ -95,8 +85,7 @@
           </component>
           <component id="1c75d" class="javax.swing.JLabel">
             <constraints>
-              <xy x="91" y="68" width="442" height="28"/>
-              <grid row="2" column="1" row-span="1" col-span="5" vsize-policy="0" hsize-policy="1" anchor="9" fill="0">
+              <grid row="2" column="1" row-span="1" col-span="5" vsize-policy="0" hsize-policy="1" anchor="9" fill="0" indent="0" use-parent-layout="false">
                 <preferred-size width="500" height="-1"/>
                 <maximum-size width="500" height="-1"/>
               </grid>
@@ -107,8 +96,7 @@
           </component>
           <component id="aaa3b" class="javax.swing.JRadioButton" binding="radioFederatedGateway">
             <constraints>
-              <xy x="56" y="104" width="123" height="22"/>
-              <grid row="3" column="0" row-span="1" col-span="5" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+              <grid row="3" column="0" row-span="1" col-span="5" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="Federated Gateway"/>
@@ -116,8 +104,7 @@
           </component>
           <component id="b7738" class="javax.swing.JLabel">
             <constraints>
-              <xy x="91" y="132" width="442" height="28"/>
-              <grid row="4" column="1" row-span="1" col-span="5" vsize-policy="0" hsize-policy="1" anchor="9" fill="0">
+              <grid row="4" column="1" row-span="1" col-span="5" vsize-policy="0" hsize-policy="1" anchor="9" fill="0" indent="0" use-parent-layout="false">
                 <preferred-size width="500" height="-1"/>
                 <maximum-size width="500" height="-1"/>
               </grid>
@@ -128,8 +115,7 @@
           </component>
           <component id="3e76b" class="javax.swing.JRadioButton" binding="radioTokenOther">
             <constraints>
-              <xy x="116" y="167" width="325" height="22"/>
-              <grid row="5" column="2" row-span="1" col-span="4" vsize-policy="0" hsize-policy="3" anchor="9" fill="0"/>
+              <grid row="5" column="2" row-span="1" col-span="4" vsize-policy="0" hsize-policy="3" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="Obtain security tokens from a WS-Trust security token service"/>
@@ -137,8 +123,7 @@
           </component>
           <component id="eb500" class="javax.swing.JRadioButton" binding="radioTokenFederatedPassive">
             <constraints>
-              <xy x="116" y="196" width="382" height="22"/>
-              <grid row="6" column="2" row-span="1" col-span="4" vsize-policy="0" hsize-policy="3" anchor="9" fill="0"/>
+              <grid row="6" column="2" row-span="1" col-span="4" vsize-policy="0" hsize-policy="3" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="Obtain security tokens from a WS-Federation (PRP) security token service"/>
@@ -146,8 +131,7 @@
           </component>
           <component id="46f78" class="javax.swing.JRadioButton" binding="radioTokenTrustedGateway">
             <constraints>
-              <xy x="116" y="224" width="407" height="22"/>
-              <grid row="7" column="2" row-span="1" col-span="4" vsize-policy="0" hsize-policy="3" anchor="9" fill="0"/>
+              <grid row="7" column="2" row-span="1" col-span="4" vsize-policy="0" hsize-policy="3" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="Obtain security tokens from the following previously-created Trusted Gateway:"/>
@@ -155,55 +139,48 @@
           </component>
           <hspacer id="66127">
             <constraints>
-              <xy x="56" y="77" width="25" height="11"/>
-              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="16" height="-1"/>
               </grid>
             </constraints>
           </hspacer>
           <hspacer id="93e2f">
             <constraints>
-              <xy x="91" y="173" width="25" height="11"/>
-              <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+              <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="16" height="-1"/>
               </grid>
             </constraints>
           </hspacer>
           <component id="90741" class="javax.swing.JComboBox" binding="trustedSsgComboBox">
             <constraints>
-              <xy x="141" y="252" width="392" height="22"/>
-              <grid row="8" column="3" row-span="1" col-span="3" vsize-policy="0" hsize-policy="2" anchor="9" fill="1"/>
+              <grid row="8" column="3" row-span="1" col-span="3" vsize-policy="0" hsize-policy="2" anchor="9" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
           </component>
           <hspacer id="8fb74">
             <constraints>
-              <xy x="116" y="258" width="25" height="11"/>
-              <grid row="8" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+              <grid row="8" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="16" height="-1"/>
               </grid>
             </constraints>
           </hspacer>
           <hspacer id="2b6b">
             <constraints>
-              <xy x="533" y="258" width="20" height="11"/>
-              <grid row="8" column="6" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+              <grid row="8" column="6" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false">
                 <minimum-size width="12" height="-1"/>
               </grid>
             </constraints>
           </hspacer>
           <vspacer id="b1900">
             <constraints>
-              <xy x="148" y="380" width="11" height="20"/>
-              <grid row="13" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+              <grid row="13" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
                 <minimum-size width="-1" height="12"/>
               </grid>
             </constraints>
           </vspacer>
           <component id="1d974" class="javax.swing.JLabel" binding="bottomSpace">
             <constraints>
-              <xy x="56" y="172" width="7" height="14"/>
-              <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+              <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value=" "/>
@@ -211,55 +188,48 @@
           </component>
           <hspacer id="3c992">
             <constraints>
-              <xy x="166" y="45" width="347" height="11"/>
-              <grid row="1" column="4" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+              <grid row="1" column="4" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
           </hspacer>
           <component id="dd54e" class="javax.swing.JRadioButton" binding="radioRawUrl">
             <constraints>
-              <xy x="56" y="281" width="123" height="22"/>
-              <grid row="9" column="0" row-span="1" col-span="6" vsize-policy="0" hsize-policy="3" anchor="10" fill="0"/>
+              <grid row="9" column="0" row-span="1" col-span="6" vsize-policy="0" hsize-policy="3" anchor="10" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Generic web service"/>
+              <text value="Generic Web Service"/>
             </properties>
           </component>
-          <component id="be530" class="javax.swing.JLabel" binding="genericWebServiceLabel">
+          <component id="be530" class="javax.swing.JLabel">
             <constraints>
-              <xy x="91" y="308" width="419" height="14"/>
-              <grid row="10" column="1" row-span="1" col-span="5" vsize-policy="0" hsize-policy="1" anchor="9" fill="0"/>
+              <grid row="10" column="1" row-span="1" col-span="5" vsize-policy="0" hsize-policy="1" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="&lt;HTML&gt;A generic web service is accessed via a URL.  Security policies are configured manually."/>
+              <text value="&lt;HTML&gt;A generic Web service is accessed via a URL.  Security policies are configured manually."/>
             </properties>
           </component>
           <vspacer id="bc9d7">
             <constraints>
-              <xy x="148" y="334" width="11" height="20"/>
-              <grid row="11" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+              <grid row="11" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
                 <minimum-size width="-1" height="12"/>
               </grid>
             </constraints>
           </vspacer>
-          <grid id="60fb6" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="60fb6" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="56" y="354" width="477" height="25"/>
-              <grid row="12" column="0" row-span="1" col-span="6" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+              <grid row="12" column="0" row-span="1" col-span="6" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
             <border type="none"/>
             <children>
               <hspacer id="cc4b1">
                 <constraints>
-                  <xy x="0" y="7" width="388" height="11"/>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
               </hspacer>
               <component id="6712f" class="javax.swing.JButton" binding="createButton">
                 <constraints>
-                  <xy x="388" y="0" width="69" height="25"/>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="4" fill="0"/>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <text value="Create"/>
@@ -267,8 +237,7 @@
               </component>
               <component id="63cee" class="javax.swing.JButton" binding="cancelButton">
                 <constraints>
-                  <xy x="540" y="655" width="69" height="25"/>
-                  <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="4" fill="0"/>
+                  <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <text value="Cancel"/>

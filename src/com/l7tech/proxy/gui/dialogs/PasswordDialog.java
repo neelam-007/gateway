@@ -22,9 +22,6 @@ import java.util.Arrays;
  * Small dialog box that prompts for a new password, requiring the user to type it twice for confirmation.
  * Doesn't ask about usernames, and so not to be confused with LogonDialog, which does.
  * Interaction design is intended to be error-dialog-free.
- * User: mike
- * Date: Jun 30, 2003
- * Time: 1:58:04 PM
  */
 public class PasswordDialog extends JDialog {
     private static final String DFG = "defaultForeground";
@@ -44,10 +41,18 @@ public class PasswordDialog extends JDialog {
         super(owner, title, true);
         this.singleInputOnly = singleInputOnly;
         setContentPane(getMainPanel());
+        init();
     }
 
     public PasswordDialog(Frame owner, String title) {
         this(owner, title, false);
+        init();
+    }
+
+    private void init() {
+        Utilities.equalizeButtonSizes(new JButton[] { getButtonOk(), getButtonCancel() });
+        getRootPane().setDefaultButton(getButtonOk());
+        Utilities.setEscKeyStrokeDisposes(this);
     }
 
     private JPanel getMainPanel() {
@@ -118,13 +123,29 @@ public class PasswordDialog extends JDialog {
 
     private JPanel getWidgetPanel() {
         if (widgetPanel == null) {
-            widgetPanel = new JPanel(new GridLayout(2, 2, 4, 4));
-            widgetPanel.add(new JLabel("Password:"));
-            widgetPanel.add(getFieldPassword());
+            widgetPanel = new JPanel(new GridBagLayout());
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            gbc.gridheight = 1;
+            gbc.gridwidth = 1;
+            gbc.weightx = 1;
+            gbc.weighty = 0;
+            gbc.ipadx = 1;
+            gbc.ipady = 1;
+            gbc.insets = new Insets(2, 2, 2, 2);
+
+            gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0;
+            widgetPanel.add(new JLabel("Password:"), gbc);
+            gbc.gridx = 1; gbc.gridy = 0; gbc.weightx = 1;
+            widgetPanel.add(getFieldPassword(), gbc);
             if (!singleInputOnly) {
-                widgetPanel.add(new JLabel("Verify password:"));
-                widgetPanel.add(getFieldPasswordVerify());
+                gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0;
+                widgetPanel.add(new JLabel("Verify password:"), gbc);
+                gbc.gridx = 1; gbc.gridy = 1; gbc.weightx = 1;
+                widgetPanel.add(getFieldPasswordVerify(), gbc);
             }
+            gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0; gbc.weighty = 1;
+            widgetPanel.add(Box.createGlue(), gbc);
         }
         return widgetPanel;
     }
@@ -132,6 +153,7 @@ public class PasswordDialog extends JDialog {
     private JPasswordField getFieldPassword() {
         if (fieldPassword == null) {
             fieldPassword = new JPasswordField();
+            fieldPassword.setPreferredSize(new Dimension(285, 20));
             fieldPassword.getDocument().addDocumentListener(getDocumentListener());
             fieldPassword.putClientProperty(DFG, fieldPassword.getForeground());
             fieldPassword.addKeyListener(new CapslockKeyListener());
@@ -142,6 +164,7 @@ public class PasswordDialog extends JDialog {
     private JPasswordField getFieldPasswordVerify() {
         if (fieldPasswordVerify == null) {
             fieldPasswordVerify = new JPasswordField();
+            fieldPasswordVerify.setPreferredSize(new Dimension(285, 20));
             fieldPasswordVerify.getDocument().addDocumentListener(getDocumentListener());
             fieldPasswordVerify.putClientProperty(DFG, fieldPasswordVerify.getForeground());
             fieldPasswordVerify.addKeyListener(new CapslockKeyListener());
@@ -196,9 +219,7 @@ public class PasswordDialog extends JDialog {
 
     private char[] runPasswordPrompt() {
         pack();
-        FontMetrics fm = getFontMetrics(getFont());
-        setSize(2* fm.stringWidth(getTitle()), (int)getSize().getHeight());
-        setResizable(false);
+        setResizable(true);
         Utilities.centerOnScreen(this);
         setVisible(true);
         return passwordValid ? fieldPassword.getPassword() : null;
@@ -222,7 +243,11 @@ public class PasswordDialog extends JDialog {
     }
 
     public static void main(String[] argv) {
-        char[] word = PasswordDialog.getPassword(null, "Get Password", true);
+        JFrame frame = new JFrame("test");
+        frame.setVisible(true);
+        char[] word = PasswordDialog.getPassword(frame,
+                                             "Enter new password for Gateway <My gateway with a long long very extremely longish long name>");
+//        char[] word = PasswordDialog.getPassword(null, "Get Password", true);
         System.out.println("Got password: \"" + (word == null ? "<none>" : new String(word)) + "\"");
         System.exit(0);
     }

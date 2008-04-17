@@ -32,10 +32,7 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.Constants;
 import com.l7tech.proxy.RequestInterceptor;
-import com.l7tech.proxy.datamodel.FederatedSamlTokenStrategy;
-import com.l7tech.proxy.datamodel.Managers;
-import com.l7tech.proxy.datamodel.Policy;
-import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
@@ -241,7 +238,7 @@ public class MessageProcessor {
 
         // If we have a client cert, and the current password worked to decrypt it's private key, but something
         // has rejected the password anyway, we need to reestablish the validity of this account with the SSG.
-        if (ssg.getClientCertificate() != null && ssg.getRuntime().getSsgKeyStoreManager().isPasswordWorkedForPrivateKey()) {
+        if (!ssg.isGeneric() && ssg.getClientCertificate() != null && ssg.getRuntime().getSsgKeyStoreManager().isPasswordWorkedForPrivateKey()) {
             if (securePasswordPing(context)) {
                 // password works with our keystore, and with the SSG, so why did it fail just now?
                 String message = "Recieved password failure, but it worked with our keystore and the Gateway liked it when we double-checked it.  " +
@@ -253,7 +250,7 @@ public class MessageProcessor {
             log.severe("The Gateway password that was used to obtain this client cert is no longer valid -- deleting the client cert");
             try {
                 ssg.getRuntime().getSsgKeyStoreManager().deleteClientCert();
-            } catch (KeyStoreCorruptException e1) {
+            } catch (KeyStoreCorruptException e1) {                                       
                 ssg.getRuntime().handleKeyStoreCorrupt();
                 // FALLTHROUGH -- retry, creating new keystore
             }
@@ -324,6 +321,8 @@ public class MessageProcessor {
         Ssg ssg = context.getSsg();
         if (ssg.isFederatedGateway())
             throw new OperationCanceledException("Unable to perform password ping with Federated SSG"); // can't happen
+        if (ssg.isGeneric())
+            throw new OperationCanceledException("Unable to perform password ping with Generic SSG"); // can't happen
 
         // We'll just use the CertificateDownloader for this.
         CertificateDownloader cd = new CertificateDownloader(context.getHttpClient(),
@@ -533,7 +532,8 @@ public class MessageProcessor {
                 // TODO we should only trust this fault if it is signed
                 log.warning("Gateway reports " + responseFaultDetail.getFaultCode() +
                             ".  Will throw away current SAML ticket and try again.");
-                context.getSsg().getRuntime().getTokenStrategy(SecurityTokenType.SAML_ASSERTION).onTokenRejected();
+                final TokenStrategy strat = context.getSsg().getRuntime().getTokenStrategy(SecurityTokenType.SAML_ASSERTION);
+                if (strat != null) strat.onTokenRejected();
                 throw new PolicyRetryableException("Flushed rejected SAML ticket.");
             }
             // FALLTHROUGH: not handled by agent -- fall through and send it back to the client
@@ -986,18 +986,42 @@ public class MessageProcessor {
                 return new WssTimestampWrapper(wssTimestampRaw, ssg.getRuntime().getDateTranslatorFromSsg());
             }
         };
+        maybeStripSecurityHeader(ssg, responseDocument, processorResult);
 
-        // the processed security header must be deleted *if* it was explicitely addressed to us
-        if (processorResult.getProcessedActor() != null &&
-            processorResult.getProcessedActor() == SecurityActor.L7ACTOR) {
-            Element eltodelete = SoapUtil.getSecurityElement(responseDocument, SecurityActor.L7ACTOR.getValue());
-            if (eltodelete == null) {
-                log.warning("the security element was already deleted somehow?"); // should not happen
-            } else {
-                eltodelete.getParentNode().removeChild(eltodelete);
-            }
-        }
+
         return processorResult;
+    }
+
+    private void maybeStripSecurityHeader(Ssg ssg, Document doc, ProcessorResult processorResult) throws InvalidDocumentFormatException {
+        final String stripMode = ssg.getProperties().get("response.security.stripHeader"); // "always" or "secure_span"; default "always"
+                
+        if ("secure_span".equals(stripMode)) {
+            // the processed security header will be deleted iff. it was explicitely addressed to us
+            if (processorResult.getProcessedActor() != null &&
+                processorResult.getProcessedActor() == SecurityActor.L7ACTOR) {
+                Element eltodelete = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
+                if (eltodelete == null) {
+                    log.warning("the security element was already deleted somehow?"); // should not happen
+                } else {
+                    eltodelete.getParentNode().removeChild(eltodelete);
+                }
+            }
+        } else {
+            // always remove the processed security header
+            SecurityActor procActor = processorResult.getProcessedActor();
+            final Element del;
+            if (procActor == null) {
+                del = SoapUtil.getSecurityElement(doc);
+            } else {
+                del = SoapUtil.getSecurityElement(doc, procActor.getValue());
+            }
+
+            if (del != null)
+                del.getParentNode().removeChild(del);
+        }
+
+        // If we are about to leave behind an empty SOAP Header, remove that too
+        SoapUtil.removeEmptySoapHeader(doc);
     }
 
     private void handleCertStatusStale(PolicyApplicationContext context) {
