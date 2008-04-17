@@ -28,6 +28,11 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
     private transient String xmlProperties;
     private Map<String, String> properties;
 
+    /*Required by Jaxb*/
+    public PersistentGroup(){
+
+    }
+
     protected PersistentGroup(long providerOid, String name) {
         this.providerOid = providerOid;
         this._name = name;

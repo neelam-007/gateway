@@ -3,6 +3,9 @@ package com.l7tech.identity.internal;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.PersistentGroup;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement
 public class InternalGroup extends PersistentGroup {
     public InternalGroup() {
         this(null);

@@ -6,6 +6,8 @@ import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.InvalidPasswordException;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 /**
  * User from the internal identity provider.
  * Password property is stored as HEX(MD5(login:L7SSGDigestRealm:password)). If you pass a clear text passwd in
@@ -18,6 +20,7 @@ import com.l7tech.objectmodel.InvalidPasswordException;
  *
  *
  */
+@XmlRootElement
 public class InternalUser extends PersistentUser {
     private long expiration = -1;
     protected String hashedPassword;

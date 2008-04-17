@@ -7,6 +7,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.xml.bind.annotation.XmlRootElement;
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +24,7 @@ import java.util.Map;
  * Date: Jun 23, 2003
  *
  */
+@XmlRootElement
 public class IdentityProviderConfig extends NamedEntityImp {
 
     public IdentityProviderConfig(IdentityProviderType type) {

@@ -11,6 +11,8 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlElement;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Arrays;
@@ -19,6 +21,7 @@ import java.util.logging.Logger;
 /**
  * @author alex
  */
+@XmlRootElement
 public class Policy extends NamedEntityImp {
     private static final Logger logger = Logger.getLogger(Policy.class.getName());
 

@@ -21,6 +21,11 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
     protected String email;
     protected String department;
 
+    /*Put in to allow for JAXB processing*/
+    public PersistentUser(){
+
+    }
+    
     protected PersistentUser(long providerOid, String login) {
         this.providerOid = providerOid;
         this.login = login;

@@ -14,6 +14,8 @@ import org.xml.sax.InputSource;
 
 import javax.wsdl.Port;
 import javax.wsdl.WSDLException;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -30,6 +32,7 @@ import java.util.regex.Pattern;
  * @author alex
  */
 @SuppressWarnings( { "NonJaxWsWebServices" } )
+@XmlRootElement
 public class PublishedService extends NamedEntityImp {
     //private static final long serialVersionUID = 8711916262379377867L;
     private static final Logger logger = Logger.getLogger(PublishedService.class.getName());
@@ -365,6 +368,7 @@ public class PublishedService extends NamedEntityImp {
      *
      * @return a read-only set of zero or more Strings such as "PUT", "GET", "DELETE" and "POST".  May be empty but never null.
      */
+    @XmlTransient
     public Set<String> getHttpMethods() {
         if (httpMethodNames == null) httpMethodNames = METHODNAMES_SOAP;
         if (httpMethods == null) httpMethods = createSetFromMethods(httpMethodNames);
@@ -463,7 +467,6 @@ public class PublishedService extends NamedEntityImp {
     // ************************************************
     // PRIVATES
     // ************************************************
-
     private String _wsdlUrl;
     private String _wsdlXml;
     private boolean _disabled;
@@ -476,6 +479,7 @@ public class PublishedService extends NamedEntityImp {
     private transient Wsdl _parsedWsdl;
     private transient Port _wsdlPort;
     private transient URL _serviceUrl;
+
     private transient Set<String> httpMethods; // invariants: never null, always in sync with httpMethodNames
     private transient Boolean multipart;
 
