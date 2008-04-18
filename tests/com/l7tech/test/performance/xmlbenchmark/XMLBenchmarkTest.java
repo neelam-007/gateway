@@ -48,6 +48,24 @@ public class XMLBenchmarkTest extends TestCase {
 
     }
 
+    /**
+     * Unit test against Tarari.  This method will not determine whether it is running the hardware or software version
+     * of Tarari.  To test the hardware of tarari, you'll need to disable the tarari service.
+     */
+    public void testTarari(){
+//        try {
+//            XMLBenchmarking test = new XMLBenchmarkingForTarari(testConfigurations.get(0));
+//            test.run();
+//        }
+//        catch (BenchmarkException be) {
+//            be.printStackTrace();
+//            fail();
+//        }
+    }
+
+    /**
+     * Unit test against Xerces/Xalan.
+     */
     public void testXerces() {
         try{
             XMLBenchmarking test = new XMLBenchmarkingForXercesXalan(testConfigurations.get(0));
@@ -57,8 +75,20 @@ public class XMLBenchmarkTest extends TestCase {
             be.printStackTrace();
             fail();
         }
+    }
 
-
+    /**
+     * Unit test against VTD by Ximpleware
+     */
+    public void testVTD(){
+        try{
+            XMLBenchmarking test = new XMLBenchmarkingForVTD(testConfigurations.get(0));
+            test.run();
+        }
+        catch (BenchmarkException be){
+            be.printStackTrace();
+            fail();
+        }
     }
 
 
