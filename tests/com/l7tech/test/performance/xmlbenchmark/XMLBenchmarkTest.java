@@ -49,6 +49,15 @@ public class XMLBenchmarkTest extends TestCase {
     }
 
     public void testXerces() {
+        try{
+            XMLBenchmarking test = new XMLBenchmarkingForXercesXalan(testConfigurations.get(0));
+            test.run();
+        }
+        catch (BenchmarkException be){
+            be.printStackTrace();
+            fail();
+        }
+
 
     }
 

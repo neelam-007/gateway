@@ -5,6 +5,7 @@ import com.l7tech.test.performance.xmlbenchmark.cfg.XPathQuery;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.io.*;
 
 /**
  * Configuration bean for one benchmark test.
@@ -50,6 +51,9 @@ public class BenchmarkConfig {
     /** The XML message to run the ops agains */
     protected String xmlMessage;
 
+    /** The XML file location **/
+    protected String xmlLocation;
+
     /** List the operations in execution order performed by the benchmark test */
     protected Operation[] operations;
 
@@ -80,11 +84,16 @@ public class BenchmarkConfig {
         super();
         this.label = testCfg.getName();
         loadConfiguration(testCfg);
-        this.operations = new Operation[] {Operation.P, Operation.V, Operation.T, Operation.XP};
+        //this.operations = new Operation[] {Operation.P, Operation.V, Operation.T, Operation.XP};
+        this.operations = new Operation[] { Operation.P, Operation.V, Operation.T, Operation.XP };
     }
 
     public String getXmlMessage() {
         return xmlMessage;
+    }
+
+    public String getXmlLocation() {
+        return xmlLocation;
     }
 
     public Operation[] getOperations() {
@@ -105,7 +114,22 @@ public class BenchmarkConfig {
 
     protected void loadConfiguration(TestConfiguration testCfg)
     {
-        this.xmlMessage = testCfg.getXmlMessage().getData();
+        if ( testCfg.getXmlMessage().getData() != null ){
+            //xml data is already in the config file
+            this.xmlMessage = testCfg.getXmlMessage().getData();
+            this.xmlLocation = testCfg.getXmlMessage().getLocation();
+        }
+        else if ( testCfg.getXmlMessage().getLocation() != null ){
+            //xml data is a file at the specified location, so we'll read it off there
+            this.xmlMessage = getXMLDataFromFile(testCfg.getXmlMessage().getLocation());
+            this.xmlLocation = testCfg.getXmlMessage().getLocation();
+        }
+        else{
+            //hopefully doesnt fall into this case
+            this.xmlMessage = "";
+            this.xmlLocation = "";
+        }
+
         this.schemaLocation = testCfg.getSchemaLocation();
         this.xsltLocation = testCfg.getXsltLocation();
         parseXPath(testCfg.getXpathQueries().getQuery());
@@ -126,5 +150,42 @@ public class BenchmarkConfig {
             this.xpathQueries = xpaths;
             this.xpathResult = values;
         }
+    }
+
+    /**
+     * This will read the xml location path and read that xml file and output the entire message in string.
+     * @return  The string data of the xml data.
+     */
+    private String getXMLDataFromFile(String xmlLocation){
+
+        BufferedReader reader = null;
+        StringBuilder xmlData = new StringBuilder("");
+
+        try{
+            //initialize reader
+            reader = new BufferedReader(new FileReader(xmlLocation));
+            String data = null;
+
+            //read xml data from file
+            while ( (data = reader.readLine()) != null ){
+                xmlData.append(data);   //append to the final xml data product
+            }
+        }
+        catch (IOException ioe){
+            System.err.println("Failed to load XML file from : " + xmlLocation);
+        }
+        finally{
+            try{
+                //clean up - there should be some helper that can do this but lazy to look for it :P
+                if (reader !=null){
+                    reader.close();
+                }
+            }
+            catch (IOException ioe){
+                //nothing we can do here, should not come here!
+            }
+        }
+
+        return xmlData.toString();
     }
 }
