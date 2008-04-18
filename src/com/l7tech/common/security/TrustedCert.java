@@ -4,6 +4,7 @@
 
 package com.l7tech.common.security;
 
+import javax.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 import java.security.cert.X509Certificate;
 
@@ -15,6 +16,8 @@ import java.security.cert.X509Certificate;
  *
  * @author alex
  */
+
+@XmlRootElement
 public class TrustedCert extends X509Entity implements Serializable, Cloneable {
     public void copyFrom(TrustedCert cert) {
         this._name = cert._name;

@@ -8,9 +8,12 @@ import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProviderConfig;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 /**
  * @author alex
  */
+@XmlRootElement
 public class FederatedUser extends PersistentUser {
     public FederatedUser() {
         this(IdentityProviderConfig.DEFAULT_OID, null);

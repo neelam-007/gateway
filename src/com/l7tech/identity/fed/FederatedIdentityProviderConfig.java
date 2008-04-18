@@ -9,10 +9,13 @@ package com.l7tech.identity.fed;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 /**
  * @author alex
  * @version $Revision$
  */
+@XmlRootElement
 public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
     public FederatedIdentityProviderConfig() {
         super(IdentityProviderType.FEDERATED);

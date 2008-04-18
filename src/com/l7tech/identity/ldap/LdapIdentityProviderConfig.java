@@ -3,6 +3,7 @@ package com.l7tech.identity.ldap;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 
+import javax.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
@@ -20,6 +21,7 @@ import java.util.Iterator;
  * $Id$<br/>
  *
  */
+@XmlRootElement
 public class LdapIdentityProviderConfig extends IdentityProviderConfig implements Serializable {
     public LdapIdentityProviderConfig(IdentityProviderConfig toto) {
         super(IdentityProviderType.LDAP);

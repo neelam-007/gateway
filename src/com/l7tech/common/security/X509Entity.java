@@ -4,6 +4,7 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
@@ -25,6 +26,7 @@ public abstract class X509Entity extends NamedEntityImp {
      * @return an {@link java.security.cert.X509Certificate}
      * @throws java.security.cert.CertificateException if the certificate cannot be deserialized
      */
+    @XmlJavaTypeAdapter(X509CertificateAdapter.class)
     public synchronized X509Certificate getCertificate() throws CertificateException {
         if ( cachedCert == null ) {
             if (certBase64 == null) return null;

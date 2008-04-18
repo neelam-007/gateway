@@ -93,6 +93,14 @@ public class IdentityProviderConfig extends NamedEntityImp {
         return propsXml;
     }
 
+    /*For JAXB processing. Needed a way to get this identity provider to recreate it's internal
+    * propsXml after setting a property after it has been unmarshalled*/
+    public void recreateSerializedProps() throws java.io.IOException{
+        propsXml = null;
+        this.getSerializedProps();
+        return;
+    }
+
     /**
      * for serialization by axis and hibernate only.
      * to set the properties, call setProperty

@@ -6,6 +6,8 @@ package com.l7tech.identity.fed;
 
 import com.l7tech.identity.IdentityProviderConfig;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 /**
  * A "virtual" federated group.
  *
@@ -16,6 +18,8 @@ import com.l7tech.identity.IdentityProviderConfig;
  * @see FederatedGroup
  * @author alex
  */
+
+@XmlRootElement
 public class VirtualGroup extends FederatedGroup {
     public VirtualGroup() {
         this(IdentityProviderConfig.DEFAULT_OID, null);

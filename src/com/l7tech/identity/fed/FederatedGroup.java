@@ -9,6 +9,8 @@ import java.util.Map;
 import com.l7tech.identity.PersistentGroup;
 import com.l7tech.identity.IdentityProviderConfig;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 /**
  * A "physical" federated group.
  *
@@ -19,6 +21,7 @@ import com.l7tech.identity.IdentityProviderConfig;
  * @author alex
  * @see VirtualGroup
  */
+@XmlRootElement
 public class FederatedGroup extends PersistentGroup {
     public FederatedGroup() {
         this(IdentityProviderConfig.DEFAULT_OID, null);
