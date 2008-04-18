@@ -16,8 +16,6 @@ import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.gui.Gui;
-import com.l7tech.proxy.gui.dialogs.LogonDialog;
 import com.l7tech.proxy.ssl.*;
 import com.l7tech.proxy.util.SslUtils;
 
@@ -25,9 +23,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
-import javax.swing.*;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -35,10 +31,6 @@ import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Strategy for obtaining a SAML token from a third party WS-Federation server using
@@ -223,7 +215,7 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
     //- PROTECTED
 
     protected SamlAssertion acquireSamlAssertion(Ssg ssg) throws OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException, BadCredentialsException, IOException {
-        SamlAssertion samlAssertion = null;
+        final SamlAssertion samlAssertion;
 
         URL url = new URL(ipStsUrl);
         GenericHttpRequestParams params = new GenericHttpRequestParams(url);
@@ -241,23 +233,15 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
             try {
                 token = FederationPassiveClient.obtainFederationToken(httpClient, params, realm, replyUrl, context, addTimestamp);
             } catch(ResponseStatusException rse) {
-                if(rse.getStatus()==HttpConstants.STATUS_UNAUTHORIZED) {
-                    if(ssg.getRuntime().promptForUsernameAndPassword()) {
-                        final String host = url.getHost();
-                        final Collection cc = new ArrayList(1);
-                        invokeOnSwingThread(new Runnable(){public void run(){cc.add(LogonDialog.logon(Gui.getInstance().getFrame(),LOGON_DIALOG_TITLE,LOGON_LABEL_TEXT,host,getUsername(),false,false,""));}});
-                        if(!cc.isEmpty()) {
-                            PasswordAuthentication pa = (PasswordAuthentication) cc.iterator().next();
-                            if(pa!=null) { //TODO if implementing (optional) persistent password for federated ssg then save here
-                                setUsername(pa.getUserName());
-                                storePassword(pa.getPassword());
-                                params.setPasswordAuthentication(pa);
-                                continue;
-                            }
-                            else if (ssg.getRuntime().incrementNumTimesLogonDialogCanceled() >= SsgRuntime.MAX_LOGON_CANCEL) {
-                                ssg.getRuntime().promptForUsernameAndPassword(false);
-                            }
-                        }
+                if(rse.getStatus() == HttpConstants.STATUS_UNAUTHORIZED) {
+                    final String host = url.getHost();
+                    PasswordAuthentication pw = ssg.getRuntime().getCredentialManager().getAuxiliaryCredentials(ssg, getType(), host, CredentialManager.ReasonHint.TOKEN_SERVICE, false);
+                    if(pw != null) {
+                        //TODO if implementing (optional) persistent password for federated ssg then save here
+                        setUsername(pw.getUserName());
+                        storePassword(pw.getPassword());
+                        params.setPasswordAuthentication(pw);
+                        continue;
                     }
                     throw rse;
                 }
@@ -275,17 +259,6 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
     }
 
     //- PRIVATE
-
-    /**
-     * Logger for this class
-     */
-    private static final Logger logger = Logger.getLogger(WsFederationPRPSamlTokenStrategy.class.getName());
-
-    /**
-     *
-     */
-    private static final String LOGON_DIALOG_TITLE = "Log On to Federation server";
-    private static final String LOGON_LABEL_TEXT = "for the Federation server:";
 
     /**
      * SSL context to use for HTTP requests.
@@ -329,26 +302,6 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
         SSLException ssle = new SSLException(message);
         ssle.initCause(cause);
         return ssle;
-    }
-
-    /**
-     * Invoke the specified runnable and wait for it to finish.  If this is the event dispatch thread,
-     * just runs it; otherwise uses SwingUtilities.invokeAndWait()
-     * @param runnable  code that displays a modal dialog
-     */
-    private void invokeOnSwingThread(Runnable runnable) {
-        if (SwingUtilities.isEventDispatchThread()) {
-            runnable.run();
-        } else {
-            try {
-                SwingUtilities.invokeAndWait(runnable);
-            } catch (InterruptedException e) {
-                logger.log(Level.WARNING, "Thread interrupted; reasserting interrupt and continuing");
-                Thread.currentThread().interrupt();
-            } catch (InvocationTargetException e) {
-                logger.log(Level.WARNING, "Dialog code threw an exception; continuing", e);
-            }
-        }
     }
 
     /**

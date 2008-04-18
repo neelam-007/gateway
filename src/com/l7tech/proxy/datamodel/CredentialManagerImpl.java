@@ -10,6 +10,7 @@ import com.l7tech.proxy.datamodel.exceptions.CredentialsUnavailableException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.proxy.Constants;
+import com.l7tech.common.security.token.SecurityTokenType;
 
 import java.net.PasswordAuthentication;
 import java.security.cert.X509Certificate;
@@ -50,6 +51,11 @@ public class CredentialManagerImpl extends CredentialManager {
 
     public PasswordAuthentication getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException {
         log.log(Level.WARNING, "Headless CredentialManager: unable to obtain new credentials");
+        throw new CredentialsUnavailableException("Unable to obtain new credentials");
+    }
+
+    public PasswordAuthentication getAuxiliaryCredentials(Ssg ssg, SecurityTokenType tokenType, String stsHostname, ReasonHint hint, boolean reportBadPassword) throws OperationCanceledException {
+        log.log(Level.WARNING, "Headless CredentialManager: unable to obtain credentials for STS");
         throw new CredentialsUnavailableException("Unable to obtain new credentials");
     }
 

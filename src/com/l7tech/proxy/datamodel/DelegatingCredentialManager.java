@@ -8,6 +8,7 @@ package com.l7tech.proxy.datamodel;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.ssl.SslPeer;
+import com.l7tech.common.security.token.SecurityTokenType;
 
 import java.net.PasswordAuthentication;
 import java.security.cert.X509Certificate;
@@ -38,6 +39,10 @@ public class DelegatingCredentialManager extends CredentialManager {
 
     public PasswordAuthentication getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException, HttpChallengeRequiredException {
         return getDelegate().getNewCredentials(ssg, displayBadPasswordMessage);
+    }
+
+    public PasswordAuthentication getAuxiliaryCredentials(Ssg ssg, SecurityTokenType tokenType, String stsHostname, ReasonHint hint, boolean reportBadPassword) throws OperationCanceledException {
+        return getDelegate().getAuxiliaryCredentials(ssg, tokenType, stsHostname, hint, reportBadPassword);
     }
 
     public void notifyLengthyOperationStarting(Ssg ssg, String message) {

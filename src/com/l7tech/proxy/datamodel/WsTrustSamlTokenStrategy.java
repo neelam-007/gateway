@@ -14,43 +14,32 @@ import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
 import com.l7tech.common.security.wstrust.WsTrustConfig;
 import com.l7tech.common.security.wstrust.WsTrustConfigFactory;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.EncryptionUtil;
-import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.common.xml.WsTrustRequestType;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.WsTrustRequestType;
+import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.ssl.*;
 import com.l7tech.proxy.util.SslUtils;
-import com.l7tech.proxy.gui.dialogs.LogonDialog;
-import com.l7tech.proxy.gui.Gui;
-
 import org.w3c.dom.Element;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
-import javax.swing.*;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.PasswordAuthentication;
+import java.net.URL;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * This is the strategy for obtaining a SAML token from a third-party WS-Trust server.
@@ -58,12 +47,6 @@ import java.lang.reflect.InvocationTargetException;
 public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy implements Cloneable {
     private static final Logger log = Logger.getLogger(WsTrustSamlTokenStrategy.class.getName());
     private static final SSLContext SSL_CONTEXT;
-
-    /**
-     *
-     */
-    private static final String LOGON_DIALOG_TITLE = "Log On to Trust server";
-    private static final String LOGON_LABEL_TEXT = "for the Trust server:";
 
     // TODO parameterize the HTTP client to use
     private final UrlConnectionHttpClient genericHttpClient = new UrlConnectionHttpClient();
@@ -147,25 +130,14 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
                     Throwable cause = cioe.getCause();
                     if(cause instanceof InvalidDocumentFormatException) {
                         if(cause.getMessage() != null && cause.getMessage().startsWith("Unexpected SOAP fault from token service: p383:FailedAuthentication:")) {
-                            if(ssg.getRuntime().promptForUsernameAndPassword()) {
-                                final String host = url.getHost();
-                                final Collection cc = new ArrayList(1);
-                                invokeOnSwingThread(new Runnable(){public void run(){
-                                    cc.add(LogonDialog.logon(Gui.getInstance().getFrame(),LOGON_DIALOG_TITLE,LOGON_LABEL_TEXT,host,getUsername(),false,false,""));
-                                }});
-                                if(!cc.isEmpty()) {
-                                    PasswordAuthentication pa = (PasswordAuthentication) cc.iterator().next();
-                                    if(pa!=null) { //TODO if implementing (optional) persistent password for wstrust federation then save here
-                                        setUsername(pa.getUserName());
-                                        storePassword(pa.getPassword());
-                                        usernameToken = new UsernameTokenImpl(getUsername(), password());
-                                        continue;
-                                    }
-                                    else if (ssg.getRuntime().incrementNumTimesLogonDialogCanceled() >= SsgRuntime.MAX_LOGON_CANCEL) {
-                                        ssg.getRuntime().promptForUsernameAndPassword(false);
-                                    }
-                                    
-                                }
+                            final String host = url.getHost();
+                            PasswordAuthentication pw = ssg.getRuntime().getCredentialManager().getAuxiliaryCredentials(ssg, getType(), host, CredentialManager.ReasonHint.TOKEN_SERVICE, false);
+                            if(pw != null) {
+                                //TODO if implementing (optional) persistent password for wstrust federation then save here
+                                setUsername(pw.getUserName());
+                                storePassword(pw.getPassword());
+                                usernameToken = new UsernameTokenImpl(getUsername(), password());
+                                continue;
                             }
                         }
                     }
@@ -344,26 +316,6 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
 
         // They do; import it
         storeTokenServerCert(peerCert);
-    }
-
-    /**
-     * Invoke the specified runnable and wait for it to finish.  If this is the event dispatch thread,
-     * just runs it; otherwise uses SwingUtilities.invokeAndWait()
-     * @param runnable  code that displays a modal dialog
-     */
-    private void invokeOnSwingThread(Runnable runnable) {
-        if (SwingUtilities.isEventDispatchThread()) {
-            runnable.run();
-        } else {
-            try {
-                SwingUtilities.invokeAndWait(runnable);
-            } catch (InterruptedException e) {
-                log.log(Level.WARNING, "Thread interrupted; reasserting interrupt and continuing");
-                Thread.currentThread().interrupt();
-            } catch (InvocationTargetException e) {
-                log.log(Level.WARNING, "Dialog code threw an exception; continuing", e);
-            }
-        }
     }
 
     /**

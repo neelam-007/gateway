@@ -9,6 +9,7 @@ package com.l7tech.proxy.gui;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.PleaseWaitDialog;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.proxy.datamodel.CredentialManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManager;
@@ -85,6 +86,59 @@ class GuiCredentialManager extends CredentialManager {
         return getCredentials(ssg, "", true, displayBadPasswordMessage);
     }
 
+    public PasswordAuthentication getAuxiliaryCredentials(final Ssg ssg, SecurityTokenType tokenType, String stsHostname, final ReasonHint hint, final boolean reportBadPassword) throws OperationCanceledException {
+        // If this SSG isn't supposed to be hassling us with dialog boxes, stop now
+        if (ssg != null && !ssg.getRuntime().promptForUsernameAndPassword()) {
+            log.info("Logon prompts disabled for Gateway " + ssg);
+            throw new OperationCanceledException("Logon prompts are disabled for Gateway " + ssg);
+        }
+
+        final CredHolder holder = new CredHolder();
+
+        final String labelText = "for the token service: ";
+        final String serverName = stsHostname;
+
+        log.info("Displaying logon prompt for token service " + stsHostname);
+        invokeOnSwingThread(new Runnable() {
+            public void run() {
+                PasswordAuthentication pw = LogonDialog.logon(
+                        Gui.getInstance().getFrame(),
+                        "Enter Username and Password",
+                        labelText,
+                        serverName,
+                        null,
+                        false,
+                        reportBadPassword,
+                        "");
+                if (pw == null) {
+                    if (ssg != null && ssg.getRuntime().incrementNumTimesLogonDialogCanceled() >= SsgRuntime.MAX_LOGON_CANCEL) {
+                        // This is the second time we've popped up a logon dialog and the user has impatiently
+                        // canceled it.  We can take a hint -- we'll turn off logon prompts until the proxy is
+                        // restarted or the user manually changes the password.
+                        ssg.getRuntime().promptForUsernameAndPassword(false);
+                    }
+                    return;
+                }
+                ssg.setUsername(pw.getUserName());
+                ssg.getRuntime().setCachedPassword(pw.getPassword());
+                ssg.getRuntime().onCredentialsUpdated();
+                ssg.getRuntime().promptForUsernameAndPassword(true);
+                holder.pw = pw;
+
+                doSsgManagerSave();
+            }
+        });
+
+        if (holder.pw == null) {
+            log.info("User canceled logon dialog for token service " + stsHostname);
+            throw new OperationCanceledException("User canceled logon dialog");
+        }
+
+        log.info("New credentials noted for token service " + stsHostname);
+        ssg.getRuntime().resetSslContext();
+        return holder.pw;
+    }
+
     private PasswordAuthentication getCredentials(final Ssg ssg, final String reasonHint, boolean mustGetNewOnes, final boolean oldOnesWereBad)
             throws OperationCanceledException
     {
@@ -139,7 +193,7 @@ class GuiCredentialManager extends CredentialManager {
                     return;
                 }
                 ssg.setUsername(pw.getUserName());
-                ssg.getRuntime().setCachedPassword(pw.getPassword()); // TODO: encoding?
+                ssg.getRuntime().setCachedPassword(pw.getPassword());
                 ssg.getRuntime().onCredentialsUpdated();
                 ssg.getRuntime().promptForUsernameAndPassword(true);
                 holder.pw = pw;

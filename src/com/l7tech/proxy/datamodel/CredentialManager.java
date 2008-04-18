@@ -9,6 +9,7 @@ package com.l7tech.proxy.datamodel;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.ssl.SslPeer;
+import com.l7tech.common.security.token.SecurityTokenType;
 
 import java.net.PasswordAuthentication;
 import java.security.cert.X509Certificate;
@@ -24,9 +25,11 @@ import java.security.cert.X509Certificate;
  * Time: 10:31:45 AM
  */
 public abstract class CredentialManager {
-    public static final class ReasonHint {
-        public static final ReasonHint NONE = new ReasonHint("");
-        public static final ReasonHint PRIVATE_KEY = new ReasonHint("for your client certificate ");
+    public static enum ReasonHint {
+        NONE(""),
+        PRIVATE_KEY("for your client certificate "),
+        TOKEN_SERVICE("for your security token service ");
+
         private final String r;
         private ReasonHint(String r) { this.r = r; }
         public String toString() { return r; }
@@ -53,7 +56,7 @@ public abstract class CredentialManager {
      * Caller <em>must not</em> hold the Ssg monitor when calling this method.
      *
      * @param ssg the Ssg whose credentials you want
-     * @param hint optional hint to the user about what we plan to do with the password when we get it.
+     * @param hint hint to the user about what we plan to do with the password when we get it.  Currently required.
      *             The same credentials must be returned regardless of which hint is provided.
      *             (Eventually we may support using a private key password that differs from the Gateway password.)
      * @param disregardExisting if true, the user will be prompted for new credentials even if cached credentials are on hand.
@@ -79,6 +82,24 @@ public abstract class CredentialManager {
      * @throws OperationCanceledException if we prompted the user, but he clicked cancel
      */
     public abstract PasswordAuthentication getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException, HttpChallengeRequiredException;
+
+    /**
+     * Get auxiliary credentials for this Ssg, to be used to obtain a security token of the specified type from
+     * the specified token service hostname. 
+     *
+     * Caller <em>must not</em> hold the Ssg monitor when calling this method.
+     *
+     * @param ssg the Ssg whose auxiliary credentials you want.  Currently required.
+     * @param tokenType the type of security token we are trying to get, or null if not relevant.
+     * @param stsHostname the hostname of the security token service we plan to talk to.  Currently required.
+     * @param hint hint to the user about what we plan to do with the password when we get it.  Currently required.
+     *             The same credentials must be returned regardless of which hint is provided.
+     * @param reportBadPassword if true, the user will be advised that the existing credentials are bad.
+     * @return the credentials to use.  Never null.
+     * @throws com.l7tech.proxy.datamodel.exceptions.CredentialsUnavailableException if no matching credentials are configured or available 
+     * @throws OperationCanceledException if we prompted the user, but he clicked cancel
+     */
+    public abstract PasswordAuthentication getAuxiliaryCredentials(Ssg ssg, SecurityTokenType tokenType, String stsHostname, ReasonHint hint, boolean reportBadPassword) throws OperationCanceledException;
 
     /**
      * Unobtrusively notify that a lengthy operation is now in progress.
