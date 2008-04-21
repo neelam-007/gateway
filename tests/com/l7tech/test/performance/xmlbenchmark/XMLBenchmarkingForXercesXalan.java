@@ -34,8 +34,10 @@ import com.l7tech.server.communityschemas.SchemaValidationErrorHandler;
  */
 public class XMLBenchmarkingForXercesXalan extends XMLBenchmarking {
 
-    private Document document;
-    public static final boolean NAMESPACE_AWARENESS = true;
+    public static boolean NAMESPACE_AWARENESS = true;
+    public static String NAMESPACE_PREFIX = "ns1";
+    public static String NAMESPACE_URI = "http://l7tech.com/xmlbench";
+
     SchemaValidationErrorHandler errorHandler;
 
     /**
@@ -57,18 +59,9 @@ public class XMLBenchmarkingForXercesXalan extends XMLBenchmarking {
             //initialize the error handler for schema validation
             errorHandler = new SchemaValidationErrorHandler();
             errorHandler.reset();
-
-            //create document
-            DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactoryImpl.newInstance();
-            docBuilderFactory.setNamespaceAware(NAMESPACE_AWARENESS);
-
-            DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
-            document = docBuilder.parse(new InputSource(new ByteArrayInputStream(xmlMessage.getBytes())));
-
         }
         catch (Exception e){
-            System.err.println("Failed in XMLBenchmarkingForXercesXalan - initialize() : " + e.getMessage());
-            throw new BenchmarkException(e);
+            throw new BenchmarkException("Failed in XMLBenchmarkingForXercesXalan - initialize()", e);
         }
 
     }
@@ -82,8 +75,7 @@ public class XMLBenchmarkingForXercesXalan extends XMLBenchmarking {
             testResults.setParsingTestPassed(true);
         }
         catch (Exception e){
-            System.err.println("Failed in XMLBenchmarkingForXercesXalan - runParsing() : " + e.getMessage());
-            throw new BenchmarkException(e);
+            throw new BenchmarkException("Failed in XMLBenchmarkingForXercesXalan - runParsing()", e);
         }
     }
 
@@ -125,8 +117,7 @@ public class XMLBenchmarkingForXercesXalan extends XMLBenchmarking {
             }
         }
         catch (Exception e){
-            System.err.println("Failed in XMLBenchmarkingForXercesXalan - runSchemalValidation() : " + e.getMessage());
-            throw new BenchmarkException(e);
+            throw new BenchmarkException("Failed in XMLBenchmarkingForXercesXalan - runSchemalValidation()", e);
         }
 
     }
@@ -152,24 +143,30 @@ public class XMLBenchmarkingForXercesXalan extends XMLBenchmarking {
             testResults.setXsltTestPassed(true);    //we dont know the transformation correctness until checked
         }
         catch (Exception e){
-            System.err.println("Failed in XMLBenchmarkingForXercesXalan - runXSLTransform() : " + e.getMessage());
-            throw new BenchmarkException(e);
+            throw new BenchmarkException("Failed in XMLBenchmarkingForXercesXalan - runXSLTransform()", e);
         }
 
     }
 
     protected void runXPath() throws BenchmarkException {
         try{
+            //create document
+            DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactoryImpl.newInstance();
+            docBuilderFactory.setNamespaceAware(NAMESPACE_AWARENESS);
+
+            DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+            Document document = docBuilder.parse(new InputSource(new ByteArrayInputStream(xmlMessage.getBytes())));
+
             XPathFactory xpathFactory = XPathFactory.newInstance();
             XPath xpath = xpathFactory.newXPath();
             xpath.reset();
             xpath.setNamespaceContext(new NamespaceContext() {
                 public String getNamespaceURI(String prefix) {
-                    return "http://l7tech.com/xmlbench";
+                    return NAMESPACE_URI;
                 }
 
                 public String getPrefix(String namespaceURI) {
-                    return "ns1";
+                    return NAMESPACE_PREFIX;
                 }
 
                 public Iterator getPrefixes(String namespaceURI) {
@@ -192,8 +189,7 @@ public class XMLBenchmarkingForXercesXalan extends XMLBenchmarking {
             testResults.setXPathResults(xpathResults);
         }
         catch (Exception e){
-            System.err.println("Failed in XMLBenchmarkingForXercesXalan - runXPath() : " + e.getMessage());
-            throw new BenchmarkException(e);
+            throw new BenchmarkException("Failed in XMLBenchmarkingForXercesXalan - runXPath()", e);
         }
     }
 }

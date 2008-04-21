@@ -6,7 +6,6 @@ import com.ximpleware.AutoPilot;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.io.ByteArrayInputStream;
 
 /**
  * XML Benchmark testing for VTD which is own by Ximpleware.  It seems that Ximpleware does not have a way for
@@ -17,10 +16,9 @@ import java.io.ByteArrayInputStream;
  */
 public class XMLBenchmarkingForVTD extends XMLBenchmarking {
 
-    private VTDGen vtdGen;
-    public static final boolean NAMESPACE_AWARENESS = true;
-    public static final String NAMESPACE_PREFIX = "ns1";
-    public static final String NAMESPACE_URL = "http://l7tech.com/xmlbench";
+    public static boolean NAMESPACE_AWARENESS = true;
+    public static String NAMESPACE_PREFIX = "ns1";
+    public static String NAMESPACE_URI = "http://l7tech.com/xmlbench";
 
     public XMLBenchmarkingForVTD(BenchmarkConfig cfg) {
         super(cfg);
@@ -29,10 +27,6 @@ public class XMLBenchmarkingForVTD extends XMLBenchmarking {
     protected void initialize() throws BenchmarkException {
         try{
             super.initialize();
-            
-            vtdGen = new VTDGen();
-            vtdGen.setDoc(config.xmlMessage.getBytes());
-            vtdGen.parse(true);
             //vtdGen.parseFile(super.config.getXmlLocation(), NAMESPACE_AWARENESS);
         }
         catch (Exception e){
@@ -45,6 +39,7 @@ public class XMLBenchmarkingForVTD extends XMLBenchmarking {
         try{
             VTDGen vtdGen = new VTDGen();
             vtdGen.setDoc(config.xmlMessage.getBytes());
+            vtdGen.parse(true);
             //boolean successParse = vtdGen.parseFile(super.config.getXmlLocation(), NAMESPACE_AWARENESS);
             testResults.setParsingTestPassed(true);
 
@@ -58,8 +53,7 @@ public class XMLBenchmarkingForVTD extends XMLBenchmarking {
             }*/
         }
         catch (Exception e) {
-            System.err.println("Failed in XMLBenchmarkingForVTD - runParsing() : " + e.getMessage());
-            throw new BenchmarkException(e);
+            throw new BenchmarkException("Failed in XMLBenchmarkingForVTD - runParsing()", e);
         }
     }
 
@@ -75,13 +69,17 @@ public class XMLBenchmarkingForVTD extends XMLBenchmarking {
 
     protected void runXPath() throws BenchmarkException {
         try{
+            VTDGen vtdGen = new VTDGen();
+            vtdGen.setDoc(config.xmlMessage.getBytes());
+            vtdGen.parse(true);
+
             //have to initialize the navigator then put it into the auto pilot which is XPath
             VTDNav vtdNav = vtdGen.getNav();
             AutoPilot autoPilot = new AutoPilot(vtdNav);    //does the XPath
 
             //set the namespace if we are using it
             if ( NAMESPACE_AWARENESS ){
-                autoPilot.declareXPathNameSpace(NAMESPACE_PREFIX, NAMESPACE_URL);
+                autoPilot.declareXPathNameSpace(NAMESPACE_PREFIX, NAMESPACE_URI);
             }
 
             List<String> xPathQueries = super.config.getXpathQueries();
@@ -99,8 +97,7 @@ public class XMLBenchmarkingForVTD extends XMLBenchmarking {
             testResults.setXPathResults(xPathResults);             
         }
         catch (Exception e){
-            System.err.println("Failed in XMLBenchmarkingForVTD - runXPath() : " + e.getMessage());
-            throw new BenchmarkException(e);
+            throw new BenchmarkException("Failed in XMLBenchmarkingForVTD - runXPath()", e);
         }
 
     }
