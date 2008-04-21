@@ -335,11 +335,18 @@ public class DBActions {
         return isOk;
     }
 
+    private String hidepass(String password) {
+        // We will only indicate whether or not the password is empty here.
+        // To avoid leaking information about the length we won't just mask the characters;
+        // to avoid misleadingly implying an incorrect length, we won't just write asterixes
+        return password == null || password.length() < 1 ? "<empty>" : "<not shown>";
+    }
+
     public boolean doExistingDb(String dbName, String hostname, String username, String password, String privUsername, String privPassword, String currentVersion, DBActionsListener ui) {
         String errorMsg;
         boolean isOk;
 
-        logger.info("Attempting to connect to an existing database (" + hostname + "/" + dbName + ")" + "using username/password \"" + username + "/" + password + "\"");
+        logger.info("Attempting to connect to an existing database (" + hostname + "/" + dbName + ")" + "using username/password " + username + "/" + hidepass(password));
 
 
         if (hostname.equalsIgnoreCase(SharedWizardInfo.getInstance().getRealHostname())) {
