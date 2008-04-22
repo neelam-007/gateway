@@ -140,6 +140,10 @@ seal)
   # Force root to change her password the next time she logs in.
   chage -d 0 root
 
+  #reset pam_tally
+  pam_tally --reset --user root
+  pam_tally --reset --user ssgconfig
+
 # fixme: shouldn't we enable the firstboot service and touch
 # /etc/reconfigSys to have the client go through base
 # install settings? I.e. date,country,keyboard etc.
@@ -153,11 +157,11 @@ seal)
   #dd if=/dev/zero of=/tmp/0bits bs=20971520 # bs=20m
   #rm -f /tmp/0bits
 
-  # poweroff the system and do not write the wtmp entry.
-  poweroff -d
-
   # Delete this script.
   rm -f /root/sealsys
+
+  # poweroff the system and do not write the wtmp entry.
+  poweroff -d
 
 ;;
 
