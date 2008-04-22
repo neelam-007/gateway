@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.xml.bind.annotation.XmlRootElement;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
@@ -20,6 +21,7 @@ import java.util.logging.Logger;
  *
  * Persistent.
  */
+@XmlRootElement
 public class JmsConnection extends NamedEntityImp implements Serializable {
     private static final Logger logger = Logger.getLogger(JmsConnection.class.getName());
     private static final String ENCODING = "UTF-8";

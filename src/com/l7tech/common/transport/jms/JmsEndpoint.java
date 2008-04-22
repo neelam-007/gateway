@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
+import javax.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 import java.net.PasswordAuthentication;
 
@@ -16,6 +17,7 @@ import java.net.PasswordAuthentication;
  *
  * Persistent.
   */
+@XmlRootElement
 public class JmsEndpoint extends NamedEntityImp implements Serializable, Comparable {
     public static final int DEFAULT_MAX_CONCURRENT_REQUESTS = 1;
 
