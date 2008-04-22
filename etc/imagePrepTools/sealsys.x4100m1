@@ -139,6 +139,10 @@ seal)
 
   # Force root to change her password the next time she logs in.
   chage -d 0 root
+  chage -d 0 ssgconfig
+
+  #reset ssgconfig password to "7layer"
+  echo "7layer" | passwd ssgconfig --stdin >/dev/null
 
   #reset pam_tally
   pam_tally --reset --user root
