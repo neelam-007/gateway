@@ -1183,6 +1183,78 @@
         <echo level="info">Nightly performance tests complete.</echo>
     </target>
 
+    <target name="test.perf.xmlbench" description="Run performance xml-benchmarking tests and generate a Japex test report." depends="clean.test, dev">
+
+        <!-- clean.test, dev, -test.perf.init -->
+        <echo level="info">Running XML-Benchmarking test.</echo>
+
+        <!-- Composes desired Japex report file name and final location. -->
+        <tstamp>
+            <format property="test.xmlbench.report.suffix" pattern="yyyy'-'MM'-'dd'.'HHmm"/>
+        </tstamp>
+        <!--<property name="test.perf.report.name" value="${build.version.major}.${build.version.minor}${build.version.subminor}_${test.perf.report.suffix}"/>-->
+
+        <property name="test.xmlbench.report.dir" value="${build.dir}/xml-benchmark"/>
+        <property name="test.xmlbench.report.name" value="XML-Benchmarking test"/>
+        <property name="test.xmlbench.report.file" location="${test.xmlbench.report.dir}/xml-benchmarking-test.xml"/>
+
+        <!-- Creates temporary directory for Japex to output test report.
+             This is necessary because Japex is hardcoded to output folder and file names I don't like. -->
+        <!--<tstamp>-->
+            <!--<format property="test.xmlbench.tmp.suffix" pattern="yyyyMMddHHmmss"/>-->
+        <!--</tstamp>-->
+        <property name="test.xmlbench.tmp.dir" location="${build.dir}/xml-benchmark-tmp"/>
+        <mkdir dir="${test.xmlbench.tmp.dir}"/>
+
+        <!-- Runs Japex to generate test report file. -->
+        <java dir="." fork="true" classname="com.sun.japex.Japex">
+            <classpath>
+                <fileset dir="lib">
+                    <include name="ant.jar"/>
+                    <include name="test/japex-1.1.jar"/>
+                    <include name="test/jdsl-1.1.jar"/>
+                    <include name="tools/junit-4.4.jar"/>
+                </fileset>
+            </classpath>
+            <jvmarg value="-Djava.library.path=/usr/local/Tarari/lib"/>
+            <jvmarg value="-Djapex.reportsDirectory=${test.xmlbench.tmp.dir}"/>
+            <jvmarg value="-Dlayer7.name=${test.xmlbench.report.name}"/>
+            <jvmarg value="-Dlayer7.version=v${build.version.major}.${build.version.minor}${build.version.subminor}"/> <!-- letter 'v' to prevent Japex from parsing this as number -->
+            <jvmarg value="-Dlayer7.notes=xml benchmarking"/>
+            <jvmarg value="-Dsrc.root=${src.root}"/>
+            <arg line="-nohtml"/>
+            <arg line="-verbose"/>
+            <arg line="tests/com/l7tech/test/performance/xmlbenchmark/japex-config.xml"/>
+        </java>
+
+        <!--Moves Japex test report to desired final location.-->
+        <move tofile="${test.xmlbench.report.file}">
+            <fileset dir="${test.xmlbench.tmp.dir}">
+                <include name="**/report.xml"/>
+            </fileset>
+        </move>
+
+        <delete dir="${test.xmlbench.tmp.dir}"/>
+
+        <!--Run utility to generate the charts from the data. -->
+        <echo level="info">Generating charts from result.</echo>
+        <java dir="." fork="true" classname="com.l7tech.test.performance.xmlbenchmark.ChartBenchmarkResults">
+            <classpath>
+                <fileset dir="lib">
+                    <include name="jcommon-1.0.5.jar"/>
+                    <include name="jfreechart-1.0.2.jar"/>
+                    <include name="xercesImpl.jar"/>
+                </fileset>
+                <pathelement location="${build.classes}"/>
+                <pathelement location="${build.test.classes}"/>
+            </classpath>
+            <arg line="${test.xmlbench.report.file}"/>
+            <arg line="${test.xmlbench.report.dir}"/>
+        </java>
+
+        <echo level="info">XML-Benchmarking test complete.</echo>
+    </target>
+
     <target name="report.jdepend" depends="compile">
         <echo level="info">Generating JDepend report.</echo>
         <mkdir dir="${build.reports}/jdepend"/>
