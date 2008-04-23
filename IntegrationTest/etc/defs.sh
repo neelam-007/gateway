@@ -26,20 +26,6 @@ export SITEMINDER_RPM="ssg-sm6-4.4-1.i386.rpm"
 export SYMANTEC_RPM="ssg-symantec-4.4-1.noarch.rpm"
 export JSAM_RPM="ssg-jsam-4.4-1.noarch.rpm"
 
-export SSG_VERSION=""
-if [ "$SSG_VERSION" = "4.3" ]; then
-  export DB_DUMP_TGZ_FILE="dataDump_4.3.gzip"
-  export DB_DUMP_FILE="dataDump_4.3.sql"
-elif [ "$SSG_VERSION" = "4.3.2" ]; then
-  export DB_DUMP_TGZ_FILE="dataDump_4.3.2.tar.gz"
-  export DB_DUMP_FILE="dataDump_4.3.2.sql"
-elif [ "$SSG_VERSION" = "4.4" ]; then
-  export DB_DUMP_TGZ_FILE="dataDump_4.4.tar.gz"
-  export DB_DUMP_FILE="dataDump_4.4.sql"
-elif [ "$SSG_VERSION" = "HEAD" ]; then
-  export DB_DUMP_TGZ_FILE="dataDump_4.4.tar.gz"
-  export DB_DUMP_FILE="dataDump_4.4.sql"
-else
-  export DB_DUMP_TGZ_FILE="dataDump_4.4.tar.gz"
-  export DB_DUMP_FILE="dataDump_4.4.sql"
-fi
+export SSG_VERSION="HEAD"
+export DB_DUMP_TGZ_FILE="dataDump_4.4.tar.gz"
+export DB_DUMP_FILE="dataDump_4.4.sql"

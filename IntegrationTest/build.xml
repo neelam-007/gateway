@@ -122,22 +122,6 @@
                 <uptodate targetfile="${lib.dir}/Manager.jar" srcfile="${uneasyrooster.ssmBuild.dir}/Manager.jar"/>
             </and>
         </condition>
-
-        <condition property="build.fixSourceCode">
-            <not>
-                <and>
-                    <isset property="env.SSG_VERSION"/>
-                    <equals arg1="${env.SSG_VERSION}" arg2="4.4"/>
-                </and>
-            </not>
-        </condition>
-    </target>
-
-    <target name="fixSourceCode" depends="init" description="Fix Source Code" if="build.fixSourceCode">
-        <echo>SSG_VERSION = ${env.SSG_VERSION}</echo>
-        <replace dir="src/com/l7tech/manager/automator/jaxb" token="//entity-manager//" summary="true">
-            <include name="**/*.java"/>
-        </replace>
     </target>
     
     <!-- Executable Targets: build -->
