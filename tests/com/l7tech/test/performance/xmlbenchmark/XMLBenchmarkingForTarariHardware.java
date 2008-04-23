@@ -52,8 +52,8 @@ public class XMLBenchmarkingForTarariHardware extends XMLBenchmarking {
      * Default constructor
      * @param cfg
      */
-    public XMLBenchmarkingForTarariHardware(BenchmarkConfig cfg) {
-        super(cfg);
+    public XMLBenchmarkingForTarariHardware(BenchmarkConfig cfg, BenchmarkOperation[] ops) {
+        super(cfg, ops);
     }
 
     /**

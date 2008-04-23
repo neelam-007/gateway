@@ -11,7 +11,6 @@ import com.tarari.xml.xpath10.parser.ExpressionParser;
 import com.tarari.xml.xpath10.parser.XPathParseContext;
 import com.tarari.xml.xpath10.expr.Expression;
 import com.tarari.xml.xpath10.XPathContext;
-import com.tarari.xml.name.NamespaceDecl;
 import com.tarari.xml.xslt11.Stylesheet;
 
 import java.io.ByteArrayOutputStream;
@@ -34,8 +33,8 @@ public class XMLBenchmarkingForTarariSoftware extends XMLBenchmarking {
     public static String NAMESPACE_PREFIX = "ns1";
     public static String NAMESPACE_URI = "http://l7tech.com/xmlbench";
 
-    public XMLBenchmarkingForTarariSoftware(BenchmarkConfig cfg) {
-        super(cfg);
+    public XMLBenchmarkingForTarariSoftware(BenchmarkConfig cfg, BenchmarkOperation[] ops) {
+        super(cfg, ops);
     }
 
     protected void initialize() throws BenchmarkException {
@@ -49,7 +48,7 @@ public class XMLBenchmarkingForTarariSoftware extends XMLBenchmarking {
 
     protected void runParsing() throws BenchmarkException {
         try {
-            XmlSource xmlSource = new XmlSource(config.xmlMessage.getBytes());
+            XmlSource xmlSource = new XmlSource(config.getXmlStream());
             RaxDocument raxDocument = RaxDocument.createDocument(xmlSource);
 
             //pass parsing if document created
@@ -65,7 +64,7 @@ public class XMLBenchmarkingForTarariSoftware extends XMLBenchmarking {
 
     protected void runSchemalValidation() throws BenchmarkException {
         try {
-            XmlSource xmlSource = new XmlSource(config.xmlMessage.getBytes());
+            XmlSource xmlSource = new XmlSource(config.getXmlStream());
             RaxDocument raxDocument = RaxDocument.createDocument(xmlSource);
 
             SchemaLoader.unloadAllSchemas();    //clear out any schema that might be in the system already - this should be init()?
@@ -90,7 +89,7 @@ public class XMLBenchmarkingForTarariSoftware extends XMLBenchmarking {
             Stylesheet stylesheet = Stylesheet.create(xslSource);
 
             //initialize xml source
-            XmlSource xmlSource = new XmlSource(config.getXmlMessage().getBytes());
+            XmlSource xmlSource = new XmlSource(config.getXmlStream());
 
             //set result storage area
             ByteArrayOutputStream byteArrayOutStream = new ByteArrayOutputStream();
@@ -112,7 +111,7 @@ public class XMLBenchmarkingForTarariSoftware extends XMLBenchmarking {
     protected void runXPath() throws BenchmarkException {
         try {
             //initialize xml source
-            XmlSource xmlSource = new XmlSource(config.getXmlMessage().getBytes());
+            XmlSource xmlSource = new XmlSource(config.getXmlStream());
             RaxDocument raxDocument = RaxDocument.createDocument(xmlSource);
 
             List<String> result = new ArrayList<String>();  //hold the xpath results

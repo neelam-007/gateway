@@ -29,12 +29,16 @@ public class XMLBenchmarkTest extends TestCase {
 
     private static List<BenchmarkConfig> testConfigurations;
 
+    private BenchmarkOperation[] runOperations;
+
     protected void setUp() throws Exception {
 
         if (testConfigurations == null) {
             // load configuration from xml file
             loadConfiguration();
         }
+
+//        this.runOperations = new BenchmarkOperation[] { BenchmarkOperation.P };
     }
 
     protected void tearDown() throws Exception {
@@ -45,7 +49,7 @@ public class XMLBenchmarkTest extends TestCase {
      */
     public void testTarariHW() {
 //        try {
-//            XMLBenchmarking test = new XMLBenchmarkingForTarariHardware(testConfigurations.get(0));
+//            XMLBenchmarking test = new XMLBenchmarkingForTarariHardware(testConfigurations.get(0), runOperations);
 //            test.run();
 //        }
 //        catch (BenchmarkException be) {
@@ -56,7 +60,7 @@ public class XMLBenchmarkTest extends TestCase {
 
     public void testTarariSW() {
         try {
-            XMLBenchmarking test = new XMLBenchmarkingForTarariSoftware(testConfigurations.get(0));
+            XMLBenchmarking test = new XMLBenchmarkingForTarariSoftware(testConfigurations.get(0), runOperations);
             test.run();
         }
         catch (BenchmarkException be) {
@@ -70,7 +74,21 @@ public class XMLBenchmarkTest extends TestCase {
      */
     public void testXercesXalan() {
         try{
-            XMLBenchmarking test = new XMLBenchmarkingForXercesXalan(testConfigurations.get(0));
+            XMLBenchmarking test = new XMLBenchmarkingForXercesXalan(testConfigurations.get(0), runOperations);
+            test.run();
+        }
+        catch (BenchmarkException be){
+            be.printStackTrace();
+            fail();
+        }
+    }
+
+    /**
+     * Unit test against PDOM
+     */
+    public void testInfonytePDOM() {
+        try{
+            XMLBenchmarking test = new XMLBenchmarkingForPDOM(testConfigurations.get(0), runOperations);
             test.run();
         }
         catch (BenchmarkException be){
@@ -84,7 +102,7 @@ public class XMLBenchmarkTest extends TestCase {
      */
     public void testVTD(){
         try{
-            XMLBenchmarking test = new XMLBenchmarkingForVTD(testConfigurations.get(0));
+            XMLBenchmarking test = new XMLBenchmarkingForVTD(testConfigurations.get(0), runOperations);
             test.run();
         }
         catch (BenchmarkException be){
@@ -93,6 +111,39 @@ public class XMLBenchmarkTest extends TestCase {
         }
     }
 
+    public static void setupClass() throws Exception
+    {
+        // add anything else that needs to be setup
+    }
+
+    public static void teardownClass() throws Exception
+    {
+        // add anything else that needs to be executed before exit
+    }
+    
+    protected void setUpParsing() throws Exception
+    {
+        setUp();
+        this.runOperations = new BenchmarkOperation[] {BenchmarkOperation.P};
+    }
+
+    protected void setUpSchema() throws Exception
+    {
+        setUp();
+        this.runOperations = new BenchmarkOperation[] {BenchmarkOperation.V};
+    }
+
+    protected void setUpXSLT() throws Exception
+    {
+        setUp();
+        this.runOperations = new BenchmarkOperation[] {BenchmarkOperation.T};
+    }
+
+    protected void setUpXPath() throws Exception
+    {
+        setUp();
+        this.runOperations = new BenchmarkOperation[] {BenchmarkOperation.XP};
+    }
 
     private void loadConfiguration() throws Exception
     {
@@ -141,7 +192,7 @@ public class XMLBenchmarkTest extends TestCase {
         }
     }
 
-    private void parseConfiguration(BenchmarkConfiguration config) throws Exception
+    private void parseConfiguration(BenchmarkConfiguration config) throws BenchmarkException
     {
         ArrayList<BenchmarkConfig> cfgList = new ArrayList<BenchmarkConfig>();
 
@@ -152,4 +203,5 @@ public class XMLBenchmarkTest extends TestCase {
 
         this.testConfigurations = cfgList;
     }
+
 }

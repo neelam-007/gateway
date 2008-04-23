@@ -1,8 +1,6 @@
 package com.l7tech.test.performance.xmlbenchmark;
 
-import com.ximpleware.VTDGen;
-import com.ximpleware.VTDNav;
-import com.ximpleware.AutoPilot;
+import com.ximpleware.*;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -20,8 +18,8 @@ public class XMLBenchmarkingForVTD extends XMLBenchmarking {
     public static String NAMESPACE_PREFIX = "ns1";
     public static String NAMESPACE_URI = "http://l7tech.com/xmlbench";
 
-    public XMLBenchmarkingForVTD(BenchmarkConfig cfg) {
-        super(cfg);
+    public XMLBenchmarkingForVTD(BenchmarkConfig cfg, BenchmarkOperation[] ops) {
+        super(cfg, ops);
     }
 
     protected void initialize() throws BenchmarkException {
@@ -37,12 +35,9 @@ public class XMLBenchmarkingForVTD extends XMLBenchmarking {
 
     protected void runParsing() throws BenchmarkException {
         try{
-            VTDGen vtdGen = new VTDGen();
-            vtdGen.setDoc(config.xmlMessage.getBytes());
-            vtdGen.parse(true);
+            VTDGen vtdGen = xmlToVTDGen();
             //boolean successParse = vtdGen.parseFile(super.config.getXmlLocation(), NAMESPACE_AWARENESS);
             testResults.setParsingTestPassed(true);
-
 
             /*//update testing result
             if ( successParse ){
@@ -69,9 +64,7 @@ public class XMLBenchmarkingForVTD extends XMLBenchmarking {
 
     protected void runXPath() throws BenchmarkException {
         try{
-            VTDGen vtdGen = new VTDGen();
-            vtdGen.setDoc(config.xmlMessage.getBytes());
-            vtdGen.parse(true);
+            VTDGen vtdGen = xmlToVTDGen();
 
             //have to initialize the navigator then put it into the auto pilot which is XPath
             VTDNav vtdNav = vtdGen.getNav();
@@ -94,11 +87,36 @@ public class XMLBenchmarkingForVTD extends XMLBenchmarking {
 
             //update test results
             testResults.setXpathTestPassed(true);
-            testResults.setXPathResults(xPathResults);             
-        }
-        catch (Exception e){
+            testResults.setXPathResults(xPathResults);
+
+        } catch (Exception e){
             throw new BenchmarkException("Failed in XMLBenchmarkingForVTD - runXPath()", e);
         }
 
     }
+
+    private VTDGen xmlToVTDGen() throws BenchmarkException {
+
+        VTDGen newVTD = new VTDGen();
+
+        try {
+            if (config.isXmlFromFile()) {
+                newVTD.parseFile(config.getXmlLocation(), true);
+            } else {
+                newVTD.setDoc(config.xmlMessage.getBytes());
+                newVTD.parse(true);
+            }
+            return newVTD;
+
+        } catch (EncodingException enex) {
+            throw new BenchmarkException("Error in xmlToVTDGen.", enex);
+        } catch (EOFException eof) {
+            throw new BenchmarkException("Error in xmlToVTDGen.", eof);
+        } catch (EntityException ent) {
+            throw new BenchmarkException("Error in xmlToVTDGen.", ent);
+        } catch (ParseException pex) {
+            throw new BenchmarkException("Error in xmlToVTDGen.", pex);
+        }
+    }
+
 }

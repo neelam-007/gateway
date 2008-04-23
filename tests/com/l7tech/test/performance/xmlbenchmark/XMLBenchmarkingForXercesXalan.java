@@ -7,14 +7,11 @@ import org.xml.sax.InputSource;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.parsers.SAXParser;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
@@ -44,8 +41,8 @@ public class XMLBenchmarkingForXercesXalan extends XMLBenchmarking {
      * Initialize benchmark config file
      * @param cfg    Configuration file used for the benchmark test
      */
-    public XMLBenchmarkingForXercesXalan(BenchmarkConfig cfg) {
-        super(cfg);
+    public XMLBenchmarkingForXercesXalan(BenchmarkConfig cfg, BenchmarkOperation[] ops) {
+        super(cfg, ops);
     }
 
     /**
@@ -71,7 +68,7 @@ public class XMLBenchmarkingForXercesXalan extends XMLBenchmarking {
             //parse using DOM
             DOMParser domParser = new DOMParser();
             domParser.reset();
-            domParser.parse(new InputSource(new ByteArrayInputStream(xmlMessage.getBytes())));
+            domParser.parse(getXmlInputSource());
             testResults.setParsingTestPassed(true);
         }
         catch (Exception e){
@@ -105,7 +102,7 @@ public class XMLBenchmarkingForXercesXalan extends XMLBenchmarking {
 
             DocumentBuilder builder = docBuilderFactory.newDocumentBuilder();
             builder.setErrorHandler(errorHandler);
-            builder.parse(new InputSource(new ByteArrayInputStream(xmlMessage.getBytes())));
+            builder.parse(getXmlInputSource());
 
 
             //check if there were any errors during the validation, throw exception to fail the test if not valid
@@ -125,8 +122,8 @@ public class XMLBenchmarkingForXercesXalan extends XMLBenchmarking {
     protected void runXSLTransform() throws BenchmarkException {
         try{
             //create the stream source for the XML and XSL
-            StreamSource xslStreamSource = new StreamSource(new File(super.config.getXsltLocation()));
-            StreamSource xmlStreamSource = new StreamSource(new ByteArrayInputStream(xmlMessage.getBytes()));
+            StreamSource xslStreamSource = getXsltStreamSource();
+            StreamSource xmlStreamSource = getXmlStreamSource();
 
             //initialize the transformer used for the transformation
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -155,7 +152,7 @@ public class XMLBenchmarkingForXercesXalan extends XMLBenchmarking {
             docBuilderFactory.setNamespaceAware(NAMESPACE_AWARENESS);
 
             DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
-            Document document = docBuilder.parse(new InputSource(new ByteArrayInputStream(xmlMessage.getBytes())));
+            Document document = docBuilder.parse(getXmlInputSource());
 
             XPathFactory xpathFactory = XPathFactory.newInstance();
             XPath xpath = xpathFactory.newXPath();

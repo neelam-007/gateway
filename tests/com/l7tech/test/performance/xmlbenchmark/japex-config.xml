@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testSuite name="XML-Benchmark" xmlns="http://www.sun.com/japex/testSuite">
+
+    <!--
+        See https://japex.dev.java.net/docs/manual.html and javadoc of com.sun.japex.Constants
+        for description of japex.* parameters.
+        See javadoc of com.l7tech.test.performance.Constants for description of layer7.* parameters.
+    -->
+
+    <param name="japex.classPath" value="${src.root}/lib/*.jar"/>
+    <param name="japex.classPath" value="${src.root}/lib/crypto/bc/*.jar"/>
+    <param name="japex.classPath" value="${src.root}/lib/tools/jdsl-1.0.jar"/>
+    <param name="japex.classPath" value="${src.root}/lib/tools/junit*.jar"/>
+    <param name="japex.classPath" value="${src.root}/build/classes"/>
+    <param name="japex.classPath" value="${src.root}/build/test-classes"/>
+    <param name="japex.classPath" value="${src.root}/lib/test/vtd-xml.jar"/>
+    <param name="japex.classPath" value="${src.root}/lib/test/Infonyte/*.jar"/>
+    <param name="japex.classPath" value="/usr/local/Tarari/lib/*.jar"/>
+
+    <param name="japex.reportsDirectory" value="${japex.reportsDirectory}"/>
+    
+    <param name="japex.resultUnit" value="tps"/>        <!-- must be tps -->
+    <param name="japex.warmupsPerDriver" value="0"/>    <!-- must be 0 -->
+    <param name="japex.runsPerDriver" value="1"/>       <!-- must be 1 -->
+    <param name="japex.warmupTime" value="10"/>         <!-- 30 seconds; in format ((HH:)?MM:)S?S -->
+    <param name="japex.runTime" value="30"/>            <!-- 60 seconds; in format ((HH:)?MM:)S?S -->
+
+    <param name= "layer7.name" value="${layer7.name}"/>
+    <param name= "layer7.version" value="${layer7.version}"/>
+    <param name= "layer7.notes" value="${layer7.notes}"/>
+
+    <driver name="JUnitDriver">     <!-- must be the only driver in this config -->
+        <param name="japex.driverClass" value="com.l7tech.test.performance.JUnitDriver"/>
+        <param name="description" value="Layer 7 Japex Driver"/>
+        <param name="layer7.runInInitializeDriver" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest.setupClass"/>
+        <param name="layer7.runInTerminateDriver" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest.teardownClass"/>
+    </driver>
+
+    <!-- XML Parsing Tests -->
+    <testCase name="Tarari SW-parsing">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testTarariSW"/>
+        <param name="layer7.runInPrepare" value="setUpParsing"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="Xerces/Xalan-parsing">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testXercesXalan"/>
+        <param name="layer7.runInPrepare" value="setUpParsing"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="Infonyte PDOM-parsing">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testInfonytePDOM"/>
+        <param name="layer7.runInPrepare" value="setUpParsing"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="VTD-parsing">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testVTD"/>
+        <param name="layer7.runInPrepare" value="setUpParsing"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <!-- Schema Validation Tests -->
+    <testCase name="Tarari SW-schema">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testTarariSW"/>
+        <param name="layer7.runInPrepare" value="setUpSchema"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="Xerces/Xalan-schema">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testXercesXalan"/>
+        <param name="layer7.runInPrepare" value="setUpSchema"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="Infonyte PDOM-schema">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testInfonytePDOM"/>
+        <param name="layer7.runInPrepare" value="setUpSchema"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="VTD*-schema">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testVTD"/>
+        <param name="layer7.runInPrepare" value="setUpSchema"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <!-- XSL Transform Tests -->
+    <testCase name="Tarari SW-xslt">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testTarariSW"/>
+        <param name="layer7.runInPrepare" value="setUpXSLT"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="Xerces/Xalan-xslt">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testXercesXalan"/>
+        <param name="layer7.runInPrepare" value="setUpXSLT"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="Infonyte PDOM-xslt">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testInfonytePDOM"/>
+        <param name="layer7.runInPrepare" value="setUpXSLT"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="VTD*-xslt">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testVTD"/>
+        <param name="layer7.runInPrepare" value="setUpXSLT"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <!-- XPath Tests -->
+    <testCase name="Tarari SW-xpath">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testTarariSW"/>
+        <param name="layer7.runInPrepare" value="setUpXPath"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="Xerces/Xalan-xpath">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testXercesXalan"/>
+        <param name="layer7.runInPrepare" value="setUpXPath"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="Infonyte PDOM-xpath">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testInfonytePDOM"/>
+        <param name="layer7.runInPrepare" value="setUpXPath"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+    <testCase name="VTD*-xpath">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testVTD"/>
+        <param name="layer7.runInPrepare" value="setUpXPath"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+
+</testSuite>

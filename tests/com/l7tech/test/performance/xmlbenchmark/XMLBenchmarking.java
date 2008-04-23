@@ -1,6 +1,10 @@
 package com.l7tech.test.performance.xmlbenchmark;
 
+import org.xml.sax.InputSource;
+
+import javax.xml.transform.stream.StreamSource;
 import java.util.List;
+import java.io.IOException;
 
 /**
  * This is the interface that defines the all operations that can be executed during the XML performance benchmarking tests.
@@ -12,21 +16,31 @@ public abstract class XMLBenchmarking {
     /** The configuration for one benchmark test */
     protected BenchmarkConfig config;
 
-    /** XML message instance to test against */
-    protected String xmlMessage;
+//    /** XML message instance to test against */
+//    protected String xmlMessage;
 
-    protected BenchmarkResults testResults;   //holds test results
+    /** The XML operations to run against the test message */
+    protected BenchmarkOperation[] ops;
+
+    /** Stores test results */
+    protected BenchmarkResults testResults;
 
     /**
      * Constructor.
      *
      * @param cfg configuration for the benchmark test
+     * @param runOps specifies the set of xml operations to run
      */
-    public XMLBenchmarking(BenchmarkConfig cfg) {
+    public XMLBenchmarking(BenchmarkConfig cfg, BenchmarkOperation[] runOps) {
         super();
 
         this.config = cfg;
-        this.xmlMessage = cfg.getXmlMessage();
+//        this.xmlMessage = cfg.getXmlMessage();
+
+        if (runOps == null)
+            this.ops = cfg.getOperations();
+        else
+            this.ops = runOps;
     }
 
     /**
@@ -38,7 +52,7 @@ public abstract class XMLBenchmarking {
 
         initialize();
 
-        for (BenchmarkConfig.Operation op : config.getOperations())
+        for (BenchmarkOperation op : ops)
         {
             if (op.isParse()) {
                 this.runParsing();
@@ -46,10 +60,10 @@ public abstract class XMLBenchmarking {
             else if (op.isValidate()) {
                 runSchemalValidation();
             }
-            if (op.isTransform()) {
+            else if (op.isTransform()) {
                 runXSLTransform();
             }
-            if (op.isXPath()) {
+            else if (op.isXPath()) {
                 runXPath();
             }
         }
@@ -68,7 +82,7 @@ public abstract class XMLBenchmarking {
      */
     public final void verifyTestResults() throws BenchmarkException{
 
-        for (BenchmarkConfig.Operation op : config.getOperations() ){
+        for (BenchmarkOperation op : ops ){
             //verify for parse operation
             if ( op.isParse() && !testResults.getParsingTestPassed() ){
                 throw new BenchmarkException("Parsing failed.");
@@ -116,6 +130,18 @@ public abstract class XMLBenchmarking {
         testResults = new BenchmarkResults();
     }
 
+    protected InputSource getXmlInputSource() throws IOException {
+        return new InputSource(config.getXmlStream());
+    }
+
+    protected StreamSource getXmlStreamSource() throws IOException {
+        return new StreamSource(config.getXmlStream());
+    }
+
+    protected StreamSource getXsltStreamSource() throws IOException {
+        return new StreamSource(config.getXsltLocation());
+    }
+
     protected abstract void runParsing() throws BenchmarkException;
 
     protected abstract void runSchemalValidation() throws BenchmarkException;
@@ -123,8 +149,5 @@ public abstract class XMLBenchmarking {
     protected abstract void runXSLTransform() throws BenchmarkException;
 
     protected abstract void runXPath() throws BenchmarkException;
-
-
-
 
 }

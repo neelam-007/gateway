@@ -1,25 +1,47 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <benchmark-config xmlns="http://l7tech.com/xmlbench"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="http://l7tech.com/xmlbench benchmark-config.xsd">
-    <benchmark-test name="SimpleTest">
-        <xmlMessage>
-            <!--<data><![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="yes"?><mySampleTest>dummyData</mySampleTest>]]></data>-->
-            <location>/home/dlee/Development/workspace/tests/com/l7tech/test/performance/xmlbenchmark/benchmark-config.xml</location>
-        </xmlMessage>
-        <schemaLocation>/home/dlee/Development/workspace/tests/com/l7tech/test/performance/xmlbenchmark/benchmark-config.xsd</schemaLocation>
-        <xsltLocation>/home/dlee/Development/workspace/tests/com/l7tech/test/performance/xmlbenchmark/benchmark-config.xsl</xsltLocation>
-        <xpathQueries>
-            <query>
-                <xpath>//ns1:benchmark-test/@name</xpath>
-                <!--<xpath>/benchmark-config/benchmark-test/xsltLocation/xpathQueries/query[1]/xpath/text()</xpath>-->
-                <!--<xpath>/benchmark-config/benchmark-test/@name</xpath>-->
-                <value>SimpleTest</value>
-            </query>
-            <query>
-                <xpath>//ns1:xsltLocation</xpath>
-                <value>/home/dlee/Development/workspace/tests/com/l7tech/test/performance/xmlbenchmark/benchmark-config.xsl</value>
-            </query>
-        </xpathQueries>
-    </benchmark-test>
+                  xsi:schemaLocation="http://l7tech.com/xmlbench file:///home/vchan/Dev/workspace/idea-trunk/tests/com/l7tech/test/performance/xmlbenchmark/benchmark-config.xsd">
+    <!--xsi:noNamespaceSchemaLocation="benchmark-config.xsd">-->
+  <benchmark-test name="SimpleTest">
+    <xmlMessage>
+        <data><![CDATA[
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<benchmark-config xmlns="http://l7tech.com/xmlbench"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://l7tech.com/xmlbench file:///home/vchan/Dev/workspace/idea-trunk/tests/com/l7tech/test/performance/xmlbenchmark/benchmark-config.xsd">
+  <benchmark-test name="SimpleTest">
+    <xmlMessage>
+        <location>dummy.xml</location>
+    </xmlMessage>
+    <schemaLocation>mySchemaFile.xsd</schemaLocation>
+    <xsltLocation>myXSLTFile.xsl</xsltLocation>
+      <xpathQueries>
+          <query>
+              <xpath>//value[1]/text()</xpath>
+              <value>hello</value>
+          </query>
+          <!--<query>-->
+              <!--<xpath></xpath>-->
+              <!--<value></value>-->
+          <!--</query>-->
+      </xpathQueries>
+  </benchmark-test>
+</benchmark-config>
+        ]]></data>
+        <!--<location>xmlLocation.xml</location>-->
+    </xmlMessage>
+    <schemaLocation>/home/vchan/Dev/workspace/idea-trunk/tests/com/l7tech/test/performance/xmlbenchmark/benchmark-config.xsd</schemaLocation>
+    <xsltLocation>/home/vchan/Dev/workspace/idea-trunk/tests/com/l7tech/test/performance/xmlbenchmark/benchmark-config.xsl</xsltLocation>
+      <xpathQueries>
+          <query>
+              <xpath>//ns1:benchmark-test/@name</xpath>
+              <value>SimpleTest</value>
+          </query>
+          <!--<query>-->
+              <!--<xpath>/my/xpath/test</xpath>-->
+              <!--<value>value</value>-->
+          <!--</query>-->
+      </xpathQueries>
+  </benchmark-test>
 </benchmark-config>
