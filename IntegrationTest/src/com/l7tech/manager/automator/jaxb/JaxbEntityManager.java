@@ -810,8 +810,8 @@ public class JaxbEntityManager {
         System.out.println("Downloading all policies of type: " + type);
         Collection<PolicyHeader> policyFragments = this.policyAdmin.findPolicyHeadersByType(type);
         for(PolicyHeader pH: policyFragments){
-            //entity-manager//Policy policy = this.policyAdmin.findPolicyByUniqueName(pH.getName());
-            //entity-manager//this.doMarshall(policy, jaxbDir+"/"+folderName+"/",  type+"_"+policy.getId() +".xml" );
+            Policy policy = this.policyAdmin.findPolicyByUniqueName(pH.getName());
+            this.doMarshall(policy, jaxbDir+"/"+folderName+"/",  type+"_"+policy.getId() +".xml" );
         }
         System.out.println("Finished downloading all policies of type: " + type);
     }
@@ -1024,12 +1024,12 @@ public class JaxbEntityManager {
     private void updateIncludeAssertion(Include include) throws Exception{
 
         String policyName = include.getPolicyName();
-        //entity-manager//Policy policy = this.policyAdmin.findPolicyByUniqueName(policyName);
-        //entity-manager//if(policy == null){
-            //entity-manager//throw new RuntimeException("Policy fragment: "+ policyName+" not found");
-        //entity-manager//}
-        //entity-manager//long oid = policy.getOid();
-        //entity-manager//include.setPolicyOid(oid);
+        Policy policy = this.policyAdmin.findPolicyByUniqueName(policyName);
+        if(policy == null){
+            throw new RuntimeException("Policy fragment: "+ policyName+" not found");
+        }
+        long oid = policy.getOid();
+        include.setPolicyOid(oid);
     }
     
 }

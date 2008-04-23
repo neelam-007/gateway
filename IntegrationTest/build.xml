@@ -125,7 +125,7 @@
     </target>
     
     <!-- Executable Targets: build -->
-    <target name="build" depends="init,fixSourceCode" description="Compile" unless="build.notRequired">
+    <target name="build" depends="init" description="Compile" unless="build.notRequired">
         <mkdir dir="${classes.dir}"/>
         <javac srcdir="src" destdir="${classes.dir}">
             <include name="**/*.java"/>
