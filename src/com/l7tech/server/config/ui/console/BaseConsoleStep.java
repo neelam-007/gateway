@@ -20,16 +20,16 @@ import java.util.regex.Pattern;
  * Date: Feb 21 19, 2006
  * Time: 4:50:05 PM
  */
-public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
+public abstract class BaseConsoleStep<CBT extends ConfigurationBean, CCT extends ConfigurationCommand> implements ConfigWizardConsoleStep {
 
     protected ConsoleWizardUtils consoleWizardUtils;
     protected ConfigurationWizard parent;
 
-    protected ConfigurationBean configBean = null;
+    protected CBT configBean = null;
 
     protected OSSpecificFunctions osFunctions = null;
 
-    protected ConfigurationCommand configCommand;
+    protected CCT configCommand;
 
     protected boolean showNavigation = true;
     protected boolean showQuitMessage = true;
@@ -46,6 +46,7 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
         consoleWizardUtils = parent.getWizardUtils();
     }
 
+    private static boolean warned = false;
     public void showStep(boolean validated) throws WizardNavigationException {
         if (osFunctions == null) {
             PartitionInformation pi = PartitionManager.getInstance().getActivePartition();
@@ -63,7 +64,7 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
     }
 
 
-    public ConfigurationCommand getConfigurationCommand() {
+    public CCT getConfigurationCommand() {
         return configCommand;
     }
 

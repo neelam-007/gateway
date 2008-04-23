@@ -8,11 +8,9 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.JceProvider;
-import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.ssl.CertLoader;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
@@ -20,23 +18,17 @@ import com.l7tech.proxy.util.SslUtils;
 
 import java.io.*;
 import java.net.PasswordAuthentication;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.security.*;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.Charset;
-import java.nio.charset.CharacterCodingException;
-import java.nio.CharBuffer;
-import java.nio.ByteBuffer;
 
 /**
  * Default implementation of SsgKeyStoreManager for the stand-alone SecureSpan Bridge, saving the material to PKCS#12
@@ -614,56 +606,16 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
     {
         if (ssg.isFederatedGateway())
             throw new IllegalArgumentException("Unable to import client certificate for Federated Gateway.");
-        KeyStore ks;
+        KeyStore.PrivateKeyEntry entry = null;
         try {
-            ks = KeyStore.getInstance(IMPORT_KEYSTORE_TYPE);
-        } catch (KeyStoreException e) {
-            throw new RuntimeException(e); // shouldn't happen
-        }
-        InputStream in = null;
-        try {
-            in = new FileInputStream(certFile);
-            ks.load(in, pass);
-        } finally {
-            ResourceUtils.closeQuietly(in);        
-        }
-        Certificate[] chainToImport = null;
-        Key key = null;
-        try {
-            List aliases = new ArrayList();
-            Enumeration aliasEnum = ks.aliases();
-            while (aliasEnum.hasMoreElements()) {
-                String alias = (String)aliasEnum.nextElement();
-                if (ks.getKey(alias, pass) != null)
-                    aliases.add(alias);
-            }
-            String alias = null;
-            if (aliases.size() > 1 && aliasPicker != null) {
-                alias = aliasPicker.selectAlias((String[])aliases.toArray(new String[0]));
-                if (alias == null)
-                    throw new AliasNotFoundException("The AliasPicker did not return an alias.");
-            } else if (aliases.size() > 0)
-                alias = (String)aliases.get(0);
-            if (alias == null)
-                throw new IOException("The specified file does not contain any client certificates.");
-            chainToImport = ks.getCertificateChain(alias);
-            if (chainToImport == null || chainToImport.length < 1)
-                throw new AliasNotFoundException("The specified file does not contain a certificate chain for alias " + alias);
-            ((X509Certificate)chainToImport[0]).checkValidity();
-            key = ks.getKey(alias, pass);
-            if (key == null || !(key instanceof PrivateKey))
-                throw new AliasNotFoundException("The specified alias does not contain a private key.");
-        } catch (KeyStoreException e) {
-            throw new CausedIOException("Unable to read aliases from keystore", e);
-        } catch (CertificateExpiredException cee) {
-            throw new GeneralSecurityException("The certificate has expired: " + cee.getMessage(), cee);
-        } catch (CertificateNotYetValidException cnyve) {
-            throw new GeneralSecurityException("The certificate is not yet valid: " + cnyve.getMessage(), cnyve);
+            entry = CertUtils.loadPrivateKey(new CertUtils.FileInputStreamFactory(certFile), IMPORT_KEYSTORE_TYPE, pass, aliasPicker, pass);
+        } catch (CertUtils.AliasNotFoundException e) {
+            // TODO remove this along with the intermediate class
+            throw new AliasNotFoundException(e);
         }
 
-        saveClientCertificate((PrivateKey)key, (X509Certificate)chainToImport[0], ssgPassword);
+        saveClientCertificate(entry.getPrivateKey(), (X509Certificate)entry.getCertificate(), ssgPassword);
     }
-
 
     /**
      * Convert the characters to bytes using UTF-8 encoding.

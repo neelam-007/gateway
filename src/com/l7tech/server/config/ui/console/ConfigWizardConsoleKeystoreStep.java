@@ -1,5 +1,6 @@
 package com.l7tech.server.config.ui.console;
 
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.server.config.*;
@@ -10,19 +11,26 @@ import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 
+import javax.crypto.BadPaddingException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * User: megery
  * Date: Feb 20, 2006
  * Time: 9:59:35 AM
  */
-public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements KeystoreActionsListener {
+public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep<KeystoreConfigBean, KeystoreConfigCommand> implements KeystoreActionsListener {
 
     private static final Logger logger = Logger.getLogger(ConfigWizardConsoleKeystoreStep.class.getName());
 
@@ -60,8 +68,8 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
             if (doKeystoreConfig) {
                 doKeystoreTypePrompts();
             }
-            ((KeystoreConfigBean)configBean).setHostname(getParentWizard().getHostname());
-            ((KeystoreConfigBean)configBean).setDbInformation(SharedWizardInfo.getInstance().getDbinfo());
+            configBean.setHostname(getParentWizard().getHostname());
+            configBean.setDbInformation(SharedWizardInfo.getInstance().getDbinfo());
             storeInput();
         } catch (IOException e) {
             e.printStackTrace();
@@ -103,7 +111,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
             ksType = KeystoreType.NO_KEYSTORE;
         }
 
-        KeystoreConfigBean keystoreBean = (KeystoreConfigBean) configBean;
+        KeystoreConfigBean keystoreBean = configBean;
         keystoreBean.setKeyStoreType(ksType);
         getParentWizard().setKeystoreType(ksType);
         keystoreBean.setKeystoreTypeName(ksType.getShortTypeName());
@@ -138,7 +146,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
             };
             String input = getData(prompts, defaultValue, new String[] {"1", "2"},null);
 
-            KeystoreConfigBean keystoreBean = (KeystoreConfigBean) configBean;
+            KeystoreConfigBean keystoreBean = configBean;
             keystoreBean.setInitializeHSM((input != null && "1".equals(input)));
             if (keystoreBean.isInitializeHSM()) {
                     askInitialiseHSMQuestions();
@@ -152,7 +160,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
     private boolean askRestoreHSMQuestions() throws IOException, WizardNavigationException {
         boolean success;
 
-        KeystoreConfigBean keystoreBean = (KeystoreConfigBean) configBean;
+        KeystoreConfigBean keystoreBean = configBean;
         keystoreBean.setShouldBackupMasterKey(false);
         String backupPassword = getMatchingPasswords(
                 "Enter the master key backup password: ",
@@ -180,7 +188,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         do {
             boolean shouldBackup = getConfirmationFromUser("Back Up Master Key to USB Drive After Initialization? ", "y");
 
-            KeystoreConfigBean keystoreBean = (KeystoreConfigBean) configBean;
+            KeystoreConfigBean keystoreBean = configBean;
             if (shouldBackup) {
                 keystoreBean.setShouldBackupMasterKey(true);
                 String backupPassword = getMatchingPasswords("Enter the password to protect the master key backup:", "Confirm the password to protect the master key backup:", 6);
@@ -201,7 +209,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                     printText("Subsequent nodes in the cluster will need the master key in order" + getEolChar()  +
                               "to join the cluster." + getEolChar() + getEolChar());
 
-                    boolean foundAFob = false;
+                    boolean foundAFob;
                     do {
                         getData(
                                 new String[] {
@@ -235,7 +243,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
         doKeystorePasswordPrompts(
                 "Set the HSM Password",
                 resourceBundle.getString("hsm.initialize.new.password.msg") + ": ",
-                ((KeystoreConfigBean)configBean).isInitializeHSM()?resourceBundle.getString("hsm.initialize.confirm.password.msg") + ": ":null);
+                configBean.isInitializeHSM()?resourceBundle.getString("hsm.initialize.confirm.password.msg") + ": ":null);
     }
 
     private void askLunaKeystoreQuestions() throws IOException, WizardNavigationException {
@@ -288,7 +296,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
 
         Map installPaths = getValidLunaPaths(installPathPrompt, defaultInstallPath, jspPathPrompt, defaultJspPath);
 
-        KeystoreConfigBean keystoreBean = (KeystoreConfigBean) configBean;
+        KeystoreConfigBean keystoreBean = configBean;
         keystoreBean.setLunaInstallationPath((String) installPaths.get(installPathPrompt));
         keystoreBean.setLunaJspPath((String) installPaths.get(jspPathPrompt));
     }
@@ -302,12 +310,131 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
             "Please make a selection: [" + defaultValue + "] ",
         };
         String input = getData(prompts, defaultValue, new String[] {"1", "2"}, null);
+        configBean.setDoBothKeys( (input != null && "1".equals(input)));
 
-        KeystoreConfigBean keystoreBean = (KeystoreConfigBean) configBean;
-        keystoreBean.setDoBothKeys( (input != null && "1".equals(input)));
-        doKeystorePasswordPrompts("Keystore Password",
+        defaultValue = "1";
+        prompts = new String[] {
+                "\n1) Generate new SSL key\n",
+                "2) Import an outside SSL key from a PKCS#12 file\n",
+                "Please make a selection: [" + defaultValue + "] ",
+        };
+        input = getData(prompts, defaultValue, new String[] {"1", "2"}, null);
+        if ("2".equals(input)) {
+            doImportExternalSslKey();
+        }
+
+        doKeystorePasswordPrompts("Gateway Keystore Password",
                                   "Enter the keystore password (must be a minimum of 6 characters): ",
                                   "Enter the keystore password again (must match the first password): ");
+    }
+
+    private void doImportExternalSslKey() throws IOException, WizardNavigationException {
+        KeyStore.PrivateKeyEntry keyEntry;
+        do {
+            File ksfile = promptForExternalSslKeystoreFile();
+            String passphrase = consoleWizardUtils.getSecretData(
+                    new String[] { "Enter passphrase for this PKCS#12 file: " },
+                    "changeme",
+                    true,
+                    null,
+                    "");
+
+            keyEntry = doLoadImportedPrivateKey(ksfile, passphrase);
+        } while (keyEntry == null);
+
+        configBean.setImportedSslKey(keyEntry);
+    }
+
+    private KeyStore.PrivateKeyEntry doLoadImportedPrivateKey(File ksfile, String passphrase) throws IOException, WizardNavigationException {
+        String errorDetail;
+        try {
+            return CertUtils.loadPrivateKey(
+                    new CertUtils.FileInputStreamFactory(ksfile),
+                    "PKCS12",
+                    passphrase.toCharArray(),
+                    makeConsoleAliasPicker(),
+                    passphrase.toCharArray());
+        } catch (IOException e) {
+            if (ExceptionUtils.causedBy(e, BadPaddingException.class)) {
+                errorDetail = "Incorrect passphrase or damaged file";
+            } else
+                errorDetail = ExceptionUtils.getMessage(e);
+        } catch (KeyStoreException e) {
+            errorDetail = ExceptionUtils.getMessage(e);
+        } catch (NoSuchAlgorithmException e) {
+            errorDetail = ExceptionUtils.getMessage(e);
+        } catch (CertificateException e) {
+            errorDetail = ExceptionUtils.getMessage(e);
+        } catch (CertUtils.AliasNotFoundException e) {
+            // Is this actually a wrapped console navigatio request from our alias picker?
+            WizardNavigationException wne = ExceptionUtils.getCauseIfCausedBy(e, WizardNavigationException.class);
+            if (wne != null) throw wne;
+
+            // Is this actually a wrapped console I/O error from our alias picker?
+            IOException ioe = ExceptionUtils.getCauseIfCausedBy(e, IOException.class);
+            if (ioe != null) throw ioe;
+
+            errorDetail = ExceptionUtils.getMessage(e);
+        } catch (UnrecoverableKeyException e) {
+            errorDetail = "Incorrect passphrase";
+        }
+
+        if (errorDetail != null)
+            consoleWizardUtils.printText("Unable to import SSL key: " + errorDetail + "\n");
+        return null;
+    }
+
+    private File promptForExternalSslKeystoreFile() throws IOException, WizardNavigationException {
+        File ksfile;
+        boolean done = false;
+        do {
+            String kspath = consoleWizardUtils.getData(
+                    new String[] { "Enter path to PKCS#12 file to import: " },
+                    "/tmp/import.p12",
+                    true,
+                    (Pattern) null,
+                    "Not a valid pathname");
+            ksfile = new File(kspath);
+            if (!ksfile.exists())
+                consoleWizardUtils.printText("File does not exist\n");
+            else if (!ksfile.isFile())
+                consoleWizardUtils.printText("File is not a plain file\n");
+            else if (!ksfile.canRead())
+                consoleWizardUtils.printText("File is not readable by this configuration wizard process\n");
+            else
+                done = true;
+        } while (!done);
+        return ksfile;
+    }
+
+    private CertUtils.AliasPicker makeConsoleAliasPicker() {
+        return new CertUtils.AliasPicker() {
+            public String selectAlias(String[] options) throws CertUtils.AliasNotFoundException {
+                try {
+                    List<String> prompts = new ArrayList<String>();
+                    List<String> allowed = new ArrayList<String>();
+                    prompts.add("\nChoose alias of key to import:\n");
+                    String defaultValue = "1";
+                    for (int i = 0; i < options.length; i++) {
+                        String option = options[i];
+                        String num = Integer.toString(i + 1);
+                        prompts.add(num + ") " + option + "\n");
+                        allowed.add(num);
+                    }
+                    prompts.add("Please make a selection: [" + defaultValue + "] ");
+                    String input = getData(prompts.toArray(new String[prompts.size()]),
+                            defaultValue,
+                            allowed.toArray(new String[allowed.size()]),
+                            null);
+                    int gotnum = Integer.parseInt(input.trim());
+                    return options[gotnum - 1];
+                } catch (IOException e) {
+                    throw new CertUtils.AliasNotFoundException(e);
+                } catch (WizardNavigationException e) {
+                    throw new CertUtils.AliasNotFoundException(e);
+                }
+            }
+        };
     }
 
     private void doKeystorePasswordPrompts(String header, String firstMsg, String secondMsg) throws IOException, WizardNavigationException {
@@ -318,7 +445,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
                 KeyStoreConstants.PASSWORD_LENGTH
         );
 
-        KeystoreConfigBean keystoreBean = (KeystoreConfigBean) configBean;
+        KeystoreConfigBean keystoreBean = configBean;
         keystoreBean.setKsPassword(password.toCharArray());
     }
 
@@ -338,7 +465,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
 
         shouldConfigure = input != null && input.trim().equals("2");
 
-        ((KeystoreConfigBean)configBean).setDoKeystoreConfig(shouldConfigure);
+        configBean.setDoKeystoreConfig(shouldConfigure);
 
         PartitionInformation pinfo = PartitionManager.getInstance().getActivePartition();
         boolean shouldDisable = true;
@@ -375,7 +502,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
 
     public boolean validateStep() {
         boolean ok;
-        KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
+        KeystoreConfigBean ksBean = configBean;
         if (ksBean.isDoKeystoreConfig()) {
             KeystoreActions ka = new KeystoreActions(osFunctions);
             try {
@@ -441,7 +568,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep implements 
             Properties props = new Properties();
             props.load(fis);
 
-            KeystoreConfigBean keystoreBean = (KeystoreConfigBean)configBean;
+            KeystoreConfigBean keystoreBean = configBean;
 
             String typeFromFile = props.getProperty(KeyStoreConstants.PROP_KS_TYPE);
             keystoreBean.setKeystoreTypeName(typeFromFile);

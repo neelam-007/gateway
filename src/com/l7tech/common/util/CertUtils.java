@@ -10,9 +10,7 @@ import org.apache.harmony.security.asn1.ASN1Integer;
 import org.apache.harmony.security.asn1.ASN1Sequence;
 import org.apache.harmony.security.asn1.ASN1Type;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.Certificate;
@@ -24,6 +22,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateKeySpec;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.logging.Level;
@@ -915,7 +914,161 @@ public class CertUtils {
         BigInteger exponent = new BigInteger((byte[])sequence[3]);
 
         return new BigInteger[]{modulus, exponent};
-    }    
+    }
+
+    /** Exception thrown if the desired alias is not found in a keystore file. */
+    public static class AliasNotFoundException extends Exception {
+        public AliasNotFoundException() {
+        }
+
+        public AliasNotFoundException(String message) {
+            super(message);
+        }
+
+        public AliasNotFoundException(Throwable cause) {
+            super(cause);
+        }
+
+        public AliasNotFoundException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    /**
+     * Caller passes an instance of this to importClientCertificate if they wish to present the user with a list of aliases in a file.
+     */
+    public static interface AliasPicker {
+        /**
+         * @param options the available aliases.  Never null or empty.
+         * @return the preferred alias.  May not be null.
+         * @throws AliasNotFoundException if none of the available aliases look good.
+         */
+        String selectAlias(String[] options) throws AliasNotFoundException;
+    }
+
+    /**
+     * An AliasPicker that always picks a presupplied alias.
+     */
+    public static class SingleAliasPicker implements AliasPicker {
+        private final String alias;
+
+        /**
+         * @param alias The alias to match.  Required.
+         *              The match will not be case-sensitive.
+         */
+        public SingleAliasPicker(String alias) {
+            if (alias == null) throw new NullPointerException();
+            this.alias = alias;
+        }
+
+        public String selectAlias(String[] options) throws AliasNotFoundException {
+            for (String option : options) {
+                if (alias.equalsIgnoreCase(option))
+                    return option;
+            }
+            throw new AliasNotFoundException("No private key entry with alias " + alias + " was found.");
+        }
+    }
+
+    /**
+     * An InputStream factory that creates InputStreams by opening the specified File.
+     */
+    public static class FileInputStreamFactory implements Callable<InputStream> {
+        private final File file;
+
+        /**
+         * Create a factory that will produce new InputStreams by opening the specified file.
+         *
+         * @param file The file to open.  Required.  If file doesn't exist or can't be read
+         *        when call() is invoked, the invocation will fail.
+         */
+        public FileInputStreamFactory(File file) {
+            this.file = file;
+        }
+
+        /**
+         * Produce a new FileInputStream by reading our associated file.  Caller takes ownership of
+         * the returned stream and is responsible for closing it.
+         *
+         * @return a new InputStream that reads from the current file.  Never null.  Caller must close it.
+         * @throws SecurityException if the security manager exists and denies access to this file
+         * @throws FileNotFoundException if the file does not exist or otherwise cannot be opened for reading
+         * @throws Exception declared but not thrown by this method.  May be thrown by a subclass.
+         */
+        public InputStream call() throws Exception {
+            return new FileInputStream(file);
+        }
+    }
+
+    /**
+     * Loads a private key entry from the specified keystore, using the specified information.
+     * <p/>
+     * Caller is responsible for any validity-checking of the imported certificate, if needed.
+     *
+     * @param inputStreamFactory a factory which, when invoked, produces a new InputStream instance.  Required.
+     *                           See {@link FileInputStreamFactory} if all you have is a File.
+     * @param kstype the type of keystore to create.  Required.
+     * @param ksPass the passphrase to use when opening the file.  Required.
+     * @param aliasPicker Selects the alias to import.  Required.
+     *                    See {@link SingleAliasPicker} if all you have is a single String.
+     * @param aliasPass  the passphrase to use when getting this particular key entry.  For many keystore types,
+     *                   this should be the same as the ksPass.  Required.
+     * @return the PrivateKeyEntry loaded from the target keystore.  Never null.
+     * @throws java.io.IOException if there is a problem reading from the InputStream
+     * @throws CertUtils.AliasNotFoundException if the expected alias is not found in the keystore
+     * @throws java.security.KeyStoreException if there is a problem reading the keystore
+     * @throws java.security.NoSuchAlgorithmException if a cryptographic algorithm needed to read this keystore
+     *                                                can't be found
+     * @throws java.security.UnrecoverableKeyException if the specified key cannot be recovered, possibly due to
+     *                                                 an incorrect passphrase
+     * @throws java.security.cert.CertificateException if any of the certificates in the keystore cannot be loaded.
+     */
+    public static KeyStore.PrivateKeyEntry loadPrivateKey(Callable<InputStream> inputStreamFactory, String kstype, char[] ksPass, AliasPicker aliasPicker, char[] aliasPass)
+            throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, AliasNotFoundException, UnrecoverableKeyException {
+        KeyStore ks = KeyStore.getInstance(kstype);
+        InputStream in = null;
+        try {
+            in = inputStreamFactory.call();
+            ks.load(in, ksPass);
+        } catch (IOException e) {
+            throw e;
+        } catch (NoSuchAlgorithmException e) {
+            throw e;
+        } catch (CertificateException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new KeyStoreException(e); // can't happen
+        } finally {
+            ResourceUtils.closeQuietly(in);
+        }
+
+        List<String> aliases = new ArrayList<String>();
+        Enumeration aliasEnum = ks.aliases();
+        while (aliasEnum.hasMoreElements()) {
+            String alias = (String)aliasEnum.nextElement();
+            if (ks.isKeyEntry(alias))
+                aliases.add(alias);
+        }
+        final String alias;
+        if (aliases.size() > 1 && aliasPicker != null) {
+            alias = aliasPicker.selectAlias(aliases.toArray(new String[aliases.size()]));
+            if (alias == null)
+                throw new AliasNotFoundException("The AliasPicker did not return an alias.");
+        } else if (aliases.size() > 0) {
+            alias = aliases.get(0);
+        } else
+            throw new AliasNotFoundException("The specified file does not contain any certificates.");
+        Certificate[] chainToImport = ks.getCertificateChain(alias);
+        if (chainToImport == null || chainToImport.length < 1)
+            throw new AliasNotFoundException("The specified file does not contain a certificate chain for alias " + alias);
+        if (!(chainToImport[0] instanceof X509Certificate))
+            throw new AliasNotFoundException("The certificate chain for alias " + alias + " is not X.509");
+        Key key = ks.getKey(alias, aliasPass);
+        if (key == null || !(key instanceof PrivateKey))
+            throw new AliasNotFoundException("The specified alias does not contain a private key.");
+
+         return new KeyStore.PrivateKeyEntry((PrivateKey)key, chainToImport);
+    }
 
     private static final String FACTORY_ALGORITHM = "X.509";
 }

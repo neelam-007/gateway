@@ -3,6 +3,8 @@ package com.l7tech.server.config.beans;
 import com.l7tech.server.config.KeystoreType;
 import com.l7tech.server.config.db.DBInformation;
 
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
 /**
@@ -18,9 +20,12 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     private char[] ksPassword;
     private boolean doBothKeys;
     private String hostname;
+    private KeyStore.PrivateKeyEntry importedSslKey;
 
     private static final String DO_BOTH_KEYS_INFO = "Creating CA and SSL keys";
     private static final String SKIP_CA_KEY_INFO = "Skipping CA keys creation";
+    private static final String GEN_CA_IMPORT_SSL = "Generating new CA key and importing SSL key: ";
+    private static final String SKIP_CA_IMPORT_SSL = "Skipping CA keys creation and importing SSL key: ";
     private static final String USING_HOSTNAME_INFO = "Generating keys using hostname: ";
     private static final String SKIPPING_KEYSTORE_CONFIG_INFO = "Skipping keystore configuration";
 
@@ -72,7 +77,11 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
             if (type == KeystoreType.DEFAULT_KEYSTORE_NAME || type == KeystoreType.LUNA_KEYSTORE_NAME) {
                 explanations.add(insertTab + "Create " + getKeyStoreType());
                 if (type == KeystoreType.DEFAULT_KEYSTORE_NAME) {
-                    if (isDoBothKeys()) {
+                    if (getImportedSslKey() != null) {
+                        String exp = isDoBothKeys() ? GEN_CA_IMPORT_SSL : SKIP_CA_IMPORT_SSL;
+                        exp += ((X509Certificate)getImportedSslKey().getCertificate()).getSubjectDN().getName();
+                        explanations.add(insertTab + exp);
+                    } else if (isDoBothKeys()) {
                         explanations.add(insertTab + DO_BOTH_KEYS_INFO);
                     } else {
                         explanations.add(insertTab + SKIP_CA_KEY_INFO);
@@ -195,5 +204,11 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
         this.dbInformation = dbInformation;
     }
 
+    public KeyStore.PrivateKeyEntry getImportedSslKey() {
+        return importedSslKey;
+    }
 
+    public void setImportedSslKey(KeyStore.PrivateKeyEntry importedSslKey) {
+        this.importedSslKey = importedSslKey;
+    }
 }

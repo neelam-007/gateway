@@ -968,31 +968,15 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     }
 
-    private boolean makeDefaultKeys(boolean doBothKeys, KeystoreConfigBean ksBean, String ksDir, char[] ksPassword) throws Exception {
-        boolean keysDone;
-        String args[] = new String[]
-        {
-                ksBean.getHostname(),
+    private void makeDefaultKeys(boolean doBothKeys, KeystoreConfigBean ksBean, String ksDir, char[] ksPassword) throws Exception {
+        SetKeys.setKeys(ksBean.getHostname(),
                 ksDir,
                 new String(ksPassword),
                 new String(ksPassword),
-                getKsType()
-        };
-
-        if (doBothKeys) {
-            logger.info("Generating both keys");
-            SetKeys.NewCa.main(args);
-            keysDone = true;
-        } else {
-            logger.info("Generating only SSL key");
-            SetKeys.ExistingCa.main(args);
-            keysDone = true;
-        }
-
-        return keysDone;
+                getKsType(),
+                doBothKeys,
+                ksBean.getImportedSslKey());
     }
-
-
 
     private void updateKeystoreProperties(File keystorePropertiesFile, char[] ksPassword) throws IOException, ConfigurationException {
         FileOutputStream fos = null;

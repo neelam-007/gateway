@@ -5,6 +5,7 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.proxy.datamodel.exceptions.*;
 
@@ -226,8 +227,11 @@ public abstract class SsgKeyStoreManager {
      */
     protected abstract KeyStore getTrustStore() throws KeyStoreCorruptException;
 
-    /** Exception thrown if the desired alias is not found in a keystore file. */
-    public static class AliasNotFoundException extends Exception {
+    /**
+     * Exception thrown if the desired alias is not found in a keystore file.
+     * TODO this pointless intermediate class is only here to reduce the patch size/merge risk for the Bug #4933 fix and should be removed as soon as the fix is merged to rel4_5
+     */
+    public static class AliasNotFoundException extends CertUtils.AliasNotFoundException {
         public AliasNotFoundException() {
         }
 
@@ -255,8 +259,11 @@ public abstract class SsgKeyStoreManager {
      */
     public abstract void importServerCertificate(File file) throws IOException, CertificateException, KeyStoreCorruptException, KeyStoreException;
 
-    /** Caller passes an instance of this to importClientCertificate if they wish to present the user with a list of aliases in a file. */
-    public static interface AliasPicker {
+    /**
+     * Caller passes an instance of this to importClientCertificate if they wish to present the user with a list of aliases in a file.
+     * TODO this pointless intermediate class is only here to reduce the patch size/merge risk for the Bug #4933 fix and should be removed as soon as the fix is merged to rel4_5
+     */
+    public static interface AliasPicker extends CertUtils.AliasPicker {
         /**
          * @return the preferred alias.  May not be null.
          * @throws AliasNotFoundException if none of the available aliases look good.

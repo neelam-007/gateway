@@ -15,8 +15,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.*;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
+import java.security.cert.*;
 import java.util.logging.Logger;
 
 /**
@@ -40,7 +39,26 @@ public class SetKeys {
 
     private static final Logger log = Logger.getLogger(SetKeys.class.getName());
 
-    SetKeys( String[] args, boolean newca ) {
+    /**
+     * Write out the Software Static SSL and, optionally, CA keys to the specified keystore configuration directory.
+     *
+     * @param hostname hostname to use when generating DNs for new certs.  Required.
+     * @param ksdir path to keystore directory, the directory containing ssl.ks and ca.ks.  Required.
+     * @param capass passphrase for CA keystore.  Required.
+     * @param sslpass  passphrase for SSL keystore.  Required.
+     * @param kstype keystore type, ie "PKCS12".  Required.
+     * @param newca if true, we will generate a new self-signed CA key.  Otherwise we will try to use the existing one.
+     * @param sslKeyToUse if specified, we will use the specified SSL key.  Otherwise, we will generate a new one.
+     */
+    public static void setKeys(String hostname, String ksdir, String capass, String sslpass, String kstype, boolean newca, KeyStore.PrivateKeyEntry sslKeyToUse)
+            throws SignatureException, IOException, InvalidKeyException, NoSuchAlgorithmException, KeyStoreException, CertificateException, UnrecoverableKeyException
+    {
+        String[] args = new String[] { hostname, ksdir, capass, sslpass, kstype };
+
+        new SetKeys(args, newca, sslKeyToUse).doIt();
+    }
+
+    SetKeys( String[] args, boolean newca, KeyStore.PrivateKeyEntry sslKeyToUse ) {
         if (args.length < 4)
             throw new IllegalArgumentException( "Usage: java ( " +
                                                 SetKeys.class.getName() + ".NewCa | " +
@@ -52,6 +70,7 @@ public class SetKeys {
         capass = args[2];
         sslpass = args[3];
         kstype = args[4];
+        this.sslKeyToUse = sslKeyToUse;
 
         JceProvider.init();
     }
@@ -121,21 +140,34 @@ public class SetKeys {
             }
         }
 
-        X509Certificate sslCert = null;
+        X509Certificate[] sslChain;
         {
             File sslKsFile = new File(dir, SSL_KS);
             KeyStore sslks = KeyStore.getInstance(kstype);
             log.info( "Creating new SSL keystore" );
             sslks.load(null,null);
-            log.info( "Generating RSA keypair for SSL cert" );
-            KeyPair sslkp = JceProvider.generateRsaKeyPair();
 
-            sslCert =
-                BouncyCastleRsaSignerEngine.makeSignedCertificate( SSL_DN_PREFIX + hostname,
-                                                                   SSL_VALIDITY_DAYS,
-                                                                   sslkp.getPublic(), caCert, caPrivateKey, RsaSignerEngine.CertType.SSL );
-            sslks.setKeyEntry( SSL_ALIAS, sslkp.getPrivate(), sslpass.toCharArray(),
-                               new X509Certificate[] { sslCert, caCert } );
+            KeyPair sslkp;
+            if (sslKeyToUse != null) {
+                // Use specified
+                log.info( "Using specified SSL cert" );
+                X509Certificate sslCert = (X509Certificate) sslKeyToUse.getCertificate();
+                sslChain = new X509Certificate[] { sslCert };
+                PublicKey publicKey = sslCert.getPublicKey();
+                PrivateKey privateKey = sslKeyToUse.getPrivateKey();
+                sslkp = new KeyPair(publicKey, privateKey);
+            } else {
+                // Generate new
+                log.info( "Generating RSA keypair for SSL cert" );
+                sslkp = JceProvider.generateRsaKeyPair();
+                X509Certificate sslCert =
+                    BouncyCastleRsaSignerEngine.makeSignedCertificate( SSL_DN_PREFIX + hostname,
+                                                                       SSL_VALIDITY_DAYS,
+                                                                       sslkp.getPublic(), caCert, caPrivateKey, RsaSignerEngine.CertType.SSL );
+                sslChain = new X509Certificate[] { sslCert, caCert };
+            }
+
+            sslks.setKeyEntry( SSL_ALIAS, sslkp.getPrivate(), sslpass.toCharArray(), sslChain );
             FileOutputStream fos = null;
             try {
                 fos = new FileOutputStream(sslKsFile);
@@ -148,7 +180,7 @@ public class SetKeys {
 
         {
             log.info("Exporting DER-encoded SSL certificate");
-            byte[] sslCertBytes = sslCert.getEncoded();
+            byte[] sslCertBytes = sslChain[0].getEncoded();
             FileOutputStream fos = null;
             try {
                 File sslCertFile = new File(dir,SSL_CERT);
@@ -163,14 +195,14 @@ public class SetKeys {
 
     public static class ExistingCa {
         public static void main( String[] args ) throws Exception {
-            SetKeys me = new SetKeys(args, false);
+            SetKeys me = new SetKeys(args, false, null);
             me.doIt();
         }
     }
 
     public static class NewCa {
         public static void main( String[] args ) throws Exception {
-            SetKeys me = new SetKeys(args, true);
+            SetKeys me = new SetKeys(args, true, null);
             me.doIt();
         }
     }
@@ -181,4 +213,5 @@ public class SetKeys {
     private final String sslpass;
     private final boolean newca;
     private final String kstype;
+    private KeyStore.PrivateKeyEntry sslKeyToUse;
 }
