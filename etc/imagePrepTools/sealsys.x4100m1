@@ -137,12 +137,12 @@ seal)
   # Force the expiry of the root password 60 days after it has been changed (STIG requirement).
   chage -M 60 root
 
+  #reset ssgconfig password to "7layer"
+  echo "7layer" | passwd ssgconfig --stdin >/dev/null
+
   # Force root to change her password the next time she logs in.
   chage -d 0 root
   chage -d 0 ssgconfig
-
-  #reset ssgconfig password to "7layer"
-  echo "7layer" | passwd ssgconfig --stdin >/dev/null
 
   #reset pam_tally
   pam_tally --reset --user root
