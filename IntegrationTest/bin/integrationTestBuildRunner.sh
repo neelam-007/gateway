@@ -1,7 +1,5 @@
 #!/bin/bash
 
-BRANCH=$1
-
 RESULTS_CACHE_DIR=/home/teamcity/IntegrationTestResultsCache
 
 # Get the required build files
@@ -30,9 +28,6 @@ fi
 ssh root@devssg1 "rm -rf /tmp/IntegrationTest"
 ssh root@devssg1 "mkdir /tmp/IntegrationTest"
 
-# Update the branch in the defs.sh file
-sed -i -e 's/^export SSG_VERSION=.*/export SSG_VERSION='$BRANCH'/' etc/defs.sh
-
 # 
 # Copy the files over
 scp -r bin root@devssg1:/tmp/IntegrationTest/
@@ -47,7 +42,10 @@ cp UneasyRooster/ServerWsiBspAssertion.rules.properties UneasyRooster/ServerWsiS
 scp -r AutoTest root@devssg1:/tmp/IntegrationTest/
 mkdir PreviousAutoTestResults
 rm -f PreviousAutoTestResults/*
-nameSuffix="_$BRANCH"
+
+. etc/defs.sh
+
+nameSuffix="_$SSG_VERSION"
 if [ "$nameSuffix" = "_" ]; then
   nameSuffix=""
 fi
