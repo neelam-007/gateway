@@ -1,0 +1,239 @@
+<!-- Setting up and prepare to build and deploy -->
+<project name="ManagerAutomator" default="runAccountUpdater" basedir=".">
+
+    <!-- SSM installed location -->
+    <property name="uneasyrooster.ssmBuild.dir" value="/home/njordan/Desktop/Manager-4.4"/>
+
+    <!-- below is the default install for the jre on ubuntu linux -->
+    <property name="ssm.jre.dir" value="/usr/lib/jvm/java-6-sun/jre"/> <!--ubuntu linux-->
+
+    <!-- Configure the context PATH for this application -->
+    <property name="uneasyrooster.ssmBuild.lib.dir" value="${uneasyrooster.ssmBuild.dir}/lib"/>
+
+    <property environment="env"/>
+    <property name="lib.dir" location="lib"/>
+    <property name="classes.dir" value="classes"/>
+    <property name="javadoc.home" value="javadoc"/>
+    <property name="configwiz.jar.file" value="/ssg/configwizard/AutoConfig.jar"/>
+
+    <!-- Policy Migrator stuff below -->
+
+    <!-- Policy Migrator Init -->
+    <target name="policy_migrator.init">
+        <!-- time stamp -->
+        <tstamp/>
+    </target>
+
+    <!-- Policy Migrator Prepartion -->
+    <target name="policy_migrator.prepare" depends="policy_migrator.init" description="Create build directories and preparation">
+        <mkdir dir="${classes.dir}"/>
+    </target>
+
+    <!-- Policy Migrator Classpath -->
+    <path id="policy_migrator.classpath">
+        <pathelement location="${lib.dir}/mysql-connector-java-3.1.11-bin.jar"/>
+        <pathelement location="${basedir}"/>
+        <pathelement location="${classes.dir}"/>
+    </path>
+
+    <!-- Executable Targets: build and run PolicyMigrator.java -->
+    <target name="runPolicyMigrator" depends="clean, policy_migrator.prepare" description="Compile">
+        <javac srcdir="src" destdir="${classes.dir}">
+            <include name="com/l7tech/policy/migrator/*.java"/>
+            <classpath refid="policy_migrator.classpath"/>
+        </javac>
+
+        <java classname="com.l7tech.policy.migrator.PolicyMigrator" classpathref="policy_migrator.classpath" fork="true"/>
+    </target>
+
+    <!-- End Policy Migrator stuff -->
+
+    
+    <!-- Configwizard Automator stuff below -->
+    
+    <!-- ConfigWizard Init -->
+    <target name="configwiz.init">
+        <!-- time stamp -->
+        <tstamp/>
+    </target>
+
+    <!-- ConfigWizard Prepartion -->
+    <target name="configwiz.prepare" depends="configwiz.init" description="Create build directories and preparation">
+        <mkdir dir="${classes.dir}"/>
+    </target>
+
+    <!-- ConfigWizard Classpath -->
+    <!-- Note that this will only compile if run on a machine with the SSG installed -->
+    <path id="configwiz.classpath">
+        <pathelement location="/ssg/configwizard/ConfigWizard.jar"/>
+        <pathelement location="${basedir}"/>
+        <pathelement location="${classes.dir}"/>
+    </path>
+
+    <!-- Executable Targets: build AutoConfigDriver and bundle into a .jar -->
+    <target name="build.configwiz" depends="clean, configwiz.prepare" description="Compile">
+        <javac srcdir="src" destdir="${classes.dir}">
+            <include name="com/l7tech/configwizard/automator/*.java"/>
+            <classpath refid="configwiz.classpath"/>
+        </javac>
+
+        <jar manifest="MANIFEST.MF" destfile="${configwiz.jar.file}" basedir="${classes.dir}"/>
+    </target>
+
+    <!-- this isn't actually used -->
+    <target name="runConfigWizardAutomator" depends="build.configwiz">
+        <java classname="com.l7tech.configwizard.automator.AutoConfigDriver" classpathref="configwiz.classpath" fork="true"/>
+    </target>
+
+    <!-- End Configwizard Automator stuff -->
+
+    <!-- Classpath -->
+    <path id="test.classpath">
+        <pathelement location="${lib.dir}/Manager.jar"/>
+        <fileset dir="${lib.dir}">
+            <include name="*.jar"/>
+        </fileset>
+        <fileset dir="${uneasyrooster.ssmBuild.lib.dir}">
+            <include name="*.jar"/>
+        </fileset>
+        <fileset dir="${uneasyrooster.ssmBuild.dir}">
+            <include name="*.jar"/>
+        </fileset>
+        <pathelement location="${basedir}"/>
+        <pathelement location="${classes.dir}"/>
+    </path>
+
+    <target name="init">
+        <!-- time stamp -->
+        <tstamp/>
+
+        <condition property="build.notRequired">
+            <and>
+                <available file="${classes.dir}" type="dir"/>
+                <uptodate targetfile="build-stamp">
+                    <srcfiles dir="." includes="**/*.java"/>
+                </uptodate>
+            </and>
+        </condition>
+
+        <condition property="unsignManagerJar.notRequired">
+            <and>
+                <available file="${lib.dir}/Manager.jar" type="file"/>
+                <uptodate targetfile="${lib.dir}/Manager.jar" srcfile="${uneasyrooster.ssmBuild.dir}/Manager.jar"/>
+            </and>
+        </condition>
+
+        <condition property="build.fixSourceCode">
+            <not>
+                <and>
+                    <isset property="env.SSG_VERSION"/>
+                    <equals arg1="${env.SSG_VERSION}" arg2="4.4"/>
+                </and>
+            </not>
+        </condition>
+    </target>
+
+    <target name="fixSourceCode" depends="init" description="Fix Source Code" if="build.fixSourceCode">
+        <echo>SSG_VERSION = ${env.SSG_VERSION}</echo>
+        <replace dir="src/com/l7tech/manager/automator/jaxb" token="//entity-manager//" summary="true">
+            <include name="**/*.java"/>
+        </replace>
+    </target>
+    
+    <!-- Executable Targets: build -->
+    <target name="build" depends="init,fixSourceCode" description="Compile" unless="build.notRequired">
+        <mkdir dir="${classes.dir}"/>
+        <javac srcdir="src" destdir="${classes.dir}">
+            <include name="**/*.java"/>
+            <exclude name="com/l7tech/configwizard/automator/*.java"/>
+            <classpath refid="test.classpath"/>
+        </javac>
+        <touch file="build-stamp"/>
+    </target>
+
+    <!-- Javadoc Target -->
+    <target name="javadoc" description="Generates Javadoc.">
+        <mkdir dir="${classes.dir}"/>
+        <delete includeEmptyDirs="true" quiet="true">
+            <fileset dir="${javadoc.home}" includes="**/*"/>
+        </delete>
+        <mkdir dir="${javadoc.home}"/>
+        <javadoc sourcepath="src"
+                 destdir="${javadoc.home}"
+                 packagenames="com.*"
+                 windowtitle="Layer 7 Technologies: QA - AutoTest"
+                 doctitle="AutoTest"
+                 defaultexcludes="yes"
+                 version="true"
+                 use="true"
+                 splitindex="true"
+                 maxmemory="512m">
+                <!-- other possible options:
+                 author="true"
+                 private="true"
+                 additionalparam="-linksource"
+                -->
+            <header><![CDATA[<b>Layer 7 Technologies Inc.<b><br><font size='-1'>Dev - ManagerAutomator</font>]]></header>
+            <link href="http://www.jfree.org/jfreechart/api/javadoc"/>
+        </javadoc>
+    </target>
+
+    <!-- Clean classes, AutoTest.jar, AutoConfig.jar, cfg_data.xml only, leave test log (.txt) files-->
+    <target name="clean">
+        <delete dir="${classes.dir}"/>
+        <delete file="build-stamp"/>
+        <delete file="${lib.dir}/Manager.jar"/>
+        <delete file="${configwiz.jar.file}"/>
+        <delete file="/ssg/configwizard/cfg_data.xml"/>
+    </target>
+
+    <target name="unsignManagerJar" depends="init" unless="unsignManagerJar.notRequired">
+        <delete dir="temp" quiet="true"/>
+        <mkdir dir="temp"/>
+        <unjar src="${uneasyrooster.ssmBuild.dir}/Manager.jar" dest="temp"/>
+        <delete dir="temp/META-INF"/>
+        <jar destfile="${lib.dir}/Manager.jar" basedir="temp"/>
+        <delete dir="temp"/>
+    </target>
+
+    <target name="runAccountUpdater" depends="build,unsignManagerJar">
+        <java classname="com.l7tech.manager.automator.Main" classpathref="test.classpath" fork="true"/>
+    </target>
+
+    <target name="runSetAuditThreshold" depends="build,unsignManagerJar" if="auditThreshold.value">
+        <java classname="com.l7tech.manager.automator.Main" classpathref="test.classpath" fork="true">
+            <arg value="set-audit-threshold"/>
+            <arg value="${auditThreshold.value}"/>
+        </java>
+    </target>
+
+    <target name="runAddTrustedCertificate" depends="build,unsignManagerJar" if="cert.file">
+        <java classname="com.l7tech.manager.automator.Main" classpathref="test.classpath" fork="true">
+            <arg value="add-trusted-key"/>
+            <arg value="${cert.file}"/>
+        </java>
+    </target>
+
+    <target name="runSetupPrivateKeys" depends="build,unsignManagerJar">
+        <java classname="com.l7tech.manager.automator.Main" classpathref="test.classpath" fork="true">
+            <arg value="setup-private-keys"/>
+        </java>
+    </target>
+
+    <target name="runAutoTestLogParser" depends="build">
+        <java classname="com.l7tech.autotest.logparser.Main" classpathref="test.classpath" fork="true"/>
+    </target>
+
+    <target name="runEntityManager" depends="build,unsignManagerJar" if="entityManagerAction">
+        <java classname="com.l7tech.manager.automator.Main" classpathref="test.classpath" fork="true">
+            <arg value="entity-manager"/>
+            <arg value="${entityManagerAction}"/>
+        </java>
+    </target>
+
+    <target name="runCreateServices" depends="build,unsignManagerJar">
+        <java classname="com.l7tech.manager.automator.Main" classpathref="test.classpath" fork="true">
+            <arg value="create-services"/>
+        </java>
+    </target>
+</project>

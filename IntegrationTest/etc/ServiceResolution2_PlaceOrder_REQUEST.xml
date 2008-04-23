@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<soap:Body>
+		<placeOrder xmlns="http://warehouse.acme.com/serviceresolution2">
+			<productid>457232554</productid>
+			<amount>1</amount>
+			<price>1230</price>
+			<accountid>7</accountid>
+		</placeOrder>
+		<placeOrder xmlns="http://warehouse.acme.com/serviceresolution2">
+			<productid>1234</productid>
+			<amount>1</amount>
+			<price>11234</price>
+			<accountid>7</accountid>
+		</placeOrder>
+		<placeOrder xmlns="http://warehouse.acme.com/serviceresolution2">
+			<productid>5678</productid>
+			<amount>1</amount>
+			<price>5678</price>
+			<accountid>7</accountid>
+		</placeOrder>
+		<placeOrder xmlns="http://warehouse.acme.com/serviceresolution2">
+			<productid>910</productid>
+			<amount>1</amount>
+			<price>910</price>
+			<accountid>7</accountid>
+		</placeOrder>
+		<placeOrder xmlns="http://warehouse.acme.com/serviceresolution2">
+			<productid>123468</productid>
+			<amount>1</amount>
+			<price>44</price>
+			<accountid>7</accountid>
+		</placeOrder>
+		<placeOrder xmlns="http://warehouse.acme.com/serviceresolution2">
+			<productid>32168768</productid>
+			<amount>1</amount>
+			<price>45</price>
+			<accountid>7</accountid>
+		</placeOrder>
+		<placeOrder xmlns="http://warehouse.acme.com/serviceresolution2">
+			<productid>98762165436</productid>
+			<amount>1</amount>
+			<price>5151</price>
+			<accountid>7</accountid>
+		</placeOrder>
+        <placeOrder xmlns="http://warehouse.acme.com/serviceresolution2">
+            <productid>98762165436</productid>
+            <amount>1</amount>
+            <price>5151</price>
+            <accountid>7</accountid>
+        </placeOrder>
+	</soap:Body>
+</soap:Envelope>
