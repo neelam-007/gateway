@@ -129,8 +129,14 @@ seal)
   # Remove Layer7 rpms.
   rm -rf /root/rpms
 
+  ifdown eth0
+
   # Clear the /etc/resolv.conf file
   echo "" > /etc/resolv.conf
+
+  # Clear the /etc/security/opasswd file
+  echo "" > /etc/security/opasswd
+
 
   sed -i -e 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
   
@@ -139,6 +145,9 @@ seal)
 
   #reset ssgconfig password to "7layer"
   echo "7layer" | passwd ssgconfig --stdin >/dev/null
+
+  # Force the expiry of the ssgconfig password 60 days after it has been changed (STIG requirement).
+  chage -M 60 ssgconfig
 
   # Force root to change her password the next time she logs in.
   chage -d 0 root
