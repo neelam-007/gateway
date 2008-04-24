@@ -33,8 +33,7 @@ public interface SecurityContext {
     /**
      * Set the security context as authenticated
      *
-     * @throws GeneralSecurityException thrown if the request context is already set as authenticated or
-     * if this is being invoked through ServiceResponse (only makes sense in ServiceRequest)
+     * @throws GeneralSecurityException if this is being invoked through ServiceResponse (only makes sense in ServiceRequest)
      */
     void setAuthenticated() throws GeneralSecurityException;
 }

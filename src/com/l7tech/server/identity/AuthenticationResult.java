@@ -12,7 +12,6 @@ import java.security.cert.X509Certificate;
  * Created on successful authentication events.  Semi-threadsafe (mutators are synchronized).
  */
 public final class AuthenticationResult {
-    public static final AuthenticationResult AUTHENTICATED_UNKNOWN_USER = new AuthenticationResult();
 
     private static class CacheHolder {
         private static final int CACHE_SIZE =
@@ -23,11 +22,6 @@ public final class AuthenticationResult {
                                                                             CACHE_SIZE,
                                                                             71,
                                                                             WhirlycacheFactory.POLICY_LFU);
-    }
-
-    private AuthenticationResult() {
-        user = null;
-        certSignedByStaleCA = false;
     }
 
     public AuthenticationResult(User user, X509Certificate authenticatedCert, boolean certWasSignedByStaleCA) {

@@ -160,6 +160,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                         subject.getPrivateCredentials().add(new String(credentials));
                     }
                 }
+                final boolean[] authenticated = new boolean[1];
                 subject.setReadOnly();
                 Subject.doAs(subject, new PrivilegedExceptionAction() {
                     public Object run() throws Exception {
@@ -173,6 +174,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                                 CustomServiceRequest customServiceRequest = new CustomServiceRequest(context);
                                 customService = customServiceRequest;
                                 serviceInvocation.onRequest(customServiceRequest);
+                                authenticated[0] = customServiceRequest.authenticated;
                             }
                         }
                         finally {
@@ -181,7 +183,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                         return null;
                     }
                 });
-                if (isAuthAssertion && principalCredentials != null)
+                if (isAuthAssertion && principalCredentials != null && authenticated[0])
                     context.addAuthenticationResult(new AuthenticationResult(new UserBean(principalCredentials.getLogin()), null, false));
                 return AssertionStatus.NONE;
             } catch (PrivilegedActionException e) {
@@ -431,10 +433,12 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         private Document document;
         private final SecurityContext securityContext;
 
+        private boolean authenticated;
+
         public CustomServiceRequest(PolicyEnforcementContext pec)
           throws IOException, SAXException {
             this.pec = pec;
-
+            authenticated = pec.isAuthenticated();
             try {
                 this.document = (Document) pec.getRequest().getXmlKnob().getDocumentReadOnly().cloneNode(true);
             } catch (Exception e) {
@@ -456,14 +460,11 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 }
 
                 public boolean isAuthenticated() {
-                    return CustomServiceRequest.this.pec.isAuthenticated();
+                    return authenticated;
                 }
 
                 public void setAuthenticated() throws GeneralSecurityException {
-                    if (CustomServiceRequest.this.pec.isAuthenticated()) {
-                        throw new GeneralSecurityException("already authenticated");
-                    }
-                    CustomServiceRequest.this.pec.addAuthenticationResult(AuthenticationResult.AUTHENTICATED_UNKNOWN_USER);
+                      authenticated = true;
                 }
             };
         }
