@@ -10,6 +10,7 @@ import com.tarari.xml.rax.fastxpath.*;
 import com.tarari.xml.XmlSource;
 
 import java.io.FileInputStream;
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -24,9 +25,6 @@ import java.util.ArrayList;
 public class XMLBenchmarkingForTarariHardware extends XMLBenchmarking {
 
     protected GlobalTarariContextImpl gtci;
-    protected RaxDocument raxDoc;
-    protected XmlSource xmlSource;
-    protected Stylesheet styleSheet;
 
     /**
      * Initialize the variables needed to test Tarari
@@ -37,9 +35,6 @@ public class XMLBenchmarkingForTarariHardware extends XMLBenchmarking {
             //initialize tarari
             System.setProperty("com.l7tech.common.xml.tarari.enable", "true");    //this just initialize the probe for tarari
             gtci = (GlobalTarariContextImpl) TarariLoader.getGlobalContext();
-
-            xmlSource = new XmlSource(new FileInputStream(super.config.getXmlMessage()));
-            styleSheet = Stylesheet.create(xmlSource);
 
             SchemaLoader.unloadAllSchemas();    //make sure no schema loaded
         }
@@ -62,10 +57,12 @@ public class XMLBenchmarkingForTarariHardware extends XMLBenchmarking {
      */
     protected void runParsing() throws BenchmarkException {
         try{
-            styleSheet.setValidate(false);
-            raxDoc = RaxDocument.createDocument(xmlSource);
+            XmlSource xmlSource = new XmlSource(new ByteArrayInputStream(config.getXmlMessage().getBytes()));
+            RaxDocument raxDoc = RaxDocument.createDocument(xmlSource);
 
-            testResults.setParsingTestPassed(true);
+            if ( raxDoc != null ) {
+                testResults.setParsingTestPassed(true);
+            }
         }
         catch (Exception e){
             throw new BenchmarkException("Failed in XMLBenchmarkingForTarariHardware - runParsing()", e);
@@ -78,10 +75,18 @@ public class XMLBenchmarkingForTarariHardware extends XMLBenchmarking {
      */
     protected void runSchemalValidation() throws BenchmarkException {
         try{
-            styleSheet.setValidate(true);    //not sure what this will actually do
-            SchemaLoader.loadSchema(super.config.getSchemaLocation());
-            boolean isValid = raxDoc.validate();
+            XmlSource xmlSource = new XmlSource(new ByteArrayInputStream(config.getXmlMessage().getBytes()));
 
+            //create schema for validation
+            SchemaLoader.loadSchema(super.config.getSchemaLocation());
+            SchemaLoader.unloadAllSchemas();
+
+            //validate
+            Stylesheet styleSheet = Stylesheet.create(xmlSource);
+            styleSheet.setValidate(true);
+            RaxDocument raxDoc = RaxDocument.createDocument(xmlSource);
+
+            boolean isValid = raxDoc.validate();
             testResults.setSchemaValidationTestPassed(isValid);
         }
         catch (Exception e){
@@ -96,10 +101,13 @@ public class XMLBenchmarkingForTarariHardware extends XMLBenchmarking {
      */
     protected void runXSLTransform() throws BenchmarkException {
         try{
+            XmlSource xmlSource = new XmlSource(new ByteArrayInputStream(config.getXmlMessage().getBytes()));
+            Stylesheet styleSheet = Stylesheet.create(xmlSource);
+            styleSheet.setValidate(false);
+            RaxDocument raxDoc = RaxDocument.createDocument(xmlSource);
+
             //load the data into the style sheet
             //xmlSource.setData(raxDoc);
-
-            styleSheet.setValidate(false);
 
             //we wont need to output the result, so just out stream it to a null stream
             String transformedResult = "";
@@ -107,8 +115,10 @@ public class XMLBenchmarkingForTarariHardware extends XMLBenchmarking {
             styleSheet.transform(xmlSource, result);
 
             //record results
-            testResults.setXsltTestPassed(true);
-            testResults.setXsltResults(transformedResult);
+            if ( transformedResult != null && !transformedResult.equalsIgnoreCase("") ) {
+                testResults.setXsltTestPassed(true);
+                testResults.setXsltResults(transformedResult);
+            }
         }
         catch(Exception e){
             throw new BenchmarkException("Failed in XMLBenchmarkingForTarariHardware - runSchemalValidation()", e);
@@ -122,6 +132,9 @@ public class XMLBenchmarkingForTarariHardware extends XMLBenchmarking {
      */
     protected void runXPath() throws BenchmarkException {
         try {
+            XmlSource xmlSource = new XmlSource(new ByteArrayInputStream(config.getXmlMessage().getBytes()));
+            RaxDocument raxDoc = RaxDocument.createDocument(xmlSource);
+
             XPathCompiler.reset();
             XPathCompiler.compile(new ArrayList(config.getXpathQueries()));
 
@@ -137,8 +150,10 @@ public class XMLBenchmarkingForTarariHardware extends XMLBenchmarking {
             }
 
             //record results
-            testResults.setXpathTestPassed(true);
-            testResults.setXPathResults(xpathResults);              
+            if ( xpathResults.size() == config.getXpathQueries().size() ) {
+                testResults.setXpathTestPassed(true);
+                testResults.setXPathResults(xpathResults);
+            }
         }
         catch (Exception e){
             throw new BenchmarkException("Failed in XMLBenchmarkingForTarariHardware - runXPath()", e);

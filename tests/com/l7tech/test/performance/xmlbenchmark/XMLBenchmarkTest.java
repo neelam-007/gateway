@@ -16,6 +16,8 @@ import java.io.StringReader;
 
 import com.l7tech.test.performance.xmlbenchmark.cfg.TestConfiguration;
 import com.l7tech.test.performance.xmlbenchmark.cfg.BenchmarkConfiguration;
+import com.tarari.xml.rax.schema.SchemaLoader;
+import com.tarari.xml.rax.fastxpath.XPathLoader;
 import org.xml.sax.InputSource;
 
 /**
@@ -49,7 +51,7 @@ public class XMLBenchmarkTest extends TestCase {
      */
     public void testTarariHW() {
 //        try {
-//            XMLBenchmarking test = new XMLBenchmarkingForTarariHardware(testConfigurations.get(0), runOperations);
+//            XMLBenchmarking test = new XMLBenchmarkingForTarariHardware(testConfigurations.get(0));
 //            test.run();
 //        }
 //        catch (BenchmarkException be) {
@@ -111,16 +113,38 @@ public class XMLBenchmarkTest extends TestCase {
         }
     }
 
+     /**
+     * Unit test against Intel XML Software Suite
+     */
+    public void testIntel(){
+        try{
+            XMLBenchmarking test = new XMLBenchmarkingForIntel(testConfigurations.get(0), runOperations);
+            test.run();
+        }
+        catch (BenchmarkException be){
+            be.printStackTrace();
+            fail();
+        }
+    }
+
     public static void setupClass() throws Exception
     {
-        // add anything else that needs to be setup
+        if (testConfigurations == null) {
+            // load configuration from xml file
+            loadConfiguration();
+        }
+
+        //Based on how Tarari does schema validation, it only needs to load the schema once.
+        SchemaLoader.unloadAllSchemas();    //clear out any schema that might be in the system already
+        SchemaLoader.loadSchema(testConfigurations.get(0).getSchemaLocation());    //load schema
+        XPathLoader.unload();
     }
 
     public static void teardownClass() throws Exception
     {
         // add anything else that needs to be executed before exit
     }
-    
+
     protected void setUpParsing() throws Exception
     {
         setUp();
@@ -145,11 +169,11 @@ public class XMLBenchmarkTest extends TestCase {
         this.runOperations = new BenchmarkOperation[] {BenchmarkOperation.XP};
     }
 
-    private void loadConfiguration() throws Exception
+    private static void loadConfiguration() throws Exception
     {
         StringBuffer configXml = new StringBuffer();
 
-        InputStreamReader inReader = new InputStreamReader( this.getClass().getResourceAsStream(configLocation) );
+        InputStreamReader inReader = new InputStreamReader( XMLBenchmarkTest.class.getResourceAsStream(configLocation) );
         BufferedReader fr = new BufferedReader(inReader);
 
         try {
@@ -192,7 +216,7 @@ public class XMLBenchmarkTest extends TestCase {
         }
     }
 
-    private void parseConfiguration(BenchmarkConfiguration config) throws BenchmarkException
+    private static void parseConfiguration(BenchmarkConfiguration config) throws Exception
     {
         ArrayList<BenchmarkConfig> cfgList = new ArrayList<BenchmarkConfig>();
 
@@ -201,7 +225,6 @@ public class XMLBenchmarkTest extends TestCase {
             cfgList.add( new BenchmarkConfig(testCfg) );
         }
 
-        this.testConfigurations = cfgList;
+        testConfigurations = cfgList;
     }
-
 }

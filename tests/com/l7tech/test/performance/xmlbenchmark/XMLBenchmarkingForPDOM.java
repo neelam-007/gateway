@@ -38,7 +38,7 @@ public class XMLBenchmarkingForPDOM extends XMLBenchmarking {
     public static final String SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
     public static final String SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
 
-    private static final String PDOM_FILE_LOCATION = "/home/vchan/Dev/test/";
+    private static final String PDOM_FILE_LOCATION = ".";
     private static final String PDOM_FILE_SUFFIX_FOR_PARSING = "forParsing";
     private static final String PDOM_FILE_SUFFIX_FOR_SCHEMA_VAL = "forSchemaVal";
     private static final String PDOM_FILE_SUFFIX_FOR_XSLT = "forXSLT";

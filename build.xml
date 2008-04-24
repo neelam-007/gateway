@@ -69,6 +69,7 @@
               contains old copies of the bc classes.
             -->
             <include name="crypto/bc/**/*.jar"/>
+
         </fileset>
 
         <fileset dir="lib">
@@ -93,6 +94,56 @@
             <exclude name="**/ant-*.jar"/>
 
             <exclude name="**/jaxrpc.jar"/>
+
+            <!--
+                exclude the intel-xss.jar file because the jar contains some meta data which
+                maps some of the javax.xml packages to point to the intel-xss.jar file
+            -->
+            <exclude name="test/intel-xss.jar"/>
+
+        </fileset>
+    </path>
+
+    <!--
+        This is the list of jar files that will be used to compile all the tests.
+        The purpose of this is because the intel-xss.jar is needed to compile the XMLBenchmarkingForIntel.java
+        but it is not required when running the Junits.  Allowing the intel-xss.jar file included in the Junit
+        test run classpath can cause issue because the intel-xss.jar contains meta data to use intel
+        implementations when using javax.xml packages.
+        -->
+    <path id="project.classpath.fortest.compile">
+        <fileset dir="lib">
+            <!--
+              include bc provider before tarari_jce_provider since that
+              contains old copies of the bc classes.
+            -->
+            <include name="crypto/bc/**/*.jar"/>
+
+        </fileset>
+
+        <fileset dir="lib">
+            <include name="**/*.jar"/>
+            <!--
+               Issue with multiple parsers.
+               JDK 1.4 ships it's own parses and contributes to the
+               overall parser mess. java.beans.XmlEncoder and other
+               classes  do not like xerces so excluded it from project
+               classpath.
+               fla note: xercesImpl.jar is required by xss4j for xml-enc features.
+            <exclude name="*xerces*"/>
+            -->
+            <!--
+              Exclude since this is not necessary to compile and it includes old
+              versions of some of the xml api classes
+            -->
+            <exclude name="xml4j.jar"/>
+
+            <!-- Exclude build related classes -->
+            <exclude name="**/ant.jar"/>
+            <exclude name="**/ant-*.jar"/>
+
+            <exclude name="**/jaxrpc.jar"/>
+
         </fileset>
     </path>
 
@@ -711,6 +762,11 @@
             <pathelement location="${build.classes}"/>
         </path>
 
+        <path id="project.test.compile.classpath">
+            <path refid="project.classpath.fortest.compile"/>
+            <pathelement location="${build.classes}"/>    
+        </path>
+
         <available property="makensis.available" file="${build.install.compiler}"/>
         <condition property="makensis.enabled">
             <and>
@@ -839,6 +895,12 @@
     </target>
 
     <target name="test.work" depends="clean.test, dev">
+        <!--
+        <pathconvert property="test.work.classpath.text" targetos="unix" pathsep="${line.separator}">
+            <path refid="project.test.classpath"/>
+        </pathconvert>
+        <echo level="info">Using test classpath: ${line.separator}${test.work.classpath.text}</echo>
+        -->
         <junit printsummary="yes" haltonfailure="yes" fork="off" errorproperty="test.error" failureproperty="test.failure">
             <classpath>
                 <path refid="project.test.classpath"/>
@@ -1216,7 +1278,7 @@
                     <include name="tools/junit-4.4.jar"/>
                 </fileset>
             </classpath>
-            <jvmarg value="-Djava.library.path=/usr/local/Tarari/lib"/>
+            <jvmarg value="-Djava.library.path=/home/dlee/Download/tarari-lib:/home/dlee/Apps/IntelXML/bin/ia32/"/>
             <jvmarg value="-Djapex.reportsDirectory=${test.xmlbench.tmp.dir}"/>
             <jvmarg value="-Dlayer7.name=${test.xmlbench.report.name}"/>
             <jvmarg value="-Dlayer7.version=v${build.version.major}.${build.version.minor}${build.version.subminor}"/> <!-- letter 'v' to prevent Japex from parsing this as number -->
@@ -3708,7 +3770,8 @@
     <target name="compile-tests" depends="compile">
         <javac srcdir="tests" destdir="${build.test.classes}" debug="on" optimize="off"
                deprecation="on" verbose="no" target="1.5" source="1.5">
-            <classpath refid="project.test.classpath"/>
+            <!--<classpath refid="project.test.classpath"/>-->
+            <classpath refid="project.test.compile.classpath"/>
         </javac>
         <copy todir="${build.test.classes}">
             <fileset dir="tests">

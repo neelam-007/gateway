@@ -67,8 +67,6 @@ public class XMLBenchmarkingForTarariSoftware extends XMLBenchmarking {
             XmlSource xmlSource = new XmlSource(config.getXmlStream());
             RaxDocument raxDocument = RaxDocument.createDocument(xmlSource);
 
-            SchemaLoader.unloadAllSchemas();    //clear out any schema that might be in the system already - this should be init()?
-            SchemaLoader.loadSchema(config.getSchemaLocation());    //load schema
             boolean isValid = raxDocument.validate(); //validate the doc against the load schema
 
             //check validation
@@ -79,7 +77,6 @@ public class XMLBenchmarkingForTarariSoftware extends XMLBenchmarking {
         catch (Exception e) {
             throw new BenchmarkException("Failed in XMLBenchmarkingForTarariSoftware - schemalValidation()", e);
         }
-
     }
 
     protected void runXSLTransform() throws BenchmarkException {
@@ -136,8 +133,6 @@ public class XMLBenchmarkingForTarariSoftware extends XMLBenchmarking {
                 }
             }
             else {
-                //load the expressions
-                XPathLoader.unload();   //unload any previous expressions
                 XPathLoader.load(new ArrayList(config.getXpathQueries()));
 
                 //process expressions
@@ -160,6 +155,5 @@ public class XMLBenchmarkingForTarariSoftware extends XMLBenchmarking {
         catch (Exception e) {
             throw new BenchmarkException("Failed in XMLBenchmarkingForTarariSoftware - runXPath()", e);
         }
-
     }
 }
