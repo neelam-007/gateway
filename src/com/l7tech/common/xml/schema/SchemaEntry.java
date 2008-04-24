@@ -8,6 +8,8 @@ package com.l7tech.common.xml.schema;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 /**
  * A row in the communityschema table. These xml schemas are meant to define additional
  * elements that are potentially common to more than one services such as envelope schemas
@@ -15,6 +17,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
  *
  * @author flascelles@layer7-tech.com
  */
+@XmlRootElement
 public class SchemaEntry extends NamedEntityImp {
 
     /** @return the schema text, which may be empty or null. */

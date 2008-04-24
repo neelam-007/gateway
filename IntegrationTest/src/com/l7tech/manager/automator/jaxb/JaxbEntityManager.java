@@ -4,11 +4,16 @@ import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyType;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.LSInputImpl;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.xml.schema.SchemaAdmin;
+import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.admin.AdminContext;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
@@ -29,16 +34,19 @@ import com.l7tech.manager.automator.Main;
 import com.l7tech.objectmodel.*;
 import com.l7tech.cluster.ClusterStatusAdmin;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.SchemaOutputResolver;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.*;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 import javax.xml.transform.Result;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Schema;
 import java.io.*;
 import java.util.*;
 import java.lang.reflect.Method;
 import java.lang.reflect.Field;
+
+import org.w3c.dom.ls.LSResourceResolver;
+import org.w3c.dom.ls.LSInput;
 
 /**
  * Created by IntelliJ IDEA.
@@ -53,9 +61,10 @@ import java.lang.reflect.Field;
  * Published Services including their private policies.
  * JMS Connections and JMS Endpoints - not successfully tested yet - need JMS jars. Will copy and save to
  * a new SSG ok, but can't be sure I havn't missed something.
+ * SchemaEntry's
  *
  * Download will save an xml file per Entity on disk with it's root folder specified in
- * manager_automator.properties jaxb.download.rootdirectory property.
+ * manager_automater.properties jaxb.download.rootdirectory property.
  *
  * To download all of the above listed entites use downloadAllEntities()
  * To upload all of the above listed entites use uploadAllEntities()
@@ -65,10 +74,10 @@ import java.lang.reflect.Field;
  * any actions taken, with the exception of TrustedCerts as they can be invalid, processing will continue.
  *
  * The SSG from which you download, upload or delete from is determined by the property ssg.host
- * in manager_automator.properties.
+ * in manager_automater.properties.
  *
  * A fresh SSG will require a license to be uploaded before any of the Manager api functionality becomes available.
- * Specify the dev license to be uploaded using the property jaxb.upload.licensefile in manager_automator.properties
+ * Specify the dev license to be uploaded using the property jaxb.upload.licensefile in manager_automater.properties
  */
 public class JaxbEntityManager {
 
@@ -79,11 +88,15 @@ public class JaxbEntityManager {
     private IdentityAdmin identityAdmin;
     private JAXBContext context;
     private Marshaller marshaller;
-    private Unmarshaller unmarshaller;
+    private final Unmarshaller unmarshaller;
     private IdentityProviderConfig internalProv;
     private Map<String, IdentityHeader> allGroupMap;
     private String jaxbDir;
     private JmsAdmin jmsAdmin;
+    private SchemaAdmin schemaAdmin;
+    private Map<String , Boolean> processedSchemas;
+
+    public final static String SOAP_SCHEMA = "soapenv";
 
     public JaxbEntityManager(AdminContext adminContext){
 
@@ -92,9 +105,9 @@ public class JaxbEntityManager {
         serviceAdmin = adminContext.getServiceAdmin();
         identityAdmin = adminContext.getIdentityAdmin();
         trustedCertAdmin = adminContext.getTrustedCertAdmin();
-        jmsAdmin = adminContext.getJmsAdmin();        
-
-
+        jmsAdmin = adminContext.getJmsAdmin();
+        schemaAdmin = adminContext.getSchemaAdmin();
+        processedSchemas = new HashMap<String, Boolean>();
         final File baseDir = new File(".");
 
         class MySchemaOutputResolver extends SchemaOutputResolver {
@@ -106,14 +119,14 @@ public class JaxbEntityManager {
         try{
             //All classes the marshaller / unmarshaller needs to be able to process must be listed here.
             //don't need to list all clases in a hierarchy, just the type of the object you want processed.
-            context = JAXBContext.newInstance(Policy.class, JaxbPublishedService.class, IdentityProviderConfig.class, InternalUser.class, InternalGroup.class, JaxbPersistentUser.class, FederatedIdentityProviderConfig.class, LdapIdentityProviderConfig.class, TrustedCert.class, JaxbFederatedIdentityProviderConfig.class, VirtualGroup.class, FederatedGroup.class, FederatedUser.class, JmsConnection.class, JaxbJmsEndpoint.class);
+            context = JAXBContext.newInstance(Policy.class, JaxbPublishedService.class, IdentityProviderConfig.class, InternalUser.class, InternalGroup.class, JaxbPersistentUser.class, FederatedIdentityProviderConfig.class, LdapIdentityProviderConfig.class, TrustedCert.class, JaxbFederatedIdentityProviderConfig.class, VirtualGroup.class, FederatedGroup.class, FederatedUser.class, JmsConnection.class, JaxbJmsEndpoint.class, SchemaEntry.class);
             //Here we generate a schema representing all the classes we've told jaxb about
             //This is not needed but is available if you want to validate xml before unmarshalling.
             context.generateSchema(new MySchemaOutputResolver());
             marshaller = context.createMarshaller();
             unmarshaller = context.createUnmarshaller();
             internalProv = this.getInternalIdentityProvider();
-            
+
         }catch(Exception ex){
             throw new RuntimeException(ex);
         }
@@ -137,7 +150,7 @@ public class JaxbEntityManager {
     public void downloadAllEntities() throws Exception{
         downloadIdentityProviders();//includes all groups and users
         downloadTrustedCerts();
-        //downloadAllPolicyForType(PolicyType.INCLUDE_FRAGMENT, "PolicyFragments");
+        downloadSchemaEntries();
         downloadAllPublishedServices();//this includes private policies
         downloadJmsConnectionAndEndpoints();
     }
@@ -149,25 +162,22 @@ public class JaxbEntityManager {
      */
     public void uploadAllEntities() throws Exception{
         uploadLicense();
-        this.uploadGroupsInternalProvider();
-        this.uploadUsersInternalProvider();
-
-        this.uploadLdapIdentityProviders();
-
-        this.uploadTrustedCerts();
-        this.uploadFedIdentityProviders();
-
-        //uploadAllPolicyFragments();
+        uploadGroupsInternalProvider();
+        uploadUsersInternalProvider();
+        uploadLdapIdentityProviders();
+        uploadTrustedCerts();
+        uploadFedIdentityProviders();
+        uploadSchemasEntries();
         uploadAllPublishedServices();//this includes private policies
-
-        this.uploadAllJmsConnections();
-        this.uploadAllJmsEndpoints();
+        uploadAllJmsConnections();
+        uploadAllJmsEndpoints();
     }
 
     /*Delete all entities we know about.
     * Entities are deleted in order of their dependencies.*/
     public void deleteAllEntities() throws Exception{
         deleteAllPublishedServices();
+        deleteSchemaEntries();
         deleteAllPolicyForType(PolicyType.INCLUDE_FRAGMENT);
         deleteIdentityProviders();//includes groups and users
         deleteTrustedCerts();
@@ -180,7 +190,7 @@ public class JaxbEntityManager {
         TrustedCertAdmin certAdmin = this.adminContext.getTrustedCertAdmin();
         List<TrustedCert> allCerts = certAdmin.findAllCerts();
         for(TrustedCert tC: allCerts){
-           this.doMarshall(tC, jaxbDir+"/TrustedCerts/", tC.getId() +".xml");             
+           this.doMarshall(tC, jaxbDir+"/TrustedCerts/", tC.getId() +".xml");
         }
         System.out.println("Finished downloading Trusted Certs");
     }
@@ -218,7 +228,7 @@ public class JaxbEntityManager {
     }
 
     /*A fresh SSG requires a license before the manager api functionality becomes available to this app
-    * The property jaxb.upload.licensefile must be set in manager_automator.properties and must point to a valid
+    * The property jaxb.upload.licensefile must be set in manager_automater.properties and must point to a valid
     * dev license xml file.
     * */
     private void uploadLicense() throws Exception{
@@ -236,21 +246,24 @@ public class JaxbEntityManager {
         System.out.println("Starting test " + startTime);
 
         if(action.equalsIgnoreCase("Download")){
-            this.downloadJmsConnectionAndEndpoints();
+            //this.downloadJmsConnectionAndEndpoints();
             //this.downloadPublishedServices("71499777");
             //this.downloadPublishedServices("71499778");
             //this.downloadPublishedServices("71499779");
             //this.downloadTrustedCerts();
             //downloadIdentityProviders();
+            this.downloadSchemaEntries();
             //downloadAllPolicyForType(PolicyType.INCLUDE_FRAGMENT, "PolicyFragments");
             //downloadAllPolicyForType(PolicyType.PRIVATE_SERVICE, "Policies"); - no longer needed due to ps
             //downloadAllPublishedServices();
             //downloadPublishedServices("23691280");
         }else if(action.equalsIgnoreCase("Upload")){
+            this.deleteSchemaEntries();
+            this.uploadSchemasEntries();
             //this.deleteAllJmsConnections();
-            this.uploadLicense();
-            this.uploadAllJmsConnections();
-            uploadAllJmsEndpoints();
+            //this.uploadLicense();
+            //this.uploadAllJmsConnections();
+            //uploadAllJmsEndpoints();
             //this.listIdentityProviders();
             //this.uploadLdapIdentityProviders();
             //this.listIdentityProviders();
@@ -279,12 +292,186 @@ public class JaxbEntityManager {
             this.uploadFedIdentityProviders();
             */
         }
-        
+
         long duration = System.currentTimeMillis() - startTime;
         System.out.println("Duration: " + duration);  //5664050
 
     }
 
+    /*
+    * Download all schema entries. The id of the SchemaEntry is the only thing which makes it unique.
+    * Name is not required. However if you include a global schema in a policy assertion it will reference
+    * the schema based on name. Therefore we don't need to manage any links when downloading / uploading
+    * SchemaEntry's.
+    * */
+    public void downloadSchemaEntries() throws Exception{
+        System.out.println("Downloading all SchemaEntries");
+        Collection<SchemaEntry> allSchemas = this.schemaAdmin.findAllSchemas();
+        for(SchemaEntry sE: allSchemas){
+            if(!sE.getName().equals(SOAP_SCHEMA)){
+                this.doMarshall(sE, jaxbDir+"/SchemaEntries", sE.getName());
+            }
+        }
+        System.out.println("Finished downloading all SchemaEntries");
+    }
+
+    /**
+     * Unmarshall and upload all SchemaEntry's.
+     * Some of these global schemas can reference each other. When uploading schemas the SchemaManager will resolve
+     * all references. Our only concern when uploading SchemaEntry's is to ensure that any
+     * global schemas a SchemaEntry references in it's schema xml exist already on the SSG so that it can be located
+     * when the SSG is validating the SchemaEntry.
+     *
+     * The dependency search is recursive and will upload files in the order of their dependencies. A file representing
+     * a SchemaEntry will not be uploaded more than once.
+     *
+     * Note: AutoTest currently does not reference any schema's listed in the table community_schemas.
+     */
+    public void uploadSchemasEntries() throws Exception{
+        System.out.println("Uploading all Schema Entries");
+        File dir = new File(jaxbDir+"/SchemaEntries");
+        if(!dir.isDirectory()){
+            throw new Exception("SchemaEntries Directory not found");
+        }
+
+        File [] files = dir.listFiles();
+        Arrays.sort(files);
+        for(File f: files){
+            SchemaEntry schemaEntry = (SchemaEntry)this.unmarshaller.unmarshal(f);
+            //Before we load a schema we need to make sure we have loaded any file it's
+            //dependent on first, that will exist as an entry in the  community_schema table.
+            this.processSchemas(schemaEntry);
+        }
+        System.out.println("Finished uploading all Schema Entries");
+    }
+
+    /*
+    * Recursively search the supplied schemaEntry for included global schemas. Any found are loaded to the SSG*/
+    private void processSchemas(SchemaEntry schemaEntry) throws Exception{
+
+        //List<SchemaEntry> schemaIncludes = this.getAllIncludes(schemaEntry);
+        List<SchemaEntry> schemaIncludes = getAllIncludesByTextSearch(schemaEntry);
+        for(SchemaEntry se: schemaIncludes){
+            if(!processedSchemas.containsKey(se.getName())){
+                processSchemas(se);
+            }
+        }
+
+        //If an included file was found it may have been loaded before we come to it on disk
+        //in that case don't save it twice, the SSG will accept duplicate schemas.
+        if(!processedSchemas.containsKey(schemaEntry.getName())){
+            uploadSchema(schemaEntry);
+            processedSchemas.put(schemaEntry.getName(), true);
+        }
+
+    }
+
+    /*
+    * NOTE: Not using at the moment, using getAllIncludesByTextSearch as we only care about locally referenced
+    * schemas and this method will fail there is a remote schema.
+    * Retrieve a List<SchemaEntry> of all global schemas the supplied SchemaEntry includes.
+    * This code will only work if all included schemas are other global schemas which we have locally on disk
+    * after downloading all SchemaEntry's previously.
+    * @param schemaEntry the SchemaEntry to search for includes
+    * @return List<SchemaEntry> the List of SchemaEntry's included by schemaEntry
+    * @throws Exception if any includes cannot be found..as well as all the other exceptions being ducked - io,jaxb..
+    * */
+    /*
+    private List<SchemaEntry> getAllIncludes(SchemaEntry schemaEntry)  throws Exception{
+        
+        final List<SchemaEntry> schemaEntryList = new ArrayList<SchemaEntry>();
+
+        SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
+        LSResourceResolver lsrr = new LSResourceResolver() {
+            public LSInput resolveResource(String type,
+                                           String namespaceURI,
+                                           String publicId,
+                                           String systemId,
+                                           String baseURI)
+            {
+                //Get the required SchemaEntry
+                File refedFile = new File(jaxbDir+"/SchemaEntries/" + systemId);
+                SchemaEntry sEntry = null;
+                try{
+                    sEntry = (SchemaEntry)unmarshaller.unmarshal(refedFile);
+                }catch(JAXBException jE){
+                    //very basic test to see if
+                    throw new RuntimeException("Could not unmarshall refed SchemaEntry");
+                }
+                schemaEntryList.add(sEntry);                
+                LSInputImpl lsi =  new LSInputImpl();
+                lsi.setStringData(sEntry.getSchema());
+                lsi.setSystemId(systemId);
+                return lsi;
+            }
+        };
+        sf.setResourceResolver(lsrr);
+
+        String schema = schemaEntry.getSchema();
+        ByteArrayInputStream bais = new ByteArrayInputStream(schema.getBytes("UTF-8"));
+        Schema s = sf.newSchema(new StreamSource(bais, "NotUsedHere")); // populates imports as side-effect
+        //Our ResourceRevolver in SchemaFactory has now been executed...if their were any includes
+        
+        return schemaEntryList;
+    }
+    */
+    
+    /*
+    *
+    * Searches the schema xml in the supplied SchemaEntry for includes which are local.
+    * @param schemaEntry the SchemaEntry who's schema xml we need to search for schema includes
+    * @return a list of SchemaEntry's referenced by schemaEntry
+    * @throws Exception if the schemaLocation points to a file which has not previously been downloaded.
+    * */
+    private List<SchemaEntry> getAllIncludesByTextSearch(SchemaEntry schemaEntry) throws Exception{
+        List<SchemaEntry> schemaEntryList = new ArrayList<SchemaEntry>();
+
+        String s = schemaEntry.getSchema();
+        int lastIndex = 0;
+        while(true){
+            int i = s.indexOf("schemaLocation=\"", lastIndex);
+            if(i == -1){
+                break;
+            }
+            int s1 = s.indexOf("\"", i);
+            int s2 = s.indexOf("\"", s1+1);            
+            String fileName = s.substring(s1+1, s2);
+            if(fileName.indexOf("http") != -1){
+                continue;
+            }
+            SchemaEntry sEntry = (SchemaEntry)unmarshaller.unmarshal(new File(jaxbDir+"/SchemaEntries/" +fileName));
+            schemaEntryList.add(sEntry);
+            lastIndex = s2;
+        }
+
+        return schemaEntryList;
+    }
+
+    private void uploadSchema(String fileName) throws Exception{
+        File file = new File(jaxbDir+"/SchemaEntries/" + fileName);
+        SchemaEntry schemaEntry = (SchemaEntry)this.unmarshaller.unmarshal(file);
+        this.uploadSchema(schemaEntry);
+    }
+
+    private void uploadSchema(SchemaEntry schemaEntry) throws Exception{
+        if(!schemaEntry.getName().equals(SOAP_SCHEMA)){
+            schemaEntry.setOid(SchemaEntry.DEFAULT_OID);
+            this.schemaAdmin.saveSchemaEntry(schemaEntry);
+        }
+    }
+
+    /*
+    * Delete all SchemaEntry's from the SSG.*/
+    public void deleteSchemaEntries() throws Exception{
+        System.out.println("Deleting all SchemaEntries");
+        Collection<SchemaEntry> allSchemas = this.schemaAdmin.findAllSchemas();
+        for(SchemaEntry sE: allSchemas){
+            if(!sE.getName().equals(SOAP_SCHEMA)){
+                this.schemaAdmin.deleteSchemaEntry(sE);
+            }
+        }
+        System.out.println("Finished deleting all SchemaEntries");
+    }
     /*
     * Unmarshall and upload all JmsConnections
     * See downloadJmsConnectionAndEndpoints*/
@@ -324,7 +511,7 @@ public class JaxbEntityManager {
 
         return returnMap;
     }
-    
+
     public void uploadAllJmsEndpoints() throws Exception{
         System.out.println("Uploading all JmsEndpoints");
         File dir = new File(jaxbDir+"/JmsEndpoints");
@@ -335,9 +522,9 @@ public class JaxbEntityManager {
         File [] files = dir.listFiles();
         Map<String, JmsConnection> uniqIdToJmsConn = null;
         if(files.length > 0){
-            uniqIdToJmsConn = this.getJmsConnectionUniqueIdentifiers();            
+            uniqIdToJmsConn = this.getJmsConnectionUniqueIdentifiers();
         }
-        
+
         for(File f: files){
             JaxbJmsEndpoint jaxbEndPoint = (JaxbJmsEndpoint) this.unmarshaller.unmarshal(f);
             String uniqueIdentifier = jaxbEndPoint.getJmsConnectionUniqueIdentifier();
@@ -366,10 +553,9 @@ public class JaxbEntityManager {
         for(JmsConnection jC: jmsConns){
             this.jmsAdmin.deleteConnection(jC.getOid());
         }
-        System.out.println();
         System.out.println("Finished deleting all JmsConnections and JmsEndpoints");
     }
-    
+
     /*
     * Easiest way to manage JmsEndpoints and the JmsConnection they depend on is to
     * download them together via JmsAdmin.findAllTuples.
@@ -386,7 +572,7 @@ public class JaxbEntityManager {
             JmsEndpoint jmsEndPoint = tuple.getEndpoint();
             System.out.println("Conn: " + jmsConn.getName()+" Endpoint: " + jmsEndPoint.getName());
             this.doMarshall(jmsConn, jaxbDir+"/JmsConnections", jmsConn.getId()+".xml");
-            
+
             JaxbJmsEndpoint jaxbJmsEndpoint = new JaxbJmsEndpoint();
             jaxbJmsEndpoint.setJmsEndPoint(jmsEndPoint);
             String uniqueIdentifier = this.createUniqueJmsConnectionIdentifier(jmsConn);
@@ -474,7 +660,7 @@ public class JaxbEntityManager {
         for( File f: files){
             PersistentGroup persistentGroup = (PersistentGroup)this.unmarshaller.unmarshal(f);
             //Upload this InternalGroup to the FRESH ssg - in this test project
-            //this is the ssg identified in the manager_automator.properties file
+            //this is the ssg identified in the manager_automater.properties file
             persistentGroup.setOid(PersistentEntity.DEFAULT_OID);
             Set<IdentityHeader> identityHeaders = new HashSet<IdentityHeader>();
             String newGroupId = this.identityAdmin.saveGroup(config.getOid() , persistentGroup, identityHeaders);
@@ -514,15 +700,15 @@ public class JaxbEntityManager {
                 groupNames.add(iH.getName());
             }
             //JAXB can't process Interfaces - it needs a concrete class with a no arg constructor.
+            JaxbPersistentUser jaxbUser = null;
             if(user instanceof InternalUser){
                 InternalUser iUser = (InternalUser)user;
-                JaxbPersistentUser jaxbUser = new JaxbPersistentUser(iUser, groupNames);
-                this.doMarshall(jaxbUser, jaxbDir+"/"+subFolderName+"/", iUser.getId() +".xml");
+                jaxbUser = new JaxbPersistentUser(iUser, groupNames);
             }else if(user instanceof FederatedUser){
                 FederatedUser iUser = (FederatedUser)user;
-                JaxbPersistentUser jaxbUser = new JaxbPersistentUser(iUser, groupNames);
-                this.doMarshall(jaxbUser, jaxbDir+"/"+subFolderName+"/", iUser.getId() +".xml");
+                jaxbUser = new JaxbPersistentUser(iUser, groupNames);
             }
+            this.doMarshall(jaxbUser, jaxbDir+"/"+subFolderName+"/", jaxbUser.getPersistentUser().getId() +".xml");
         }
         System.out.println("Finished downloading all "+config.getName()+" Identity Users");
     }
@@ -538,7 +724,7 @@ public class JaxbEntityManager {
                 this.identityAdmin.deleteUser(config.getOid(), iHeader.getStrId());
             }
         }
-        System.out.println("Finished deleteing all "+config.getName()+" Identity Users");        
+        System.out.println("Finished deleteing all "+config.getName()+" Identity Users");
     }
 
     /*When creating a User you can specify the Users group membership via a Set of IdentityHeaders.
@@ -595,7 +781,7 @@ public class JaxbEntityManager {
 
                 pUser.setOid(PersistentEntity.DEFAULT_OID);
                 Set<String> groupNames = jaxbUser.getGroupNamesSet();
-                
+
                 Set<IdentityHeader> setHeaders = getUserGroupMembership(config, groupNames);
                 //A corner case is the admin user, we can't create as already there but transfer any group memberhsip
                 if(config.getTypeVal() == 1 && pUser.getName().equals("admin")){
@@ -606,7 +792,7 @@ public class JaxbEntityManager {
                 }
             }
         }
-        System.out.println("Finished uploading all "+config.getName()+" Identity Users");        
+        System.out.println("Finished uploading all "+config.getName()+" Identity Users");
     }
 
     private IdentityProviderConfig getInternalIdentityProvider() throws Exception{
@@ -656,7 +842,7 @@ public class JaxbEntityManager {
                     jaxbFedProv.setTrustedCertDns(certDns);
                 }
                 downloadGroupsForIdentityProvider(config, "IdentityProviders/FED/"+providerCfg.getName()+"/");
-                downloadUsersForIdentityProvider(config,"IdentityProviders/FED/"+providerCfg.getName()+"/Users/");                
+                downloadUsersForIdentityProvider(config,"IdentityProviders/FED/"+providerCfg.getName()+"/Users/");
                 this.doMarshall(jaxbFedProv, jaxbDir+"/IdentityProviders/FED/"+providerCfg.getName()+"/", providerCfg.getName() + "_"+providerCfg.getTypeVal() +".xml");
             }
 
@@ -678,7 +864,7 @@ public class JaxbEntityManager {
                 this.deleteGroups(providerCfg);
                 this.deleteUsers(providerCfg);
             }
-            
+
             if(providerCfg.getTypeVal() == 1){
                 continue;
             }
@@ -710,14 +896,14 @@ public class JaxbEntityManager {
 
     /*Upload all internal provider groups*/
     public void uploadGroupsInternalProvider() throws Exception{
-        this.uploadGroups(this.internalProv,"/IdentityProviders/Internal/InternalGroups");    
+        this.uploadGroups(this.internalProv,"/IdentityProviders/Internal/InternalGroups");
     }
 
     /*Upload all internal provider users*/
     public void uploadUsersInternalProvider() throws Exception{
         this.uploadUsers(this.internalProv,"/IdentityProviders/Internal/InternalUsers");
     }
-    
+
     /*
     * Fed requires groups and users unlike Ldap. Also unlike the internal provider a group or user can belong
     * to any fed provider. All identity from group to provider is via the providers oid, as a result the method
@@ -810,8 +996,8 @@ public class JaxbEntityManager {
         System.out.println("Downloading all policies of type: " + type);
         Collection<PolicyHeader> policyFragments = this.policyAdmin.findPolicyHeadersByType(type);
         for(PolicyHeader pH: policyFragments){
-            Policy policy = this.policyAdmin.findPolicyByUniqueName(pH.getName());
-            this.doMarshall(policy, jaxbDir+"/"+folderName+"/",  type+"_"+policy.getId() +".xml" );
+            //entity-manager//Policy policy = this.policyAdmin.findPolicyByUniqueName(pH.getName());
+            //entity-manager//this.doMarshall(policy, jaxbDir+"/"+folderName+"/",  type+"_"+policy.getId() +".xml" );
         }
         System.out.println("Finished downloading all policies of type: " + type);
     }
@@ -935,7 +1121,7 @@ public class JaxbEntityManager {
 
         }
         System.out.println();
-        System.out.println("Finished uploading all Published Services");        
+        System.out.println("Finished uploading all Published Services");
     }
 
     /*Delete all published services.*/
@@ -997,7 +1183,7 @@ public class JaxbEntityManager {
         }
 
     }
- 
+
     /*Look for include assertions so that we can update any references to invalid policy fragment oid's.
     * Recrusive*/
     private boolean processAssertions(CompositeAssertion a) throws Exception{
@@ -1031,5 +1217,5 @@ public class JaxbEntityManager {
         long oid = policy.getOid();
         include.setPolicyOid(oid);
     }
-    
+
 }
