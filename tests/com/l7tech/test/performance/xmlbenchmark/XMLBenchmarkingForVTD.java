@@ -2,8 +2,9 @@ package com.l7tech.test.performance.xmlbenchmark;
 
 import com.ximpleware.*;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * XML Benchmark testing for VTD which is own by Ximpleware.  It seems that Ximpleware does not have a way for
@@ -15,8 +16,6 @@ import java.util.ArrayList;
 public class XMLBenchmarkingForVTD extends XMLBenchmarking {
 
     public static boolean NAMESPACE_AWARENESS = true;
-    public static String NAMESPACE_PREFIX = "ns1";
-    public static String NAMESPACE_URI = "http://l7tech.com/xmlbench";
 
     public XMLBenchmarkingForVTD(BenchmarkConfig cfg, BenchmarkOperation[] ops) {
         super(cfg, ops);
@@ -25,7 +24,6 @@ public class XMLBenchmarkingForVTD extends XMLBenchmarking {
     protected void initialize() throws BenchmarkException {
         try{
             super.initialize();
-            //vtdGen.parseFile(super.config.getXmlLocation(), NAMESPACE_AWARENESS);
         }
         catch (Exception e){
             System.err.println("Failed in XMLBenchmarkingForVTD - initialize() : " + e.getMessage());
@@ -36,16 +34,12 @@ public class XMLBenchmarkingForVTD extends XMLBenchmarking {
     protected void runParsing() throws BenchmarkException {
         try{
             VTDGen vtdGen = xmlToVTDGen();
-            //boolean successParse = vtdGen.parseFile(super.config.getXmlLocation(), NAMESPACE_AWARENESS);
-            testResults.setParsingTestPassed(true);
 
-            /*//update testing result
-            if ( successParse ){
+            if (vtdGen != null)
                 testResults.setParsingTestPassed(true);
-            }
-            else{
+            else
                 throw new BenchmarkException("Failed in XMLBenchmarkingForVTD - runParsing()");
-            }*/
+
         }
         catch (Exception e) {
             throw new BenchmarkException("Failed in XMLBenchmarkingForVTD - runParsing()", e);
@@ -71,8 +65,14 @@ public class XMLBenchmarkingForVTD extends XMLBenchmarking {
             AutoPilot autoPilot = new AutoPilot(vtdNav);    //does the XPath
 
             //set the namespace if we are using it
-            if ( NAMESPACE_AWARENESS ){
-                autoPilot.declareXPathNameSpace(NAMESPACE_PREFIX, NAMESPACE_URI);
+            if ( NAMESPACE_AWARENESS ) {
+
+                Iterator<String> it = config.getNamespaces().keySet().iterator();
+                String key;
+                while (it.hasNext()) {
+                    key = it.next();
+                    autoPilot.declareXPathNameSpace(key, config.getNamespaces().get(key));
+                }
             }
 
             List<String> xPathQueries = super.config.getXpathQueries();

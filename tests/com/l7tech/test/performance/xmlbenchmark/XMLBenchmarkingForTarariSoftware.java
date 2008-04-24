@@ -1,20 +1,20 @@
 package com.l7tech.test.performance.xmlbenchmark;
 
-import com.tarari.xml.rax.RaxDocument;
-import com.tarari.xml.rax.cursor.RaxCursorFactory;
-import com.tarari.xml.rax.cursor.RaxCursor;
-import com.tarari.xml.rax.fastxpath.*;
-import com.tarari.xml.rax.schema.SchemaLoader;
-import com.tarari.xml.XmlSource;
 import com.tarari.xml.XmlResult;
+import com.tarari.xml.XmlSource;
+import com.tarari.xml.rax.RaxDocument;
+import com.tarari.xml.rax.cursor.RaxCursor;
+import com.tarari.xml.rax.cursor.RaxCursorFactory;
+import com.tarari.xml.rax.fastxpath.*;
+import com.tarari.xml.xpath10.XPathContext;
+import com.tarari.xml.xpath10.expr.Expression;
 import com.tarari.xml.xpath10.parser.ExpressionParser;
 import com.tarari.xml.xpath10.parser.XPathParseContext;
-import com.tarari.xml.xpath10.expr.Expression;
-import com.tarari.xml.xpath10.XPathContext;
 import com.tarari.xml.xslt11.Stylesheet;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -30,8 +30,6 @@ import java.util.List;
 public class XMLBenchmarkingForTarariSoftware extends XMLBenchmarking {
 
     public static boolean NAMESPACE_AWARENESS = true;
-    public static String NAMESPACE_PREFIX = "ns1";
-    public static String NAMESPACE_URI = "http://l7tech.com/xmlbench";
 
     public XMLBenchmarkingForTarariSoftware(BenchmarkConfig cfg, BenchmarkOperation[] ops) {
         super(cfg, ops);
@@ -117,7 +115,12 @@ public class XMLBenchmarkingForTarariSoftware extends XMLBenchmarking {
             if ( NAMESPACE_AWARENESS ) {
                 //declare namespace
                 XPathParseContext xpathParseContext = new XPathParseContext();
-                xpathParseContext.declareNamespace(NAMESPACE_PREFIX, NAMESPACE_URI);
+                Iterator<String> it = config.getNamespaces().keySet().iterator();
+                String key;
+                while (it.hasNext()) {
+                    key = it.next();
+                    xpathParseContext.declareNamespace(key, config.getNamespaces().get(key));
+                }
 
                 ExpressionParser expressParser = new ExpressionParser(xpathParseContext);
                 XPathContext xpathContext = new XPathContext();
@@ -133,7 +136,7 @@ public class XMLBenchmarkingForTarariSoftware extends XMLBenchmarking {
                 }
             }
             else {
-                XPathLoader.load(new ArrayList(config.getXpathQueries()));
+                XPathLoader.load(new ArrayList<String>(config.getXpathQueries()));
 
                 //process expressions
                 XPathProcessor xpathProcessor = new XPathProcessor(raxDocument);

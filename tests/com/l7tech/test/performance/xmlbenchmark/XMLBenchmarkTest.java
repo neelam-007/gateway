@@ -1,24 +1,23 @@
 package com.l7tech.test.performance.xmlbenchmark;
 
+import com.l7tech.test.performance.xmlbenchmark.cfg.BenchmarkConfiguration;
+import com.l7tech.test.performance.xmlbenchmark.cfg.TestConfiguration;
+import com.tarari.xml.rax.fastxpath.XPathLoader;
+import com.tarari.xml.rax.schema.SchemaLoader;
 import junit.framework.TestCase;
+import org.xml.sax.InputSource;
 
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.JAXBElement;
-import java.util.logging.Logger;
-import java.util.List;
-import java.util.ArrayList;
-import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.StringReader;
-
-import com.l7tech.test.performance.xmlbenchmark.cfg.TestConfiguration;
-import com.l7tech.test.performance.xmlbenchmark.cfg.BenchmarkConfiguration;
-import com.tarari.xml.rax.schema.SchemaLoader;
-import com.tarari.xml.rax.fastxpath.XPathLoader;
-import org.xml.sax.InputSource;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * @user: vchan
@@ -27,20 +26,19 @@ public class XMLBenchmarkTest extends TestCase {
 
     private static final Logger logger = Logger.getLogger(XMLBenchmarkTest.class.getName());
 
+    private static final String PROPERTY_RUN_INDEX = "layer7.xmlbench.cfg.runindex";
+
     private static final String configLocation = "benchmark-config.xml";
 
     private static List<BenchmarkConfig> testConfigurations;
 
+    private static int runConfigIndex;
+
     private BenchmarkOperation[] runOperations;
 
     protected void setUp() throws Exception {
-
-        if (testConfigurations == null) {
-            // load configuration from xml file
-            loadConfiguration();
-        }
-
-//        this.runOperations = new BenchmarkOperation[] { BenchmarkOperation.P };
+        // load configuration from xml file
+        XMLBenchmarkTest.setupClass();
     }
 
     protected void tearDown() throws Exception {
@@ -49,20 +47,20 @@ public class XMLBenchmarkTest extends TestCase {
     /**
      * Unit test against Tarari hardware (if available)
      */
-    public void testTarariHW() {
+//    public void testTarariHW() {
 //        try {
-//            XMLBenchmarking test = new XMLBenchmarkingForTarariHardware(testConfigurations.get(0));
+//            XMLBenchmarking test = new XMLBenchmarkingForTarariHardware(testConfigurations.get(runConfigIndex), runOperations);
 //            test.run();
 //        }
 //        catch (BenchmarkException be) {
 //            be.printStackTrace();
 //            fail();
 //        }
-    }
+//    }
 
     public void testTarariSW() {
         try {
-            XMLBenchmarking test = new XMLBenchmarkingForTarariSoftware(testConfigurations.get(0), runOperations);
+            XMLBenchmarking test = new XMLBenchmarkingForTarariSoftware(testConfigurations.get(runConfigIndex), runOperations);
             test.run();
         }
         catch (BenchmarkException be) {
@@ -76,7 +74,7 @@ public class XMLBenchmarkTest extends TestCase {
      */
     public void testXercesXalan() {
         try{
-            XMLBenchmarking test = new XMLBenchmarkingForXercesXalan(testConfigurations.get(0), runOperations);
+            XMLBenchmarking test = new XMLBenchmarkingForXercesXalan(testConfigurations.get(runConfigIndex), runOperations);
             test.run();
         }
         catch (BenchmarkException be){
@@ -90,7 +88,7 @@ public class XMLBenchmarkTest extends TestCase {
      */
     public void testInfonytePDOM() {
         try{
-            XMLBenchmarking test = new XMLBenchmarkingForPDOM(testConfigurations.get(0), runOperations);
+            XMLBenchmarking test = new XMLBenchmarkingForPDOM(testConfigurations.get(runConfigIndex), runOperations);
             test.run();
         }
         catch (BenchmarkException be){
@@ -104,7 +102,7 @@ public class XMLBenchmarkTest extends TestCase {
      */
     public void testVTD(){
         try{
-            XMLBenchmarking test = new XMLBenchmarkingForVTD(testConfigurations.get(0), runOperations);
+            XMLBenchmarking test = new XMLBenchmarkingForVTD(testConfigurations.get(runConfigIndex), runOperations);
             test.run();
         }
         catch (BenchmarkException be){
@@ -132,12 +130,15 @@ public class XMLBenchmarkTest extends TestCase {
         if (testConfigurations == null) {
             // load configuration from xml file
             loadConfiguration();
-        }
+            
+            // check the system property for a run index passing
+            parseRunIndex();
 
-        //Based on how Tarari does schema validation, it only needs to load the schema once.
-        SchemaLoader.unloadAllSchemas();    //clear out any schema that might be in the system already
-        SchemaLoader.loadSchema(testConfigurations.get(0).getSchemaLocation());    //load schema
-        XPathLoader.unload();
+            //Based on how Tarari does schema validation, it only needs to load the schema once.
+            SchemaLoader.unloadAllSchemas(); //clear out any schema that might be in the system already
+            SchemaLoader.loadSchema(testConfigurations.get(0).getSchemaLocation()); //load schema
+            XPathLoader.unload();
+        }
     }
 
     public static void teardownClass() throws Exception
@@ -226,5 +227,28 @@ public class XMLBenchmarkTest extends TestCase {
         }
 
         testConfigurations = cfgList;
+    }
+
+    private static void parseRunIndex() {
+
+        String value = System.getProperty(PROPERTY_RUN_INDEX);
+
+        if (value != null && value.length() > 0) {
+            try {
+                System.out.println("");
+
+                runConfigIndex = Integer.parseInt(value);
+                if (runConfigIndex < 0 || runConfigIndex >= testConfigurations.size()) {
+                    System.out.println("****Cannot run test configuration (" + runConfigIndex + "): Index not found." );
+                    runConfigIndex = 0;
+                }
+
+            } catch (NumberFormatException nfe) {
+                // default value;
+                runConfigIndex = 0;
+            } // ignore
+        }
+
+        System.out.println("****Running test configuration: " + testConfigurations.get(runConfigIndex).getLabel());
     }
 }

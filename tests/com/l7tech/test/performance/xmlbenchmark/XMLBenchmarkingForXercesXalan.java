@@ -1,26 +1,25 @@
 package com.l7tech.test.performance.xmlbenchmark;
 
-import org.apache.xerces.parsers.DOMParser;
+import com.l7tech.server.communityschemas.SchemaValidationErrorHandler;
 import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
+import org.apache.xerces.parsers.DOMParser;
 import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
 
+import javax.xml.namespace.NamespaceContext;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamSource;
 import javax.xml.transform.stream.StreamResult;
-import javax.xml.namespace.NamespaceContext;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.xpath.XPathFactory;
+import javax.xml.transform.stream.StreamSource;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
-import java.util.List;
+import javax.xml.xpath.XPathFactory;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.io.*;
-
-import com.l7tech.server.communityschemas.SchemaValidationErrorHandler;
+import java.util.List;
 
 
 /**
@@ -32,14 +31,13 @@ import com.l7tech.server.communityschemas.SchemaValidationErrorHandler;
 public class XMLBenchmarkingForXercesXalan extends XMLBenchmarking {
 
     public static boolean NAMESPACE_AWARENESS = true;
-    public static String NAMESPACE_PREFIX = "ns1";
-    public static String NAMESPACE_URI = "http://l7tech.com/xmlbench";
 
     SchemaValidationErrorHandler errorHandler;
 
     /**
      * Initialize benchmark config file
      * @param cfg    Configuration file used for the benchmark test
+     * @param ops    List of xml operations to run
      */
     public XMLBenchmarkingForXercesXalan(BenchmarkConfig cfg, BenchmarkOperation[] ops) {
         super(cfg, ops);
@@ -158,12 +156,17 @@ public class XMLBenchmarkingForXercesXalan extends XMLBenchmarking {
             XPath xpath = xpathFactory.newXPath();
             xpath.reset();
             xpath.setNamespaceContext(new NamespaceContext() {
+
+                HashMap<String, String> nsMap = config.getNamespaces();
+
                 public String getNamespaceURI(String prefix) {
-                    return NAMESPACE_URI;
+                    if (nsMap.containsKey(prefix))
+                        return nsMap.get(prefix);
+                    return "";
                 }
 
                 public String getPrefix(String namespaceURI) {
-                    return NAMESPACE_PREFIX;
+                    return null;
                 }
 
                 public Iterator getPrefixes(String namespaceURI) {

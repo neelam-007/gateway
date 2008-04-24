@@ -19,6 +19,7 @@
             <xs:element name="xpathQueries" minOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
+                        <xs:element name="xmlnsDef" type="Xmlns" minOccurs="1" maxOccurs="unbounded"/>
                         <xs:element name="query" type="XPathQuery" minOccurs="1" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
@@ -40,6 +41,14 @@
     <xs:complexType name="XPathQuery">
         <xs:sequence minOccurs="1">
             <xs:element name="xpath" type="NonEmptyString" minOccurs="1"/>
+            <xs:element name="value" type="NonEmptyString" minOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- XML Namespace definition Type -->
+    <xs:complexType name="Xmlns">
+        <xs:sequence minOccurs="1">
+            <xs:element name="prefix" type="NonEmptyString" minOccurs="1"/>
             <xs:element name="value" type="NonEmptyString" minOccurs="1"/>
         </xs:sequence>
     </xs:complexType>

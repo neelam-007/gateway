@@ -1246,25 +1246,14 @@
     </target>
 
     <target name="test.perf.xmlbench" description="Run performance xml-benchmarking tests and generate a Japex test report." depends="clean.test, dev">
-
-        <!-- clean.test, dev, -test.perf.init -->
         <echo level="info">Running XML-Benchmarking test.</echo>
 
-        <!-- Composes desired Japex report file name and final location. -->
-        <tstamp>
-            <format property="test.xmlbench.report.suffix" pattern="yyyy'-'MM'-'dd'.'HHmm"/>
-        </tstamp>
-        <!--<property name="test.perf.report.name" value="${build.version.major}.${build.version.minor}${build.version.subminor}_${test.perf.report.suffix}"/>-->
-
+        <!-- Set report names and properties -->
         <property name="test.xmlbench.report.dir" value="${build.dir}/xml-benchmark"/>
         <property name="test.xmlbench.report.name" value="XML-Benchmarking test"/>
         <property name="test.xmlbench.report.file" location="${test.xmlbench.report.dir}/xml-benchmarking-test.xml"/>
 
-        <!-- Creates temporary directory for Japex to output test report.
-             This is necessary because Japex is hardcoded to output folder and file names I don't like. -->
-        <!--<tstamp>-->
-            <!--<format property="test.xmlbench.tmp.suffix" pattern="yyyyMMddHHmmss"/>-->
-        <!--</tstamp>-->
+        <!-- Creates temporary directory for Japex to output test report. -->
         <property name="test.xmlbench.tmp.dir" location="${build.dir}/xml-benchmark-tmp"/>
         <mkdir dir="${test.xmlbench.tmp.dir}"/>
 
@@ -1283,6 +1272,7 @@
             <jvmarg value="-Dlayer7.name=${test.xmlbench.report.name}"/>
             <jvmarg value="-Dlayer7.version=v${build.version.major}.${build.version.minor}${build.version.subminor}"/> <!-- letter 'v' to prevent Japex from parsing this as number -->
             <jvmarg value="-Dlayer7.notes=xml benchmarking"/>
+            <jvmarg value="-Dlayer7.xmlbench.cfg.runindex=0"/>
             <jvmarg value="-Dsrc.root=${src.root}"/>
             <arg line="-nohtml"/>
             <arg line="-verbose"/>

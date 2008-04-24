@@ -2,18 +2,16 @@ package com.l7tech.test.performance.xmlbenchmark;
 
 import com.infonyte.ds.DataServerException;
 import com.infonyte.ds.fds.FileDataServerFactory;
+import com.infonyte.jaxp.PrefixResolver;
 import com.infonyte.pdom.PDOM;
 import com.infonyte.pdom.PDOMFactory;
 import com.infonyte.pdom.PDOMParser;
 import com.infonyte.pdom.PDOMParserFactory;
-import com.infonyte.xpath.XPathFactory;
 import com.infonyte.xpath.XPathExpression;
+import com.infonyte.xpath.XPathFactory;
 import com.infonyte.xpath.XValue;
-import com.infonyte.jaxp.PrefixResolver;
 import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.apache.log4j.Logger;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
@@ -23,8 +21,9 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * XMLBenchmarking implementation for PDOM package (http://www.infonyte.com/en/prod_pdom.html).
@@ -33,7 +32,9 @@ import java.util.ArrayList;
  */
 public class XMLBenchmarkingForPDOM extends XMLBenchmarking {
 
-    private Logger logger = Logger.getLogger(XMLBenchmarkingForPDOM.class);
+//    private Logger logger = Logger.getLogger(XMLBenchmarkingForPDOM.class);
+
+    public static boolean NAMESPACE_AWARENESS = true;
 
     public static final String SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
     public static final String SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
@@ -44,7 +45,7 @@ public class XMLBenchmarkingForPDOM extends XMLBenchmarking {
     private static final String PDOM_FILE_SUFFIX_FOR_XSLT = "forXSLT";
     private static final String PDOM_FILE_SUFFIX_FOR_XPATH = "forXPath";
 
-    private Document doc;
+//    private Document doc;
     private PDOMUtil pdomUtil;
 
     public XMLBenchmarkingForPDOM(BenchmarkConfig cfg, BenchmarkOperation[] ops) {
@@ -149,8 +150,13 @@ public class XMLBenchmarkingForPDOM extends XMLBenchmarking {
             for (String query : config.getXpathQueries()) {
 
                 expr = XPathFactory.newExpression(query, new PrefixResolver() {
-                    public String getNamespaceForPrefix(String s) {
-                        return "http://l7tech.com/xmlbench";
+
+                    HashMap<String, String> nsMap = config.getNamespaces();
+
+                    public String getNamespaceForPrefix(String prefix) {
+                        if (nsMap.containsKey(prefix))
+                            return nsMap.get(prefix);
+                        return "";
                     }
                 });
                 value = expr.eval(pdom.getDocument());
@@ -358,7 +364,7 @@ public class XMLBenchmarkingForPDOM extends XMLBenchmarking {
             // Enabling/Disabling XML validation
             sax_parser_factory.setValidating(isValidating);
             // Enabling/Disabling XML namespace support
-            sax_parser_factory.setNamespaceAware(true);
+            sax_parser_factory.setNamespaceAware(NAMESPACE_AWARENESS);
             return newFactory;
         }
     }

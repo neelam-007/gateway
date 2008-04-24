@@ -15,18 +15,18 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
- * <p>Java class for TestMessage complex type.
+ * <p>Java class for Xmlns complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="TestMessage">
+ * &lt;complexType name="Xmlns">
  *   &lt;complexContent>
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
- *       &lt;choice>
- *         &lt;element name="data" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *         &lt;element name="location" type="{http://www.w3.org/2001/XMLSchema}string"/>
- *       &lt;/choice>
+ *       &lt;sequence>
+ *         &lt;element name="prefix" type="{http://l7tech.com/xmlbench}NonEmptyString"/>
+ *         &lt;element name="value" type="{http://l7tech.com/xmlbench}NonEmptyString"/>
+ *       &lt;/sequence>
  *     &lt;/restriction>
  *   &lt;/complexContent>
  * &lt;/complexType>
@@ -35,63 +35,63 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "TestMessage", namespace = "http://l7tech.com/xmlbench", propOrder = {
-    "data",
-    "location"
+@XmlType(name = "Xmlns", namespace = "http://l7tech.com/xmlbench", propOrder = {
+    "prefix",
+    "value"
 })
-public class TestMessage {
+public class Xmlns {
 
-    @XmlElement(namespace = "http://l7tech.com/xmlbench")
-    protected String data;
-    @XmlElement(namespace = "http://l7tech.com/xmlbench")
-    protected String location;
+    @XmlElement(namespace = "http://l7tech.com/xmlbench", required = true)
+    protected String prefix;
+    @XmlElement(namespace = "http://l7tech.com/xmlbench", required = true)
+    protected String value;
 
     /**
-     * Gets the value of the data property.
+     * Gets the value of the prefix property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getData() {
-        return data;
+    public String getPrefix() {
+        return prefix;
     }
 
     /**
-     * Sets the value of the data property.
+     * Sets the value of the prefix property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setData(String value) {
-        this.data = value;
+    public void setPrefix(String value) {
+        this.prefix = value;
     }
 
     /**
-     * Gets the value of the location property.
+     * Gets the value of the value property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getLocation() {
-        return location;
+    public String getValue() {
+        return value;
     }
 
     /**
-     * Sets the value of the location property.
+     * Sets the value of the value property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setLocation(String value) {
-        this.location = value;
+    public void setValue(String value) {
+        this.value = value;
     }
 
 }

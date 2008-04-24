@@ -15,8 +15,9 @@
     <param name="japex.classPath" value="${src.root}/build/test-classes"/>
     <param name="japex.classPath" value="${src.root}/lib/test/vtd-xml.jar"/>
     <param name="japex.classPath" value="${src.root}/lib/test/Infonyte/*.jar"/>
+    <param name="japex.classPath" value="${src.root}/lib/test/intel-xss.jar"/>
     <param name="japex.classPath" value="/usr/local/Tarari/lib/*.jar"/>
-    <param name="japex.classPath" value="/usr/local/IntelXML/lib/*.jar"/>
+    <!--<param name="japex.classPath" value="/usr/local/IntelXML/lib/*.jar"/>-->
 
     <param name="japex.reportsDirectory" value="${japex.reportsDirectory}"/>
     
