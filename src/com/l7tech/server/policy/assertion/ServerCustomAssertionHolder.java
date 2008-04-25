@@ -19,6 +19,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.UserBean;
+import com.l7tech.identity.AnonymousUserReference;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -160,7 +161,6 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                         subject.getPrivateCredentials().add(new String(credentials));
                     }
                 }
-                final boolean[] authenticated = new boolean[1];
                 subject.setReadOnly();
                 Subject.doAs(subject, new PrivilegedExceptionAction() {
                     public Object run() throws Exception {
@@ -174,7 +174,6 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                                 CustomServiceRequest customServiceRequest = new CustomServiceRequest(context);
                                 customService = customServiceRequest;
                                 serviceInvocation.onRequest(customServiceRequest);
-                                authenticated[0] = customServiceRequest.authenticated;
                             }
                         }
                         finally {
@@ -183,8 +182,12 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                         return null;
                     }
                 });
-                if (isAuthAssertion && principalCredentials != null && authenticated[0])
+                if (isAuthAssertion && principalCredentials != null) {
                     context.addAuthenticationResult(new AuthenticationResult(new UserBean(principalCredentials.getLogin()), null, false));
+                }else {
+                    context.addAuthenticationResult(new AuthenticationResult(new AnonymousUserReference("", -1, "<unknown>")));
+                }
+
                 return AssertionStatus.NONE;
             } catch (PrivilegedActionException e) {
                 if (ExceptionUtils.causedBy(e.getException(), FailedLoginException.class)) {
@@ -433,12 +436,9 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         private Document document;
         private final SecurityContext securityContext;
 
-        private boolean authenticated;
-
         public CustomServiceRequest(PolicyEnforcementContext pec)
           throws IOException, SAXException {
             this.pec = pec;
-            authenticated = pec.isAuthenticated();
             try {
                 this.document = (Document) pec.getRequest().getXmlKnob().getDocumentReadOnly().cloneNode(true);
             } catch (Exception e) {
@@ -460,11 +460,12 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 }
 
                 public boolean isAuthenticated() {
-                    return authenticated;
+                    return CustomServiceRequest.this.pec.isAuthenticated();
                 }
 
                 public void setAuthenticated() throws GeneralSecurityException {
-                      authenticated = true;
+                    //not all existing custom assertions call this when authenticating
+                    //authentication is determined by a lack of exception instead
                 }
             };
         }
