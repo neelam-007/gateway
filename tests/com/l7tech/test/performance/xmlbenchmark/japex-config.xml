@@ -78,8 +78,8 @@
     <testCase name="Tarari SW-schema">
         <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
         <param name="layer7.methodName" value="testTarariSW"/>
-        <param name="layer7.runInPrepare" value="setUpSchema"/>
-        <param name="layer7.runInFinish" value="tearDown"/>
+        <param name="layer7.runInPrepare" value="setUpSchemaForTarari"/>
+        <param name="layer7.runInFinish" value="tearDownForTarari"/>
     </testCase>
 
     <testCase name="Xerces/Xalan-schema">
@@ -151,7 +151,7 @@
         <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
         <param name="layer7.methodName" value="testTarariSW"/>
         <param name="layer7.runInPrepare" value="setUpXPath"/>
-        <param name="layer7.runInFinish" value="tearDown"/>
+        <param name="layer7.runInFinish" value="tearDownForTarari"/>
     </testCase>
 
     <testCase name="Xerces/Xalan-xpath">

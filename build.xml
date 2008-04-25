@@ -1269,7 +1269,7 @@
             </classpath>
             <jvmarg value="-Djava.library.path=/usr/local/Tarari/lib/:/usr/local/IntelXML/lib/"/>
             <jvmarg value="-Djapex.reportsDirectory=${test.xmlbench.tmp.dir}"/>
-            <jvmarg value="-Djapex.numberOfThreads=3"/>
+            <jvmarg value="-Djapex.numberOfThreads=1"/>
             <jvmarg value="-Dlayer7.name=${test.xmlbench.report.name}"/>
             <jvmarg value="-Dlayer7.version=v${build.version.major}.${build.version.minor}${build.version.subminor}"/> <!-- letter 'v' to prevent Japex from parsing this as number -->
             <jvmarg value="-Dlayer7.notes=xml benchmarking"/>

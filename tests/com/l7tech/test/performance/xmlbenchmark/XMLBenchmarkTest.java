@@ -42,6 +42,9 @@ public class XMLBenchmarkTest extends TestCase {
     }
 
     protected void tearDown() throws Exception {
+    }
+
+    protected void tearDownForTarari() throws Exception {
         try {
             if ( this.runOperations[0] == BenchmarkOperation.V ){
                 //System.out.println("Unloading Schema");
@@ -55,7 +58,6 @@ public class XMLBenchmarkTest extends TestCase {
         catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     /**
@@ -171,13 +173,18 @@ public class XMLBenchmarkTest extends TestCase {
     {
         setUp();
         this.runOperations = new BenchmarkOperation[] {BenchmarkOperation.V};
+    }
+
+    protected void setUpSchemaForTarari() throws Exception {
+        setUp();
+        this.runOperations = new BenchmarkOperation[] {BenchmarkOperation.V};
 
         try {
             //Based on how Tarari does schema validation, it only needs to load the schema once.
-            SchemaLoader.loadSchema(testConfigurations.get(0).getSchemaLocation()); //load schema
+            SchemaLoader.loadSchema(testConfigurations.get(runConfigIndex).getSchemaLocation()); //load schema
         }
         catch (Exception e) {
-            e.printStackTrace();;
+            e.printStackTrace();
         }
     }
 

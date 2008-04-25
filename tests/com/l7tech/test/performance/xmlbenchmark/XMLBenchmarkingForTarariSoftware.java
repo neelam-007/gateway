@@ -45,9 +45,10 @@ public class XMLBenchmarkingForTarariSoftware extends XMLBenchmarking {
     }
 
     protected void runParsing() throws BenchmarkException {
+        RaxDocument raxDocument = null;
         try {
             XmlSource xmlSource = new XmlSource(config.getXmlStream());
-            RaxDocument raxDocument = RaxDocument.createDocument(xmlSource);
+            raxDocument = RaxDocument.createDocument(xmlSource);
 
             //pass parsing if document created
             if ( raxDocument != null ) {
@@ -57,13 +58,21 @@ public class XMLBenchmarkingForTarariSoftware extends XMLBenchmarking {
         catch (Exception e) {
             throw new BenchmarkException("Failed in XMLBenchmarkingForTarariSoftware - runParsing()", e);
         }
+        finally {
+            //cleanup
+            if ( raxDocument != null && !raxDocument.isReleased() ) {
+                raxDocument.release();
+            }
+        }
 
     }
 
     protected void runSchemalValidation() throws BenchmarkException {
+        RaxDocument raxDocument = null;
+
         try {
             XmlSource xmlSource = new XmlSource(config.getXmlStream());
-            RaxDocument raxDocument = RaxDocument.createDocument(xmlSource);
+            raxDocument = RaxDocument.createDocument(xmlSource);
 
             boolean isValid = raxDocument.validate(); //validate the doc against the load schema
 
@@ -74,6 +83,12 @@ public class XMLBenchmarkingForTarariSoftware extends XMLBenchmarking {
         }
         catch (Exception e) {
             throw new BenchmarkException("Failed in XMLBenchmarkingForTarariSoftware - schemalValidation()", e);
+        }
+        finally {
+            //cleanup
+            if ( raxDocument != null && !raxDocument.isReleased() ) {
+                raxDocument.release();
+            }
         }
     }
 
@@ -104,10 +119,12 @@ public class XMLBenchmarkingForTarariSoftware extends XMLBenchmarking {
     }
 
     protected void runXPath() throws BenchmarkException {
+        RaxDocument raxDocument = null;
+
         try {
             //initialize xml source
             XmlSource xmlSource = new XmlSource(config.getXmlStream());
-            RaxDocument raxDocument = RaxDocument.createDocument(xmlSource);
+            raxDocument = RaxDocument.createDocument(xmlSource);
 
             List<String> result = new ArrayList<String>();  //hold the xpath results
 
@@ -157,6 +174,12 @@ public class XMLBenchmarkingForTarariSoftware extends XMLBenchmarking {
         }
         catch (Exception e) {
             throw new BenchmarkException("Failed in XMLBenchmarkingForTarariSoftware - runXPath()", e);
+        }
+        finally {
+            //cleanup
+            if ( raxDocument != null && !raxDocument.isReleased() ) {
+                raxDocument.release();
+            }
         }
     }
 }

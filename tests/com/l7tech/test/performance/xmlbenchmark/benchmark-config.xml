@@ -19,7 +19,7 @@
             </query>
         </xpathQueries>
     </benchmark-test>
-
+<!--
     <benchmark-test name="HL7v3Test">
         <xmlMessage>
             <location>/home/vchan/Dev/workspace/vc-test/cr-schema/Sample-HL7-QUPA_IN101102CA.xml</location>
@@ -37,5 +37,5 @@
             </query>
         </xpathQueries>
     </benchmark-test>
-
+-->
 </benchmark-config>
