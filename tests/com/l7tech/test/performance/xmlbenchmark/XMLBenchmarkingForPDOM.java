@@ -48,6 +48,8 @@ public class XMLBenchmarkingForPDOM extends XMLBenchmarking {
 //    private Document doc;
     private PDOMUtil pdomUtil;
 
+    public static Integer counter = 0;
+
     public XMLBenchmarkingForPDOM(BenchmarkConfig cfg, BenchmarkOperation[] ops) {
         super(cfg, ops);
     }
@@ -178,7 +180,14 @@ public class XMLBenchmarkingForPDOM extends XMLBenchmarking {
 
     protected File createPDOMFile(String suffix) throws BenchmarkException {
 
-        File newFile = new File(PDOM_FILE_LOCATION + config.getLabel() + suffix);
+        int id = 0;
+        synchronized (counter) {
+            id = counter;
+            counter++;
+        }
+
+        File newFile = new File(PDOM_FILE_LOCATION + config.getLabel() + suffix + id);
+
         if (newFile.exists()) {
             if (!newFile.delete())
                 throw new BenchmarkException("Cannot remove pdom_file.");
