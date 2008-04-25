@@ -42,6 +42,20 @@ public class XMLBenchmarkTest extends TestCase {
     }
 
     protected void tearDown() throws Exception {
+        try {
+            if ( this.runOperations[0] == BenchmarkOperation.V ){
+                //System.out.println("Unloading Schema");
+                SchemaLoader.unloadAllSchemas(); //clear out any schema that might be in the system already
+            }
+            else if ( this.runOperations[0] == BenchmarkOperation.XP ) {
+                //System.out.println("Unload XPath");
+                XPathLoader.unload();
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     /**
@@ -127,18 +141,19 @@ public class XMLBenchmarkTest extends TestCase {
 
     public static void setupClass() throws Exception
     {
-        if (testConfigurations == null) {
-            // load configuration from xml file
-            loadConfiguration();
-            
-            // check the system property for a run index passing
-            parseRunIndex();
+        try {
+            if (testConfigurations == null) {
+                // load configuration from xml file
+               loadConfiguration();
 
-            //Based on how Tarari does schema validation, it only needs to load the schema once.
-            SchemaLoader.unloadAllSchemas(); //clear out any schema that might be in the system already
-            SchemaLoader.loadSchema(testConfigurations.get(0).getSchemaLocation()); //load schema
-            XPathLoader.unload();
+                // check the system property for a run index passing
+                parseRunIndex();
+            }
         }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     public static void teardownClass() throws Exception
@@ -156,6 +171,14 @@ public class XMLBenchmarkTest extends TestCase {
     {
         setUp();
         this.runOperations = new BenchmarkOperation[] {BenchmarkOperation.V};
+
+        try {
+            //Based on how Tarari does schema validation, it only needs to load the schema once.
+            SchemaLoader.loadSchema(testConfigurations.get(0).getSchemaLocation()); //load schema
+        }
+        catch (Exception e) {
+            e.printStackTrace();;
+        }
     }
 
     protected void setUpXSLT() throws Exception
