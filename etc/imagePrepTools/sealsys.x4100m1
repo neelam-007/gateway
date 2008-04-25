@@ -123,6 +123,9 @@ seal)
   rm -f ~/ks-post.chroot
   rm -f ~/ks-post.nochroot
 
+  #ensure that the correct USB module is used by the master_key_manage script
+  echo "EHCI" > /etc/usbdrive_pp
+
   # Remove any left over traces if we happened to ssh anywhere
   rm -rf ~/.ssh
 
