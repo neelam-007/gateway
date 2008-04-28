@@ -182,10 +182,12 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                         return null;
                     }
                 });
-                if (isAuthAssertion && principalCredentials != null) {
-                    context.addAuthenticationResult(new AuthenticationResult(new UserBean(principalCredentials.getLogin()), null, false));
-                }else {
-                    context.addAuthenticationResult(new AuthenticationResult(new AnonymousUserReference("", -1, "<unknown>")));
+                if (isAuthAssertion) {
+                    if (principalCredentials != null) {
+                        context.addAuthenticationResult(new AuthenticationResult(new UserBean(principalCredentials.getLogin()), null, false));
+                    } else {
+                        context.addAuthenticationResult(new AuthenticationResult(new AnonymousUserReference("", -1, "<unknown>")));
+                    }
                 }
 
                 return AssertionStatus.NONE;
