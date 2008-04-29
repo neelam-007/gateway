@@ -68,7 +68,8 @@ public class XMLBenchmarkingForIntel extends XMLBenchmarking {
             DocumentBuilder builder = factory.newDocumentBuilder();
 
             // Parse your XML file to a DOM tree through the file URI.
-            Document document = builder.parse(new InputSource(new ByteArrayInputStream(config.getXmlMessage().getBytes())));
+            //Document document = builder.parse(new InputSource(new ByteArrayInputStream(config.getXmlMessage().getBytes())));
+            Document document = builder.parse(config.getXmlStream());
 
             if ( document != null) {
                 testResults.setParsingTestPassed(true);
@@ -88,7 +89,8 @@ public class XMLBenchmarkingForIntel extends XMLBenchmarking {
     protected synchronized void runSchemalValidation() throws BenchmarkException {
         try {
             //create xml and xsd stream source for validation
-            StreamSource xmlSource = new StreamSource(new ByteArrayInputStream(config.getXmlMessage().getBytes()));
+            //StreamSource xmlSource = new StreamSource(new ByteArrayInputStream(config.getXmlMessage().getBytes()));
+            StreamSource xmlSource = new StreamSource(config.getXmlStream());
             StreamSource xsdSource = new StreamSource(new File(config.getSchemaLocation()));
 
             //get a schema factory
@@ -121,7 +123,8 @@ public class XMLBenchmarkingForIntel extends XMLBenchmarking {
     protected void runXSLTransform() throws BenchmarkException {
         try {
             //create stream source for XML and XSL and stream results container
-            StreamSource xmlSource = new StreamSource(new ByteArrayInputStream(config.getXmlMessage().getBytes()));
+            //StreamSource xmlSource = new StreamSource(new ByteArrayInputStream(config.getXmlMessage().getBytes()));
+            StreamSource xmlSource = new StreamSource(config.getXmlStream());
             StreamSource xslSource = new StreamSource(new File(config.getXsltLocation()));
             ByteArrayOutputStream byteArrayOutStream = new ByteArrayOutputStream();
             StreamResult streamResults = new StreamResult(byteArrayOutStream);
@@ -150,7 +153,8 @@ public class XMLBenchmarkingForIntel extends XMLBenchmarking {
             DocumentBuilderFactory factory = com.intel.xml.dom.impl.ESDocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(NAMESPACE_AWARENESS);
             DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(new InputSource(new ByteArrayInputStream(config.getXmlMessage().getBytes())));
+            //Document document = builder.parse(new InputSource(new ByteArrayInputStream(config.getXmlMessage().getBytes())));
+            Document document = builder.parse(config.getXmlStream());
 
             // Generate an XPathFactory object.
             XPathFactory xpathFactory = com.intel.xml.xpath.impl.XPathFactoryImpl.newInstance();

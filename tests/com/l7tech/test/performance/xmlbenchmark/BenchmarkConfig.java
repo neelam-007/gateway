@@ -92,7 +92,7 @@ public class BenchmarkConfig {
         InputStream ins;
 
         if (xmlFromFile)
-            ins = new FileInputStream(xmlLocation);
+            ins = new FileInputStream(getFileLocation(xmlLocation));
         else
             ins = new ByteArrayInputStream(xmlMessage.getBytes());
 
@@ -258,7 +258,7 @@ public class BenchmarkConfig {
      * @param fileLocation the file to check
      * @return the absolute path if found by the classloader. Else, the input parm value will be returned.
      */
-    private String getFileLocation(String fileLocation) {
+    protected String getFileLocation(String fileLocation) {
 
         URL loc = this.getClass().getResource(fileLocation);
         if (loc != null && loc.getFile() != null && loc.getFile().length() > 0) {

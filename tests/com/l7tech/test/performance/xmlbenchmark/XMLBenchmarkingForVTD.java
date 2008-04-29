@@ -117,7 +117,7 @@ public class XMLBenchmarkingForVTD extends XMLBenchmarking {
 
         try {
             if (config.isXmlFromFile()) {
-                newVTD.parseFile(config.getXmlLocation(), true);
+                newVTD.parseFile(config.getFileLocation(config.getXmlLocation()), true);
             } else {
                 newVTD.setDoc(config.xmlMessage.getBytes());
                 newVTD.parse(true);
