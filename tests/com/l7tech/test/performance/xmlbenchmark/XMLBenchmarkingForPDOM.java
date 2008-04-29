@@ -20,6 +20,8 @@ import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,8 +47,9 @@ public class XMLBenchmarkingForPDOM extends XMLBenchmarking {
     private static final String PDOM_FILE_SUFFIX_FOR_XSLT = "forXSLT";
     private static final String PDOM_FILE_SUFFIX_FOR_XPATH = "forXPath";
 
-//    private Document doc;
     private PDOMUtil pdomUtil;
+
+    private Schema schema;
 
     public static Integer counter = 0;
 
@@ -58,6 +61,14 @@ public class XMLBenchmarkingForPDOM extends XMLBenchmarking {
         super.initialize();
 
         this.pdomUtil = new PDOMUtil();
+
+        try {
+            // create the compiled schema
+            this.schema = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI).newSchema(new File(config.getSchemaLocation()));
+
+        } catch (SAXException sax) {
+            throw new BenchmarkException("Failed to initialize Schema");
+        }
     }
 
     protected void runParsing() throws BenchmarkException {
@@ -88,14 +99,13 @@ public class XMLBenchmarkingForPDOM extends XMLBenchmarking {
         try {
             // create the PDOM
             pdom = createPDOM( createPDOMFile(PDOM_FILE_SUFFIX_FOR_SCHEMA_VAL), true );
-            Document doc = pdom.getDocument();
 
-            // traverse the tree
-            if (doc != null) {
-//                System.out.println("validated root: " + doc.getFirstChild().getNodeName() + "; isValid=" + pdom.isValid(doc));
-
+            // run Validation
+            try {
+                pdomUtil.runSchemaValidation(pdom);
                 testResults.setSchemaValidationTestPassed(true);
-            } else {
+
+            } catch (BenchmarkException bex) {
                 throw new BenchmarkException("Validation failed.");
             }
 
@@ -118,7 +128,6 @@ public class XMLBenchmarkingForPDOM extends XMLBenchmarking {
             Transformer transformer = xsltemp.newTransformer();
             transformer.transform(new DOMSource(pdom.getDocument()), result);
             testResults.setXsltResults(output.toString());
-//            System.out.println("xslt output:" + output.toString());
 
         } catch (TransformerConfigurationException tcex) {
             tcex.printStackTrace();
@@ -305,6 +314,7 @@ public class XMLBenchmarkingForPDOM extends XMLBenchmarking {
         private PDOMParserFactory getValidatingParserFactory() {
             if (validatingParserFactory == null) {
                 this.validatingParserFactory = createConfiguredPDOMParserFactory(true);
+//                this.validatingParserFactory.getSAXParserFactory().setSchema(schema);
                 this.validatingParserFactory.setFeature("http://apache.org/xml/features/validation/schema",true);
                 this.validatingParserFactory.setFeature("http://apache.org/xml/features/validation/schema-full-checking", true);
             }
@@ -375,6 +385,19 @@ public class XMLBenchmarkingForPDOM extends XMLBenchmarking {
             // Enabling/Disabling XML namespace support
             sax_parser_factory.setNamespaceAware(NAMESPACE_AWARENESS);
             return newFactory;
+        }
+
+        public void runSchemaValidation(PDOM pdom) throws BenchmarkException {
+
+            try {
+                schema.newValidator().validate(new DOMSource(pdom.getDocument()));
+
+            } catch (IOException ioe) {
+                throw new BenchmarkException("Schema validation failed with IOError", ioe);
+
+            } catch (SAXException sax) {
+                throw new BenchmarkException("Schema validation failed.", sax);
+            }
         }
     }
 }

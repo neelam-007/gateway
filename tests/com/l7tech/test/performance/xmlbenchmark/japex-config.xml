@@ -17,7 +17,6 @@
     <param name="japex.classPath" value="${src.root}/lib/test/Infonyte/*.jar"/>
     <param name="japex.classPath" value="${src.root}/lib/test/intel-xss.jar"/>
     <param name="japex.classPath" value="/usr/local/Tarari/lib/*.jar"/>
-    <!--<param name="japex.classPath" value="/usr/local/IntelXML/lib/*.jar"/>-->
 
     <param name="japex.reportsDirectory" value="${japex.reportsDirectory}"/>
     
@@ -38,122 +37,51 @@
         <param name="layer7.runInTerminateDriver" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest.teardownClass"/>
     </driver>
 
-    <!-- XML Parsing Tests -->
-    <testCase name="Tarari SW-parsing">
+    <!-- Tarari Tests -->
+    <testCase name="Tarari-parsing">
         <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
         <param name="layer7.methodName" value="testTarariSW"/>
         <param name="layer7.runInPrepare" value="setUpParsing"/>
         <param name="layer7.runInFinish" value="tearDown"/>
     </testCase>
-
-    <testCase name="Xerces/Xalan-parsing">
-        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
-        <param name="layer7.methodName" value="testXercesXalan"/>
-        <param name="layer7.runInPrepare" value="setUpParsing"/>
-        <param name="layer7.runInFinish" value="tearDown"/>
-    </testCase>
-
-    <testCase name="Infonyte PDOM-parsing">
-        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
-        <param name="layer7.methodName" value="testInfonytePDOM"/>
-        <param name="layer7.runInPrepare" value="setUpParsing"/>
-        <param name="layer7.runInFinish" value="tearDown"/>
-    </testCase>
-
-    <testCase name="VTD-parsing">
-        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
-        <param name="layer7.methodName" value="testVTD"/>
-        <param name="layer7.runInPrepare" value="setUpParsing"/>
-        <param name="layer7.runInFinish" value="tearDown"/>
-    </testCase>
-
-    <testCase name="Intel-parsing">
-        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
-        <param name="layer7.methodName" value="testIntel"/>
-        <param name="layer7.runInPrepare" value="setUpParsing"/>
-        <param name="layer7.runInFinish" value="tearDown"/>
-    </testCase>
-
-    <!-- Schema Validation Tests -->
-    <testCase name="Tarari SW-schema">
+    <testCase name="Tarari-schema">
         <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
         <param name="layer7.methodName" value="testTarariSW"/>
         <param name="layer7.runInPrepare" value="setUpSchemaForTarari"/>
         <param name="layer7.runInFinish" value="tearDownForTarari"/>
     </testCase>
-
-    <testCase name="Xerces/Xalan-schema">
-        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
-        <param name="layer7.methodName" value="testXercesXalan"/>
-        <param name="layer7.runInPrepare" value="setUpSchema"/>
-        <param name="layer7.runInFinish" value="tearDown"/>
-    </testCase>
-
-    <testCase name="Infonyte PDOM-schema">
-        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
-        <param name="layer7.methodName" value="testInfonytePDOM"/>
-        <param name="layer7.runInPrepare" value="setUpSchema"/>
-        <param name="layer7.runInFinish" value="tearDown"/>
-    </testCase>
-
-    <testCase name="VTD*-schema">
-        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
-        <param name="layer7.methodName" value="testVTD"/>
-        <param name="layer7.runInPrepare" value="setUpSchema"/>
-        <param name="layer7.runInFinish" value="tearDown"/>
-    </testCase>
-
-    <testCase name="Intel-schema">
-        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
-        <param name="layer7.methodName" value="testIntel"/>
-        <param name="layer7.runInPrepare" value="setUpSchema"/>
-        <param name="layer7.runInFinish" value="tearDown"/>
-    </testCase>
-
-    <!-- XSL Transform Tests -->
-    <testCase name="Tarari SW-xslt">
+    <testCase name="Tarari-xslt">
         <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
         <param name="layer7.methodName" value="testTarariSW"/>
         <param name="layer7.runInPrepare" value="setUpXSLT"/>
         <param name="layer7.runInFinish" value="tearDown"/>
     </testCase>
-
-    <testCase name="Xerces/Xalan-xslt">
-        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
-        <param name="layer7.methodName" value="testXercesXalan"/>
-        <param name="layer7.runInPrepare" value="setUpXSLT"/>
-        <param name="layer7.runInFinish" value="tearDown"/>
-    </testCase>
-
-    <testCase name="Infonyte PDOM-xslt">
-        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
-        <param name="layer7.methodName" value="testInfonytePDOM"/>
-        <param name="layer7.runInPrepare" value="setUpXSLT"/>
-        <param name="layer7.runInFinish" value="tearDown"/>
-    </testCase>
-
-    <testCase name="VTD*-xslt">
-        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
-        <param name="layer7.methodName" value="testVTD"/>
-        <param name="layer7.runInPrepare" value="setUpXSLT"/>
-        <param name="layer7.runInFinish" value="tearDown"/>
-    </testCase>
-
-    <testCase name="Intel-xslt">
-        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
-        <param name="layer7.methodName" value="testIntel"/>
-        <param name="layer7.runInPrepare" value="setUpXSLT"/>
-        <param name="layer7.runInFinish" value="tearDown"/>
-    </testCase>
-
-    <!-- XPath Tests -->
-    <testCase name="Tarari SW-xpath">
+    <testCase name="Tarari-xpath">
         <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
         <param name="layer7.methodName" value="testTarariSW"/>
         <param name="layer7.runInPrepare" value="setUpXPath"/>
         <param name="layer7.runInFinish" value="tearDownForTarari"/>
     </testCase>
 
+    <!-- Xerces/Xalan Tests -->
+    <testCase name="Xerces/Xalan-parsing">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testXercesXalan"/>
+        <param name="layer7.runInPrepare" value="setUpParsing"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+    <testCase name="Xerces/Xalan-schema">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testXercesXalan"/>
+        <param name="layer7.runInPrepare" value="setUpSchema"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+    <testCase name="Xerces/Xalan-xslt">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testXercesXalan"/>
+        <param name="layer7.runInPrepare" value="setUpXSLT"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
     <testCase name="Xerces/Xalan-xpath">
         <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
         <param name="layer7.methodName" value="testXercesXalan"/>
@@ -161,13 +89,51 @@
         <param name="layer7.runInFinish" value="tearDown"/>
     </testCase>
 
-    <testCase name="Infonyte PDOM-xpath">
+    <!-- Infonyte PDOM Tests -->
+    <testCase name="PDOM-parsing">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testInfonytePDOM"/>
+        <param name="layer7.runInPrepare" value="setUpParsing"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+    <testCase name="PDOM-schema">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testInfonytePDOM"/>
+        <param name="layer7.runInPrepare" value="setUpSchema"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+    <testCase name="PDOM-xslt">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testInfonytePDOM"/>
+        <param name="layer7.runInPrepare" value="setUpXSLT"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+    <testCase name="PDOM-xpath">
         <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
         <param name="layer7.methodName" value="testInfonytePDOM"/>
         <param name="layer7.runInPrepare" value="setUpXPath"/>
         <param name="layer7.runInFinish" value="tearDown"/>
     </testCase>
 
+    <!-- VTD Tests -->
+    <testCase name="VTD-parsing">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testVTD"/>
+        <param name="layer7.runInPrepare" value="setUpParsing"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+    <testCase name="VTD*-schema">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testVTD"/>
+        <param name="layer7.runInPrepare" value="setUpSchema"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+    <testCase name="VTD*-xslt">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testVTD"/>
+        <param name="layer7.runInPrepare" value="setUpXSLT"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
     <testCase name="VTD-xpath">
         <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
         <param name="layer7.methodName" value="testVTD"/>
@@ -175,6 +141,25 @@
         <param name="layer7.runInFinish" value="tearDown"/>
     </testCase>
 
+    <!-- Intel XML Suite Tests -->
+    <testCase name="Intel-parsing">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testIntel"/>
+        <param name="layer7.runInPrepare" value="setUpParsing"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+    <testCase name="Intel-schema">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testIntel"/>
+        <param name="layer7.runInPrepare" value="setUpSchema"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
+    <testCase name="Intel-xslt">
+        <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
+        <param name="layer7.methodName" value="testIntel"/>
+        <param name="layer7.runInPrepare" value="setUpXSLT"/>
+        <param name="layer7.runInFinish" value="tearDown"/>
+    </testCase>
     <testCase name="Intel-xpath">
         <param name="layer7.className" value="com.l7tech.test.performance.xmlbenchmark.XMLBenchmarkTest"/>
         <param name="layer7.methodName" value="testIntel"/>

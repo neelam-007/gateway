@@ -266,4 +266,17 @@ public class BenchmarkConfig {
         }
         return fileLocation;
     }
+
+
+    public String getTestInfoString() {
+
+        final String SEP = "-";
+        StringBuffer sb = new StringBuffer();
+
+        sb.append(getLabel()).append(SEP);
+        sb.append(getXmlMessageSize() / 1000.0D).append("K").append(SEP);
+
+        return sb.toString();
+    }
+
 }

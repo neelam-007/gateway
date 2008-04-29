@@ -1,31 +1,30 @@
 package com.l7tech.test.performance.xmlbenchmark;
 
+import com.l7tech.server.communityschemas.SchemaValidationErrorHandler;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Schema;
-import javax.xml.validation.Validator;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.NamespaceContext;
-import javax.xml.xpath.XPathFactory;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.Transformer;
+import javax.xml.xpath.XPathFactory;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ArrayList;
-
-import com.l7tech.server.communityschemas.SchemaValidationErrorHandler;
 
 /**
  * The benchmark test for Intel's XML Software Suite.
@@ -40,8 +39,6 @@ public class XMLBenchmarkingForIntel extends XMLBenchmarking {
 
     private SchemaValidationErrorHandler errorHandler;
     public static boolean NAMESPACE_AWARENESS = true;
-    public static String NAMESPACE_PREFIX = "ns1";
-    public static String NAMESPACE_URI = "http://l7tech.com/xmlbench";
 
     protected void initialize() throws BenchmarkException {
         try{
@@ -162,12 +159,17 @@ public class XMLBenchmarkingForIntel extends XMLBenchmarking {
             XPath xpath = xpathFactory.newXPath();
             xpath.reset();
             xpath.setNamespaceContext(new NamespaceContext() {
+
+                HashMap<String, String> nsMap = config.getNamespaces();
+
                 public String getNamespaceURI(String prefix) {
-                    return NAMESPACE_URI;
+                    if (nsMap.containsKey(prefix))
+                        return nsMap.get(prefix);
+                    return "";
                 }
 
                 public String getPrefix(String namespaceURI) {
-                    return NAMESPACE_PREFIX;
+                    return null;
                 }
 
                 public Iterator getPrefixes(String namespaceURI) {

@@ -3,8 +3,8 @@ package com.l7tech.test.performance.xmlbenchmark;
 import org.xml.sax.InputSource;
 
 import javax.xml.transform.stream.StreamSource;
-import java.util.List;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * This is the interface that defines the all operations that can be executed during the XML performance benchmarking tests.
@@ -140,6 +140,10 @@ public abstract class XMLBenchmarking {
 
     protected StreamSource getXsltStreamSource() throws IOException {
         return new StreamSource(config.getXsltLocation());
+    }
+
+    protected StreamSource getSchemaStreamSource() throws IOException {
+        return new StreamSource(config.getSchemaLocation());
     }
 
     protected abstract void runParsing() throws BenchmarkException;

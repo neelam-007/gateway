@@ -11,10 +11,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -27,6 +24,8 @@ public class XMLBenchmarkTest extends TestCase {
     private static final Logger logger = Logger.getLogger(XMLBenchmarkTest.class.getName());
 
     private static final String PROPERTY_RUN_INDEX = "layer7.xmlbench.cfg.runindex";
+    private static final String PROPERTY_JAPEX_REPORTS_DIR = "japex.reportsDirectory";
+    private static final String PROPERTY_JAPEX_NUMTHREADS = "japex.numberOfThreads";
 
     private static final String configLocation = "benchmark-config.xml";
 
@@ -34,14 +33,23 @@ public class XMLBenchmarkTest extends TestCase {
 
     private static int runConfigIndex;
 
+    private static File testInfoFile;
+    private static Boolean testInfoCreated = Boolean.FALSE;
+
     private BenchmarkOperation[] runOperations;
 
     protected void setUp() throws Exception {
         // load configuration from xml file
         XMLBenchmarkTest.setupClass();
+
+        // create test-info file for the charting util to use (should only be done once per test run) if the
+        if (!testInfoCreated && testInfoFile == null) {
+            createTestInfo();
+        }
     }
 
     protected void tearDown() throws Exception {
+
     }
 
     protected void tearDownForTarari() throws Exception {
@@ -60,27 +68,20 @@ public class XMLBenchmarkTest extends TestCase {
         }
     }
 
-    /**
-     * Unit test against Tarari hardware (if available)
-     */
-//    public void testTarariHW() {
-//        try {
-//            XMLBenchmarking test = new XMLBenchmarkingForTarariHardware(testConfigurations.get(runConfigIndex), runOperations);
-//            test.run();
-//        }
-//        catch (BenchmarkException be) {
-//            be.printStackTrace();
-//            fail();
-//        }
-//    }
-
     public void testTarariSW() {
         try {
+            // need this if running JUnit locally
+            // setUpSchemaForTarari();
+
             XMLBenchmarking test = new XMLBenchmarkingForTarariSoftware(testConfigurations.get(runConfigIndex), runOperations);
             test.run();
         }
         catch (BenchmarkException be) {
             be.printStackTrace();
+            fail();
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
             fail();
         }
     }
@@ -132,7 +133,7 @@ public class XMLBenchmarkTest extends TestCase {
      */
     public void testIntel(){
         try{
-            XMLBenchmarking test = new XMLBenchmarkingForIntel(testConfigurations.get(0), runOperations);
+            XMLBenchmarking test = new XMLBenchmarkingForIntel(testConfigurations.get(runConfigIndex), runOperations);
             test.run();
         }
         catch (BenchmarkException be){
@@ -154,6 +155,7 @@ public class XMLBenchmarkTest extends TestCase {
         }
         catch (Exception e) {
             e.printStackTrace();
+            throw e;
         }
 
     }
@@ -180,8 +182,11 @@ public class XMLBenchmarkTest extends TestCase {
         this.runOperations = new BenchmarkOperation[] {BenchmarkOperation.V};
 
         try {
-            //Based on how Tarari does schema validation, it only needs to load the schema once.
-            SchemaLoader.loadSchema(testConfigurations.get(runConfigIndex).getSchemaLocation()); //load schema
+
+            if (SchemaLoader.listSchemas() == null || SchemaLoader.listSchemas().length == 0) {
+                //Based on how Tarari does schema validation, it only needs to load the schema once.
+                SchemaLoader.loadSchema(testConfigurations.get(runConfigIndex).getSchemaLocation()); //load schema
+            }
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -198,6 +203,35 @@ public class XMLBenchmarkTest extends TestCase {
     {
         setUp();
         this.runOperations = new BenchmarkOperation[] {BenchmarkOperation.XP};
+    }
+
+    protected void createTestInfo() throws IOException
+    {
+        // create the test info text file for the chart util to use
+        String reportDir = System.getProperty(PROPERTY_JAPEX_REPORTS_DIR);
+        String numThreads = "T=" + System.getProperty(PROPERTY_JAPEX_NUMTHREADS);
+        if (reportDir != null) {
+
+            synchronized(this) {
+                testInfoFile = new File(reportDir + "/" + ChartBenchmarkResults.TEST_INFO_FILE);
+            }
+
+            if (!testInfoFile.exists()) {
+                FileWriter out = null;
+                try {
+                    out = new FileWriter(testInfoFile);
+                    out.write(testConfigurations.get(runConfigIndex).getTestInfoString() + numThreads );
+                    out.flush();
+                    testInfoCreated = Boolean.TRUE;
+                } finally {
+                    try {
+                        if (out != null) out.close();
+                    } catch (IOException ioe) {} // ignore
+                }
+            }
+        } else {
+            testInfoCreated = Boolean.TRUE;
+        }
     }
 
     private static void loadConfiguration() throws Exception

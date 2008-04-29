@@ -47,12 +47,28 @@ public class XMLBenchmarkingForVTD extends XMLBenchmarking {
     }
 
     protected void runSchemalValidation() throws BenchmarkException {
+
         //no schema validation for ximpleware at the moment.
+        synchronized(this)
+        {
+            try {
+                Thread.sleep(2500l);
+            } catch (InterruptedException iex) {}
+        }
+
         testResults.setSchemaValidationTestPassed(true);
     }
 
     protected void runXSLTransform() throws BenchmarkException {
+
         //doesn't look like it has XSLT
+        synchronized(this)
+        {
+            try {
+                Thread.sleep(2500l);
+            } catch (InterruptedException iex) {}
+        }
+
         testResults.setXsltTestPassed(true);
     }
 

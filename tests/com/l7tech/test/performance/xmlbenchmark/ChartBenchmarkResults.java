@@ -1,28 +1,28 @@
 package com.l7tech.test.performance.xmlbenchmark;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
-import org.xml.sax.InputSource;
-import org.jfree.data.category.DefaultCategoryDataset;
-import org.jfree.chart.JFreeChart;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartUtilities;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.LogarithmicAxis;
+import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.category.DefaultCategoryDataset;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import javax.xml.xpath.XPathFactory;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPathFactory;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  * Quick and dirty chart generator for the XML-Benchmarking japex data.  Using JFreeChart.
@@ -31,27 +31,36 @@ import javax.xml.parsers.ParserConfigurationException;
  */
 public class ChartBenchmarkResults {
 
+    public static final String TEST_INFO_FILE = "xmlbench-test-nfo.txt";
+
     private static final String KEY_PARSING = "-parsing";
     private static final String KEY_SCHEMA = "-schema";
     private static final String KEY_XSLT = "-xslt";
     private static final String KEY_XPATH = "-xpath";
 
     private File file;
+    private File testInfoFile;
+    private String testInfo = "";
     private Document doc;
-//    private ArrayList<String[]> results;
     private HashMap<String, ArrayList<ResultRecord>> resultsMap;
 
-    public ChartBenchmarkResults(String resultFile) {
+    public ChartBenchmarkResults(String resultFile, String resultDir) {
 
         // initialize the hashmap
-        this.resultsMap = new HashMap<String, ArrayList<ResultRecord>>();
-        this.resultsMap.put(KEY_PARSING, new ArrayList<ResultRecord>());
-        this.resultsMap.put(KEY_SCHEMA, new ArrayList<ResultRecord>());
-        this.resultsMap.put(KEY_XSLT, new ArrayList<ResultRecord>());
-        this.resultsMap.put(KEY_XPATH, new ArrayList<ResultRecord>());
+        resultsMap = new HashMap<String, ArrayList<ResultRecord>>();
+        resultsMap.put(KEY_PARSING, new ArrayList<ResultRecord>());
+        resultsMap.put(KEY_SCHEMA, new ArrayList<ResultRecord>());
+        resultsMap.put(KEY_XSLT, new ArrayList<ResultRecord>());
+        resultsMap.put(KEY_XPATH, new ArrayList<ResultRecord>());
+
+        // read the test-info file
+        testInfoFile = new File(resultDir + "/" + TEST_INFO_FILE);
+        if (testInfoFile.exists()) {
+            readTestInfoFile();
+        }
 
         // read the input file
-        this.file = new File(resultFile);
+        file = new File(resultFile);
         System.out.println("Input file " + resultFile + " exists: " + file.exists());
         if (file.exists()) {
             readFile();
@@ -62,14 +71,14 @@ public class ChartBenchmarkResults {
 
     public static final void main(String[] args) {
 
-        ChartBenchmarkResults charter = new ChartBenchmarkResults(args[0]);
-
-        String resultDir = "";
+        String resultDir = ".";
         if (args.length > 1 && new File(args[1]).exists()) {
             resultDir = args[1] + (args[1].endsWith("/")? "" : "/");
 
             System.out.println("Output to " + resultDir);
         }
+
+        ChartBenchmarkResults charter = new ChartBenchmarkResults(args[0], resultDir);
 
         try {
             charter.parseResult();
@@ -77,9 +86,34 @@ public class ChartBenchmarkResults {
             charter.chartResults(KEY_SCHEMA, resultDir + "xml-bench-schema.jpg");
             charter.chartResults(KEY_XSLT, resultDir + "xml-bench-xslt.jpg");
             charter.chartResults(KEY_XPATH, resultDir + "xml-bench-xpath.jpg");
+            charter.chartAll(resultDir + "xml-bench-all.jpg");
 
         } catch (Exception ex) {
             ex.printStackTrace();
+        }
+    }
+
+
+    protected void readTestInfoFile() {
+
+        BufferedReader rdr = null;
+        try {
+
+            rdr = new BufferedReader(new FileReader(testInfoFile));
+            String val;
+            if ((val = rdr.readLine()) != null )
+                testInfo = val;
+            else
+                testInfo = "";
+
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        } finally {
+            if (rdr != null) {
+                try {
+                    rdr.close();
+                } catch (IOException ioe) {}
+            }
         }
     }
 
@@ -138,12 +172,12 @@ public class ChartBenchmarkResults {
         DefaultCategoryDataset ds = new DefaultCategoryDataset();
 
         for (ResultRecord rec : resultsMap.get(testCategory)) {
-            ds.setValue(rec.getResult(), "tps", rec.name);
+            ds.setValue(rec.getResult(), testCategory, rec.name);
             System.out.println(rec.toString());
         }
 
         JFreeChart chart = ChartFactory.createBarChart3D(
-           "XML-Benchmark " + testCategory,     // Chart name
+           "XML-Benchmark " + testInfo + testCategory,     // Chart name
            "Packages",                          // X axis label
            "Throughput (tps)",                  // Y axis value
            ds,                                  // data set
@@ -162,6 +196,51 @@ public class ChartBenchmarkResults {
         }
     }
 
+    protected void chartAll(String fileName)
+    {
+        DefaultCategoryDataset ds = new DefaultCategoryDataset();
+
+        Iterator<String> it = resultsMap.keySet().iterator();
+        while (it.hasNext()) {
+
+            String key = it.next();
+            for (ResultRecord rec : resultsMap.get(key)) {
+
+                double result = rec.getResult();
+
+                if (rec.name.endsWith("*"))
+                    ds.setValue(result, key, rec.name.substring(0, rec.name.length()-1));
+                else
+                    ds.setValue(result, key, rec.name);
+
+                System.out.println(rec.toString());
+            }
+        }
+
+        JFreeChart chart = ChartFactory.createBarChart3D(
+           "XML-Benchmark " + testInfo + "-all",     // Chart name
+           "Packages",               // X axis label
+           "Throughput (tps)",       // Y axis value
+           ds,                       // data set
+           PlotOrientation.VERTICAL,
+           true, true, false);
+
+        CategoryPlot plot = chart.getCategoryPlot();
+        LogarithmicAxis axis = new LogarithmicAxis("Throughput (tps)");
+        axis.setAllowNegativesFlag(true);
+        axis.setAutoRangeMinimumSize(5.0d);
+        plot.setRangeAxis(axis);
+
+        try
+        {
+           ChartUtilities.saveChartAsJPEG(new File(fileName), chart, 700, 300);
+           System.out.println("Chart: " + fileName + " created. ok.");
+        }
+        catch (IOException e)
+        {
+           System.err.println("Problem occurred creating chart.");
+        }
+    }
 
     private static final String[] paths =
             {"@name", "resultIterations/text()", "resultTime/text()", "resultValue/text()"};

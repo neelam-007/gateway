@@ -1267,11 +1267,12 @@
                     <include name="tools/junit-4.4.jar"/>
                 </fileset>
             </classpath>
+            <jvmarg value="-Xmx3072m"/>
             <jvmarg value="-Djava.library.path=/usr/local/Tarari/lib/:/usr/local/IntelXML/lib/"/>
             <jvmarg value="-Djapex.reportsDirectory=${test.xmlbench.tmp.dir}"/>
-            <jvmarg value="-Djapex.numberOfThreads=1"/>
+            <jvmarg value="-Djapex.numberOfThreads=2"/>
             <jvmarg value="-Dlayer7.name=${test.xmlbench.report.name}"/>
-            <jvmarg value="-Dlayer7.version=v${build.version.major}.${build.version.minor}${build.version.subminor}"/> <!-- letter 'v' to prevent Japex from parsing this as number -->
+            <jvmarg value="-Dlayer7.version=v${build.version.major}.${build.version.minor}${build.version.subminor}"/>
             <jvmarg value="-Dlayer7.notes=xml benchmarking"/>
             <jvmarg value="-Dlayer7.xmlbench.cfg.runindex=0"/>
             <jvmarg value="-Dsrc.root=${src.root}"/>
@@ -1286,6 +1287,11 @@
                 <include name="**/report.xml"/>
             </fileset>
         </move>
+        <copy tofile="${test.xmlbench.report.dir}/xmlbench-test-nfo.txt">
+            <fileset dir="${test.xmlbench.tmp.dir}">
+                <include name="xmlbench-test-nfo.txt"/>
+            </fileset>
+        </copy>
 
         <delete dir="${test.xmlbench.tmp.dir}"/>
 
