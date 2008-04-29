@@ -8,6 +8,7 @@ package com.l7tech.cluster;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -17,6 +18,7 @@ import java.util.regex.Matcher;
  *
  * @author flascelles@layer7-tech.com
  */
+@XmlRootElement
 public class ClusterProperty extends NamedEntityImp {
     private static final long serialVersionUID = 1L;
 
