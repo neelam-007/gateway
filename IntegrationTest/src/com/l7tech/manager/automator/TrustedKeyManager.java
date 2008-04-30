@@ -137,8 +137,9 @@ public class TrustedKeyManager {
      * @param filename The name of the file containing the key
      * @param alias The alias to use for the key
      * @param password The password for reading the file
+     * @return X509Certificate the first certificate of the chain found in filename
      */
-    private void importPrivateKey(String filename, String alias, String password) {
+    private X509Certificate importPrivateKey(String filename, String alias, String password) {
         try {
             KeyStore keyStore = KeyStore.getInstance("PKCS12");
             keyStore.load(new FileInputStream(filename), password.toCharArray());
@@ -188,9 +189,11 @@ public class TrustedKeyManager {
             } else {
                 System.err.println("!!!! Could not find keystore information.");
             }
+            return certificateChain[0];
         } catch(Exception e) {
             e.printStackTrace();
         }
+        return null;
     }
 
     /**
@@ -198,7 +201,7 @@ public class TrustedKeyManager {
      * private key to the SSL key, and imports the specified private keys.
      * @param identityAdmin The identity admin reference to use
      */
-    public void setupPrivateKeys(IdentityAdmin identityAdmin) {
+    public void setupPrivateKeys(IdentityAdmin identityAdmin){
         this.identityAdmin = identityAdmin;
 
         String[] aliases = Main.getProperties().getProperty("manager.automator.privateKeys.toCreate").split(",");
@@ -233,7 +236,19 @@ public class TrustedKeyManager {
                 String alias = Main.getProperties().getProperty("manager.automator.privateKeys.toImport." + id + ".alias");
                 String password = Main.getProperties().getProperty("manager.automator.privateKeys.toImport." + id + ".password");
 
-                importPrivateKey(filename, alias, password);
+                X509Certificate cert = importPrivateKey(filename, alias, password);
+                if(cert == null){
+                    throw new RuntimeException("Cert for alias: " + alias+" could not be found");
+                }
+                try{
+                    User user = identityAdmin.findUserByLogin(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, alias);
+                    if(user == null){
+                        throw new RuntimeException("User: "+alias+" not found");
+                    }
+                    identityAdmin.recordNewUserCert(user, cert);
+                }catch(Exception ex){
+                    throw new RuntimeException(ex);
+                }
             }
         }
     }

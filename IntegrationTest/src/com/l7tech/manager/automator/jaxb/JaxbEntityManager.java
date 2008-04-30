@@ -15,6 +15,7 @@ import com.l7tech.admin.AdminContext;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
@@ -277,7 +278,7 @@ public class JaxbEntityManager {
             this.downloadAllClusterProperties();
         }else if(action.equalsIgnoreCase("Upload")){
             //this.uploadAllClusterProperties();
-            this.uploadPublishedServices("9830423");
+            this.uploadPublishedServices("23691272");
         }
 
         long duration = System.currentTimeMillis() - startTime;
@@ -1200,8 +1201,9 @@ public class JaxbEntityManager {
             Assertion a1 = (Assertion)iter.next();
             //CompositeAssertion subclasses are AllAssertion, one or more, exactly one
             if(a1 instanceof CompositeAssertion){
-                //keep any true found in processing the policy
-                policyUpdated = policyUpdated || this.processAssertions((CompositeAssertion)a1);
+                //keep any true found in processing the policy, ensure processAssertion is on the left of || to make
+                //sure it's executed for a1, even after the first CompositeAssertion found caused a policy update.
+                policyUpdated = this.processAssertions((CompositeAssertion)a1) || policyUpdated;
             }
             if(a1 instanceof Include){
                 updateIncludeAssertion((Include)a1);
@@ -1211,15 +1213,58 @@ public class JaxbEntityManager {
                 updateSpecificUserAssertion((SpecificUser)a1);                
                 policyUpdated = true;
             }
+            if(a1 instanceof MemberOfGroup){
+                updateGroupAssertion((MemberOfGroup)a1);
+                policyUpdated = true;
+            }
+            
         }
         return policyUpdated;
     }
 
+    /*
+    * Updated the supplied MemberOfGroup's oid's used within it to reference the Group it
+    * requires as well as the IdentityProvider.
+    * @param group The MemberOfGroup to update
+    * Note: After this method has been ran for the supplied MemberOfGroup it's internal state is
+    * upto date however the Policy it belongs to xml has not yet been updated.*/
+    private void updateGroupAssertion(MemberOfGroup group) throws Exception{
+        long providerId = group.getIdentityProviderOid();
+        long providerIdToUse;
+        if(providerId != IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID){
+           if(!this.oldIdToNewForIdentityProvider.containsKey(providerId)){
+               throw new RuntimeException("Cannot find the new provider id for provider id: " + providerId);
+           }
+           providerIdToUse = this.oldIdToNewForIdentityProvider.get(providerId);
+        }else{
+            providerIdToUse = providerId;
+        }
+        String groupName = group.getGroupName();
+        try{
+            Group foundGroup = this.identityAdmin.findGroupByName(providerIdToUse, groupName);
+            if(foundGroup == null){
+                throw new RuntimeException("Group: "+ groupName +" not found");
+            }
+            String oid = foundGroup.getId();
+            group.setGroupId(oid);
+            group.setIdentityProviderOid(providerIdToUse);
+        }catch(Exception ex){
+            System.out.println("Exception finding group with name: " + groupName);
+            System.out.println("Exception is: " + ex.getMessage());
+        }        
+    }
+
+    /*
+    * Updated the supplied SpecificUser's oid's used within it to reference the user it
+    * requires as well as the IdentityProvider.
+    * @param group The SpecificUser to update
+    * Note: After this method has been ran for the supplied SpecificUser it's internal state is
+    * upto date however the Policy it belongs to xml has not yet been updated.*/
     private void updateSpecificUserAssertion(SpecificUser specificUser) throws Exception{
 
         long providerId = specificUser.getIdentityProviderOid();
         long providerIdToUse;
-        if(providerId != -2){
+        if(providerId != IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID){
            if(!this.oldIdToNewForIdentityProvider.containsKey(providerId)){
                throw new RuntimeException("Cannot find the new provider id for provider id: " + providerId);
            }
