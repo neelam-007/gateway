@@ -6,6 +6,8 @@ import com.l7tech.common.util.BeanUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlElement;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
@@ -18,6 +20,7 @@ import java.lang.reflect.InvocationTargetException;
  * Describes a port on which the Gateway will listen for incoming requests.
  * TODO promote port range and bind address from properties to fields (they can still be persisted as properties)
  */
+@XmlRootElement
 public class SsgConnector extends NamedEntityImp implements PortOwner {
     protected static final Logger logger = Logger.getLogger(SsgConnector.class.getName());
 
@@ -154,6 +157,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     private int clientAuth;
     private Long keystoreOid;
     private String keyAlias;
+    @XmlElement
     private Set<SsgConnectorProperty> properties = new HashSet<SsgConnectorProperty>();
 
     // Fields not saved by hibernate

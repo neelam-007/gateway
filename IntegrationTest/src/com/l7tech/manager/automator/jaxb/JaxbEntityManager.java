@@ -9,6 +9,9 @@ import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.transport.TransportAdmin;
+import com.l7tech.common.transport.SsgConnector;
+import com.l7tech.common.transport.SsgConnectorProperty;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.admin.AdminContext;
@@ -89,10 +92,11 @@ public class JaxbEntityManager {
     private String jaxbDir;
     private JmsAdmin jmsAdmin;
     private SchemaAdmin schemaAdmin;
-    private Map<String , Boolean> processedSchemas;
+    private Set<String> processedSchemas;
     private Map<Long, Long> oldIdToNewForIdentityProvider;
     
     public final static String SOAP_SCHEMA = "soapenv";
+    private TransportAdmin transportAdmin;
 
     public JaxbEntityManager(AdminContext adminContext){
 
@@ -103,8 +107,10 @@ public class JaxbEntityManager {
         trustedCertAdmin = adminContext.getTrustedCertAdmin();
         jmsAdmin = adminContext.getJmsAdmin();
         schemaAdmin = adminContext.getSchemaAdmin();
-        clusterAdmin = adminContext.getClusterStatusAdmin();        
-        processedSchemas = new HashMap<String, Boolean>();
+        clusterAdmin = adminContext.getClusterStatusAdmin();
+        transportAdmin = this.adminContext.getTransportAdmin();
+        
+        processedSchemas = new HashSet<String>();
         final File baseDir = new File(".");
 
         class MySchemaOutputResolver extends SchemaOutputResolver {
@@ -116,7 +122,7 @@ public class JaxbEntityManager {
         try{
             //All classes the marshaller / unmarshaller needs to be able to process must be listed here.
             //don't need to list all clases in a hierarchy, just the type of the object you want processed.
-            context = JAXBContext.newInstance(Policy.class, JaxbPublishedService.class, IdentityProviderConfig.class, InternalUser.class, InternalGroup.class, JaxbPersistentUser.class, FederatedIdentityProviderConfig.class, LdapIdentityProviderConfig.class, TrustedCert.class, JaxbFederatedIdentityProviderConfig.class, VirtualGroup.class, FederatedGroup.class, FederatedUser.class, JmsConnection.class, JaxbJmsEndpoint.class, SchemaEntry.class, ClusterProperty.class);
+            context = JAXBContext.newInstance(Policy.class, JaxbPublishedService.class, IdentityProviderConfig.class, InternalUser.class, InternalGroup.class, JaxbPersistentUser.class, FederatedIdentityProviderConfig.class, LdapIdentityProviderConfig.class, TrustedCert.class, JaxbFederatedIdentityProviderConfig.class, VirtualGroup.class, FederatedGroup.class, FederatedUser.class, JmsConnection.class, JaxbJmsEndpoint.class, SchemaEntry.class, ClusterProperty.class, SsgConnector.class);
             //Here we generate a schema representing all the classes we've told jaxb about
             //This is not needed but is available if you want to validate xml before unmarshalling.
             context.generateSchema(new MySchemaOutputResolver());
@@ -137,6 +143,7 @@ public class JaxbEntityManager {
             }
         }
 
+
     }
 
     /**
@@ -149,8 +156,9 @@ public class JaxbEntityManager {
         downloadTrustedCerts();
         downloadAllClusterProperties();
         downloadSchemaEntries();
-        downloadAllPublishedServices();//this includes private policies
+        downloadAllTransports();
         downloadJmsConnectionAndEndpoints();
+        downloadAllPublishedServices();//this includes private policies
     }
 
     /**
@@ -168,9 +176,10 @@ public class JaxbEntityManager {
         uploadTrustedCerts();
         uploadFedIdentityProviders();
         uploadSchemasEntries();
-        uploadAllPublishedServices();//this includes private policies
+        uploadAllTransports();
         uploadAllJmsConnections();
         uploadAllJmsEndpoints();
+        uploadAllPublishedServices();//this includes private policies
     }
 
     /*Delete all entities we know about.
@@ -275,10 +284,11 @@ public class JaxbEntityManager {
         System.out.println("Starting test " + startTime);
 
         if(action.equalsIgnoreCase("Download")){
-            this.downloadAllClusterProperties();
+            this.downloadAllTransports();
         }else if(action.equalsIgnoreCase("Upload")){
             //this.uploadAllClusterProperties();
-            this.uploadPublishedServices("23691272");
+            //this.uploadPublishedServices("23691272");
+            this.uploadAllTransports();
         }
 
         long duration = System.currentTimeMillis() - startTime;
@@ -286,6 +296,87 @@ public class JaxbEntityManager {
 
     }
 
+    /*
+    * Download all connectors - this is important for connectors which
+    * are not default like FTP..should prob call it download optional connectors
+    * or all you to supply the connectors required...*/
+    private void downloadAllTransports() throws Exception{
+        System.out.println("Downloading all Transports");
+        Collection<SsgConnector> conns = transportAdmin.findAllSsgConnectors();
+        for(SsgConnector sG: conns){
+           this.doMarshall(sG, jaxbDir+"/Transports", sG.getName());
+        }
+        System.out.println("Finished downloading all Transports");
+    }
+
+    /*
+    * Unmarshall and upload all Transports EXCEPT transports which are allready defined on the SSG
+    * Unlike other uploads this method will first download all Transports to know what Transports
+    * exist and then only upload those which are new
+    * Since a port on THIS SSG we are uploading too can only have one enabled port at a time a connector
+    * is determined to be already existing if its port and enabled status match.
+    *
+    * When marshalling an SsgConnector, it's Set<SsgConnectorProperty> is also marshalled. Each
+    * SsgConnectorProperty in this set contains a reference to an SsgConnector, but this relationship is
+    * not marshalled due to the infinite loop it causes. So when uploading we need to set the SsgConnectorProperty's
+    * reference to the SsgConnector to which it belongs.
+    * */
+    private void uploadAllTransports() throws Exception{
+        System.out.println("Uploading all NEW Transports");
+        File dir = new File(jaxbDir+"/Transports");
+        if(!dir.isDirectory()){
+            throw new Exception("Transports Directory not found");
+        }
+
+        //Download all existing Tansports on this SSG
+        Collection<SsgConnector> conns = this.transportAdmin.findAllSsgConnectors();
+        Set<String> connSet = new HashSet<String>();
+        for(SsgConnector sG: conns){
+            String uniqueConnName = getUniqueSsgConnectorName(sG);
+            connSet.add(uniqueConnName);
+        }
+        
+        File [] files = dir.listFiles();
+        for(File f: files){
+            SsgConnector ssgConnector = (SsgConnector)this.unmarshaller.unmarshal(f);
+            String uniqueConnName = getUniqueSsgConnectorName(ssgConnector);
+            if(!connSet.contains(uniqueConnName)){
+                //upload as this transport isn't defined on the SSG
+                System.out.println("Saving SsgConnector: " + uniqueConnName);
+                //Set<SsgConnectorProperty> connProps = ssgConnector.getProperties();
+                //Working around protected get/setProperties in SsgConnectorProperty, need to take the
+                //long route instead of changing the access modifier, need to create new properties
+                //as no way to modify the SsgConnector's internal state. Don't want to change the protected
+                //to private right now
+                List<String> propNames = ssgConnector.getPropertyNames();
+                Map<String, String> ssgConnProps = new HashMap<String, String>();
+                for(String s: propNames){
+                    String connPropValue = ssgConnector.getProperty(s);
+                    ssgConnProps.put(s, connPropValue);
+                    ssgConnector.removeProperty(s);
+                }
+                //Update the oid of this ssgConnector before adding it's props
+                ssgConnector.setOid(SsgConnector.DEFAULT_OID);
+                //Now we have all saved all the name-value pairs and removed all of the SsgConnector's
+                //internal SsgConnectorProperty's we can add then back.
+                for(String s: ssgConnProps.keySet()){
+                    //Now it's internal property's contain the correct reference
+                    ssgConnector.putProperty(s, ssgConnProps.get(s));                    
+                }
+
+                this.transportAdmin.saveSsgConnector(ssgConnector);
+            }else{
+                System.out.println("Not saving SsgConnector: " + uniqueConnName);                
+            }
+        }
+        System.out.println("Finished uploading all NEW Transports");        
+
+    }
+
+    private String getUniqueSsgConnectorName(SsgConnector sG){
+        //return sG.getName()+"_"+sG.getPort()+"_"+sG.isEnabled();
+        return sG.getPort()+"_"+sG.isEnabled();
+    }
     /*
     * Download all schema entries. The id of the SchemaEntry is the only thing which makes it unique.
     * Name is not required. However if you include a global schema in a policy assertion it will reference
@@ -346,17 +437,17 @@ public class JaxbEntityManager {
         //List<SchemaEntry> schemaIncludes = this.getAllIncludes(schemaEntry);
         List<SchemaEntry> schemaIncludes = getAllIncludesByTextSearch(schemaEntry);
         for(SchemaEntry se: schemaIncludes){
-            if(!processedSchemas.containsKey(se.getName())){
+            if(!processedSchemas.contains(se.getName())){
                 processSchemas(se);
             }
         }
 
         //If an included file was found it may have been loaded before we come to it on disk
         //in that case don't save it twice, the SSG will accept duplicate schemas.
-        if(!processedSchemas.containsKey(schemaEntry.getName())){
+        if(!processedSchemas.contains(schemaEntry.getName())){
             System.out.println("UPLOADING Schema: " + schemaEntry.getName());
             uploadSchema(schemaEntry);
-            processedSchemas.put(schemaEntry.getName(), true);
+            processedSchemas.add(schemaEntry.getName());
         }
 
     }
@@ -1251,7 +1342,7 @@ public class JaxbEntityManager {
         }catch(Exception ex){
             System.out.println("Exception finding group with name: " + groupName);
             System.out.println("Exception is: " + ex.getMessage());
-        }        
+        }
     }
 
     /*
