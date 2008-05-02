@@ -55,6 +55,8 @@ public class BenchmarkConfig {
     /** Flag specifying whether the xml message is being read from file or in-line */
     private boolean xmlFromFile;
 
+    private List<String> forDirectXPath; //need a temp variable to hold the xpath queries for directxpath in tarari
+
     /**
      * Constructor.  Using all operations in the following order:
      * <ul>
@@ -279,4 +281,11 @@ public class BenchmarkConfig {
         return sb.toString();
     }
 
+    public List<String> getForDirectXPath() {
+        return forDirectXPath;
+    }
+
+    public void setForDirectXPath(List<String> forDirectXPath) {
+        this.forDirectXPath = forDirectXPath;
+    }
 }

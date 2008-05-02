@@ -109,7 +109,7 @@ public abstract class XMLBenchmarking {
                     List<String> actualResults = testResults.getXPathResults();
                     if ( expectedResults.size() == actualResults.size() ){
                         for (int i=0; i < expectedResults.size(); i++){
-                            if ( !expectedResults.get(i).equals(actualResults.get(i)) ){
+                            if ( !expectedResults.contains(actualResults.get(i)) ){
                                 throw new BenchmarkException("XPath results not accurate: expected=" + expectedResults.get(i) + "  actual=" + actualResults.get(i));
                             }
                         }

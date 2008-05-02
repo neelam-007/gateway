@@ -2,7 +2,11 @@ package com.l7tech.test.performance.xmlbenchmark;
 
 import com.l7tech.test.performance.xmlbenchmark.cfg.BenchmarkConfiguration;
 import com.l7tech.test.performance.xmlbenchmark.cfg.TestConfiguration;
+import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
+import com.l7tech.common.xml.xpath.FastXpath;
 import com.tarari.xml.rax.fastxpath.XPathLoader;
+import com.tarari.xml.rax.fastxpath.XPathCompiler;
+import com.tarari.xml.rax.fastxpath.XPathCompilerException;
 import com.tarari.xml.rax.schema.SchemaLoader;
 import junit.framework.TestCase;
 import org.xml.sax.InputSource;
@@ -14,7 +18,9 @@ import javax.xml.bind.Unmarshaller;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
 import java.util.logging.Logger;
+import java.text.ParseException;
 
 /**
  * @user: vchan
@@ -35,6 +41,8 @@ public class XMLBenchmarkTest extends TestCase {
 
     private static File testInfoFile;
     private static Boolean testInfoCreated = Boolean.FALSE;
+
+    public static Boolean xpathLoaded = false;
 
     private BenchmarkOperation[] runOperations;
 
@@ -61,6 +69,7 @@ public class XMLBenchmarkTest extends TestCase {
             else if ( this.runOperations[0] == BenchmarkOperation.XP ) {
                 //System.out.println("Unload XPath");
                 XPathLoader.unload();
+                XPathCompiler.reset();
             }
         }
         catch (Exception e) {
@@ -72,7 +81,7 @@ public class XMLBenchmarkTest extends TestCase {
         try {
             // need this if running JUnit locally
             // setUpSchemaForTarari();
-
+            //     setUpXPathForTarari();
             XMLBenchmarking test = new XMLBenchmarkingForTarariSoftware(testConfigurations.get(runConfigIndex), runOperations);
             test.run();
         }
@@ -190,6 +199,53 @@ public class XMLBenchmarkTest extends TestCase {
         }
         catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    protected void setUpXPathForTarari() throws Exception {
+        setUp();
+        this.runOperations = new BenchmarkOperation[] {BenchmarkOperation.XP};
+
+        if (xpathLoaded == false) {
+            synchronized (xpathLoaded) {
+                xpathLoaded = true;
+                XPathCompiler.reset();
+                //System.out.println("loading the xpaths");
+                ArrayList<String> fastXpaths = new ArrayList<String>();
+                ArrayList<String> directXpaths = new ArrayList<String>();
+                final ArrayList<String> tempXqs = new ArrayList<String>();
+                tempXqs.addAll(testConfigurations.get(runConfigIndex).getXpathQueries());
+
+                final HashMap<String, String> namespace = new HashMap<String, String>();
+                namespace.putAll(testConfigurations.get(runConfigIndex).getNamespaces());
+
+                for (String xpath : tempXqs) {
+                    try {
+                        String convertXpath = TarariXpathConverter.convertToFastXpath(namespace, xpath).getExpression();
+                        XPathCompiler.compile(new String[]{convertXpath});
+                        fastXpaths.add(convertXpath);
+                        //System.out.println("loaded : " + xpath);
+                    }
+                    catch (ParseException e) {
+                        //System.err.println("Cannot convert to tarari normal form");
+                        directXpaths.add(xpath);
+                    }
+                    catch (XPathCompilerException e) {
+                        //System.err.println("xpath compiler exception!!");
+                        directXpaths.add(xpath);
+                    }
+                    finally {
+                        XPathCompiler.reset();
+                    }
+                }
+
+                if ( !fastXpaths.isEmpty() ) {
+                    XPathCompiler.compile(fastXpaths);
+                }
+
+
+                testConfigurations.get(runConfigIndex).setForDirectXPath(directXpaths); //store the ones later for direct xpath
+            }
         }
     }
 
