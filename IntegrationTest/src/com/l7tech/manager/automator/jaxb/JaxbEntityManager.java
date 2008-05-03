@@ -17,6 +17,7 @@ import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.admin.AdminContext;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
+import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -93,10 +94,12 @@ public class JaxbEntityManager {
     private JmsAdmin jmsAdmin;
     private SchemaAdmin schemaAdmin;
     private Set<String> processedSchemas;
-    private Map<Long, Long> oldIdToNewForIdentityProvider;
+    private Map<Long, IdentityProviderConfig> oldIdToNewForIdentityProvider;
     
     public final static String SOAP_SCHEMA = "soapenv";
     private TransportAdmin transportAdmin;
+    private Map<String, JmsEndpoint> endPointMap;
+    private Map<String, User> fedUserNameToUserMap;
 
     public JaxbEntityManager(AdminContext adminContext){
 
@@ -122,7 +125,7 @@ public class JaxbEntityManager {
         try{
             //All classes the marshaller / unmarshaller needs to be able to process must be listed here.
             //don't need to list all clases in a hierarchy, just the type of the object you want processed.
-            context = JAXBContext.newInstance(Policy.class, JaxbPublishedService.class, IdentityProviderConfig.class, InternalUser.class, InternalGroup.class, JaxbPersistentUser.class, FederatedIdentityProviderConfig.class, LdapIdentityProviderConfig.class, TrustedCert.class, JaxbFederatedIdentityProviderConfig.class, VirtualGroup.class, FederatedGroup.class, FederatedUser.class, JmsConnection.class, JaxbJmsEndpoint.class, SchemaEntry.class, ClusterProperty.class, SsgConnector.class);
+            context = JAXBContext.newInstance(Policy.class, JaxbPublishedService.class, IdentityProviderConfig.class, InternalUser.class, InternalGroup.class, JaxbPersistentUser.class, FederatedIdentityProviderConfig.class, LdapIdentityProviderConfig.class, TrustedCert.class, JaxbFederatedIdentityProviderConfig.class, VirtualGroup.class, FederatedGroup.class, FederatedUser.class, JmsConnection.class, JaxbJmsEndpoint.class, SchemaEntry.class, ClusterProperty.class, SsgConnector.class, SsgConnectorProperty.class);
             //Here we generate a schema representing all the classes we've told jaxb about
             //This is not needed but is available if you want to validate xml before unmarshalling.
             context.generateSchema(new MySchemaOutputResolver());
@@ -168,7 +171,7 @@ public class JaxbEntityManager {
      */
     public void uploadAllEntities() throws Exception{
         uploadLicense();
-        oldIdToNewForIdentityProvider = new HashMap<Long, Long>();
+        oldIdToNewForIdentityProvider = new HashMap<Long, IdentityProviderConfig>();
         uploadGroupsInternalProvider();
         uploadUsersInternalProvider();
         uploadLdapIdentityProviders();
@@ -191,6 +194,22 @@ public class JaxbEntityManager {
         deleteIdentityProviders();//includes groups and users
         deleteTrustedCerts();
         deleteAllJmsConnectionsAndEndpoints();
+        deleteAllClusterProperties();        
+    }
+
+    /*
+    * Delete all cluster properties from the SSG apart from the cluster.internodePort and license properties.*/
+    public void deleteAllClusterProperties() throws Exception{
+        System.out.println("Deleting all Cluster Properties");
+        Collection<ClusterProperty> cluProperties = clusterAdmin.getAllProperties();
+        for(ClusterProperty cP: cluProperties){
+            if(cP.getName().equals("cluster.internodePort") || cP.getName().equals("license")){
+                continue;
+            }
+
+            this.clusterAdmin.deleteProperty(cP);
+        }
+        System.out.println("Finished deleting all Cluster Properties");
     }
 
     public void downloadAllClusterProperties() throws Exception{
@@ -202,7 +221,6 @@ public class JaxbEntityManager {
             }
             this.doMarshall(cP, jaxbDir+"/ClusterProperties/", cP.getId() +".xml");            
         }
-
         System.out.println("Finished downloading Cluster Properties");
     }
 
@@ -284,11 +302,31 @@ public class JaxbEntityManager {
         System.out.println("Starting test " + startTime);
 
         if(action.equalsIgnoreCase("Download")){
-            this.downloadAllTransports();
+            //this.downloadAllTransports();
+            //this.downloadPublishedServices("655848");
+            //this.downloadAllPublishedServices();
         }else if(action.equalsIgnoreCase("Upload")){
             //this.uploadAllClusterProperties();
             //this.uploadPublishedServices("23691272");
-            this.uploadAllTransports();
+            //this.uploadAllTransports();
+            //this.uploadAllJmsConnections();
+            //this.uploadAllJmsEndpoints();
+            //this.uploadPublishedServices("51609604");
+            this.deleteAllEntities();
+
+            uploadLicense();
+            oldIdToNewForIdentityProvider = new HashMap<Long, IdentityProviderConfig>();
+            uploadGroupsInternalProvider();
+            uploadUsersInternalProvider();
+            uploadLdapIdentityProviders();
+            uploadAllClusterProperties();
+            uploadTrustedCerts();
+            uploadFedIdentityProviders();
+            uploadSchemasEntries();
+            uploadAllTransports();
+            uploadAllJmsConnections();
+            uploadAllJmsEndpoints();
+            this.uploadPublishedServices("18677761");
         }
 
         long duration = System.currentTimeMillis() - startTime;
@@ -645,7 +683,7 @@ public class JaxbEntityManager {
     /*
     * Easiest way to manage JmsEndpoints and the JmsConnection they depend on is to
     * download them together via JmsAdmin.findAllTuples.
-    * This way we can store information to enable the JmsConnection the JmsEndpoint
+    * This way we can store information to enable the JmsConnection that the JmsEndpoint
     * depends on to be looked up when we recreate the JmsEndpoint on a fresh SSG.
     * This can in theory miss some JmsConnections as they are not dependent on their relationship
     * with any JmsEndpoints - so this is checked also*/
@@ -977,7 +1015,8 @@ public class JaxbEntityManager {
             long oldId = providerCfg.getOid();
             providerCfg.setOid(IdentityProviderConfig.DEFAULT_OID);
             long id = this.identityAdmin.saveIdentityProviderConfig(providerCfg);
-            oldIdToNewForIdentityProvider.put(oldId, id);
+            providerCfg.setOid(id);
+            oldIdToNewForIdentityProvider.put(oldId, providerCfg);
             System.out.println("Added: " + oldId+" - " + id);
         }
 
@@ -1058,7 +1097,7 @@ public class JaxbEntityManager {
 
                 long id = this.identityAdmin.saveIdentityProviderConfig(config);
                 config.setOid(id);//update so we can use in uploadGroups
-                oldIdToNewForIdentityProvider.put(oldId, id);
+                oldIdToNewForIdentityProvider.put(oldId, config);
                 System.out.println("Added: " + oldId+" - " + id);
                 //Test for Fed Groups
                 String fileName = jaxbDir+"/IdentityProviders/FED/"+f.getName()+"/FedGroup";
@@ -1308,11 +1347,47 @@ public class JaxbEntityManager {
                 updateGroupAssertion((MemberOfGroup)a1);
                 policyUpdated = true;
             }
+            if(a1 instanceof JmsRoutingAssertion){
+                updateJmsRoutingAssertion((JmsRoutingAssertion)a1);
+                policyUpdated = true;
+            }
             
         }
         return policyUpdated;
     }
 
+    /*
+    * Update the oid reference to the JMS endpoint contained in the supplied jmsAssertion
+    * The first time is called it will download and cache all JmsConnection, JmsEndpoint tuples.
+    * @param jmsAssertion The JmsRoutingAssertion to update
+    * Note: After this method has been ran for the supplied JmsRoutingAssertion it's internal state is
+    * upto date however the Policy it belongs to xml has not yet been updated.
+    */
+    private void updateJmsRoutingAssertion(JmsRoutingAssertion jmsAssertion) throws Exception{
+
+        //Need to look up this endpoint. This is not directly possible so we need to first
+        //download all of them via findAllTuples.
+        if(this.endPointMap == null){
+            JmsAdmin.JmsTuple[] jmsTuples = this.jmsAdmin.findAllTuples();
+            endPointMap = new HashMap<String, JmsEndpoint>();
+            for(JmsAdmin.JmsTuple tuple: jmsTuples){
+                JmsEndpoint endPoint = tuple.getEndpoint();
+                endPointMap.put(endPoint.getName(), endPoint);
+            }
+        }
+
+        String endPointName = jmsAssertion.getEndpointName();
+        if(!this.endPointMap.containsKey(endPointName)){
+            //throw new RuntimeException("JmsEndpoint: " + endPointName+ " not found in SSG");
+            //dont throw the exception, as it will stop all other services from being uploaded.
+            System.out.println("Could not find endPoint: " + endPointName);
+            return;
+        }
+
+        JmsEndpoint endPoint = this.endPointMap.get(endPointName);
+        jmsAssertion.setEndpointOid(endPoint.getOid());
+    }
+    
     /*
     * Updated the supplied MemberOfGroup's oid's used within it to reference the Group it
     * requires as well as the IdentityProvider.
@@ -1326,7 +1401,8 @@ public class JaxbEntityManager {
            if(!this.oldIdToNewForIdentityProvider.containsKey(providerId)){
                throw new RuntimeException("Cannot find the new provider id for provider id: " + providerId);
            }
-           providerIdToUse = this.oldIdToNewForIdentityProvider.get(providerId);
+           IdentityProviderConfig config = this.oldIdToNewForIdentityProvider.get(providerId);
+           providerIdToUse = config.getOid();
         }else{
             providerIdToUse = providerId;
         }
@@ -1355,19 +1431,45 @@ public class JaxbEntityManager {
 
         long providerId = specificUser.getIdentityProviderOid();
         long providerIdToUse;
+        IdentityProviderConfig config = null;
         if(providerId != IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID){
            if(!this.oldIdToNewForIdentityProvider.containsKey(providerId)){
                throw new RuntimeException("Cannot find the new provider id for provider id: " + providerId);
            }
-           providerIdToUse = this.oldIdToNewForIdentityProvider.get(providerId);
+           config = this.oldIdToNewForIdentityProvider.get(providerId);
+           providerIdToUse = config.getOid();
         }else{
             providerIdToUse = providerId;
         }
-        String userName = specificUser.getUserLogin();
+        String userLogin = specificUser.getUserLogin();
         try{
-            User user = this.identityAdmin.findUserByLogin(providerIdToUse, userName);
+            //Fed users in the AutoTest db's can have blank login's! This means we can't find them with current
+            // Manager api....unless we download them all...so we know who they are.
+
+            //this handles internal and ldap users and fed users with non blank login's...
+            User user = null;
+            try{
+                user = this.identityAdmin.findUserByLogin(providerIdToUse, userLogin);
+            }catch(Exception ex){ //FindException not working..coming back as spring roll back exception...
+                System.out.println("User not found: " + userLogin);
+                user = null;
+            }
+            //this handles when fed user doesn't have a non blank login
+            if(user == null && config != null){
+                if(config instanceof FederatedIdentityProviderConfig){
+                    if(this.fedUserNameToUserMap == null){
+                        doDownloadAllFedUsers(providerIdToUse);
+                    }                        
+                    //get fed user here
+                    if(!this.fedUserNameToUserMap.containsKey(specificUser.getUserName())){
+                        throw new RuntimeException("Fed user: " + specificUser.getUserName()+" could not be found");
+                    }
+                    user = this.fedUserNameToUserMap.get(specificUser.getUserName());
+                }
+            }
+            //or maybe the user just doesn't exist..
             if(user == null){
-                throw new RuntimeException("User: "+ userName+" not found");
+                throw new RuntimeException("User: "+ userLogin+" not found");
             }
             String oid = user.getId();
             specificUser.setUserUid(oid);
@@ -1375,12 +1477,26 @@ public class JaxbEntityManager {
         }catch(Exception ex){
             //This happens as some published services have policies with blank user logins
             //also the usernames associated with these blank user logins are not valid.
-            System.out.println("Exception finding user with login: " + userName);
+            System.out.println("Exception finding user with login: " + userLogin);
             System.out.println("This users name is: " + specificUser.getUserName());
             System.out.println("Exception is: " + ex.getMessage());
         }
     }
 
+    /*
+    * Download and store in instance variable fedUserNameToUserMap all Fed Users
+    * Required when uploading PublishedServices and we need to resolve the new user oid of the
+    * fed user which is referenced from with the services policy xml*/
+    private void doDownloadAllFedUsers(long providerId) throws Exception{
+        if(this.fedUserNameToUserMap == null){
+            fedUserNameToUserMap = new HashMap<String, User>();
+            IdentityHeader [] fedUsers = this.identityAdmin.findAllUsers(providerId);
+            for(IdentityHeader iH: fedUsers){
+                User aFedUser = this.identityAdmin.findUserByID(providerId, iH.getStrId());
+                fedUserNameToUserMap.put(iH.getName(), aFedUser);
+            }
+        }
+    }
 
     /*Look up the include assertion and get it's new oid. Do the look up based on name*/
     private void updateIncludeAssertion(Include include) throws Exception{
