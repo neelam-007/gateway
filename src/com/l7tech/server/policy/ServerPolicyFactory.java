@@ -5,6 +5,7 @@ package com.l7tech.server.policy;
 
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.util.ConstructorInvocation;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.assertion.*;
@@ -164,9 +165,11 @@ public class ServerPolicyFactory implements ApplicationContextAware {
             Throwable cause = ite.getCause();
             if (cause instanceof LicenseException)
                 throw (LicenseException) cause;
-            throw new ServerPolicyException(genericAssertion, "Error creating specific assertion for '"+genericAssertion.getClass().getName()+"'", ite);
+            throw new ServerPolicyException(genericAssertion, "Error creating specific assertion for '"+genericAssertion.getClass().getName()+"': " + ExceptionUtils.getMessage(ite), ite);
         } catch (Exception ie) {
-            throw new ServerPolicyException(genericAssertion, "Error creating specific assertion for '"+genericAssertion.getClass().getName()+"'", ie);
+            throw new ServerPolicyException(genericAssertion, "Error creating specific assertion for '"+genericAssertion.getClass().getName()+"': " + ExceptionUtils.getMessage(ie), ie);
+        } catch (Throwable t) {
+            throw new ServerPolicyException(genericAssertion, "Error creating specific assertion for '"+genericAssertion.getClass().getName()+"': " + ExceptionUtils.getMessage(t), t);
         }
     }
 

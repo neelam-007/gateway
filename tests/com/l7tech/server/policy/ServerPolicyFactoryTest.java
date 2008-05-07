@@ -12,6 +12,7 @@ import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.ServerUnknownAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -121,6 +122,72 @@ public class ServerPolicyFactoryTest extends TestCase {
         assertTrue(serverTrueTree.checkRequest(pp) == AssertionStatus.NONE);
 
         ServerAssertion serverReal = pfac.compilePolicy(real, true);
+    }
+
+    public static class ServerRunnablesAssertion extends AbstractServerAssertion<RunnablesAssertion> {
+        public ServerRunnablesAssertion(RunnablesAssertion assertion) {
+            super(assertion);
+            if (assertion.ctorRunnable != null) assertion.ctorRunnable.run();
+        }
+
+        public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+            if (assertion.checkRequestRunnable != null) assertion.checkRequestRunnable.run();
+            return AssertionStatus.NONE;
+        }
+    }
+
+    public static class RunnablesAssertion extends Assertion {
+        Runnable ctorRunnable;
+        Runnable checkRequestRunnable;
+
+        public RunnablesAssertion() {
+        }
+
+        RunnablesAssertion(Runnable ctorRunnable, Runnable checkRequestRunnable) {
+            this.ctorRunnable = ctorRunnable;
+            this.checkRequestRunnable = checkRequestRunnable;
+        }
+
+        public AssertionMetadata meta() {
+            DefaultAssertionMetadata meta = super.defaultMeta();
+            meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, ServerRunnablesAssertion.class.getName());
+            return meta;
+        }
+    }
+
+    private static final String EXCEPTION_MESS = "this is a RuntimeException";
+    private static final Runnable EXCEPTION_THROWER = new Runnable() {
+        public void run() {
+            throw new RuntimeException(EXCEPTION_MESS);
+        }
+    };
+
+    private static final String ERROR_MESS = "This is an Error";
+    private static final Runnable ERROR_THROWER = new Runnable() {
+        public void run() {
+            throw new Error(ERROR_MESS);
+        }
+    };
+    
+    public void testCtorThrowsException() {
+        instantiateThrower(EXCEPTION_THROWER, EXCEPTION_MESS);
+    }
+
+    public void testCtorThrowsError() {
+        instantiateThrower(ERROR_THROWER, ERROR_MESS);
+    }
+
+    private void instantiateThrower(Runnable ctorThrower, String expectedExceptionString) {
+        ServerPolicyFactory pfac = (ServerPolicyFactory)testApplicationContext.getBean("policyFactory");
+        try {
+            pfac.compilePolicy(new RunnablesAssertion(ctorThrower, null), false);
+            fail("Expected exception was not thrown");
+        } catch (ServerPolicyException e) {
+            assertTrue("Exception message did not contain expected substring \"" + expectedExceptionString + "\".  Exception message: " + e.getMessage(),
+                    e.getMessage().contains(expectedExceptionString));
+        } catch (Throwable t) {
+            fail("Expected exception was not thrown");
+        }
     }
 
     /**

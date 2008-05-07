@@ -77,6 +77,8 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
             InputSource is = new InputSource(new StringReader(stylesheet));
             is.setSystemId("");
             master = getStylesheetParser().parseStylesheet(new XmlSource(is));
+        } catch (StackOverflowError e) {
+            throw new ParseException("Unable to parse XSLT: " + ExceptionUtils.getMessage(e), 0); // Avoid rethrowing the HUGE stack trace
         } catch (XsltParseException e) {
             throw (ParseException)new ParseException("Unable to parse XSLT: " + ExceptionUtils.getMessage(e), 0).initCause(e);
         } catch (IOException e) {
