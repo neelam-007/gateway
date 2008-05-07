@@ -333,6 +333,11 @@ public class DialogDisplayer {
 
     /**
      * Display a message dialog as a sheet if possible; otherwise as an ordinary dialog.
+     * <p/>
+     * <b>Note</b>: If the dialog is displayed as a sheet this method may <em>return immediately</em>, before
+     * the dialog is dismissed.  Calling this method with a null callback,
+     * when it isn't the very last statement in a method that returns void back to the Swing event pump,
+     * is <b>almost certainly a bug</b>.
      *
      * @see JOptionPane#showMessageDialog(Component, Object) JOptionPane#showMessageDialog
      * @param parent    parent component.  required
@@ -348,6 +353,11 @@ public class DialogDisplayer {
 
     /**
      * Display a message dialog as a sheet if possible; otherwise as an ordinary dialog.
+     * <p/>
+     * <b>Note</b>: If the dialog is displayed as a sheet this method may <em>return immediately</em>, before
+     * the dialog is dismissed.  Calling this method with a null callback,
+     * when it isn't the very last statement in a method that returns void back to the Swing event pump,
+     * is <b>almost certainly a bug</b>.
      *
      * @see JOptionPane#showMessageDialog(Component, Object) JOptionPane#showMessageDialog
      * @param parent    parent component.  required
@@ -509,6 +519,11 @@ public class DialogDisplayer {
 
     /**
      * Display a confirmation dialog as a sheet if possible, otherwise normally.
+     * <p/>
+     * <b>Note</b>: If the dialog is displayed as a sheet this method may <em>return immediately</em>, before
+     * the dialog is dismissed.  Calling this method with a null callback,
+     * when it isn't the very last statement in a method that returns void back to the Swing event pump,
+     * is <b>almost certainly a bug</b>.
      *
      * @param parent    parent component.  required
      * @param mess      message to display.  required
@@ -522,6 +537,11 @@ public class DialogDisplayer {
 
     /**
      * Display a confirmation dialog as a sheet if possible, otherwise normally.
+     * <p/>
+     * <b>Note</b>: If the dialog is displayed as a sheet this method may <em>return immediately</em>, before
+     * the dialog is dismissed.  Calling this method with a null callback,
+     * when it isn't the very last statement in a method that returns void back to the Swing event pump,
+     * is <b>almost certainly a bug</b>.
      *
      * @param parent    parent component.  required
      * @param mess      message to display.  required
@@ -538,6 +558,11 @@ public class DialogDisplayer {
 
     /**
      * Display a confirmation dialog as a sheet if possible, otherwise normally.
+     * <p/>
+     * <b>Note</b>: If the dialog is displayed as a sheet this method may <em>return immediately</em>, before
+     * the dialog is dismissed.  Calling this method with a null callback,
+     * when it isn't the very last statement in a method that returns void back to the Swing event pump,
+     * is <b>almost certainly a bug</b>.
      *
      * @param parent    parent component.  required
      * @param mess      message to display.  required
@@ -555,6 +580,11 @@ public class DialogDisplayer {
 
     /**
      * Display a message dialog as a sheet if possible; otherwise as an ordinary dialog.
+     * <p/>
+     * <b>Note</b>: If the dialog is displayed as a sheet this method may <em>return immediately</em>, before
+     * the dialog is dismissed.  Calling this method with a null callback,
+     * when it isn't the very last statement in a method that returns void back to the Swing event pump,
+     * is <b>almost certainly a bug</b>.
      *
      * @see JOptionPane#showOptionDialog
      * @param parent    parent component.  required
@@ -604,6 +634,19 @@ public class DialogDisplayer {
         });
     }
 
+    /**
+     * Show an input dialog as a sheet if possible; otherwise as an ordinary dialog.
+     *
+     * @see JOptionPane#showInputDialog(java.awt.Component, Object, String, int, javax.swing.Icon, Object[], Object)
+     * @param parent  dialog parent
+     * @param mess    mesage to display
+     * @param title   dialog title
+     * @param messType type of message (ERROR_MESSAGE, INFORMATION_MESSAGE, etc)
+     * @param icon     Icon to use, or null
+     * @param values array of possible selection values
+     * @param initialValue the initial selection value
+     * @param result callback which will be invoked later with the user's input when the dialog is closed 
+     */
     public static void showInputDialog(Component parent, Object mess, String title, int messType, Icon icon, 
                                          Object[] values, Object initialValue, final InputListener result)
     {

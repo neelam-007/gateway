@@ -123,7 +123,7 @@ public class GuiCertUtil {
                             in = new FileInputStream(file);
                             fileBytes = HexUtils.slurpStream(in, 1024*64);
                         } catch (IOException ioe) {
-                            DialogDisplayer.showMessageDialog(parent, "Error reading file", "Could not read certificate.", null);
+                            JOptionPane.showMessageDialog(parent, "Error reading file", "Could not read certificate.", JOptionPane.ERROR_MESSAGE);
                             logger.log(Level.WARNING, "Error reading certificate data", ioe);
                             continue;
                         } finally {
@@ -219,7 +219,7 @@ public class GuiCertUtil {
                                         got.add((X509Certificate)cert);
                                     }
 
-                                    certificateChain = got.toArray(new X509Certificate[0]);
+                                    certificateChain = got.toArray(new X509Certificate[got.size()]);
                                     privateKey = (PrivateKey) key;
                                 }
                                 catch (KeyStoreException ke) {
@@ -244,20 +244,20 @@ public class GuiCertUtil {
                                 continue;
                             }
                             else {
-                                DialogDisplayer.showMessageDialog(parent, "Error reading file", "Could not read certificate.", null);
+                                JOptionPane.showMessageDialog(parent, "Error reading file", "Could not read certificate.", JOptionPane.ERROR_MESSAGE);
                                 logger.log(Level.WARNING, "Error reading certificate data", ioe);
                                 continue;
                             }
                         }
                         catch(CertificateException ce) {
-                            DialogDisplayer.showMessageDialog(parent, "Error decoding file", "Could not decode certificate.", null);
+                            JOptionPane.showMessageDialog(parent, "Error decoding file", "Could not decode certificate.", JOptionPane.ERROR_MESSAGE);
                             logger.log(Level.WARNING, "Error reading certificate data", ce);
                             continue;
                         }
                     }
                     else {
                         logger.log(Level.WARNING, "Cannot read selected certificate file");
-                        DialogDisplayer.showMessageDialog(parent, SAVE_DIALOG_ERROR_TITLE, "Cannot read selected file.\n " + file.getAbsolutePath(), null);
+                        JOptionPane.showMessageDialog(parent, SAVE_DIALOG_ERROR_TITLE, "Cannot read selected file.\n " + file.getAbsolutePath(), JOptionPane.ERROR_MESSAGE);
                     }
                 }
             }
@@ -350,11 +350,11 @@ public class GuiCertUtil {
                     }
                     catch(IOException e) {
                         logger.log(Level.WARNING, "Error getting certificate data", e);
-                        DialogDisplayer.showMessageDialog(parent, SAVE_DIALOG_ERROR_TITLE, "Certificate is invalid.", null);
+                        JOptionPane.showMessageDialog(parent, SAVE_DIALOG_ERROR_TITLE, "Certificate is invalid.", JOptionPane.ERROR_MESSAGE);
                     }
                     catch(CertificateEncodingException cee) {
                         logger.log(Level.WARNING, "Error getting certificate data", cee);
-                        DialogDisplayer.showMessageDialog(parent, SAVE_DIALOG_ERROR_TITLE, "Certificate is invalid.", null);
+                        JOptionPane.showMessageDialog(parent, SAVE_DIALOG_ERROR_TITLE, "Certificate is invalid.", JOptionPane.ERROR_MESSAGE);
                     }
 
                     if (data != null) {
@@ -366,7 +366,7 @@ public class GuiCertUtil {
                         }
                         catch(IOException ioe) {
                             logger.log(Level.WARNING, "Error writing certificate file", ioe);
-                            DialogDisplayer.showMessageDialog(parent, SAVE_DIALOG_ERROR_TITLE, "Error writing certificate file.", null);
+                            JOptionPane.showMessageDialog(parent, SAVE_DIALOG_ERROR_TITLE, "Error writing certificate file.", JOptionPane.ERROR_MESSAGE);
                         }
                         finally {
                             ResourceUtils.closeQuietly(out);
@@ -375,8 +375,8 @@ public class GuiCertUtil {
                 }
                 else {
                     logger.log(Level.WARNING, "Cannot write to selected certificate file");
-                    DialogDisplayer.showMessageDialog(parent, SAVE_DIALOG_ERROR_TITLE,
-                            "Cannot write to selected file.\n " + file.getAbsolutePath(), null);
+                    JOptionPane.showMessageDialog(parent, SAVE_DIALOG_ERROR_TITLE,
+                            "Cannot write to selected file.\n " + file.getAbsolutePath(), JOptionPane.ERROR_MESSAGE);
                 }
             }
         }

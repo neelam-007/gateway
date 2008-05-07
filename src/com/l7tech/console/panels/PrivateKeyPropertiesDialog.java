@@ -16,6 +16,7 @@ import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.SsmApplication;
 import com.l7tech.objectmodel.FindException;
 
 import javax.security.auth.x500.X500Principal;
@@ -211,7 +212,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                                                       "Invalid Subject", JOptionPane.ERROR_MESSAGE, null);
                     return;
                 }
-                byte[] csr;
+                final byte[] csr;
                 try {
                     csr = admin.generateCSR(subject.getKeystore().id, subject.getAlias(), dn.getName());
                 } catch (FindException e) {
@@ -221,37 +222,39 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     return;
                 }
                 // save CSR to file
-                JFileChooser chooser = new JFileChooser(FileChooserUtil.getStartingDirectory());
-                FileChooserUtil.addListenerToFileChooser(chooser);
-                chooser.setDialogTitle("Save CSR to File");
-                chooser.setMultiSelectionEnabled(false);
-                chooser.setFileFilter(new FileFilter() {
-                    public boolean accept(File f) {
-                        return f.getAbsolutePath().endsWith(".p10") || f.getAbsolutePath().endsWith(".P10") || f.isDirectory();
-                    }
-                    public String getDescription() {
-                        return "PKCS #10 Files";
+                SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+                    public void useFileChooser(JFileChooser chooser) {
+                        chooser.setDialogTitle("Save CSR to File");
+                        chooser.setMultiSelectionEnabled(false);
+                        chooser.setFileFilter(new FileFilter() {
+                            public boolean accept(File f) {
+                                return f.getAbsolutePath().endsWith(".p10") || f.getAbsolutePath().endsWith(".P10") || f.isDirectory();
+                            }
+                            public String getDescription() {
+                                return "PKCS #10 Files";
+                            }
+                        });
+
+                        int ret = chooser.showSaveDialog(TopComponents.getInstance().getTopParent());
+                        if (JFileChooser.APPROVE_OPTION == ret) {
+                            String name = chooser.getSelectedFile().getPath();
+                            // add extension if not present
+                            if (!name.endsWith(".p10") && !name.endsWith(".P10")) {
+                                name = name + ".p10";
+                            }
+                            // save the file
+                            try {
+                                FileOutputStream fos = new FileOutputStream(name);
+                                fos.write(csr);
+                                fos.close();
+                            } catch (IOException e) {
+                                logger.log(Level.WARNING, "error saving CSR", e);
+                                DialogDisplayer.showMessageDialog(generateCSRButton, "Error Saving CSR " + e.getMessage(),
+                                                              "Error", JOptionPane.ERROR_MESSAGE, null);
+                            }
+                        }
                     }
                 });
-
-                int ret = chooser.showSaveDialog(TopComponents.getInstance().getTopParent());
-                if (JFileChooser.APPROVE_OPTION == ret) {
-                    String name = chooser.getSelectedFile().getPath();
-                    // add extension if not present
-                    if (!name.endsWith(".p10") && !name.endsWith(".P10")) {
-                        name = name + ".p10";
-                    }
-                    // save the file
-                    try {
-                        FileOutputStream fos = new FileOutputStream(name);
-                        fos.write(csr);
-                        fos.close();
-                    } catch (IOException e) {
-                        logger.log(Level.WARNING, "error saving CSR", e);
-                        DialogDisplayer.showMessageDialog(generateCSRButton, "Error Saving CSR " + e.getMessage(),
-                                                      "Error", JOptionPane.ERROR_MESSAGE, null);
-                    }
-                }
             }
         };
         DialogDisplayer.showInputDialog(generateCSRButton, "CSR Subject (DN):",

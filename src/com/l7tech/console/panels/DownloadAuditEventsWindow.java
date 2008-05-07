@@ -9,7 +9,9 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.util.OpaqueId;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.jcalendar.TimeRangePicker;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -230,42 +232,47 @@ public class DownloadAuditEventsWindow extends JFrame {
      * Handles browse button click.
      */
     private void onBrowse() {
-        File startingPath = new File(filePathTextField.getText());
-        if(!startingPath.exists()) {
-            startingPath = FileChooserUtil.getStartingDirectory();
-        }
-        final JFileChooser chooser = new JFileChooser(startingPath);
-        FileChooserUtil.addListenerToFileChooser(chooser);
-        chooser.setDialogTitle("Save Audit Events As");
-        chooser.setDialogType(JFileChooser.SAVE_DIALOG);
-        chooser.setMultiSelectionEnabled(false);
-        final FileFilter fileFilter = new FileFilter() {
-            public boolean accept(File f) {
-                return (f.isDirectory() || f.getName().toLowerCase().endsWith(".zip"));
+        SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+            public void useFileChooser(JFileChooser fc) {
+                File startingPath = new File(filePathTextField.getText());
+                if(!startingPath.exists()) {
+                    startingPath = FileChooserUtil.getStartingDirectory();
+                }
+
+                final JFileChooser chooser = new JFileChooser(startingPath);
+                FileChooserUtil.addListenerToFileChooser(chooser);
+                chooser.setDialogTitle("Save Audit Events As");
+                chooser.setDialogType(JFileChooser.SAVE_DIALOG);
+                chooser.setMultiSelectionEnabled(false);
+                final FileFilter fileFilter = new FileFilter() {
+                    public boolean accept(File f) {
+                        return (f.isDirectory() || f.getName().toLowerCase().endsWith(".zip"));
+                    }
+
+                    public String getDescription() {
+                        return "ZIP archives (*.zip)";
+                    }
+                };
+                chooser.setFileFilter(fileFilter);
+                final int result = chooser.showSaveDialog(DownloadAuditEventsWindow.this);
+                if (result != JFileChooser.APPROVE_OPTION)
+                    return;
+
+                File filePath = chooser.getSelectedFile();
+                if (filePath == null)
+                    return;
+
+                // Adds "zip" extension if ZIP filter is selected, the selected file
+                // does not exist and the name does not end with ZIP (case insensitive).
+                if (chooser.getFileFilter() == fileFilter &&
+                    !filePath.exists() &&
+                    !filePath.getName().toLowerCase().endsWith(".zip")) {
+                    filePath = new File(filePath.getPath() + ".zip");
+                }
+
+                filePathTextField.setText(filePath.getAbsolutePath());
             }
-
-            public String getDescription() {
-                return "ZIP archives (*.zip)";
-            }
-        };
-        chooser.setFileFilter(fileFilter);
-        final int result = chooser.showSaveDialog(DownloadAuditEventsWindow.this);
-        if (result != JFileChooser.APPROVE_OPTION)
-            return;
-
-        File filePath = chooser.getSelectedFile();
-        if (filePath == null)
-            return;
-
-        // Adds "zip" extension if ZIP filter is selected, the selected file
-        // does not exist and the name does not end with ZIP (case insensitive).
-        if (chooser.getFileFilter() == fileFilter &&
-            !filePath.exists() &&
-            !filePath.getName().toLowerCase().endsWith(".zip")) {
-            filePath = new File(filePath.getPath() + ".zip");
-        }
-
-        filePathTextField.setText(filePath.getAbsolutePath());
+        });
     }
 
     /**
