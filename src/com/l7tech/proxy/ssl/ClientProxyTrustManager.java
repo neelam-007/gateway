@@ -8,11 +8,8 @@ package com.l7tech.proxy.ssl;
 
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import sun.security.x509.X500Name;
 
 import javax.net.ssl.X509TrustManager;
-import javax.security.auth.x500.X500Principal;
-import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
@@ -63,7 +60,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
         String expectedHostname = peer.getHostname();
         String cn = "";
         X509Certificate cert = x509Certificates[0];
-        cn = extractCommonName(cert.getSubjectX500Principal());
+        cn = CertUtils.getCn(cert);
 
         if (!cn.equalsIgnoreCase(expectedHostname)) {
             final String msg = "Server certificate name (" + cn +
@@ -90,24 +87,6 @@ public class ClientProxyTrustManager implements X509TrustManager {
         } catch ( CertificateException e ) {
             log.warning(e.getMessage()); // log in case SSL layer obscures our diagnostic info
             throw e;
-        }
-    }
-
-    /** extract the common name */
-    private String extractCommonName(X500Principal subjectX500Principal) throws CertificateException {
-        String principal = subjectX500Principal.toString();
-        try {
-            // TODO Bug #2182 Using the sun X500Name class ties us to the Sun JVM, but the xss4j X500Name class fails on Apache default certs (with EMAILADDRESS in the DN)
-            X500Name x500Name = new X500Name(principal);
-            String cn = x500Name.getCommonName();
-            if (cn == null) {
-                String msg = "Could not determine the Common Name (CN) value for " + principal;
-                log.log(Level.SEVERE, msg);
-                throw new CertificateException(msg);
-            }
-            return cn;
-        } catch (IOException e) {
-            throw new CertificateException(e);
         }
     }
 }
