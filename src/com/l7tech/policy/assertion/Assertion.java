@@ -16,7 +16,21 @@ import java.io.Serializable;
 import java.util.*;
 
 /**
- * Represents a generic Assertion.  Immutable except for de-persistence.
+ * Represents a generic Assertion.  An Assertion is a bean that holds configuration for a single
+ * server or client assertion instance.
+ * <p/>
+ * Assertions derived from CompositeAssertion can contain child assertions, including other CompositeAssertions.
+ * Assertions arranged in a tree, along with a tiny amount of metadata, make up a policy fragment.
+ * Assertions can be serialized to policy XML using the WspWriter and deserialized from policy XML using the WspReader.
+ * <p/>
+ * On the Gateway, a server assertion instance is invoked with a PolicyEnforcementContext
+ * to take some action in response to a request or a response message.  The ServerPolicyFactory takes care
+ * of instantiating a tree of ServerAssertion instances from a tree of generic Assertion beans.
+ * <p/>
+ * Within the XML VPN Client, a client assertion instance is invoked with a PolicyApplicationContext
+ * to apply security decoration to a request message, or to unapply security decoration from a response message.
+ * The ClientPolicyFactory takes care of instantiating a tree of ClientAssertion instances from a tree of
+ * generic Assertion beans.
  *
  * @noinspection unchecked,ForLoopReplaceableByForEach,EqualsWhichDoesntCheckParameterClass
  */
