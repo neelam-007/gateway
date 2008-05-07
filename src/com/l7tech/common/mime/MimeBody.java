@@ -10,6 +10,7 @@ package com.l7tech.common.mime;
  import com.l7tech.common.util.CausedIOException;
  import com.l7tech.common.util.CausedIllegalStateException;
  import com.l7tech.common.util.HexUtils;
+ import com.l7tech.common.util.ResourceUtils;
 
  import java.io.ByteArrayInputStream;
  import java.io.IOException;
@@ -81,6 +82,7 @@ public class MimeBody implements Iterable<PartInfo> {
      * @param mainInputStream  the primary InputStream.  May not be null.  Must be positioned to the first byte
      *                         of the body content, regardless of whether or not the body is multipart.
      *                         If a MimeBody is successfully created, it takes ownership of the mainInputStream.
+     *                         If the MimeBody constructor throws a checked exception, this StashManager will already have been closed.
      * @throws NoSuchPartException if this message is multpart/related but does not have any parts
      * @throws IOException if the mainInputStream cannot be read or a multipart message is not in valid MIME format
      */
@@ -89,73 +91,78 @@ public class MimeBody implements Iterable<PartInfo> {
                              InputStream mainInputStream)
             throws IOException, NoSuchPartException
     {
-        if (stashManager == null || outerContentType == null || mainInputStream == null)
+        boolean itworked = false;
+        try {
+            if (stashManager == null || outerContentType == null || mainInputStream == null)
                 throw new IllegalArgumentException("stashManager, outerContentType, and mainInputStream must all be provided");
 
-        this.outerContentType = outerContentType;
-        this.stashManager = stashManager;
-        String start = outerContentType.getParam("start");
-        if (start != null && start.length() < 1) throw new IOException("Multipart content type has a \"start\" parameter but it is empty");
-        long firstPartXmlMaxBytes = MimeBody.firstPartXmlMaxBytes.get();
+            this.outerContentType = outerContentType;
+            this.stashManager = stashManager;
+            String start = outerContentType.getParam("start");
+            if (start != null && start.length() < 1) throw new IOException("Multipart content type has a \"start\" parameter but it is empty");
+            long firstPartXmlMaxBytes = MimeBody.firstPartXmlMaxBytes.get();
 
-        if (outerContentType.isMultipart()) {
-            // Multipart message.  Prepare the first part for reading.
-            boundaryStr = outerContentType.getMultipartBoundary();
-            boundary = ("--" + boundaryStr).getBytes(MimeHeader.ENCODING);
-            if (boundary.length > BLOCKSIZE)
-                throw new IOException("This multipart message cannot be processed because it uses a multipart crlfBoundary which is more than 4kb in length");
-            byte[] boundaryScanbuf = new byte[boundary.length];
-            pushbackSize = BLOCKSIZE + boundaryScanbuf.length;
-            this.mainInputStream = new FlaggingByteLimitInputStream(mainInputStream);
-            readInitialBoundary();
-            readNextPartHeaders();
-            firstPart = (PartInfoImpl)partInfos.get(0);
-            if (start != null && !(start.equals(firstPart.getContentId(false))))
-                throw new IOException("Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part.");
-            if (firstPartXmlMaxBytes > 0) {
-                ContentTypeHeader firstCt = firstPart.getContentType();
-                if (firstCt != null && firstCt.isXml()) {
-                    this.mainInputStream.setSizeLimitNonFlagging(firstPartXmlMaxBytes);
-                }
-            }
-        } else {
-            // Single-part message.  Configure first and only part accordingly.
-            boundaryStr = null;
-            boundary = null;
-            pushbackSize = BLOCKSIZE;
-            this.mainInputStream = new FlaggingByteLimitInputStream(mainInputStream, pushbackSize);
-            if (firstPartXmlMaxBytes > 0) this.mainInputStream.setSizeLimitNonFlagging(firstPartXmlMaxBytes);
-            final MimeHeaders outerHeaders = new MimeHeaders();
-            outerHeaders.add(outerContentType);
-            final PartInfoImpl mainPartInfo = new PartInfoImpl(0, outerHeaders) {
-                public InputStream getInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException {
-                    InputStream stashedStream = preparePartInputStream();
-                    if (stashedStream != null)
-                        return stashedStream;
-
-                    InputStream is = MimeBody.this.mainInputStream;
-                    moreParts = false;
-                    onBodyRead();
-
-                    // We are ready to return an InputStream.
-                    // Do we need to stash the data first?
-                    if (destroyAsRead) {
-                        // No -- allow caller to consume it.
-                        return is;
+            if (outerContentType.isMultipart()) {
+                // Multipart message.  Prepare the first part for reading.
+                boundaryStr = outerContentType.getMultipartBoundary();
+                boundary = ("--" + boundaryStr).getBytes(MimeHeader.ENCODING);
+                if (boundary.length > BLOCKSIZE)
+                    throw new IOException("This multipart message cannot be processed because it uses a multipart crlfBoundary which is more than 4kb in length");
+                byte[] boundaryScanbuf = new byte[boundary.length];
+                pushbackSize = BLOCKSIZE + boundaryScanbuf.length;
+                this.mainInputStream = new FlaggingByteLimitInputStream(mainInputStream);
+                readInitialBoundary();
+                readNextPartHeaders();
+                firstPart = (PartInfoImpl)partInfos.get(0);
+                if (start != null && !(start.equals(firstPart.getContentId(false))))
+                    throw new IOException("Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part.");
+                if (firstPartXmlMaxBytes > 0) {
+                    ContentTypeHeader firstCt = firstPart.getContentType();
+                    if (firstCt != null && firstCt.isXml()) {
+                        this.mainInputStream.setSizeLimitNonFlagging(firstPartXmlMaxBytes);
                     }
-
-                    // Yes -- stash it first, then recall it.
-                    return stashAndRecall(is);
                 }
-            };
-            partInfos.add(mainPartInfo);
-            firstPart = mainPartInfo;
+            } else {
+                // Single-part message.  Configure first and only part accordingly.
+                boundaryStr = null;
+                boundary = null;
+                pushbackSize = BLOCKSIZE;
+                this.mainInputStream = new FlaggingByteLimitInputStream(mainInputStream, pushbackSize);
+                if (firstPartXmlMaxBytes > 0) this.mainInputStream.setSizeLimitNonFlagging(firstPartXmlMaxBytes);
+                final MimeHeaders outerHeaders = new MimeHeaders();
+                outerHeaders.add(outerContentType);
+                final PartInfoImpl mainPartInfo = new PartInfoImpl(0, outerHeaders) {
+                    public InputStream getInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException {
+                        InputStream stashedStream = preparePartInputStream();
+                        if (stashedStream != null)
+                            return stashedStream;
 
-            final String mainContentId = mainPartInfo.getContentId(true);
-            if (mainContentId != null)
-                partInfosByCid.put(mainContentId, mainPartInfo);
+                        InputStream is = MimeBody.this.mainInputStream;
+                        moreParts = false;
+                        onBodyRead();
+
+                        // We are ready to return an InputStream.
+                        // Do we need to stash the data first?
+                        if (destroyAsRead) {
+                            // No -- allow caller to consume it.
+                            return is;
+                        }
+
+                        // Yes -- stash it first, then recall it.
+                        return stashAndRecall(is);
+                    }
+                };
+                partInfos.add(mainPartInfo);
+                firstPart = mainPartInfo;
+
+                final String mainContentId = mainPartInfo.getContentId(true);
+                if (mainContentId != null)
+                    partInfosByCid.put(mainContentId, mainPartInfo);
+            }
+            itworked = true;
+        } finally {
+            if (!itworked) ResourceUtils.closeQuietly(stashManager);
         }
-
     }
 
     /**

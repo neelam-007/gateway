@@ -376,7 +376,6 @@ public class KnobblyMessageTest {
         }
     }
 
-    @Ignore("Not yet fixed")
     @Test
     @BugNumber(4542)
     public void testBug4542LeakedStashManager() throws Exception {

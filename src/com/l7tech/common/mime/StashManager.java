@@ -8,6 +8,7 @@ package com.l7tech.common.mime;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Closeable;
 
 /**
  * Users of MimeBody must provide it with a StashManager in which it can store multipart parts throughout
@@ -16,7 +17,7 @@ import java.io.InputStream;
  * <p>
  * StashManagers may not be used by more than one thread simultaneously.
  */
-public interface StashManager {
+public interface StashManager extends Closeable {
     /**
      * Stash the complete content of the specified InputStream into this StashManager instance keyed with the
      * specified ordinal number.
