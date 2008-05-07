@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><jmsConnection><oid>51478528</oid><version>2</version><name>ssgautotestQueue4.out</name><initialContextFactoryClassname>com.tibco.tibjms.naming.TibjmsInitialContextFactory</initialContextFactoryClassname><jndiUrl>tibjmsnaming://qatibcomq:7222</jndiUrl><properties>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE properties SYSTEM &quot;http://java.sun.com/dtd/properties.dtd&quot;&gt;
+&lt;properties&gt;
+&lt;entry key=&quot;com.tibco.tibjms.ssl.enable_verify_host&quot;&gt;com.l7tech.server.jms.prop.boolean.false&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.naming.ssl_auth_only&quot;&gt;com.l7tech.server.jms.prop.boolean.false&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.naming.ssl_enable_verify_host&quot;&gt;com.l7tech.server.jms.prop.boolean.false&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.ssl.enable_verify_hostname&quot;&gt;com.l7tech.server.jms.prop.boolean.false&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.ssl.auth_only&quot;&gt;com.l7tech.server.jms.prop.boolean.false&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.naming.ssl_enable_verify_hostname&quot;&gt;com.l7tech.server.jms.prop.boolean.false&lt;/entry&gt;
+&lt;/properties&gt;
+</properties><queueFactoryUrl>ssgautotestQueueConnectionFactory</queueFactoryUrl></jmsConnection>

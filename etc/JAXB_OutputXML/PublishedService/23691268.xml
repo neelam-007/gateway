@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><jaxbPublishedService><PService><oid>23691268</oid><version>4</version><name>schema_import_test</name><disabled>false</disabled><httpMethodNames>DELETE,POST,GET,PUT</httpMethodNames><laxResolution>false</laxResolution><policy><oid>57311397</oid><version>0</version><name>Policy for service #23691268, schema_import_test</name><soap>false</soap><type>PRIVATE_SERVICE</type><versionActive>true</versionActive><versionOrdinal>-1</versionOrdinal><xml>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+        &lt;L7p:SchemaValidation&gt;
+            &lt;L7p:ResourceInfo staticResourceInfo=&quot;included&quot;&gt;
+                &lt;L7p:Document stringValue=&quot;&amp;lt;?xml version=&amp;quot;1.0&amp;quot; encoding=&amp;quot;UTF-8&amp;quot;?&amp;gt;
+&amp;lt;s:schema elementFormDefault=&amp;quot;qualified&amp;quot;
+    targetNamespace=&amp;quot;http://www.acme.com/schemas/purchaseOrder&amp;quot;
+    xmlns:accnt=&amp;quot;http://www.acme.com/schemas/account&amp;quot; xmlns:s=&amp;quot;http://www.w3.org/2001/XMLSchema&amp;quot;&amp;gt;
+    &amp;lt;s:import namespace=&amp;quot;http://www.acme.com/schemas/account&amp;quot; schemaLocation=&amp;quot;account2.xsd&amp;quot;/&amp;gt;
+    &amp;lt;s:element name=&amp;quot;PurchaseOrder&amp;quot;&amp;gt;
+        &amp;lt;s:complexType&amp;gt;
+            &amp;lt;s:sequence&amp;gt;
+                &amp;lt;s:element maxOccurs=&amp;quot;1&amp;quot; minOccurs=&amp;quot;1&amp;quot; name=&amp;quot;Quantity&amp;quot; type=&amp;quot;s:int&amp;quot;/&amp;gt;
+                &amp;lt;s:element maxOccurs=&amp;quot;1&amp;quot; minOccurs=&amp;quot;1&amp;quot; name=&amp;quot;ItemId&amp;quot; type=&amp;quot;s:string&amp;quot;/&amp;gt;
+                &amp;lt;s:element ref=&amp;quot;accnt:Account&amp;quot;/&amp;gt;
+            &amp;lt;/s:sequence&amp;gt;
+        &amp;lt;/s:complexType&amp;gt;
+    &amp;lt;/s:element&amp;gt;
+&amp;lt;/s:schema&amp;gt;
+&quot;/&gt;
+            &lt;/L7p:ResourceInfo&gt;
+        &lt;/L7p:SchemaValidation&gt;
+        &lt;L7p:EchoRoutingAssertion/&gt;
+    &lt;/wsp:All&gt;
+&lt;/wsp:Policy&gt;
+</xml></policy><routingUri>/schemaimport2</routingUri><soap>false</soap><wsdlUrl></wsdlUrl></PService></jaxbPublishedService>

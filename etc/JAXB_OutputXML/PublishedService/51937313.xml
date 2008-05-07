@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><jaxbPublishedService><PService><oid>51937313</oid><version>4</version><name>NonSoapServiceCertHttp</name><disabled>false</disabled><httpMethodNames>POST,GET,DELETE,PUT</httpMethodNames><laxResolution>false</laxResolution><policy><oid>57311860</oid><version>0</version><name>Policy for service #51937313, NonSoapServiceCertHttp</name><soap>false</soap><type>PRIVATE_SERVICE</type><versionActive>true</versionActive><versionOrdinal>2</versionOrdinal><xml>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+        &lt;L7p:SslAssertion&gt;
+            &lt;L7p:RequireClientAuthentication booleanValue=&quot;true&quot;/&gt;
+        &lt;/L7p:SslAssertion&gt;
+        &lt;wsp:OneOrMore wsp:Usage=&quot;Required&quot;&gt;
+            &lt;L7p:SpecificUser&gt;
+                &lt;L7p:IdentityProviderOid longValue=&quot;-2&quot;/&gt;
+                &lt;L7p:UserLogin stringValue=&quot;NonSoapGuy&quot;/&gt;
+                &lt;L7p:UserName stringValue=&quot;NonSoapGuy&quot;/&gt;
+                &lt;L7p:UserUid stringValue=&quot;52199424&quot;/&gt;
+            &lt;/L7p:SpecificUser&gt;
+        &lt;/wsp:OneOrMore&gt;
+        &lt;L7p:EchoRoutingAssertion/&gt;
+    &lt;/wsp:All&gt;
+&lt;/wsp:Policy&gt;
+</xml></policy><routingUri>/misc/NonSoapServiceCertHttp</routingUri><soap>false</soap><wsdlUrl></wsdlUrl></PService></jaxbPublishedService>

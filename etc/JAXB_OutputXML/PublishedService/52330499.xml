@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><jaxbPublishedService><PService><oid>52330499</oid><version>9</version><name>Regex Mime</name><disabled>false</disabled><httpMethodNames>POST,GET,DELETE,PUT</httpMethodNames><laxResolution>false</laxResolution><policy><oid>57311808</oid><version>0</version><name>Policy for service #52330499, Regex Mime</name><soap>false</soap><type>PRIVATE_SERVICE</type><versionActive>true</versionActive><versionOrdinal>-1</versionOrdinal><xml>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+        &lt;L7p:Regex&gt;
+            &lt;L7p:Encoding stringValue=&quot;&quot;/&gt;
+            &lt;L7p:Regex stringValue=&quot;mime part 0&quot;/&gt;
+            &lt;L7p:Replacement stringValue=&quot;&quot;/&gt;
+        &lt;/L7p:Regex&gt;
+        &lt;L7p:HardcodedResponse&gt;
+            &lt;L7p:Base64ResponseBody stringValue=&quot;PHRlbXBsYXRlUmVzcG9uc2U+Y29uc3VtcHRpb24gc3VjY2VlZGVkPC90ZW1wbGF0ZVJlc3BvbnNlPg==&quot;/&gt;
+        &lt;/L7p:HardcodedResponse&gt;
+    &lt;/wsp:All&gt;
+&lt;/wsp:Policy&gt;
+</xml></policy><routingUri>/regex/mimePart0</routingUri><soap>false</soap><wsdlUrl></wsdlUrl></PService></jaxbPublishedService>

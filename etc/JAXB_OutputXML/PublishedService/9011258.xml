@@ -1,0 +1,548 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><jaxbPublishedService><PService><oid>9011258</oid><version>8</version><name>SendSmsService</name><disabled>false</disabled><httpMethodNames>POST</httpMethodNames><laxResolution>true</laxResolution><policy><oid>57311739</oid><version>0</version><name>Policy for service #9011258, SendSmsService</name><soap>true</soap><type>PRIVATE_SERVICE</type><versionActive>true</versionActive><versionOrdinal>-1</versionOrdinal><xml>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+        &lt;wsp:MessagePredicate
+            Dialect=&quot;http://www.w3.org/TR/1999/REC-xpath-19991116&quot;
+            L7p:variablePrefix=&quot;foo&quot; wsp:Usage=&quot;wsp:Required&quot;
+            xmlns:exp=&quot;http://www.layer7tech.com/ws/policy/export&quot;
+            xmlns:impl=&quot;http://www.csapi.org/schema/parlayx/sms/send/v1_0/local&quot;
+            xmlns:soapenv=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;
+            xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;&gt;/soapenv:Envelope/soapenv:Header/remoteip&lt;/wsp:MessagePredicate&gt;
+        &lt;L7p:RemoteIpAddressRange&gt;
+            &lt;L7p:StartIp stringValue=&quot;192.168.1.99&quot;/&gt;
+            &lt;L7p:NetworkMask intValue=&quot;32&quot;/&gt;
+            &lt;L7p:IpSourceContextVariable stringValue=&quot;foo.result&quot;/&gt;
+        &lt;/L7p:RemoteIpAddressRange&gt;
+        &lt;L7p:HttpRoutingAssertion&gt;
+            &lt;L7p:ProtectedServiceUrl stringValue=&quot;http://localhost:8080/parlayx/services/SendSms&quot;/&gt;
+            &lt;L7p:SamlAssertionVersion intValue=&quot;2&quot;/&gt;
+        &lt;/L7p:HttpRoutingAssertion&gt;
+    &lt;/wsp:All&gt;
+&lt;/wsp:Policy&gt;
+</xml></policy><routingUri>/sms</routingUri><soap>true</soap><wsdlUrl></wsdlUrl><wsdlXml>&lt;wsdl:definitions xmlns:apachesoap=&quot;http://xml.apache.org/xml-soap&quot; xmlns:impl=&quot;http://www.csapi.org/schema/parlayx/sms/send/v1_0/local&quot; xmlns:intf=&quot;http://www.csapi.org/schema/parlayx/sms/send/v1_0/local&quot; xmlns:tns1=&quot;http://www.csapi.org/schema/parlayx/common/v1_0&quot; xmlns:tns2=&quot;http://www.csapi.org/schema/parlayx/sms/v1_0&quot; xmlns:wsdl=&quot;http://schemas.xmlsoap.org/wsdl/&quot; xmlns:wsdlsoap=&quot;http://schemas.xmlsoap.org/wsdl/soap/&quot; xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; targetNamespace=&quot;http://www.csapi.org/schema/parlayx/sms/send/v1_0/local&quot;&gt;
+&lt;!--WSDL created by Apache Axis version: 1.2RC3
+Built on Feb 28, 2005 (10:15:14 EST)--&gt;
+ &lt;wsdl:types&gt;
+  &lt;schema xmlns=&quot;http://www.w3.org/2001/XMLSchema&quot; elementFormDefault=&quot;qualified&quot; targetNamespace=&quot;http://www.csapi.org/schema/parlayx/sms/send/v1_0/local&quot;&gt;
+   &lt;import namespace=&quot;http://www.csapi.org/schema/parlayx/sms/v1_0&quot;&gt;&lt;/import&gt;
+   &lt;import namespace=&quot;http://www.csapi.org/schema/parlayx/common/v1_0&quot;&gt;&lt;/import&gt;
+   &lt;element name=&quot;sendSms&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;destAddressSet&quot; type=&quot;tns1:ArrayOfEndUserIdentifier&quot;&gt;&lt;/element&gt;
+      &lt;element name=&quot;senderName&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+      &lt;element name=&quot;charging&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+      &lt;element name=&quot;message&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;element name=&quot;sendSmsResponse&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;result&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;element name=&quot;sendSmsLogo&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;destAddressSet&quot; type=&quot;tns1:ArrayOfEndUserIdentifier&quot;&gt;&lt;/element&gt;
+      &lt;element name=&quot;senderName&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+      &lt;element name=&quot;charging&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+      &lt;element name=&quot;image&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+      &lt;element name=&quot;smsFormat&quot; type=&quot;tns2:SmsFormat&quot;&gt;&lt;/element&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;element name=&quot;sendSmsLogoResponse&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;result&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;element name=&quot;sendSmsRingTone&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;destAddressSet&quot; type=&quot;tns1:ArrayOfEndUserIdentifier&quot;&gt;&lt;/element&gt;
+      &lt;element name=&quot;senderName&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+      &lt;element name=&quot;charging&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+      &lt;element name=&quot;ringtone&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+      &lt;element name=&quot;smsFormat&quot; type=&quot;tns2:SmsFormat&quot;&gt;&lt;/element&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;element name=&quot;sendSmsRingToneResponse&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;result&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;element name=&quot;getSmsDeliveryStatus&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;requestIdentifier&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;element name=&quot;getSmsDeliveryStatusResponse&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;result&quot; type=&quot;tns2:ArrayOfDeliveryStatusType&quot;&gt;&lt;/element&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+  &lt;/schema&gt;
+  &lt;schema xmlns=&quot;http://www.w3.org/2001/XMLSchema&quot; elementFormDefault=&quot;qualified&quot; targetNamespace=&quot;http://www.csapi.org/schema/parlayx/common/v1_0&quot;&gt;
+   &lt;import namespace=&quot;http://www.csapi.org/schema/parlayx/sms/v1_0&quot;&gt;&lt;/import&gt;
+   &lt;complexType name=&quot;EndUserIdentifier&quot;&gt;
+    &lt;sequence&gt;
+     &lt;element name=&quot;value&quot; type=&quot;xsd:anyURI&quot;&gt;&lt;/element&gt;
+    &lt;/sequence&gt;
+   &lt;/complexType&gt;
+   &lt;complexType name=&quot;ArrayOfEndUserIdentifier&quot;&gt;
+    &lt;sequence&gt;
+     &lt;element maxOccurs=&quot;unbounded&quot; minOccurs=&quot;0&quot; name=&quot;ArrayOfEndUserIdentifier&quot; nillable=&quot;true&quot; type=&quot;tns1:EndUserIdentifier&quot;&gt;&lt;/element&gt;
+    &lt;/sequence&gt;
+   &lt;/complexType&gt;
+   &lt;complexType name=&quot;InvalidArgumentException&quot;&gt;
+    &lt;sequence&gt;
+     &lt;element name=&quot;InvalidArgumentException&quot; nillable=&quot;true&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+    &lt;/sequence&gt;
+   &lt;/complexType&gt;
+   &lt;element name=&quot;InvalidArgumentException&quot; type=&quot;tns1:InvalidArgumentException&quot;&gt;&lt;/element&gt;
+   &lt;complexType name=&quot;UnknownEndUserException&quot;&gt;
+    &lt;sequence&gt;
+     &lt;element name=&quot;UnknownEndUserException&quot; nillable=&quot;true&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+    &lt;/sequence&gt;
+   &lt;/complexType&gt;
+   &lt;element name=&quot;UnknownEndUserException&quot; type=&quot;tns1:UnknownEndUserException&quot;&gt;&lt;/element&gt;
+   &lt;complexType name=&quot;MessageTooLongException&quot;&gt;
+    &lt;sequence&gt;
+     &lt;element name=&quot;MessageTooLongException&quot; nillable=&quot;true&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+    &lt;/sequence&gt;
+   &lt;/complexType&gt;
+   &lt;element name=&quot;MessageTooLongException&quot; type=&quot;tns1:MessageTooLongException&quot;&gt;&lt;/element&gt;
+   &lt;complexType name=&quot;PolicyException&quot;&gt;
+    &lt;sequence&gt;
+     &lt;element name=&quot;PolicyException&quot; nillable=&quot;true&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+    &lt;/sequence&gt;
+   &lt;/complexType&gt;
+   &lt;element name=&quot;PolicyException&quot; type=&quot;tns1:PolicyException&quot;&gt;&lt;/element&gt;
+   &lt;complexType name=&quot;ServiceException&quot;&gt;
+    &lt;sequence&gt;
+     &lt;element name=&quot;ServiceException&quot; nillable=&quot;true&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+    &lt;/sequence&gt;
+   &lt;/complexType&gt;
+   &lt;element name=&quot;ServiceException&quot; type=&quot;tns1:ServiceException&quot;&gt;&lt;/element&gt;
+  &lt;/schema&gt;
+  &lt;schema xmlns=&quot;http://www.w3.org/2001/XMLSchema&quot; elementFormDefault=&quot;qualified&quot; targetNamespace=&quot;http://www.csapi.org/schema/parlayx/sms/v1_0&quot;&gt;
+   &lt;import namespace=&quot;http://www.csapi.org/schema/parlayx/common/v1_0&quot;&gt;&lt;/import&gt;
+   &lt;simpleType name=&quot;SmsFormat&quot;&gt;
+    &lt;restriction base=&quot;xsd:string&quot;&gt;
+     &lt;enumeration value=&quot;Ems&quot;&gt;&lt;/enumeration&gt;
+     &lt;enumeration value=&quot;SmartMessaging&quot;&gt;&lt;/enumeration&gt;
+    &lt;/restriction&gt;
+   &lt;/simpleType&gt;
+   &lt;complexType name=&quot;UnsupportedFormatException&quot;&gt;
+    &lt;sequence&gt;
+     &lt;element name=&quot;UnsupportedFormatException&quot; nillable=&quot;true&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+    &lt;/sequence&gt;
+   &lt;/complexType&gt;
+   &lt;element name=&quot;UnsupportedFormatException&quot; type=&quot;tns2:UnsupportedFormatException&quot;&gt;&lt;/element&gt;
+   &lt;simpleType name=&quot;DeliveryStatus&quot;&gt;
+    &lt;restriction base=&quot;xsd:string&quot;&gt;
+     &lt;enumeration value=&quot;Delivered&quot;&gt;&lt;/enumeration&gt;
+     &lt;enumeration value=&quot;DeliveryUncertain&quot;&gt;&lt;/enumeration&gt;
+     &lt;enumeration value=&quot;DeliveryImpossible&quot;&gt;&lt;/enumeration&gt;
+     &lt;enumeration value=&quot;MessageWaiting&quot;&gt;&lt;/enumeration&gt;
+    &lt;/restriction&gt;
+   &lt;/simpleType&gt;
+   &lt;complexType name=&quot;DeliveryStatusType&quot;&gt;
+    &lt;sequence&gt;
+     &lt;element name=&quot;destinationAddress&quot; type=&quot;tns1:EndUserIdentifier&quot;&gt;&lt;/element&gt;
+     &lt;element name=&quot;deliveryStatus&quot; type=&quot;tns2:DeliveryStatus&quot;&gt;&lt;/element&gt;
+    &lt;/sequence&gt;
+   &lt;/complexType&gt;
+   &lt;complexType name=&quot;ArrayOfDeliveryStatusType&quot;&gt;
+    &lt;sequence&gt;
+     &lt;element maxOccurs=&quot;unbounded&quot; minOccurs=&quot;0&quot; name=&quot;ArrayOfDeliveryStatusType&quot; nillable=&quot;true&quot; type=&quot;tns2:DeliveryStatusType&quot;&gt;&lt;/element&gt;
+    &lt;/sequence&gt;
+   &lt;/complexType&gt;
+   &lt;complexType name=&quot;UnknownRequestIdentifierException&quot;&gt;
+    &lt;sequence&gt;
+     &lt;element name=&quot;UnknownRequestIdentifierException&quot; nillable=&quot;true&quot; type=&quot;xsd:string&quot;&gt;&lt;/element&gt;
+    &lt;/sequence&gt;
+   &lt;/complexType&gt;
+   &lt;element name=&quot;UnknownRequestIdentifierException&quot; type=&quot;tns2:UnknownRequestIdentifierException&quot;&gt;&lt;/element&gt;
+  &lt;/schema&gt;
+ &lt;/wsdl:types&gt;
+
+   &lt;wsdl:message name=&quot;sendSmsRequest&quot;&gt;
+
+      &lt;wsdl:part element=&quot;impl:sendSms&quot; name=&quot;parameters&quot;&gt;&lt;/wsdl:part&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;sendSmsLogoResponse&quot;&gt;
+
+      &lt;wsdl:part element=&quot;impl:sendSmsLogoResponse&quot; name=&quot;parameters&quot;&gt;&lt;/wsdl:part&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;ServiceException&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:ServiceException&quot; name=&quot;ServiceException&quot;&gt;&lt;/wsdl:part&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;MessageTooLongException&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:MessageTooLongException&quot; name=&quot;MessageTooLongException&quot;&gt;&lt;/wsdl:part&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;UnknownEndUserException&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:UnknownEndUserException&quot; name=&quot;UnknownEndUserException&quot;&gt;&lt;/wsdl:part&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;InvalidArgumentException&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:InvalidArgumentException&quot; name=&quot;InvalidArgumentException&quot;&gt;&lt;/wsdl:part&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;getSmsDeliveryStatusResponse&quot;&gt;
+
+      &lt;wsdl:part element=&quot;impl:getSmsDeliveryStatusResponse&quot; name=&quot;parameters&quot;&gt;&lt;/wsdl:part&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;sendSmsResponse&quot;&gt;
+
+      &lt;wsdl:part element=&quot;impl:sendSmsResponse&quot; name=&quot;parameters&quot;&gt;&lt;/wsdl:part&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;sendSmsLogoRequest&quot;&gt;
+
+      &lt;wsdl:part element=&quot;impl:sendSmsLogo&quot; name=&quot;parameters&quot;&gt;&lt;/wsdl:part&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;sendSmsRingToneResponse&quot;&gt;
+
+      &lt;wsdl:part element=&quot;impl:sendSmsRingToneResponse&quot; name=&quot;parameters&quot;&gt;&lt;/wsdl:part&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;sendSmsRingToneRequest&quot;&gt;
+
+      &lt;wsdl:part element=&quot;impl:sendSmsRingTone&quot; name=&quot;parameters&quot;&gt;&lt;/wsdl:part&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;getSmsDeliveryStatusRequest&quot;&gt;
+
+      &lt;wsdl:part element=&quot;impl:getSmsDeliveryStatus&quot; name=&quot;parameters&quot;&gt;&lt;/wsdl:part&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;UnknownRequestIdentifierException&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns2:UnknownRequestIdentifierException&quot; name=&quot;UnknownRequestIdentifierException&quot;&gt;&lt;/wsdl:part&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;PolicyException&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:PolicyException&quot; name=&quot;PolicyException&quot;&gt;&lt;/wsdl:part&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;UnsupportedFormatException&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns2:UnsupportedFormatException&quot; name=&quot;UnsupportedFormatException&quot;&gt;&lt;/wsdl:part&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:portType name=&quot;SendSms&quot;&gt;
+
+      &lt;wsdl:operation name=&quot;sendSms&quot;&gt;
+
+         &lt;wsdl:input message=&quot;impl:sendSmsRequest&quot; name=&quot;sendSmsRequest&quot;&gt;&lt;/wsdl:input&gt;
+
+         &lt;wsdl:output message=&quot;impl:sendSmsResponse&quot; name=&quot;sendSmsResponse&quot;&gt;&lt;/wsdl:output&gt;
+
+         &lt;wsdl:fault message=&quot;impl:InvalidArgumentException&quot; name=&quot;InvalidArgumentException&quot;&gt;&lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault message=&quot;impl:UnknownEndUserException&quot; name=&quot;UnknownEndUserException&quot;&gt;&lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault message=&quot;impl:MessageTooLongException&quot; name=&quot;MessageTooLongException&quot;&gt;&lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault message=&quot;impl:PolicyException&quot; name=&quot;PolicyException&quot;&gt;&lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault message=&quot;impl:ServiceException&quot; name=&quot;ServiceException&quot;&gt;&lt;/wsdl:fault&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;sendSmsLogo&quot;&gt;
+
+         &lt;wsdl:input message=&quot;impl:sendSmsLogoRequest&quot; name=&quot;sendSmsLogoRequest&quot;&gt;&lt;/wsdl:input&gt;
+
+         &lt;wsdl:output message=&quot;impl:sendSmsLogoResponse&quot; name=&quot;sendSmsLogoResponse&quot;&gt;&lt;/wsdl:output&gt;
+
+         &lt;wsdl:fault message=&quot;impl:InvalidArgumentException&quot; name=&quot;InvalidArgumentException&quot;&gt;&lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault message=&quot;impl:UnknownEndUserException&quot; name=&quot;UnknownEndUserException&quot;&gt;&lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault message=&quot;impl:MessageTooLongException&quot; name=&quot;MessageTooLongException&quot;&gt;&lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault message=&quot;impl:UnsupportedFormatException&quot; name=&quot;UnsupportedFormatException&quot;&gt;&lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault message=&quot;impl:PolicyException&quot; name=&quot;PolicyException&quot;&gt;&lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault message=&quot;impl:ServiceException&quot; name=&quot;ServiceException&quot;&gt;&lt;/wsdl:fault&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;sendSmsRingTone&quot;&gt;
+
+         &lt;wsdl:input message=&quot;impl:sendSmsRingToneRequest&quot; name=&quot;sendSmsRingToneRequest&quot;&gt;&lt;/wsdl:input&gt;
+
+         &lt;wsdl:output message=&quot;impl:sendSmsRingToneResponse&quot; name=&quot;sendSmsRingToneResponse&quot;&gt;&lt;/wsdl:output&gt;
+
+         &lt;wsdl:fault message=&quot;impl:InvalidArgumentException&quot; name=&quot;InvalidArgumentException&quot;&gt;&lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault message=&quot;impl:UnknownEndUserException&quot; name=&quot;UnknownEndUserException&quot;&gt;&lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault message=&quot;impl:MessageTooLongException&quot; name=&quot;MessageTooLongException&quot;&gt;&lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault message=&quot;impl:UnsupportedFormatException&quot; name=&quot;UnsupportedFormatException&quot;&gt;&lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault message=&quot;impl:PolicyException&quot; name=&quot;PolicyException&quot;&gt;&lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault message=&quot;impl:ServiceException&quot; name=&quot;ServiceException&quot;&gt;&lt;/wsdl:fault&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;getSmsDeliveryStatus&quot;&gt;
+
+         &lt;wsdl:input message=&quot;impl:getSmsDeliveryStatusRequest&quot; name=&quot;getSmsDeliveryStatusRequest&quot;&gt;&lt;/wsdl:input&gt;
+
+         &lt;wsdl:output message=&quot;impl:getSmsDeliveryStatusResponse&quot; name=&quot;getSmsDeliveryStatusResponse&quot;&gt;&lt;/wsdl:output&gt;
+
+         &lt;wsdl:fault message=&quot;impl:UnknownRequestIdentifierException&quot; name=&quot;UnknownRequestIdentifierException&quot;&gt;&lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault message=&quot;impl:ServiceException&quot; name=&quot;ServiceException&quot;&gt;&lt;/wsdl:fault&gt;
+
+      &lt;/wsdl:operation&gt;
+
+   &lt;/wsdl:portType&gt;
+
+   &lt;wsdl:binding name=&quot;SendSmsSoapBinding&quot; type=&quot;impl:SendSms&quot;&gt;
+
+      &lt;wsdlsoap:binding style=&quot;document&quot; transport=&quot;http://schemas.xmlsoap.org/soap/http&quot;&gt;&lt;/wsdlsoap:binding&gt;
+
+      &lt;wsdl:operation name=&quot;sendSms&quot;&gt;
+
+         &lt;wsdlsoap:operation soapAction=&quot;&quot;&gt;&lt;/wsdlsoap:operation&gt;
+
+         &lt;wsdl:input name=&quot;sendSmsRequest&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;&gt;&lt;/wsdlsoap:body&gt;
+
+         &lt;/wsdl:input&gt;
+
+         &lt;wsdl:output name=&quot;sendSmsResponse&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;&gt;&lt;/wsdlsoap:body&gt;
+
+         &lt;/wsdl:output&gt;
+
+         &lt;wsdl:fault name=&quot;InvalidArgumentException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;InvalidArgumentException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault name=&quot;UnknownEndUserException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;UnknownEndUserException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault name=&quot;MessageTooLongException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;MessageTooLongException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault name=&quot;PolicyException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;PolicyException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault name=&quot;ServiceException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;ServiceException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;sendSmsLogo&quot;&gt;
+
+         &lt;wsdlsoap:operation soapAction=&quot;&quot;&gt;&lt;/wsdlsoap:operation&gt;
+
+         &lt;wsdl:input name=&quot;sendSmsLogoRequest&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;&gt;&lt;/wsdlsoap:body&gt;
+
+         &lt;/wsdl:input&gt;
+
+         &lt;wsdl:output name=&quot;sendSmsLogoResponse&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;&gt;&lt;/wsdlsoap:body&gt;
+
+         &lt;/wsdl:output&gt;
+
+         &lt;wsdl:fault name=&quot;InvalidArgumentException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;InvalidArgumentException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault name=&quot;UnknownEndUserException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;UnknownEndUserException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault name=&quot;MessageTooLongException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;MessageTooLongException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault name=&quot;UnsupportedFormatException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;UnsupportedFormatException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault name=&quot;PolicyException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;PolicyException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault name=&quot;ServiceException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;ServiceException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;sendSmsRingTone&quot;&gt;
+
+         &lt;wsdlsoap:operation soapAction=&quot;&quot;&gt;&lt;/wsdlsoap:operation&gt;
+
+         &lt;wsdl:input name=&quot;sendSmsRingToneRequest&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;&gt;&lt;/wsdlsoap:body&gt;
+
+         &lt;/wsdl:input&gt;
+
+         &lt;wsdl:output name=&quot;sendSmsRingToneResponse&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;&gt;&lt;/wsdlsoap:body&gt;
+
+         &lt;/wsdl:output&gt;
+
+         &lt;wsdl:fault name=&quot;InvalidArgumentException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;InvalidArgumentException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault name=&quot;UnknownEndUserException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;UnknownEndUserException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault name=&quot;MessageTooLongException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;MessageTooLongException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault name=&quot;UnsupportedFormatException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;UnsupportedFormatException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault name=&quot;PolicyException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;PolicyException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault name=&quot;ServiceException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;ServiceException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;getSmsDeliveryStatus&quot;&gt;
+
+         &lt;wsdlsoap:operation soapAction=&quot;&quot;&gt;&lt;/wsdlsoap:operation&gt;
+
+         &lt;wsdl:input name=&quot;getSmsDeliveryStatusRequest&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;&gt;&lt;/wsdlsoap:body&gt;
+
+         &lt;/wsdl:input&gt;
+
+         &lt;wsdl:output name=&quot;getSmsDeliveryStatusResponse&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;&gt;&lt;/wsdlsoap:body&gt;
+
+         &lt;/wsdl:output&gt;
+
+         &lt;wsdl:fault name=&quot;UnknownRequestIdentifierException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;UnknownRequestIdentifierException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+         &lt;wsdl:fault name=&quot;ServiceException&quot;&gt;
+
+            &lt;wsdlsoap:fault name=&quot;ServiceException&quot; use=&quot;literal&quot;&gt;&lt;/wsdlsoap:fault&gt;
+
+         &lt;/wsdl:fault&gt;
+
+      &lt;/wsdl:operation&gt;
+
+   &lt;/wsdl:binding&gt;
+
+   &lt;wsdl:service name=&quot;SendSmsService&quot;&gt;
+
+      &lt;wsdl:port binding=&quot;impl:SendSmsSoapBinding&quot; name=&quot;SendSms&quot;&gt;
+
+         &lt;wsdlsoap:address location=&quot;http://localhost:8080/parlayx/services/SendSms&quot;&gt;&lt;/wsdlsoap:address&gt;
+
+      &lt;/wsdl:port&gt;
+
+   &lt;/wsdl:service&gt;
+
+&lt;/wsdl:definitions&gt;</wsdlXml></PService></jaxbPublishedService>

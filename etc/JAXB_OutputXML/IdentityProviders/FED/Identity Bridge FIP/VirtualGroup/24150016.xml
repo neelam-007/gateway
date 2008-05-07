@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><virtualGroup><oid>24150016</oid><version>0</version><name>fipVirtualGroup</name><description></description><providerId>24018944</providerId><xmlProperties>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt; 
+&lt;java version=&quot;1.6.0_03&quot; class=&quot;java.beans.XMLDecoder&quot;&gt; 
+ &lt;object class=&quot;java.util.HashMap&quot;&gt; 
+  &lt;void method=&quot;put&quot;&gt; 
+   &lt;string&gt;x509SubjectDnPattern&lt;/string&gt; 
+   &lt;string&gt;CN=*&lt;/string&gt; 
+  &lt;/void&gt; 
+  &lt;void method=&quot;put&quot;&gt; 
+   &lt;string&gt;samlEmailPattern&lt;/string&gt; 
+   &lt;string&gt;&lt;/string&gt; 
+  &lt;/void&gt; 
+ &lt;/object&gt; 
+&lt;/java&gt; 
+</xmlProperties><samlEmailPattern></samlEmailPattern><x509SubjectDnPattern>CN=*</x509SubjectDnPattern></virtualGroup>

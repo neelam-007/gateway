@@ -1,0 +1,471 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><jaxbPublishedService><PService><oid>44892161</oid><version>9</version><name>PlayerStatsService</name><disabled>false</disabled><httpMethodNames>POST</httpMethodNames><laxResolution>false</laxResolution><policy><oid>57311595</oid><version>1</version><name>Policy for service #44892161, PlayerStatsService</name><soap>true</soap><type>PRIVATE_SERVICE</type><versionActive>true</versionActive><versionOrdinal>2</versionOrdinal><xml>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+        &lt;L7p:FaultLevel&gt;
+            &lt;L7p:LevelInfo soapFaultLevel=&quot;included&quot;&gt;
+                &lt;L7p:Level intValue=&quot;4&quot;/&gt;
+            &lt;/L7p:LevelInfo&gt;
+        &lt;/L7p:FaultLevel&gt;
+        &lt;L7p:HttpDigest/&gt;
+        &lt;wsp:OneOrMore wsp:Usage=&quot;Required&quot;&gt;
+            &lt;L7p:SpecificUser&gt;
+                &lt;L7p:IdentityProviderOid longValue=&quot;-2&quot;/&gt;
+                &lt;L7p:UserLogin stringValue=&quot;admin&quot;/&gt;
+                &lt;L7p:UserName stringValue=&quot;admin&quot;/&gt;
+                &lt;L7p:UserUid stringValue=&quot;3&quot;/&gt;
+            &lt;/L7p:SpecificUser&gt;
+        &lt;/wsp:OneOrMore&gt;
+        &lt;wsse:SecurityToken xmlns:wsse=&quot;http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd&quot;&gt;
+            &lt;wsse:TokenType&gt;http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct&lt;/wsse:TokenType&gt;
+            &lt;L7p:Properties/&gt;
+        &lt;/wsse:SecurityToken&gt;
+        &lt;wsp:OneOrMore wsp:Usage=&quot;Required&quot;&gt;
+            &lt;L7p:SpecificUser&gt;
+                &lt;L7p:IdentityProviderOid longValue=&quot;-2&quot;/&gt;
+                &lt;L7p:UserLogin stringValue=&quot;iipssgautotest&quot;/&gt;
+                &lt;L7p:UserName stringValue=&quot;iipssgautotest&quot;/&gt;
+                &lt;L7p:UserUid stringValue=&quot;10551296&quot;/&gt;
+            &lt;/L7p:SpecificUser&gt;
+        &lt;/wsp:OneOrMore&gt;
+        &lt;L7p:HardcodedResponse&gt;
+            &lt;L7p:Base64ResponseBody stringValue=&quot;PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHNvYXBlbnY6RW52ZWxvcGUgeG1sbnM6c29hcGVudj0iaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvc29hcC9lbnZlbG9wZS8iPgogICAgPHNvYXBlbnY6Qm9keT4KICAgICAgICA8YXV0aGVudGljYXRlZFVzZXI+JHtyZXF1ZXN0LmF1dGhlbnRpY2F0ZWR1c2VyLjB9PC9hdXRoZW50aWNhdGVkVXNlcj4KCTxhdXRoZW50aWNhdGVkVXNlcj4ke3JlcXVlc3QuYXV0aGVudGljYXRlZHVzZXIuMX08L2F1dGhlbnRpY2F0ZWRVc2VyPgoJPGF1dGhlbnRpY2F0ZWRVc2Vycz4ke3JlcXVlc3QuYXV0aGVudGljYXRlZHVzZXJzWzBdfTwvYXV0aGVudGljYXRlZFVzZXJzPgoJPGF1dGhlbnRpY2F0ZWRVc2Vycz4ke3JlcXVlc3QuYXV0aGVudGljYXRlZHVzZXJzWzFdfTwvYXV0aGVudGljYXRlZFVzZXJzPgogICAgPC9zb2FwZW52OkJvZHk+Cjwvc29hcGVudjpFbnZlbG9wZT4KCg==&quot;/&gt;
+        &lt;/L7p:HardcodedResponse&gt;
+    &lt;/wsp:All&gt;
+&lt;/wsp:Policy&gt;
+</xml></policy><routingUri>/multipleAuth/httpDigest/WssSecureConversation</routingUri><soap>true</soap><wsdlUrl>http://hugh:8081/axis/services/PlayerStats?wsdl</wsdlUrl><wsdlXml>&lt;wsdl:definitions targetNamespace=&quot;http://hugh:8081/axis/services/PlayerStats&quot; xmlns:apachesoap=&quot;http://xml.apache.org/xml-soap&quot; xmlns:impl=&quot;http://hugh:8081/axis/services/PlayerStats&quot; xmlns:intf=&quot;http://hugh:8081/axis/services/PlayerStats&quot; xmlns:tns1=&quot;http://playerstatsws.test.l7tech.com&quot; xmlns:wsdl=&quot;http://schemas.xmlsoap.org/wsdl/&quot; xmlns:wsdlsoap=&quot;http://schemas.xmlsoap.org/wsdl/soap/&quot; xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot;&gt;
+&lt;!--WSDL created by Apache Axis version: 1.3
+Built on Oct 05, 2005 (05:23:37 EDT)--&gt;
+ &lt;wsdl:types&gt;
+  &lt;schema elementFormDefault=&quot;qualified&quot; targetNamespace=&quot;http://playerstatsws.test.l7tech.com&quot; xmlns=&quot;http://www.w3.org/2001/XMLSchema&quot;&gt;
+   &lt;element name=&quot;getPhysicalStats&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;playerNumber&quot; type=&quot;xsd:int&quot;/&gt;
+      &lt;element name=&quot;delay&quot; type=&quot;xsd:int&quot;/&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;element name=&quot;getPhysicalStatsResponse&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;getPhysicalStatsReturn&quot; type=&quot;tns1:PhysicalStats&quot;/&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;complexType name=&quot;PhysicalStats&quot;&gt;
+    &lt;sequence&gt;
+     &lt;element name=&quot;height&quot; nillable=&quot;true&quot; type=&quot;xsd:string&quot;/&gt;
+     &lt;element name=&quot;position&quot; nillable=&quot;true&quot; type=&quot;xsd:string&quot;/&gt;
+     &lt;element name=&quot;shoots&quot; nillable=&quot;true&quot; type=&quot;xsd:string&quot;/&gt;
+     &lt;element name=&quot;weight&quot; type=&quot;xsd:int&quot;/&gt;
+    &lt;/sequence&gt;
+   &lt;/complexType&gt;
+   &lt;element name=&quot;getOffensiveStats&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;playerNumber&quot; type=&quot;xsd:int&quot;/&gt;
+      &lt;element name=&quot;delay&quot; type=&quot;xsd:int&quot;/&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;element name=&quot;getOffensiveStatsResponse&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;getOffensiveStatsReturn&quot; type=&quot;tns1:OffensiveStats&quot;/&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;complexType name=&quot;OffensiveStats&quot;&gt;
+    &lt;sequence&gt;
+     &lt;element name=&quot;assists&quot; type=&quot;xsd:int&quot;/&gt;
+     &lt;element name=&quot;gamesPlayed&quot; type=&quot;xsd:int&quot;/&gt;
+     &lt;element name=&quot;goals&quot; type=&quot;xsd:int&quot;/&gt;
+     &lt;element name=&quot;penaltyMins&quot; type=&quot;xsd:int&quot;/&gt;
+     &lt;element name=&quot;plusMinus&quot; type=&quot;xsd:int&quot;/&gt;
+     &lt;element name=&quot;points&quot; type=&quot;xsd:int&quot;/&gt;
+    &lt;/sequence&gt;
+   &lt;/complexType&gt;
+   &lt;element name=&quot;listPlayers&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;delay&quot; type=&quot;xsd:int&quot;/&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;element name=&quot;listPlayersResponse&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element maxOccurs=&quot;unbounded&quot; name=&quot;listPlayersReturn&quot; type=&quot;tns1:Player&quot;/&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;complexType name=&quot;DraftDetails&quot;&gt;
+    &lt;sequence&gt;
+     &lt;element name=&quot;pick&quot; type=&quot;xsd:int&quot;/&gt;
+     &lt;element name=&quot;round&quot; type=&quot;xsd:int&quot;/&gt;
+     &lt;element name=&quot;team&quot; nillable=&quot;true&quot; type=&quot;xsd:string&quot;/&gt;
+     &lt;element name=&quot;year&quot; type=&quot;xsd:int&quot;/&gt;
+    &lt;/sequence&gt;
+   &lt;/complexType&gt;
+   &lt;complexType name=&quot;Player&quot;&gt;
+    &lt;sequence&gt;
+     &lt;element name=&quot;FName&quot; nillable=&quot;true&quot; type=&quot;xsd:string&quot;/&gt;
+     &lt;element name=&quot;LName&quot; nillable=&quot;true&quot; type=&quot;xsd:string&quot;/&gt;
+     &lt;element name=&quot;age&quot; type=&quot;xsd:int&quot;/&gt;
+     &lt;element name=&quot;dob&quot; nillable=&quot;true&quot; type=&quot;xsd:string&quot;/&gt;
+     &lt;element name=&quot;draftDetails&quot; nillable=&quot;true&quot; type=&quot;tns1:DraftDetails&quot;/&gt;
+     &lt;element name=&quot;number&quot; type=&quot;xsd:int&quot;/&gt;
+     &lt;element name=&quot;offensiveStats&quot; nillable=&quot;true&quot; type=&quot;tns1:OffensiveStats&quot;/&gt;
+     &lt;element name=&quot;physicalStats&quot; nillable=&quot;true&quot; type=&quot;tns1:PhysicalStats&quot;/&gt;
+    &lt;/sequence&gt;
+   &lt;/complexType&gt;
+   &lt;element name=&quot;getDraftDetails&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;playerNumber&quot; type=&quot;xsd:int&quot;/&gt;
+      &lt;element name=&quot;delay&quot; type=&quot;xsd:int&quot;/&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;element name=&quot;getDraftDetailsResponse&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;getDraftDetailsReturn&quot; type=&quot;tns1:DraftDetails&quot;/&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;element name=&quot;getPlayer&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;playerNumber&quot; type=&quot;xsd:int&quot;/&gt;
+      &lt;element name=&quot;delay&quot; type=&quot;xsd:int&quot;/&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;element name=&quot;getPlayerResponse&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;getPlayerReturn&quot; type=&quot;tns1:Player&quot;/&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;element name=&quot;addPlayer&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;player&quot; type=&quot;tns1:Player&quot;/&gt;
+      &lt;element name=&quot;delay&quot; type=&quot;xsd:int&quot;/&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;element name=&quot;addPlayerResponse&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element maxOccurs=&quot;unbounded&quot; name=&quot;addPlayerReturn&quot; type=&quot;tns1:Player&quot;/&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;element name=&quot;removePlayer&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element name=&quot;playerNumber&quot; type=&quot;xsd:int&quot;/&gt;
+      &lt;element name=&quot;delay&quot; type=&quot;xsd:int&quot;/&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+   &lt;element name=&quot;removePlayerResponse&quot;&gt;
+    &lt;complexType&gt;
+     &lt;sequence&gt;
+      &lt;element maxOccurs=&quot;unbounded&quot; name=&quot;removePlayerReturn&quot; type=&quot;tns1:Player&quot;/&gt;
+     &lt;/sequence&gt;
+    &lt;/complexType&gt;
+   &lt;/element&gt;
+  &lt;/schema&gt;
+ &lt;/wsdl:types&gt;
+
+   &lt;wsdl:message name=&quot;getPhysicalStatsRequest&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:getPhysicalStats&quot; name=&quot;parameters&quot;/&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;addPlayerResponse&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:addPlayerResponse&quot; name=&quot;parameters&quot;/&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;addPlayerRequest&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:addPlayer&quot; name=&quot;parameters&quot;/&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;getOffensiveStatsResponse&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:getOffensiveStatsResponse&quot; name=&quot;parameters&quot;/&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;removePlayerResponse&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:removePlayerResponse&quot; name=&quot;parameters&quot;/&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;listPlayersRequest&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:listPlayers&quot; name=&quot;parameters&quot;/&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;listPlayersResponse&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:listPlayersResponse&quot; name=&quot;parameters&quot;/&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;getDraftDetailsRequest&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:getDraftDetails&quot; name=&quot;parameters&quot;/&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;getDraftDetailsResponse&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:getDraftDetailsResponse&quot; name=&quot;parameters&quot;/&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;getPhysicalStatsResponse&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:getPhysicalStatsResponse&quot; name=&quot;parameters&quot;/&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;getPlayerResponse&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:getPlayerResponse&quot; name=&quot;parameters&quot;/&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;getOffensiveStatsRequest&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:getOffensiveStats&quot; name=&quot;parameters&quot;/&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;removePlayerRequest&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:removePlayer&quot; name=&quot;parameters&quot;/&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:message name=&quot;getPlayerRequest&quot;&gt;
+
+      &lt;wsdl:part element=&quot;tns1:getPlayer&quot; name=&quot;parameters&quot;/&gt;
+
+   &lt;/wsdl:message&gt;
+
+   &lt;wsdl:portType name=&quot;PlayerStats&quot;&gt;
+
+      &lt;wsdl:operation name=&quot;getPhysicalStats&quot;&gt;
+
+         &lt;wsdl:input message=&quot;impl:getPhysicalStatsRequest&quot; name=&quot;getPhysicalStatsRequest&quot;/&gt;
+
+         &lt;wsdl:output message=&quot;impl:getPhysicalStatsResponse&quot; name=&quot;getPhysicalStatsResponse&quot;/&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;getOffensiveStats&quot;&gt;
+
+         &lt;wsdl:input message=&quot;impl:getOffensiveStatsRequest&quot; name=&quot;getOffensiveStatsRequest&quot;/&gt;
+
+         &lt;wsdl:output message=&quot;impl:getOffensiveStatsResponse&quot; name=&quot;getOffensiveStatsResponse&quot;/&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;listPlayers&quot;&gt;
+
+         &lt;wsdl:input message=&quot;impl:listPlayersRequest&quot; name=&quot;listPlayersRequest&quot;/&gt;
+
+         &lt;wsdl:output message=&quot;impl:listPlayersResponse&quot; name=&quot;listPlayersResponse&quot;/&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;getDraftDetails&quot;&gt;
+
+         &lt;wsdl:input message=&quot;impl:getDraftDetailsRequest&quot; name=&quot;getDraftDetailsRequest&quot;/&gt;
+
+         &lt;wsdl:output message=&quot;impl:getDraftDetailsResponse&quot; name=&quot;getDraftDetailsResponse&quot;/&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;getPlayer&quot;&gt;
+
+         &lt;wsdl:input message=&quot;impl:getPlayerRequest&quot; name=&quot;getPlayerRequest&quot;/&gt;
+
+         &lt;wsdl:output message=&quot;impl:getPlayerResponse&quot; name=&quot;getPlayerResponse&quot;/&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;addPlayer&quot;&gt;
+
+         &lt;wsdl:input message=&quot;impl:addPlayerRequest&quot; name=&quot;addPlayerRequest&quot;/&gt;
+
+         &lt;wsdl:output message=&quot;impl:addPlayerResponse&quot; name=&quot;addPlayerResponse&quot;/&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;removePlayer&quot;&gt;
+
+         &lt;wsdl:input message=&quot;impl:removePlayerRequest&quot; name=&quot;removePlayerRequest&quot;/&gt;
+
+         &lt;wsdl:output message=&quot;impl:removePlayerResponse&quot; name=&quot;removePlayerResponse&quot;/&gt;
+
+      &lt;/wsdl:operation&gt;
+
+   &lt;/wsdl:portType&gt;
+
+   &lt;wsdl:binding name=&quot;PlayerStatsSoapBinding&quot; type=&quot;impl:PlayerStats&quot;&gt;
+
+      &lt;wsdlsoap:binding style=&quot;document&quot; transport=&quot;http://schemas.xmlsoap.org/soap/http&quot;/&gt;
+
+      &lt;wsdl:operation name=&quot;getPhysicalStats&quot;&gt;
+
+         &lt;wsdlsoap:operation soapAction=&quot;&quot;/&gt;
+
+         &lt;wsdl:input name=&quot;getPhysicalStatsRequest&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;/&gt;
+
+         &lt;/wsdl:input&gt;
+
+         &lt;wsdl:output name=&quot;getPhysicalStatsResponse&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;/&gt;
+
+         &lt;/wsdl:output&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;getOffensiveStats&quot;&gt;
+
+         &lt;wsdlsoap:operation soapAction=&quot;&quot;/&gt;
+
+         &lt;wsdl:input name=&quot;getOffensiveStatsRequest&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;/&gt;
+
+         &lt;/wsdl:input&gt;
+
+         &lt;wsdl:output name=&quot;getOffensiveStatsResponse&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;/&gt;
+
+         &lt;/wsdl:output&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;listPlayers&quot;&gt;
+
+         &lt;wsdlsoap:operation soapAction=&quot;&quot;/&gt;
+
+         &lt;wsdl:input name=&quot;listPlayersRequest&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;/&gt;
+
+         &lt;/wsdl:input&gt;
+
+         &lt;wsdl:output name=&quot;listPlayersResponse&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;/&gt;
+
+         &lt;/wsdl:output&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;getDraftDetails&quot;&gt;
+
+         &lt;wsdlsoap:operation soapAction=&quot;&quot;/&gt;
+
+         &lt;wsdl:input name=&quot;getDraftDetailsRequest&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;/&gt;
+
+         &lt;/wsdl:input&gt;
+
+         &lt;wsdl:output name=&quot;getDraftDetailsResponse&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;/&gt;
+
+         &lt;/wsdl:output&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;getPlayer&quot;&gt;
+
+         &lt;wsdlsoap:operation soapAction=&quot;&quot;/&gt;
+
+         &lt;wsdl:input name=&quot;getPlayerRequest&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;/&gt;
+
+         &lt;/wsdl:input&gt;
+
+         &lt;wsdl:output name=&quot;getPlayerResponse&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;/&gt;
+
+         &lt;/wsdl:output&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;addPlayer&quot;&gt;
+
+         &lt;wsdlsoap:operation soapAction=&quot;&quot;/&gt;
+
+         &lt;wsdl:input name=&quot;addPlayerRequest&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;/&gt;
+
+         &lt;/wsdl:input&gt;
+
+         &lt;wsdl:output name=&quot;addPlayerResponse&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;/&gt;
+
+         &lt;/wsdl:output&gt;
+
+      &lt;/wsdl:operation&gt;
+
+      &lt;wsdl:operation name=&quot;removePlayer&quot;&gt;
+
+         &lt;wsdlsoap:operation soapAction=&quot;&quot;/&gt;
+
+         &lt;wsdl:input name=&quot;removePlayerRequest&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;/&gt;
+
+         &lt;/wsdl:input&gt;
+
+         &lt;wsdl:output name=&quot;removePlayerResponse&quot;&gt;
+
+            &lt;wsdlsoap:body use=&quot;literal&quot;/&gt;
+
+         &lt;/wsdl:output&gt;
+
+      &lt;/wsdl:operation&gt;
+
+   &lt;/wsdl:binding&gt;
+
+   &lt;wsdl:service name=&quot;PlayerStatsService&quot;&gt;
+
+      &lt;wsdl:port binding=&quot;impl:PlayerStatsSoapBinding&quot; name=&quot;PlayerStats&quot;&gt;
+
+         &lt;wsdlsoap:address location=&quot;http://hugh:8081/axis/services/PlayerStats&quot;/&gt;
+
+      &lt;/wsdl:port&gt;
+
+   &lt;/wsdl:service&gt;
+
+&lt;/wsdl:definitions&gt;</wsdlXml></PService></jaxbPublishedService>

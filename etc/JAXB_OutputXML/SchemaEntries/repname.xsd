@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><schemaEntry><oid>24084481</oid><version>0</version><name>repname.xsd</name><schema>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;s:schema elementFormDefault=&quot;qualified&quot; targetNamespace=&quot;http://www.acme.com/schemas/RepName&quot; xmlns:s=&quot;http://www.w3.org/2001/XMLSchema&quot;&gt;
+  &lt;s:element name=&quot;RepName&quot;&gt;
+    &lt;s:complexType&gt;
+      &lt;s:sequence&gt;
+        &lt;s:element minOccurs=&quot;1&quot; maxOccurs=&quot;1&quot; name=&quot;FirstName&quot; type=&quot;s:string&quot; /&gt;
+        &lt;s:element minOccurs=&quot;1&quot; maxOccurs=&quot;1&quot; name=&quot;LastName&quot; type=&quot;s:string&quot; /&gt;
+      &lt;/s:sequence&gt;
+    &lt;/s:complexType&gt;
+  &lt;/s:element&gt;
+&lt;/s:schema&gt;</schema><system>false</system><tns>http://www.acme.com/schemas/RepName</tns></schemaEntry>

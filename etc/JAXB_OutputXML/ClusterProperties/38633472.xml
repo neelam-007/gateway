@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><clusterProperty><oid>38633472</oid><version>0</version><name>io.xmlPartMaxBytes</name><description>Maximum number of bytes permitted in the XML part of a message, or 0 for unlimited (Integer)</description><value>0</value></clusterProperty>

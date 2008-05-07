@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><jaxbPublishedService><PService><oid>23691278</oid><version>5</version><name>EchoAttachmentsServiceService</name><disabled>false</disabled><httpMethodNames>POST</httpMethodNames><laxResolution>false</laxResolution><policy><oid>57311384</oid><version>0</version><name>Policy for service #23691278, EchoAttachmentsServiceService</name><soap>true</soap><type>PRIVATE_SERVICE</type><versionActive>true</versionActive><versionOrdinal>-1</versionOrdinal><xml>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+        &lt;L7p:HttpRoutingAssertion&gt;
+            &lt;L7p:ProtectedServiceUrl stringValue=&quot;http://hugh:8080/axis/services/urn:EchoAttachmentsService&quot;/&gt;
+            &lt;L7p:RequestHeaderRules httpPassthroughRuleSet=&quot;included&quot;&gt;
+                &lt;L7p:Rules httpPassthroughRules=&quot;included&quot;&gt;
+                    &lt;L7p:item httpPassthroughRule=&quot;included&quot;&gt;
+                        &lt;L7p:Name stringValue=&quot;Cookie&quot;/&gt;
+                    &lt;/L7p:item&gt;
+                    &lt;L7p:item httpPassthroughRule=&quot;included&quot;&gt;
+                        &lt;L7p:Name stringValue=&quot;SOAPAction&quot;/&gt;
+                    &lt;/L7p:item&gt;
+                &lt;/L7p:Rules&gt;
+            &lt;/L7p:RequestHeaderRules&gt;
+            &lt;L7p:RequestParamRules httpPassthroughRuleSet=&quot;included&quot;&gt;
+                &lt;L7p:ForwardAll booleanValue=&quot;true&quot;/&gt;
+                &lt;L7p:Rules httpPassthroughRules=&quot;included&quot;/&gt;
+            &lt;/L7p:RequestParamRules&gt;
+            &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet=&quot;included&quot;&gt;
+                &lt;L7p:Rules httpPassthroughRules=&quot;included&quot;&gt;
+                    &lt;L7p:item httpPassthroughRule=&quot;included&quot;&gt;
+                        &lt;L7p:Name stringValue=&quot;Set-Cookie&quot;/&gt;
+                    &lt;/L7p:item&gt;
+                &lt;/L7p:Rules&gt;
+            &lt;/L7p:ResponseHeaderRules&gt;
+            &lt;L7p:SamlAssertionVersion intValue=&quot;2&quot;/&gt;
+        &lt;/L7p:HttpRoutingAssertion&gt;
+    &lt;/wsp:All&gt;
+&lt;/wsp:Policy&gt;
+</xml></policy><soap>true</soap><wsdlUrl>http://192.168.1.176/EchoAttachmentsServiceAxisAllHello.wsdl</wsdlUrl><wsdlXml>&lt;wsdl:definitions xmlns=&quot;http://schemas.xmlsoap.org/wsdl/&quot; xmlns:apachesoap=&quot;http://xml.apache.org/xml-soap&quot; xmlns:impl=&quot;urn:EchoAttachmentsService&quot; xmlns:intf=&quot;urn:EchoAttachmentsService&quot; xmlns:mime=&quot;http://schemas.xmlsoap.org/wsdl/mime/&quot; xmlns:soapenc=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; xmlns:tns1=&quot;http://activation.javax&quot; xmlns:wsdl=&quot;http://schemas.xmlsoap.org/wsdl/&quot; xmlns:wsdlsoap=&quot;http://schemas.xmlsoap.org/wsdl/soap/&quot; xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; targetNamespace=&quot;urn:EchoAttachmentsService&quot;&gt;
+ &lt;wsdl:types&gt;
+  &lt;schema xmlns=&quot;http://www.w3.org/2001/XMLSchema&quot; targetNamespace=&quot;urn:EchoAttachmentsService&quot;&gt;
+   &lt;import namespace=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot;&gt;&lt;/import&gt;
+   &lt;complexType name=&quot;ArrayOf_tns1_DataHandler&quot;&gt;
+    &lt;complexContent&gt;
+     &lt;restriction base=&quot;soapenc:Array&quot;&gt;
+      &lt;attribute ref=&quot;soapenc:arrayType&quot; wsdl:arrayType=&quot;null[]&quot;&gt;&lt;/attribute&gt;
+     &lt;/restriction&gt;
+    &lt;/complexContent&gt;
+   &lt;/complexType&gt;
+   &lt;element name=&quot;ArrayOf_tns1_DataHandler&quot; nillable=&quot;true&quot; type=&quot;impl:ArrayOf_tns1_DataHandler&quot;&gt;&lt;/element&gt;
+  &lt;/schema&gt;
+ &lt;/wsdl:types&gt;
+  &lt;wsdl:message name=&quot;echoOneRequest&quot;&gt;
+      &lt;wsdl:part name=&quot;source&quot; type=&quot;xsd:anyType&quot;&gt;&lt;/wsdl:part&gt;
+   &lt;/wsdl:message&gt;
+   &lt;wsdl:message name=&quot;echoOneResponse&quot;&gt;
+      &lt;wsdl:part name=&quot;returnqname&quot; type=&quot;xsd:anyType&quot;&gt;&lt;/wsdl:part&gt;
+   &lt;/wsdl:message&gt;
+   &lt;wsdl:message name=&quot;echoTwoRequest&quot;&gt;
+      &lt;wsdl:part name=&quot;source1&quot; type=&quot;xsd:anyType&quot;&gt;&lt;/wsdl:part&gt;
+      &lt;wsdl:part name=&quot;source2&quot; type=&quot;xsd:anyType&quot;&gt;&lt;/wsdl:part&gt;
+   &lt;/wsdl:message&gt;
+   &lt;wsdl:message name=&quot;echoTwoResponse&quot;&gt;
+      &lt;wsdl:part name=&quot;returnqname&quot; type=&quot;xsd:anyType&quot;&gt;&lt;/wsdl:part&gt;
+   &lt;/wsdl:message&gt;
+   &lt;wsdl:message name=&quot;echoDirRequest&quot;&gt;
+      &lt;wsdl:part name=&quot;item&quot; type=&quot;impl:ArrayOf_tns1_DataHandler&quot;&gt;&lt;/wsdl:part&gt;
+   &lt;/wsdl:message&gt;
+   &lt;wsdl:message name=&quot;echoDirResponse&quot;&gt;
+      &lt;wsdl:part name=&quot;item&quot; type=&quot;impl:ArrayOf_tns1_DataHandler&quot;&gt;&lt;/wsdl:part&gt;
+   &lt;/wsdl:message&gt;
+  &lt;wsdl:message name=&quot;sayHelloRequest&quot;&gt;&lt;/wsdl:message&gt;
+   &lt;wsdl:message name=&quot;sayHelloResponse&quot;&gt;
+      &lt;wsdl:part name=&quot;sayHelloReturn&quot; type=&quot;xsd:anyType&quot;&gt;&lt;/wsdl:part&gt;
+   &lt;/wsdl:message&gt;
+
+
+   &lt;wsdl:portType name=&quot;EchoAttachmentsService&quot;&gt;
+      &lt;wsdl:operation name=&quot;echoOne&quot; parameterOrder=&quot;dh&quot;&gt;
+         &lt;wsdl:input message=&quot;impl:echoOneRequest&quot; name=&quot;echoOneRequest&quot;&gt;&lt;/wsdl:input&gt;
+         &lt;wsdl:output message=&quot;impl:echoOneResponse&quot; name=&quot;echoOneResponse&quot;&gt;&lt;/wsdl:output&gt;
+      &lt;/wsdl:operation&gt;
+      &lt;wsdl:operation name=&quot;echoTwo&quot; parameterOrder=&quot;dh&quot;&gt;
+         &lt;wsdl:input message=&quot;impl:echoTwoRequest&quot; name=&quot;echoTwoRequest&quot;&gt;&lt;/wsdl:input&gt;
+         &lt;wsdl:output message=&quot;impl:echoTwoResponse&quot; name=&quot;echoTwoResponse&quot;&gt;&lt;/wsdl:output&gt;
+      &lt;/wsdl:operation&gt;
+     &lt;wsdl:operation name=&quot;echoDir&quot; parameterOrder=&quot;attachments&quot;&gt;
+         &lt;wsdl:input message=&quot;impl:echoDirRequest&quot; name=&quot;echoDirRequest&quot;&gt;&lt;/wsdl:input&gt;
+         &lt;wsdl:output message=&quot;impl:echoDirResponse&quot; name=&quot;echoDirResponse&quot;&gt;&lt;/wsdl:output&gt;
+      &lt;/wsdl:operation&gt;
+      &lt;wsdl:operation name=&quot;sayHello&quot;&gt;
+         &lt;wsdl:input message=&quot;impl:sayHelloRequest&quot; name=&quot;sayHelloRequest&quot;&gt;&lt;/wsdl:input&gt;
+         &lt;wsdl:output message=&quot;impl:sayHelloResponse&quot; name=&quot;sayHelloResponse&quot;&gt;&lt;/wsdl:output&gt;
+      &lt;/wsdl:operation&gt;
+   &lt;/wsdl:portType&gt;
+
+   &lt;wsdl:binding name=&quot;EchoAttachmentsServiceSoapBinding1&quot; type=&quot;impl:EchoAttachmentsService&quot;&gt;
+      &lt;wsdlsoap:binding style=&quot;rpc&quot; transport=&quot;http://schemas.xmlsoap.org/soap/http&quot;&gt;&lt;/wsdlsoap:binding&gt;
+      &lt;wsdl:operation name=&quot;echoOne&quot;&gt;
+         &lt;wsdlsoap:operation soapAction=&quot;&quot;&gt;&lt;/wsdlsoap:operation&gt;
+         &lt;wsdl:input name=&quot;echoOneRequest&quot;&gt;
+            &lt;mime:multipartRelated&gt;
+
+
+                 &lt;mime:part&gt;
+
+
+                      &lt;wsdlsoap:body encodingStyle=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; namespace=&quot;urn:EchoAttachmentsService&quot; use=&quot;encoded&quot;&gt;&lt;/wsdlsoap:body&gt;
+
+
+                 &lt;/mime:part&gt;
+
+
+                 &lt;mime:part&gt;
+
+ 
+                       	&lt;mime:content part=&quot;source&quot; type=&quot;*/*&quot;&gt;&lt;/mime:content&gt;
+
+                     
+ 		 &lt;/mime:part&gt;
+
+                   
+	     &lt;/mime:multipartRelated&gt;
+
+
+         &lt;/wsdl:input&gt;
+         &lt;wsdl:output name=&quot;echoOneResponse&quot;&gt;
+            &lt;mime:multipartRelated&gt;
+
+
+                 &lt;mime:part&gt;
+
+
+                      &lt;wsdlsoap:body encodingStyle=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; namespace=&quot;urn:EchoAttachmentsService&quot; use=&quot;encoded&quot;&gt;&lt;/wsdlsoap:body&gt;
+
+
+                 &lt;/mime:part&gt;
+
+
+                 &lt;mime:part&gt;
+
+ 
+                       &lt;mime:content part=&quot;returnqname&quot; type=&quot;*/*&quot;&gt;&lt;/mime:content&gt;
+
+                     
+  		 &lt;/mime:part&gt;
+
+                   
+	     &lt;/mime:multipartRelated&gt;
+
+
+         &lt;/wsdl:output&gt;
+      &lt;/wsdl:operation&gt;
+      &lt;wsdl:operation name=&quot;sayHello&quot;&gt;
+         &lt;wsdlsoap:operation soapAction=&quot;&quot;&gt;&lt;/wsdlsoap:operation&gt;
+         &lt;wsdl:input name=&quot;sayHelloRequest&quot;&gt;&lt;/wsdl:input&gt;
+         &lt;wsdl:output name=&quot;sayHelloResponse&quot;&gt;&lt;/wsdl:output&gt;
+      &lt;/wsdl:operation&gt;
+   &lt;/wsdl:binding&gt;
+
+   &lt;wsdl:binding name=&quot;EchoAttachmentsServiceSoapBinding2&quot; type=&quot;impl:EchoAttachmentsService&quot;&gt;
+      &lt;wsdlsoap:binding style=&quot;rpc&quot; transport=&quot;http://schemas.xmlsoap.org/soap/http&quot;&gt;&lt;/wsdlsoap:binding&gt;
+      &lt;wsdl:operation name=&quot;echoTwo&quot;&gt;
+         &lt;wsdlsoap:operation soapAction=&quot;&quot;&gt;&lt;/wsdlsoap:operation&gt;
+         &lt;wsdl:input name=&quot;echoTwoRequest&quot;&gt;
+            &lt;mime:multipartRelated&gt;
+
+
+                 &lt;mime:part&gt;
+
+
+                      &lt;wsdlsoap:body encodingStyle=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; namespace=&quot;urn:EchoAttachmentsService&quot; use=&quot;encoded&quot;&gt;&lt;/wsdlsoap:body&gt;
+
+
+                 &lt;/mime:part&gt;
+
+
+                 &lt;mime:part&gt;
+
+ 
+                       	&lt;mime:content part=&quot;source1&quot; type=&quot;*/*&quot;&gt;&lt;/mime:content&gt;
+
+                     
+ 		 &lt;/mime:part&gt;
+
+                   
+                 &lt;mime:part&gt;
+
+ 
+                       	&lt;mime:content part=&quot;source2&quot; type=&quot;*/*&quot;&gt;&lt;/mime:content&gt;
+
+                     
+ 		 &lt;/mime:part&gt;
+
+                   
+	     &lt;/mime:multipartRelated&gt;
+
+
+         &lt;/wsdl:input&gt;
+         &lt;wsdl:output name=&quot;echoTwoResponse&quot;&gt;
+            &lt;mime:multipartRelated&gt;
+
+
+                 &lt;mime:part&gt;
+
+
+                      &lt;wsdlsoap:body encodingStyle=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; namespace=&quot;urn:EchoAttachmentsService&quot; use=&quot;encoded&quot;&gt;&lt;/wsdlsoap:body&gt;
+
+
+                 &lt;/mime:part&gt;
+
+
+                 &lt;mime:part&gt;
+
+ 
+                       &lt;mime:content part=&quot;returnqname&quot; type=&quot;*/*&quot;&gt;&lt;/mime:content&gt;
+
+                     
+  		 &lt;/mime:part&gt;
+
+                   
+	     &lt;/mime:multipartRelated&gt;
+
+
+         &lt;/wsdl:output&gt;
+      &lt;/wsdl:operation&gt;
+      &lt;wsdl:operation name=&quot;echoDir&quot;&gt;
+         &lt;wsdlsoap:operation soapAction=&quot;&quot;&gt;&lt;/wsdlsoap:operation&gt;
+         &lt;wsdl:input name=&quot;echoDirRequest&quot;&gt;
+            &lt;mime:multipartRelated&gt;
+
+
+                 &lt;mime:part&gt;
+
+
+                      &lt;wsdlsoap:body encodingStyle=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; namespace=&quot;urn:EchoAttachmentsService&quot; use=&quot;encoded&quot;&gt;&lt;/wsdlsoap:body&gt;
+
+
+                 &lt;/mime:part&gt;
+
+
+                 &lt;mime:part&gt;
+
+ 
+                       &lt;mime:content part=&quot;source&quot; type=&quot;*/*&quot;&gt;&lt;/mime:content&gt;
+
+                     
+		 &lt;/mime:part&gt;
+
+                   
+	     &lt;/mime:multipartRelated&gt;
+
+
+         &lt;/wsdl:input&gt;
+         &lt;wsdl:output name=&quot;echoDirResponse&quot;&gt;
+            &lt;mime:multipartRelated&gt;
+
+
+                 &lt;mime:part&gt;
+
+
+                      &lt;wsdlsoap:body encodingStyle=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; namespace=&quot;urn:EchoAttachmentsService&quot; use=&quot;encoded&quot;&gt;&lt;/wsdlsoap:body&gt;
+
+
+                 &lt;/mime:part&gt;
+
+
+                 &lt;mime:part&gt;
+
+ 
+                       &lt;mime:content part=&quot;echoDirReturn&quot; type=&quot;*/*&quot;&gt;&lt;/mime:content&gt;
+
+                     
+  		 &lt;/mime:part&gt;
+
+                   
+	     &lt;/mime:multipartRelated&gt;
+
+
+         &lt;/wsdl:output&gt;
+      &lt;/wsdl:operation&gt;
+   &lt;/wsdl:binding&gt;
+
+   &lt;wsdl:service name=&quot;EchoAttachmentsServiceService&quot;&gt;
+      &lt;wsdl:port binding=&quot;impl:EchoAttachmentsServiceSoapBinding2&quot; name=&quot;EchoAttachmentsService&quot;&gt;
+         &lt;wsdlsoap:address location=&quot;http://192.168.1.176:8080/axis/services/urn:EchoAttachmentsService&quot;&gt;&lt;/wsdlsoap:address&gt;
+      &lt;/wsdl:port&gt;
+      &lt;wsdl:port binding=&quot;impl:EchoAttachmentsServiceSoapBinding1&quot; name=&quot;EchoAttachmentsService&quot;&gt;
+         &lt;wsdlsoap:address location=&quot;http://192.168.1.176:8080/axis/services/urn:EchoAttachmentsService&quot;&gt;&lt;/wsdlsoap:address&gt;
+      &lt;/wsdl:port&gt;
+
+   &lt;/wsdl:service&gt;
+&lt;/wsdl:definitions&gt;</wsdlXml></PService></jaxbPublishedService>

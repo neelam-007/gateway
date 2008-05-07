@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><clusterProperty><oid>45088768</oid><version>7</version><name>pingServlet.mode</name><description>Set the permission mode of the Ping Servlet (OFF | REQUIRE_CREDS | OPEN)</description><value>REQUIRE_CREDS</value></clusterProperty>

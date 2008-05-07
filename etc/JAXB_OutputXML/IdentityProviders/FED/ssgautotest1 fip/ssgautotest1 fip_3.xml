@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><jaxbFederatedIdentityProviderConfig><fedProvider><oid>18546688</oid><version>7</version><name>ssgautotest1 fip</name><adminEnabled>false</adminEnabled><serializedProps>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt; 
+&lt;java version=&quot;1.6.0_03&quot; class=&quot;java.beans.XMLDecoder&quot;&gt; 
+ &lt;object class=&quot;java.util.HashMap&quot;&gt; 
+  &lt;void method=&quot;put&quot;&gt; 
+   &lt;string&gt;trustedCertOids&lt;/string&gt; 
+   &lt;array class=&quot;long&quot; length=&quot;2&quot;&gt; 
+    &lt;void index=&quot;0&quot;&gt; 
+     &lt;long&gt;70385666&lt;/long&gt; 
+    &lt;/void&gt; 
+    &lt;void index=&quot;1&quot;&gt; 
+     &lt;long&gt;70385667&lt;/long&gt; 
+    &lt;/void&gt; 
+   &lt;/array&gt; 
+  &lt;/void&gt; 
+  &lt;void method=&quot;put&quot;&gt; 
+   &lt;string&gt;x509Supported&lt;/string&gt; 
+   &lt;boolean&gt;true&lt;/boolean&gt; 
+  &lt;/void&gt; 
+  &lt;void method=&quot;put&quot;&gt; 
+   &lt;string&gt;samlSupported&lt;/string&gt; 
+   &lt;boolean&gt;true&lt;/boolean&gt; 
+  &lt;/void&gt; 
+ &lt;/object&gt; 
+&lt;/java&gt; 
+</serializedProps><typeVal>3</typeVal><samlSupported>true</samlSupported><trustedCertOids>70385666</trustedCertOids><trustedCertOids>70385667</trustedCertOids><x509Supported>true</x509Supported></fedProvider><trustedCertDns>CN=root.ssgautotest1.l7tech.com</trustedCertDns><trustedCertDns>CN=ssgautotest1.l7tech.com</trustedCertDns></jaxbFederatedIdentityProviderConfig>

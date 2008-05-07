@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><jaxbFederatedIdentityProviderConfig><fedProvider><oid>7733248</oid><version>0</version><name>canyon fip</name><adminEnabled>false</adminEnabled><serializedProps>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt; 
+&lt;java version=&quot;1.5.0_07&quot; class=&quot;java.beans.XMLDecoder&quot;&gt; 
+ &lt;object class=&quot;java.util.HashMap&quot;&gt; 
+  &lt;void method=&quot;put&quot;&gt; 
+   &lt;string&gt;samlSupported&lt;/string&gt; 
+   &lt;boolean&gt;true&lt;/boolean&gt; 
+  &lt;/void&gt; 
+  &lt;void method=&quot;put&quot;&gt; 
+   &lt;string&gt;trustedCertOids&lt;/string&gt; 
+   &lt;array class=&quot;long&quot; length=&quot;1&quot;&gt; 
+    &lt;void index=&quot;0&quot;&gt; 
+     &lt;long&gt;7700480&lt;/long&gt; 
+    &lt;/void&gt; 
+   &lt;/array&gt; 
+  &lt;/void&gt; 
+  &lt;void method=&quot;put&quot;&gt; 
+   &lt;string&gt;x509Supported&lt;/string&gt; 
+   &lt;boolean&gt;false&lt;/boolean&gt; 
+  &lt;/void&gt; 
+ &lt;/object&gt; 
+&lt;/java&gt; 
+</serializedProps><typeVal>3</typeVal><samlSupported>true</samlSupported><trustedCertOids>7700480</trustedCertOids><x509Supported>false</x509Supported></fedProvider><trustedCertDns>CN=canyon.l7tech.com</trustedCertDns></jaxbFederatedIdentityProviderConfig>

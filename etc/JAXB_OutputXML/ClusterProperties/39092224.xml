@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><clusterProperty><oid>39092224</oid><version>0</version><name>audit.detailThreshold</name><description>Minimum level required of an Audit Detail Message for it to be saved to the database (Level)</description><value>ALL</value></clusterProperty>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><schemaEntry><oid>24084482</oid><version>0</version><name>account2.xsd</name><schema>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;s:schema elementFormDefault=&quot;qualified&quot; targetNamespace=&quot;http://www.acme.com/schemas/account&quot; xmlns:rn=&quot;http://www.acme.com/schemas/RepName&quot; xmlns:s=&quot;http://www.w3.org/2001/XMLSchema&quot;&gt;
+
+&lt;s:import namespace=&quot;http://www.acme.com/schemas/RepName&quot; schemaLocation=&quot;repname.xsd&quot; /&gt;
+
+  &lt;s:element name=&quot;Account&quot;&gt;
+    &lt;s:complexType&gt;
+      &lt;s:sequence&gt;
+        &lt;s:element minOccurs=&quot;1&quot; maxOccurs=&quot;1&quot; name=&quot;CustomerId&quot; type=&quot;s:string&quot; /&gt;
+        &lt;s:element ref=&quot;rn:RepName&quot; /&gt;
+      &lt;/s:sequence&gt;
+    &lt;/s:complexType&gt;
+  &lt;/s:element&gt;
+&lt;/s:schema&gt;</schema><system>false</system><tns>http://www.acme.com/schemas/account</tns></schemaEntry>

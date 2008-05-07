@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><jaxbPublishedService><PService><oid>9830472</oid><version>5</version><name>GoogleSearchService</name><disabled>false</disabled><httpMethodNames>POST</httpMethodNames><laxResolution>false</laxResolution><policy><oid>57311525</oid><version>0</version><name>Policy for service #9830472, GoogleSearchService</name><soap>true</soap><type>PRIVATE_SERVICE</type><versionActive>true</versionActive><versionOrdinal>-1</versionOrdinal><xml>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+        &lt;wsse:SecurityToken xmlns:wsse=&quot;http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd&quot;&gt;
+            &lt;wsse:TokenType&gt;http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3&lt;/wsse:TokenType&gt;
+            &lt;L7p:Properties/&gt;
+        &lt;/wsse:SecurityToken&gt;
+        &lt;wsp:OneOrMore wsp:Usage=&quot;Required&quot;&gt;
+            &lt;L7p:SpecificUser&gt;
+                &lt;L7p:UserLogin stringValue=&quot;temp&quot;/&gt;
+                &lt;L7p:UserUid stringValue=&quot;9764866&quot;/&gt;
+                &lt;L7p:IdentityProviderOid longValue=&quot;-2&quot;/&gt;
+                &lt;L7p:UserName stringValue=&quot;temp&quot;/&gt;
+            &lt;/L7p:SpecificUser&gt;
+            &lt;L7p:SpecificUser&gt;
+                &lt;L7p:UserLogin stringValue=&quot;xmlsecurity&quot;/&gt;
+                &lt;L7p:UserUid stringValue=&quot;9207809&quot;/&gt;
+                &lt;L7p:IdentityProviderOid longValue=&quot;-2&quot;/&gt;
+                &lt;L7p:UserName stringValue=&quot;xmlsecurity&quot;/&gt;
+            &lt;/L7p:SpecificUser&gt;
+        &lt;/wsp:OneOrMore&gt;
+        &lt;L7p:HttpRoutingAssertion&gt;
+            &lt;L7p:ProtectedServiceUrl stringValue=&quot;http://api.google.com/search/beta2&quot;/&gt;
+        &lt;/L7p:HttpRoutingAssertion&gt;
+        &lt;L7p:ResponseWssIntegrity&gt;
+            &lt;L7p:XpathExpression xpathExpressionValue=&quot;included&quot;&gt;
+                &lt;L7p:Expression stringValue=&quot;/soapenv:Envelope/soapenv:Body/ns1:doSpellingSuggestionResponse/return&quot;/&gt;
+                &lt;L7p:Namespaces mapValue=&quot;included&quot;&gt;
+                    &lt;L7p:entry&gt;
+                        &lt;L7p:key stringValue=&quot;soapenv&quot;/&gt;
+                        &lt;L7p:value stringValue=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;L7p:entry&gt;
+                        &lt;L7p:key stringValue=&quot;xsi&quot;/&gt;
+                        &lt;L7p:value stringValue=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;L7p:entry&gt;
+                        &lt;L7p:key stringValue=&quot;ns1&quot;/&gt;
+                        &lt;L7p:value stringValue=&quot;urn:GoogleSearch&quot;/&gt;
+                    &lt;/L7p:entry&gt;
+                    &lt;L7p:entry&gt;
+                        &lt;L7p:key stringValue=&quot;xsd&quot;/&gt;
+                        &lt;L7p:value stringValue=&quot;http://www.w3.org/2001/XMLSchema&quot;/&gt;
+                    &lt;/L7p:entry&gt;
+                &lt;/L7p:Namespaces&gt;
+            &lt;/L7p:XpathExpression&gt;
+        &lt;/L7p:ResponseWssIntegrity&gt;
+    &lt;/wsp:All&gt;
+&lt;/wsp:Policy&gt;
+</xml></policy><routingUri>/xmlSecurity/signResponseBlankElement</routingUri><soap>true</soap><wsdlUrl>http://api.google.com/GoogleSearch.wsdl</wsdlUrl><wsdlXml>&lt;!-- WSDL description of the Google Web APIs.
+     The Google Web APIs are in beta release. All interfaces are subject to
+     change as we refine and extend our APIs. Please see the terms of use
+     for more information. --&gt;
+&lt;!-- Revision 2002-08-16 --&gt;
+&lt;definitions xmlns=&quot;http://schemas.xmlsoap.org/wsdl/&quot; xmlns:soap=&quot;http://schemas.xmlsoap.org/wsdl/soap/&quot; xmlns:soapenc=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; xmlns:typens=&quot;urn:GoogleSearch&quot; xmlns:wsdl=&quot;http://schemas.xmlsoap.org/wsdl/&quot; xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; name=&quot;GoogleSearch&quot; targetNamespace=&quot;urn:GoogleSearch&quot;&gt;
+
+  &lt;!-- Types for search - result elements, directory categories --&gt;
+
+  &lt;types&gt;
+    &lt;xsd:schema xmlns=&quot;http://www.w3.org/2001/XMLSchema&quot; targetNamespace=&quot;urn:GoogleSearch&quot;&gt;
+            
+      &lt;xsd:complexType name=&quot;GoogleSearchResult&quot;&gt;
+        &lt;xsd:all&gt;
+          &lt;xsd:element name=&quot;documentFiltering&quot; type=&quot;xsd:boolean&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;searchComments&quot; type=&quot;xsd:string&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;estimatedTotalResultsCount&quot; type=&quot;xsd:int&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;estimateIsExact&quot; type=&quot;xsd:boolean&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;resultElements&quot; type=&quot;typens:ResultElementArray&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;searchQuery&quot; type=&quot;xsd:string&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;startIndex&quot; type=&quot;xsd:int&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;endIndex&quot; type=&quot;xsd:int&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;searchTips&quot; type=&quot;xsd:string&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;directoryCategories&quot; type=&quot;typens:DirectoryCategoryArray&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;searchTime&quot; type=&quot;xsd:double&quot;&gt;&lt;/xsd:element&gt;
+        &lt;/xsd:all&gt;
+      &lt;/xsd:complexType&gt;
+
+      &lt;xsd:complexType name=&quot;ResultElement&quot;&gt;
+        &lt;xsd:all&gt;
+          &lt;xsd:element name=&quot;summary&quot; type=&quot;xsd:string&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;URL&quot; type=&quot;xsd:string&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;snippet&quot; type=&quot;xsd:string&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;title&quot; type=&quot;xsd:string&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;cachedSize&quot; type=&quot;xsd:string&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;relatedInformationPresent&quot; type=&quot;xsd:boolean&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;hostName&quot; type=&quot;xsd:string&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;directoryCategory&quot; type=&quot;typens:DirectoryCategory&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;directoryTitle&quot; type=&quot;xsd:string&quot;&gt;&lt;/xsd:element&gt;
+        &lt;/xsd:all&gt;
+      &lt;/xsd:complexType&gt;
+  
+      &lt;xsd:complexType name=&quot;ResultElementArray&quot;&gt;
+        &lt;xsd:complexContent&gt;
+          &lt;xsd:restriction base=&quot;soapenc:Array&quot;&gt;
+             &lt;xsd:attribute ref=&quot;soapenc:arrayType&quot; wsdl:arrayType=&quot;typens:ResultElement[]&quot;&gt;&lt;/xsd:attribute&gt;
+          &lt;/xsd:restriction&gt;
+        &lt;/xsd:complexContent&gt;
+      &lt;/xsd:complexType&gt;
+
+      &lt;xsd:complexType name=&quot;DirectoryCategoryArray&quot;&gt;
+        &lt;xsd:complexContent&gt;
+          &lt;xsd:restriction base=&quot;soapenc:Array&quot;&gt;
+             &lt;xsd:attribute ref=&quot;soapenc:arrayType&quot; wsdl:arrayType=&quot;typens:DirectoryCategory[]&quot;&gt;&lt;/xsd:attribute&gt;
+          &lt;/xsd:restriction&gt;
+        &lt;/xsd:complexContent&gt;
+      &lt;/xsd:complexType&gt;
+
+      &lt;xsd:complexType name=&quot;DirectoryCategory&quot;&gt;
+        &lt;xsd:all&gt;
+          &lt;xsd:element name=&quot;fullViewableName&quot; type=&quot;xsd:string&quot;&gt;&lt;/xsd:element&gt;
+          &lt;xsd:element name=&quot;specialEncoding&quot; type=&quot;xsd:string&quot;&gt;&lt;/xsd:element&gt;
+        &lt;/xsd:all&gt;
+      &lt;/xsd:complexType&gt;
+
+    &lt;/xsd:schema&gt;
+  &lt;/types&gt; 
+
+  &lt;!-- Messages for Google Web APIs - cached page, search, spelling. --&gt;
+             
+  &lt;message name=&quot;doGetCachedPage&quot;&gt;
+    &lt;part name=&quot;key&quot; type=&quot;xsd:string&quot;&gt;&lt;/part&gt;
+    &lt;part name=&quot;url&quot; type=&quot;xsd:string&quot;&gt;&lt;/part&gt;
+  &lt;/message&gt;
+
+  &lt;message name=&quot;doGetCachedPageResponse&quot;&gt;
+    &lt;part name=&quot;return&quot; type=&quot;xsd:base64Binary&quot;&gt;&lt;/part&gt;
+  &lt;/message&gt;
+
+  &lt;message name=&quot;doSpellingSuggestion&quot;&gt;
+    &lt;part name=&quot;key&quot; type=&quot;xsd:string&quot;&gt;&lt;/part&gt;
+    &lt;part name=&quot;phrase&quot; type=&quot;xsd:string&quot;&gt;&lt;/part&gt;
+  &lt;/message&gt;
+
+  &lt;message name=&quot;doSpellingSuggestionResponse&quot;&gt;
+    &lt;part name=&quot;return&quot; type=&quot;xsd:string&quot;&gt;&lt;/part&gt;
+  &lt;/message&gt;
+
+  &lt;!-- note, ie and oe are ignored by server; all traffic is UTF-8. --&gt;
+
+  &lt;message name=&quot;doGoogleSearch&quot;&gt;
+    &lt;part name=&quot;key&quot; type=&quot;xsd:string&quot;&gt;&lt;/part&gt;
+    &lt;part name=&quot;q&quot; type=&quot;xsd:string&quot;&gt;&lt;/part&gt;
+    &lt;part name=&quot;start&quot; type=&quot;xsd:int&quot;&gt;&lt;/part&gt;
+    &lt;part name=&quot;maxResults&quot; type=&quot;xsd:int&quot;&gt;&lt;/part&gt;
+    &lt;part name=&quot;filter&quot; type=&quot;xsd:boolean&quot;&gt;&lt;/part&gt;
+    &lt;part name=&quot;restrict&quot; type=&quot;xsd:string&quot;&gt;&lt;/part&gt;
+    &lt;part name=&quot;safeSearch&quot; type=&quot;xsd:boolean&quot;&gt;&lt;/part&gt;
+    &lt;part name=&quot;lr&quot; type=&quot;xsd:string&quot;&gt;&lt;/part&gt;
+    &lt;part name=&quot;ie&quot; type=&quot;xsd:string&quot;&gt;&lt;/part&gt;
+    &lt;part name=&quot;oe&quot; type=&quot;xsd:string&quot;&gt;&lt;/part&gt;
+  &lt;/message&gt;
+
+  &lt;message name=&quot;doGoogleSearchResponse&quot;&gt;
+    &lt;part name=&quot;return&quot; type=&quot;typens:GoogleSearchResult&quot;&gt;&lt;/part&gt;           
+  &lt;/message&gt;
+
+  &lt;!-- Port for Google Web APIs, &quot;GoogleSearch&quot; --&gt;
+
+  &lt;portType name=&quot;GoogleSearchPort&quot;&gt;
+
+    &lt;operation name=&quot;doGetCachedPage&quot;&gt;
+      &lt;input message=&quot;typens:doGetCachedPage&quot;&gt;&lt;/input&gt;
+      &lt;output message=&quot;typens:doGetCachedPageResponse&quot;&gt;&lt;/output&gt;
+    &lt;/operation&gt;
+
+    &lt;operation name=&quot;doSpellingSuggestion&quot;&gt;
+      &lt;input message=&quot;typens:doSpellingSuggestion&quot;&gt;&lt;/input&gt;
+      &lt;output message=&quot;typens:doSpellingSuggestionResponse&quot;&gt;&lt;/output&gt;
+    &lt;/operation&gt;
+
+    &lt;operation name=&quot;doGoogleSearch&quot;&gt;
+      &lt;input message=&quot;typens:doGoogleSearch&quot;&gt;&lt;/input&gt;
+      &lt;output message=&quot;typens:doGoogleSearchResponse&quot;&gt;&lt;/output&gt;
+    &lt;/operation&gt;
+
+  &lt;/portType&gt;
+
+
+  &lt;!-- Binding for Google Web APIs - RPC, SOAP over HTTP --&gt;
+
+  &lt;binding name=&quot;GoogleSearchBinding&quot; type=&quot;typens:GoogleSearchPort&quot;&gt;
+    &lt;soap:binding style=&quot;rpc&quot; transport=&quot;http://schemas.xmlsoap.org/soap/http&quot;&gt;&lt;/soap:binding&gt;
+
+    &lt;operation name=&quot;doGetCachedPage&quot;&gt;
+      &lt;soap:operation soapAction=&quot;urn:GoogleSearchAction&quot;&gt;&lt;/soap:operation&gt;
+      &lt;input&gt;
+        &lt;soap:body encodingStyle=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; namespace=&quot;urn:GoogleSearch&quot; use=&quot;encoded&quot;&gt;&lt;/soap:body&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;soap:body encodingStyle=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; namespace=&quot;urn:GoogleSearch&quot; use=&quot;encoded&quot;&gt;&lt;/soap:body&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+
+    &lt;operation name=&quot;doSpellingSuggestion&quot;&gt;
+      &lt;soap:operation soapAction=&quot;urn:GoogleSearchAction&quot;&gt;&lt;/soap:operation&gt;
+      &lt;input&gt;
+        &lt;soap:body encodingStyle=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; namespace=&quot;urn:GoogleSearch&quot; use=&quot;encoded&quot;&gt;&lt;/soap:body&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;soap:body encodingStyle=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; namespace=&quot;urn:GoogleSearch&quot; use=&quot;encoded&quot;&gt;&lt;/soap:body&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+
+    &lt;operation name=&quot;doGoogleSearch&quot;&gt;
+      &lt;soap:operation soapAction=&quot;urn:GoogleSearchAction&quot;&gt;&lt;/soap:operation&gt;
+      &lt;input&gt;
+        &lt;soap:body encodingStyle=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; namespace=&quot;urn:GoogleSearch&quot; use=&quot;encoded&quot;&gt;&lt;/soap:body&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;soap:body encodingStyle=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; namespace=&quot;urn:GoogleSearch&quot; use=&quot;encoded&quot;&gt;&lt;/soap:body&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+  &lt;/binding&gt;
+
+  &lt;!-- Endpoint for Google Web APIs --&gt;
+  &lt;service name=&quot;GoogleSearchService&quot;&gt;
+    &lt;port binding=&quot;typens:GoogleSearchBinding&quot; name=&quot;GoogleSearchPort&quot;&gt;
+      &lt;soap:address location=&quot;http://api.google.com/search/beta2&quot;&gt;&lt;/soap:address&gt;
+    &lt;/port&gt;
+  &lt;/service&gt;
+
+&lt;/definitions&gt;</wsdlXml></PService></jaxbPublishedService>

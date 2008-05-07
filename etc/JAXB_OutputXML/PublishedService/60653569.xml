@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><jaxbPublishedService><PService><oid>60653569</oid><version>1</version><name>Multi-Valued Context Variables</name><disabled>false</disabled><httpMethodNames>POST,GET,DELETE,PUT</httpMethodNames><laxResolution>false</laxResolution><policy><oid>60686337</oid><version>2</version><name>Policy for service #60653569, Multi-Valued Context Variables</name><soap>false</soap><type>PRIVATE_SERVICE</type><versionActive>true</versionActive><versionOrdinal>3</versionOrdinal><xml>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+        &lt;L7p:ComparisonAssertion&gt;
+            &lt;L7p:Expression1 stringValue=&quot;${request.http.headerValues.repeatHeader}&quot;/&gt;
+            &lt;L7p:Expression2 stringValue=&quot;value2&quot;/&gt;
+            &lt;L7p:Operator operator=&quot;CONTAINS&quot;/&gt;
+            &lt;L7p:OwnerPolicyOid boxedLongValue=&quot;60686337&quot;/&gt;
+            &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
+                &lt;L7p:item binary=&quot;included&quot;&gt;
+                    &lt;L7p:Operator operator=&quot;CONTAINS&quot;/&gt;
+                    &lt;L7p:RightValue stringValue=&quot;value2&quot;/&gt;
+                &lt;/L7p:item&gt;
+            &lt;/L7p:Predicates&gt;
+        &lt;/L7p:ComparisonAssertion&gt;
+        &lt;L7p:HardcodedResponse&gt;
+            &lt;L7p:Base64ResponseBody stringValue=&quot;PHN1Y2Nlc3M+U1VDQ0VTUyE8L3N1Y2Nlc3M+&quot;/&gt;
+            &lt;L7p:OwnerPolicyOid boxedLongValue=&quot;60686337&quot;/&gt;
+        &lt;/L7p:HardcodedResponse&gt;
+    &lt;/wsp:All&gt;
+&lt;/wsp:Policy&gt;
+</xml></policy><routingUri>/misc/multiValuedContextVars/comparisonFail</routingUri><soap>false</soap><wsdlUrl></wsdlUrl></PService></jaxbPublishedService>

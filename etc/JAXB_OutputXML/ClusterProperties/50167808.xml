@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><clusterProperty><oid>50167808</oid><version>0</version><name>audit.messageThreshold</name><description>Minimum level required of a Message Audit Record for it to be saved to the database (Level)</description><value>FINEST</value></clusterProperty>

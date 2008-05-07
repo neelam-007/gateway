@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><jmsConnection><oid>50757633</oid><version>1</version><name>sslssgautotestQueue1.in</name><initialContextFactoryClassname>com.tibco.tibjms.naming.TibjmsInitialContextFactory</initialContextFactoryClassname><jndiUrl>tibjmsnaming://qatibcomqssl:7243</jndiUrl><password>password</password><properties>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE properties SYSTEM &quot;http://java.sun.com/dtd/properties.dtd&quot;&gt;
+&lt;properties&gt;
+&lt;entry key=&quot;com.l7tech.server.jms.prop.customizer.class&quot;&gt;com.l7tech.server.transport.jms.prov.TibcoConnectionFactoryCustomizer&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.ssl.enable_verify_host&quot;&gt;com.l7tech.server.jms.prop.boolean.true&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.ssl.enable_verify_hostname&quot;&gt;com.l7tech.server.jms.prop.boolean.false&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.naming.ssl_identity&quot;&gt;com.l7tech.server.jms.prop.keystore	0	SSL&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.ssl.identity&quot;&gt;com.l7tech.server.jms.prop.keystore.bytes	0	SSL&lt;/entry&gt;
+&lt;entry key=&quot;java.naming.security.credentials&quot;&gt;password&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.ssl.trusted_certs&quot;&gt;com.l7tech.server.jms.prop.trustedcert.listx509&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.naming.ssl_trusted_certs&quot;&gt;com.l7tech.server.jms.prop.trustedcert.listx509&lt;/entry&gt;
+&lt;entry key=&quot;com.l7tech.server.jms.prop.jndi.ssgKeystoreId&quot;&gt;0&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.naming.ssl_enable_verify_hostname&quot;&gt;com.l7tech.server.jms.prop.boolean.false&lt;/entry&gt;
+&lt;entry key=&quot;com.l7tech.server.jms.prop.queue.ssgKeyAlias&quot;&gt;SSL&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.naming.security_protocol&quot;&gt;ssl&lt;/entry&gt;
+&lt;entry key=&quot;java.naming.security.principal&quot;&gt;sslssgautotest&lt;/entry&gt;
+&lt;entry key=&quot;com.l7tech.server.jms.prop.queue.ssgKeystoreId&quot;&gt;0&lt;/entry&gt;
+&lt;entry key=&quot;com.l7tech.server.jms.prop.jndi.ssgKeyAlias&quot;&gt;SSL&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.naming.ssl_password&quot;&gt;com.l7tech.server.jms.prop.keystore.password	0	SSL&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.ssl.password&quot;&gt;com.l7tech.server.jms.prop.keystore.password	0	SSL&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.ssl.auth_only&quot;&gt;com.l7tech.server.jms.prop.boolean.false&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.naming.ssl_auth_only&quot;&gt;com.l7tech.server.jms.prop.boolean.false&lt;/entry&gt;
+&lt;entry key=&quot;com.tibco.tibjms.naming.ssl_enable_verify_host&quot;&gt;com.l7tech.server.jms.prop.boolean.true&lt;/entry&gt;
+&lt;/properties&gt;
+</properties><queueFactoryUrl>sslssgautotestQueueConnectionFactory</queueFactoryUrl><username>sslssgautotest</username></jmsConnection>

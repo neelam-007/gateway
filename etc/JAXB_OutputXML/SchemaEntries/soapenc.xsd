@@ -1,0 +1,587 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><schemaEntry><oid>5668865</oid><version>0</version><name>soapenc.xsd</name><schema>&lt;?xml version='1.0' encoding='UTF-8' ?&gt;
+
+&lt;!-- Schema for the SOAP/1.1 encoding
+
+Portions © 2001 DevelopMentor. 
+© 2001 W3C (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University). All Rights Reserved.  
+ 
+This document is governed by the W3C Software License [1] as described in the FAQ [2].
+[1] http://www.w3.org/Consortium/Legal/copyright-software-19980720
+[2] http://www.w3.org/Consortium/Legal/IPR-FAQ-20000620.html#DTD 
+By obtaining, using and/or copying this work, you (the licensee) agree that you have read, understood, and will comply with the following terms and conditions:
+
+Permission to use, copy, modify, and distribute this software and its documentation, with or without modification,  for any purpose and without fee or royalty is hereby granted, provided that you include the following on ALL copies of the software and documentation or portions thereof, including modifications, that you make:
+
+1.  The full text of this NOTICE in a location viewable to users of the redistributed or derivative work. 
+
+2.  Any pre-existing intellectual property disclaimers, notices, or terms and conditions. If none exist, a short notice of the following form (hypertext is preferred, text is permitted) should be used within the body of any redistributed or derivative code: &quot;Copyright © 2001 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University). All Rights Reserved. http://www.w3.org/Consortium/Legal/&quot; 
+
+3.  Notice of any changes or modifications to the W3C files, including the date changes were made. (We recommend you provide URIs to the location from which the code is derived.)   
+
+Original W3C files; http://www.w3.org/2001/06/soap-encoding
+Changes made: 
+     - reverted namespace to http://schemas.xmlsoap.org/soap/encoding/
+     - reverted root to only allow 0 and 1 as lexical values
+	 - removed default value from root attribute declaration
+
+THIS SOFTWARE AND DOCUMENTATION IS PROVIDED &quot;AS IS,&quot; AND COPYRIGHT HOLDERS MAKE NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO, WARRANTIES OF MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF THE SOFTWARE OR DOCUMENTATION WILL NOT INFRINGE ANY THIRD PARTY PATENTS, COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS.
+
+COPYRIGHT HOLDERS WILL NOT BE LIABLE FOR ANY DIRECT, INDIRECT, SPECIAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF ANY USE OF THE SOFTWARE OR DOCUMENTATION.
+
+The name and trademarks of copyright holders may NOT be used in advertising or publicity pertaining to the software without specific, written prior permission. Title to copyright in this software and any associated documentation will at all times remain with copyright holders.
+
+--&gt;
+&lt;xs:schema xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot;
+           xmlns:tns=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot;
+           targetNamespace=&quot;http://schemas.xmlsoap.org/soap/encoding/&quot; &gt;
+        
+ &lt;xs:attribute name=&quot;root&quot; &gt;
+   &lt;xs:annotation&gt;
+     &lt;xs:documentation&gt;
+	   'root' can be used to distinguish serialization roots from other
+       elements that are present in a serialization but are not roots of
+       a serialized value graph 
+	 &lt;/xs:documentation&gt;
+   &lt;/xs:annotation&gt;
+   &lt;xs:simpleType&gt;
+
+     &lt;xs:restriction base='xs:boolean'&gt;
+	   &lt;xs:pattern value='0|1' /&gt;
+	 &lt;/xs:restriction&gt;
+   &lt;/xs:simpleType&gt;
+ &lt;/xs:attribute&gt;
+
+  &lt;xs:attributeGroup name=&quot;commonAttributes&quot; &gt;
+    &lt;xs:annotation&gt;
+	  &lt;xs:documentation&gt;
+
+	    Attributes common to all elements that function as accessors or 
+        represent independent (multi-ref) values.  The href attribute is
+        intended to be used in a manner like CONREF.  That is, the element
+        content should be empty iff the href attribute appears
+	  &lt;/xs:documentation&gt;
+	&lt;/xs:annotation&gt;
+    &lt;xs:attribute name=&quot;id&quot; type=&quot;xs:ID&quot; /&gt;
+    &lt;xs:attribute name=&quot;href&quot; type=&quot;xs:anyURI&quot; /&gt;
+    &lt;xs:anyAttribute namespace=&quot;##other&quot; processContents=&quot;lax&quot; /&gt;
+  &lt;/xs:attributeGroup&gt;
+
+  &lt;!-- Global Attributes.  The following attributes are intended to be usable via qualified attribute names on any complex type referencing them. --&gt;
+       
+  &lt;!-- Array attributes. Needed to give the type and dimensions of an array's contents, and the offset for partially-transmitted arrays. --&gt;
+
+   
+  &lt;xs:simpleType name=&quot;arrayCoordinate&quot; &gt;
+    &lt;xs:restriction base=&quot;xs:string&quot; /&gt;
+  &lt;/xs:simpleType&gt;
+          
+  &lt;xs:attribute name=&quot;arrayType&quot; type=&quot;xs:string&quot; /&gt;
+  &lt;xs:attribute name=&quot;offset&quot; type=&quot;tns:arrayCoordinate&quot; /&gt;
+  
+  &lt;xs:attributeGroup name=&quot;arrayAttributes&quot; &gt;
+    &lt;xs:attribute ref=&quot;tns:arrayType&quot; /&gt;
+    &lt;xs:attribute ref=&quot;tns:offset&quot; /&gt;
+  &lt;/xs:attributeGroup&gt;    
+  
+  &lt;xs:attribute name=&quot;position&quot; type=&quot;tns:arrayCoordinate&quot; /&gt; 
+  
+  &lt;xs:attributeGroup name=&quot;arrayMemberAttributes&quot; &gt;
+
+    &lt;xs:attribute ref=&quot;tns:position&quot; /&gt;
+  &lt;/xs:attributeGroup&gt;    
+
+  &lt;xs:group name=&quot;Array&quot; &gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:any namespace=&quot;##any&quot; minOccurs=&quot;0&quot; maxOccurs=&quot;unbounded&quot; processContents=&quot;lax&quot; /&gt;
+	&lt;/xs:sequence&gt;
+  &lt;/xs:group&gt;
+
+  &lt;xs:element name=&quot;Array&quot; type=&quot;tns:Array&quot; /&gt;
+  &lt;xs:complexType name=&quot;Array&quot; &gt;
+
+    &lt;xs:annotation&gt;
+	  &lt;xs:documentation&gt;
+	   'Array' is a complex type for accessors identified by position 
+	  &lt;/xs:documentation&gt;
+	&lt;/xs:annotation&gt;
+    &lt;xs:group ref=&quot;tns:Array&quot; minOccurs=&quot;0&quot; /&gt;
+    &lt;xs:attributeGroup ref=&quot;tns:arrayAttributes&quot; /&gt;
+    &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+  &lt;/xs:complexType&gt; 
+
+  &lt;!-- 'Struct' is a complex type for accessors identified by name. 
+       Constraint: No element may be have the same name as any other,
+       nor may any element have a maxOccurs &gt; 1. --&gt;
+
+   
+  &lt;xs:element name=&quot;Struct&quot; type=&quot;tns:Struct&quot; /&gt;
+
+  &lt;xs:group name=&quot;Struct&quot; &gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:any namespace=&quot;##any&quot; minOccurs=&quot;0&quot; maxOccurs=&quot;unbounded&quot; processContents=&quot;lax&quot; /&gt;
+	&lt;/xs:sequence&gt;
+  &lt;/xs:group&gt;
+
+  &lt;xs:complexType name=&quot;Struct&quot; &gt;
+    &lt;xs:group ref=&quot;tns:Struct&quot; minOccurs=&quot;0&quot; /&gt;
+
+    &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot;/&gt;
+  &lt;/xs:complexType&gt; 
+
+  &lt;!-- 'Base64' can be used to serialize binary data using base64 encoding
+       as defined in RFC2045 but without the MIME line length limitation. --&gt;
+
+  &lt;xs:simpleType name=&quot;base64&quot; &gt;
+    &lt;xs:restriction base=&quot;xs:base64Binary&quot; /&gt;
+  &lt;/xs:simpleType&gt;
+
+ &lt;!-- Element declarations corresponding to each of the simple types in the 
+      XML Schemas Specification. --&gt;
+
+  &lt;xs:element name=&quot;duration&quot; type=&quot;tns:duration&quot; /&gt;
+
+  &lt;xs:complexType name=&quot;duration&quot; &gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:duration&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;dateTime&quot; type=&quot;tns:dateTime&quot; /&gt;
+
+  &lt;xs:complexType name=&quot;dateTime&quot; &gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:dateTime&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+
+
+  &lt;xs:element name=&quot;NOTATION&quot; type=&quot;tns:NOTATION&quot; /&gt;
+  &lt;xs:complexType name=&quot;NOTATION&quot; &gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:QName&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+  
+
+  &lt;xs:element name=&quot;time&quot; type=&quot;tns:time&quot; /&gt;
+
+  &lt;xs:complexType name=&quot;time&quot; &gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:time&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;date&quot; type=&quot;tns:date&quot; /&gt;
+
+  &lt;xs:complexType name=&quot;date&quot; &gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:date&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;gYearMonth&quot; type=&quot;tns:gYearMonth&quot; /&gt;
+
+  &lt;xs:complexType name=&quot;gYearMonth&quot; &gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:gYearMonth&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;gYear&quot; type=&quot;tns:gYear&quot; /&gt;
+
+  &lt;xs:complexType name=&quot;gYear&quot; &gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:gYear&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;gMonthDay&quot; type=&quot;tns:gMonthDay&quot; /&gt;
+
+  &lt;xs:complexType name=&quot;gMonthDay&quot; &gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:gMonthDay&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;gDay&quot; type=&quot;tns:gDay&quot; /&gt;
+
+  &lt;xs:complexType name=&quot;gDay&quot; &gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:gDay&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;gMonth&quot; type=&quot;tns:gMonth&quot; /&gt;
+
+  &lt;xs:complexType name=&quot;gMonth&quot; &gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:gMonth&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+  
+  &lt;xs:element name=&quot;boolean&quot; type=&quot;tns:boolean&quot; /&gt;
+  &lt;xs:complexType name=&quot;boolean&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:boolean&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;base64Binary&quot; type=&quot;tns:base64Binary&quot; /&gt;
+  &lt;xs:complexType name=&quot;base64Binary&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:base64Binary&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;hexBinary&quot; type=&quot;tns:hexBinary&quot; /&gt;
+  &lt;xs:complexType name=&quot;hexBinary&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+     &lt;xs:extension base=&quot;xs:hexBinary&quot; &gt;
+       &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+     &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;float&quot; type=&quot;tns:float&quot; /&gt;
+  &lt;xs:complexType name=&quot;float&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:float&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;double&quot; type=&quot;tns:double&quot; /&gt;
+  &lt;xs:complexType name=&quot;double&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:double&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;anyURI&quot; type=&quot;tns:anyURI&quot; /&gt;
+  &lt;xs:complexType name=&quot;anyURI&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:anyURI&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;QName&quot; type=&quot;tns:QName&quot; /&gt;
+  &lt;xs:complexType name=&quot;QName&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:QName&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  
+  &lt;xs:element name=&quot;string&quot; type=&quot;tns:string&quot; /&gt;
+  &lt;xs:complexType name=&quot;string&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:string&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;normalizedString&quot; type=&quot;tns:normalizedString&quot; /&gt;
+  &lt;xs:complexType name=&quot;normalizedString&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:normalizedString&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;token&quot; type=&quot;tns:token&quot; /&gt;
+  &lt;xs:complexType name=&quot;token&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:token&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;language&quot; type=&quot;tns:language&quot; /&gt;
+  &lt;xs:complexType name=&quot;language&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:language&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;Name&quot; type=&quot;tns:Name&quot; /&gt;
+  &lt;xs:complexType name=&quot;Name&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:Name&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;NMTOKEN&quot; type=&quot;tns:NMTOKEN&quot; /&gt;
+  &lt;xs:complexType name=&quot;NMTOKEN&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:NMTOKEN&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;NCName&quot; type=&quot;tns:NCName&quot; /&gt;
+  &lt;xs:complexType name=&quot;NCName&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:NCName&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;NMTOKENS&quot; type=&quot;tns:NMTOKENS&quot; /&gt;
+  &lt;xs:complexType name=&quot;NMTOKENS&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:NMTOKENS&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;ID&quot; type=&quot;tns:ID&quot; /&gt;
+  &lt;xs:complexType name=&quot;ID&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:ID&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;IDREF&quot; type=&quot;tns:IDREF&quot; /&gt;
+  &lt;xs:complexType name=&quot;IDREF&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:IDREF&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;ENTITY&quot; type=&quot;tns:ENTITY&quot; /&gt;
+  &lt;xs:complexType name=&quot;ENTITY&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:ENTITY&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;IDREFS&quot; type=&quot;tns:IDREFS&quot; /&gt;
+  &lt;xs:complexType name=&quot;IDREFS&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:IDREFS&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;ENTITIES&quot; type=&quot;tns:ENTITIES&quot; /&gt;
+  &lt;xs:complexType name=&quot;ENTITIES&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:ENTITIES&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;decimal&quot; type=&quot;tns:decimal&quot; /&gt;
+  &lt;xs:complexType name=&quot;decimal&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:decimal&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;integer&quot; type=&quot;tns:integer&quot; /&gt;
+  &lt;xs:complexType name=&quot;integer&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:integer&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;nonPositiveInteger&quot; type=&quot;tns:nonPositiveInteger&quot; /&gt;
+  &lt;xs:complexType name=&quot;nonPositiveInteger&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:nonPositiveInteger&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;negativeInteger&quot; type=&quot;tns:negativeInteger&quot; /&gt;
+  &lt;xs:complexType name=&quot;negativeInteger&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:negativeInteger&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;long&quot; type=&quot;tns:long&quot; /&gt;
+  &lt;xs:complexType name=&quot;long&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:long&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;int&quot; type=&quot;tns:int&quot; /&gt;
+  &lt;xs:complexType name=&quot;int&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:int&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;short&quot; type=&quot;tns:short&quot; /&gt;
+  &lt;xs:complexType name=&quot;short&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:short&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;byte&quot; type=&quot;tns:byte&quot; /&gt;
+  &lt;xs:complexType name=&quot;byte&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:byte&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;nonNegativeInteger&quot; type=&quot;tns:nonNegativeInteger&quot; /&gt;
+  &lt;xs:complexType name=&quot;nonNegativeInteger&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:nonNegativeInteger&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;unsignedLong&quot; type=&quot;tns:unsignedLong&quot; /&gt;
+  &lt;xs:complexType name=&quot;unsignedLong&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:unsignedLong&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;unsignedInt&quot; type=&quot;tns:unsignedInt&quot; /&gt;
+  &lt;xs:complexType name=&quot;unsignedInt&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:unsignedInt&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;unsignedShort&quot; type=&quot;tns:unsignedShort&quot; /&gt;
+  &lt;xs:complexType name=&quot;unsignedShort&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:unsignedShort&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;unsignedByte&quot; type=&quot;tns:unsignedByte&quot; /&gt;
+  &lt;xs:complexType name=&quot;unsignedByte&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:unsignedByte&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;positiveInteger&quot; type=&quot;tns:positiveInteger&quot; /&gt;
+  &lt;xs:complexType name=&quot;positiveInteger&quot; &gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base=&quot;xs:positiveInteger&quot; &gt;
+        &lt;xs:attributeGroup ref=&quot;tns:commonAttributes&quot; /&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name=&quot;anyType&quot; /&gt;
+&lt;/xs:schema&gt;
+
+</schema><system>false</system><tns>http://schemas.xmlsoap.org/soap/encoding/</tns></schemaEntry>

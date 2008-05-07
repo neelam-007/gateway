@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><jaxbPublishedService><PService><oid>34766850</oid><version>6</version><name>nonsoap for ftp</name><disabled>false</disabled><httpMethodNames>POST,GET,DELETE,PUT</httpMethodNames><laxResolution>false</laxResolution><policy><oid>57311657</oid><version>1</version><name>Policy for service #34766850, nonsoap for ftp</name><soap>false</soap><type>PRIVATE_SERVICE</type><versionActive>true</versionActive><versionOrdinal>2</versionOrdinal><xml>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+        &lt;L7p:FtpCredential/&gt;
+        &lt;L7p:SpecificUser&gt;
+            &lt;L7p:IdentityProviderOid longValue=&quot;-2&quot;/&gt;
+            &lt;L7p:UserLogin stringValue=&quot;admin&quot;/&gt;
+            &lt;L7p:UserName stringValue=&quot;admin&quot;/&gt;
+            &lt;L7p:UserUid stringValue=&quot;3&quot;/&gt;
+        &lt;/L7p:SpecificUser&gt;
+        &lt;L7p:HardcodedResponse&gt;
+            &lt;L7p:Base64ResponseBody stringValue=&quot;c3VjY2Vzc2Z1bA==&quot;/&gt;
+        &lt;/L7p:HardcodedResponse&gt;
+    &lt;/wsp:All&gt;
+&lt;/wsp:Policy&gt;
+</xml></policy><routingUri>/ftp4</routingUri><soap>false</soap><wsdlUrl></wsdlUrl></PService></jaxbPublishedService>

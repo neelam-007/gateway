@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><jaxbPublishedService><PService><oid>60162048</oid><version>1</version><name>Multi-Valued Context Variables</name><disabled>false</disabled><httpMethodNames>POST,GET,DELETE,PUT</httpMethodNames><laxResolution>false</laxResolution><policy><oid>60194816</oid><version>10</version><name>Policy for service #60162048, Multi-Valued Context Variables</name><soap>false</soap><type>PRIVATE_SERVICE</type><versionActive>true</versionActive><versionOrdinal>11</versionOrdinal><xml>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+        &lt;L7p:FaultLevel&gt;
+            &lt;L7p:LevelInfo soapFaultLevel=&quot;included&quot;&gt;
+                &lt;L7p:Level intValue=&quot;4&quot;/&gt;
+            &lt;/L7p:LevelInfo&gt;
+        &lt;/L7p:FaultLevel&gt;
+        &lt;L7p:HardcodedResponse&gt;
+            &lt;L7p:Base64ResponseBody stringValue=&quot;PHJlcXVlc3QuaHR0cC5oZWFkZXJWYWx1ZXM+Cjxub1N1ZmZpeD4ke3JlcXVlc3QuaHR0cC5oZWFkZXJWYWx1ZXN9PC9ub1N1ZmZpeD4KPGRlZmF1bHQ+JHtyZXF1ZXN0Lmh0dHAuaGVhZGVyVmFsdWVzLnJlcGVhdEhlYWRlcn08L2RlZmF1bHQ+Cjxub3RoaW5nPiR7cmVxdWVzdC5odHRwLmhlYWRlclZhbHVlcy5yZXBlYXRIZWFkZXJ8fTwvbm90aGluZz4KPHNwYWNlPiR7cmVxdWVzdC5odHRwLmhlYWRlclZhbHVlcy5yZXBlYXRIZWFkZXJ8IH08L3NwYWNlPgo8cG91bmQ+JHtyZXF1ZXN0Lmh0dHAuaGVhZGVyVmFsdWVzLnJlcGVhdEhlYWRlcnwjfTwvcG91bmQ+CjxpbmRleDI+JHtyZXF1ZXN0Lmh0dHAuaGVhZGVyVmFsdWVzLnJlcGVhdEhlYWRlclsyXX08L2luZGV4Mj4KPGluZGV4T3V0T2ZCb3VuZHM+JHtyZXF1ZXN0Lmh0dHAuaGVhZGVyVmFsdWVzLnJlcGVhdEhlYWRlclszXX08L2luZGV4T3V0T2ZCb3VuZHM+CjxuZWdhdGl2ZUluZGV4PiR7cmVxdWVzdC5odHRwLmhlYWRlclZhbHVlcy5yZXBlYXRIZWFkZXJbM119PC9uZWdhdGl2ZUluZGV4Pgo8L3JlcXVlc3QuaHR0cC5oZWFkZXJWYWx1ZXM+Cg==&quot;/&gt;
+            &lt;L7p:OwnerPolicyOid boxedLongValue=&quot;60194816&quot;/&gt;
+        &lt;/L7p:HardcodedResponse&gt;
+    &lt;/wsp:All&gt;
+&lt;/wsp:Policy&gt;
+</xml></policy><routingUri>/misc/multiValuedContextVars</routingUri><soap>false</soap><wsdlUrl></wsdlUrl></PService></jaxbPublishedService>
