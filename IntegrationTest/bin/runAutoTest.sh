@@ -217,29 +217,16 @@ configurePartition() {
 }
 
 installDB() {
+
   mysqladmin -u $MYSQL_ROOT_USER --password=$MYSQL_ROOT_PASSWORD -f drop $DB_NAME
   mysqladmin -u $MYSQL_ROOT_USER --password=$MYSQL_ROOT_PASSWORD create $DB_NAME
   echo 'GRANT ALL ON '$DB_NAME'.* TO gateway@localhost' | mysql -u $MYSQL_ROOT_USER --password=$MYSQL_ROOT_PASSWORD
   echo "GRANT ALL ON $DB_NAME.* TO gateway@'%'" | mysql -u $MYSQL_ROOT_USER --password=$MYSQL_ROOT_PASSWORD
-  cp AutoTest/DBData/$DB_DUMP_TGZ_FILE /tmp/dbdump.tar.gz
-  tar xzCf /tmp /tmp/dbdump.tar.gz
-  rm -f /tmp/dbdump.tar.gz
-  local status
-  mysql -u $DB_USER --password=$DB_PASS $DB_NAME < "/tmp/$DB_DUMP_FILE"
-  status=$?
-  rm -f "/tmp/$DB_DUMP_FILE"
-  if [ "$status" = "0" ]; then
-    sed -i -e 's/^policy\.migrator\.db\.host=.*/policy.migrator.db.host='"$DB_HOST"'/' src/policy_migrator.properties
-    sed -i -e 's/^policy\.migrator\.db\.name=.*/policy.migrator.db.name='"$DB_NAME"'/' src/policy_migrator.properties
-    sed -i -e 's/^policy\.migrator\.db\.username=.*/policy.migrator.db.username='"$MYSQL_ROOT_USER"'/' src/policy_migrator.properties
-    sed -i -e 's/^policy\.migrator\.db\.password=.*/policy.migrator.db.password='"$MYSQL_ROOT_PASSWORD"'/' src/policy_migrator.properties
-    hostname=$(hostname -f)
-    mysql -f -u $DB_USER --password=$DB_PASS $DB_NAME -e "update internal_user set name = '$hostname', login = '$hostname' where login = 'autotest.l7tech.com';"
-    ant runPolicyMigrator
-    status=$?
-  fi
 
-  return $?
+  #Need a ssg.sql here to create the database
+  echo 'Creating empty SSG database using /ssg/etc/sql/ssg.sql'
+  mysql -u $DB_USER --password=$DB_PASS $DB_NAME < "/ssg/etc/sql/ssg.sql"
+  return 0
 }
 
 updateDB() {
@@ -460,8 +447,9 @@ runIntegrationTest() {
     fi
   fi
   if [ "$status" = "0" ]; then
-    #updateDB
-    cleanDB
+
+    echo 'Updating connector.....'
+    mysql -f -u $DB_USER --password=$DB_PASS $DB_NAME -e "update connector set enabled = 1;"
 
     local retVal
     retVal=0
@@ -469,7 +457,10 @@ runIntegrationTest() {
     if [ "$?" = "0" ]; then
       startSnmptrapd
       configureAutoTest
-      addTrustedCertificates
+
+      echo 'Uploading all entities'
+      ant runEntityManager -DentityManagerAction=upload
+      ant runSetupPrivateKeys
 
       # Restart the SSG so that policies using the new certs are reloaded
       stopSSG
