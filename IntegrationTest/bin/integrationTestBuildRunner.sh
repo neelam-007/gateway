@@ -34,6 +34,7 @@ scp -r bin root@devssg1:/tmp/IntegrationTest/
 scp -r etc root@devssg1:/tmp/IntegrationTest/
 scp -r src root@devssg1:/tmp/IntegrationTest/
 scp build.xml root@devssg1:/tmp/IntegrationTest/
+scp DEVLICENSE.xml root@devssg1:/tmp/IntegrationTest/
 scp -r lib root@devssg1:/tmp/IntegrationTest/
 scp -r tools root@devssg1:/tmp/IntegrationTest/
 scp -r snmptrapd root@devssg1:/tmp/IntegrationTest/
