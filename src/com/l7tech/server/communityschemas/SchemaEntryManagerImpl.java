@@ -181,10 +181,6 @@ public class SchemaEntryManagerImpl
         if (newSchema.getOid() == SOAP_SCHEMA_OID)
             throw new SaveException("The SOAP schema cannot be saved");
 
-        if (newSchema.getOid() != SchemaEntry.DEFAULT_OID) {
-            invalidateCompiledSchema(newSchema.getOid());
-        }
-
         long res = super.save(newSchema);
 
         try {
@@ -202,10 +198,6 @@ public class SchemaEntryManagerImpl
     public void update(SchemaEntry schemaEntry) throws UpdateException {
         if (schemaEntry.getOid() == SOAP_SCHEMA_OID)
             throw new UpdateException("The SOAP schema cannot be updated");
-
-        if (schemaEntry.getOid() != SchemaEntry.DEFAULT_OID) {
-            invalidateCompiledSchema(schemaEntry.getOid());
-        }
 
         super.update(schemaEntry);
 
@@ -246,12 +238,13 @@ public class SchemaEntryManagerImpl
                         
                         for (long oid : eieio.getEntityIds()) {
                             try {
-                                if (!invalidateCompiledSchema(oid)) continue; // We have no record of it, don't care
-
                                 // See if it still exists (i.e. it's updated, not deleted)
 
                                 SchemaEntry entry = findEntity(oid);
-                                if (entry == null) continue; // It's gone, no need to compile
+                                if (entry == null) {
+                                    invalidateCompiledSchema(oid);
+                                    continue;
+                                }
 
                                 compileAndCache(oid, entry);
                             } catch (FindException e) {
