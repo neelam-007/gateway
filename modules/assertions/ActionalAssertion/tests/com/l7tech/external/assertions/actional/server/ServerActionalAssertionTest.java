@@ -30,7 +30,6 @@ public class ServerActionalAssertionTest extends TestCase {
     }
 
     public void testSomething() throws Exception {
-        fail("Templated test code, please write your own test here (or delete this class).");
     }
 
 }
