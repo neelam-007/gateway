@@ -100,6 +100,38 @@ public class JaxbEntityManager {
     private TransportAdmin transportAdmin;
     private Map<String, JmsEndpoint> endPointMap;
     private Map<String, User> fedUserNameToUserMap;
+    private Map<IdentityProviderConfig, Map<String, IdentityHeader>> providerToGroupMap;
+
+    private FilenameFilter xmlFilter = new FilenameFilter(){
+
+                public boolean accept(File dir, String name){
+                    if(name.endsWith("xml")){
+                        return true;
+                    }else{
+                        return false;
+                    }
+                }
+            };
+
+    private FilenameFilter nonSVNDirFilter = new FilenameFilter(){
+                public boolean accept(File dir, String name){
+                    if(name.indexOf(".svn") == -1 ){
+                        return true;
+                    }else{
+                        return false;
+                    }
+                }
+            };
+
+    private FilenameFilter xsdFilter = new FilenameFilter(){
+                public boolean accept(File dir, String name){
+                    if(name.endsWith("xsd")){
+                        return true;
+                    }else{
+                        return false;
+                    }
+                }
+            };
 
     public JaxbEntityManager(AdminContext adminContext){
 
@@ -116,9 +148,10 @@ public class JaxbEntityManager {
         processedSchemas = new HashSet<String>();
         final File baseDir = new File(".");
 
+        //This schema is not actually used
         class MySchemaOutputResolver extends SchemaOutputResolver {
             public Result createOutput( String namespaceUri, String suggestedFileName ) throws IOException {
-                return new StreamResult(new File(baseDir,"PublishedService.xsd"));
+                return new StreamResult(new File(baseDir,"JaxbEntityManagerSchema.xsd"));
             }
         }
 
@@ -146,7 +179,25 @@ public class JaxbEntityManager {
             }
         }
 
+        providerToGroupMap = new HashMap<IdentityProviderConfig, Map<String, IdentityHeader>>();
 
+    }
+
+    /*Helper function to get out files from a directory matching the supplied filter
+    * 'files' is a Java File which can mean either a file or a directory*/
+    private File [] getFilesFromDirectory(String directory, FilenameFilter filter) throws IOException{
+        File dir = new File(directory);
+        return this.getFilesFromDirectory(dir, filter);
+    }
+
+    /*Helper function to get all files matching the filter out of the supplied File*/
+    private File [] getFilesFromDirectory(File dir, FilenameFilter filter) throws IOException{
+
+        if(dir.exists() && dir.isDirectory()){
+            File [] dirFiles = dir.listFiles(filter);
+            return dirFiles;
+        }
+        throw new RuntimeException("Directory: " + dir.getName() +" not found");
     }
 
     /**
@@ -226,12 +277,7 @@ public class JaxbEntityManager {
 
     public void uploadAllClusterProperties() throws Exception{
         System.out.println("Uploading all Cluster Properties");
-        File dir = new File(jaxbDir+"/ClusterProperties");
-        if(!dir.isDirectory()){
-            throw new Exception("ClusterProperties Directory not found");
-        }
-
-        File [] files = dir.listFiles();
+        File [] files = this.getFilesFromDirectory(jaxbDir+"/ClusterProperties", this.xmlFilter);
         for(File f: files){
             ClusterProperty clusterProperty = (ClusterProperty)this.unmarshaller.unmarshal(f);
             clusterProperty.setOid(ClusterProperty.DEFAULT_OID);
@@ -263,12 +309,7 @@ public class JaxbEntityManager {
     /* Upload all TrustedCerts found. Invalid certs exceptions are caught and processing will continue*/
     public void uploadTrustedCerts() throws Exception{
         System.out.println("Uploading all Trusted Certs");
-        File dir = new File(jaxbDir+"/TrustedCerts/");
-        if(!dir.exists() || !dir.isDirectory()){
-            throw new RuntimeException("TrustedCerts Directory not found");
-        }
-
-        File [] files = dir.listFiles();
+        File [] files = this.getFilesFromDirectory(jaxbDir+"/TrustedCerts/", this.xmlFilter);        
 
         for( File f: files){
             TrustedCert tCert = (TrustedCert)this.unmarshaller.unmarshal(f);
@@ -303,7 +344,7 @@ public class JaxbEntityManager {
 
         if(action.equalsIgnoreCase("Download")){
             //this.downloadAllTransports();
-            //this.downloadPublishedServices("655848");
+            this.downloadPublishedServices("655407");
             //this.downloadAllPublishedServices();
         }else if(action.equalsIgnoreCase("Upload")){
             //this.uploadAllClusterProperties();
@@ -312,8 +353,16 @@ public class JaxbEntityManager {
             //this.uploadAllJmsConnections();
             //this.uploadAllJmsEndpoints();
             //this.uploadPublishedServices("51609604");
-            this.deleteAllEntities();
-
+            /*
+            this.uploadLicense();
+            for(int i = 0; i < 1000; i++){
+                this.deleteSchemaEntries();
+                this.uploadSchemasEntries();
+                processedSchemas.clear();
+            }
+            */
+            
+            //this.deleteAllEntities();
             uploadLicense();
             oldIdToNewForIdentityProvider = new HashMap<Long, IdentityProviderConfig>();
             uploadGroupsInternalProvider();
@@ -327,6 +376,32 @@ public class JaxbEntityManager {
             uploadAllJmsConnections();
             uploadAllJmsEndpoints();
             this.uploadPublishedServices("18677761");
+
+        }else if(action.equalsIgnoreCase("TestJaxb")){
+            //1) Create a canned version of this version of TestJaxb
+            /*
+            TestJaxb testJaxb = new TestJaxb();
+            testJaxb.setAddress("address");
+            testJaxb.setName("name");
+            testJaxb.setPhone("phone");
+            this.doMarshall(testJaxb,jaxbDir+"/Testing/", "TestJaxb.xml");
+            */
+            //2) What happens when we add a new property to the class but not the canned xml??
+            //add property country to JaxbTest - now unmarshall above marshalled object
+            /*
+            File f = new File(jaxbDir+"/Testing/TestJaxb.xml");
+            TestJaxb testJaxb = (TestJaxb)this.unmarshaller.unmarshal(f);
+            System.out.println(testJaxb.toString());   //new property country is just null
+            */
+
+            //3) What happens if you remove a property that exists in the canned xml?
+            //remove property phone from JaxbTest
+            /*
+            File f = new File(jaxbDir+"/Testing/TestJaxb.xml");
+            TestJaxb testJaxb = (TestJaxb)this.unmarshaller.unmarshal(f);
+            System.out.println(testJaxb.toString());  //phone property is not set, no errors or warnings generated
+            */
+
         }
 
         long duration = System.currentTimeMillis() - startTime;
@@ -342,7 +417,7 @@ public class JaxbEntityManager {
         System.out.println("Downloading all Transports");
         Collection<SsgConnector> conns = transportAdmin.findAllSsgConnectors();
         for(SsgConnector sG: conns){
-           this.doMarshall(sG, jaxbDir+"/Transports", sG.getName());
+           this.doMarshall(sG, jaxbDir+"/Transports", sG.getName()+".xml");
         }
         System.out.println("Finished downloading all Transports");
     }
@@ -361,10 +436,7 @@ public class JaxbEntityManager {
     * */
     private void uploadAllTransports() throws Exception{
         System.out.println("Uploading all NEW Transports");
-        File dir = new File(jaxbDir+"/Transports");
-        if(!dir.isDirectory()){
-            throw new Exception("Transports Directory not found");
-        }
+        File [] files = this.getFilesFromDirectory(jaxbDir+"/Transports", this.xmlFilter);        
 
         //Download all existing Tansports on this SSG
         Collection<SsgConnector> conns = this.transportAdmin.findAllSsgConnectors();
@@ -374,7 +446,6 @@ public class JaxbEntityManager {
             connSet.add(uniqueConnName);
         }
         
-        File [] files = dir.listFiles();
         for(File f: files){
             SsgConnector ssgConnector = (SsgConnector)this.unmarshaller.unmarshal(f);
             String uniqueConnName = getUniqueSsgConnectorName(ssgConnector);
@@ -446,12 +517,9 @@ public class JaxbEntityManager {
      */
     public void uploadSchemasEntries() throws Exception{
         System.out.println("Uploading all Schema Entries");
-        File dir = new File(jaxbDir+"/SchemaEntries");
-        if(!dir.isDirectory()){
-            throw new Exception("SchemaEntries Directory not found");
-        }
 
-        File [] files = dir.listFiles();
+        File [] files = this.getFilesFromDirectory(jaxbDir+"/SchemaEntries", this.xsdFilter);        
+
         for(File f: files){
             SchemaEntry schemaEntry = (SchemaEntry)this.unmarshaller.unmarshal(f);
             System.out.println("Working on schema: " + f.getName());
@@ -460,7 +528,7 @@ public class JaxbEntityManager {
             try{
                 this.processSchemas(schemaEntry);
             }catch(Exception eX){
-                System.out.println("Processing schema: " + f.getName());
+                System.out.println("Exception with schema: " + f.getName()+" " + eX.getMessage());
                 System.out.println(schemaEntry.getSchema());                
                 throw eX;
             }
@@ -580,6 +648,8 @@ public class JaxbEntityManager {
     private void uploadSchema(SchemaEntry schemaEntry) throws Exception{
         if(!schemaEntry.getName().equals(SOAP_SCHEMA)){
             schemaEntry.setOid(SchemaEntry.DEFAULT_OID);
+            System.out.println("Saving Schema:");
+            System.out.println(schemaEntry.getName());
             this.schemaAdmin.saveSchemaEntry(schemaEntry);
         }
     }
@@ -601,12 +671,7 @@ public class JaxbEntityManager {
     * See downloadJmsConnectionAndEndpoints*/
     public void uploadAllJmsConnections() throws Exception{
         System.out.println("Uploading all JmsConnections");
-        File dir = new File(jaxbDir+"/JmsConnections");
-        if(!dir.isDirectory()){
-            throw new Exception("JmsConnections Directory not found");
-        }
-
-        File [] files = dir.listFiles();
+        File [] files = this.getFilesFromDirectory(jaxbDir+"/JmsConnections", this.xmlFilter);
 
         for(File f: files){
             JmsConnection jmsConn = (JmsConnection)this.unmarshaller.unmarshal(f);
@@ -638,20 +703,17 @@ public class JaxbEntityManager {
 
     public void uploadAllJmsEndpoints() throws Exception{
         System.out.println("Uploading all JmsEndpoints");
-        File dir = new File(jaxbDir+"/JmsEndpoints");
-        if(!dir.isDirectory()){
-            throw new Exception("JmsEndpoints Directory not found");
-        }
-
-        File [] files = dir.listFiles();
+        File [] files = this.getFilesFromDirectory(jaxbDir+"/JmsEndpoints", this.xmlFilter);
         Map<String, JmsConnection> uniqIdToJmsConn = null;
         if(files.length > 0){
             uniqIdToJmsConn = this.getJmsConnectionUniqueIdentifiers();
         }
 
+        System.out.println("Found : " + files.length+ " JmsEndpoints");
         for(File f: files){
             JaxbJmsEndpoint jaxbEndPoint = (JaxbJmsEndpoint) this.unmarshaller.unmarshal(f);
             String uniqueIdentifier = jaxbEndPoint.getJmsConnectionUniqueIdentifier();
+            System.out.println("Uploading endpoint: " + uniqueIdentifier);
             if(!uniqIdToJmsConn.containsKey(uniqueIdentifier)){
                 throw new RuntimeException("JmsConnection required for JmsEndpoint not found on SSG");
             }
@@ -701,7 +763,7 @@ public class JaxbEntityManager {
             jaxbJmsEndpoint.setJmsEndPoint(jmsEndPoint);
             String uniqueIdentifier = this.createUniqueJmsConnectionIdentifier(jmsConn);
             jaxbJmsEndpoint.setJmsConnectionUniqueIdentifier(uniqueIdentifier);
-            this.doMarshall(jaxbJmsEndpoint, jaxbDir+"/JmsEndpoints", jmsEndPoint.getId());
+            this.doMarshall(jaxbJmsEndpoint, jaxbDir+"/JmsEndpoints", jmsEndPoint.getId()+".xml");
         }
 
         //Did we miss any JmsConnections?
@@ -740,7 +802,7 @@ public class JaxbEntityManager {
     * Download all groups belonging to the supplied identity provider.
     * For Federated groups we have no way of looking up the identity provider when moving to a fresh SSG.
     * If we upload the identity providers followed by the groups, we have no way of telling from the group
-    * which proivder it came from. The means of handlign this in JaxbEntityManager currently is to download
+    * which proivder it came from. The means of handling this in JaxbEntityManager currently is to download
     * groups after downloading the identity provider to which it belongs. subFolderName should point to a folder
     * within a specific identity provider folder.
     * Jaxb can't marshall interfaces so we marshall Group objects as a subtype of PersistentGroup
@@ -774,12 +836,7 @@ public class JaxbEntityManager {
     public void uploadGroups(IdentityProviderConfig config, String subFolder) throws Exception{
 
         System.out.println("Uploading all Groups for " +config.getName());
-        File dir = new File(jaxbDir+"/"+subFolder+"/");
-        if(!dir.exists() || !dir.isDirectory()){
-            throw new RuntimeException(jaxbDir+"/"+subFolder+" directory not found");
-        }
-
-        File [] files = dir.listFiles();
+        File [] files = this.getFilesFromDirectory(jaxbDir+"/"+subFolder, this.xmlFilter);
 
         for( File f: files){
             PersistentGroup persistentGroup = (PersistentGroup)this.unmarshaller.unmarshal(f);
@@ -854,22 +911,28 @@ public class JaxbEntityManager {
     /*When creating a User you can specify the Users group membership via a Set of IdentityHeaders.
     Use this method to get the set of IdentityHeaders required by a user by specifying what groups
     the user is currently a member of.
-    This method could cache the groups identity header's but currently doesn't.
+    This method caches the groups identity header's the first time it comes across an IdentityProviderConfig
     @param    groupNames A set of strings representing the groups we want the IdentityHeader for
     @return   Return a set of IdentityHeaders of ALL IdentityHeaders in
     the Internal Identity Provider, whose getName().equals a string in the set groupNames
     * */
     private Set<IdentityHeader> getUserGroupMembership(IdentityProviderConfig config, Set<String> groupNames) throws Exception{
-        IdentityHeader [] identityHeaders = this.identityAdmin.findAllGroups(config.getOid());
-        Map<String, IdentityHeader> groupMap = new HashMap();
-        for(IdentityHeader iHeader: identityHeaders){
-            groupMap.put(iHeader.getName(), iHeader);
-        }
-
         Set<IdentityHeader> returnSet = new HashSet<IdentityHeader>();
         if(groupNames == null){
             return returnSet;
         }
+
+        //do we need to download all the Groups for the supplied IdentityProviderConfig?
+        if(!providerToGroupMap.containsKey(config)){
+            IdentityHeader [] identityHeaders = this.identityAdmin.findAllGroups(config.getOid());
+            Map<String, IdentityHeader> groupMap = new HashMap();
+            for(IdentityHeader iHeader: identityHeaders){
+                groupMap.put(iHeader.getName(), iHeader);
+            }
+            providerToGroupMap.put(config, groupMap);
+        }
+
+        Map<String, IdentityHeader> groupMap = providerToGroupMap.get(config);
         for(String groupName: groupNames){
             IdentityHeader iHeader = groupMap.get(groupName);
             returnSet.add(iHeader);
@@ -889,13 +952,7 @@ public class JaxbEntityManager {
     public void uploadUsers(IdentityProviderConfig config, String subFolder) throws Exception{
 
         System.out.println("Uploading all "+config.getName()+" Identity Users");
-        //make sure our cache of Groups is up to date
-        File userDirectory = new File(jaxbDir+"/"+subFolder+"/");
-        if(!userDirectory.isDirectory()){
-            throw new RuntimeException("Directory not found :" + jaxbDir+"/"+subFolder+"/");
-        }
-
-        File [] files = userDirectory.listFiles();
+        File [] files = this.getFilesFromDirectory(jaxbDir+"/"+subFolder+"/", this.xmlFilter);
 
         for( File f: files){
             Object o = this.unmarshaller.unmarshal(f);
@@ -1003,12 +1060,7 @@ public class JaxbEntityManager {
     public void uploadLdapIdentityProviders() throws Exception{
         System.out.println("Uploading all Identity Providers");
 
-        File idProvidersDir = new File(jaxbDir+"/IdentityProviders/LDAP");
-        if(!idProvidersDir.isDirectory()){
-            throw new RuntimeException("LDAP Identity Provider Directory not found");
-        }
-
-        File [] files = idProvidersDir.listFiles();
+        File [] files = this.getFilesFromDirectory(jaxbDir+"/IdentityProviders/LDAP", this.xmlFilter);
 
         for( File f: files){
             LdapIdentityProviderConfig providerCfg = (LdapIdentityProviderConfig)this.unmarshaller.unmarshal(f);
@@ -1038,27 +1090,16 @@ public class JaxbEntityManager {
     * taken by JaxbEntityManager is to store fed group / user info as a subdirectory and to upload it directly
     * after uploading the fed provider, when we will have it's new provider id. We could also cache this info
     * so that we can upload groups separately, however the uploading of identity provider will always have to
-    * be done first, unless you somehow know what the fed provider id is...
+    * be done first. When downloading Groups we could store information to uniquely identify the Identity Provider
+    * to which it belongs.
     * */
     public void uploadFedIdentityProviders() throws Exception{
-        File idProvidersDir = new File(jaxbDir+"/IdentityProviders/FED");
-        if(!idProvidersDir.isDirectory()){
-            throw new RuntimeException("FED Identity Provider Directory not found");
-        }
+        System.out.println("Uploading all Federated Identity Providers");
 
-        File [] files = idProvidersDir.listFiles();
+        File [] files = getFilesFromDirectory(jaxbDir+"/IdentityProviders/FED", this.nonSVNDirFilter);
         for( File f: files){
             if(f.isDirectory()){
-                File [] subDirFiles = f.listFiles(new FilenameFilter(){
-
-                    public boolean accept(File dir, String name){
-                        if(name.endsWith("xml")){
-                            return true;
-                        }else{
-                            return false;
-                        }
-                    }
-                });
+                File [] subDirFiles = this.getFilesFromDirectory(f, this.xmlFilter);
                 if(subDirFiles.length > 1){
                     throw new RuntimeException("More than one Identity Provider found in "+ f.getName());
                 }
@@ -1114,7 +1155,7 @@ public class JaxbEntityManager {
                 uploadUsers(config,"/IdentityProviders/FED/"+f.getName()+"/Users");
             }
         }
-        System.out.println("Finished uploading all Identity Providers");
+        System.out.println("Finished uploading all Federated Identity Providers");
     }
 
     /*
@@ -1219,11 +1260,7 @@ public class JaxbEntityManager {
     public void uploadAllPublishedServices() throws Exception{
 
         System.out.println("Uploading all Published Services");
-        File dir = new File(jaxbDir+"/PublishedService/");
-        if(!dir.isDirectory()){
-            throw new Exception("PublishedService Directory not found");
-        }
-        File [] files = dir.listFiles();
+        File [] files = this.getFilesFromDirectory(jaxbDir+"/PublishedService/", this.xmlFilter);
 
         int count = 0;
         for( File f: files){
@@ -1285,12 +1322,7 @@ public class JaxbEntityManager {
     public void uploadAllPolicyFragments() throws Exception{
 
         System.out.println("Uploading all Policy Fragments");
-        File dir = new File(jaxbDir+"/PolicyFragments/");
-        if(!dir.isDirectory()){
-            throw new Exception("PolicyFragments Directory not found");
-        }
-
-        File [] files = dir.listFiles();
+        File [] files = this.getFilesFromDirectory(jaxbDir+"/PolicyFragments/", this.xmlFilter);
 
         for( File f: files){
             Policy policy = (Policy)this.unmarshaller.unmarshal(f);
