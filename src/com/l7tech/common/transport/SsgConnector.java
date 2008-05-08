@@ -87,7 +87,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
 
         /**
          * All built-in servlets other than the first three.  This includes POLICYDISCO, STS, PASSWD etc.
-         * This does NOT include the PingServlet since this is considered part of web based administration.
+         * This does NOT include the PingServlet since the PingServlet has its own access rules.
          */
         OTHER_SERVLETS(POLICYDISCO, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY, BACKUP, HPSOAM);
 

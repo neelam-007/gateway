@@ -4,6 +4,7 @@ import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.transport.SsgConnector.Endpoint;
+import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -93,15 +94,16 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     protected abstract String getFeature();
 
     /**
-     * @return the endpoint name that must be enabled on the SsgConnector that received this
-     *         request in order for the request to be allowed.
+     * @return the endpoint name that must be enabled on the SsgConnector that received the
+     *         request in order for the request to be allowed, or null if this endpoint should accept
+     *         requests regardless of what endpoints are enabled on the SsgConnector that received the request.
      *         For example, {@link Endpoint#PASSWD}.
      */
     protected abstract Endpoint getRequiredEndpoint();
 
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
-            HttpTransportModule.requireEndpoint(req, getRequiredEndpoint());
+            requireEndpoint(req);
         } catch (TransportModule.ListenerException e) {
             resp.sendError(404, "Service unavailable on this port");
             return;
@@ -298,7 +300,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     protected AuthenticationResult[] authenticateRequestBasic(HttpServletRequest req, PublishedService service)
             throws IOException, BadCredentialsException, MissingCredentialsException, IssuedCertNotPresentedException, LicenseException, TransportModule.ListenerException {
         licenseManager.requireFeature(getFeature());
-        HttpTransportModule.requireEndpoint(req, getRequiredEndpoint());
+        requireEndpoint(req);
 
         // Try to authenticate against identity providers
         final boolean sawCreds;
@@ -344,6 +346,12 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             throw new BadCredentialsException(msg);
         else
             throw new MissingCredentialsException();
+    }
+
+    private void requireEndpoint(HttpServletRequest req) throws TransportModule.ListenerException {
+        final Endpoint endpoint = getRequiredEndpoint();
+        if (endpoint != null)
+            HttpTransportModule.requireEndpoint(req, endpoint);
     }
 
     /**
