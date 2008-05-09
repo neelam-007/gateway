@@ -32,6 +32,7 @@ ssh root@devssg1 "mkdir /tmp/IntegrationTest"
 # 
 # Copy the files over
 scp DEVLICENSE.xml root@devssg1:/tmp/IntegrationTest/
+scp -r etc/JAXB_OutputXML root@devssg1:/tmp/IntegrationTest/
 cd IntegrationTest
 scp -r bin root@devssg1:/tmp/IntegrationTest/
 scp -r etc root@devssg1:/tmp/IntegrationTest/
