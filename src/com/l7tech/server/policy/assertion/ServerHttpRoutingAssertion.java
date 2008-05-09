@@ -82,13 +82,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     private final URL protectedServiceUrl;
     private boolean customURLList;
 
-    //used for Actional only
-    private GenericHttpHeader actionalHeader = null;
-
-    public void setActionalHeader(GenericHttpHeader actionalHeader) {
-        this.actionalHeader = actionalHeader;
-    }
-
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) {
         super(assertion, ctx, logger);
 
@@ -111,6 +104,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
             protectedServiceUrl = url;
         }
+
+
 
         try {
             final SignerInfo signerInfo;
@@ -278,11 +273,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
             routedRequestParams.addExtraHeader(new GenericHttpHeader(HOST, hostValue.toString()));
 
-            //add Actional header if it exists
-            if (actionalHeader != null) {
-                routedRequestParams.addExtraHeader(actionalHeader);
-            }
-
             HttpRequestKnob httpRequestKnob = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
 
             if (data.isTaiCredentialChaining()) {
@@ -391,7 +381,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         } else { // This means use a context variable.
             logger.info("assuming http method for downstream service (POST) when request message source is a context variable");
         }
-        return GenericHttpClient.POST;                     
+        return GenericHttpClient.POST;
     }
 
     private AssertionStatus reallyTryUrl(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams,

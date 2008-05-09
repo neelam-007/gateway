@@ -54,10 +54,6 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
     protected final ApplicationContext applicationContext;
     protected final RAT data;
 
-    public RAT getData() {
-        return data;
-    }
-
     /**
      *
      */

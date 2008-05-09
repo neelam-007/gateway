@@ -32,7 +32,6 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.MessageProcessed;
-import com.l7tech.server.event.MessageReceived;
 import com.l7tech.server.hpsoam.WSMFService;
 import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.server.message.HttpSessionPolicyContextCache;
@@ -264,12 +263,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 } else {
                     auditor.logAndAudit(MessageProcessingMessages.POLICY_ID_NOT_PROVIDED);
                 }
-            }
-
-            try {
-                getApplicationContext().publishEvent(new MessageReceived(this, context));
-            } catch (Throwable t) {
-                auditor.logAndAudit(MessageProcessingMessages.EVENT_MANAGER_EXCEPTION, null, t);
             }
 
             // Get the server policy
