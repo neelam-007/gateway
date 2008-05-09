@@ -94,9 +94,9 @@ public class Interceptor {
 
         setSecurityId(ci, pec, serverHttpRoutingAssertion);
 
-        if(operation != null){
+        if (operation != null) {
             ci.setOpName(operation.getName());
-        }else{
+        } else {
             ci.setOpName(serviceName);
         }
         ci.setUrl(event.getUrl().toString());
@@ -300,6 +300,13 @@ public class Interceptor {
         //collect all the information we need to populate the ServerInteraction object
         final PolicyEnforcementContext pec = event.getContext();
         final Message responseMessage = pec.getResponse();
+
+        if (responseMessage.getHttpResponseKnob() == null) {
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Interceptor ignoring non-http response.");
+            }
+            return;
+        }
 
         SoapKnob soapKnob;
         long length;
