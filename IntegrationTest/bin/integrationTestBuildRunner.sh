@@ -3,7 +3,7 @@
 RESULTS_CACHE_DIR=/home/teamcity/IntegrationTestResultsCache
 
 # Get the required build files
-LAST_BUILD_DIR="dist"
+LAST_BUILD_DIR="IntegrationTest/dist"
 if [ ! -e "$LAST_BUILD_DIR/"ssg-*.noarch.rpm ]; then
   echo "SSG RPM was not found."
   exit 1
@@ -64,6 +64,8 @@ scp jars/*.jar root@devssg1:/tmp/IntegrationTest/jars/
 
 # Copy the build files to the new build directory on devssg1
 ssh root@devssg1 "mkdir /tmp/IntegrationTest/new_build"
+
+$LAST_BUILD_DIR = "dist"
 scp "$LAST_BUILD_DIR/"ssg-*.noarch.rpm "$LAST_BUILD_DIR/"ssg-appliance-*.i386.rpm "$LAST_BUILD_DIR/"Manager-*.tar.gz "$LAST_BUILD_DIR/"Client-*.tar.gz root@devssg1:/tmp/IntegrationTest/new_build
 
 # Run the integration test
