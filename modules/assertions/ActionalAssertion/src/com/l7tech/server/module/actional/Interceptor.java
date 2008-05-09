@@ -72,7 +72,7 @@ public class Interceptor {
             //get the payload....if configured to do so
             //otherwise, just the content-length
             if (transmitPayload) {
-                payload = getMessageBytes(requestMessage);
+                payload = HexUtils.slurpStream(requestMessage.getMimeKnob().getEntireMessageBodyAsInputStream());
                 length = payload.length;
             } else {
                 //get the content-length only
@@ -155,7 +155,7 @@ public class Interceptor {
             }
 
             if (transmitPayload) {
-                payload = getMessageBytes(responseMessage);
+                payload = HexUtils.slurpStream(responseMessage.getMimeKnob().getEntireMessageBodyAsInputStream());
                 length = payload.length;
             } else {
                 //get the content-length only
@@ -239,7 +239,7 @@ public class Interceptor {
             subNodeName = InetAddress.getLocalHost().getCanonicalHostName();
 
             if (transmitPayload) {
-                payload = getMessageBytes(requestMessage);
+                payload = HexUtils.slurpStream(requestMessage.getMimeKnob().getEntireMessageBodyAsInputStream());
                 length = payload.length;
             } else {
                 //must get the size of the message from somewhere else
@@ -330,7 +330,7 @@ public class Interceptor {
             //get the payload....if configured to do so
             //otherwise, just the content-length
             if (transmitPayload) {
-                payload = getMessageBytes(responseMessage);
+                payload = HexUtils.slurpStream(responseMessage.getMimeKnob().getEntireMessageBodyAsInputStream());
                 length = payload.length;
             } else {
                 //get the content-length only
@@ -355,27 +355,6 @@ public class Interceptor {
         }
         si.end();
     }
-
-    private static byte[] getMessageBytes(Message message) throws Exception {
-        final MimeKnob mimeKnob = message.getMimeKnob();
-
-        if (mimeKnob.isMultipart()) {
-            logger.log(Level.WARNING, "Interceptor encountered multipart SOAP message. Payload will not be captured.");
-            return null;
-        }
-
-        final PartInfo partInfo = mimeKnob.getFirstPart();
-
-        //try the quick & dirty way first
-        byte[] messageBytes = partInfo.getBytesIfAlreadyAvailable();
-
-        if (messageBytes == null) {
-            messageBytes = HexUtils.slurpStream(partInfo.getInputStream(false));
-        }
-
-        return messageBytes;
-    }
-
     /**
      * Sets the security ID of the given ClientInteraction.  The security ID is only set when
      * HTTP credentials are specificed in the routing assertion OR if the routing assertion is configured

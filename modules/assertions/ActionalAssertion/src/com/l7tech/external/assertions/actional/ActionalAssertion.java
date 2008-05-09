@@ -24,8 +24,9 @@ public class ActionalAssertion extends Assertion implements UsesVariables {
     //
     private static final String META_INITIALIZED = ActionalAssertion.class.getName() + ".metadataInitialized";
 
-    public static final String INTERCEPTOR_ENABLE_CLUSTER_PROPERTY = "actional.interceptor.enabled";
-    public static final String INTERCEPTOR_TRANSMIT_PAYLOAD_CLUSTER_PROPERTY = "actional.interceptor.transmitPayload";
+    public static final String INTERCEPTOR_ENABLE_CLUSTER_PROPERTY = "interceptor.enabled";
+    public static final String INTERCEPTOR_TRANSMIT_PROVIDER_PAYLOAD_CLUSTER_PROPERTY = "interceptor.transmitProviderPayloads";
+    public static final String INTERCEPTOR_TRANSMIT_CONSUMER_PAYLOAD_CLUSTER_PROPERTY = "interceptor.transmitConsumerPaylods";
 
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -68,8 +69,14 @@ public class ActionalAssertion extends Assertion implements UsesVariables {
                 String.valueOf(Boolean.FALSE)
         });
 
-        clusterProperties.put(INTERCEPTOR_TRANSMIT_PAYLOAD_CLUSTER_PROPERTY, new String[] {
-                "Determines whether XML payloads are captured and forwarded by the Actional Interceptor along with statistical information. (true/false)\n" +
+        clusterProperties.put(INTERCEPTOR_TRANSMIT_PROVIDER_PAYLOAD_CLUSTER_PROPERTY, new String[] {
+                "Determines whether XML payloads are captured and forwarded by the Interceptor along with statistical information when processing incoming request messages. (true/false)\n" +
+                "Warning. Transmitting the payload can be resource intensive.",
+                String.valueOf(Boolean.FALSE)
+        });
+
+        clusterProperties.put(INTERCEPTOR_TRANSMIT_CONSUMER_PAYLOAD_CLUSTER_PROPERTY, new String[] {
+                "Determines whether XML payloads are captured and forwarded by the Interceptor along with statistical information when processing outgoing request messages. (true/false)\n" +
                 "Warning. Transmitting the payload can be resource intensive.",
                 String.valueOf(Boolean.FALSE)
         });

@@ -74,12 +74,13 @@ public class InterceptorEventListener implements ApplicationListener {
     private boolean enabled = false;
 
     /**
-     * Deteremines whether or not the Actional Interceptor should transmit the XML payload
+     * Deteremines whether or not the Interceptor should transmit the XML payload
+     * for either incoming "provider" or outgoing "consumer" requests
      * along with other message processing information to the Actional Agent.
      * <p/>
-     * This maps the cluster property: actionalInterceptor.transmitPayload
      */
-    private boolean transmitPayload = false;
+    private boolean transmitProviderPayload = false;
+    private boolean transmitConsumerPayload = false;
 
     // END CLUSTER PROPERTIES STUFF
 
@@ -106,18 +107,17 @@ public class InterceptorEventListener implements ApplicationListener {
         if (enabled) {//dispatch to appropriate Interceptor handler
             if (event instanceof MessageReceived) {
                 final MessageReceived messageReceivedEvent = (MessageReceived) event;
-                Interceptor.handleServerRequest(messageReceivedEvent, transmitPayload);
+                Interceptor.handleServerRequest(messageReceivedEvent, transmitProviderPayload);
             } else if (event instanceof MessageProcessed) {
                 final MessageProcessed messageProcessedEvent = (MessageProcessed) event;
-                Interceptor.handleServerResponse(messageProcessedEvent, transmitPayload);
+                Interceptor.handleServerResponse(messageProcessedEvent, transmitProviderPayload);
             } else if (event instanceof PreRoutingEvent) {
                 final PreRoutingEvent preRoutingEvent = (PreRoutingEvent) event;
-                Interceptor.handleClientRequest(preRoutingEvent, transmitPayload);
+                Interceptor.handleClientRequest(preRoutingEvent, transmitConsumerPayload);
             } else if (event instanceof PostRoutingEvent) {
                 final PostRoutingEvent postRoutingEvent = (PostRoutingEvent) event;
-                Interceptor.handleClientResponse(postRoutingEvent, transmitPayload);
+                Interceptor.handleClientResponse(postRoutingEvent, transmitConsumerPayload);
             }
-            //TODO do we need to handle FaultProcessed events?
         } else if (!initialized) {
             if (event instanceof AssertionModuleRegistrationEvent) {// TODO do we actually care about any other events?
                 //since all our init is done onModuleLoaded()
@@ -171,11 +171,13 @@ public class InterceptorEventListener implements ApplicationListener {
         }
 
         String enabledPropertyValue = serverConfig.getProperty(ClusterProperty.asServerConfigPropertyName(ActionalAssertion.INTERCEPTOR_ENABLE_CLUSTER_PROPERTY));
-        String transmitPayloadPropertyValue = serverConfig.getProperty(ClusterProperty.asServerConfigPropertyName(ActionalAssertion.INTERCEPTOR_TRANSMIT_PAYLOAD_CLUSTER_PROPERTY));
+        String transmitProviderPayloadPropertyValue = serverConfig.getProperty(ClusterProperty.asServerConfigPropertyName(ActionalAssertion.INTERCEPTOR_TRANSMIT_PROVIDER_PAYLOAD_CLUSTER_PROPERTY));
+        String transmitConsumerPayloadPropertyValue = serverConfig.getProperty(ClusterProperty.asServerConfigPropertyName(ActionalAssertion.INTERCEPTOR_TRANSMIT_CONSUMER_PAYLOAD_CLUSTER_PROPERTY));
 
         synchronized (this) {
             enabled = Boolean.parseBoolean(enabledPropertyValue);
-            transmitPayload = Boolean.parseBoolean(transmitPayloadPropertyValue);
+            transmitProviderPayload = Boolean.parseBoolean(transmitProviderPayloadPropertyValue);
+            transmitConsumerPayload = Boolean.parseBoolean(transmitProviderPayloadPropertyValue);
         }
     }
 
