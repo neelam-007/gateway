@@ -482,6 +482,11 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             logger.info("Removing " + connector.getScheme() + " connector on port " + connector.getPort());
             embedded.removeConnector(connector);
             closeAllSockets(oid);
+            try {
+                connector.destroy();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Exception while destroying connector for port " + entry.left.getPort() + ": " + ExceptionUtils.getMessage(e), e);
+            }
         }
     }
 
