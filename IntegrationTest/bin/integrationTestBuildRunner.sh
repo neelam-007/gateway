@@ -1,7 +1,8 @@
 #!/bin/bash
 
 RESULTS_CACHE_DIR=/home/teamcity/IntegrationTestResultsCache
-
+pwd
+ls
 # Get the required build files
 LAST_BUILD_DIR="IntegrationTest/dist"
 if [ ! -e "$LAST_BUILD_DIR/"ssg-*.noarch.rpm ]; then
