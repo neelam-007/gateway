@@ -34,7 +34,7 @@ import com.l7tech.external.assertions.actional.ActionalAssertion;
  * @author jules
  */
 public class InterceptorEventListener implements ApplicationListener {
-    public static final Logger logger = Logger.getLogger(InterceptorEventListener.class.getName());
+    protected static final Logger logger = Logger.getLogger(InterceptorEventListener.class.getName());
 
     /**
      * This module's instance of the InterceptorEventListener.
