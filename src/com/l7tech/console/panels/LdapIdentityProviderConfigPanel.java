@@ -38,7 +38,6 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         setLayout(new BorderLayout());
         add(getTypePanel(), BorderLayout.NORTH);
         add(getConfigPanel(), BorderLayout.CENTER);
-        add(Box.createVerticalStrut( 320 ), BorderLayout.WEST);
         getConfigPanel().setVisible(false);
     }
 

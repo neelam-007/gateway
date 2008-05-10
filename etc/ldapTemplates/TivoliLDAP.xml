@@ -17,10 +17,7 @@
       <void property="firstNameAttrName"> 
        <string>givenName</string> 
       </void> 
-      <void property="kerberosAttrName">
-       <string>uid</string>
-      </void>
-      <void property="lastNameAttrName">
+      <void property="lastNameAttrName"> 
        <string>sn</string> 
       </void> 
       <void property="loginAttrName"> 

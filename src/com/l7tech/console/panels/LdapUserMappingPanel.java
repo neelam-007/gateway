@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  *
  * $Id$
  */
-@SuppressWarnings( { "FieldCanBeLocal" } )
+
 public class LdapUserMappingPanel extends IdentityProviderStepPanel {
 
     static final Logger log = Logger.getLogger(LdapUserMappingPanel.class.getName());
@@ -61,13 +61,11 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
      *
      * @return  String  The descritpion of the step.
      */
-    @Override
     public String getDescription() {
         return "Map the attributes for each user object class in the LDAP Identity Provider.";
     }
 
     /** @return the wizard step label    */
-    @Override
     public String getStepLabel() {
         return "User Object Classes";
     }
@@ -86,14 +84,6 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
             userMapping.setFirstNameAttrName(firstNameAttribute.getText());
             userMapping.setLastNameAttrName(lastNameAttribute.getText());
             userMapping.setLoginAttrName(loginNameAttribute.getText());
-            if ( kerberosAttribute.getText().trim().length() > 0 )
-                userMapping.setKerberosAttrName(kerberosAttribute.getText());
-            else
-                userMapping.setKerberosAttrName(null);                
-            if ( kerberosEnterpriseAttribute.getText().trim().length() > 0 )
-                userMapping.setKerberosEnterpriseAttrName(kerberosEnterpriseAttribute.getText());
-            else
-                userMapping.setKerberosEnterpriseAttrName(null);
             userMapping.setPasswdAttrName(passwordAttribute.getText());
 
 /*   Commented out the password strategry for the time being as the server does not handle it right now (Bugzilla #615)
@@ -133,7 +123,6 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
      *
      * @throws IllegalArgumentException   if the data provided by the wizard are not valid.
      */
-    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
 
         if (settings instanceof LdapIdentityProviderConfig) {
@@ -145,9 +134,10 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
             // clear the model
             getUserListModel().clear();
 
-            for( UserMappingConfig userMapping : userMappings ) {
+            for (int i = 0; i < userMappings.length; i++) {
+
                 // update the user list display
-                getUserListModel().add( userMapping );
+                getUserListModel().add(userMappings[i]);
             }
 
             // select the first row for display of attributes
@@ -190,10 +180,9 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
      *
      * @param settings the object representing wizard panel state
      */
-    @Override
     public void storeSettings(Object settings) {
 
-        Object userMapping;
+        Object userMapping = null;
 
         // store the current record if selected
         if((userMapping = getUserList().getSelectedValue()) != null) {
@@ -226,14 +215,6 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
             firstNameAttribute.setText(userMapping.getFirstNameAttrName());
             lastNameAttribute.setText(userMapping.getLastNameAttrName());
             loginNameAttribute.setText(userMapping.getLoginAttrName());
-            if ( userMapping.getKerberosAttrName() != null )
-                kerberosAttribute.setText(userMapping.getKerberosAttrName());
-            else
-                kerberosAttribute.setText("");
-            if ( userMapping.getKerberosEnterpriseAttrName() != null )
-                kerberosEnterpriseAttribute.setText(userMapping.getKerberosEnterpriseAttrName());
-            else
-                kerberosEnterpriseAttribute.setText("");
             nameAttribute.setText(userMapping.getNameAttrName());
             objectClass.setText(userMapping.getObjClass());
             passwordAttribute.setText(userMapping.getPasswdAttrName());
@@ -253,8 +234,6 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         firstNameAttribute.setText("");
         lastNameAttribute.setText("");
         loginNameAttribute.setText("");
-        kerberosAttribute.setText("");
-        kerberosEnterpriseAttribute.setText("");
         nameAttribute.setText("");
         objectClass.setText("");
         passwordAttribute.setText("");
@@ -268,7 +247,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
      *
      * @return true if the panel is valid, false otherwis
      */
-    @Override
+
     public boolean canTest() {
         return true;
     }
@@ -310,8 +289,6 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         firstNameAttribute.setEnabled(enable);
         lastNameAttribute.setEnabled(enable);
         loginNameAttribute.setEnabled(enable);
-        kerberosAttribute.setEnabled(enable);
-        kerberosEnterpriseAttribute.setEnabled(enable);
         nameAttribute.setEnabled(enable);
         objectClass.setEnabled(enable);
         passwordAttribute.setEnabled(enable);
@@ -507,10 +484,6 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         loginNameAttributeLabel = new JLabel();
         nameAttribute = new JTextField();
         loginNameAttribute = new JTextField();
-        kerberosAttributeLabel = new JLabel();
-        kerberosAttribute = new JTextField();
-        kerberosEnterpriseAttributeLabel = new JLabel();
-        kerberosEnterpriseAttribute = new JTextField();
         passwordAttributeLabel = new JLabel();
         passwordAttribute = new JTextField();
         firstNameAttributeLabel = new JLabel();
@@ -684,42 +657,6 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 12, 0, 0);
         userAttributePanel.add(emailAttribute, gridBagConstraints);
 
-        kerberosAttributeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
-        kerberosAttributeLabel.setText(resources.getString("kerberosAttributeTextField.label"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 11;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
-        userAttributePanel.add(kerberosAttributeLabel, gridBagConstraints);
-
-        kerberosAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
-        kerberosAttribute.setToolTipText(resources.getString("kerberosAttributeTextField.tooltip"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 11;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 12, 0, 0);
-        userAttributePanel.add(kerberosAttribute, gridBagConstraints);
-
-        kerberosEnterpriseAttributeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
-        kerberosEnterpriseAttributeLabel.setText(resources.getString("kerberosEnterpriseAttributeTextField.label"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 12;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
-        userAttributePanel.add(kerberosEnterpriseAttributeLabel, gridBagConstraints);
-
-        kerberosEnterpriseAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
-        kerberosEnterpriseAttribute.setToolTipText(resources.getString("kerberosEnterpriseAttributeTextField.tooltip"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 12;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 12, 0, 0);
-        userAttributePanel.add(kerberosEnterpriseAttribute, gridBagConstraints);
-
         /*   Commented out the password strategry for the time being as the server does not handle it right now (Bugzilla #615)
         passwordStrategyAttributeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
         passwordStrategyAttributeLabel.setText(resources.getString("passwordStrategyAttributeTextField.label"));
@@ -788,8 +725,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
      *
      **/
     private final ListCellRenderer renderer = new DefaultListCellRenderer() {
-       @Override
-       public Component getListCellRendererComponent(JList list, Object value,
+        public Component getListCellRendererComponent(JList list, Object value,
                                                       int index, boolean isSelected,
                                                       boolean cellHasFocus) {
             if (isSelected) {
@@ -858,8 +794,6 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
     private JLabel emailAttributeLabel;
     private JLabel lastNameAttributeLabel;
     private JLabel loginNameAttributeLabel;
-    private JLabel kerberosAttributeLabel;
-    private JLabel kerberosEnterpriseAttributeLabel;
     private JLabel mappingTitleLabel;
     private JLabel nameAttributeLabel;
     private JLabel objectClassLabel;
@@ -870,8 +804,6 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
     private JTextField firstNameAttribute;
     private JTextField lastNameAttribute;
     private JTextField loginNameAttribute;
-    private JTextField kerberosAttribute;
-    private JTextField kerberosEnterpriseAttribute;
     private JTextField nameAttribute;
     private JTextField objectClass;
     private JTextField passwordAttribute;

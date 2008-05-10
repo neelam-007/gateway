@@ -19,6 +19,7 @@ import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.identity.ldap.UserMappingConfig;
 import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.identity.mapping.LdapAttributeMapping;
+import com.l7tech.identity.mapping.UsersOrGroups;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -151,7 +152,7 @@ public class LdapIdentityProviderImpl
                     //noinspection StringEquality
                     if (ldapUrls[i] == urlThatFailed) {
                         failurePos = i;
-                        urlStatus[i] = System.currentTimeMillis();
+                        urlStatus[i] = new Long(System.currentTimeMillis());
                         logger.info("Blacklisting url for next " + (retryFailedConnectionTimeout / 1000) +
                           " seconds : " + ldapUrls[i]);
                     }
@@ -167,7 +168,7 @@ public class LdapIdentityProviderImpl
                     thisoneok = true;
                     logger.fine("Try url not on blacklist yet " + ldapUrls[i]);
                 } else {
-                    long howLong = System.currentTimeMillis() - urlStatus[i];
+                    long howLong = System.currentTimeMillis() - urlStatus[i].longValue();
                     if (howLong > retryFailedConnectionTimeout) {
                         thisoneok = true;
                         urlStatus[i] = null;
@@ -196,10 +197,11 @@ public class LdapIdentityProviderImpl
             KerberosServiceTicket ticket = (KerberosServiceTicket) pc.getPayload();
 
             Collection<IdentityHeader> headers;
+            String upn = ticket.getClientPrincipalName();
             try {
-                headers = search(ticket);
+                headers = search(true, false, getKerberosLdapAttributeMapping(), upn);
                 if (headers.size() > 1) {
-                    throw new AuthenticationException("Found multiple LDAP users for kerberos principal '" + ticket.getClientPrincipalName() + "'.");
+                    throw new AuthenticationException("Found multiple LDAP users with userPrincipalName '" + upn + "'.");
                 }
                 else if (!headers.isEmpty()){
                     for (IdentityHeader header : headers) {
@@ -210,7 +212,7 @@ public class LdapIdentityProviderImpl
                     return new AuthenticationResult(realUser);
                 }
             } catch (FindException e) {
-                throw new AuthenticationException("Couldn't find LDAP user for kerberos principal '" + ticket.getClientPrincipalName() + "'.", e);
+                throw new AuthenticationException("Couldn't find LDAP user with userPrincipalName '" + upn + "'.", e);
             }
         } else {
             try {
@@ -324,53 +326,6 @@ public class LdapIdentityProviderImpl
         return doSearch(filter);
     }
 
-    /**
-     * Find the LDAP users that correspond to the given ticket 
-     */
-    private Collection<IdentityHeader> search( final KerberosServiceTicket ticket ) throws FindException {
-        String principal = ticket.getClientPrincipalName();
-
-        int index1 = principal.indexOf( '@' );
-        int index2 = principal.lastIndexOf( '@' );
-        boolean isEnterprise = index1 != index2;
-        String value = principal;
-        if ( index2 != -1 ) {
-            value = principal.substring( 0, index2 );
-        }
-
-        if ( value.length() == 0 ) {
-            throw new FindException( "Error processing kerberos principal name '"+principal+"', cannot determine REALM." );            
-        }
-
-        if ( logger.isLoggable( Level.FINEST ) ) {
-            logger.log( Level.FINEST, "Performing LDAP search by kerberos principal ''{1}'' (enterprise:{0})", new Object[]{isEnterprise, principal} );
-        }
-
-        ArrayList<LdapSearchTerm> terms = new ArrayList<LdapSearchTerm>();
-        for (int i = 0; i < config.getUserMappings().length; i++) {
-            UserMappingConfig userMappingConfig = config.getUserMappings()[i];
-
-            String mappingName = null;
-            if ( isEnterprise ) {
-                mappingName = userMappingConfig.getKerberosEnterpriseAttrName();
-            }
-
-            if ( mappingName == null ) {
-                mappingName = userMappingConfig.getKerberosAttrName();
-
-                if ( mappingName == null ) {
-                    mappingName = userMappingConfig.getLoginAttrName();
-                }
-            }
-
-            terms.add( new LdapSearchTerm( userMappingConfig.getObjClass(), mappingName, value ) );
-        }
-
-        String filter = makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]));
-
-        return doSearch(filter);
-    }
-
     private Collection<IdentityHeader> doSearch(String filter) throws FindException {
         Collection<IdentityHeader> output = new TreeSet<IdentityHeader>();
         DirContext context = null;
@@ -442,7 +397,7 @@ public class LdapIdentityProviderImpl
                     UserMappingConfig userMappingConfig = config.getUserMappings()[i];
                     terms.add(new LdapSearchTerm(userMappingConfig.getObjClass(), attName, attValue.toString()));
                 }
-                userFilter = makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]));
+                userFilter = makeSearchFilter(terms.toArray(new LdapSearchTerm[0]));
             }
 
             if (getusers) {
@@ -451,7 +406,7 @@ public class LdapIdentityProviderImpl
                     GroupMappingConfig groupMappingConfig = config.getGroupMappings()[i];
                     terms.add(new LdapSearchTerm(groupMappingConfig.getObjClass(), attName, attValue.toString()));
                 }
-                groupFilter = makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]));
+                groupFilter = makeSearchFilter(terms.toArray(new LdapSearchTerm[0]));
             }
 
             String filter;
@@ -487,7 +442,7 @@ public class LdapIdentityProviderImpl
             terms.add(new LdapSearchTerm(userType.getObjClass(), userType.getLoginAttrName(), param));
             terms.add(new LdapSearchTerm(userType.getObjClass(), userType.getNameAttrName(), param));
         }
-        return makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]));
+        return makeSearchFilter(terms.toArray(new LdapSearchTerm[0]));
     }
 
     private String makeSearchFilter(LdapSearchTerm[] terms) {
@@ -520,7 +475,7 @@ public class LdapIdentityProviderImpl
             terms.add(new LdapSearchTerm(groupType.getObjClass(), groupType.getNameAttrName(), param));
         }
 
-        return makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]));
+        return makeSearchFilter(terms.toArray(new LdapSearchTerm[0]));
     }
 
     public DirContext getBrowseContext() throws NamingException {
@@ -792,13 +747,13 @@ public class LdapIdentityProviderImpl
                   "is of unexpected type: " + found.getClass().getName());
             }
             if (value != null) {
-                if ((value & DISABLED_FLAG) == DISABLED_FLAG) {
+                if ((value.longValue() & DISABLED_FLAG) == DISABLED_FLAG) {
                     auditor.logAndAudit(SystemMessages.AUTH_USER_DISABLED, userDn);
                     return false;
-                } else if ((value & LOCKED_FLAG) == LOCKED_FLAG) {
+                } else if ((value.longValue() & LOCKED_FLAG) == LOCKED_FLAG) {
                     auditor.logAndAudit(SystemMessages.AUTH_USER_LOCKED, userDn);
                     return false;
-                }  else if ((value & EXPIRED_FLAG) == EXPIRED_FLAG) {
+                }  else if ((value.longValue() & EXPIRED_FLAG) == EXPIRED_FLAG) {
                     auditor.logAndAudit(SystemMessages.AUTH_USER_EXPIRED, userDn);
                     return false;
                 }
@@ -851,7 +806,7 @@ public class LdapIdentityProviderImpl
     /**
      * Constructs an EntityHeader for the dn passed.
      *
-     * @param sr The search result
+     * @param sr
      * @return the EntityHeader for the dn or null if the object class is not supported or if the entity
      *         should be ignored (perhaps disabled)
      */
@@ -928,6 +883,18 @@ public class LdapIdentityProviderImpl
         return null;
     }
 
+    private LdapAttributeMapping getKerberosLdapAttributeMapping(){
+        LdapAttributeMapping lmap = kerberosLdapAttributeMapping;
+
+        if (lmap == null) {
+            lmap = new LdapAttributeMapping(null, config.getOid(), UsersOrGroups.USERS);
+            lmap.setCustomAttributeName("userPrincipalName"); // TODO make this configurable in LdapIdentityProviderConfig
+            kerberosLdapAttributeMapping = lmap;
+        }
+
+        return lmap;
+    }
+
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.auditor = new Auditor(this, applicationContext, logger);
     }
@@ -936,6 +903,7 @@ public class LdapIdentityProviderImpl
 
     private ServerConfig serverConfig;
     private LdapIdentityProviderConfig config;
+    private LdapAttributeMapping kerberosLdapAttributeMapping;
     private ClientCertManager clientCertManager;
     private LdapUserManager userManager;
     private LdapGroupManager groupManager;
