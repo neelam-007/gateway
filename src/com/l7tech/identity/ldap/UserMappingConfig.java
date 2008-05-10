@@ -9,8 +9,6 @@ import java.io.Serializable;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jan 20, 2004<br/>
- * $Id$<br/>
- *
  */
 public class UserMappingConfig implements Serializable {
 
@@ -70,6 +68,22 @@ public class UserMappingConfig implements Serializable {
         this.emailNameAttrName = emailNameAttrName;
     }
 
+    public String getKerberosAttrName() {
+        return kerberosAttrName;
+    }
+
+    public void setKerberosAttrName( String kerberosAttrName ) {
+        this.kerberosAttrName = kerberosAttrName;
+    }
+
+    public String getKerberosEnterpriseAttrName() {
+        return kerberosEnterpriseAttrName;
+    }
+
+    public void setKerberosEnterpriseAttrName( String kerberosEnterpriseAttrName ) {
+        this.kerberosEnterpriseAttrName = kerberosEnterpriseAttrName;
+    }
+
     public PasswdStrategy getPasswdType() {
         return passwdType;
     }
@@ -85,14 +99,19 @@ public class UserMappingConfig implements Serializable {
     private String firstNameAttrName;
     private String lastNameAttrName;
     private String emailNameAttrName;
-    private PasswdStrategy passwdType = null;
+    private String kerberosAttrName;
+    private String kerberosEnterpriseAttrName;
+    private PasswdStrategy passwdType;
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof UserMappingConfig)) return false;
 
         final UserMappingConfig userMappingConfig = (UserMappingConfig) o;
 
+        if (kerberosAttrName != null ? !kerberosAttrName.equals(userMappingConfig.kerberosAttrName) : userMappingConfig.kerberosAttrName != null) return false;
+        if (kerberosEnterpriseAttrName != null ? !kerberosEnterpriseAttrName.equals(userMappingConfig.kerberosEnterpriseAttrName) : userMappingConfig.kerberosEnterpriseAttrName != null) return false;
         if (emailNameAttrName != null ? !emailNameAttrName.equals(userMappingConfig.emailNameAttrName) : userMappingConfig.emailNameAttrName != null) return false;
         if (firstNameAttrName != null ? !firstNameAttrName.equals(userMappingConfig.firstNameAttrName) : userMappingConfig.firstNameAttrName != null) return false;
         if (lastNameAttrName != null ? !lastNameAttrName.equals(userMappingConfig.lastNameAttrName) : userMappingConfig.lastNameAttrName != null) return false;
@@ -100,11 +119,13 @@ public class UserMappingConfig implements Serializable {
         if (nameAttrName != null ? !nameAttrName.equals(userMappingConfig.nameAttrName) : userMappingConfig.nameAttrName != null) return false;
         if (objClass != null ? !objClass.equals(userMappingConfig.objClass) : userMappingConfig.objClass != null) return false;
         if (passwdAttrName != null ? !passwdAttrName.equals(userMappingConfig.passwdAttrName) : userMappingConfig.passwdAttrName != null) return false;
+        //noinspection RedundantIfStatement
         if (passwdType != null ? !passwdType.equals(userMappingConfig.passwdType) : userMappingConfig.passwdType != null) return false;
 
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result;
         result = (objClass != null ? objClass.hashCode() : 0);
@@ -114,6 +135,8 @@ public class UserMappingConfig implements Serializable {
         result = 29 * result + (firstNameAttrName != null ? firstNameAttrName.hashCode() : 0);
         result = 29 * result + (lastNameAttrName != null ? lastNameAttrName.hashCode() : 0);
         result = 29 * result + (emailNameAttrName != null ? emailNameAttrName.hashCode() : 0);
+        result = 29 * result + (kerberosAttrName != null ? kerberosAttrName.hashCode() : 0);
+        result = 29 * result + (kerberosEnterpriseAttrName != null ? kerberosEnterpriseAttrName.hashCode() : 0);
         result = 29 * result + (passwdType != null ? passwdType.hashCode() : 0);
         return result;
     }
