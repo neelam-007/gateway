@@ -14,15 +14,13 @@ import java.net.Socket;
 import java.nio.channels.SocketChannel;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
 /**
  * ServerSocketFactory wrapper that supports connection listeners.
- *
- * @author Steve Jones, $Author$
- * @version $Revision$
  */
 public class SsgServerSocketFactory extends ServerSocketFactory {
     private long transportModuleId = -1;
@@ -226,25 +224,18 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
         private final long transportModuleId;
         private final long connectorOid;
         private final Socket accepted;
-        boolean dispatched;
+        private final AtomicBoolean dispatched = new AtomicBoolean(false);
 
         public DispatchSupport(long transportModuleId, long connectorOid, Socket accepted) {
             this.transportModuleId = transportModuleId;
             this.connectorOid = connectorOid;
             this.accepted = accepted;
-            dispatched = false;
         }
 
         public void maybeDispatch() {
-            if (!dispatched) {
-                synchronized (this) {
-                    if (dispatched)
-                        return;
-
-                    dispatchingListener.onGetInputStream(transportModuleId, connectorOid, accepted);
-                    dispatched = true;
-                }
-            }
+            final boolean wasDispatched = dispatched.getAndSet(true);
+            if (!wasDispatched)
+                dispatchingListener.onGetInputStream(transportModuleId, connectorOid, accepted);
         }
 
         public void onClose() {
