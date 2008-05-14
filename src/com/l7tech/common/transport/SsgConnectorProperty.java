@@ -2,8 +2,6 @@ package com.l7tech.common.transport;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * Represents an arbitrary property associated with an SsgConnector instance.  This allows connectors to be configured

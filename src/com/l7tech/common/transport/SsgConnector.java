@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -159,7 +160,8 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     private int clientAuth;
     private Long keystoreOid;
     private String keyAlias;
-
+    
+    @XmlTransient
     private Set<SsgConnectorProperty> properties = new HashSet<SsgConnectorProperty>();
 
     // Fields not saved by hibernate
