@@ -1,20 +1,22 @@
 package com.l7tech.server;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collection;
-
-import junit.framework.TestCase;
+import com.l7tech.objectmodel.EntityManager;
 import junit.framework.Test;
+import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
-import org.springframework.beans.MutablePropertyValues;
-import org.springframework.beans.PropertyValue;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Basic test for spring application context.
@@ -99,6 +101,33 @@ public class ApplicationContextTest  extends TestCase {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Ensure that all EntityManager beans in the application context are registered with the BeanNameAutoProxyCreator
+     */
+    public void testEntityManagerAutoProxy() throws Exception {
+        //
+        DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
+        XmlBeanDefinitionReader xbdr = new XmlBeanDefinitionReader(dlbf);
+
+        for (String context : CONTEXTS) {
+            xbdr.loadBeanDefinitions(new ClassPathResource(context));
+        }
+
+        String[] autoProxyDefn = dlbf.getBeanDefinitionNames(BeanNameAutoProxyCreator.class);
+        assertNotNull(autoProxyDefn); assertTrue(autoProxyDefn.length == 1);
+        BeanDefinition proxyDef = dlbf.getBeanDefinition(autoProxyDefn[0]);
+
+        //noinspection unchecked
+        List<String> regbeans = (List<String>)proxyDef.getPropertyValues().getPropertyValue("beanNames").getValue();
+
+        String[] entityManagerDefns = dlbf.getBeanDefinitionNames(EntityManager.class);
+        assertNotNull(entityManagerDefns); assertTrue(entityManagerDefns.length > 0);
+
+        for (String name : entityManagerDefns) {
+            assertTrue("Bean " + name + " should be registered with BeanNameAutoProxyCreator", regbeans.contains(name));
         }
     }
 }

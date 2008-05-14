@@ -82,6 +82,7 @@
                 <idref bean="serviceDocumentManager"/>
                 <idref bean="resolutionManager"/>
                 <idref bean="clusterInfoManager"/>
+                <idref bean="clusterPropertyManager"/>
                 <idref bean="serviceUsageManager"/>
                 <idref bean="jmsEndpointManager"/>
                 <idref bean="jmsConnectionManager"/>
@@ -98,6 +99,8 @@
                 <idref bean="revocationCheckPolicyManager"/>
                 <idref bean="ssgConnectorManager"/>
                 <idref bean="policyManager"/>
+                <idref bean="policyVersionManager"/>
+                <idref bean="sinkManager"/>
             </list>
         </property>
     </bean>
