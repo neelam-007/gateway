@@ -22,11 +22,6 @@ public class SsgConnectorProperty extends NamedEntityImp {
         this.value = value;
     }
 
-    /*This is very important for Jaxb. Without this @XmlTransient annotation marshalling an SsgConnector
-    * will go into an infinite loop as the SsgConnector to which 'this' SsgConnectorProperty belongs is what
-    * causes this objct to be marshalled which in turn causes it's parent to be marshalled due to this
-    * bi-directional relationship, which causes the infinite loop behaviour.*/
-    @XmlTransient
     public SsgConnector getConnector() {
         return connector;
     }
