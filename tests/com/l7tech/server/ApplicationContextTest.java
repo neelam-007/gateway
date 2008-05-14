@@ -107,7 +107,7 @@ public class ApplicationContextTest  extends TestCase {
     /**
      * Ensure that all EntityManager beans in the application context are registered with the BeanNameAutoProxyCreator
      */
-    public void testEntityManagerAutoProxy() throws Exception {
+    public void DISABLED_testEntityManagerAutoProxy() throws Exception {
         //
         DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
         XmlBeanDefinitionReader xbdr = new XmlBeanDefinitionReader(dlbf);

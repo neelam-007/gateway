@@ -100,7 +100,7 @@
                 <idref bean="ssgConnectorManager"/>
                 <idref bean="policyManager"/>
                 <idref bean="policyVersionManager"/>
-                <idref bean="sinkManager"/>
+                <!-- <idref bean="sinkManager"/> Disabled for now because it conflicts with MethodInvokingFactoryBean -->
             </list>
         </property>
     </bean>
