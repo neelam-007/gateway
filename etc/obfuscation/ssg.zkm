@@ -63,7 +63,7 @@ existingSerializedClasses *.* implements java.io.Serializable;
 
 obfuscate   changeLogFileIn=""
             changeLogFileOut="build/obfuscation/gatewaychange.log"
-            obfuscateFlow=normal
+            obfuscateFlow=none
             encryptStringLiterals=normal
             lineNumbers=delete;
 

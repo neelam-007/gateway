@@ -48,7 +48,7 @@ existingSerializedClasses *.* implements java.io.Serializable;
 obfuscate   changeLogFileIn=""
             changeLogFileOut="build/obfuscation/udditoolchange.log"
             keepInnerClassInfo=ifNameNotObfuscated
-            obfuscateFlow=normal
+            obfuscateFlow=none
             encryptStringLiterals=normal
             lineNumbers=delete;
 
