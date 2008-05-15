@@ -161,7 +161,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     private Long keystoreOid;
     private String keyAlias;
     
-    @XmlTransient
+    @XmlElement
     private Set<SsgConnectorProperty> properties = new HashSet<SsgConnectorProperty>();
 
     // Fields not saved by hibernate

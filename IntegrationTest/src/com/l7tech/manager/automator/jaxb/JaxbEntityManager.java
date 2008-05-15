@@ -158,7 +158,7 @@ public class JaxbEntityManager {
         try{
             //All classes the marshaller / unmarshaller needs to be able to process must be listed here.
             //don't need to list all clases in a hierarchy, just the type of the object you want processed.
-            context = JAXBContext.newInstance(Policy.class, JaxbPublishedService.class, IdentityProviderConfig.class, InternalUser.class, InternalGroup.class, JaxbPersistentUser.class, FederatedIdentityProviderConfig.class, LdapIdentityProviderConfig.class, TrustedCert.class, JaxbFederatedIdentityProviderConfig.class, VirtualGroup.class, FederatedGroup.class, FederatedUser.class, JmsConnection.class, JaxbJmsEndpoint.class, SchemaEntry.class, ClusterProperty.class, SsgConnector.class, SsgConnectorProperty.class, JaxbSsgConnectorProperty.class);
+            context = JAXBContext.newInstance(Policy.class, JaxbPublishedService.class, IdentityProviderConfig.class, InternalUser.class, InternalGroup.class, JaxbPersistentUser.class, FederatedIdentityProviderConfig.class, LdapIdentityProviderConfig.class, TrustedCert.class, JaxbFederatedIdentityProviderConfig.class, VirtualGroup.class, FederatedGroup.class, FederatedUser.class, JmsConnection.class, JaxbJmsEndpoint.class, SchemaEntry.class, ClusterProperty.class, SsgConnector.class, SsgConnectorProperty.class);
             //Here we generate a schema representing all the classes we've told jaxb about
             //This is not needed but is available if you want to validate xml before unmarshalling.
             context.generateSchema(new MySchemaOutputResolver());
@@ -421,16 +421,8 @@ public class JaxbEntityManager {
         System.out.println("Downloading all Transports");
         Collection<SsgConnector> conns = transportAdmin.findAllSsgConnectors();
         for(SsgConnector sG: conns){
-            JaxbSsgConnectorProperty jaxbSsgConnProp = new JaxbSsgConnectorProperty();
-            jaxbSsgConnProp.setSsgConnector(sG);
-            Map<String, String> props = new HashMap<String, String>();
-            List<String> propNames = sG.getPropertyNames();
-            for(String key: propNames){
-                String value = sG.getProperty(key);
-                props.put(key, value);
-            }
-            jaxbSsgConnProp.setProperties(props);                
-            this.doMarshall(jaxbSsgConnProp, jaxbDir+"/Transports", sG.getName()+".xml");
+            this.doMarshall(sG, jaxbDir+"/Transports", sG.getName()+".xml");
+
         }
         System.out.println("Finished downloading all Transports");
     }
@@ -460,28 +452,36 @@ public class JaxbEntityManager {
         }
         
         for(File f: files){
-            JaxbSsgConnectorProperty jaxbSsgConnectorProperty = (JaxbSsgConnectorProperty)this.unmarshaller.unmarshal(f);
-            String uniqueConnName = getUniqueSsgConnectorName(jaxbSsgConnectorProperty.getSsgConnector());
+            SsgConnector ssgConnector = (SsgConnector)this.unmarshaller.unmarshal(f);
+            String uniqueConnName = getUniqueSsgConnectorName(ssgConnector);
             if(!connSet.contains(uniqueConnName)){
-                //upload as this transport isn't defined on the SSG
                 System.out.println("Saving SsgConnector: " + uniqueConnName);
-                //Set<SsgConnectorProperty> connProps = jaxbSsgConnectorProperty.getProperties();
+                //Set<SsgConnectorProperty> connProps = ssgConnector.getProperties();
                 //Working around protected get/setProperties in SsgConnectorProperty, need to take the
                 //long route instead of changing the access modifier, need to create new properties
                 //as no way to modify the SsgConnector's internal state. Don't want to change the protected
-                //to public right now
-                Map<String, String> props = jaxbSsgConnectorProperty.getProperties();
-                SsgConnector ssgConnector = jaxbSsgConnectorProperty.getSsgConnector();
-                for(String key: props.keySet()){
-                    ssgConnector.putProperty(key, props.get(key));
+                //to private right now
+                List<String> propNames = ssgConnector.getPropertyNames();
+                Map<String, String> ssgConnProps = new HashMap<String, String>();
+                for(String s: propNames){
+                    String connPropValue = ssgConnector.getProperty(s);
+                    ssgConnProps.put(s, connPropValue);
+                    ssgConnector.removeProperty(s);
                 }
-                //Update the oid of this jaxbSsgConnectorProperty before adding it's props
+                //Update the oid of this ssgConnector before adding it's props
                 ssgConnector.setOid(SsgConnector.DEFAULT_OID);
+                //Now we have all saved all the name-value pairs and removed all of the SsgConnector's
+                //internal SsgConnectorProperty's we can add then back.
+                for(String s: ssgConnProps.keySet()){
+                    //Now it's internal property's contain the correct reference
+                    ssgConnector.putProperty(s, ssgConnProps.get(s));
+                }
 
                 this.transportAdmin.saveSsgConnector(ssgConnector);
             }else{
                 System.out.println("Not saving SsgConnector: " + uniqueConnName);                
             }
+
         }
         System.out.println("Finished uploading all NEW Transports");        
 
