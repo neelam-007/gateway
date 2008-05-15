@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><ssgConnector><oid>-670</oid><version>1</version><name>Main</name><clientAuth>0</clientAuth><enabled>true</enabled><endpoints>MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS</endpoints><port>8080</port><scheme>HTTP</scheme><secure>false</secure></ssgConnector>

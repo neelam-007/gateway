@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><ssgConnector><oid>-671</oid><version>1</version><name>Main SSL</name><clientAuth>2</clientAuth><enabled>true</enabled><endpoints>MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS</endpoints><port>8443</port><scheme>HTTPS</scheme><secure>true</secure></ssgConnector>
