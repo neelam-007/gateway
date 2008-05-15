@@ -596,14 +596,14 @@ public class DBActions {
 
         ssgDbChecker = new CheckSSGDatabase();
         //always sort the dbCheckers in reverse in case someone has added one out of sequence so things still work properly
+        Arrays.sort(dbCheckers, Collections.reverseOrder());
+
         if (!hasCheckForCurrentVersion(dbCheckers)) {
             DbVersionChecker[] checkers = new DbVersionChecker[dbCheckers.length+1];
-            System.arraycopy(dbCheckers, 0, checkers, 0, dbCheckers.length);
-            checkers[dbCheckers.length] =  new DbVersionBeHappyChecker();
+            System.arraycopy(dbCheckers, 0, checkers, 1, dbCheckers.length);
+            checkers[0] =  new DbVersionBeHappyChecker(dbCheckers.length > 0 ? dbCheckers[0] : null);
             dbCheckers = checkers;
         }
-
-        Arrays.sort(dbCheckers, Collections.reverseOrder());
     }
 
     private void initDriver() throws ClassNotFoundException {
