@@ -158,7 +158,7 @@ public class JaxbEntityManager {
         try{
             //All classes the marshaller / unmarshaller needs to be able to process must be listed here.
             //don't need to list all clases in a hierarchy, just the type of the object you want processed.
-            context = JAXBContext.newInstance(Policy.class, JaxbPublishedService.class, IdentityProviderConfig.class, InternalUser.class, InternalGroup.class, JaxbPersistentUser.class, FederatedIdentityProviderConfig.class, LdapIdentityProviderConfig.class, TrustedCert.class, JaxbFederatedIdentityProviderConfig.class, VirtualGroup.class, FederatedGroup.class, FederatedUser.class, JmsConnection.class, JaxbJmsEndpoint.class, SchemaEntry.class, ClusterProperty.class, SsgConnector.class, SsgConnectorProperty.class);
+            context = JAXBContext.newInstance(Policy.class, JaxbPublishedService.class, IdentityProviderConfig.class, InternalUser.class, InternalGroup.class, JaxbPersistentUser.class, FederatedIdentityProviderConfig.class, LdapIdentityProviderConfig.class, TrustedCert.class, JaxbFederatedIdentityProviderConfig.class, VirtualGroup.class, FederatedGroup.class, FederatedUser.class, JmsConnection.class, JaxbJmsEndpoint.class, SchemaEntry.class, ClusterProperty.class, SsgConnector.class, SsgConnectorProperty.class, JaxbSsgConnectorProperty.class);
             //Here we generate a schema representing all the classes we've told jaxb about
             //This is not needed but is available if you want to validate xml before unmarshalling.
             context.generateSchema(new MySchemaOutputResolver());
@@ -245,7 +245,7 @@ public class JaxbEntityManager {
         deleteIdentityProviders();//includes groups and users
         deleteTrustedCerts();
         deleteAllJmsConnectionsAndEndpoints();
-        deleteAllClusterProperties();        
+        deleteAllClusterProperties();
     }
 
     /*
@@ -270,7 +270,7 @@ public class JaxbEntityManager {
             if(cP.getName().equals("cluster.internodePort") || cP.getName().equals("license")){
                 continue;
             }
-            this.doMarshall(cP, jaxbDir+"/ClusterProperties/", cP.getId() +".xml");            
+            this.doMarshall(cP, jaxbDir+"/ClusterProperties/", cP.getId() +".xml");
         }
         System.out.println("Finished downloading Cluster Properties");
     }
@@ -283,7 +283,7 @@ public class JaxbEntityManager {
             clusterProperty.setOid(ClusterProperty.DEFAULT_OID);
             this.clusterAdmin.saveProperty(clusterProperty);
         }
-        System.out.println("Finished uploading all Cluster Properties");        
+        System.out.println("Finished uploading all Cluster Properties");
     }
     /* Download all trusted certs in this SSG*/
     public void downloadTrustedCerts() throws Exception{
@@ -309,7 +309,7 @@ public class JaxbEntityManager {
     /* Upload all TrustedCerts found. Invalid certs exceptions are caught and processing will continue*/
     public void uploadTrustedCerts() throws Exception{
         System.out.println("Uploading all Trusted Certs");
-        File [] files = this.getFilesFromDirectory(jaxbDir+"/TrustedCerts/", this.xmlFilter);        
+        File [] files = this.getFilesFromDirectory(jaxbDir+"/TrustedCerts/", this.xmlFilter);
 
         for( File f: files){
             TrustedCert tCert = (TrustedCert)this.unmarshaller.unmarshal(f);
@@ -362,7 +362,7 @@ public class JaxbEntityManager {
                 processedSchemas.clear();
             }
             */
-            
+
             //this.deleteAllEntities();
             uploadLicense();
             //deleteAllNonStandardTransports();
@@ -421,8 +421,16 @@ public class JaxbEntityManager {
         System.out.println("Downloading all Transports");
         Collection<SsgConnector> conns = transportAdmin.findAllSsgConnectors();
         for(SsgConnector sG: conns){
-            this.doMarshall(sG, jaxbDir+"/Transports", sG.getName()+".xml");
-
+            JaxbSsgConnectorProperty jaxbSsgConnProp = new JaxbSsgConnectorProperty();
+            jaxbSsgConnProp.setSsgConnector(sG);
+            Map<String, String> props = new HashMap<String, String>();
+            List<String> propNames = sG.getPropertyNames();
+            for(String key: propNames){
+                String value = sG.getProperty(key);
+                props.put(key, value);
+            }
+            jaxbSsgConnProp.setProperties(props);
+            this.doMarshall(jaxbSsgConnProp, jaxbDir+"/Transports", sG.getName()+".xml");
         }
         System.out.println("Finished downloading all Transports");
     }
@@ -441,7 +449,7 @@ public class JaxbEntityManager {
     * */
     public void uploadAllTransports() throws Exception{
         System.out.println("Uploading all NEW Transports");
-        File [] files = this.getFilesFromDirectory(jaxbDir+"/Transports", this.xmlFilter);        
+        File [] files = this.getFilesFromDirectory(jaxbDir+"/Transports", this.xmlFilter);
 
         //Download all existing Tansports on this SSG
         Collection<SsgConnector> conns = this.transportAdmin.findAllSsgConnectors();
@@ -450,38 +458,30 @@ public class JaxbEntityManager {
             String uniqueConnName = getUniqueSsgConnectorName(sG);
             connSet.add(uniqueConnName);
         }
-        
+
         for(File f: files){
-            SsgConnector ssgConnector = (SsgConnector)this.unmarshaller.unmarshal(f);
-            String uniqueConnName = getUniqueSsgConnectorName(ssgConnector);
+            JaxbSsgConnectorProperty jaxbSsgConnectorProperty = (JaxbSsgConnectorProperty)this.unmarshaller.unmarshal(f);
+            String uniqueConnName = getUniqueSsgConnectorName(jaxbSsgConnectorProperty.getSsgConnector());
             if(!connSet.contains(uniqueConnName)){
+                //upload as this transport isn't defined on the SSG
                 System.out.println("Saving SsgConnector: " + uniqueConnName);
-                //Set<SsgConnectorProperty> connProps = ssgConnector.getProperties();
+                //Set<SsgConnectorProperty> connProps = jaxbSsgConnectorProperty.getProperties();
                 //Working around protected get/setProperties in SsgConnectorProperty, need to take the
                 //long route instead of changing the access modifier, need to create new properties
                 //as no way to modify the SsgConnector's internal state. Don't want to change the protected
-                //to private right now
-                List<String> propNames = ssgConnector.getPropertyNames();
-                Map<String, String> ssgConnProps = new HashMap<String, String>();
-                for(String s: propNames){
-                    String connPropValue = ssgConnector.getProperty(s);
-                    ssgConnProps.put(s, connPropValue);
-                    ssgConnector.removeProperty(s);
+                //to public right now
+                Map<String, String> props = jaxbSsgConnectorProperty.getProperties();
+                SsgConnector ssgConnector = jaxbSsgConnectorProperty.getSsgConnector();
+                for(String key: props.keySet()){
+                    ssgConnector.putProperty(key, props.get(key));
                 }
-                //Update the oid of this ssgConnector before adding it's props
+                //Update the oid of this jaxbSsgConnectorProperty before adding it's props
                 ssgConnector.setOid(SsgConnector.DEFAULT_OID);
-                //Now we have all saved all the name-value pairs and removed all of the SsgConnector's
-                //internal SsgConnectorProperty's we can add then back.
-                for(String s: ssgConnProps.keySet()){
-                    //Now it's internal property's contain the correct reference
-                    ssgConnector.putProperty(s, ssgConnProps.get(s));
-                }
 
                 this.transportAdmin.saveSsgConnector(ssgConnector);
             }else{
-                System.out.println("Not saving SsgConnector: " + uniqueConnName);                
+                System.out.println("Not saving SsgConnector: " + uniqueConnName);
             }
-
         }
         System.out.println("Finished uploading all NEW Transports");        
 
