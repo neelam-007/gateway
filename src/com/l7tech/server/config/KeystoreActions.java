@@ -1,11 +1,7 @@
 package com.l7tech.server.config;
 
 import com.l7tech.common.security.JceProvider;
-import com.l7tech.common.util.ProcResult;
-import com.l7tech.common.util.ProcUtils;
-import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.server.config.beans.KeystoreConfigBean;
+import com.l7tech.common.util.*;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.exceptions.KeystoreActionsException;
@@ -265,11 +261,11 @@ public class KeystoreActions {
         try {
             sharedKey = reallyGetExistingSharedKey(ksType, ksPassword, keystoreFile, tryAgain, listener);
         } catch (IOException e) {
-            logger.severe("Error loading existing keystore and retrieving cluster shared key: " + e.getMessage());
-            throw new KeystoreActionsException("Error loading existing keystore and retrieving cluster shared key: " + e.getMessage());
+            logger.severe("Error loading existing keystore and retrieving cluster shared key: " + ExceptionUtils.getMessage(e));
+            throw new KeystoreActionsException("Error loading existing keystore and retrieving cluster shared key: " + ExceptionUtils.getMessage(e));
         } catch (KeystoreActionsException e) {
-            logger.severe("Error loading existing keystore and retrieving cluster shared key: " + e.getMessage());
-            throw new KeystoreActionsException("Error loading existing keystore and retrieving cluster shared key: " + e.getMessage());
+            logger.severe("Error loading existing keystore and retrieving cluster shared key: " + ExceptionUtils.getMessage(e));
+            throw new KeystoreActionsException("Error loading existing keystore and retrieving cluster shared key: " + ExceptionUtils.getMessage(e));
         }
         return sharedKey;
     }
@@ -293,10 +289,10 @@ public class KeystoreActions {
                     if (listener != null) {
                         return reallyGetExistingSharedKey(null, null, keystoreFile, false, listener);
                     } else {
-                        throw new WrongKeystorePasswordException("Could not load the keystore with the given password and type");
+                        throw new WrongKeystorePasswordException("Could not load the keystore with the given password and type", passwdEx);
                     }
                 } else {
-                    throw new WrongKeystorePasswordException("Could not load the keystore with the given password and type");
+                    throw new WrongKeystorePasswordException("Could not load the keystore with the given password and type", passwdEx);
                 }
             }
         }
