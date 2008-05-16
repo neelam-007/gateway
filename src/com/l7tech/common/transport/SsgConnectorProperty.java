@@ -10,7 +10,7 @@ import javax.xml.bind.annotation.XmlTransient;
  * Represents an arbitrary property associated with an SsgConnector instance.  This allows connectors to be configured
  * that didn't exist when a particular Gateway core's hibernate mappings file was written (ie, added via .aar files).
  */
-@XmlRootElement
+
 public class SsgConnectorProperty extends NamedEntityImp {
     private static final long serialVersionUID = 1L;
 
@@ -26,7 +26,7 @@ public class SsgConnectorProperty extends NamedEntityImp {
         this.value = value;
     }
 
-    @XmlTransient
+
     public SsgConnector getConnector() {
         return connector;
     }
