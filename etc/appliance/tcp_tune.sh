@@ -64,7 +64,7 @@ start() {
     	echo "Increase Network backlogs for Gigabit"
     	echo 2500 > /proc/sys/net/core/netdev_max_backlog
     	echo "Increase maximum connections"
-    	echo 1024 > /proc/sys/net/core/somaxconn
+    	echo 10240 > /proc/sys/net/core/somaxconn
 	echo "Memory limit for fragment assembly"
         echo 4194304 > /proc/sys/net/ipv4/ipfrag_high_thresh
 	echo "Done"
