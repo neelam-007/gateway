@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.proxy.util;
@@ -226,7 +225,7 @@ public class SslUtils {
 
         // Make sure they match
         if (!certNameString.equals(csrNameString))
-            throw new CertificateException("We got a certificate, but it's distinguished name didn't match what we asked for.");
+            throw new CertificateException("We got a certificate, but its distinguished name didn't match what we asked for.");
         if (!cert.getPublicKey().equals(csr.getPublicKey()))
             throw new CertificateException("We got a certificate, but it certified the wrong public key.");
 
