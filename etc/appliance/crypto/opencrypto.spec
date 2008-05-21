@@ -1,7 +1,7 @@
-Summary: Tarari Support for SecureSpan Gateway
+Summary: Opencryptoki Support for SecureSpan Gateway
 Name: opencryptoki
 Version: l7
-Release: 1
+Release: 2
 Group: Applications/Internet
 License: GPL
 URL: http://www.layer7tech.com
@@ -15,6 +15,7 @@ provides: opencrypto-l7
 
 %description
 Opencryptoki modified version to use Sun SCA6000 card
+New release is 64 bit only
 
 %clean
 rm -fr %{buildroot}

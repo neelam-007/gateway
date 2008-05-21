@@ -13,5 +13,6 @@ if [ -e  /usr/local/Tarari ]; then
     fi                                 
 
     export LD_LIBRARY_PATH
-    export PATH
+    export PATH	
+    export XCX_JOB_MODE=sqb,1000
 fi

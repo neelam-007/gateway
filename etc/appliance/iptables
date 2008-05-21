@@ -1,15 +1,29 @@
 # Layer 7 supplied iptables config for the SecureSpan Gateway Appliance
 # /etc/sysconfig/iptables
-# Use iptables-singlenet for single address configurations
+# Modification of this file is not recommended 
+# as our system manipulates these rules live
+# 
+# Design:
+# This is a drop all system
 #
+# If the port and/or interface doesn't explicity allow the packet
+# the packet is dropped.
+#
+# Network Design:
+# In a single network installation, all communication is via eth0
+# In a double network ETH1 is PUBLIC side and ETH0 is PRIVATE side
+# In a triple network ETH1 is PUBLIC side, ETH0 is MANAGEMENT network, ETH2 is PRIVATE side
+# DNS, NTP must be on one of MANAGMENT or PRIVATE networks
+#
+# Almost all dropped packets are logged as Badflags: in syslog, but this
+# is also rate limited to prevent filling the hard disk
+
+
 *nat
 :PREROUTING ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
-
-# Optionally redirect the standard ports up to our ports
-#[0:0] -A PREROUTING -p tcp -m tcp --dport 80 -j REDIRECT --to-ports 8080 
-#[0:0] -A PREROUTING -p tcp -m tcp --dport 443 -j REDIRECT --to-ports 8443 
+# Redirect used for startup of replication
 [0:0] -A PREROUTING -i eth0 -p tcp -m tcp --dport 3307 -j REDIRECT --to-ports 3306
 
 COMMIT
@@ -21,13 +35,15 @@ COMMIT
 :badflags - [0:0]
 :portdrop - [0:0]
 
-# fast forward established connections, no need to have them traverse the rules
+# fast forward established connections, no need to 
+# traverse the rules every packet
+
 [0:0] -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-# allow all input on localhost 
+# allow all on localhost 
 [0:0] -A INPUT -i lo -m state --state NEW -j ACCEPT
 
-# Block bad tcp flags
+# Block bad tcp flags on all interfaces
 [0:0] -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,PSH,URG -j badflags
 [0:0] -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,PSH,ACK,URG -j badflags 
 [0:0] -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,ACK,URG -j badflags 
@@ -35,45 +51,46 @@ COMMIT
 [0:0] -A INPUT -p tcp -m tcp --tcp-flags SYN,RST SYN,RST -j badflags 
 [0:0] -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN FIN,SYN -j badflags 
 
-# allow good icmp
+# allow good icmp on all interfaces
 [0:0] -A INPUT -p icmp -m icmp --icmp-type 0 -j ACCEPT
 [0:0] -A INPUT -p icmp -m icmp --icmp-type 3 -j ACCEPT 
 [0:0] -A INPUT -p icmp -m icmp --icmp-type 11 -j ACCEPT 
 
-# rate limit ping
+# rate limit ping on all interfaces
 [0:0] -A INPUT -p icmp -m icmp --icmp-type 8 -m limit --limit 2/sec -j ACCEPT
 
-# drop the rest
-[0:0] -A INPUT -p icmp -j portdrop
+# drop the rest on all interfaces
+[0:0] -A INPUT -p icmp -j badflags
 
 # And drop anything we might try and inadvertently send back, too
 [0:0] -A OUTPUT -p icmp -m state --state INVALID -j DROP
 
-# DNS, NTP
-[0:0] -A INPUT -p udp -m udp --dport 53 -j ACCEPT
-[0:0] -A INPUT -p udp -m udp --dport 123 -j ACCEPT
-
+# DNS, ALLOWED on private networks eth0 and eth2 
+[0:0] -A INPUT -i eth0 -p udp -m udp --dport 53 -j ACCEPT
+[0:0] -A INPUT -i eth2 -p udp -m udp --dport 53 -j ACCEPT
+[0:0] -A INPUT -i eth3 -p udp -m udp --dport 53 -j ACCEPT
+# NTP. ALLOWED on private networks eth0 and eth2 
+[0:0] -A INPUT -i eth0 -p udp -m udp --dport 123 -j ACCEPT
+[0:0] -A INPUT -i eth2 -p udp -m udp --dport 123 -j ACCEPT
+[0:0] -A INPUT -i eth3 -p udp -m udp --dport 123 -j ACCEPT
+# By exclusion, not allowed on eth1
 
 # Remote Assertion Server (uses loopback)
 [0:0] -A INPUT -i ! lo -p tcp -m tcp --dport 7001 -j portdrop
 [0:0] -A INPUT -i ! lo -p tcp -m tcp --dport 7100 -j portdrop
 
 # Allow in the cluster protocol, only for multicast destinations
-
-[0:0] -A INPUT -d ! 224.0.0.0/16 -p udp -m udp --dport 8777 -j ACCEPT
-
-# Allow in the other two ports, for all destinations and sources
-
-# FIXME: Ephemeral port range for Multicast
-
-[0:0] -A INPUT -p udp -m udp --dport 7001:7100 -j ACCEPT
-# [0:0] -A INPUT -p udp -m udp --dport 32784 -j ACCEPT
-
+# ONLY on eth0. This means that you MUST use eth0 when running
+# in a cluster
+[0:0] -A INPUT  -i eth0 -d 224.0.0.0/16 -p udp -m udp --dport 8777 -j ACCEPT
+# Allow Multicast UDP output on eth0
+[0:0] -A OUTPUT -i eth0 -d 224.0.0.0/16 -p udp -m udp --dport 8777 -j ACCEPT
+# Allow inbound UDP on port 7001-7100 on eth0/private side
+[0:0] -A INPUT -i eth0 -p udp -m udp --dport 7001:7100 -j ACCEPT
 #
-# ADD CUSTOM ALLOW RULES HERE
+# ADD CUSTOM ACCEPT RULES HERE
 #
-
-# open on eth0 even if SSG's are  not up
+# open on eth0/private even if SSG's are  not up
 [0:0] -A INPUT -i eth0 -p tcp -m tcp --dport 3306 -j ACCEPT
 [0:0] -A INPUT -i eth0 -p tcp -m tcp --dport 22 -j ACCEPT
 #
@@ -83,7 +100,7 @@ COMMIT
 # is started or stopped, or whenever a partition's listen ports
 # are reconfigured.
 #
-# Finally, drop all other TCP and UDP
+# Finally, drop all other TCP and UDP on all interfaces 
 [0:0] -A INPUT -p tcp -m tcp --dport 1:65535 -j portdrop
 [0:0] -A INPUT -p udp -m udp --dport 1:65535 -j portdrop
 
@@ -97,6 +114,8 @@ COMMIT
 # Badflags rule
 # Limit logging to 15 per minute, so we don't DOS the logfiles
 # Anything that gets logged with badflags is LIKELY a port scan or attack attempt.
+
 [0:0] -A badflags -m limit --limit 15/min -j LOG --log-prefix "Badflags:" 
 [0:0] -A badflags -j DROP 
+
 COMMIT
