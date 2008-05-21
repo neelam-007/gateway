@@ -35,6 +35,31 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     private int smtpPort = DEFAULT_PORT;
     private String subject = DEFAULT_SUBJECT;
     private String base64message = "";
+    private Protocol protocol = Protocol.PLAIN;
+    private boolean authenticate = false;
+    private String authUsername;
+    private String authPassword;
+
+    public static enum Protocol {
+        PLAIN("Plain SMTP"),
+        SSL("SMTP over SSL"),
+        STARTTLS("SMTP with STARTTLS"),;
+
+        private final String description;
+
+        private Protocol(String s) {
+            this.description = s;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        @Override
+        public String toString() {
+            return description;
+        }
+    }
 
     public EmailAlertAssertion() {
     }
@@ -135,7 +160,48 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
         this.sourceEmailAddress = sourceEmailAddress;
     }
 
+    public Protocol getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(Protocol protocol) {
+        this.protocol = protocol;
+    }
+
+    public boolean isAuthenticate() {
+        return authenticate;
+    }
+
+    public void setAuthenticate(boolean authenticate) {
+        this.authenticate = authenticate;
+    }
+
+    public String getAuthUsername() {
+        return authUsername;
+    }
+
+    public void setAuthUsername(String authUsername) {
+        this.authUsername = authUsername;
+    }
+
+    public String getAuthPassword() {
+        return authPassword;
+    }
+
+    public void setAuthPassword(String authPassword) {
+        this.authPassword = authPassword;
+    }
+
     public String[] getVariablesUsed() {
         return Syntax.getReferencedNames(this.messageString());
+    }
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+        meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
+                new Java5EnumTypeMapping(Protocol.class, "Protocol")
+        )));
+        return meta;
     }
 }

@@ -97,7 +97,7 @@
             <include name="spring-aop.jar"/>
             <include name="spring-support.jar"/>
             <include name="commons-logging-1.0.4.jar"/>
-            <include name="mailapi-1.4.jar"/>
+            <include name="mailapi-1.4.1.jar"/>
             <include name="forms_rt.jar"/>
             <include name="xss4j.jar"/>
             <include name="commons-*.jar"/>

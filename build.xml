@@ -402,7 +402,7 @@
         <include name="**/forms_rt.jar"/>
         <include name="**/mysql-connector-java-5.0.4-bin.jar"/>
         <include name="**/xss4j*.jar"/>
-        <include name="**/mailapi-1.4.jar"/>
+        <include name="**/mailapi-1.4.1.jar"/>
         <include name="**/activation.jar"/>
         <include name="**/bcprov-jdk15-135.jar"/>
         <include name="**/kunststoff.jar"/>
@@ -438,7 +438,7 @@
         <include name="**/commons-logging-*.jar"/>
         <include name="**/xercesImpl.jar"/>
         <include name="**/xss4j*.jar"/>
-        <include name="**/mailapi-1.4.jar"/>
+        <include name="**/mailapi-1.4.1.jar"/>
         <include name="**/activation.jar"/>
         <include name="**/whirlycache-*.jar"/>
         <include name="**/bcprov-jdk15-135.jar"/>
@@ -472,7 +472,7 @@
         <include name="**/forms_rt.jar"/>
         <include name="**/xml4j.jar"/>
         <include name="**/are.jar"/>
-        <include name="**/mailapi-1.4.jar"/>
+        <include name="**/mailapi-1.4.1.jar"/>
         <include name="**/activation.jar"/>
         <include name="**/spring-context.jar"/>
         <include name="**/spring-beans.jar"/>
@@ -520,7 +520,7 @@
         <include name="**/spring-beans.jar"/>
         <include name="**/spring-remoting.jar"/>
         <include name="**/aopalliance.jar"/>
-        <include name="**/mailapi-1.4.jar"/>
+        <include name="**/mailapi-1.4.1.jar"/>
         <include name="**/antlr-2.7.7-l7p1.jar"/>
         <include name="**/log4j-1.2.14.jar"/>
         <include name="**/xalan-2.7.1.jar"/>
@@ -556,8 +556,8 @@
         <include name="**/commons-logging-1.0.4.jar"/>
 
         <include name="**/activation.jar"/>
-        <include name="**/mailapi-1.4.jar"/>
-        <include name="**/smtp-1.4.jar"/>
+        <include name="**/mailapi-1.4.1.jar"/>
+        <include name="**/smtp-1.4.1.jar"/>
         <include name="**/whirlycache-1.0.1.jar"/>
         <include name="**/policy-1.0.jar"/>
         <include name="**/commons-collections-3.2.jar"/>
@@ -1186,8 +1186,8 @@
         <java classname="com.l7tech.test.performance.RegressionReport" fork="true">
             <classpath>
                 <fileset dir="lib">
-                    <include name="mailapi-1.4.jar"/>
-                    <include name="smtp-1.4.jar"/>
+                    <include name="mailapi-1.4.1.jar"/>
+                    <include name="smtp-1.4.1.jar"/>
                     <include name="xercesImpl.jar"/>
                     <include name="commons-lang-2.3.jar"/>
                     <include name="test/japex-1.1.jar"/>
@@ -2214,7 +2214,7 @@
         <include name="**/jaxrpc.jar"/>
         <include name="**/jms-1.1.jar"/>
         <include name="**/log4j-1.2.14.jar"/>
-        <include name="**/mailapi-1.4.jar"/>
+        <include name="**/mailapi-1.4.1.jar"/>
         <include name="**/policy-1.0.jar"/>
         <include name="**/qname.jar"/>
         <include name="**/saaj-api.jar"/>
