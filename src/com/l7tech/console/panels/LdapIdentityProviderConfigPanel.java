@@ -8,6 +8,8 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.ExceptionUtils;
 
 import javax.swing.*;
+import javax.swing.event.ListDataListener;
+import javax.swing.event.ListDataEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -76,6 +78,19 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private JList getLdapHostList() {
         if (ldapUrlList == null) {
             DefaultComboBoxModel model = new DefaultComboBoxModel();
+            // To update buttons if there are any changes in the Ldap Host List,
+            // add a ListDataListener for the list.
+            model.addListDataListener(new ListDataListener() {
+                public void intervalAdded(ListDataEvent e) {
+                    updateControlButtonState();
+                }
+                public void intervalRemoved(ListDataEvent e) {
+                    updateControlButtonState();
+                }
+                public void contentsChanged(ListDataEvent e) {
+                    updateControlButtonState();
+                }
+            });
             ldapUrlList = new JList(model);
         }
         return ldapUrlList;
