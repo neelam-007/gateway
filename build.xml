@@ -1869,6 +1869,7 @@
                 <exclude name="com/l7tech/proxy/RequestHandler*.class"/>
                 <exclude name="com/l7tech/server/config/ui/**/*"/>
                 <exclude name="com/l7tech/server/config/systemconfig/**/*"/>
+                <exclude name="com/l7tech/server/ems/**/*"/>
                 <exclude name="com/l7tech/server/config/packageupdater/**/*"/>
 
                 <!-- UDDI implementations (these should be packaged as modules) -->
