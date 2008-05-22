@@ -2,6 +2,10 @@ package com.l7tech.objectmodel.imp;
 
 import com.l7tech.objectmodel.NamedEntity;
 
+import javax.persistence.Column;
+import javax.persistence.MappedSuperclass;
+
+@MappedSuperclass
 public abstract class NamedEntityImp extends PersistentEntityImp implements NamedEntity {
 
     public NamedEntityImp() {
@@ -13,6 +17,7 @@ public abstract class NamedEntityImp extends PersistentEntityImp implements Name
         setName(entity.getName());
     }
 
+    @Column(name="name", nullable=false)
     public String getName() {
         return _name;
     }

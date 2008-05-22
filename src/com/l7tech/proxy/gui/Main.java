@@ -118,7 +118,7 @@ public final class Main extends com.l7tech.proxy.Main {
             String message = "Unable to start the "+ Constants.APP_NAME +": " + e;
             // Friendlier error message for starting multiple instances
             if (e instanceof BindException || e instanceof SsgManagerImpl.ConfigurationAlreadyLockedException ||
-              (e instanceof MultiException && ((MultiException)e).getException(0) instanceof BindException)) {
+              (e instanceof MultiException && ((MultiException)e).getThrowable(0) instanceof BindException)) {
                 message = "The SecureSpan "+ Constants.APP_NAME +" is already running.  \nPlease shut down the existing " +
                   Constants.APP_NAME + " and try again.";
             }

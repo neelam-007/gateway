@@ -8,9 +8,10 @@ package com.l7tech.cluster;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A row in the cluster_properties table. On the server-side, this is managed through
@@ -19,6 +20,9 @@ import java.util.regex.Matcher;
  * @author flascelles@layer7-tech.com
  */
 @XmlRootElement
+@Entity
+@Table(name="cluster_property")
+@AttributeOverride(name="name", column=@Column(name="propKey", nullable=false, unique=true))
 public class ClusterProperty extends NamedEntityImp {
     private static final long serialVersionUID = 1L;
 
@@ -33,6 +37,8 @@ public class ClusterProperty extends NamedEntityImp {
         this.value = value;
     }
 
+    @Column(name="propValue", nullable=false, length=Integer.MAX_VALUE)
+    @Lob
     public String getValue() {
         return value;
     }
@@ -41,6 +47,7 @@ public class ClusterProperty extends NamedEntityImp {
         this.value = value;
     }
 
+    @Transient
     public String getDescription() {
         return description;
     }
@@ -50,6 +57,7 @@ public class ClusterProperty extends NamedEntityImp {
     }
 
     /** @return true if this property should be hidden in the cluster property GUI. */
+    @Transient
     public boolean isHiddenInGui() {
         // Currently, there's only 1 hidden property, so for now we'll just hardcode it rather than
         // add a whole new DB column and support code

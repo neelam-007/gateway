@@ -115,6 +115,9 @@ public abstract class GenericHttpResponse implements GenericHttpResponseParams {
         return result;
     }
 
+    private static final Pattern FIND_ENCODING =
+            Pattern.compile("^<\\?xml\\s+version=(.).*\\s+encoding=\\1(.*?)\\1\\s*(?:\\s+standalone=.*\\s*)?\\?>", Pattern.MULTILINE);
+
     /**
      * Examines the supplied byte array looking for an XML declaration. If an XML declaration is found
      * and it contains the encoding attribute, then return the value of the encoding attribute.
@@ -129,8 +132,7 @@ public abstract class GenericHttpResponse implements GenericHttpResponseParams {
             String xmlString = new String(bytes, 0, 1024 > bytes.length ? bytes.length : 1024, possibleEncoding);
             // With some charsets, our guess at this point could have messed up the quotes, so we need to find what
             // character is used for quotes
-            Pattern pattern = Pattern.compile("^<\\?xml\\s+version=(.).*\\s+encoding=\\1(.*?)\\1\\s*(?:\\s+standalone=.*\\s*)?\\?>", Pattern.MULTILINE);
-            Matcher matcher = pattern.matcher(xmlString);
+            Matcher matcher = FIND_ENCODING.matcher(xmlString);
             if(matcher.find()) {
                 return matcher.group(2);
             } else {

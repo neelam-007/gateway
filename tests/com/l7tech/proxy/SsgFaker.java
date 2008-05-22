@@ -2,18 +2,23 @@ package com.l7tech.proxy;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.SingleCertX509KeyManager;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
-import org.mortbay.http.*;
-import org.mortbay.http.handler.AbstractHttpHandler;
-import org.mortbay.util.MultiException;
+import org.mortbay.jetty.*;
+import org.mortbay.jetty.bio.SocketConnector;
+import org.mortbay.jetty.handler.AbstractHandler;
+import org.mortbay.jetty.security.SslSocketConnector;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.xml.soap.SOAPConstants;
 import java.io.Closeable;
 import java.io.IOException;
@@ -32,9 +37,7 @@ public class SsgFaker implements Closeable {
     private static final Logger log = Logger.getLogger(SsgFaker.class.getName());
     public static final String PING_NS = "http://services.l7tech.com/soap/demos/Ping";
 
-    private HttpServer httpServer;
-    private int maxThreads = 4;
-    private int minThreads = 1;
+    private Server httpServer;
     private int localPort = 7566;
     private int sslPort = 7443;
     private String ssgUrl = "http://localhost:" + localPort;
@@ -68,48 +71,35 @@ public class SsgFaker implements Closeable {
         if (destroyed)
             throw new IllegalStateException("this SsgFaker is no more");
 
-        httpServer = new HttpServer();
-
-        HttpContext context = new HttpContext(httpServer, "/");
-        HttpHandler requestHandler = new SsgFakerHandler();
-        context.addHandler(requestHandler);
-        httpServer.addContext(context);
+        httpServer = new Server();
+        httpServer.addHandler(new SsgFakerHandler());
 
         // Set up HTTP listener
-        SocketListener socketListener = new SocketListener();
-        socketListener.setMaxThreads(maxThreads);
-        socketListener.setMinThreads(minThreads);
+        Connector socketListener = new SocketConnector();
         socketListener.setPort(localPort);
-        httpServer.addListener(socketListener);
+        httpServer.addConnector(socketListener);
 
         // Set up SSL listener
-        final SSLContext ctx;
-        {
-            X509Certificate cert = TestDocuments.getDotNetServerCertificate();
-            PrivateKey key = TestDocuments.getDotNetServerPrivateKey();
-            SingleCertX509KeyManager km = new SingleCertX509KeyManager(new X509Certificate[]{cert}, key);
-            ctx = SSLContext.getInstance("SSL");
-            ctx.init(new KeyManager[] { km }, null, null);
-        }
-        SslListener sslListener = new SslListener() {
+        SslSocketConnector sslListener = new SslSocketConnector() {
+            final SSLContext ctx; {
+                X509Certificate cert = TestDocuments.getDotNetServerCertificate();
+                PrivateKey key = TestDocuments.getDotNetServerPrivateKey();
+                SingleCertX509KeyManager km = new SingleCertX509KeyManager(new X509Certificate[]{cert}, key);
+                ctx = SSLContext.getInstance("SSL");
+                ctx.init(new KeyManager[] { km }, null, null);
+            }
+
             protected SSLServerSocketFactory createFactory() throws Exception {
                 return ctx.getServerSocketFactory();
             }
         };        
-        sslListener.setMaxThreads(maxThreads);
-        sslListener.setMinThreads(minThreads);
         sslListener.setPort(sslPort);
         sslListener.setConfidentialPort(sslPort);
         sslListener.setConfidentialScheme("https");
-        sslListener.setDefaultScheme("https");
-        httpServer.addListener(sslListener);
+        httpServer.addConnector(sslListener);
 
-        try {
-            httpServer.start();
-        } catch (MultiException e) {
-            log.log(Level.SEVERE, "Unable to start up test SSG", e);
-            throw e.getException(0);
-        }
+        httpServer.start();
+
         log.info("SsgFaker started; listening for http connections on " + ssgUrl);
         log.info("SsgFaker listening for https connections on " + sslUrl);
         return ssgUrl;
@@ -125,14 +115,11 @@ public class SsgFaker implements Closeable {
 
     /**
      * Stop the test SSG.
+     * @throws Exception if shutdown fails
      */
-    private synchronized void stop() {
-        try {
-            log.info("SsgFaker shutting down");
-            httpServer.stop(true);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+    private synchronized void stop() throws Exception {
+        log.info("SsgFaker shutting down");
+        httpServer.stop();
     }
 
     /**
@@ -141,7 +128,11 @@ public class SsgFaker implements Closeable {
     public synchronized void destroy() {
         if (destroyed)
             return;
-        stop();
+        try {
+            stop();
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Error shutting down SsgFaker: " + ExceptionUtils.getMessage(e), e);
+        }
         httpServer.destroy();
         destroyed = true;
     }
@@ -160,21 +151,19 @@ public class SsgFaker implements Closeable {
     }
 
     /** @noinspection SerializableNonStaticInnerClassWithoutSerialVersionUID,SerializableInnerClassWithNonSerializableOuterClass,NonStaticInnerClassInSecureContext */
-    private class SsgFakerHandler extends AbstractHttpHandler {
-        public void handle(String pathInContext,
-                           String pathParams,
-                           HttpRequest request,
-                           HttpResponse response)
-          throws IOException
-        {
+    private class SsgFakerHandler extends AbstractHandler {
+        public void handle(String pathInContext, HttpServletRequest servRequest, HttpServletResponse servResponse, int dispatch) throws IOException, ServletException {
+            Request request = (Request)servRequest;
+            Response response = (Response)servResponse;
+
             log.info("SsgFakerHandler: incoming request: pathInContext=" + pathInContext);
 
             boolean isBasicAuth = isBasicAuth(request);
 
-            Enumeration fields = request.getFieldNames();
+            Enumeration fields = request.getHeaderNames();
             while (fields.hasMoreElements()) {
                 String s = (String)fields.nextElement();
-                log.info("Request header: " + s + ": " + request.getField(s));
+                log.info("Request header: " + s + ": " + request.getHeader(s));
             }
 
             log.info("SsgFaker: request to path: " + pathInContext);
@@ -204,21 +193,26 @@ public class SsgFaker implements Closeable {
                 if (isBasicAuth) {
                     handlerPing(requestEnvelope, response);
                 } else {
-                    response.addField("WWW-Authenticate", "Basic realm=\"business\"");
-                    response.setReason("Unauthorized");
-                    response.addField("Content-Type", "text/html");
-                    response.setStatus(401);
-                    response.getOutputStream().write("<title>Uh oh</title>Uh oh".getBytes());
-                    response.commit();
+                    response.setStatus(401, "Unauthorized");
+                    response.setContentType("text/xml");
+                    response.addHeader("WWW-Authenticate", "Basic realm=\"business\"");
+                    response.getOutputStream().write("<title>Uh oh</title>".getBytes());
+                    response.complete();
                 }
+            } else if ("/".equals(pathInContext)) {
+                response.setStatus(200);
+                response.setContentType("text/xml");
+                response.getOutputStream().write("<title>Heyas</title>".getBytes());
+                response.complete();
             } else {
+                log.info("URI didn't match anything -- returning 404");
                 throw new HttpException(404, "No service with that URI in this SsgFaker");
             }
         }
 
-        private boolean isBasicAuth(HttpRequest request) throws IOException {
+        private boolean isBasicAuth(Request request) throws IOException {
             boolean isBasicAuth = false;
-            String authHeader = request.getField("Authorization");
+            String authHeader = request.getHeader("Authorization");
             if (authHeader != null && "Basic ".equalsIgnoreCase(authHeader.substring(0, 6))) {
                 String authStuff = new String(HexUtils.decodeBase64(authHeader.substring(6)));
                 log.info("Found HTTP Basic auth stuff: " + authStuff);
@@ -229,10 +223,10 @@ public class SsgFaker implements Closeable {
             return isBasicAuth;
         }
 
-        private void handlerPing(Document requestEnvelope, HttpResponse response) throws IOException {
-            response.addField("Content-Type", "text/xml");
+        private void handlerPing(Document requestEnvelope, Response response) throws IOException {
+            response.setContentType("text/xml");
             XmlUtil.nodeToOutputStream(requestEnvelope, response.getOutputStream());
-            response.commit();
+            response.complete();
         }
     }
 
@@ -249,16 +243,16 @@ public class SsgFaker implements Closeable {
         return gotCreds;
     }
 
-    protected void handleWsdlProxyRequest(HttpResponse response) throws IOException {
+    protected void handleWsdlProxyRequest(Response response) throws IOException {
         response.setStatus(200);
-        response.addField("Content-Type", "text/xml");
+        response.setContentType("text/xml");
         response.getOutputStream().write(wsdlProxyResponseBody.getBytes());
-        response.commit();
+        response.complete();
     }
 
-    protected static void handleThrowFault(HttpResponse response) throws IOException {
+    protected static void handleThrowFault(Response response) throws IOException {
         response.setStatus(200);
-        response.addField("Content-Type", "text/xml");
+        response.setContentType("text/xml");
         response.getOutputStream().write(("<soapenv:Envelope" +
           " xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"" +
           " xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"" +
@@ -272,7 +266,7 @@ public class SsgFaker implements Closeable {
           "  </soapenv:Fault>\n" +
           " </soapenv:Body>\n" +
           "</soapenv:Envelope>\n").getBytes());
-        response.commit();
+        response.complete();
     }
 
     /**

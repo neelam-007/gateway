@@ -21,9 +21,6 @@ import java.util.logging.Logger;
  *
  * <p>You would not normally create instances of this class.</p>
  *
- * <p>NOTE: Since we're aiming for 1.4.x compliance we can't use the Closeable
- * interface.</p>
- *
  * @author steve
  */
 public final class ResourceUtils {

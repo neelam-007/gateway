@@ -459,6 +459,8 @@
         <include name="**/bcprov-jdk15-135.jar"/>
         <include name="**/xss4j*.jar"/>
         <include name="**/org.mortbay.jetty.jar"/>
+        <include name="**/org.mortbay.jetty.https.jar"/>
+        <include name="**/org.mortbay.jetty.util.jar"/>
         <include name="**/commons-httpclient-3.0.1.jar"/>
         <include name="**/commons-codec-1.2.jar"/>
         <include name="**/servlet-api.jar"/>

@@ -30,19 +30,19 @@ public class SsgFakerTest {
     private String ssgUrl;
 
     @Before
-    protected void setUp() throws Exception {
+    public void setUp() throws Exception {
         ResourceUtils.closeQuietly(ssgFaker);
         ssgFaker = new SsgFaker();
         ssgUrl = ssgFaker.start();
     }
 
     @After
-    protected void tearDown() {
+    public void tearDown() {
         ResourceUtils.closeQuietly(ssgFaker);
     }
 
     private void sendPing(String payload, Document reqEnvelope) throws SAXException, IOException, InvalidDocumentFormatException {
-        Document responseEnvelope = sendXml(reqEnvelope);
+        Document responseEnvelope = sendXml(ssgUrl + "/soap/ssg", reqEnvelope);
 
         logger.info("Client:  I Sent: " + XmlUtil.nodeToFormattedString(reqEnvelope));
         logger.info("Client:  I Got back: " + XmlUtil.nodeToFormattedString(responseEnvelope));
@@ -53,10 +53,10 @@ public class SsgFakerTest {
         assertEquals(respText, payload);
     }
 
-    private Document sendXml(Document reqEnvelope) throws MalformedURLException, GenericHttpException, SAXException {
+    private Document sendXml(String url, Document reqEnvelope) throws MalformedURLException, GenericHttpException, SAXException {
         SimpleHttpClient httpClient = new SimpleHttpClient(new UrlConnectionHttpClient());
-        URL url = new URL(ssgUrl);
-        SimpleHttpClient.SimpleXmlResponse response = httpClient.postXml(new GenericHttpRequestParams(url), reqEnvelope);
+        URL u = new URL(url);
+        SimpleHttpClient.SimpleXmlResponse response = httpClient.postXml(new GenericHttpRequestParams(u), reqEnvelope);
         return response.getDocument();
     }
 

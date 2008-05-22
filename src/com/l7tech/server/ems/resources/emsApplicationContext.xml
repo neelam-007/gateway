@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+    <bean id="dataSource" class="org.apache.derby.jdbc.EmbeddedDataSource40">
+        <property name="databaseName" value="emsdb"/>
+        <property name="createDatabase" value="create"/>
+    </bean>
+
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="annotatedClasses">
+            <list>
+                <value>com.l7tech.cluster.ClusterProperty</value>
+            </list>
+        </property>
+        <property name="hibernateProperties" value="hibernate.dialect=org.hibernate.dialect.DerbyDialect"/>
+        <property name="schemaUpdate" value="true"/>
+    </bean>
+
+    <bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <!-- Hibernate managers that need transaction interception -->
+    <bean class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
+        <property name="proxyTargetClass" value="false"/>
+        <property name="interceptorNames">
+            <list>
+                <idref bean="annotationTransactionInterceptor"/>
+            </list>
+        </property>
+        <property name="beanNames">
+            <list>
+                <idref bean="clusterPropertyManager"/>
+            </list>
+        </property>
+    </bean>
+
+
+    <bean class="org.springframework.transaction.interceptor.TransactionAttributeSourceAdvisor">
+        <property name="transactionInterceptor" ref="annotationTransactionInterceptor"/>
+    </bean>
+
+    <bean id="annotationTransactionInterceptor" class="org.springframework.transaction.interceptor.TransactionInterceptor">
+        <property name="transactionManager" ref="transactionManager"/>
+        <property name="transactionAttributeSource">
+            <bean class="org.springframework.transaction.annotation.AnnotationTransactionAttributeSource"/>
+        </property>
+    </bean>
+
+    <!-- Abstract "parent" of any bean that needs access to sessionFactory and transactionManager -->
+    <bean id="hibernateBean" abstract="true">
+        <property name="sessionFactory" ref="sessionFactory"/>
+        <property name="transactionManager" ref="transactionManager"/>
+    </bean>
+
+    <bean id="clusterPropertyManager" class="com.l7tech.cluster.ClusterPropertyManagerImpl" parent="hibernateBean"/>
+
+    <bean id="licenseManager" class="com.l7tech.server.GatewayLicenseManager">
+        <constructor-arg ref="clusterPropertyManager"/>
+    </bean>
+
+</beans>

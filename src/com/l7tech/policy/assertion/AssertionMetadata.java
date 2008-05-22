@@ -464,7 +464,7 @@ public interface AssertionMetadata {
     String FEATURE_SET_NAME = "featureSetName";
 
     /**
-     * Functions.Unary<Set<String>,Assertion> instance.
+     * Functions.Unary< Set < String >, Assertion > instance.
      *
      * <p>Allow an assertion to supply additional features that may be
      * optional. This is primarily used when an assertion has some

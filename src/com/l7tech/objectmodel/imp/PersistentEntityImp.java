@@ -5,11 +5,13 @@ package com.l7tech.objectmodel.imp;
 
 import com.l7tech.objectmodel.PersistentEntity;
 
+import javax.persistence.*;
 import java.io.Serializable;
 
 /**
  * @author alex
  */
+@MappedSuperclass
 public class PersistentEntityImp implements PersistentEntity, Serializable {
 
     public PersistentEntityImp() {
@@ -24,14 +26,19 @@ public class PersistentEntityImp implements PersistentEntity, Serializable {
         setVersion(entity.getVersion());
     }
 
+    @Id
+    @Column(name="objectid", nullable=false, updatable=false)
+    @GeneratedValue
     public long getOid() {
         return _oid;
     }
 
+    @Transient
     public Long getOidAsLong() {
         return _oidObject;
     }
 
+    @Transient
     public String getId() {
         return Long.toString(_oid);
     }
@@ -42,6 +49,8 @@ public class PersistentEntityImp implements PersistentEntity, Serializable {
         _oidObject = new Long(oid);
     }
 
+    @Version
+    @Column(name="version")
     public int getVersion() {
         return _version;
     }
@@ -73,6 +82,7 @@ public class PersistentEntityImp implements PersistentEntity, Serializable {
         _locked = true;
     }
 
+    @Transient
     protected boolean isLocked() {
         return _locked;
     }
