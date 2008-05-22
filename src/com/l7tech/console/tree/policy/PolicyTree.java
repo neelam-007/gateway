@@ -299,11 +299,11 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
             if (isIdentityView()) return; // non editable if identity view
 
-            AbstractTreeNode node;
+            AssertionTreeNode node;
             if (mouseEvent.isPopupTrigger()) {
                 int closestRow = tree.getClosestRowForLocation(mouseEvent.getX(), mouseEvent.getY());
                 if (closestRow == -1) {
-                    node = (AbstractTreeNode)tree.getModel().getRoot();
+                    node = (AssertionTreeNode)tree.getModel().getRoot();
                     if (node == null) {
                         return;
                     }
@@ -321,12 +321,11 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     if (!found) {
                         tree.setSelectionRow(closestRow);
                     }
-                    node = (AbstractTreeNode)tree.getLastSelectedPathComponent();
+                    node = (AssertionTreeNode)tree.getLastSelectedPathComponent();
                 }
 
                 if (node != null) {
-
-                    Action[] actions = node.getActions();
+                    Action[] actions = (node.isNestedInAnIncludedPolicy())? new Action[]{} : node.getActions();
                     if (policyEditorPanel != null) {
                         policyEditorPanel.updateActions(actions);
                     }
