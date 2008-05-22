@@ -292,37 +292,37 @@ public class JmsQueuesWindow extends JDialog {
                 public void actionPerformed(ActionEvent e) {
                     int row = getJmsQueueTable().getSelectedRow();
                     if (row >= 0) {
-                        JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueueTableModel().getJmsQueues().get(row);
+                        JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueueTableModel().getJmsQueueAt(row);
                         if (i != null) {
                             JmsEndpoint end = i.getEndpoint();
                             JmsConnection conn = i.getConnection();
                             String name = end.getName();
 
-                            try {
-                                Object[] options = {"Remove", "Cancel"};
+                            Object[] options = {"Remove", "Cancel"};
 
-                                int result = JOptionPane.showOptionDialog(null,
-                                  "<HTML>Are you sure you want to remove the " +
-                                  "registration for the JMS Queue " +
-                                  name + "?<br>" +
-                                  "<center>This action cannot be undone." +
-                                  "</center></html>",
-                                  "Remove JMS Queue?",
-                                  0, JOptionPane.WARNING_MESSAGE,
-                                  null, options, options[1]);
-                                if (result == 0) {
+                            int result = JOptionPane.showOptionDialog(null,
+                              "<HTML>Are you sure you want to remove the " +
+                              "registration for the JMS Queue " +
+                              name + "?<br>" +
+                              "<center>This action cannot be undone." +
+                              "</center></html>",
+                              "Remove JMS Queue?",
+                              0, JOptionPane.WARNING_MESSAGE,
+                              null, options, options[1]);
+                            if (result == 0) {
+                                try {
                                     Registry.getDefault().getJmsManager().deleteEndpoint(end.getOid());
 
                                     // If the new connection would be empty, delete it too (normal operation)
                                     JmsEndpoint[] endpoints = Registry.getDefault().getJmsManager().getEndpointsForConnection(i.getConnection().getOid());
                                     if (endpoints.length < 1)
                                         Registry.getDefault().getJmsManager().deleteConnection(conn.getOid());
+                                } catch (Exception e1) {
+                                    throw new RuntimeException("Unable to delete queue " + name, e1);
                                 }
-                            } catch (Exception e1) {
-                                throw new RuntimeException("Unable to delete queue " + name, e1);
-                            }
 
-                            updateEndpointList(null);
+                                updateEndpointList(null);
+                            }
                         }
                     }
                 }
@@ -380,7 +380,7 @@ public class JmsQueuesWindow extends JDialog {
     private void showPropertiesDialog() {
         int row = getJmsQueueTable().getSelectedRow();
         if (row >= 0) {
-            JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueueTableModel().getJmsQueues().get(row);
+            JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueueTableModel().getJmsQueueAt(row);
             if (i != null) {
                 final JmsQueuePropertiesDialog pd =
                   JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, i.getConnection(), i.getEndpoint(), false);

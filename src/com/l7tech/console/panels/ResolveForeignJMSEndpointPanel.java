@@ -1,6 +1,8 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.transport.jms.JmsConnection;
+import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.console.util.Registry;
@@ -68,9 +70,9 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
             }
         });
 
-        manageJMSEndpoints.addActionListener(new ActionListener() {
+        createJMSEndpoint.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                manageJMSPressed();
+                createJMSPressed();
             }
         });
     }
@@ -78,13 +80,28 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
     /**
      * called when the user presses the button to manage JMS queues.
      */
-    private void manageJMSPressed() {
-        JmsQueuesWindow jqw = JmsQueuesWindow.createInstance(this.getOwner());
-        jqw.pack();
-        Utilities.centerOnScreen(jqw);
-        DialogDisplayer.display(jqw, new Runnable() {
+    private void createJMSPressed() {
+        JmsConnection jmsConnection = new JmsConnection();
+        jmsConnection.setInitialContextFactoryClassname(foreignRef.getInitialContextFactoryClassname());
+        jmsConnection.setJndiUrl(foreignRef.getJndiUrl());
+        jmsConnection.setQueueFactoryUrl(foreignRef.getQueueFactoryUrl());
+        jmsConnection.setTopicFactoryUrl(foreignRef.getTopicFactoryUrl());
+        jmsConnection.setDestinationFactoryUrl(foreignRef.getDestinationFactoryUrl());
+        JmsEndpoint jmsEndpoint = new JmsEndpoint();
+        jmsEndpoint.setDestinationName(foreignRef.getEndpointName());
+
+        final JmsQueuePropertiesDialog jqpd = JmsQueuePropertiesDialog.createInstance(this.getOwner(), jmsConnection, jmsEndpoint, false);
+        jqpd.pack();
+        Utilities.centerOnScreen(jqpd);
+        DialogDisplayer.display(jqpd, new Runnable() {
             public void run() {
                 populateQueueSelector();
+
+                if(!jqpd.isCanceled() && jqpd.getEndpoint().getOid() > 0) {
+                    queueSelector.setSelectedItem(jqpd.getEndpoint().getName());
+                    changeRadio.setSelected(true);
+                    queueSelector.setEnabled(true);
+                }
             }
         });
     }
@@ -185,7 +202,7 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
     private JRadioButton deleteRadio;
     private JRadioButton ignoreRadio;
     private JComboBox queueSelector;
-    private JButton manageJMSEndpoints;
+    private JButton createJMSEndpoint;
     private ButtonGroup actionRadios;
 
     private final Logger logger = Logger.getLogger(ResolveForeignJMSEndpointPanel.class.getName());

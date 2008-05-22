@@ -97,6 +97,14 @@ public class JMSEndpointReference extends ExternalReference {
         return queueFactoryUrl;
     }
 
+    public String getTopicFactoryUrl() {
+        return topicFactoryUrl;
+    }
+
+    public String getDestinationFactoryUrl() {
+        return destinationFactoryUrl;
+    }
+
     public void setLocalizeReplace(long newEndpointId) {
         localizeType = LocaliseAction.REPLACE;
         localEndpointId = newEndpointId;
