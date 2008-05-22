@@ -7,9 +7,13 @@ import com.l7tech.console.util.TopComponents;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.swing.*;
+import javax.swing.tree.DefaultTreeModel;
 import java.io.*;
 import java.util.Comparator;
 import java.util.logging.Level;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 
 /**
@@ -21,6 +25,7 @@ import java.util.logging.Level;
 public class PolicyTemplatesFolderNode extends AbstractPaletteFolderNode {
     public static final String NAME = "Policy Templates";
     public static final String TEMPLATES_DIR = "policy.templates";
+    public static final String REFRESH_POLICY_TEMPLATES = "Refresh Policy Templates";
 
     /** The entity name comparator  */
       protected static final Comparator<PolicyTemplateNode> FILENAME_COMPARATOR = new Comparator<PolicyTemplateNode>() {
@@ -38,8 +43,24 @@ public class PolicyTemplatesFolderNode extends AbstractPaletteFolderNode {
 
     public PolicyTemplatesFolderNode() {
         super(NAME, "policies", TopComponents.getInstance().getPreferences().getHomePath() + File.separator + TEMPLATES_DIR, FILENAME_COMPARATOR);
+
+        // Add a refresh property.  If users change policy xml file names in the local directory, ".l7tech/policy.templates",
+        // after Refresh clicked or F5 pressed, these policy templates will be reloaded in the assertion palette panel.
+        JTree paletteTree = (JTree) TopComponents.getInstance().getComponent(AssertionsTree.NAME);
+        paletteTree.addPropertyChangeListener(REFRESH_POLICY_TEMPLATES, new PropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent evt) {
+                reloadChildren();
+            }
+        });
     }
 
+    @Override
+    public void reloadChildren() {
+        super.reloadChildren();
+        JTree paletteTree = (JTree) TopComponents.getInstance().getComponent(AssertionsTree.NAME);
+        final DefaultTreeModel paletteModel = (DefaultTreeModel) paletteTree.getModel();
+        paletteModel.nodeStructureChanged(this);
+    }
 
     /**
      * subclasses override this method

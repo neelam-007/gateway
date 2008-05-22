@@ -987,6 +987,8 @@ public class MainWindow extends JFrame implements SheetHolder {
                       identityProvidersTree.refresh(identitiesRootNode);
                       alreadyRefreshed.add(identityProvidersTree);
                   }
+                  // no matter what, if policy templates exist, always refresh it
+                  getAssertionPaletteTree().firePropertyChange(PolicyTemplatesFolderNode.REFRESH_POLICY_TEMPLATES, 0, 1);
                   // no matter what, if service tree exists, always refresh it
                   if (servicesAndPoliciesTree != null) {
                       servicesAndPoliciesTree.refresh(servicesFolderNode);
