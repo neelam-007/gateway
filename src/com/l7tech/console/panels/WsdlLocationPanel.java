@@ -38,15 +38,8 @@ import org.xml.sax.InputSource;
 
 import com.l7tech.common.gui.util.*;
 import com.l7tech.common.gui.util.SwingWorker;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.common.util.ResourceTrackingWSDLLocator;
-import com.l7tech.common.util.Closeable;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.SyspropUtil;
+import com.l7tech.common.util.*;
 import com.l7tech.common.io.IOExceptionThrowingReader;
 import com.l7tech.console.event.WsdlEvent;
 import com.l7tech.console.event.WsdlListener;
@@ -174,7 +167,48 @@ public class WsdlLocationPanel extends JPanel {
      * @return the URL / path.
      */
     public String getWsdlUrl() {
-        return wsdlUrlTextField.getText();
+        String wsdlUrl = wsdlUrlTextField.getText();
+        
+        if (isUrlOk(wsdlUrl, null)) {
+            return wsdlUrl;
+        }
+        return getAbsoluteFilePath(wsdlUrl);
+    }
+
+    private String getAbsoluteFilePath(String filePath) {
+        if (filePath == null || filePath.trim().length() == 0) return filePath;
+        
+        try {
+            File wsdlFile = new File(filePath);
+            // Check if the filePath is an absolute path or not.
+            // If so, then check if the file exists or not.
+            // If not, it means that the filePath is a relative path, then append the default directory at the front of the filePath.
+            if (! wsdlFile.isAbsolute())
+                return DEFAULT_DIRECTORY + System.getProperty("file.separator") + filePath;
+            else
+                return filePath;
+        } catch (AccessControlException e) {
+            // We're probably running as an unsigned applet
+            return null;
+        }
+    }
+
+    /**
+     * Find the default directory, which is the same as the home directory in Linux/Unix, but different from the home
+     * directory in Windows.  For example, the default directory in Windows is "C:\...\Usernmae\My Document" and the
+     * home directory is "C:\...\Username".
+     *
+     * @return the default directory.
+     */
+    private String getDefaultDirectory() {
+        try {
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setCurrentDirectory(null);
+            return fileChooser.getCurrentDirectory().getAbsolutePath();
+        } catch (AccessControlException e) {
+            // We're probably running as an unsigned applet
+            return null;
+        }
     }
 
     /**
@@ -192,7 +226,7 @@ public class WsdlLocationPanel extends JPanel {
      * @return true if valid
      */
     public boolean isLocationValid() {
-        String location = wsdlUrlTextField.getText();
+        String location = getWsdlUrl();
         return isUrlOk(location, null) || isFileOk(location);
     }
 
@@ -200,6 +234,7 @@ public class WsdlLocationPanel extends JPanel {
 
     private static final String EXAMPLE_PATH_NIX     = "   /opt/services/purchase.wsdl";
     private static final String EXAMPLE_PATH_WINDOWS = "   C:\\My Documents\\Services\\purchase.wsdl";
+    private final String DEFAULT_DIRECTORY = this.getDefaultDirectory();
 
     private JDialog ownerd;
     private JFrame ownerf;
@@ -362,7 +397,6 @@ public class WsdlLocationPanel extends JPanel {
         return isFile;
     }
 
-
     /**
      * Attempt to resolve the WSDL.  Returns true if we have a valid one, or false otherwise.
      * Will pester the user with a dialog box if the WSDL could not be fetched.
@@ -372,7 +406,7 @@ public class WsdlLocationPanel extends JPanel {
     private Wsdl processWsdlLocation() {
         urlChanged();
 
-        final String wsdlUrl = wsdlUrlTextField.getText();
+        final String wsdlUrl = getWsdlUrl();
         WSDLLocator locator;
         if (isUrlOk(wsdlUrl, null) && !isUrlOk(wsdlUrl, "file")) { // then it is http or https so the Gateway should resolve it
             locator = gatewayHttpWSDLLocator(wsdlUrl);
@@ -538,13 +572,13 @@ public class WsdlLocationPanel extends JPanel {
                                 dlg.setVisible(false);
                                 if (ExceptionUtils.causedBy(e1, SocketException.class)) {
                                     JOptionPane.showMessageDialog(null,
-                                                                  "Could not fetch the WSDL at location '" + wsdlUrlTextField.getText() +
+                                                                  "Could not fetch the WSDL at location '" + getWsdlUrl() +
                                                                   "'\n",
                                                                   "Error",
                                                                   JOptionPane.ERROR_MESSAGE);
                                 } else {
                                     JOptionPane.showMessageDialog(null,
-                                                                  "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() +
+                                                                  "Unable to parse the WSDL at location '" + getWsdlUrl() +
                                                                   "'\n",
                                                                   "Error",
                                                                   JOptionPane.ERROR_MESSAGE);
@@ -559,7 +593,7 @@ public class WsdlLocationPanel extends JPanel {
                                 logger.log(Level.INFO, "XML parsing error.", e1);
                                 dlg.setVisible(false);
                                 JOptionPane.showMessageDialog(null,
-                                                              "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() +
+                                                              "Unable to parse the WSDL at location '" + getWsdlUrl() +
                                                               "'\n",
                                                               "Error",
                                                               JOptionPane.ERROR_MESSAGE);
