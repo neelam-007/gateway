@@ -7,6 +7,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.TimeSource;
 import com.l7tech.external.assertions.ratelimit.RateLimitAssertion;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -34,12 +35,15 @@ import java.util.logging.Logger;
  */
 public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitAssertion> {
     private static final Logger logger = Logger.getLogger(ServerRateLimitAssertion.class.getName());
-    private static final long CLUSTER_POLL_INTERVAL = 1000 * 43; // Check every 43 seconds to see if cluster size has changed
+    private static final long NANOS_PER_MILLI = 1000000L;  // Number of nanoseconds in one millisecond
+    private static final long MILLIS_PER_SECOND = 1000L;
+    private static final long NANOS_PER_SECOND = MILLIS_PER_SECOND * NANOS_PER_MILLI;
+    private static final long CLUSTER_POLL_INTERVAL = 43 * MILLIS_PER_SECOND; // Check every 43 seconds to see if cluster size has changed
     private static final int DEFAULT_MAX_QUEUED_THREADS = 20;
     private static final int DEFAULT_CLEANER_PERIOD = 13613;
     private static final int DEFAULT_MAX_NAP_TIME = 4703;
     private static final int DEFAULT_MAX_TOTAL_SLEEP_TIME = 18371;
-    private static final long MAX_IDLE_TIME = 3 * 1000L; // Point pool maxes out after 3 seconds idle
+    private static final long MAX_IDLE_TIME = 3 * MILLIS_PER_SECOND; // Point pool maxes out after 3 seconds idle
     private static final long POINTS_PER_REQUEST = 0x8000L; // cost in points to send a single request
     private static final Level SUBINFO_LEVEL =
                 Boolean.getBoolean("com.l7tech.external.server.ratelimit.logAtInfo") ? Level.INFO : Level.FINE;
@@ -56,6 +60,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final AtomicLong maxTotalSleepTime = new AtomicLong(DEFAULT_MAX_TOTAL_SLEEP_TIME);
     private static boolean useNanos = true;
     private static boolean autoFallbackFromNanos = !Boolean.getBoolean("com.l7tech.external.server.ratelimit.forceNanos");
+    static TimeSource clock = new TimeSource();
 
     static {
         Background.scheduleRepeated(new TimerTask() {
@@ -95,12 +100,12 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         private boolean notified = false;
 
         private synchronized boolean waitIfPossible() throws CausedIOException {
-            try {
-                // Check for pending notification
-                if (notified)
-                    return true;
-                notified = false;
+            // Check for pending notification
+            if (notified)
+                return true;
+            notified = false;
 
+            try {
                 int sleepers = curSleepThreads.incrementAndGet();
                 if (sleepers > (long)maxSleepThreads.get())
                     return false;
@@ -153,7 +158,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 if (idleMs > MAX_IDLE_TIME) idleMs = MAX_IDLE_TIME;
             }
 
-            long newPoints = points + (idleMs * pointsPerSecond) / 1000L;
+            long newPoints = points + (idleMs * pointsPerSecond) / MILLIS_PER_SECOND;
             if (newPoints > maxPoints)
                 newPoints = maxPoints;
 
@@ -172,16 +177,16 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
         private synchronized long spendNano(long now, long pointsPerSecond, long maxPoints) {
             // First add points for time passed
-            final long maxIdleNanos = MAX_IDLE_TIME * 1000000L;
+            final long maxIdleNanos = MAX_IDLE_TIME * NANOS_PER_MILLI;
             lastUsed = now;
-            final long nanoNow = System.nanoTime();
+            final long nanoNow = clock.nanoTime();
             long idleNanos;
             if (lastSpentNanos == Long.MIN_VALUE) {
                 idleNanos = maxIdleNanos;
             } else if (lastSpentNanos > nanoNow) {
                 // Nano jump backwards in time detected (Sun Java bug 6458294)
                 idleNanos = 0;
-                if (autoFallbackFromNanos && Math.abs(nanoNow - lastSpentNanos) > 10000000L) {
+                if (autoFallbackFromNanos && Math.abs(nanoNow - lastSpentNanos) > 10L * NANOS_PER_MILLI) {
                     synchronized (ServerRateLimitAssertion.class) {
                         if (useNanos) {
                             logger.severe("Nanosecond timer is too unreliable on this system; will use millisecond timer instead from now on");
@@ -195,7 +200,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 if (idleNanos > maxIdleNanos) idleNanos = maxIdleNanos;
             }
 
-            long newPoints = points + (idleNanos * pointsPerSecond) / (1000L * 1000000L);
+            long newPoints = points + (idleNanos * pointsPerSecond) / NANOS_PER_SECOND;
             if (newPoints > maxPoints)
                 newPoints = maxPoints;
 
@@ -245,7 +250,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                     token.notified = false;
                 }
 
-                if (isOverslept(startTime, System.currentTimeMillis()))
+                if (isOverslept(startTime, clock.currentTimeMillis()))
                     return 2;
             }
         }
@@ -283,7 +288,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
 
     private AssertionStatus checkNoSleep(long pps, Counter counter, String counterName, long maxPoints) throws IOException {
-        if (counter.spend(System.currentTimeMillis(), pps, maxPoints) == 0) {
+        if (counter.spend(clock.currentTimeMillis(), pps, maxPoints) == 0) {
             // Successful spend.
             return AssertionStatus.NONE;
         }
@@ -296,7 +301,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private AssertionStatus checkWithSleep(long pps, Counter counter, String counterName, long maxPoints) throws IOException {
         final ThreadToken token = new ThreadToken();
         final long maxnap = maxNapTime.get();
-        long startTime = System.currentTimeMillis();
+        long startTime = clock.currentTimeMillis();
 
         try {
             int result = counter.pushTokenAndWaitUntilFirst(startTime, token);
@@ -310,7 +315,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
             // We are now in first place.  Run until we either succeed or hit a time or concurrency limit.
             for (;;) {
-                long now = System.currentTimeMillis();
+                long now = clock.currentTimeMillis();
 
                 long shortfall = counter.spend(now, pps, maxPoints);
                 if (shortfall == 0)
@@ -321,10 +326,10 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                     return AssertionStatus.SERVICE_UNAVAILABLE;
                 }
 
-                long sleepNanos = shortfall * 1000L * 1000000L / pps + 1;
+                long sleepNanos = shortfall * NANOS_PER_SECOND / pps + 1;
                 if (sleepNanos < 1) sleepNanos = 1;
-                long sleepTime = sleepNanos / 1000000L;
-                sleepNanos %= 1000000L;
+                long sleepTime = sleepNanos / NANOS_PER_MILLI;
+                sleepNanos %= NANOS_PER_MILLI;
 
                 if (sleepTime > maxnap) sleepTime = maxnap; // don't sleep for too long
 
@@ -353,7 +358,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
             if (logger.isLoggable(SUBINFO_LEVEL))
                 logger.log(SUBINFO_LEVEL, "Rate limit: Thead " + Thread.currentThread().getName() + ": sleeping " + sleepMillis + "ms " + nanos + "ns");
-            Thread.sleep(sleepMillis, nanos);
+            clock.sleep(sleepMillis, nanos);
             return true;
         } catch (InterruptedException e) {
             throw new CausedIOException("Thread interrupted", e);
@@ -372,7 +377,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
     // @return the cluster size. always positive
     private int getClusterSize() {
-        long now = System.currentTimeMillis();
+        long now = clock.currentTimeMillis();
         final long lastCheck = lastClusterCheck.get();
         final int oldSize = clusterSize.get();
 
@@ -385,7 +390,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                     if (clusterSize.get() < 1) {
                         logger.log(SUBINFO_LEVEL, "Initializing cluster size");
                         clusterSize.set(loadClusterSizeFromDb());
-                        lastClusterCheck.set(System.currentTimeMillis());
+                        lastClusterCheck.set(clock.currentTimeMillis());
                     }
                 }
             } finally {
@@ -397,10 +402,10 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
             if (clusterCheckLock.tryLock()) {
                 try {
                     // See if we still need to do it
-                    if (System.currentTimeMillis() - lastClusterCheck.get() > CLUSTER_POLL_INTERVAL) {
+                    if (clock.currentTimeMillis() - lastClusterCheck.get() > CLUSTER_POLL_INTERVAL) {
                         logger.log(SUBINFO_LEVEL, "Checking current cluster size");
                         clusterSize.set(loadClusterSizeFromDb());
-                        lastClusterCheck.set(System.currentTimeMillis());
+                        lastClusterCheck.set(clock.currentTimeMillis());
                     }
                 } finally {
                     clusterCheckLock.unlock();
