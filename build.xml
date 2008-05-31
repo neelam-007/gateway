@@ -375,6 +375,8 @@
         <include name="**/commons-collections-3.2.jar"/>
         <include name="**/commons-logging-1.0.4.jar"/>
         <include name="**/commons-discovery.jar"/>
+        <include name="**/concurrent-1.3.4.jar"/>
+        <include name="**/whirlycache-1.0.1.jar"/>
         <include name="**/qname.jar"/>
         <include name="**/forms_rt.jar"/>
         <include name="**/xmlpad.jar"/>
@@ -926,6 +928,7 @@
             <test name="com.l7tech.identity.IdentityEqualityTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.policy.assertion.RequestSwAAssertionTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.rbac.EntityTypeTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.io.InetAddressUtilTest" haltonfailure="no"/>
         </junit>
     </target>
 

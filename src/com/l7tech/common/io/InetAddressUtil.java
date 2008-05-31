@@ -86,4 +86,12 @@ public class InetAddressUtil {
 
         return false;
     }
+
+    public static long toLong(InetAddress addr) {
+        byte[] a = addr.getAddress();
+        return ((0xFFL & a[0]) << 24) |
+               ((0xFFL & a[1]) << 16) |
+               ((0xFFL & a[2]) <<  8) |
+                (0xFFL & a[3]);
+    }
 }
