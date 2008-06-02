@@ -387,7 +387,7 @@
               </vspacer>
             </children>
           </grid>
-          <grid id="29b97" layout-manager="GridLayoutManager" row-count="14" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="29b97" binding="inboundOptionsPanel" layout-manager="GridLayoutManager" row-count="14" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="8" left="8" bottom="8" right="8"/>
             <constraints>
               <tabbedpane title="Inbound Options"/>
@@ -595,7 +595,7 @@
               </grid>
             </children>
           </grid>
-          <grid id="67a2b" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="67a2b" binding="outboundOptionsPanel" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
               <tabbedpane title="Outbound Options"/>
