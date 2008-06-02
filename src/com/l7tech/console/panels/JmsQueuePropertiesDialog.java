@@ -104,7 +104,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private Logger logger = Logger.getLogger(JmsQueuePropertiesDialog.class.getName());
 
     public ServiceAdmin getServiceAdmin() {
-        return (ServiceAdmin) Registry.getDefault().getServiceManager();
+        return Registry.getDefault().getServiceManager();
     }
 
     private static class ProviderComboBoxItem {
@@ -245,7 +245,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         jndiPasswordField.setDocument(new MaxLengthDocument(32));
         // Case 2: in the Queue Tab
         qcfTextField.setDocument(new MaxLengthDocument(255));
-        queueNameTextField.setDocument(new MaxLengthDocument(255));
+        queueNameTextField.setDocument(new MaxLengthDocument(128));
         queueUsernameTextField.setDocument(new MaxLengthDocument(32));
         queuePasswordField.setDocument(new MaxLengthDocument(32));
         // Case 3: in the Inbound or Outbound Options Tab
