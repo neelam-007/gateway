@@ -90,6 +90,7 @@
                       <margin top="2" left="3" bottom="0" right="3"/>
                       <selected value="true"/>
                       <text value="&amp;Outbound - SecureSpan Gateway can route messages to Queue"/>
+                      <toolTipText value="Select Outbound to configure an outbound queue."/>
                     </properties>
                   </component>
                   <component id="a6fff" class="javax.swing.JRadioButton" binding="inboundRadioButton">
@@ -99,6 +100,7 @@
                     <properties>
                       <margin top="0" left="3" bottom="2" right="3"/>
                       <text value="&amp;Inbound - SecureSpan Gateway will drain messages from Queue"/>
+                      <toolTipText value="Select Inbound to configure an inbound queue."/>
                     </properties>
                   </component>
                 </children>
@@ -489,7 +491,7 @@
                     <properties>
                       <selected value="true"/>
                       <text value="Auto&amp;matic (send reply if specified in inbound message)"/>
-                      <toolTipText value="If a ReplyTo queue was designated in inbound message, the Gateway should send its response on it; otherwise no reply will be sent."/>
+                      <toolTipText value="&lt;html&gt;If a ReplyTo queue was designated in inbound message, the Gateway should&lt;p&gt;send its response on it; otherwise no reply will be sent.&lt;/html&gt;"/>
                     </properties>
                   </component>
                   <component id="aed24" class="javax.swing.JRadioButton" binding="inboundReplyNoneRadioButton">
@@ -498,7 +500,7 @@
                     </constraints>
                     <properties>
                       <text value="Do &amp;not send replies (one-way)"/>
-                      <toolTipText value="The Gateway should never send a reply to messages received on this queue, even for incoming messages with a designated ReplyTo queue set."/>
+                      <toolTipText value="&lt;html&gt;The Gateway should never send a reply to messages received on this queue,&lt;p&gt;even for incoming messages with a designated ReplyTo queue set.&lt;/html&gt;"/>
                     </properties>
                   </component>
                   <component id="816c2" class="javax.swing.JRadioButton" binding="inboundReplySpecifiedQueueRadioButton">
@@ -507,7 +509,7 @@
                     </constraints>
                     <properties>
                       <text value="Send Re&amp;ply to specified queue:"/>
-                      <toolTipText value="The Gateway should always send its reply to the specified queue, ignoring any ReplyTo queue that may have been designated in the inbound request."/>
+                      <toolTipText value="&lt;html&gt;The Gateway should always send its reply to the specified queue, ignoring any&lt;p&gt;ReplyTo queue that may have been designated in the inbound request.&lt;/html&gt;"/>
                     </properties>
                   </component>
                   <component id="bfec9" class="javax.swing.JTextField" binding="inboundReplySpecifiedQueueField">
@@ -581,6 +583,7 @@
                     </constraints>
                     <properties>
                       <text value="Set Response CorrelationI&amp;D from Request's MessageID"/>
+                      <toolTipText value="&lt;html&gt;Choose this option to have the Gateway copy the MessageID from the inbound&lt;p&gt;request message to the JMSCorrelationID attribute on the outbound response.&lt;/html&gt;"/>
                     </properties>
                   </component>
                   <component id="3c0fa" class="javax.swing.JRadioButton" binding="inboundCorrelationIdRadioButton" default-binding="true">
@@ -590,6 +593,7 @@
                     <properties>
                       <selected value="true"/>
                       <text value="Cop&amp;y CorrelationID from Request to Response"/>
+                      <toolTipText value="&lt;html&gt;Choose this option to have the SecureSpan Gateway copy the JMSCorrelationID&lt;p&gt;value from the inbound request message to the JMSCorrelationID attribute on&lt;p&gt;the outbound response.&lt;/html&gt;"/>
                     </properties>
                   </component>
                 </children>
@@ -628,7 +632,7 @@
                     </constraints>
                     <properties>
                       <text value="&amp;No replies (one-way)"/>
-                      <toolTipText value="The Gateway should neither designate a ReplyTo queue on outbound requests, nor wait for any response."/>
+                      <toolTipText value="&lt;html&gt;The Gateway should neither designate a ReplyTo queue on outbound requests,&lt;p&gt;nor wait for any response.&lt;/html&gt;"/>
                     </properties>
                   </component>
                   <component id="385e8" class="javax.swing.JRadioButton" binding="outboundReplySpecifiedQueueRadioButton">
@@ -637,7 +641,7 @@
                     </constraints>
                     <properties>
                       <text value="Wait for &amp;Reply on specified queue:"/>
-                      <toolTipText value="The Gateway should designate the specified queue as the ReplyTo queue for all outbound requests, and wait for a response on that queue."/>
+                      <toolTipText value="&lt;html&gt;The Gateway should designate the specified queue as the ReplyTo queue for all outbound&lt;p&gt;requests, and wait for a response on that queue.&lt;/html&gt;"/>
                     </properties>
                   </component>
                   <component id="1dbf1" class="javax.swing.JTextField" binding="outboundReplySpecifiedQueueField">
@@ -665,6 +669,7 @@
                         <properties>
                           <selected value="true"/>
                           <text value="&amp;Generate New CorrelationID for Request "/>
+                          <toolTipText value="&lt;html&gt;Choose this to have the SecureSpan Gateway generate a unique ID, set it as the&lt;p&gt;&quot;JMSCorrelationID&quot; attribute on the outbound request, and then select only&lt;p&gt; messages with the matching JmSCorrelationID value from the response queue.&lt;/html&gt;"/>
                         </properties>
                       </component>
                       <component id="fcba0" class="javax.swing.JRadioButton" binding="outboundMessageIdRadioButton" default-binding="true">
@@ -673,6 +678,7 @@
                         </constraints>
                         <properties>
                           <text value="&amp;Expect Receiver to copy Request MessageID to Response CorrelationID  "/>
+                          <toolTipText value="&lt;html&gt;Choose this to send the request message as-is, then select only messages with&lt;p&gt;the &quot;JMSCorrelationID&quot; attribute matching the outbound request's &quot;MessageID&quot;&lt;p&gt;attribute from the response queue.&lt;/html&gt;"/>
                         </properties>
                       </component>
                     </children>
@@ -699,7 +705,7 @@
                     <properties>
                       <selected value="true"/>
                       <text value="&amp;Automatic"/>
-                      <toolTipText value="TextMessage only if forwarding a request that arrived as a TextMessage; otherwise, BytesMessage "/>
+                      <toolTipText value="&lt;html&gt;TextMessage only if forwarding a request that arrived as a TextMessage; &lt;p&gt;otherwise, BytesMessage&lt;/html&gt; "/>
                     </properties>
                   </component>
                   <component id="2aff0" class="javax.swing.JRadioButton" binding="outboundFormatTextRadioButton">
@@ -708,6 +714,7 @@
                     </constraints>
                     <properties>
                       <text value="Te&amp;xtMessage"/>
+                      <toolTipText value="Always forward requests as TextMessage."/>
                     </properties>
                   </component>
                   <component id="c5f23" class="javax.swing.JRadioButton" binding="outboundFormatBytesRadioButton">
@@ -716,6 +723,7 @@
                     </constraints>
                     <properties>
                       <text value="&amp;BytesMessage"/>
+                      <toolTipText value="Always forward requests as BytesMessage."/>
                     </properties>
                   </component>
                 </children>
