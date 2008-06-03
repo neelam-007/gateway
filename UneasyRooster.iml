@@ -1222,7 +1222,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/mailapi-1.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/mailapi-1.4.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1439,6 +1439,74 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/tools/junit-4.4.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$APPLICATION_HOME_DIR$/lib/javaee.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/org.mortbay.jetty.util.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="Restlet">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/gateway/restlet/com.noelios.restlet.ext.spring_2.5.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/restlet/org.restlet.ext.spring_2.5.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/restlet/com.noelios.restlet.ext.jetty_6.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/restlet/com.noelios.restlet.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/restlet/org.restlet.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="PDOM">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/test/Infonyte/com.infonyte.pdom.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/test/Infonyte/com.infonyte.collection.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/test/Infonyte/com.infonyte.pxsltc.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/test/Infonyte/com.infonyte.xpath.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/test/Infonyte/com.infonyte.ptools.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/test/Infonyte/com.infonyte.cli.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/test/Infonyte/com.infonyte.xql.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/test/Infonyte/com.infonyte.index.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/test/Infonyte/com.infonyte.pxslt.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/test/Infonyte/com.infonyte.gui.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/test/Infonyte/com.infonyte.base.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="VTD">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/test/vtd-xml.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="XSS">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/test/intel-xss.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
