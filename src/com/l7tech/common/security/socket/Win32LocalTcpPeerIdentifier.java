@@ -35,52 +35,6 @@ class Win32LocalTcpPeerIdentifier extends LocalTcpPeerIdentifier {
     }
 
     /**
-     * @return the peer's process ID, if {@link #identifyTcpPeer} has been called and succeeded; otherwise 0.
-     */
-    public int getProcessId() {
-        return pid;
-    }
-
-    /**
-     * @return the peer's session ID, if (@link #identifyTcpPeer} has been called and succeeded; otherwise 0.
-     */
-    public int getSessionId() {
-        return sid;
-    }
-
-    /**
-     * @return the peer's user name, if {@link #identifyTcpPeer} has been called and succeeded; otherwise null.
-     */
-    public String getUsername() {
-        return username;
-    }
-
-    /**
-     * @return the peer's Windows domain, if {@link #identifyTcpPeer} has been called and succeeded; otherwise null.
-     */
-    public String getDomain() {
-        return domain;
-    }
-
-    /**
-     * @return the peer's program name, if {@link #identifyTcpPeer} has been called and succeeded; otherwise null.
-     */
-    public String getProgram() {
-        return program;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * <b>Win32 implementation:</b>
-     * For Win32, the format of the user identifier is "username@domain".
-     */
-    @Override
-    public String getUserIdentifier() {
-        return getUsername() + "@" + getDomain();
-    }
-
-    /**
      * {@inheritDoc}
      *
      * @throws AccessControlException If this process lacks the PROCESS_QUERY_INFORMATION right on the target process,
@@ -92,7 +46,15 @@ class Win32LocalTcpPeerIdentifier extends LocalTcpPeerIdentifier {
             throw new UnsatisfiedLinkError("Win32LocalTcpPeerIdentifier is not available on this system");
 
         final long longsock = sockAddr == null ? 0 : InetAddressUtil.toLong(sockAddr);
-        return nativeIdentifyTcpPeer(longsock, includeAllLoopback, sockPort, InetAddressUtil.toLong(peerAddr), peerPort);
+        if (!nativeIdentifyTcpPeer(longsock, includeAllLoopback, sockPort, InetAddressUtil.toLong(peerAddr), peerPort))
+            return false;
+
+        putIdentifier(IDENTIFIER_PID, String.valueOf(pid));
+        putIdentifier(IDENTIFIER_SID, String.valueOf(sid));
+        putIdentifier(IDENTIFIER_USERNAME, username);
+        putIdentifier(IDENTIFIER_NAMESPACE, domain);
+        putIdentifier(IDENTIFIER_PROGRAM, program);
+        return true;
     }
 
 

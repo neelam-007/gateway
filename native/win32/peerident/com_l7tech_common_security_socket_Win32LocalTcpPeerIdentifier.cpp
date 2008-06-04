@@ -1,3 +1,18 @@
+/*
+  Single-threaded test results:
+
+  TCP table scan to find pid:						4500/sec, no leaks, no other processes use CPU
+  + session ID lookup:								4400/sec, no leaks, no other processes use CPU
+  + username lookup:								1700/sec, no leaks, lsass.exe 8%, svchost.exe 5%
+  + domain lookup:									1100/sec, no leaks, lsass.exe +2%, svchost.exe +1%
+
+Then add one of the following program name lookup methods:
+  + program lookup with EnumProcessModules:			1000/sec, no leaks, no additional lsass/svchost load
+  + program lookup with CreateToolhelp32Snapshot:	 900/sec, no leaks, no additional lsass/svchost load
+  + program lookup with WTSQuerySessionInformation:	 900/sec, leaks at least 1kb per lookup, lsass.exe +5%, svchost.exe +2%
+
+ */
+
 #define WIN32_LEAN_AND_MEAN 1
 
 #include <string>
@@ -7,6 +22,8 @@
 #include <Winsock.h>
 #include <Iphlpapi.h>
 #include <WtsApi32.h>
+#include <Tlhelp32.h>
+#include <Psapi.h>
 #include <math.h>
 
 #include "com_l7tech_common_security_socket_Win32LocalTcpPeerIdentifier.h"
@@ -19,8 +36,9 @@ using namespace std;
 // Constants
 //
 
-#define INITIAL_BUFFER_SIZE 17
+#define INITIAL_BUFFER_SIZE 16384
 #define MAX_BUFFER_SIZE 0x10000000
+#define INITIAL_MODULES 256
 
 #define CN_SELF				"Lcom/l7tech/common/security/socket/Win32LocalTcpPeerIdentifier;"
 #define FIELD_PID			"pid"
@@ -61,9 +79,29 @@ public:
 	explicit auto_WTSFreeMemory() : auto_free() {};
 	explicit auto_WTSFreeMemory(LPVOID ptr) : auto_free(ptr) {};
 	virtual ~auto_WTSFreeMemory() { release(); };
-protected:
-	virtual void release_impl(LPVOID ptr) {
-		::WTSFreeMemory(ptr);
+	virtual void release() {
+		if (NULL != m_ptr) {
+			::WTSFreeMemory(m_ptr);
+			m_ptr = NULL;
+		}
+	}
+};
+
+
+// Utility class that calls CloseHandle on its owned HANDLE when destroyed
+class auto_CloseHandle : public auto_free<HANDLE, INVALID_HANDLE_VALUE> {
+public:
+	explicit auto_CloseHandle() : auto_free() {};
+	explicit auto_CloseHandle(HANDLE handle) : auto_free(handle) {};
+	virtual ~auto_CloseHandle() { release(); };
+	virtual void release() {
+		if (is_valid()) {
+			::CloseHandle(m_ptr);
+			m_ptr = INVALID_HANDLE_VALUE;
+		}
+	}
+	bool is_valid() {
+		return NULL != m_ptr && INVALID_HANDLE_VALUE != m_ptr;
 	}
 };
 
@@ -170,6 +208,8 @@ get_tcp_table(JNIEnv* env, vector<BYTE>& bytes)
 		if (bytes.capacity() < bytes_next_size) throw bad_alloc();
 		DWORD bytes_actual_size = bytes.capacity();
 
+		dprintf(env, "Querying for TCP table (buffer size=%d)", bytes_actual_size);
+
 		DWORD r = ::GetExtendedTcpTable(&(*bytes.begin()), &bytes_actual_size, FALSE, AF_INET, TCP_TABLE_OWNER_PID_ALL, 0);
 
 		switch (r) {
@@ -179,7 +219,7 @@ get_tcp_table(JNIEnv* env, vector<BYTE>& bytes)
 			case ERROR_INSUFFICIENT_BUFFER:
 				if (bytes_next_size < MAX_BUFFER_SIZE) {
 					// Allocate a larger buffer and try again
-					bytes_next_size = max((DWORD)::ceil(1.6 * (bytes_next_size + 1)), bytes_actual_size);
+					bytes_next_size = max((DWORD)::ceil(1.6 * (bytes_next_size + 1)), (DWORD)::ceil(1.2 * (bytes_actual_size + 8)));
 					bytes.reserve(bytes_next_size);
 					if (bytes.capacity() < bytes_next_size) throw bad_alloc();
 					break; // retry with larger buffer
@@ -200,7 +240,7 @@ get_tcp_table(JNIEnv* env, vector<BYTE>& bytes)
 
 // Scan the provided TCP table for a matching row.
 // Returns the matching pid, or -1 if no matching pid was found.
-int 
+DWORD 
 scan_for_pid(PMIB_TCPTABLE_OWNER_PID table, jlong sockip, jboolean incloop, jint sockport, jlong peerip, jint peerport) 
 {
 	DWORD wantRemoteAddr = htonl((DWORD)sockip);
@@ -260,19 +300,53 @@ query_wts_string(JNIEnv* env, DWORD sessionId, WTS_INFO_CLASS query, const char*
 		if (err == ERROR_SUCCESS) {
 			// This breaks the WTSQuerySessionInformaion contract, but it appears to happen when querying WTSApplicationName.
 			// Possibly when "the session specified in the SessionId parameter is a session at the physical console".
-			// We'll treat this like an empty application name.
-			querybuf = TEXT("");
-			/* FALLTHROUGH without registering querybuf with auto_wts */
+			// We've also found that whenever this happens something leaks at least 1kb of native memory.
+			// Report this as a serious error.
+			auto_wts.acquire(querybuf);
+			env->ThrowNew(g_exOutOfMemoryError, errprefix);
+			return NULL;
 		} else {
 			report_error_auto(env, errprefix, err);
 			return NULL;
 		}
-	} else
+	} 
+
+	if (querybuf != NULL)
 		auto_wts.acquire(querybuf);
 
 	dprintf(env, "    converting to UTF8 for %s", errprefix);
 
 	return env->NewStringUTF(tstr_to_utf8(querybuf).c_str());
+}
+
+
+// Look up the executable base name of a process specified by pid, and return it in a new JNI String local reference.
+// Requires PROCESS_QUERY_INFORMATION and PROCESS_VM_READ access rights on the target process.
+// Returns NULL if a Java exception is pending.
+jstring
+lookup_program(JNIEnv* env, DWORD pid)
+{
+	auto_CloseHandle proc(::OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, pid));
+	if (!proc.is_valid()) {
+		report_error_auto(env, "Unable to get program name: open client process failed", GetLastError());
+		return NULL;
+	}
+
+	HMODULE hModule;
+	DWORD cb;
+	if (0 == ::EnumProcessModules(proc.get(), &hModule, sizeof hModule, &cb)) {
+		report_error_auto(env, "Unable to get program name: enum client process modules failed", GetLastError());
+		return NULL;
+	}
+
+	TCHAR path[MAX_PATH];
+	if (0 == ::GetModuleBaseName(proc.get(), hModule, path, sizeof path)) {
+		report_error_auto(env, "Unable to get program name: get module base name failed", GetLastError());
+		return NULL;
+	}
+
+	string path_utf8 = tstr_to_utf8(path);
+	return env->NewStringUTF(path_utf8.c_str());
 }
 
 
@@ -292,7 +366,7 @@ NativeIdentifyPeer_impl(JNIEnv* env,
 						jlong peerip, 
 						jint peerport)
 {
-	if (0 != env->EnsureLocalCapacity(8))
+	if (0 != env->EnsureLocalCapacity(16))
 		return JNI_FALSE;
 
 	vector<BYTE> tcpvec(INITIAL_BUFFER_SIZE);
@@ -305,15 +379,13 @@ NativeIdentifyPeer_impl(JNIEnv* env,
 
 	// Scan for pid owning matching connection
 	PMIB_TCPTABLE_OWNER_PID tcptable = (PMIB_TCPTABLE_OWNER_PID)&(*tcpvec.begin());
-	int pid = scan_for_pid(tcptable, sockip, incloop, sockport, peerip, peerport);
+	DWORD pid = scan_for_pid(tcptable, sockip, incloop, sockport, peerip, peerport);
 	if (-1 == pid) {
 		// No match in table.
 		return JNI_FALSE;
 	}
 
 	dprintf(env, "Looking for session ID for pid %d", pid);
-
-	// Find session ID
 	DWORD sid;
 	if (0 == ::ProcessIdToSessionId(pid, &sid)) {
 		report_error_auto(env, "Unable to look up session ID for remote process", GetLastError());
@@ -321,22 +393,16 @@ NativeIdentifyPeer_impl(JNIEnv* env,
 	}
 
 	dprintf(env, "Found session id %d; getting username", sid);
-
-	// Query the values we need to store
 	jstring username = query_wts_string(env, sid, WTSUserName, "session username");
 	if (NULL == username)
 		return JNI_FALSE;
 
-	dprint(env, "getting domain");
+	dprint(env, "getting program");
+	jstring program = lookup_program(env, pid);
 
+	dprint(env, "getting domain");
 	jstring domain = query_wts_string(env, sid, WTSDomainName, "session domain");
 	if (NULL == domain)
-		return JNI_FALSE;
-
-	dprint(env, "getting program");
-
-	jstring program = query_wts_string(env, sid, WTSApplicationName, "session application name");
-	if (NULL == program)
 		return JNI_FALSE;
 
 	dprint(env, "storing values");

@@ -92,23 +92,9 @@ dprint(JNIEnv* env, const string msg)
 void
 init_system_err_println(JNIEnv* env, jclass clsSystem)
 {
-
-}
-
-void
-dprint_open(JNIEnv* env)
-{
 	jfieldID field_err;
 	jobject obj_system_err;
 	jclass clsPrintStream;
-	char msg[128];
-
-	DWORD pid = ::GetCurrentProcessId();
-	sprintf_s(msg, sizeof msg, "Current PID: %d\n\nAttach debugger now, if desired; then, press OK to continue.", pid);
-	::MessageBoxA(NULL, msg, "JNI DLL Attached", MB_OK);
-
-	// Save g_clsSystem
-	cache_class(env, CN_SYSTEM, g_clsSystem);
 
 	// Save g_objSystemErr
 	PEND_IF_NULL(field_err = env->GetStaticFieldID(g_clsSystem, "err", CN_PRINTSTREAM));
@@ -118,6 +104,20 @@ dprint_open(JNIEnv* env)
 	// Save g_methodPrintln
 	PEND_IF_NULL(clsPrintStream = env->FindClass(CN_PRINTSTREAM));
 	PEND_IF_NULL(g_methodPrintln = env->GetMethodID(clsPrintStream, "println", "(Ljava/lang/String;)V"));
+}
+
+void
+dprint_open(JNIEnv* env)
+{
+#ifdef PAUSE_ON_START
+	char msg[128];
+	DWORD pid = ::GetCurrentProcessId();
+	sprintf_s(msg, sizeof msg, "Current PID: %d\n\nAttach debugger now, if desired; then, press OK to continue.", pid);
+	::MessageBoxA(NULL, msg, "JNI DLL Attached", MB_OK);
+#endif /* PAUSE_ON_START */
+
+	cache_class(env, CN_SYSTEM, g_clsSystem);
+	init_system_err_println(env, g_clsSystem);
 }
 
 

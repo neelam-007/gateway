@@ -1,12 +1,14 @@
 package com.l7tech.common.security.socket;
 
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.skunkworks.BenchmarkRunner;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,10 +21,10 @@ public class LocalTcpPeerIdentifierTest {
 
     public static void main(String[] args) throws Exception {
         if (!Win32LocalTcpPeerIdentifier.isAvailable())
-            throw new UnsatisfiedLinkError("No Win32 local TCP peer identifier is available -- missing dll? not windows?");
+            throw new UnsatisfiedLinkError("No local TCP peer identifier is available on this system");
 
         ServerSocket serv = new ServerSocket(8989, 5, InetAddress.getByName("127.0.0.1"));
-        while (true) {
+        for (;;) {
             Socket clientSocket = serv.accept();
             try {
                 handleClientConnection(clientSocket);
@@ -43,21 +45,19 @@ public class LocalTcpPeerIdentifierTest {
         }
     }
 
-    private static void handleClientConnection(Socket clientSocket) throws IOException {
+    private static void handleClientConnection(final Socket clientSocket) throws Exception {
         StringBuilder msg = new StringBuilder();
 
         try {
-            Win32LocalTcpPeerIdentifier ident = new Win32LocalTcpPeerIdentifier();
+            LocalTcpPeerIdentifier ident = LocalTcpPeerIdentifierFactory.createIdentifier();
             boolean result = ident.identifyTcpPeer(clientSocket);
 
             if (!result) {
                 msg.append("Unable to identify you.");
             } else {
-                msg.append("pid: ").append(ident.getProcessId()).append("\r\n");
-                msg.append("session id: ").append(ident.getSessionId()).append("\r\n");
-                msg.append("username: ").append(ident.getUsername()).append("\r\n");
-                msg.append("domain: ").append(ident.getDomain()).append("\r\n");
-                msg.append("program: ").append(ident.getProgram()).append("\r\n");
+                Set<String> idents = ident.getIdentifiers();
+                for (String name : idents)
+                    msg.append(name).append(": ").append(ident.getIdentifier(name)).append("\r\n");
             }
         } catch (Exception e) {
             logger.log(Level.INFO, "Exception while identifying connection: " + ExceptionUtils.getMessage(e), e);
@@ -68,5 +68,19 @@ public class LocalTcpPeerIdentifierTest {
         msg.append("\r\n");
         os.write(msg.toString().getBytes());
         os.flush();
+
+        // Do a quick benchmark
+        new BenchmarkRunner(new Runnable() {
+            public void run() {
+                for (int i = 0; i < 10000; ++i) {
+                    LocalTcpPeerIdentifier ident = LocalTcpPeerIdentifierFactory.createIdentifier();
+                    try {
+                        ident.identifyTcpPeer(clientSocket);
+                    } catch (IOException e) {
+                        throw new RuntimeException("Ident failed", e);
+                    }
+                }
+            }
+        }, 4).run();
     }
 }

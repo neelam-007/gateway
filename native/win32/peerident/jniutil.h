@@ -31,11 +31,11 @@ class java_exception_pending : public std::exception {};
 
 // Utility abstract superclass for classes that auto-release resources identified by a pointer
 // For this to work, each subclass MUST provide a virtual destructor that calls release().
-template<class ptrT>
+template<class ptrT, ptrT nullT = NULL>
 class auto_free {
 public:
 	// Create an auto_free instance that initially owns no resource.
-	explicit auto_free() : m_ptr(NULL) {}
+	explicit auto_free() : m_ptr(nullT) {}
 
 	// Create an auto_free instance that initially owns the specified resource.
 	explicit auto_free(ptrT ptr) : m_ptr(ptr) {}
@@ -52,17 +52,13 @@ public:
 		m_ptr = ptr;
 	}
 
-	// Release the resource and clear the reference.
-	void release() {
-		if (m_ptr != NULL)
-			release_impl(m_ptr);
-		m_ptr = NULL;
-	}
+	// Release the resource, if necessary, and clear the reference.
+	virtual void release() = 0;
 
 	// Detach the resource from this auto_free instance so that it will not be freed.
 	ptrT detach() {
 		ptrT ret = m_ptr;
-		m_ptr = NULL;
+		m_ptr = nullT;
 		return ret;
 	}
 
@@ -72,8 +68,8 @@ public:
 	}
 
 protected:
-	// Release the specified pointer, which must not be null
-	virtual void release_impl(ptrT ptr) = 0;
+	// Pointer the resource we are managing
+	ptrT m_ptr;
 
 private:
 	// Can't be copied
@@ -81,9 +77,6 @@ private:
 
 	// Can't be assigned to
 	auto_free& operator=(const auto_free& o) { return *this; }
-
-	// Pointer the resource we are managing
-	ptrT m_ptr;
 };
 
 
@@ -94,14 +87,16 @@ private:
 template<class jobjectT>
 class auto_local_ref : public auto_free<jobjectT> {
 public:
-	// Create an instance that initially owns no resource, but will use the specified
-	// JNI env for freeing any future resource it comes to own.
-	explicit auto_local_ref(JNIEnv* env) : env(env), auto_free() {};
-
-	// Create an instance that owns the specified resource, to be freed with the specified JNI env.
-	explicit auto_local_ref(JNIEnv* env, jobjectT obj) : env(env), auto_free(obj) {};
-
+	explicit auto_local_ref(JNIEnv* env) : m_env(env), auto_free() {};
+	explicit auto_local_ref(JNIEnv* env, jobjectT obj) : m_env(env), auto_free(obj) {};
 	virtual ~auto_local_ref() { release(); };
+	virtual void release() {
+		if (NULL != m_ptr) {
+			if (NULL != m_env)
+				m_env->DeleteLocalRef(obj);
+			m_ptr = NULL;
+		}
+	}
 
 	// Take ownership of the specified reference, throwing java_exception_pending if it is NULL.
 	void acquire_not_null(jobjectT obj) {
@@ -109,14 +104,8 @@ public:
 		acquire(obj);
 	}
 
-protected:
-	virtual void release_impl(jobjectT obj) {
-		if (env != NULL)
-			env->DeleteLocalRef(obj);
-	}
-
 private:
-	JNIEnv* env;
+	JNIEnv* m_env;
 };
 
 
@@ -126,9 +115,11 @@ public:
 	explicit auto_LocalFree() : auto_free() {};
 	explicit auto_LocalFree(HLOCAL ptr) : auto_free(ptr) {};
 	virtual ~auto_LocalFree() { release(); };
-protected:
-	virtual void release_impl(HLOCAL ptr) {
-		::LocalFree(ptr);
+	virtual void release() {
+		if (NULL != m_ptr) {
+			::LocalFree(m_ptr);
+			m_ptr = NULL;
+		}
 	}
 };
 
