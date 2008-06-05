@@ -6,6 +6,8 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.RunOnChangeListener;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -23,6 +25,7 @@ public class RecipientSecurityHeaderWizardStep extends WizardStepPanel {
 
     public interface Validator {
         boolean checkData();
+        void checkFinishButtonActivation();
     }
 
     public RecipientSecurityHeaderWizardStep(WizardStepPanel next) {
@@ -37,10 +40,16 @@ public class RecipientSecurityHeaderWizardStep extends WizardStepPanel {
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
+
+        actorAttributeValueField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            public void run() {
+                validator.checkFinishButtonActivation();
+            }
+        }));
     }
 
     public boolean canFinish() {
-       return true;
+       return getCapturedValue().trim().length() != 0;
     }
 
     public String getDescription() {

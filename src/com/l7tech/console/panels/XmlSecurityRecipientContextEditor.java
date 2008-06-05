@@ -146,6 +146,8 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                 final RecipientSecurityHeaderWizardStep panel3 = new RecipientSecurityHeaderWizardStep(null);
                 final CertDetailsPanel panel2 = new CertDetailsPanel(panel3);
                 final CertImportMethodsPanel panel1 = new CertImportMethodsPanel(panel2, true);
+                Frame f = TopComponents.getInstance().getTopParent();
+                final Wizard wizard = new AddCertificateWizard(f, panel1);
 
                 panel3.setValidator(new RecipientSecurityHeaderWizardStep.Validator() {
                     public boolean checkData() {
@@ -169,13 +171,15 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                         }
                         return true;
                     }
+
+                    public void checkFinishButtonActivation() {
+                        boolean enabled = panel3.getCapturedValue().trim().length() != 0;
+                        wizard.getButtonFinish().setEnabled(enabled);
+                    }
                 });
 
-                Frame f = TopComponents.getInstance().getTopParent();
-                Wizard w = new AddCertificateWizard(f, panel1);
-                w.setTitle("New WSS Recipient Wizard");
-
-                w.addWizardListener(new WizardListener() {
+                wizard.setTitle("New WSS Recipient Wizard");
+                wizard.addWizardListener(new WizardListener() {
                     public void wizardSelectionChanged(WizardEvent e) {}
                     public void wizardFinished(WizardEvent e) {
                         String maybeNewActor = panel3.getCapturedValue();
@@ -189,9 +193,9 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                     }
                     public void wizardCanceled(WizardEvent e) {}
                 });
-                w.pack();
-                Utilities.centerOnScreen(w);
-                DialogDisplayer.display(w, new Runnable() {
+                wizard.pack();
+                Utilities.centerOnScreen(wizard);
+                DialogDisplayer.display(wizard, new Runnable() {
                     public void run() {
                         XmlSecurityRecipientContextEditor.this.pack();
                     }

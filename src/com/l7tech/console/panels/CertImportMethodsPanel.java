@@ -304,6 +304,12 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         } else if (copyAndPasteRadioButton.isSelected()) {
 
             String certPem = copyAndPasteTextArea.getText();
+            if (certPem == null || certPem.trim().length() == 0) {
+                JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.content"),
+                                              resources.getString("view.error.title"),
+                                              JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
 
             try {
                 is = new ByteArrayInputStream(certPem.getBytes("UTF-8"));
