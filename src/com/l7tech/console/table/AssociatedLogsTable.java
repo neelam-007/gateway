@@ -258,6 +258,8 @@ public class AssociatedLogsTable extends JTable {
                 public void actionPerformed(ActionEvent e) {
                     if (value != null) {
                         DialogDisplayer.display(new DetailViewDialog(value));
+                        // Make the renderer reappear.
+                        fireEditingStopped();
                     }
                 }
             });
