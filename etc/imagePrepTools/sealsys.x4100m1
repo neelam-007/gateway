@@ -181,7 +181,72 @@ seal)
 
 ;;
 
+customize)
+
+  FOO=`lspci`
+  if [ ! $? -eq 0 ] ; then
+      echo ""
+      echo "ERROR: can't run lspci - are you running as root?"
+      echo ""
+      exit 1;
+  fi
+
+  #looking for an installed SCA (Class 1000: 108e:5ca0)
+  SCA_CARD_INSTALLED=`lspci -n | grep "108e:5ca0"`
+  if [ -n "${SCA_CARD_INSTALLED}" ] ; then
+        echo "SCA card seems to be installed - Nothing to do"
+        exit 0;
+  else
+        echo "WARNING: The SCA card does not appear to be installed"
+  fi
+
+
+  SCADIAG="/opt/sun/sca6000/sbin/scadiag"
+  if [ -s ${SCADIAG} ] ; then
+        echo "SCA support software appears to be installed"
+  else
+        echo "ERROR: SCA support software does not appear to be installed"
+        exit 1;
+  fi
+
+  SCA_SSG_SOFTWARE="/ssg/appliance/libexec/masterkey-manage.pl"
+  if [ -s ${SCA_SSG_SOFTWARE} ] ; then
+        echo "The SSG SCA support software appears to be installed"
+  else
+        echo "ERROR: The SSG SCA support software does not appear to be installed"
+        exit 1;
+  fi
+
+
+  echo ""
+  echo "**********************"
+  echo "Disabling SCA startup"
+  echo "**********************"
+  echo ""
+  echo "Disabling SCA startup scripts"
+  rm /etc/rc3.d/S*sca.driver
+  rm /etc/rc3.d/S*sca.daemon
+  echo ""
+  echo "Renaming the SCA software directory"
+  mv /opt/sun/sca6000 /opt/sun/sca6000.disabled
+  echo ""
+  echo "The SCA is now disabled"
+
+;;
+
+update)
+
+echo ""
+echo "updating sealsys with latest version from trunk"
+echo ""
+wget "http://sarek.l7tech.com:9090/browse/~raw,r=trunk/UneasyRooster/trunk/etc/imagePrepTools/sealsys.x4100m1" -O sealsys
+chmod +x ./sealsys
+
+;;
+
 *)
-  echo $"Usage: $0 (preseal|test|seal)"
+  echo $"Usage: $0 (preseal|test|seal|customize|update)"
+
 esac
+
 exit 1
