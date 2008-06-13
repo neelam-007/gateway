@@ -224,8 +224,8 @@ customize)
   echo "**********************"
   echo ""
   echo "Disabling SCA startup scripts"
-  rm /etc/rc3.d/S*sca.driver
-  rm /etc/rc3.d/S*sca.daemon
+  rm -f /etc/rc3.d/S*sca.driver
+  rm -f /etc/rc3.d/S*sca.daemon
   echo ""
   echo "Renaming the SCA software directory"
   mv /opt/sun/sca6000 /opt/sun/sca6000.disabled
