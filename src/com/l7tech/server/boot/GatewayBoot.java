@@ -76,6 +76,7 @@ public class GatewayBoot {
     public void destroy() throws LifecycleException {
         if (!running.get())
             return;
+
         applicationContext.close();
         running.set(false);
     }
@@ -145,9 +146,6 @@ public class GatewayBoot {
     }
 
     private void createApplicationContext() {
-        //hack: remove what catalina added as java.protocol.handler.pkgs and let the default
-        // jdk protocol handler resolution  TODO: Is this hack still needed?
-        System.getProperties().remove("java.protocol.handler.pkgs");
         applicationContext = new ClassPathXmlApplicationContext(new String[]{
                 "com/l7tech/server/resources/dataAccessContext.xml",
                 "com/l7tech/server/resources/ssgApplicationContext.xml",
