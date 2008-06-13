@@ -129,8 +129,8 @@ public class ConfigWizardConsoleEndpointsStep extends BaseConsoleStep {
         }
 
         printText(getEolChar() +
-                  "*** At least one adminsitrative endpoint must be present and enabled in order to use the SecureSpan Gateway ***" + getEolChar() +
-                  "Please create at least one adminsitrative endpoint." + getEolChar() +
+                  "*** At least one administrative endpoint must be present and enabled in order to use the SecureSpan Gateway ***" + getEolChar() +
+                  "Please create at least one administrative endpoint." + getEolChar() +
                   getEolChar());
         return false;
     }
