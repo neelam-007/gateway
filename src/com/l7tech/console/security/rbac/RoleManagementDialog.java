@@ -64,6 +64,9 @@ public class RoleManagementDialog extends JDialog {
     private void initialize() {
         enableRoleManagmentButtons(RbacUtilities.isEnableRoleEditing());
 
+        // reset cached identity provider names
+        UserHolder.reset();
+
         populateList();
         setupButtonListeners();
         setupActionListeners();

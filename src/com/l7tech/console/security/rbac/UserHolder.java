@@ -42,6 +42,11 @@ class UserHolder {
         }
     }
 
+    static void reset() {
+        identityAdmin = null;
+        idpNames = null;
+    }
+
     static class NoSuchUserException extends Exception {
         final UserRoleAssignment assignment;
 
