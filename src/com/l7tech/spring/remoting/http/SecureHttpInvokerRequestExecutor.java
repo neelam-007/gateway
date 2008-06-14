@@ -119,7 +119,7 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
             // the message text and create a dummy throwable instead
             if (ioe instanceof HttpException) {
                 if (ioe.getMessage() != null &&
-                    ioe.getMessage().contains("Did not receive successful HTTP response: status code = 503, status message = [This application is not currently available]")) {
+                    ioe.getMessage().contains("Did not receive successful HTTP response: status code = 503, status message = [")) {
                     logger.log(Level.WARNING, "Replacing HttpException with (dummy) SocketException.", ioe);
                     throw new SocketException("Dummy cause since HttpClient doesn't nest exceptions.");
                 }
