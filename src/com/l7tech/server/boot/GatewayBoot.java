@@ -27,7 +27,7 @@ public class GatewayBoot {
     protected static final Logger logger = Logger.getLogger(GatewayBoot.class.getName());
     public static final String SHUTDOWN_FILENAME = "SHUTDOWN.NOW";
     private static final long SHUTDOWN_POLL_INTERVAL = 1987L;
-    private static final long DB_CHECK_DELAY = 10;
+    private static final long DB_CHECK_DELAY = 30;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
