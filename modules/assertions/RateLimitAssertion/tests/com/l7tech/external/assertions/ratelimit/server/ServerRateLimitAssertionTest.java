@@ -12,12 +12,11 @@ import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.skunkworks.BenchmarkRunner;
-import junit.extensions.TestSetup;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.junit.Before;
+import org.junit.Test;
+import static junit.framework.Assert.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -33,7 +32,7 @@ import java.util.logging.Logger;
 /**
  * Test the RateLimitAssertion.
  */
-public class ServerRateLimitAssertionTest extends TestCase {
+public class ServerRateLimitAssertionTest {
     static {
         System.setProperty("com.l7tech.external.server.ratelimit.logAtInfo", "true");
     }
@@ -99,31 +98,21 @@ public class ServerRateLimitAssertionTest extends TestCase {
         }
     }
 
-    public ServerRateLimitAssertionTest(String name) {
-        super(name);
-    }
+    @Before
+    public void setUp() throws Exception {
+        applicationContext = new ClassPathXmlApplicationContext(new String[]{
+                "com/l7tech/external/assertions/ratelimit/server/serverRateLimitAssertionTestApplicationContext.xml"
+        });
 
-    public static Test suite() {
-        final TestSuite suite = new TestSuite(ServerRateLimitAssertionTest.class);
-        return new TestSetup(suite) {
-            protected void setUp() throws Exception {
-                applicationContext = new ClassPathXmlApplicationContext(new String[]{
-                        "com/l7tech/external/assertions/ratelimit/server/serverRateLimitAssertionTestApplicationContext.xml"
-                });
+        // Ensure cleaner doesn't run during the test
+        serverConfig = (ServerConfigStub) applicationContext.getBean("serverConfig", ServerConfigStub.class);
+        serverConfig.putProperty(RateLimitAssertion.PARAM_CLEANER_PERIOD, String.valueOf(86400L * 1000L));
 
-                // Ensure cleaner doesn't run during the test
-                serverConfig = (ServerConfigStub) applicationContext.getBean("serverConfig", ServerConfigStub.class);
-                serverConfig.putProperty(RateLimitAssertion.PARAM_CLEANER_PERIOD, String.valueOf(86400L * 1000L));
-
-                // Make test use our fake time source
-                ServerRateLimitAssertion.clock = clock;
-                sleepHandler.set(new FailingSleepHandler("no sleep handler configured for current test"));
-            }
-        };
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
+        // Make test use our fake time source
+        ServerRateLimitAssertion.clock = clock;
+        ServerRateLimitAssertion.useNanos = true;
+        ServerRateLimitAssertion.autoFallbackFromNanos = false;
+        sleepHandler.set(new FailingSleepHandler("no sleep handler configured for current test"));
     }
 
     private PolicyEnforcementContext makeContext() throws Exception {
@@ -136,6 +125,7 @@ public class ServerRateLimitAssertionTest extends TestCase {
         return new ServerRateLimitAssertion(rla, applicationContext);
     }
 
+    @Test
     public void testConcurrencyLimit() throws Exception {
         clock.sync();
 
@@ -191,6 +181,7 @@ public class ServerRateLimitAssertionTest extends TestCase {
 
     static final ConcurrentHashMap<Treq, Object> running = new ConcurrentHashMap<Treq, Object>();
 
+    @Test
     public void testSimpleRateLimit() throws Exception {
         RateLimitAssertion rla = new RateLimitAssertion();
         rla.setHardLimit(false);
@@ -211,6 +202,7 @@ public class ServerRateLimitAssertionTest extends TestCase {
         assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
     }
 
+    @Test
     public void testSimpleRateLimitWithSleep() throws Exception {
         RateLimitAssertion rla = new RateLimitAssertion();
         rla.setCounterName("testSimpleRateLimitWithSleep");
@@ -244,9 +236,74 @@ public class ServerRateLimitAssertionTest extends TestCase {
         assertTrue("Success: " + desc, finished[0]);
     }
 
-    public void testHighRateLimitNoSleep() throws Exception {
+    @Test
+    public void testHighRateLimitNoSleepSingleThreadNanos() throws Exception {
+        ServerRateLimitAssertion.useNanos = true;
+
         RateLimitAssertion rla = new RateLimitAssertion();
-        rla.setCounterName("testHighRateLimitNoSleep");
+        rla.setCounterName("testHighRateLimitNoSleepSingleThread");
+        int rps = 80220369; // 1 higher than highest safe value of 80220368
+        rla.setMaxRequestsPerSecond(rps);
+        rla.setShapeRequests(false);
+        rla.setHardLimit(false);
+        final ServerAssertion ass = makePolicy(rla);
+        final int nreq = 5000;
+        String desc = "send " + nreq + " requests through non-shaping rate limit of " + rps + " req/sec";
+
+        sleepHandler.set(new FailingSleepHandler("supposed to be shapeRequests=false"));
+        clock.sync();
+        for (int i = 0; i < nreq; ++i) {
+            final PolicyEnforcementContext context = makeContext();
+            try {
+                assertEquals("Limit should have succeeded (Iteration " + i + ")", AssertionStatus.NONE, ass.checkRequest(context));
+                if (i % 11 == 0)
+                    clock.advanceByNanos(3416L);
+                if (i % 3000 == 0)
+                    log.info("Request " + i + " of " + nreq);
+            } finally {
+                context.close();
+            }
+        }
+
+        log.info("Success: " + desc);
+    }
+
+    @Test
+    public void testHighRateLimitNoSleepSingleThreadMillis() throws Exception {
+        ServerRateLimitAssertion.useNanos = false;
+
+        RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setCounterName("testHighRateLimitNoSleepSingleThread");
+        int rps = 80220369; // 1 higher than highest safe value of 80220368
+        rla.setMaxRequestsPerSecond(rps);
+        rla.setShapeRequests(false);
+        rla.setHardLimit(false);
+        final ServerAssertion ass = makePolicy(rla);
+        final int nreq = 5000;
+        String desc = "send " + nreq + " requests through non-shaping rate limit of " + rps + " req/sec";
+
+        sleepHandler.set(new FailingSleepHandler("supposed to be shapeRequests=false"));
+        clock.sync();
+        for (int i = 0; i < nreq; ++i) {
+            final PolicyEnforcementContext context = makeContext();
+            try {
+                assertEquals(AssertionStatus.NONE, ass.checkRequest(context));
+                if (i % 11 == 0)
+                    clock.advanceByNanos(3416L);
+                if (i % 3000 == 0)
+                    log.info("Request " + i + " of " + nreq);
+            } finally {
+                context.close();
+            }
+        }
+
+        log.info("Success: " + desc);
+    }
+
+    @Test
+    public void testHighRateLimitNoSleepMultiThread() throws Exception {
+        RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setCounterName("testHighRateLimitNoSleepMultiThread");
         int rps = 90000;
         rla.setMaxRequestsPerSecond(rps);
         rla.setShapeRequests(false);
@@ -261,11 +318,16 @@ public class ServerRateLimitAssertionTest extends TestCase {
         BenchmarkRunner bench = new BenchmarkRunner(new Runnable() {
             public void doRun() throws Exception {
                 for (int i = 0; i < nreq; ++i) {
-                    assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
-                    if (i % 77 == 0)
-                        clock.advanceByNanos(243000L);
-                    if (i % 3000 == 0)
-                        log.info("Request " + i + " of " + nreq);
+                    final PolicyEnforcementContext context = makeContext();
+                    try {
+                        assertEquals(AssertionStatus.NONE, ass.checkRequest(context));
+                        if (i % 77 == 0)
+                            clock.advanceByNanos(243000L);
+                        if (i % 3000 == 0)
+                            log.info("Request " + i + " of " + nreq);
+                    } finally {
+                        context.close();
+                    }
                 }
             }
 
@@ -286,11 +348,16 @@ public class ServerRateLimitAssertionTest extends TestCase {
         BenchmarkRunner bench2 = new BenchmarkRunner(new Runnable() {
             public void doRun() throws Exception {
                 for (int i = 0; i < nreq; ++i) {
-                    assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
-                    if (i % 77 == 0)
-                        clock.advanceByNanos(243000L);
-                    if (i % 3000 == 0)
-                        log.info("Request " + i + " of " + nreq);
+                    final PolicyEnforcementContext context = makeContext();
+                    try {
+                        assertEquals(AssertionStatus.NONE, ass.checkRequest(context));
+                        if (i % 77 == 0)
+                            clock.advanceByNanos(243000L);
+                        if (i % 3000 == 0)
+                            log.info("Request " + i + " of " + nreq);
+                    } finally {
+                        context.close();
+                    }
                 }
             }
 
@@ -308,6 +375,33 @@ public class ServerRateLimitAssertionTest extends TestCase {
         bench2.run();
 
         log.info("Success: " + desc);
+    }
+
+    @Test
+    public void test90kLimitSequentialNanos() throws Exception {
+        ServerRateLimitAssertion.useNanos = true;
+
+        RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setCounterName("test90kLimitSequentialNanos");
+        rla.setHardLimit(true);
+        rla.setMaxConcurrency(0);
+        rla.setShapeRequests(false);
+        rla.setMaxRequestsPerSecond(90000);
+
+        ServerAssertion ass = makePolicy(rla);
+        PolicyEnforcementContext context;
+        sleepHandler.set(new FailingSleepHandler("supposed to be shapeRequests=false"));
+        clock.sync();
+
+        context = makeContext();
+        assertEquals(AssertionStatus.NONE, ass.checkRequest(context));
+        context.close();
+
+        clock.advanceByMillis(5000L);
+
+        context = makeContext();
+        assertEquals(AssertionStatus.NONE, ass.checkRequest(context));
+        context.close();
     }
 
     class Treq implements Callable<AssertionStatus> {
@@ -366,30 +460,35 @@ public class ServerRateLimitAssertionTest extends TestCase {
         return ret;
     }
 
+    @Test
     public void testSleepLimit111() throws Exception {
         testSleepLimit(1, 1, 1);
     }
 
+    @Test
     public void testSleepLimit222() throws Exception {
         testSleepLimit(2, 2, 2);
     }
 
+    @Test
     public void testSleepLimit333() throws Exception {
         testSleepLimit(3, 3, 3);
     }
 
+    @Test
     public void testSleepLimit444() throws Exception {
-        testSleepLimit(3, 3, 3);
+        testSleepLimit(4, 4, 4);
     }
 
+    @Test
     public void testSleepLimit490() throws Exception {
         testSleepLimit(4, 9, 0);
     }
 
+    @Test
     public void testSleepLimit491() throws Exception {
         testSleepLimit(4, 9, 1);
     }
-
 
     @SuppressWarnings({"UnnecessaryLocalVariable"})
     public void testSleepLimit(int maxReqPerSecond, int maxNodeConcurrency, int postFailures) throws Exception {
@@ -409,6 +508,7 @@ public class ServerRateLimitAssertionTest extends TestCase {
 
         // Prime server assertion with lots of idle time
         clock.sync();
+        sleepHandler.set(new FailingSleepHandler("during primer"));
         new Treq(ass, "primer", null, null).call();
         clock.advanceByMillis(30000L);
 

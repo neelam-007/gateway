@@ -35,6 +35,7 @@ import java.util.logging.Logger;
  */
 public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitAssertion> {
     private static final Logger logger = Logger.getLogger(ServerRateLimitAssertion.class.getName());
+    private static final int MAX_REQUESTS_PER_SECOND = 80220368; // Limit to 80million requests per second limit to avoid nanosecond overflow
     private static final long NANOS_PER_MILLI = 1000000L;  // Number of nanoseconds in one millisecond
     private static final long MILLIS_PER_SECOND = 1000L;
     private static final long NANOS_PER_SECOND = MILLIS_PER_SECOND * NANOS_PER_MILLI;
@@ -58,8 +59,8 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final AtomicLong cleanerPeriod = new AtomicLong(DEFAULT_CLEANER_PERIOD);
     private static final AtomicLong maxNapTime = new AtomicLong(DEFAULT_MAX_NAP_TIME);
     private static final AtomicLong maxTotalSleepTime = new AtomicLong(DEFAULT_MAX_TOTAL_SLEEP_TIME);
-    private static boolean useNanos = true;
-    private static boolean autoFallbackFromNanos = !Boolean.getBoolean("com.l7tech.external.server.ratelimit.forceNanos");
+    static boolean useNanos = true;
+    static boolean autoFallbackFromNanos = !Boolean.getBoolean("com.l7tech.external.server.ratelimit.forceNanos");
     static TimeSource clock = new TimeSource();
 
     static {
@@ -372,7 +373,10 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     }
 
     private long findPointsPerSecond() {
-        return rla.getMaxRequestsPerSecond() * POINTS_PER_REQUEST / getClusterSize();
+        int rps = rla.getMaxRequestsPerSecond();
+        if (rps > MAX_REQUESTS_PER_SECOND)
+            rps = MAX_REQUESTS_PER_SECOND; // Guard agaist overflow
+        return rps * POINTS_PER_REQUEST / getClusterSize();
     }
 
     // @return the cluster size. always positive
