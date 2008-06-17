@@ -45,7 +45,8 @@ public abstract class CredentialManager {
      *
      * @param ssg  the Ssg whose credentials you want
      * @return the credentials for this Ssg, or null if none are configured
-     * @throws OperationCanceledException if we prompted the user, but he clicked cancel
+     * @throws OperationCanceledException if credentials are needed but the user declines to supply them at this time.
+     * @throws com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException if credentials are needed and an HTTP challenge back to the client is required to obtain them for this Ssg.
      */
     public abstract PasswordAuthentication getCredentials(Ssg ssg) throws OperationCanceledException, HttpChallengeRequiredException;
 
@@ -62,7 +63,8 @@ public abstract class CredentialManager {
      * @param disregardExisting if true, the user will be prompted for new credentials even if cached credentials are on hand.
      * @param reportBadPassword if true, the user will be advised that the existing credentials are bad.  Implies disregardExisting.
      * @return the credentials for this Ssg, or null if none are configured.
-     * @throws OperationCanceledException
+     * @throws OperationCanceledException if credentials are needed but the user declines to supply them at this time.
+     * @throws com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException if credentials are needed and an HTTP challenge back to the client is required to obtain them for this Ssg.
      */
     public abstract PasswordAuthentication getCredentialsWithReasonHint(Ssg ssg,
                                                                         ReasonHint hint,
@@ -79,7 +81,8 @@ public abstract class CredentialManager {
      * @param ssg the Ssg whose credentials you want to update
      * @param displayBadPasswordMessage if true, user will be told that current credentials are no good.
      * @return the new credentials for this Ssg.  Never null.
-     * @throws OperationCanceledException if we prompted the user, but he clicked cancel
+     * @throws OperationCanceledException if credentials are needed but the user declines to supply them at this time.
+     * @throws com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException if credentials are needed and an HTTP challenge back to the client is required to obtain them for this Ssg.
      */
     public abstract PasswordAuthentication getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException, HttpChallengeRequiredException;
 
@@ -107,6 +110,8 @@ public abstract class CredentialManager {
      * Only one "Please wait..." dialog will be active for a given Ssg.
      * Caller <em>must not</em> hold the Ssg monitor when calling this method.
      *
+     * @param ssg the affected Ssg, or null.
+     * @param message the message to display.  Required.
      */
     public abstract void notifyLengthyOperationStarting(Ssg ssg, String message);
 
@@ -115,6 +120,7 @@ public abstract class CredentialManager {
      * Tears down any "Please wait..." dialog.
      * Caller <em>must not</em> hold the Ssg monitor when calling this method.
      *
+     * @param ssg the affected Ssg, or null.
      */
     public abstract void notifyLengthyOperationFinished(Ssg ssg);
 
@@ -128,7 +134,7 @@ public abstract class CredentialManager {
      * Whatever decision the user makes should be remembered for the rest of this session.
      * Caller <em>must not</em> hold the Ssg monitor when calling this method.
      *
-     * @param ssg
+     * @param ssg the Ssg whose keystore was found to be corrupt.  Required.
      * @throws OperationCanceledException if the user does not wish to delete the invalid keystore
      */
     public abstract void notifyKeyStoreCorrupt(Ssg ssg) throws OperationCanceledException;
@@ -139,7 +145,7 @@ public abstract class CredentialManager {
      * his Gateway administrator and beg to have the lost certificate revoked from the database.
      * Caller <em>must not</em> hold the Ssg monitor when calling this method.
      *
-     * @param ssg
+     * @param ssg the Ssg whose client certificate was found to be already issued.  Required.
      */
     public abstract void notifyCertificateAlreadyIssued(Ssg ssg);
 
