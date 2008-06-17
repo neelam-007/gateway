@@ -1,15 +1,16 @@
 package com.l7tech.server.tomcat;
 
-import java.io.IOException;
-import java.net.Socket;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import javax.servlet.ServletException;
-
+import com.l7tech.server.transport.http.HttpTransportModule;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.valves.ValveBase;
-import com.l7tech.server.transport.http.HttpTransportModule;
+
+import javax.servlet.ServletException;
+import java.io.IOException;
+import java.net.Socket;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Valve that listens for new Socket connections and stamps the thread with
@@ -19,9 +20,6 @@ import com.l7tech.server.transport.http.HttpTransportModule;
  * connection strategy. The default strategy avoids context switches by
  * processing connections in the same Thread that accepts the connection. If
  * this strategy is changed this valve will break.</p>
- *
- * @author Steve Jones, $Author$
- * @version $Revision$
  */
 public class ConnectionIdValve extends ValveBase {
     public static final String ATTRIBUTE_CONNECTION_ID = "com.l7tech.server.connectionId";
@@ -42,17 +40,14 @@ public class ConnectionIdValve extends ValveBase {
      */
     public ConnectionIdValve(HttpTransportModule transportModule) {
         this.httpTransportModule = transportModule;
-        this.connectionSequence = 0;
+        this.connectionSequence.set(0);
         SsgServerSocketFactory.addListener(new SsgServerSocketFactory.Listener(){
             public void onGetInputStream(long transportModuleInstanceId, long connectorOid, Socket accepted) {
                 if (transportModuleInstanceId != httpTransportModule.getInstanceId())
                     // not for us
                     return;
 
-                long id = 0;
-                synchronized(connectionSequenceLock) {
-                    id = ++connectionSequence;
-                }
+                long id = connectionSequence.incrementAndGet();
                 if(logger.isLoggable(Level.FINE)) {
                     logger.log(Level.FINE, "Setting id for connection '"+id+"'.");
                 }
@@ -101,6 +96,5 @@ public class ConnectionIdValve extends ValveBase {
     private static final ThreadLocal<Long> ssgConnectorOid = new ThreadLocal<Long>();
     private final HttpTransportModule httpTransportModule;
     private final ThreadLocal<Long> connectionId = new ThreadLocal<Long>();
-    private final Object connectionSequenceLock = new Object();
-    private long connectionSequence;
+    private final AtomicLong connectionSequence = new AtomicLong(0);
 }
