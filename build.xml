@@ -125,10 +125,12 @@
     -->
     <path id="uidesigner.classpath">
         <fileset dir="lib/tools">
-            <include name="jdom.jar"/>
             <include name="asm.jar"/>
             <include name="asm-commons.jar"/>
             <include name="javac2.jar"/>
+        </fileset>
+        <fileset dir="lib">
+            <include name="**/jdom.jar"/>
         </fileset>
     </path>
 

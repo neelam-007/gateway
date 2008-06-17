@@ -33,10 +33,12 @@
     -->
     <path id="uidesigner.classpath">
         <fileset dir="${UneasyRooster.dir}/lib/tools">
-            <include name="jdom.jar"/>
             <include name="asm.jar"/>
             <include name="asm-commons.jar"/>
             <include name="javac2.jar"/>
+        </fileset>
+        <fileset dir="${UneasyRooster.dir}/lib">
+            <include name="**/jdom.jar"/>
         </fileset>
     </path>
     <taskdef name="javac2t"
@@ -102,6 +104,8 @@
             <include name="xss4j.jar"/>
             <include name="commons-*.jar"/>
             <include name="whirlycache-1.0.1.jar"/>
+            <include name="hibernate-*.jar"/>
+            <include name="ejb3-persistence.jar"/>
         </fileset>
         <fileset dir="${UneasyRooster.dir}/lib/tools">
             <include name="junit*.jar"/>            

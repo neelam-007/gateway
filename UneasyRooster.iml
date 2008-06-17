@@ -23,7 +23,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="0500-xml.soap.WSDL4J 1.6.2 (must be first)">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/0500-wsdl4j_1.6.2.jar!/" />
         </CLASSES>
@@ -32,1088 +32,13 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jboss-common.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/xercesImpl.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/catalina-ant.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/adminws/xfire-core-1.2.2.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/rsa/jsafeWithNative.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/catalina.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/catalina-ha.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/commons-pool-1.2.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/concurrent-1.3.4.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/rsa/certj.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/ncipher/kmcsp.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/spring-aop.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/commons-configuration-1.3.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/xbean-saml2_0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/jcommon-1.0.5.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/jfreechart-1.0.2.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/xalan-2.7.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jboss-system.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/forms_rt.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/nekohtml.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/tomcat-juli.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/jasper-el.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/ncipher/kmjava.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/jsp-api.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/tomcat-i18n-ja.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/commons-codec-1.2.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-wasp.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jboss-j2ee.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/rsa/jsafe.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/spring-webmvc.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/saaj-api.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/saaj-impl.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/rsa/jsafeJCE.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/activation.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/apache-harmony-asn1-20060711.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/rsa/ldap.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/commons-logging-1.0.4.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/slf4j-api-1.3.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/rsa/certjWithNative.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/ftp/ftplet-api-1.0-543677-20070601.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/spring-remoting.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jboss-jmx.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/spring-dao.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/BrowserLauncher2-10rc4.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/spring-mock.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/spring-beans.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/hibernate3.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/rsa/asn1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/antlr-2.7.7-l7p1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/commons-lang-2.3.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-wsdl_api.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/ehcache-1.2.3.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/ncipher/jcetools.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/bc/bcprov-jdk15-135.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/xmlpad.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/commons-httpclient-3.0.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/commons-daemon.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-uddiclient_core.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-wsdl2uddi_client_v3.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/jta.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/rsa/rsamisc.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/adminws/jdom.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jboss-aop.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/spring-hibernate.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/ant-nodeps.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
+      <library name="build.Ant">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/ant.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/dom4j-1.6.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-jaxm.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/xmlpad-res.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-uddiclient_api_v3.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/spring-orm.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/jasper-jdt.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/jaxen-1.1-beta-10.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/policy-1.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/tomcat-dbcp.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/jasper.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/tomcat-i18n-fr.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jboss-serialization.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/xss4j.00.patch.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/xss4j.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-saaj.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/tomcat-coyote.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/ncipher/jutils.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jboss-minimal.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/cglib-2.1.3.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-core_services_client.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/annotations-api.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/asm.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/spring-web.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/looks-1.1.3.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/kunststoff.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/spring-jdbc.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/commons-dbcp-1.2.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/ncipher/keysafe.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/jms-1.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/tarari/tarari_raxj.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/commons-collections-3.2.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/jdbc/mysql/mysql-connector-java-5.0.4-bin.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/aopalliance.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jgroups.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/xml4j.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/ncipher/nfjava.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/ftp/ftpserver-core-1.0-543677-20070601.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/ncipher/rsaprivenc.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/xbean.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/log4j-1.2.14.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/test/FastInfoset.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/jsr173_1.0_api.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/spring-support.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-jaxrpc.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/xbean-xenc-xmldsig.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/luna/LunaJCESP.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/spring-core.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/org.mortbay.jetty.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/asm-attrs.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/el-api.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/catalina-tribes.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/ncipher/spp.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/ant-nodeps.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/ant-contrib-1.0b3.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/ant-apache-bcel.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/adminws/xfire-aegis-1.2.2.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/ant-junit.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/ant-launcher.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -1121,52 +46,7 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/one-jar-boot-0.95.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/nachocalendar-0.23.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/jcalendar-1.3.2.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-builtin_serialization.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/crypto/luna/LunaJCASP.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
+      <library name="cache.Whirlycache 1.0.1">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/whirlycache-1.0.1.jar!/" />
         </CLASSES>
@@ -1175,188 +55,161 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="cluster.JBoss Cache">
         <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jboss-jmx.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jboss-system.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jboss-common.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/gateway/cluster/trove.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/c3p0-0.9.1.2.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jboss-serialization.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jgroups.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jboss-j2ee.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jboss-cache.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jboss-aop.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/cluster/jboss-minimal.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/jta.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="crypto.Luna">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/systray4j.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/luna/LunaJCESP.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/luna/LunaJCASP.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="crypto.nCipher">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/servlet-api.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/ncipher/nfjava.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/ncipher/kmcsp.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/ncipher/rsaprivenc.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/ncipher/jcetools.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/ncipher/jutils.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/ncipher/kmjava.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/ncipher/keysafe.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/ncipher/spp.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="crypto.RSA">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/mailapi-1.4.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/xbean-saml1_1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/crypto/rsa/jsafeJCE.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/rsa/ldap.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/rsa/certj.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/rsa/rsamisc.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/rsa/asn1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/rsa/jsafe.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/rsa/jsafeWithNative.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/crypto/rsa/codebase.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/rsa/certjWithNative.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="crypto.BouncyCastle 1.35">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/slf4j-jdk14-1.3.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/bc/bcprov-jdk15-135.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="crypto.asn1.Harmony ASN1 20060711">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/are.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/apache-harmony-asn1-20060711.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="db.Hibernate 3">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/commons-discovery.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/hibernate3.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/hibernate-annotations.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/hibernate-commons-annotations.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/ejb3-persistence.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/c3p0-0.9.1.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/ehcache-1.2.3.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="db.jdbc.Derby 10.4.1.3">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/spring-context.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/jdbc/derby/derby-10.4.1.3.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="db.jdbc.MySQL 5">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/serializer-xalan-2.7.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/jdbc/mysql/mysql-connector-java-5.0.4-bin.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="html.Neko HTML">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/tomcat-i18n-es.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/nekohtml.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="jms.API 1.1">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/commons-modeler-2.0.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/jms-1.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="jms.MQSeries">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/ant-junit.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/jms/mqseries/com.ibm.mq.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/jms/mqseries/com.ibm.mqbind.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/jms/mqseries/com.ibm.mqjms.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/jms/mqseries/connector.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/jms/mqseries6/connector.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/jms/mqseries6/dhbcore.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/jms/mqseries6/com.ibm.mq.pcf-6.0.3.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/jms/mqseries6/mqcontext.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/jms/mqseries6/com.ibm.mqjms.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/jms/mqseries6/com.ibm.mq.jms.Nojndi.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/jms/mqseries6/com.ibm.mq.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/adminws/xfire-spring-1.2.2.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/jms/tibco/tibjmsadmin.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
+      <library name="jms.Tibco">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/gateway/jms/tibco/tibrvjms.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/gateway/jms/tibco/tibjmsapps.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/gateway/jms/tibco/tibcrypt.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/jms/tibco/tibjmsadmin.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/gateway/jms/tibco/tibjms.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -1364,62 +217,89 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="logging.log4j 1.2.14 / slf4j 1.3.1">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/jms/tibco/tibcrypt.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/slf4j-jdk14-1.3.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/slf4j-api-1.3.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/log4j-1.2.14.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="misc.cglib 2.1.3">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/test/jdsl-1.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/cglib-2.1.3.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="misc.Commons">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/test/japex-1.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/commons-logging-1.0.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/commons-discovery.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/commons-daemon.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/commons-configuration-1.3.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/commons-httpclient-3.0.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/commons-modeler-2.0.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/commons-collections-3.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/commons-dbcp-1.2.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/commons-lang-2.3.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/commons-pool-1.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/commons-codec-1.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="misc.Concurrent 1.3.4">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/generic/guddi-1.0.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/concurrent-1.3.4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="misc.One-JAR 0.95">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/mina-filter-compression-1.1.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/one-jar-boot-0.95.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="misc.Spring">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/spring-context.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-support.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-remoting.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-mock.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-aop.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-webmvc.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-jdbc.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-beans.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-hibernate.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-orm.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-web.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-dao.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-core.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/aopalliance.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="net.Mina 1.1.0">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/mina-filter-ssl-1.1.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/mina-filter-compression-1.1.0.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/mina-core-1.1.0.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -1427,43 +307,29 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="net.ftp.all">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/jms/mqseries/com.ibm.mqjms.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/ftp/ftplet-api-1.0-543677-20070601.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/ftp/ftpserver-core-1.0-543677-20070601.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library>
+      <library name="net.http.Jetty 6.1">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/tools/junit-4.4.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$APPLICATION_HOME_DIR$/lib/javaee.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/org.mortbay.jetty.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/org.mortbay.jetty.ajp.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/org.mortbay.jetty.util.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/org.mortbay.jetty.https.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module-library">
-      <library name="Restlet">
+    <orderEntry type="module-library" exported="">
+      <library name="net.http.Restlet 1.1m3">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/gateway/restlet/com.noelios.restlet.ext.spring_2.5.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/gateway/restlet/org.restlet.ext.spring_2.5.jar!/" />
@@ -1475,8 +341,214 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module-library">
-      <library name="PDOM">
+    <orderEntry type="module-library" exported="">
+      <library name="net.http.Tomcat 6.0">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/tomcat-i18n-fr.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/catalina-ant.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/tomcat-coyote.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/catalina.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/catalina-tribes.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/catalina-ha.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/tomcat-juli.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/jasper-el.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/annotations-api.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/tomcat-i18n-ja.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/tomcat-i18n-es.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/tomcat-dbcp.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/jsp-api.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/el-api.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/jasper-jdt.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/tomcat/jasper.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/servlet-api.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="net.smtp.Javamail">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/mailapi-1.4.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/smtp-1.4.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/activation.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="test.JUnit 4.4 / Japex 1.1 / JDSL 1.1">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/tools/junit-4.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/test/japex-1.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/test/jdsl-1.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="text.ANTLR 2.7.7-l7p1">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/antlr-2.7.7-l7p1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="uddi.generic">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/generic/guddi-1.0.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="uddi.Systinet">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-wasp.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-saaj.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-builtin_serialization.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-wsdl_api.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-jaxrpc.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-jaxm.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-wsdl2uddi_client_v3.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-uddiclient_api_v3.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-core_services_client.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-uddiclient_core.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="ui.BrowserLauncher 2.10rc4">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/BrowserLauncher2-10rc4.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="ui.Idea forms">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/forms_rt.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/tools/javac2.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/asm.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/asm-attrs.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="ui.Systray4j">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/systray4j.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="ui.control.JFreeChart 1.0.2">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/jfreechart-1.0.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/jcommon-1.0.5.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="ui.control.XMLPad">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/xmlpad.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/xmlpad-res.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="ui.control.calendar.NachoCalendar 0.23">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/nachocalendar-0.23.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="ui.control.calendar.JCalendar 1.3.2">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/jcalendar-1.3.2.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="ui.lnf.Looks 1.1.3">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/looks-1.1.3.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="ui.lnf.Kunststoff">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/kunststoff.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="xml.DOM4J 1.6.1">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/dom4j-1.6.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="xml.FastInfoset">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/test/FastInfoset.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="xml.JAXB">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/jaxb-api.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/jaxb-impl.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="xml.JDOM">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/gateway/adminws/jdom.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="xml.PDOM">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/test/Infonyte/com.infonyte.pdom.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/test/Infonyte/com.infonyte.collection.jar!/" />
@@ -1494,8 +566,28 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module-library">
-      <library name="VTD">
+    <orderEntry type="module-library" exported="">
+      <library name="xml.StAX">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/jsr173_1.0_api.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/sjsxp.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="xml.Tarari">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/gateway/tarari/tarari_raxj.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/crypto/tarari/tarari_jce_provider.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="xml.VTD">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/test/vtd-xml.jar!/" />
         </CLASSES>
@@ -1503,10 +595,112 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module-library">
-      <library name="XSS">
+    <orderEntry type="module-library" exported="">
+      <library name="xml.Xalan">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/serializer-xalan-2.7.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/xalan-2.7.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="xml.XBean">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/xbean-xenc-xmldsig.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/xbean-saml2_0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/xbean.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/xbean-saml1_1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/resolver.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="xml.Xerces">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/xercesImpl.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="xml.XSS">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/test/intel-xss.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="xml.security.XSS4J">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/xss4j.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/xml4j.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/xss4j.00.patch.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/are.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="xml.soap.JAX-WS">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/jaxws-api.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/jaxws-rt.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="xml.soap.JSR 181  WS Metadata (Unused?)">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/jsr181-api.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="xml.soap.SAAJ">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/saaj-impl.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/saaj-api.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="xml.soap.WS-SecurityPolicy 1.0">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/policy-1.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="xml.soap.XFire">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/gateway/adminws/xfire-aegis-1.2.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/adminws/xfire-spring-1.2.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/adminws/xfire-core-1.2.2.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="xml.xpath.Jaxen 1.1b10">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/jaxen-1.1-beta-10.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
