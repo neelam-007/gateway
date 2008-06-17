@@ -297,7 +297,9 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     }
 
     /**
-     * Load the keystore from the database, mutate it, and save it back, all atomically.
+     * Load the keystore from the database, mutate it, and save it back, all atomically.  The actual transaction
+     * will not necessarily occur before this call returns -- it may be scheduled for later execution.  The returned
+     * Future will show Done when the mutation eventually completes.
      *
      * @param mutator  a Runnable that will mutate the current keystore, which will be guaranteed
      *                 to be up-to-date and non-null when the runnable is invoked.
