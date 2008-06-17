@@ -289,7 +289,6 @@
           <root url="jar://$MODULE_DIR$/lib/spring-web.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/spring-dao.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/spring-core.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/aopalliance.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

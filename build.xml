@@ -525,7 +525,6 @@
         <include name="**/spring-dao.jar"/>
         <include name="**/spring-beans.jar"/>
         <include name="**/spring-remoting.jar"/>
-        <include name="**/aopalliance.jar"/>
         <include name="**/mailapi-1.4.1.jar"/>
         <include name="**/antlr-2.7.7-l7p1.jar"/>
         <include name="**/log4j-1.2.14.jar"/>
@@ -596,7 +595,6 @@
         <include name="**/spring-remoting.jar"/>
         <include name="**/spring-support.jar"/>
         <include name="**/spring-web.jar"/>
-        <include name="**/aopalliance.jar"/>
         <include name="**/nekohtml.jar"/>
 
         <!-- AdminWS Stuff -->
@@ -1777,7 +1775,6 @@
         <pack-mac jarfile="${build.dir}/managerlibs/0500-wsdl4j_1.6.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/activation.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/antlr-2.7.7-l7p1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/aopalliance.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/BrowserLauncher2-10rc4.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/commons-codec-1.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/commons-collections-3.2.jar"/>
