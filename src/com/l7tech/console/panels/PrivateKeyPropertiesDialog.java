@@ -11,6 +11,7 @@ import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
@@ -26,7 +27,6 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.cert.CertificateEncodingException;
@@ -226,26 +226,31 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     public void useFileChooser(JFileChooser chooser) {
                         chooser.setDialogTitle("Save CSR to File");
                         chooser.setMultiSelectionEnabled(false);
-                        chooser.setFileFilter(new FileFilter() {
-                            public boolean accept(File f) {
-                                return f.getAbsolutePath().endsWith(".p10") || f.getAbsolutePath().endsWith(".P10") || f.isDirectory();
-                            }
-                            public String getDescription() {
-                                return "PKCS #10 Files";
-                            }
-                        });
+                        FileFilter p10Filter = FileChooserUtil.buildFilter(".p10", "(*.p10) PKCS #10 Files");
+                        FileFilter pemFilter = FileChooserUtil.buildFilter(".pem", "(*.pem) BASE64 PEM Files");
+                        chooser.setFileFilter(p10Filter);
+                        chooser.setFileFilter(pemFilter);
 
                         int ret = chooser.showSaveDialog(TopComponents.getInstance().getTopParent());
                         if (JFileChooser.APPROVE_OPTION == ret) {
                             String name = chooser.getSelectedFile().getPath();
-                            // add extension if not present
-                            if (!name.endsWith(".p10") && !name.endsWith(".P10")) {
-                                name = name + ".p10";
+                            // add an extension if not presented.
+                            if (name.indexOf('.') < 0 ||
+                                (!name.endsWith(".p10") && !name.endsWith(".pem"))) {
+                                if (chooser.getFileFilter() == pemFilter) {
+                                    name = name + ".pem";
+                                } else {
+                                    name = name + ".p10";
+                                }
                             }
                             // save the file
                             try {
                                 FileOutputStream fos = new FileOutputStream(name);
-                                fos.write(csr);
+                                if (chooser.getFileFilter() == pemFilter) {
+                                    fos.write(HexUtils.encodeBase64(csr).getBytes());
+                                } else {
+                                    fos.write(csr);
+                                }
                                 fos.close();
                             } catch (IOException e) {
                                 logger.log(Level.WARNING, "error saving CSR", e);

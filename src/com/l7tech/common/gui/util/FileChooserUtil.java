@@ -1,6 +1,7 @@
 package com.l7tech.common.gui.util;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
 import java.util.logging.Logger;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -99,5 +100,22 @@ public class FileChooserUtil {
     /** Interface implemented by callers of {@link FileChooserUtil#doWithJFileChooser}. */
     public interface FileChooserUser {
         void useFileChooser(JFileChooser fc);
+    }
+
+    /**
+     * A helper class to create a file filter given a file extension and a file type description.
+     * @param extension: a file extension such as .p10 or .pem
+     * @param description: a file-type description.
+     * @return a FileFilter.
+     */
+    public static FileFilter buildFilter(final String extension, final String description) {
+        return new FileFilter() {
+            public boolean accept(File f) {
+                return  f.isDirectory() || f.getName().toLowerCase().endsWith(extension);
+            }
+            public String getDescription() {
+                return description;
+            }
+        };
     }
 }
