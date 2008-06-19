@@ -8,6 +8,7 @@ import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.util.OpaqueId;
+import com.l7tech.common.util.FileUtils;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.Registry;
@@ -285,8 +286,17 @@ public class DownloadAuditEventsWindow extends JFrame {
             filePath = filePath + ".zip";
             filePathTextField.setText(filePath);
         }
-
         outputFile = new File(filePath);
+        if (! outputFile.isAbsolute()) {
+            String defaultDirectory = FileUtils.getDefaultDirectory();
+            String separator = System.getProperty("file.separator");
+            if (! filePath.startsWith(defaultDirectory)) {
+                filePath = defaultDirectory + separator + filePath;
+                outputFile = new File(filePath);
+                filePathTextField.setText(filePath);
+            }
+        }
+
         if (outputFile.exists()) {
             String[] options = { "Overwrite", "Cancel" };
             int result = JOptionPane.showOptionDialog(this,

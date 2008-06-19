@@ -1,6 +1,8 @@
 package com.l7tech.server.service;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.StringReader;
@@ -28,14 +30,17 @@ public class SafeWsdlPublishedService implements PublishedService.WsdlStrategy {
     }
 
     public Wsdl parseWsdl(final String uri, final String wsdl) throws WSDLException {
-        Wsdl parsedWsdl = null;
+        Wsdl parsedWsdl;
 
         try {
-            parsedWsdl = Wsdl.newInstance(new ServiceDocumentResolver(uri, wsdl, serviceDocuments));
+            parsedWsdl = Wsdl.newInstance(Wsdl.getWSDLLocator(uri, buildContent(uri, wsdl, serviceDocuments), logger));
         }
         catch (WSDLException we) {
             logger.log(Level.WARNING, "Error parsing WSDL.", we);
-            parsedWsdl = Wsdl.newInstance(uri, new InputSource(new StringReader(wsdl)));
+            InputSource source = new InputSource();
+            source.setSystemId(uri);
+            source.setCharacterStream(new StringReader(wsdl));        
+            parsedWsdl = Wsdl.newInstance(uri, source);
         }
         
         return parsedWsdl;
@@ -46,4 +51,16 @@ public class SafeWsdlPublishedService implements PublishedService.WsdlStrategy {
     private static final Logger logger = Logger.getLogger(SafeWsdlPublishedService.class.getName());
 
     private final Collection<ServiceDocument> serviceDocuments;
+
+    private Map<String,String> buildContent( String baseUri, String baseContent, Collection<ServiceDocument> docs ) {
+        Map<String,String> content = new HashMap<String,String>();
+
+        for ( ServiceDocument doc : docs ) {
+            content.put( doc.getUri(), doc.getContents() );            
+        }
+
+        content.put( baseUri, baseContent );
+
+        return content;
+    }
 }

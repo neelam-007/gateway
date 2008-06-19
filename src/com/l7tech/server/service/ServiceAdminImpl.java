@@ -16,8 +16,8 @@ import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.PolicyReference;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
@@ -31,10 +31,7 @@ import com.l7tech.server.service.uddi.UddiAgentFactory;
 import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.uddi.RegistryPublicationManager;
 import com.l7tech.server.uddi.UDDITemplateManager;
-import com.l7tech.service.PublishedService;
-import com.l7tech.service.SampleMessage;
-import com.l7tech.service.ServiceAdmin;
-import com.l7tech.service.ServiceDocument;
+import com.l7tech.service.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -50,10 +47,8 @@ import org.springframework.context.ApplicationContextAware;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.StringReader;
 import java.net.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -70,7 +65,7 @@ import java.util.logging.Logger;
  * Layer 7 Technologies, inc.<br/>
  * User: flascelles<br/>
  * Date: Jun 6, 2003
- * @noinspection OverloadedMethodsWithSameNumberOfParameters
+ * @noinspection OverloadedMethodsWithSameNumberOfParameters,ValidExternallyBoundObject
  */
 public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
     private static final ServiceHeader[] EMPTY_ENTITY_HEADER_ARRAY = new ServiceHeader[0];
@@ -90,6 +85,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     private final WspReader wspReader;
     private final UDDITemplateManager uddiTemplateManager;
     private final PolicyVersionManager policyVersionManager;
+    private final ServiceTemplateManager serviceTemplateManager;
 
     private final AsyncAdminMethodsImpl asyncSupport = new AsyncAdminMethodsImpl();
     private final BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
@@ -116,7 +112,9 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
                             WspReader wspReader,
                             UDDITemplateManager uddiTemplateManager,
                             PolicyVersionManager policyVersionManager,
-                            ServerConfig serverConfig) {
+                            ServerConfig serverConfig,
+                            ServiceTemplateManager serviceTemplateManager)
+    {
         this.licenseManager = licenseManager;
         this.registryPublicationManager = registryPublicationManager;
         this.uddiAgentFactory = uddiAgentFactory;
@@ -130,6 +128,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         this.wspReader = wspReader;
         this.uddiTemplateManager = uddiTemplateManager;
         this.policyVersionManager = policyVersionManager;
+        this.serviceTemplateManager = serviceTemplateManager;
 
         int maxConcurrency = serverConfig.getIntProperty(ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 15);
         validatorExecutor = new ThreadPoolExecutor(1, maxConcurrency, 5 * 60, TimeUnit.SECONDS, validatorQueue);
@@ -223,16 +222,16 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         return publishedServicesUpdateProducer.createUpdate(oldVersionID);
     }
 
-    public JobId<PolicyValidatorResult> validatePolicy(final String policyXml, final PolicyType policyType, final boolean soap, final String wsdlXml) {
+    public JobId<PolicyValidatorResult> validatePolicy(final String policyXml,
+                                                       final PolicyType policyType,
+                                                       final boolean soap,
+                                                       final Wsdl wsdl)
+    {
         final Assertion assertion;
-        final Wsdl wsdl;
         try {
             assertion = wspReader.parsePermissively(policyXml);
-            wsdl = wsdlXml == null ? null : Wsdl.newInstance(null, new StringReader(wsdlXml));
         } catch (IOException e) {
             throw new RuntimeException("Cannot parse passed Policy XML: " + ExceptionUtils.getMessage(e), e);
-        } catch (WSDLException e) {
-            throw new RuntimeException("Cannot parse passed WSDL XML: " + ExceptionUtils.getMessage(e), e);
         }
 
         return validatePolicy(assertion, policyType, soap, wsdl);
@@ -251,35 +250,30 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         })), PolicyValidatorResult.class);
     }
 
-    public JobId<PolicyValidatorResult> validatePolicy(final String policyXml, final PolicyType policyType, final boolean soap, final String wsdlXml, HashMap<String, Policy> fragments) {
+    public JobId<PolicyValidatorResult> validatePolicy(final String policyXml, final PolicyType policyType, final boolean soap, Wsdl wsdl, HashMap<String, Policy> fragments) {
         final Assertion assertion;
-        final Wsdl wsdl;
         try {
             assertion = wspReader.parsePermissively(policyXml);
-            wsdl = wsdlXml == null ? null : Wsdl.newInstance(null, new StringReader(wsdlXml));
-
-            addPoliciesToIncludeAssertions(assertion, fragments);
+            addPoliciesToPolicyReferenceAssertions(assertion, fragments);
         } catch (IOException e) {
             throw new RuntimeException("Cannot parse passed Policy XML: " + ExceptionUtils.getMessage(e), e);
-        } catch (WSDLException e) {
-            throw new RuntimeException("Cannot parse passed WSDL XML: " + ExceptionUtils.getMessage(e), e);
         }
 
         return validatePolicy(assertion, policyType, soap, wsdl);
     }
 
-    private void addPoliciesToIncludeAssertions(Assertion rootAssertion, HashMap<String, Policy> fragments) throws IOException {
+    private void addPoliciesToPolicyReferenceAssertions(Assertion rootAssertion, HashMap<String, Policy> fragments) throws IOException {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
             for(Iterator it = compAssertion.children();it.hasNext();) {
                 Assertion child = (Assertion)it.next();
-                addPoliciesToIncludeAssertions(child, fragments);
+                addPoliciesToPolicyReferenceAssertions(child, fragments);
             }
-        } else if(rootAssertion instanceof Include) {
-            Include includeAssertion = (Include)rootAssertion;
-            if(fragments.containsKey(includeAssertion.getPolicyName())) {
-                includeAssertion.replaceFragmentPolicy(fragments.get(includeAssertion.getPolicyName()));
-                addPoliciesToIncludeAssertions(includeAssertion.retrieveFragmentPolicy().getAssertion(), fragments);
+        } else if(rootAssertion instanceof PolicyReference) {
+            PolicyReference policyReference = (PolicyReference)rootAssertion;
+            if(fragments.containsKey(policyReference.retrievePolicyGuid())) {
+                policyReference.replaceFragmentPolicy(fragments.get(policyReference.retrievePolicyGuid()));
+                addPoliciesToPolicyReferenceAssertions(policyReference.retrieveFragmentPolicy().getAssertion(), fragments);
             }
         }
     }
@@ -316,8 +310,14 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
             } else {
                 // SAVING NEW SERVICE
                 logger.fine("Saving new PublishedService");
+                if(policy != null && policy.getGuid() == null) {
+                    UUID guid = UUID.randomUUID();
+                    policy.setGuid(guid.toString());
+                }
                 oid = serviceManager.save(service);
-                if (policy != null) policyVersionManager.checkpointPolicy(policy, true, true);
+                if (policy != null) {
+                    policyVersionManager.checkpointPolicy(policy, true, true);
+                }
                 serviceManager.addManageServiceRole(service);
             }
         } catch (UpdateException e) {
@@ -497,6 +497,9 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         sampleMessageManager.delete(message);
     }
 
+    public Set<ServiceTemplate> findAllTemplates() {
+        return serviceTemplateManager.findAll();
+    }
 
     /**
      * Parse the String service ID to long (database format). Throws runtime exc

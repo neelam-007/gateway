@@ -22,13 +22,17 @@
         <property name="serverConfig" ref="serverConfig"/>
     </bean>
 
-    <bean id="jmsBootProcess" class="com.l7tech.server.transport.jms.JmsBootProcess">
-        <constructor-arg ref="serverConfig"/>
-        <constructor-arg ref="licenseManager"/>
-        <constructor-arg ref="jmsConnectionManager"/>
-        <constructor-arg ref="jmsEndpointManager"/>
-        <constructor-arg ref="jmsPropertyMapper"/>
-        <constructor-arg ref="managedBackgroundTimer"/>
+    <!-- JMS boot process  -->
+    <bean id="jmsBootProcess" class="com.l7tech.server.transport.jms2.JmsBootProcess">
+        <constructor-arg type="com.l7tech.server.ServerConfig" ref="serverConfig"/>
+        <constructor-arg type="com.l7tech.common.LicenseManager" ref="licenseManager"/>
+        <constructor-arg type="com.l7tech.server.transport.jms.JmsConnectionManager" ref="jmsConnectionManager"/>
+        <constructor-arg type="com.l7tech.server.transport.jms.JmsEndpointManager" ref="jmsEndpointManager"/>
+        <constructor-arg type="com.l7tech.server.transport.jms.JmsPropertyMapper" ref="jmsPropertyMapper"/>
+        <constructor-arg type="java.util.Timer"><null/></constructor-arg>
+        <property name="jmsEndpointListenerFactory">
+            <bean class="com.l7tech.server.transport.jms2.asynch.PooledJmsEndpointListenerFactory"/>
+        </property>
     </bean>
 
     <!-- Abstract "parent" of any bean that needs access to sessionFactory and transactionManager -->
@@ -863,5 +867,9 @@
     <bean id="auditDetailFilter" class="com.l7tech.server.audit.AuditDetailFilter">
         <constructor-arg ref="serverConfig"/>
     </bean>
+
+    <bean id="serviceTemplateManager" class="com.l7tech.server.service.ServiceTemplateManagerImpl"/>
+
+    <bean id="esmSubscriptionManager" class="com.l7tech.server.wsdm.subscription.SubscriptionManagerImpl" parent="hibernateBean"/>
 
 </beans>

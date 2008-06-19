@@ -40,5 +40,14 @@ public class ServiceMessages extends Messages {
     public static final M BACKUP_NO_SUCH_NODE           = m(3613, Level.WARNING, "Backup request routing failed: no such node: {0}");
     public static final M BACKUP_ROUTING_IO_ERROR       = m(3614, Level.WARNING, "Backup request routing failed");
 
+    // ESM Notification Service Messages
+    public static final M ESM_NOTIFY_NOTIFICATION       = m(3650, Level.FINE,    "Sending notification to ''{0}''");
+    public static final M ESM_NOTIFY_INVALID_URL        = m(3651, Level.WARNING, "Invalid notification URL ''{0}''; notification not sent");
+    public static final M ESM_NOTIFY_NO_POLICY          = m(3652, Level.INFO,    "No notification policy; sending default notification to ''{0}''");
+    public static final M ESM_NOTIFY_INVALID_POLICY     = m(3653, Level.WARNING, "Notification policy ''{1}'' missing or invalid; notification not sent to ''{0}''");
+    public static final M ESM_NOTIFY_IO_ERROR           = m(3654, Level.WARNING, "IO Error ''{2}'' when sending ESM notification for policy ''{1}'' to ''{0}''");
+    public static final M ESM_NOTIFY_SUCCESS            = m(3655, Level.INFO,    "Notification sent successfully to ''{0}''; HTTP response status ''{1}''");
+    public static final M ESM_NOTIFY_FAILURE            = m(3656, Level.WARNING, "Notification failed for ''{0}''; HTTP response status ''{1}''");   
+
     // MAX -                                              m(3999
 }

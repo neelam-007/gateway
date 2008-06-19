@@ -11,13 +11,14 @@ import com.l7tech.common.util.HexUtils;
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.Closeable;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 /**
  * Provides a client-independant, generic interface to an HTTP response.
  */
-public abstract class GenericHttpResponse implements GenericHttpResponseParams {
+public abstract class GenericHttpResponse implements Closeable, GenericHttpResponseParams {
     protected static class GuessedEncodingResult {
         public String encoding;
         public int bytesToSkip;

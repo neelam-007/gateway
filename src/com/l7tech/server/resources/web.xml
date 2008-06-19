@@ -210,6 +210,16 @@
         <servlet-class>com.l7tech.server.FileDownloadServlet</servlet-class>
     </servlet>
 
+    <!--<servlet>-->
+        <!--<servlet-name>esmServlet</servlet-name>-->
+        <!--<servlet-class>com.l7tech.server.wsdm.ESMServlet</servlet-class>-->
+    <!--</servlet>-->
+
+    <!--<servlet-mapping>-->
+        <!--<servlet-name>esmServlet</servlet-name>-->
+        <!--<url-pattern>/ssg/wsdm/*</url-pattern>-->
+    <!--</servlet-mapping>-->
+
     <servlet-mapping>
         <servlet-name>fileDownloadServlet</servlet-name>
         <url-pattern>/ssg/webadmin/filedownload</url-pattern>
@@ -286,6 +296,11 @@
     <servlet-mapping>
         <servlet-name>WsdlProxy</servlet-name>
         <url-pattern>/ssg/wsdl</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>WsdlProxy</servlet-name>
+        <url-pattern>/ssg/wsdl/*</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>

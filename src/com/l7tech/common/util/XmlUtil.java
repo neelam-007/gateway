@@ -1179,6 +1179,27 @@ public class XmlUtil {
         }
     }
 
+    public static void visitNodes( Node node, Functions.UnaryVoid<Node> visitor ) {
+        if ( node != null ) {
+            visitor.call( node );
+
+            // visit attributes
+            NamedNodeMap attrNodeMap = node.getAttributes();
+            if ( attrNodeMap != null ) {
+                for ( int n=0; n<attrNodeMap.getLength(); n++ ) {
+                    Node attrNode = attrNodeMap.item(n);
+                    visitor.call( attrNode );
+                }
+            }
+
+            // visit children
+            visitNodes( node.getFirstChild(), visitor );
+
+            // visit siblings
+            visitNodes( node.getNextSibling(), visitor );
+        }
+    }
+
     public static class BadSchemaException extends Exception {
         public BadSchemaException(String s){super(s);}
         public BadSchemaException(Throwable e){super(e.getMessage(), e);}

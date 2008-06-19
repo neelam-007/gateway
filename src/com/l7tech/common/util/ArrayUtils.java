@@ -1,14 +1,10 @@
 /*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2005-2008 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.common.util;
 
-import java.util.Map;
-import java.util.LinkedHashMap;
-import java.util.Collections;
 import java.lang.reflect.Array;
+import java.util.*;
 
 /**
  * Utilities for manipulating arrays.
@@ -355,5 +351,28 @@ public class ArrayUtils {
         if (a.length > 0) System.arraycopy(a, 0, ret, 0, a.length);
         if (b.length > 0) System.arraycopy(b, 0, ret, a.length, b.length);
         return ret;
+    }
+
+    /** Same as {@link Arrays#fill} except it returns the array (e.g. so you can use it in a super constructor call) */
+    public static char[] fill(char[] chars, char c) {
+        Arrays.fill(chars, c);
+        return chars;
+    }
+
+    public static long[] unbox(List<Long> oids) {
+        return unbox(oids.toArray(new Long[oids.size()]));
+    }
+
+    private static char[] unbox(Character[] cs) {
+        if (cs == null || cs.length == 0) throw new IllegalArgumentException("ls must be a non-empty array of chars");
+        char[] result = new char[cs.length];
+        for (int i = 0; i < cs.length; i++) {
+            result[i] = cs[i];
+        }
+        return result;
+    }
+
+    public static char[] unbox(List<Character> cs) {
+        return unbox(cs.toArray(new Character[cs.size()]));
     }
 }

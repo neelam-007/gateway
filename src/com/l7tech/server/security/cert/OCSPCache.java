@@ -4,6 +4,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.common.util.TimeUnit;
 import com.l7tech.common.util.WhirlycacheFactory;
+import com.l7tech.common.security.CertificateValidationResult;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.HttpClientFactory;
 import com.whirlycott.cache.Cache;
@@ -14,6 +15,7 @@ import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Date;
 
 /**
  * Caching wrapper for OCSPClient functionality.
@@ -59,7 +61,8 @@ public class OCSPCache {
                                                final X509Certificate certificate,
                                                final X509Certificate issuerCertificate,
                                                final OCSPClient.OCSPCertificateAuthorizer responseAuthorizer,
-                                               final Auditor auditor)
+                                               final Auditor auditor,
+                                               final CertificateValidationResult onNetworkFailure)
         throws OCSPClient.OCSPClientException
     {
 
@@ -74,14 +77,42 @@ public class OCSPCache {
 
         try {
             OCSPClient.OCSPStatus status;
+            OCSPClient.OCSPStatus cachedStatus = null;
             OcspValue ocspValue = (OcspValue) certValidationCache.retrieve(key);
+
+            //grab the cached status, regardless if it's expired already
+            if ( ocspValue != null ) {
+                cachedStatus = ocspValue.status;
+            }
+
             if (ocspValue != null && !ocspValue.isExpired()) {
                 status = ocspValue.status;
                 auditor.logAndAudit(SystemMessages.CERTVAL_REV_CACHE_HIT, "OCSP", certificate.getSubjectDN().toString());
             } else {
                 auditor.logAndAudit(SystemMessages.CERTVAL_REV_CACHE_MISS, "OCSP", certificate.getSubjectDN().toString());
                 OCSPClient ocsp = new OCSPClient(httpClientFactory.createHttpClient(), responderUrl, issuerCertificate, responseAuthorizer);
-                status = ocsp.getRevocationStatus(certificate, useNonce(), true);
+
+                try {
+                    //attempt to get OCSP status for the certificate
+                    status = ocsp.getRevocationStatus(certificate, useNonce(), true);
+                }
+                catch (OCSPClient.OCSPClientException oce) {
+                    //something has gone wrong trying to grab the revocation status from the server, we'll need to reuse
+                    //the cache version
+                    if ( cachedStatus != null) {
+                        status = cachedStatus;
+
+                        auditor.logAndAudit(SystemMessages.CERTVAL_REV_USE_CACHE, "OCSP", certificate.getSubjectDN().toString(), new Date(status.getExpiry()).toString());
+                        certValidationCache.store(key, new OcspValue(cachedStatus, status.getExpiry()), status.getExpiry());
+
+                        return status;  //return the cached version
+                    }
+                    else {
+                        //we don't even have status value, so we'll need to throw the error
+                        throw oce;
+                    }
+                }
+
                 long timeNow = System.currentTimeMillis();
                 long expiryPeriod = getExpiryPeriod(status.getExpiry(), timeNow);
                 certValidationCache.store(key, new OcspValue(status, timeNow + expiryPeriod), expiryPeriod);

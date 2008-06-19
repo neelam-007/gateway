@@ -35,7 +35,7 @@ import java.util.HashMap;
 public class SavePolicyAction extends PolicyNodeAction {
     protected AssertionTreeNode node;
     private final boolean activateAsWell;
-    private HashMap<String, Long> fragmentNameOidMap;
+    private HashMap<String, String> fragmentNameGuidMap;
 
     public SavePolicyAction(boolean activateAsWell) {
         super(null);
@@ -134,7 +134,7 @@ public class SavePolicyAction extends PolicyNodeAction {
             }
 
             PolicyAdmin.SavePolicyWithFragmentsResult result = updatePolicyXml(policyOid, xml, fragments, activateAsWell);
-            fragmentNameOidMap = result.fragmentNameOidMap;
+            fragmentNameGuidMap = result.fragmentNameGuidMap;
             PolicyCheckpointState checkpointState = result.policyCheckpointState;
             final long newVersionOrdinal = checkpointState.getPolicyVersionOrdinal();
             final boolean activationState = checkpointState.isPolicyVersionActive();
@@ -170,7 +170,7 @@ public class SavePolicyAction extends PolicyNodeAction {
         return Registry.getDefault().getPolicyAdmin().savePolicy(policy, activateAsWell, fragments);
     }
 
-    public HashMap<String, Long> getFragmentNameOidMap() {
-        return fragmentNameOidMap;
+    public HashMap<String, String> getFragmentNameGuidMap() {
+        return fragmentNameGuidMap;
     }
 }

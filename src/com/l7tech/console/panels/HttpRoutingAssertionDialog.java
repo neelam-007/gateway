@@ -7,10 +7,8 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.IpListPanel;
 import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.policy.Policy;
-import com.l7tech.common.security.rbac.AttemptedUpdate;
-import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.console.action.SecureAction;
+import com.l7tech.console.action.BaseAction;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.table.HttpHeaderRuleTableHandler;
@@ -132,7 +130,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JTextField resMsgDestVariableTextField;
     private JLabel resMsgDestVariableStatusLabel;
 
-    private final SecureAction okButtonAction;
+    private final BaseAction okButtonAction;
     private boolean confirmed = false;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.HttpRoutingAssertionDialog");
@@ -153,7 +151,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         this.httpAuthPanel = new HttpRoutingHttpAuthPanel(assertion);
         this.samlAuthPanel = new HttpRoutingSamlAuthPanel(assertion);
 
-        okButtonAction = new SecureAction(new AttemptedUpdate(EntityType.POLICY, policy)) {
+        okButtonAction = new BaseAction() {
             @Override
             public String getName() {
                 return resources.getString("okButton.text");

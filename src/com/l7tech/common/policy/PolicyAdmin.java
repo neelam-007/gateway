@@ -14,10 +14,7 @@ import com.l7tech.admin.Administrative;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.HashMap;
+import java.util.*;
 import java.io.Serializable;
 
 /**
@@ -33,11 +30,11 @@ public interface PolicyAdmin {
      */
     public static class SavePolicyWithFragmentsResult implements Serializable {
         public PolicyCheckpointState policyCheckpointState;
-        public HashMap<String, Long> fragmentNameOidMap;
+        public HashMap<String, String> fragmentNameGuidMap;
 
-        public SavePolicyWithFragmentsResult(PolicyCheckpointState policyCheckpointState, HashMap<String, Long> fragmentNameMapOidMap) {
+        public SavePolicyWithFragmentsResult(PolicyCheckpointState policyCheckpointState, HashMap<String, String> fragmentNameGuidMap) {
             this.policyCheckpointState = policyCheckpointState;
-            this.fragmentNameOidMap = fragmentNameMapOidMap;
+            this.fragmentNameGuidMap = fragmentNameGuidMap;
         }
     }
 
@@ -65,14 +62,35 @@ public interface PolicyAdmin {
     Policy findPolicyByUniqueName(String name) throws FindException;
 
     /**
+     * Finds a particular {@link Policy} with the specified GUID, or null if no such policy can be found.
+     * @param guid the GUID of the Policy to retrieve
+     * @return the Policy with the specified GUID, or null if no such policy can be found.
+     */
+    @Secured(stereotype=FIND_ENTITY_BY_ATTRIBUTE)
+    @Transactional(readOnly=true)
+    @Administrative(licensed = false)
+    Policy findPolicyByGuid(String guid) throws FindException;
+
+    /**
      * Finds all policies in the system with the given type.
      * @param type the type of policies to find; pass <code>null</code> for policies of any type
      * @return the policies with the specified type
      */
-    @Secured(stereotype=FIND_ENTITIES)
+    @Secured(stereotype=FIND_HEADERS)
     @Transactional(readOnly=true)
     @Administrative(licensed = false)
     Collection<PolicyHeader> findPolicyHeadersByType(PolicyType type) throws FindException;
+
+    /**
+     * Finds all policies in the system with any of the given types.
+     * @param types the types of policies to find; pass <code>null</code> for policies of any type
+     * @return the policies with the specified type
+     */
+    @Transactional(readOnly = true)
+    @Secured(stereotype = MethodStereotype.FIND_HEADERS)
+    @Administrative(licensed = false)
+    Collection<PolicyHeader> findPolicyHeadersWithTypes(EnumSet<PolicyType> types);
+
 
     /**
      * Deletes the policy with the specified OID.  An impact analysis will be performed prior to deleting the policy,
@@ -147,7 +165,7 @@ public interface PolicyAdmin {
      * @return the requested PolicyVersion, or null if that OID wasn't found.
      * @throws FindException if there is a database problem
      */
-    @Secured(stereotype=FIND_BY_PRIMARY_KEY, relevantArg=0)
+    @Secured(stereotype=GET_PROPERTY_BY_ID, relevantArg=0)
     @Transactional(readOnly=true)
     PolicyVersion findPolicyVersionByPrimaryKey(long policyOid, long versionOid) throws FindException;
 

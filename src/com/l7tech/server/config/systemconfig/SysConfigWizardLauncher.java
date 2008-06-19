@@ -3,6 +3,7 @@ package com.l7tech.server.config.systemconfig;
 import com.l7tech.server.config.ui.console.ConfigWizardConsoleResultsStep;
 import com.l7tech.server.config.ui.console.ConfigWizardConsoleStep;
 import com.l7tech.server.config.ui.console.ConfigWizardConsoleSummaryStep;
+import com.l7tech.server.config.ui.console.ConsoleWizardUtils;
 
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -45,6 +46,7 @@ public class SysConfigWizardLauncher {
         stepsList.add(new ConfigWizardConsoleSummaryStep(sysWizard, "System Configuration Summary"));
 
         ConfigWizardConsoleResultsStep resultsStep = new ConfigWizardConsoleResultsStep(sysWizard, "Networking Configuration Results");
+        resultsStep.setSuccessMessage("The configuration was successfully applied." + ConsoleWizardUtils.EOL_CHAR + "You must restart the SSG Appliance in order for the configuration to take effect." + ConsoleWizardUtils.EOL_CHAR);
         resultsStep.setManualStepsFileName("ssg_networkingconfig_manualsteps.txt");
         resultsStep.setLogFilename("ssg_networkingconfig_log.txt");
         stepsList.add(resultsStep);

@@ -25,6 +25,6 @@ public class IncludeAssertionPaletteNode extends AbstractLeafPaletteNode {
 
     @Override
     public Assertion asAssertion() {
-        return new Include(header.getOid(), header.getName());
+        return new Include(header.getStrId(), header.getName());
     }
 }

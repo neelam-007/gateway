@@ -9,10 +9,14 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.policy.variable.InvalidContextVariableException;
 
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
  * This assertion splits a single-valued String context variable into a multi-valued List&lt;String&gt; by
@@ -44,6 +48,8 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
 
     /** @param inputVariable name of variable to split. */
     public void setInputVariable(String inputVariable) {
+        String invalidationResult = validateVariable(inputVariable);
+        if (invalidationResult != null) throw new InvalidContextVariableException(invalidationResult);
         this.inputVariable = inputVariable;
     }
 
@@ -54,6 +60,8 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
 
     /** @param outputVariable name of variable in which to store the result.  May be the same as outputVariable. */
     public void setOutputVariable(String outputVariable) {
+        String invalidationResult = validateVariable(outputVariable);
+        if (invalidationResult != null) throw new InvalidContextVariableException(invalidationResult);
         this.outputVariable = outputVariable;
     }
 
@@ -123,5 +131,45 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
             if (message != null)
                 result.addWarning((new PolicyValidatorResult.Warning(assertion, path, message, null)));
         }
+    }
+
+    /**
+     * Validate the variable against the name convention of context variables.
+     * Note: the method also checks if the name is overlapped with other user defined context variables.
+     * @return a validation result if the name is not valid.  Otherwise, return a null string.
+     */
+    private String validateVariable(String variable) {
+        String invalidationResult;
+
+        if (StringUtils.isBlank(variable)) {
+            // It is not a vaild variable.
+            invalidationResult = "Variable cannot be empty.";
+        } else if ((invalidationResult = VariableMetadata.validateName(variable)) != null) {
+            // It is not a vaild variable.
+            // Nothing to do here, since invalidationResult has been set.
+        } else {
+            final VariableMetadata meta = BuiltinVariables.getMetadata(variable);
+            if (meta == null) {
+                // It is a vaild variable.
+                // New variable will be created
+                invalidationResult = null;
+            } else {
+                if (meta.isSettable()) {
+                    if (meta.getType() == DataType.MESSAGE) {
+                        // It is a vaild variable.
+                        // Built-in, settable
+                        invalidationResult = null;
+                    } else {
+                        // It is not a vaild variable.
+                        invalidationResult = "Built-in, settable but not message type";
+                    }
+                } else {
+                    // It is not a vaild variable.
+                    invalidationResult = "Built-in, not settable";
+                }
+            }
+        }
+        
+        return invalidationResult;
     }
 }

@@ -144,9 +144,28 @@ control_single_partition() {
             if [ -f "${GATEWAY_PID}" ]  && [ -d "/proc/$(< ${GATEWAY_PID})" ] ; then
                 return 1
             fi
-            (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND}") <&- &>/dev/null &
+
+            if [ "$LOG_REDIRECTION_OPERATOR" = "|" -a -n "$LOG_REDIRECTION_DEST" ]; then
+                (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND}" <&- 2>&1 | `${LOG_REDIRECTION_DEST/<PARTITION_NAME>/$PARTITION_NAME}`) &>/dev/null &
+            else
+                if [ "$LOG_REDIRECTION_OPERATOR" = ">" -a -n "$LOG_REDIRECTION_DEST" ]; then
+                    output_file="${LOG_REDIRECTION_DEST/<PARTITION_NAME>/$PARTITION_NAME}"
+                else
+                    output_file="/dev/null"
+                fi
+                (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh ${COMMAND}") <&- &>"$output_file" &
+            fi
         elif [ "${COMMAND}" == "forcestop" ] ; then
-            (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh stop -force") <&- &>/dev/null
+            if [ "$LOG_REDIRECTION_OPERATOR" = "|" -a -n "$LOG_REDIRECTION_DEST" ]; then
+                (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh stop -force" <&- 2>&1 | `${LOG_REDIRECTION_DEST/<PARTITION_NAME>/$PARTITION_NAME}`) &/dev/null &
+            else
+                if [ "$LOG_REDIRECTION_OPERATOR" = ">" -a -n "$LOG_REDIRECTION_DEST" ]; then
+                    output_file="${LOG_REDIRECTION_DEST/<PARTITION_NAME>/$PARTITION_NAME}"
+                else
+                    output_file="/dev/null"
+                fi
+                (su $SSGUSER -c "${SSG_HOME}/bin/gateway.sh stop -force") <&- &>"$output_file"
+            fi
             GATEWAY_RET=$?
             do_firewall
             return $GATEWAY_RET

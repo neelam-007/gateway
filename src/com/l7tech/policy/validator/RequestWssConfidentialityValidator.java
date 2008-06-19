@@ -1,69 +1,60 @@
 package com.l7tech.policy.validator;
 
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
-import com.l7tech.common.xml.Wsdl;
-import org.jaxen.dom.DOMXPath;
-
-import java.util.logging.Logger;
 
 /**
- * Validates the <code>RequestWssConfidentiality</code> assertion internals. This validates
- * the XPath requirements and the the encryption method algorithm consistency. The processing
- * model requires that the same encryption method algorithm is used in the policy path.
+ * Validates the <code>RequestWssConfidentiality</code> assertion internals. This checks
+ * whether the WSSRecipient is non-local.  If so, a warning is issued.
+ *
+ * Note: This class was pre-existing in the source tree, but appeared to be unused.  Now
+ * employed to provide a simple warning.
  *
  * @author emil
+ * @author vchan
  */
 public class RequestWssConfidentialityValidator implements AssertionValidator {
-    private static final Logger logger = Logger.getLogger(RequestWssConfidentialityValidator.class.getName());
-    private final RequestWssConfidentiality assertion;
-    private String errString = null;
-    private Throwable errThrowable = null;
+    /* not used */
+    // private static final Logger logger = Logger.getLogger(RequestWssConfidentialityValidator.class.getName());
 
+    protected static final String WARN_WSS_RECIPIENT_NOT_LOCAL =
+            "A WSSRecipient other than \"Default\" will not be enforced by the gateway.  This assertion will always succeed.";
+
+    private final RequestWssConfidentiality assertion;
+    private boolean warnForAssert;
+
+    /**
+     * Constructor.
+     *
+     * @param ra    The assertion instance to validate
+     */
     public RequestWssConfidentialityValidator(RequestWssConfidentiality ra) {
-        assertion = ra;
-        String pattern = null;
-        if (assertion.getXpathExpression() != null) {
-            pattern = assertion.getXpathExpression().getExpression();
-        }
-        if (pattern == null) {
-            final String str = "XPath pattern is missing";
-            logger.info(str);
-            errString = str;
-        } else if (pattern.equals("/soapenv:Envelope")) {
-            errString = "The path " + pattern + " is " +
-                        "not valid for XML encryption";
-        } else {
-            try {
-                new DOMXPath(pattern);
-            } catch (Exception e) {
-                final String str = "XPath pattern is not valid";
-                logger.info(str);
-                errString = str;
-                errThrowable = e;
-            }
-        }
+        this.assertion = ra;
+        this.warnForAssert = !(assertion.getRecipientContext().localRecipient());
     }
 
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
-        if (errString != null) {
-            result.addError(new PolicyValidatorResult.Error(assertion, path, errString, errThrowable));
-            return;
+
+        if (warnForAssert) {
+            result.addWarning(new PolicyValidatorResult.Warning(assertion, path, WARN_WSS_RECIPIENT_NOT_LOCAL, null));
         }
 
-        Assertion[] assertionPath = path.getPath();
-        for (int i = assertionPath.length - 1; i >= 0; i--) {
-            Assertion a = assertionPath[i];
+        for (Assertion a : path.getPath()) {
+
             if (a != assertion && a instanceof RequestWssConfidentiality) {
                 RequestWssConfidentiality ra = (RequestWssConfidentiality)a;
-                if (!ra.getXEncAlgorithm().equals(assertion.getXEncAlgorithm())) {
-                    String message = "Multiple confidentiality assertions present with different Encryption Method Algorithms";
-                    result.addError(new PolicyValidatorResult.Error(assertion, path, message, null));
-                    logger.info(message);
+
+                // for the Request, we only check to see whether the recipient is local
+                if (!ra.getRecipientContext().localRecipient()) {
+
+                    // if so, create a warning
+                    result.addWarning(new PolicyValidatorResult.Warning(ra, path, WARN_WSS_RECIPIENT_NOT_LOCAL, null));
                 }
             }
         }
     }
+
 }

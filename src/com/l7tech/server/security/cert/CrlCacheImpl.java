@@ -103,8 +103,10 @@ public class CrlCacheImpl implements CrlCache {
 
     public X509CRL getCrl(String crlUrl, Audit auditor) throws CRLException, IOException {
         X509CRL crl;
+        X509CRL cachedCRL = null;
         Lock read = null, write = null;
         CrlCacheEntry crlCacheEntry = (CrlCacheEntry) crlCache.retrieve(crlUrl);
+
         try {
             if (crlCacheEntry == null) {
                 auditor.logAndAudit(SystemMessages.CERTVAL_REV_CACHE_MISS, "CRL", crlUrl);
@@ -118,6 +120,9 @@ public class CrlCacheImpl implements CrlCache {
                 read = crlCacheEntry.lock.readLock();
                 read.lock();
 
+                //grab the cached CRL first
+                cachedCRL = crlCacheEntry.getCrl();
+
                 if (crlCacheEntry.refresh < System.currentTimeMillis()) {
                     auditor.logAndAudit(SystemMessages.CERTVAL_REV_CACHE_STALE, "CRL", crlUrl, new Date(crlCacheEntry.refresh).toString());
                     crl = null;
@@ -128,12 +133,28 @@ public class CrlCacheImpl implements CrlCache {
             }
 
             if (crl == null) {
-                if (crlUrl.startsWith("ldap:") || crlUrl.startsWith("ldaps:")) {
-                    crl = getCrlFromLdap(crlUrl);
-                } else if (crlUrl.startsWith("http:") || crlUrl.startsWith("https:")) {
-                    crl = getCrlFromHttp(crlUrl);
-                } else {
-                    throw new CRLException("Unsupported CRL URL scheme: " + crlUrl);
+                try {
+                    //attempt to grab the CRL through LDAP(s) or HTTP(s)
+                    if (crlUrl.startsWith("ldap:") || crlUrl.startsWith("ldaps:")) {
+                        crl = getCrlFromLdap(crlUrl);
+                    } else if (crlUrl.startsWith("http:") || crlUrl.startsWith("https:")) {
+                        crl = getCrlFromHttp(crlUrl);
+                    } else {
+                        throw new CRLException("Unsupported CRL URL scheme: " + crlUrl);
+                    }
+                }
+                catch (IOException ioe){
+                    //failed to grab CRL from LDAP(s) or HTTP(s), so we should try to reuse the cache version
+                    if ( cachedCRL != null ) {
+
+                        //we do have a cached CRL, we should use it
+                        auditor.logAndAudit(SystemMessages.CERTVAL_REV_USE_CACHE, "CRL", crlUrl, new Date(crlCacheEntry.refresh).toString());
+                        crl = cachedCRL;    //return the cached CRL to be used
+                    }
+                    else {
+                        //we do not have a cached CRL, so we need to throw IOException
+                        throw ioe;
+                    }
                 }
 
                 read.unlock(); read = null; // Upgrade to write lock

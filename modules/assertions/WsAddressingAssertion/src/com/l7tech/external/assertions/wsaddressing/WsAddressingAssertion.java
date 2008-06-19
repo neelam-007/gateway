@@ -34,6 +34,18 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
         setEnableWsAddressing10(true);
     }
 
+    public String[] getVariableSuffixes() {
+        return new String[] {
+            VAR_SUFFIX_TO,
+            VAR_SUFFIX_ACTION,
+            VAR_SUFFIX_MESSAGEID,
+            VAR_SUFFIX_FROM,
+            VAR_SUFFIX_REPLYTO,
+            VAR_SUFFIX_FAULTTO,
+            VAR_SUFFIX_NAMESPACE
+        };
+    }
+
     /**
      * Is WS-Addressing 1.0 enabled.
      *

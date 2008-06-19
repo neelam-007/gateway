@@ -5,6 +5,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.panels.ResolveExternalPolicyReferencesWizard;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspReader;
@@ -46,7 +47,7 @@ public class RemoteReferenceResolver {
      * @param references references parsed from a policy document.
      * @return false if the process cannot continue because the administrator canceled an operation for example.
      */
-    public boolean resolveReferences(ExternalReference[] references) {
+    public boolean resolveReferences(ExternalReference[] references) throws InvalidPolicyStreamException {
         Collection unresolved = new ArrayList();
         for (ExternalReference reference : references) {
             if (!reference.verifyReference()) {
@@ -85,6 +86,11 @@ public class RemoteReferenceResolver {
         }
         traverseAssertionTreeForLocalization(root);
         return root;
+    }
+
+    public Assertion localizePolicy(Assertion rootAssertion) {
+        traverseAssertionTreeForLocalization(rootAssertion);
+        return rootAssertion;
     }
 
     private boolean traverseAssertionTreeForLocalization(Assertion rootAssertion) {

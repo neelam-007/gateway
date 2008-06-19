@@ -17,6 +17,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
@@ -56,7 +57,8 @@ public class CreatePolicyAction extends SecureAction {
 
     protected void performAction() {
         final Frame mw = TopComponents.getInstance().getTopParent();
-        String xml = WspWriter.getPolicyXml(new AllAssertion( Collections.EMPTY_LIST ));
+//        String xml = WspWriter.getPolicyXml(new AllAssertion( Collections.EMPTY_LIST ));
+        String xml = null;
         // canUpdate == true because this action would be disabled if we couldn't create policies
         final OkCancelDialog<Policy> dlg = PolicyPropertiesPanel.makeDialog(mw, new Policy(PolicyType.INCLUDE_FRAGMENT, null, xml, false), true);
         dlg.pack();
@@ -68,9 +70,13 @@ public class CreatePolicyAction extends SecureAction {
                 Policy policy = dlg.getValue();
                 long oid = -1;
                 try {
-                    String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(new AuditDetailAssertion("Policy Fragment: " + policy.getName()))));
-                    policy.setXml( xml );
+                    //if the editor didn't already create some policy content, create a default here
+                    if (!(policy.getType() == PolicyType.INTERNAL)) {
+                        String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.asList(new AuditDetailAssertion("Policy Fragment: " + policy.getName()))));
+                        policy.setXml( xml );
+                    }
                     oid = Registry.getDefault().getPolicyAdmin().savePolicy(policy);
+                    policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(oid);
                 } catch ( DuplicateObjectException doe) {
                     JOptionPane.showMessageDialog(mw,
                           "Unable to save the policy '" + policy.getName() + "'.\n" +
@@ -81,6 +87,8 @@ public class CreatePolicyAction extends SecureAction {
                     throw new RuntimeException("Couldn't save Policy", e);
                 } catch (SaveException e) {
                     throw new RuntimeException("Couldn't save Policy", e);
+                } catch (FindException e) {
+                    throw new RuntimeException("Policy saved, but couldn't be retrieved", e);
                 }
 
                 if ( oid > 0 ) {
@@ -92,7 +100,7 @@ public class CreatePolicyAction extends SecureAction {
 
                     PoliciesFolderNode root = TopComponents.getInstance().getPoliciesFolderNode();
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                    final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(new EntityHeader(Long.toString(oid), com.l7tech.objectmodel.EntityType.POLICY, policy.getName(), null));
+                    final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(new EntityHeader(policy.getGuid(), com.l7tech.objectmodel.EntityType.POLICY, policy.getName(), null));
                     model.insertNodeInto(sn, root, root.getInsertPosition(sn));
                     tree.setSelectionPath(new TreePath(sn.getPath()));
                     SwingUtilities.invokeLater(new Runnable() {

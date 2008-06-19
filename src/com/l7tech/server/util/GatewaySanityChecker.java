@@ -47,7 +47,8 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
      */
     private static final Map<Class<? extends SystemEvent>, Set<String>> whitelist =
         Collections.unmodifiableMap(new HashMap<Class<? extends SystemEvent>, Set<String>>() {{
-            p(null,           "com.l7tech.server.upgrade.Upgrade42To43MigratePolicies");
+            p(null,           "com.l7tech.server.upgrade.Upgrade44To45SwitchPolicyIncludesToGuids",
+                              "com.l7tech.server.upgrade.Upgrade42To43MigratePolicies");
             p(Starting.class, "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions");
             p(Started.class,  "com.l7tech.server.upgrade.Upgrade35To36AddRoles",
                               "com.l7tech.server.upgrade.Upgrade42To43AddPolicyPermissions",

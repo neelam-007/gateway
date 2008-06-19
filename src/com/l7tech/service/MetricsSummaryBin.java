@@ -1,5 +1,7 @@
 package com.l7tech.service;
 
+import com.l7tech.common.util.Functions;
+
 import java.util.*;
 
 /**
@@ -27,6 +29,26 @@ public class MetricsSummaryBin extends MetricsBin {
     /** OID of published services with routing failure. */
     private final Set<Long> _servicesWithRoutingFailure = new HashSet<Long>(0);
 
+    private static final Functions.Unary<Long,MetricsBin> periodStartGetter = new Functions.Unary<Long, MetricsBin>() {
+        public Long call(MetricsBin metricsBin) {
+            return metricsBin.getPeriodStart();
+        }
+    };
+    
+    private static final Functions.Unary<Long,MetricsBin> serviceOidGetter = new Functions.Unary<Long, MetricsBin>() {
+        public Long call(MetricsBin metricsBin) {
+            return metricsBin.getServiceOid();
+        }
+    };
+
+    private long firstAttemptedRequest;
+    private long firstAuthorizedRequest;
+    private long firstCompletedRequest;
+    private long lastAttemptedRequest;
+    private long lastAuthorizedRequest;
+    private long lastCompletedRequest;
+    private double lastAverageFrontendResponseTime;
+
     /**
      * Combines metrics bins with the same period start into summary bins.
      *
@@ -35,26 +57,49 @@ public class MetricsSummaryBin extends MetricsBin {
      *         bins were supplied, but never <code>null</code>
      */
     public static Collection<MetricsSummaryBin> createSummaryMetricsBinsByPeriodStart(final Collection<MetricsBin> bins) {
-        if (bins.size() == 0)
-            return Collections.emptyList();
+        final Collection<MetricsSummaryBin> newbins = createSummaryMetricsBins(bins, periodStartGetter).values();
+        List<MetricsSummaryBin> rv = new ArrayList<MetricsSummaryBin>();
+        rv.addAll(newbins);
+        return rv;
+    }
 
-        // Groups the metrics bins by period start.
-        final Map<Long, Set<MetricsBin>> _binsByPeriod = new HashMap<Long, Set<MetricsBin>>();
+    public static Map<Long, MetricsSummaryBin> createSummaryMetricsBinsByServiceOid(final Collection<MetricsBin> bins) {
+        return createSummaryMetricsBins(bins, serviceOidGetter);
+    }
+
+    /**
+     * Combines metrics bins with the same grouping value into summary bins.
+     *
+     * @param bins        metrics bins to combine
+     * @param valueGetter a function that, given a MetricsBin, returns the grouping value
+     * @param <GT>        the type of the grouping value (e.g. Long for service OIDs)
+     * 
+     * @return unsorted collection of summary bins; can be empty if zero metrics
+     *         bins were supplied, but never <code>null</code>
+     */
+    private static <GT> Map<GT, MetricsSummaryBin> createSummaryMetricsBins(final Collection<MetricsBin> bins, final Functions.Unary<GT, MetricsBin> valueGetter) {
+        if (bins == null || bins.size() == 0)
+            return Collections.emptyMap();
+
+        final Map<GT, Set<MetricsBin>> binsByGroupId = new HashMap<GT, Set<MetricsBin>>();
         for (MetricsBin bin : bins) {
-            final Long periodStart = new Long(bin.getPeriodStart());
-            Set<MetricsBin> periodBins = _binsByPeriod.get(periodStart);
-            if (periodBins == null) {
-                periodBins = new HashSet<MetricsBin>();
-                _binsByPeriod.put(periodStart, periodBins);
+            GT value = valueGetter.call(bin);
+            if (value == null) continue;
+            Set<MetricsBin> serviceBins = binsByGroupId.get(value);
+            if (serviceBins == null) {
+                serviceBins = new HashSet<MetricsBin>();
+                binsByGroupId.put(value, serviceBins);
             }
-            periodBins.add(bin);
+            serviceBins.add(bin);
         }
 
-        // Combines the metrics bin in each period.
-        final Collection<MetricsSummaryBin> result = new ArrayList<MetricsSummaryBin>();
-        for (Collection<MetricsBin> binsInPeriod : _binsByPeriod.values()) {
-            final MetricsSummaryBin summaryBin = new MetricsSummaryBin(binsInPeriod);
-            result.add(summaryBin);
+        // Combines the metrics bin in each group.
+        final Map<GT, MetricsSummaryBin> result = new HashMap<GT, MetricsSummaryBin>();
+        for (Map.Entry<GT,Set<MetricsBin>> entry : binsByGroupId.entrySet()) {
+            final Set<MetricsBin> binSet = entry.getValue();
+            if (binSet == null || binSet.isEmpty()) continue;
+            final MetricsSummaryBin summaryBin = new MetricsSummaryBin(binSet);
+            result.put(entry.getKey(), summaryBin);
         }
 
         return result;
@@ -69,7 +114,7 @@ public class MetricsSummaryBin extends MetricsBin {
      * @throws IllegalArgumentException if zero metrics bins are supplied
      */
     public MetricsSummaryBin(final Collection<MetricsBin> bins) {
-        if (bins.size() == 0) {
+        if (bins == null || bins.size() == 0) {
             throw new IllegalArgumentException("Must have at least one metrics bin.");
         }
 
@@ -80,6 +125,12 @@ public class MetricsSummaryBin extends MetricsBin {
         long periodEnd = -1;
         long startTime = -1;
         long endTime = -1;
+        long firstAttemptedRequest = -1;
+        long firstAuthorizedRequest = -1;
+        long firstCompletedRequest = -1;
+        long lastAttemptedRequest = -1;
+        long lastAuthorizedRequest = -1;
+        long lastCompletedRequest = -1;
         int numAttemptedRequest = 0;
         int numAuthorizedRequest = 0;
         int numCompletedRequest = 0;
@@ -91,7 +142,8 @@ public class MetricsSummaryBin extends MetricsBin {
         long sumBackendResponseTime = 0;
 
         boolean first = true;
-        for (MetricsBin bin : bins) {
+        for (Iterator<MetricsBin> it = bins.iterator(); it.hasNext();) {
+            MetricsBin bin = it.next();
             if (first) {
                 clusterNodeId = bin.getClusterNodeId();
                 serviceOid = bin.getServiceOid();
@@ -111,8 +163,8 @@ public class MetricsSummaryBin extends MetricsBin {
                 numCompletedRequest = bin.getNumCompletedRequest();
                 first = false;
             } else {
-                if (clusterNodeId != bin.getClusterNodeId())
-                    clusterNodeId = null;
+                if (!(clusterNodeId == null || clusterNodeId.equals(bin.getClusterNodeId())))
+                    clusterNodeId = null; // Null out summarized node ID if this summary came from different nodes
                 if (serviceOid != bin.getServiceOid())
                     serviceOid = -1;
                 if (resolution != bin.getResolution())
@@ -144,6 +196,23 @@ public class MetricsSummaryBin extends MetricsBin {
                 numAttemptedRequest += bin.getNumAttemptedRequest();
                 numAuthorizedRequest += bin.getNumAuthorizedRequest();
                 numCompletedRequest += bin.getNumCompletedRequest();
+
+                if (!it.hasNext()) setLastAverageFrontendResponseTime(bin.getAverageFrontendResponseTime());
+            }
+
+            if (bin.getNumAttemptedRequest() > 0) {
+                firstAttemptedRequest = firstAttemptedRequest == -1 ? bin.getPeriodStart() : Math.min(bin.getPeriodStart(), firstAttemptedRequest);
+                lastAttemptedRequest = lastAttemptedRequest == -1 ? bin.getPeriodStart() : Math.max(bin.getPeriodStart(), lastAttemptedRequest);
+            }
+
+            if (bin.getNumAuthorizedRequest() > 0) {
+                firstAuthorizedRequest = firstAuthorizedRequest == -1 ? bin.getPeriodStart() : Math.min(bin.getPeriodStart(), firstAuthorizedRequest);
+                lastAuthorizedRequest = lastAuthorizedRequest == -1 ? bin.getPeriodStart() : Math.max(bin.getPeriodStart(), lastAuthorizedRequest);
+            }
+
+            if (bin.getNumCompletedRequest() > 0) {
+                firstCompletedRequest = firstCompletedRequest == -1 ? bin.getPeriodStart() : Math.min(bin.getPeriodStart(), firstCompletedRequest);
+                lastCompletedRequest = lastCompletedRequest == -1 ? bin.getPeriodStart() : Math.max(bin.getPeriodStart(), lastCompletedRequest);
             }
 
             if (bin instanceof MetricsSummaryBin) {
@@ -160,7 +229,11 @@ public class MetricsSummaryBin extends MetricsBin {
 
         setClusterNodeId(clusterNodeId);
         setServiceOid(serviceOid);
-        setResolution(resolution);
+        if(resolution == -1) {
+            _resolution = -1;
+        } else {
+            setResolution(resolution);
+        }
         setPeriodStart(periodStart);
         setInterval((int)(periodEnd - periodStart));
         setStartTime(startTime);
@@ -174,6 +247,12 @@ public class MetricsSummaryBin extends MetricsBin {
         setMinBackendResponseTime(minBackendResponseTime);
         setMaxBackendResponseTime(maxBackendResponseTime);
         setSumBackendResponseTime(sumBackendResponseTime);
+        setFirstAttemptedRequest(firstAttemptedRequest);
+        setFirstAuthorizedRequest(firstAuthorizedRequest);
+        setFirstCompletedRequest(firstCompletedRequest);
+        setLastAttemptedRequest(lastAttemptedRequest);
+        setLastAuthorizedRequest(lastAuthorizedRequest);
+        setLastCompletedRequest(lastCompletedRequest);
     }
 
     /** @return OID of published services with policy violations */
@@ -184,5 +263,61 @@ public class MetricsSummaryBin extends MetricsBin {
     /** @return OID of published services with routing failures */
     public Set<Long> getServicesWithRoutingFailure() {
         return _servicesWithRoutingFailure;
+    }
+
+    public long getFirstAttemptedRequest() {
+        return firstAttemptedRequest;
+    }
+
+    public void setFirstAttemptedRequest(long firstAttemptedRequest) {
+        this.firstAttemptedRequest = firstAttemptedRequest;
+    }
+
+    public long getFirstAuthorizedRequest() {
+        return firstAuthorizedRequest;
+    }
+
+    public void setFirstAuthorizedRequest(long firstAuthorizedRequest) {
+        this.firstAuthorizedRequest = firstAuthorizedRequest;
+    }
+
+    public long getFirstCompletedRequest() {
+        return firstCompletedRequest;
+    }
+
+    public void setFirstCompletedRequest(long firstCompletedRequest) {
+        this.firstCompletedRequest = firstCompletedRequest;
+    }
+
+    public long getLastAttemptedRequest() {
+        return lastAttemptedRequest;
+    }
+
+    public void setLastAttemptedRequest(long lastAttemptedRequest) {
+        this.lastAttemptedRequest = lastAttemptedRequest;
+    }
+
+    public long getLastAuthorizedRequest() {
+        return lastAuthorizedRequest;
+    }
+
+    public void setLastAuthorizedRequest(long lastAuthorizedRequest) {
+        this.lastAuthorizedRequest = lastAuthorizedRequest;
+    }
+
+    public long getLastCompletedRequest() {
+        return lastCompletedRequest;
+    }
+
+    public void setLastCompletedRequest(long lastCompletedRequest) {
+        this.lastCompletedRequest = lastCompletedRequest;
+    }
+
+    public double getLastAverageFrontendResponseTime() {
+        return lastAverageFrontendResponseTime;
+    }
+
+    public void setLastAverageFrontendResponseTime(double lastAverageFrontendResponseTime) {
+        this.lastAverageFrontendResponseTime = lastAverageFrontendResponseTime;
     }
 }

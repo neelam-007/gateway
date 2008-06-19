@@ -1,6 +1,6 @@
 Summary: SecureSpan Gateway, Copyright Layer 7 Technologies 2003-2008
 Name: ssg-appliance
-Version: 4.4
+Version: 5.0
 Release: 1
 Group: Applications/Internet
 License: Commercial
@@ -10,7 +10,7 @@ Packager: Layer 7 Technologies, <support@layer7tech.com>
 source0: ssg-appliance.tar.gz
 source1: jdk.tar.gz
 buildroot: %{_builddir}/%{name}-%{version}
-requires: ssg >= 4.4
+requires: ssg >= 5.0
 
 # Prevents rpm build from erroring and halting
 #%undefine       __check_files
@@ -61,7 +61,6 @@ mv %{buildroot}/ssg/bin/ssg-dbstatus-initd %{buildroot}/etc/init.d/ssg-dbstatus
 mv %{buildroot}/ssg/bin/my.cnf %{buildroot}/etc/my.cnf.ssg
 mv %{buildroot}/ssg/bin/iptables %{buildroot}/etc/sysconfig/iptables
 mv %{buildroot}/ssg/bin/appliancedefs.sh %{buildroot}/ssg/etc/profile.d/
-mv %{buildroot}/ssg/bin/tarari.sh %{buildroot}/ssg/etc/profile.d/
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
 mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
 mv %{buildroot}/ssg/bin/configuser_profile %{buildroot}/home/ssgconfig/.bash_profile
@@ -112,7 +111,6 @@ chmod 711 %{buildroot}/ssg/appliance/libexec/*
 
 %attr(0775,gateway,gateway) %dir /ssg/etc/profile.d
 %attr(0775,gateway,gateway) /ssg/etc/profile.d/appliancedefs.sh
-%attr(0775,gateway,gateway) /ssg/etc/profile.d/tarari.sh
 %attr(0764,gateway,gateway) /ssg/bin/samples/fix_banner.sh
 
 # JDK
@@ -254,15 +252,16 @@ fi
 
 %post
 
-if [ ! -e /etc/profile.d/tarari.sh ] ; then
-    ln -s /ssg/etc/profile.d/tarari.sh /etc/profile.d/tarari.sh
-fi
-
 #modify java.sh to use the appliance jdk
 cat > /ssg/etc/profile.d/java.sh <<-EOF
 SSG_JAVA_HOME="/ssg/jdk"
 export SSG_JAVA_HOME
 EOF
+
+if [ -e '/ssg/etc/profile.d/output_redirection.sh' ]; then
+    sed -i -e 's/^export LOG_REDIRECTION_OPERATOR=">"/export LOG_REDIRECTION_OPERATOR="|"/' /ssg/etc/profile.d/output_redirection.sh
+    sed -i -e 's/^export LOG_REDIRECTION_DEST="\/dev\/null"/export LOG_REDIRECTION_DEST="logger -t SSG-<PARTITION_NAME>"/' /ssg/etc/profile.d/output_redirection.sh
+fi
 
 /ssg/configwizard/ssgconfig.sh -partitionMigrate &> /dev/null
 # Change issue. This may move to a layer7-release file
@@ -317,9 +316,5 @@ if [ "$1" = "0" ] ; then
     chkconfig --del ssg-dbstatus
     chkconfig --del ssgsysconfig
     chkconfig --del ssg
-
-    if [ -e /etc/profile.d/tarari.sh ] ; then
-        rm -f /etc/profile.d/tarari.sh
-    fi
 fi
 

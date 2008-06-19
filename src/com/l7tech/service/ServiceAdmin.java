@@ -2,16 +2,17 @@ package com.l7tech.service;
 
 import com.l7tech.admin.Administrative;
 import com.l7tech.common.AsyncAdminMethods;
-import com.l7tech.common.policy.Policy;
+import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.util.CollectionUpdate;
 import com.l7tech.common.policy.PolicyType;
+import com.l7tech.common.policy.Policy;
 import static com.l7tech.common.security.rbac.EntityType.SAMPLE_MESSAGE;
 import static com.l7tech.common.security.rbac.EntityType.SERVICE;
+import static com.l7tech.common.security.rbac.EntityType.*;
 import static com.l7tech.common.security.rbac.MethodStereotype.*;
-import com.l7tech.common.security.rbac.RbacAdmin;
-import com.l7tech.common.security.rbac.Secured;
+import com.l7tech.common.security.rbac.*;
 import com.l7tech.common.uddi.UDDIRegistryInfo;
 import com.l7tech.common.uddi.WsdlInfo;
-import com.l7tech.common.util.CollectionUpdate;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Set;
 
 /**
  * Provides a remote interface for publishing searching and updating published services
@@ -119,14 +121,14 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods {
      * @param policyXml the policy xml document
      * @param policyType the type of policy this is
      * @param soap <code>true</code> if this policy is intended for SOAP services; <code>false</code> otherwise.
-     * @param wsdlXml the contents of the WSDL with which this policy is intended to be compatible 
+     * @param wsdl the contents of the WSDL with which this policy is intended to be compatible
      * @return the job identifier of the validation job.  Call {@link #getJobStatus(com.l7tech.common.AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
      *         and {@link #getJobResult(JobId)} to pick up the result in the form of a PolicyValidatorResult that contains
      *         policy validation warnings and errors
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
-    JobId<PolicyValidatorResult> validatePolicy(String policyXml, PolicyType policyType, boolean soap, String wsdlXml);
+    JobId<PolicyValidatorResult> validatePolicy(String policyXml, PolicyType policyType, boolean soap, Wsdl wsdl);
 
     /**
      * Validate the service policy and return the policy validation result. Only the server side validation rules
@@ -135,7 +137,7 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods {
      * @param policyXml the policy xml document
      * @param policyType the type of policy this is
      * @param soap <code>true</code> if this policy is intended for SOAP services; <code>false</code> otherwise.
-     * @param wsdlXml the contents of the WSDL with which this policy is intended to be compatible
+     * @param wsdl the contents of the WSDL with which this policy is intended to be compatible
      * @param fragments the policy fragments that were included with this policy when it was imported
      * @return the job identifier of the validation job.  Call {@link #getJobStatus(com.l7tech.common.AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
      *         and {@link #getJobResult(JobId)} to pick up the result in the form of a PolicyValidatorResult that contains
@@ -143,7 +145,7 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods {
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
-    JobId<PolicyValidatorResult> validatePolicy(String policyXml, PolicyType policyType, boolean soap, String wsdlXml, HashMap<String, Policy> fragments);
+    JobId<PolicyValidatorResult> validatePolicy(String policyXml, PolicyType policyType, boolean soap, Wsdl wsdl, HashMap<String, Policy> fragments);
 
     /**
      * Find all URLs of the WSDLs from UDDI Registry given the service name pattern.
@@ -179,7 +181,7 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods {
      */
     @Secured(types=SAMPLE_MESSAGE, stereotype=FIND_BY_PRIMARY_KEY)
     @Transactional(readOnly=true)
-    @Administrative(licensed=false)            
+    @Administrative(licensed=false)
     SampleMessage findSampleMessageById(long oid) throws FindException;
 
     /**
@@ -224,4 +226,8 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods {
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
     public Collection<UDDIRegistryInfo> getUDDIRegistryInfo();
+
+    @Transactional(readOnly=true)
+    @Secured(types=SERVICE_TEMPLATE, stereotype=MethodStereotype.FIND_ENTITIES)
+    Set<ServiceTemplate> findAllTemplates();
 }

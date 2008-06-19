@@ -1,0 +1,161 @@
+#!/bin/bash
+#
+# Startup script for the Secure Span Gateway Server
+#
+# chkconfig: - 98 02
+# description: Layer7's Secure Span Gateway Daemon \
+#	       secures and provides access for SOAP services
+# processname: tomcat
+# config: /ssg/tomcat
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+if [ ! -e /usr/local/Tarari/bin/load_xmlcp ]; then
+	echo "Tarari Not Installed"
+	exit
+fi
+
+if [ -e /etc/profile.d/ssgruntimedefs.sh ]; then
+	# this is 4.2 or lower
+	. /etc/profile.d/ssgruntimedefs.sh
+elif [ -e /ssg/etc/profile.d/tarariopts.sh ]; then
+	# this is 4.3 or higher with the /ssg/etc/profile structure
+	. /ssg/etc/profile
+else
+	echo "This is not a Layer 7 Appliance"
+	exit
+fi
+
+tarariStart="/usr/local/Tarari/bin/load_xmlcp"
+tarariStop="/usr/local/Tarari/bin/unload_xmlcp"
+USER=`whoami`
+
+if [ -e  /usr/local/Tarari/config/xml.config ]; then
+    RELEASE=`grep label /usr/local/Tarari/config/xml.config | cut -f 2 -d_ | cut -f 1-2 -d .`
+elif [ -e /usr/local/Tarari/config/raxj.config ]; then
+    RELEASE=`grep label /usr/local/Tarari/config/raxj.config | cut -f 2 -d_ | cut -f 1-2 -d .`
+else
+    echo "could not find any version information for the Tarari installation. Exiting."
+    exit 1
+fi
+
+if [ "$RELEASE" = "5.1" ]; then
+	CARD_ID="0004"
+elif [ "$RELEASE" = "4.3" ] || [ "$RELEASE" = "4.4" ]; then
+        CARD_ID="0203"
+elif [ "$RELEASE" = "4.2" ]; then
+        CARD_ID="0103";
+else
+        CARD_ID="NOT SUPPORTED";
+fi
+# FIXME: need to add other card ID's if we get new ones
+
+if [ -z "`/sbin/lspci -nv |grep Subsystem |grep 1863`" ]; then
+	# try using "Class" instead
+	if [ -z "`/sbin/lspci -nv |grep Class |grep 1863`" ]; then     
+		echo "No Tarari card was found in this system"
+    	exit
+	else 
+		CARD=`/sbin/lspci -nv |grep "Class" |grep "1863" |grep "${CARD_ID}"`
+	fi
+else
+	CARD=`/sbin/lspci -nv |grep "Subsystem" |grep "1863" |grep "${CARD_ID}"`
+fi
+
+if [ -z "${CARD}" ]; then
+        echo "This release (${RELEASE}) does not support this card (${CARD_ID})"
+        exit 
+fi
+
+start() {
+        echo -n $"Starting Tarari: "
+	if [ "$USER" = "root" ]; then
+		# Check to see if we're a 5.1 build
+		if [ "$RELEASE" = "5.1" ]; then 
+			ver=`uname -r`
+			if [ -e /usr/local/Tarari/drivers/cpp_base-$ver.ko ]; then
+				# Fix the symlink to point to current OS driver
+				cd /usr/local/Tarari/drivers/
+				rm -f cpp_base.ko
+				ln -sf cpp_base-$ver.ko  cpp_base.ko
+			else
+				echo "This kernel version ($ver) not supported with this driver kit"
+				exit 
+			fi
+		fi
+
+		$tarariStart > /dev/null 2>&1
+		RETVAL=$?
+		if [ $RETVAL != 0 ]; then 
+			return $RETVAL
+		fi
+		if [ "$RELEASE" = "5.1" ]; then
+			if [ -e /dev/cpp_user ]; then
+				chown gateway.gateway /dev/cpp_*
+				chmod 600  /dev/cpp_*
+			else
+				RETVAL=2 # enoent
+			fi
+		else
+			if [ -e /dev/cpp ]; then
+				chown gateway.gateway /dev/cpp /dev/cpp_jam
+				chmod 600  /dev/cpp /dev/cpp_jam
+			else
+				RETVAL=2 # enoent
+			fi
+		fi
+	else
+		echo "Need to be root to run this script";
+		exit
+	fi	
+	return $RETVAL
+}
+
+stop() {
+	echo -n $"Stopping Tarari: "
+	if [ "$USER" = "root" ]; then
+        	$tarariStop  > /dev/null 2>&1
+        	RETVAL=$?
+	else
+		echo "Need to be root to run this script";
+		exit
+	fi	
+        return $RETVAL
+
+}
+
+usage() {
+   cat >&1 <<-EOF
+		Usage:
+		 	${0} start             - Start the Tarari service
+		 	${0} stop <filename>   - Stop the Tarari service
+		 	${0} restart           - Restart (stop then start) the Tarari service
+	EOF
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart)
+	stop
+	start
+	;;
+  *)
+    usage
+    exit 1;
+    ;;
+esac
+
+if [ "$RETVAL" != "0" ]; then 
+	echo "           Error"
+else
+	echo "           Ok"
+fi
+
+exit $RETVAL

@@ -15,8 +15,6 @@ import javax.swing.*;
 import javax.swing.plaf.metal.MetalTheme;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.AccessControlException;
 
 /**
@@ -29,6 +27,7 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
     private static final boolean SUPPRESS_AUTO_LNF = SyspropUtil.getBoolean("com.l7tech.console.SuppressAutoLookAndFeel");
 
     private String resourcePath;
+    private boolean trusted = true;
     protected MainWindow mainWindow;
 
     protected MainWindow getMainWindow() {
@@ -46,6 +45,14 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
     }
 
     public abstract boolean isApplet();
+
+    public boolean isTrusted() {
+        return trusted;    
+    }
+
+    void setTrusted(boolean trusted) {
+        this.trusted = trusted;
+    }
 
     /** @return true if a custom look and feel should be honored.  False to do normal automatic look-and-feel selection. */
     public static boolean isSuppressAutoLookAndFeel() {

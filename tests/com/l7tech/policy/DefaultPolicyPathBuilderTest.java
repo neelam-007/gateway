@@ -22,9 +22,9 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.ReadOnlyEntityManager;
 import com.l7tech.objectmodel.PolicyHeader;
+import com.l7tech.objectmodel.GuidBasedEntityManager;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -74,7 +74,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
     }
 
     private DefaultPolicyPathBuilder getPathBuilder() {
-        return new DefaultPolicyPathBuilder((ReadOnlyEntityManager<Policy, PolicyHeader>) spring.getBean("policyManager"));
+        return new DefaultPolicyPathBuilder((GuidBasedEntityManager<Policy>) spring.getBean("policyManager"));
     }
 
     @Override

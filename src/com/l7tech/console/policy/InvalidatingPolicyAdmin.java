@@ -4,10 +4,7 @@ import com.l7tech.common.policy.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.HashMap;
+import java.util.*;
 
 /**
  * PolicyAdmin wrapper that fires invalidation events for the active policy.
@@ -32,8 +29,16 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
         return delegate.findPolicyByUniqueName(name);
     }
 
+    public Policy findPolicyByGuid(String guid) throws FindException {
+        return delegate.findPolicyByGuid(guid);
+    }
+
     public Collection<PolicyHeader> findPolicyHeadersByType( PolicyType type ) throws FindException {
         return delegate.findPolicyHeadersByType( type );
+    }
+
+    public Collection<PolicyHeader> findPolicyHeadersWithTypes(EnumSet<PolicyType> types) {
+        return delegate.findPolicyHeadersWithTypes(types);
     }
 
     public void deletePolicy( long policyOid ) throws PolicyDeletionForbiddenException, DeleteException, FindException {

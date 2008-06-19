@@ -25,6 +25,7 @@ import java.util.Set;
 public abstract class SecurityProvider extends Authorizer implements AuthenticationProvider {
     protected User user = null;
     private final Set<Permission> subjectPermissions = new HashSet<Permission>();
+    private boolean hasNoRoles = false;  // Keep track if a NoRoleException has been thrown or not.
 
     public synchronized User getUser() {
         return user;
@@ -76,11 +77,18 @@ public abstract class SecurityProvider extends Authorizer implements Authenticat
                 subjectPermissions.clear();
                 subjectPermissions.addAll(perms);
             }
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    TopComponents.getInstance().firePermissionRefresh();
-                }
-            });
+            // The below condition checking prevents SSM from hanging after services/policy fragments deleted.
+            if (! perms.isEmpty()) {
+                hasNoRoles = false;
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        TopComponents.getInstance().firePermissionRefresh();
+                    }
+                });
+            } else if (!hasNoRoles) {
+                hasNoRoles = true;  // Set it true to avoid many NoRoleExceptions thrown.
+                throw new NoRoleException();
+            }
             return perms;
         } catch (FindException e) {
             throw new RuntimeException(e);

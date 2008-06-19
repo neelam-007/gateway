@@ -26,6 +26,7 @@ export SITEMINDER_RPM="ssg-sm6-4.4-1.i386.rpm"
 export SYMANTEC_RPM="ssg-symantec-4.4-1.noarch.rpm"
 export JSAM_RPM="ssg-jsam-4.4-1.noarch.rpm"
 
-export SSG_VERSION="HEAD"
+export SSG_VERSION="4.5"
 export DB_DUMP_TGZ_FILE="dataDump_4.4.tar.gz"
 export DB_DUMP_FILE="dataDump_4.4.sql"
+

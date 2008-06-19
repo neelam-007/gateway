@@ -15,4 +15,11 @@ public interface AssertionTranslator {
      * @throws PolicyAssertionException if the source assertion cannot be translated.
      */
     Assertion translate(Assertion sourceAssertion) throws PolicyAssertionException;
+
+    /**
+     * Notifies the translator that processing of the specified assertion has completed. The translator can clean
+     * up any state that is related to the assertion.
+     * @param sourceAssertion The assertion that has finished getting processed
+     */
+    void translationFinished(Assertion sourceAssertion);
 }

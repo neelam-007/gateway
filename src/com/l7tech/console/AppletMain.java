@@ -5,18 +5,19 @@
 
 package com.l7tech.console;
 
-import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.ErrorMessageDialog;
+import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.DialogDisplayer;
-import com.l7tech.common.gui.util.SheetHolder;
 import com.l7tech.common.gui.util.SaveErrorStrategy;
+import com.l7tech.common.gui.util.SheetHolder;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.WeakSet;
+import com.l7tech.common.xml.Wsdl;
+import com.l7tech.console.logging.CascadingErrorHandler;
 import com.l7tech.console.panels.AppletContentStolenPanel;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.logging.CascadingErrorHandler;
-
+import com.l7tech.console.util.WsdlUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -100,6 +101,8 @@ public class AppletMain extends JApplet implements SheetHolder {
 
         initHelpKeyBinding();
         initBrowserSaveErrorStrategy();
+        // Install WSDL Factory that is safe for Applet use
+        Wsdl.setWSDLFactoryBuilder( WsdlUtils.getWSDLFactoryBuilder() );
     }
 
     /**
@@ -166,7 +169,7 @@ public class AppletMain extends JApplet implements SheetHolder {
 
     public void redirectToServlet() {
         try {
-            // In the url adding a time is for solving the problem in IE (since IE caches applet page). 
+            // In the url adding a time is for solving the problem in IE (since IE caches applet page).
             URL url = new URL(getDocumentBase().toString() + "?" + System.currentTimeMillis());
             getAppletContext().showDocument(url, "_self");
         } catch (MalformedURLException e) {

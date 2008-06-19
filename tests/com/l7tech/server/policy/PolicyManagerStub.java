@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.*;
 import java.util.Collection;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.EnumSet;
 
 /**
  * @author alex
@@ -24,9 +25,27 @@ public class PolicyManagerStub extends EntityManagerStub<Policy,PolicyHeader> im
     }
 
     public Collection<PolicyHeader> findHeadersByType(PolicyType type) throws FindException {
+        return findHeadersWithTypes(EnumSet.of(type));
+    }
+
+    public Policy findByGuid(String guid) throws FindException {
+        if(guid == null) {
+            return null;
+        }
+
+        for(Policy policy : entities.values()) {
+            if(guid.equals(policy.getGuid())) {
+                return policy;
+            }
+        }
+
+        return null;
+    }
+
+    public Collection<PolicyHeader> findHeadersWithTypes(EnumSet<PolicyType> types) {
         Set<PolicyHeader> hs = new HashSet<PolicyHeader>();
         for (Policy policy : entities.values()) {
-            if (policy.getType() == type) hs.add(new PolicyHeader(policy));
+            if (types.contains(policy.getType())) hs.add(new PolicyHeader(policy));
         }
         return hs;
     }

@@ -4,14 +4,13 @@ import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.ui.console.BaseConsoleStep;
 import com.l7tech.server.config.ui.console.ConfigurationWizard;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.collections.map.HashedMap;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -182,8 +181,8 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
     }
 
     private void doNtpConfigurationPrompts(String existingNtpServer) throws IOException, WizardNavigationException {
-
-        String prompt = "Enter the time server to use for synchronization ";
+        ntpBean.reset();
+        String prompt = "Enter a comma separated list of time servers to use for synchronization (ex. host1,host2) ";
         if (StringUtils.isNotEmpty(existingNtpServer))
             prompt += "[" + existingNtpServer + "]";
         else
@@ -196,7 +195,9 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
         String timeserverLine;
         String tsAddress = null;
 
+        Map<String, String> goodOnes = new HashMap<String, String>();
         do {
+            ntpBean.reset();
             isValid = false;
             timeserverLine = getData(
                     new String[]{prompt},
@@ -208,24 +209,24 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
             if (StringUtils.isEmpty(timeserverLine))
                 timeserverLine = "";
 
-            try {
-                tsAddress = consoleWizardUtils.resolveHostName(timeserverLine);
 
-                isValid = (tsAddress != null);
-
-                if (!isValid) {
-                    printText("*** " + timeserverLine + " cannot be resolved to a valid host ***" + getEolChar());
-                    isValid = false;
+                String[] timeServers = timeserverLine.split(",");
+                for (String singleTimeServer : timeServers) {
+                    try {
+                        tsAddress = consoleWizardUtils.resolveHostName(singleTimeServer);
+                        isValid = (tsAddress != null);
+                    } catch (UnknownHostException e) {
+                        isValid = false;
+                    }
+                    if (isValid) {
+                        ntpBean.addTimeServer(tsAddress, singleTimeServer);
+                    } else {
+                        printText("*** " + singleTimeServer + " cannot be resolved to a valid host ***" + getEolChar());
+                        isValid = false;
+                        break;
+                    }
                 }
-            } catch (UnknownHostException e) {
-                printText("*** " + timeserverLine + " cannot be resolved to a valid host ***" + getEolChar());
-                isValid = false;
-            }
-
         } while (!isValid);
-
-        ntpBean.setTimeServerAddress(tsAddress);
-        ntpBean.setTimeServerName(timeserverLine);
     }
 
     public String getTitle() {

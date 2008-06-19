@@ -9,6 +9,7 @@ import org.w3c.dom.Node;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 
 import java.util.Collection;
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ public abstract class ExternalReference {
      * Checks whether or not an external reference can be mapped on this local
      * system without administrator interaction.
      */
-    abstract boolean verifyReference();
+    abstract boolean verifyReference() throws InvalidPolicyStreamException;
 
     /**
      * Once an exported policy is loaded with it's references and the references are
@@ -64,7 +65,9 @@ public abstract class ExternalReference {
                 Element refEl = (Element)child;
                 // Get the type of reference
                 String refType = refEl.getAttribute(ExporterConstants.REF_TYPE_ATTRNAME);
-                if (refType.equals(IdProviderReference.class.getName())) {
+                if (refType.equals(FederatedIdProviderReference.class.getName())) {
+                    references.add(FederatedIdProviderReference.parseFromElement(refEl));
+                } else if (refType.equals(IdProviderReference.class.getName())) {
                     references.add(IdProviderReference.parseFromElement(refEl));
                 } else if (refType.equals(JMSEndpointReference.class.getName())) {
                     references.add(JMSEndpointReference.parseFromElement(refEl));

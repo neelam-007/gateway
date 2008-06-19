@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
+                  xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
+                  xmlns:qosm="http://metadata.dod.mil/mdr/ns/netops/esm/qosm"
+                  xmlns:muws1="http://docs.oasis-open.org/wsdm/muws1-2.xsd"
+                  xmlns:mows2w="http://docs.oasis-open.org/wsdm/mows-2.wsdl"
+                  xmlns:wsrf-rp="http://docs.oasis-open.org/wsrf/rp-2"
+                  xmlns:wsrf-rpw="http://docs.oasis-open.org/wsrf/rpw-2"
+                  xmlns:wsrf-rw="http://docs.oasis-open.org/wsrf/rw-2"
+                  xmlns:wsa="http://www.w3.org/2005/08/addressing"
+                  xmlns:qosmw="http://metadata.dod.mil/mdr/ns/netops/esm/qosmw"
+                  targetNamespace="http://metadata.dod.mil/mdr/ns/netops/esm/qosmw">
+
+    <wsdl:import namespace="http://docs.oasis-open.org/wsdm/mows-2.wsdl" location="wsdm/mows-2.wsdl"/>
+	<wsdl:import namespace="http://docs.oasis-open.org/wsrf/rpw-2" location="wsrf/rpw-2.wsdl"/>
+
+    <wsdl:types>
+		<xsd:schema>
+			<xsd:import namespace="http://docs.oasis-open.org/wsdm/muws1-2.xsd" schemaLocation="wsdm/muws1-2-esm.xsd"/>
+			<xsd:import namespace="http://metadata.dod.mil/mdr/ns/netops/esm/qosm" schemaLocation="qosm-0.5.xsd"/>
+			<xsd:import namespace="http://docs.oasis-open.org/wsrf/rp-2" schemaLocation="wsrf/rp-2-esm.xsd"/>
+		</xsd:schema>
+	</wsdl:types>
+
+    <wsdl:message name="RequestHeader">
+		<wsdl:part name="ResourceIdRequestHeader" element="muws1:ResourceId"/>
+	</wsdl:message>
+
+    <wsdl:portType name="QoSMetricsServicePortType" wsrf-rp:ResourceProperties="qosm:EsmProperties">
+		<wsdl:operation name="GetMultipleResourceProperties">
+			<wsdl:input name="GetMultipleResourcePropertiesRequest" message="wsrf-rpw:GetMultipleResourcePropertiesRequest" wsa:Action="http://docs.oasis-open.org/wsrf/rpw-2/GetMultipleResourceProperties/GetMultipleResourcePropertiesRequest"/>
+			<wsdl:output name="GetMultipleResourcePropertiesResponse" message="wsrf-rpw:GetMultipleResourcePropertiesResponse" wsa:Action="http://docs.oasis-open.org/wsrf/rpw-2/GetMultipleResourceProperties/GetMultipleResourcePropertiesResponse"/>
+			<wsdl:fault name="ResourceUnknownFault" message="wsrf-rw:ResourceUnknownFault" wsa:Action="http://docs.oasis-open.org/wsrf/rpw-2/GetMultipleResourceProperties/ResourceUnknownFault"/>
+			<wsdl:fault name="ResourceUnavailableFault" message="wsrf-rw:ResourceUnavailableFault" wsa:Action="http://docs.oasis-open.org/wsrf/rpw-2/GetMultipleResourceProperties/ResourceUnavailableFault"/>
+			<wsdl:fault name="InvalidResourcePropertyQNameFault" message="wsrf-rpw:InvalidResourcePropertyQNameFault" wsa:Action="http://docs.oasis-open.org/wsrf/rpw-2/GetMultipleResourceProperties/InvalidResourcePropertyQNameFault"/>
+		</wsdl:operation>
+	</wsdl:portType>
+
+    <wsdl:binding name="QoSMetricsServiceBinding" type="qosmw:QoSMetricsServicePortType">
+		<soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+		<wsdl:operation name="GetMultipleResourceProperties">
+			<soap:operation style="document"/>
+			<wsdl:input>
+				<soap:header message="qosmw:RequestHeader" part="ResourceIdRequestHeader" use="literal"/>
+				<soap:body use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+			</wsdl:output>
+			<wsdl:fault name="ResourceUnknownFault">
+				<soap:fault name="ResourceUnknownFault" use="literal"/>
+			</wsdl:fault>
+			<wsdl:fault name="ResourceUnavailableFault">
+				<soap:fault name="ResourceUnavailableFault" use="literal"/>
+			</wsdl:fault>
+			<wsdl:fault name="InvalidResourcePropertyQNameFault">
+				<soap:fault name="InvalidResourcePropertyQNameFault" use="literal"/>
+			</wsdl:fault>
+		</wsdl:operation>
+	</wsdl:binding>
+
+    <wsdl:service name="QoSMetricsService">
+      <wsdl:port binding="qosmw:QoSMetricsServiceBinding" name="QoSMetrics">
+         <soap:address location="^%^%_HOSTPORT_%^%^/ssg/wsdm/qosmetrics^%^%_SERVICEIDQUERY_%^%^"/>
+      </wsdl:port>
+   </wsdl:service>
+
+</wsdl:definitions>

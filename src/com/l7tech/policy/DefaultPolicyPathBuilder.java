@@ -4,6 +4,7 @@ import com.l7tech.common.policy.IncludeAssertionDereferenceTranslator;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.objectmodel.ReadOnlyEntityManager;
 import com.l7tech.objectmodel.PolicyHeader;
+import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionTranslator;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -39,13 +40,13 @@ import java.io.IOException;
  * @version 1.0
  */
 public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
-    private final ReadOnlyEntityManager<Policy, PolicyHeader> policyFinder;
+    private final GuidBasedEntityManager<Policy> policyFinder;
 
     /**
      * Protected constructor, the class cannot be instantiated
      * directly
      */
-    protected DefaultPolicyPathBuilder(final ReadOnlyEntityManager<Policy, PolicyHeader> policyFinder) {
+    protected DefaultPolicyPathBuilder(final GuidBasedEntityManager<Policy> policyFinder) {
         this.policyFinder = policyFinder;
     }
 
@@ -53,12 +54,12 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      * Put includes inline
      */
     @Override
-    public Assertion inlineIncludes(final Assertion assertion, final Set<Long> includedPolicyOids) throws  PolicyAssertionException, InterruptedException {
+    public Assertion inlineIncludes(final Assertion assertion, final Set<String> includedPolicyGuids) throws  PolicyAssertionException, InterruptedException {
         final Assertion rootWithIncludes;
 
         if ( Assertion.contains(assertion, Include.class) ) {
-            Set<Long> oids = includedPolicyOids==null ? new HashSet<Long>() : includedPolicyOids;
-            final AssertionTranslator translator = new IncludeAssertionDereferenceTranslator(policyFinder, oids, false);
+            Set<String> guids = includedPolicyGuids==null ? new HashSet<String>() : includedPolicyGuids;
+            final AssertionTranslator translator = new IncludeAssertionDereferenceTranslator(policyFinder, guids, false);
             try {
                 rootWithIncludes = translate(WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(assertion)), translator);
             } catch (IOException e) {
@@ -95,6 +96,48 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
     }
 
     /**
+     * Essentially a helper method that can pre-proecess the assertion for any include fragments problems.  If there
+     * were any PolicyAssertionException found, then it will accumuldate into a list then returned back to the caller
+     * to decide what to do with the exceptions.
+     *
+     * @param assertion The assertion to process for Include fragments
+     * @return  Returns a list of PolicyAssertionException, if any.  Will never return NULL.
+     */
+    public List<PolicyAssertionException> preProcessIncludeFragments(Assertion assertion) {
+
+        //list of PolicyAssertionExceptions collected so far
+        List<PolicyAssertionException> policyExceptions = new ArrayList<PolicyAssertionException>();
+        IncludeAssertionDereferenceTranslator iadt = new IncludeAssertionDereferenceTranslator(policyFinder, new HashSet<String>(), false);
+
+        //determine if this is a composite assertion, if so, then there will be more assertions to traverse.  Recursively
+        //call this method on the composite assertion children
+        if (assertion instanceof CompositeAssertion) {
+            final CompositeAssertion compositeAssertion = (CompositeAssertion) assertion;
+            final List children = compositeAssertion.getChildren();
+            int numOfChildren = children.size();
+
+            //recursive call on the children assertion
+            if (numOfChildren > 0) {
+                for (int i = 0; i < numOfChildren; i++) {
+                    List<PolicyAssertionException> paeList = preProcessIncludeFragments((Assertion) children.get(i));
+                    policyExceptions.addAll(paeList);   //add the policy assertion exception to the list so far
+                }
+            }
+        }
+
+        //if we are at the leaf (the only kid), then we'll try to process this kid
+        try {
+            iadt.translate(assertion);
+        }
+        catch (PolicyAssertionException pae) {
+            //got policy assertion exception problem, so we'll need to add it to the list
+            policyExceptions.add(pae);
+        }
+
+        return policyExceptions;
+    }
+
+    /**
      * generate possible assertion paths
      *
      * @param assertion the root assertion
@@ -102,7 +145,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
     private Set<AssertionPath> generatePaths(Assertion assertion, boolean processIncludes) throws InterruptedException, PolicyAssertionException {
         Set<AssertionPath> assertionPaths = new LinkedHashSet<AssertionPath>();
         Iterator preorder = processIncludes ?
-                assertion.preorderIterator(new IncludeAssertionDereferenceTranslator(policyFinder, new HashSet<Long>(), false)) :
+                assertion.preorderIterator(new IncludeAssertionDereferenceTranslator(policyFinder, new HashSet<String>(), false)) :
                 assertion.preorderIterator();
         final AssertionPath initPath = new AssertionPath(new Assertion[]{(Assertion)preorder.next()});
         assertionPaths.add(initPath);
@@ -263,6 +306,8 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
                 }
             }
         }
+
+        translator.translationFinished(assertion);
 
         return translated;
     }

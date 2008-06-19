@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 
 import java.util.logging.Logger;
 import java.util.Set;
+import java.util.List;
 
 /**
  * A class for building policy assertion paths.
@@ -33,10 +34,10 @@ public abstract class PolicyPathBuilder {
      * <p>This will change the structure of the given tree if there are any includes.</p>
      *
      * @param assertion The assertion to modify
-     * @param includedOids Set of included policy oids (optional)
+     * @param includedGuids Set of included policy oids (optional)
      * @return the modified assertion.
      */
-    public abstract Assertion inlineIncludes(Assertion assertion, Set<Long> includedOids) throws InterruptedException, PolicyAssertionException;
+    public abstract Assertion inlineIncludes(Assertion assertion, Set<String> includedGuids) throws InterruptedException, PolicyAssertionException;
 
     /**
      * Generate the policy path result (policy assertion paths for
@@ -48,6 +49,18 @@ public abstract class PolicyPathBuilder {
      */
     public PolicyPathResult generate(Assertion assertion) throws InterruptedException, PolicyAssertionException {
         return generate( assertion, true );
+    }
+
+    /**
+     * Essentially a helper method that can pre-proecess the assertion for any include fragments problems.  If there
+     * were any PolicyAssertionException found, then it will accumuldate into a list then returned back to the caller
+     * to decide what to do with the exceptions.
+     *
+     * @param assertion The assertion to process for Include fragments
+     * @return  Returns a list of PolicyAssertionException, if any.  Will never return NULL.
+     */
+    public List<PolicyAssertionException> preProcessIncludeFragments( Assertion assertion ) {
+        return preProcessIncludeFragments( assertion );
     }
 
     /**

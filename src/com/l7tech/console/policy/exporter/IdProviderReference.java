@@ -12,7 +12,9 @@ import com.l7tech.identity.Group;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.UsesEntities;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
@@ -95,7 +97,7 @@ public class IdProviderReference extends ExternalReference {
         return output;
     }
 
-    private IdProviderReference() {
+    protected IdProviderReference() {
         super();
     }
 
@@ -276,6 +278,27 @@ public class IdProviderReference extends ExternalReference {
                         return false;
                     }
                 }
+            } else if(assertionToLocalize instanceof UsesEntities) {
+                UsesEntities entitiesUser = (UsesEntities)assertionToLocalize;
+                for(EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
+                    if(entityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) && entityHeader.getOid() == providerId) {
+                        if(localizeType == LocaliseAction.REPLACE) {
+                            if(locallyMatchingProviderId != providerId) {
+                                EntityHeader newEntityHeader = new EntityHeader(Long.toString(locallyMatchingProviderId), EntityType.ID_PROVIDER_CONFIG, null, null);
+                                entitiesUser.replaceEntity(entityHeader, newEntityHeader);
+
+                                logger.info("The provider id of the imported id assertion has been changed " +
+                                        "from " + providerId + " to " + locallyMatchingProviderId);
+                                
+                                break;
+                            }
+                        } else if(localizeType == LocaliseAction.DELETE) {
+                            logger.info("Deleted this assertion from the tree.");
+                            return false;
+                        }
+                    }
+                    //TODO Add support fo updating other types of entities (users, groups, etc)
+                }
             }
         }
         return true;
@@ -287,71 +310,80 @@ public class IdProviderReference extends ExternalReference {
      * 2. if found by login but not by id, switch the id
      * 3. if found by id, make sure the login fits the assertion's login
      */
-    private void localizeLoginOrId(IdentityAssertion a) {
-        long providerId = a.getIdentityProviderOid();
+    protected void localizeLoginOrId(IdentityAssertion a) {
         IdentityAdmin idAdmin = Registry.getDefault().getIdentityAdmin();
         try {
             if (a instanceof SpecificUser) {
                 SpecificUser su = (SpecificUser)a;
-                User userFromId = idAdmin.findUserByID(providerId, su.getUserUid());
-                if (userFromId != null) {
-                    if (userFromId.getLogin() != null && !userFromId.getLogin().equals(su.getUserLogin())) {
-                        String oldLogin = su.getUserLogin();
-                        su.setUserLogin(userFromId.getLogin());
-                        logger.info("The login was changed from " + oldLogin + " to " + userFromId.getLogin());
-                    }
-                } else {
-                    User userFromLogin = idAdmin.findUserByLogin(providerId, su.getUserLogin());
-                    if (userFromLogin != null) {
-                        logger.info("Changing " + su.getUserLogin() + "'s id from " +
-                                    su.getUserUid() + " to " + userFromLogin.getId());
-                        su.setUserUid(userFromLogin.getId());
-                    } else {
-                        // the user is not found with the id nor the login
-                        String userRef = su.getUserLogin();
-                        if (userRef == null || userRef.length() < 1) {
-                            userRef = su.getUserUid();
-                        }
-                        String msg = "The user \"" + userRef + "\" does not exist on\n" +
-                                     "the target SecureSpan Gateway. You should remove\n" +
-                                     "or replace the identity assertion from the policy.";
-                        logger.warning(msg);
-                        JOptionPane.showMessageDialog(null, msg, "Unresolved identity", JOptionPane.WARNING_MESSAGE);
-                    }
-                }
+                localizeLoginOrIdForSpecificUser(idAdmin, su);
             } else if (a instanceof MemberOfGroup) {
                 MemberOfGroup mog = (MemberOfGroup) a;
-                Group groupFromId = idAdmin.findGroupByID(providerId, mog.getGroupId());
-                if ( groupFromId != null ) {
-                    if (groupFromId.getName() != null && !groupFromId.getName().equals(mog.getGroupName())) {
-                        String oldName = mog.getGroupName();
-                        mog.setGroupName(groupFromId.getName());
-                        logger.info("The group name was changed from " + oldName + " to " + groupFromId.getName());
-                    }
-                } else {
-                    Group groupFromName = idAdmin.findGroupByName(providerId, mog.getGroupName());
-                    if (groupFromName != null) {
-                        logger.info("Changing " + mog.getGroupName() + "'s id from " +
-                                    mog.getGroupId() + " to " + groupFromName.getId());
-                        mog.setGroupId(groupFromName.getId());
-                    } else {
-                        // group not found for id or name
-                        String groupRef = mog.getGroupName();
-                        if (groupRef == null || groupRef.length() < 1) {
-                            groupRef = mog.getGroupId();
-                        }
-                        String msg = "The group \"" + groupRef + "\" does not exist on\n" +
-                                     "the target SecureSpan Gateway. You should remove\n" +
-                                     "or replace the identity assertion from the policy.";
-                        logger.warning(msg);
-                        JOptionPane.showMessageDialog(null, msg, "Unresolved identity", JOptionPane.WARNING_MESSAGE);
-                    }
-                }
+                localizeLoginOrIdForSpecificGroup(idAdmin, mog);
             }
         } catch (FindException e) {
             logger.log(Level.WARNING, "problem getting identity", e);
         } catch (RuntimeException e) {
             logger.log(Level.WARNING, "problem getting identity", e);
+        }
+    }
+
+    protected void localizeLoginOrIdForSpecificUser(IdentityAdmin idAdmin, SpecificUser su) throws FindException {
+        long providerId = su.getIdentityProviderOid();
+        User userFromId = idAdmin.findUserByID(providerId, su.getUserUid());
+        if (userFromId != null) {
+            if (userFromId.getLogin() != null && !userFromId.getLogin().equals(su.getUserLogin())) {
+                String oldLogin = su.getUserLogin();
+                su.setUserLogin(userFromId.getLogin());
+                logger.info("The login was changed from " + oldLogin + " to " + userFromId.getLogin());
+            }
+        } else {
+            User userFromLogin = idAdmin.findUserByLogin(providerId, su.getUserLogin());
+            if (userFromLogin != null) {
+                logger.info("Changing " + su.getUserLogin() + "'s id from " +
+                        su.getUserUid() + " to " + userFromLogin.getId());
+                su.setUserUid(userFromLogin.getId());
+            } else {
+                // the user is not found with the id nor the login
+                String userRef = su.getUserLogin();
+                if (userRef == null || userRef.length() < 1) {
+                    userRef = su.getUserUid();
+                }
+                String msg = "The user \"" + userRef + "\" does not exist on\n" +
+                        "the target SecureSpan Gateway. You should remove\n" +
+                        "or replace the identity assertion from the policy.";
+                logger.warning(msg);
+                JOptionPane.showMessageDialog(null, msg, "Unresolved identity", JOptionPane.WARNING_MESSAGE);
+            }
+        }
+    }
+
+    protected void localizeLoginOrIdForSpecificGroup(IdentityAdmin idAdmin, MemberOfGroup mog) throws FindException {
+        long providerId = mog.getIdentityProviderOid();
+        Group groupFromId = idAdmin.findGroupByID(providerId, mog.getGroupId());
+        if ( groupFromId != null ) {
+            if (groupFromId.getName() != null && !groupFromId.getName().equals(mog.getGroupName())) {
+                String oldName = mog.getGroupName();
+                mog.setGroupName(groupFromId.getName());
+                logger.info("The group name was changed from " + oldName + " to " + groupFromId.getName());
+            }
+        } else {
+            Group groupFromName = idAdmin.findGroupByName(providerId, mog.getGroupName());
+            if (groupFromName != null) {
+                logger.info("Changing " + mog.getGroupName() + "'s id from " +
+                        mog.getGroupId() + " to " + groupFromName.getId());
+                mog.setGroupId(groupFromName.getId());
+            } else {
+                // group not found for id or name
+                String groupRef = mog.getGroupName();
+                if (groupRef == null || groupRef.length() < 1) {
+                    groupRef = mog.getGroupId();
+                }
+                String msg = "The group \"" + groupRef + "\" does not exist on\n" +
+                        "the target SecureSpan Gateway. You should remove\n" +
+                        "or replace the identity assertion from the policy.";
+                logger.warning(msg);
+                JOptionPane.showMessageDialog(null, msg, "Unresolved identity", JOptionPane.WARNING_MESSAGE);
+            }
         }
     }
 
@@ -456,11 +488,11 @@ public class IdProviderReference extends ExternalReference {
     }
 
     private LocaliseAction localizeType = null;
-    private long providerId;
+    protected long providerId;
     private long locallyMatchingProviderId;
-    private int idProviderTypeVal;
-    private String providerName;
-    private String idProviderConfProps;
+    protected int idProviderTypeVal;
+    protected String providerName;
+    protected String idProviderConfProps;
     private final Logger logger = Logger.getLogger(IdProviderReference.class.getName());
 
     public static final String REF_EL_NAME = "IDProviderReference";

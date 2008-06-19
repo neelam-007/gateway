@@ -31,15 +31,40 @@ public class KerberosAdminImpl implements KerberosAdmin {
     }
 
     public String getPrincipal() throws KerberosException {
+        final KerberosException[] exceptionHolder = new KerberosException[1];
+        final String[] principalHolder = new String[1];
+
+        Thread testThread = new Thread( new Runnable() {
+            public void run() {
+                try {
+                    principalHolder[0] = KerberosClient.getKerberosAcceptPrincipal(true);
+                } catch(KerberosException ke) {
+                    // Not really an error, since this is usually a configuration problem.
+                    // Note that we still throw the exception back to the caller so
+                    // the admin knows what happened
+                    logger.log(Level.INFO, "Kerberos error getting principal", ExceptionUtils.getDebugException(ke));
+                    exceptionHolder[0] = new KerberosException(ke.getMessage());
+                }
+            }
+        }, "KerberosConfigurationTester" );
+
+        testThread.start();
+
         try {
-            return KerberosClient.getKerberosAcceptPrincipal(true);
-        } catch(KerberosException ke) {
-            // Not really an error, since this is usually a configuration problem.
-            // Note that we still throw the exception back to the caller so
-            // the admin knows what happened
-            logger.log(Level.INFO, "Kerberos error getting principal", ExceptionUtils.getDebugException(ke));
-            throw new KerberosException(ke.getMessage());
+            testThread.join( 30000 );
+        } catch ( InterruptedException ie ) {
+            throw new KerberosConfigException("Kerberos configuration error '"+ ExceptionUtils.getMessage(ie)+"'.", ie);
         }
+
+        if ( testThread.isAlive() ) {
+            throw new KerberosException("Kerberos configuration error 'Authentication timed out'.");
+        }
+
+        if ( exceptionHolder[0] != null ) {
+            throw exceptionHolder[0];
+        }
+
+        return principalHolder[0];
     }
 
     public Map<String,String> getConfiguration() {

@@ -1,7 +1,7 @@
 ;NSIS Modern User Interface version 1.63
 ;based on Basic Example Script, which was Written by Joost Verburg
 
-!define J2RE "jre1.6.0_03"  ;Name of directory containing JRE to copy from
+!define J2RE "jre1.6.0_06"  ;Name of directory containing JRE to copy from
 !ifndef J2RE_DIR
   ;Windows mapped to drive X:
   !define J2RE_DIR "X:\"

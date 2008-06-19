@@ -526,8 +526,8 @@ public class SoapMessageGenerator {
       throws MalformedURLException, IOException, SAXException {
         List eeList;
         String targetNamespace = wsdl.getDefinition().getTargetNamespace();
-        Types types = wsdl.getTypes();
-        if (types == null) {
+        Collection<Types> types = wsdl.getTypes();
+        if (types == null || types.isEmpty()) {
             // look for schema from other place
             Element elem = Wsdl.getSchemaElement(wsdl.getDefinition(), new Wsdl.UrlGetter() {
                 public String get(String url) throws IOException {
@@ -539,7 +539,7 @@ public class SoapMessageGenerator {
             }
 
         } else {
-            eeList = types.getExtensibilityElements();
+            eeList = types.iterator().next().getExtensibilityElements();
             if (eeList == null || eeList.isEmpty()) return new NameTypePair[]{};
 
             Iterator iter = eeList.iterator();

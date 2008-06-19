@@ -11,11 +11,13 @@ import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -39,16 +41,34 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
         this.auditor = new Auditor(this, springContext, logger);
     }
 
+    @Override
+    public AssertionStatus checkRequest( PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
+        AssertionStatus status = super.checkRequest( context );
+
+        if ( status == AssertionStatus.NONE ) {
+            LoginCredentials creds = context.getLastCredentials();
+            if ( creds != null && creds.getPayload() instanceof KerberosServiceTicket) {
+                KerberosServiceTicket ticket = (KerberosServiceTicket) creds.getPayload();
+                context.setVariable( "kerberos.realm", extractRealm(ticket.getClientPrincipalName()) );        
+            }
+        }
+
+        return status;
+    }
+
     //- PROTECTED
 
+    @Override
     protected Map challengeParams(Message request, Map authParams) {
         return Collections.EMPTY_MAP;
     }
 
+    @Override
     protected String scheme() {
         return ServerHttpNegotiate.SCHEME;
     }
 
+    @Override
     protected LoginCredentials findCredentials(Message request, Map authParams) throws IOException, CredentialFinderException {
         HttpRequestKnob httpRequestKnob = request.getHttpRequestKnob();
         String wwwAuthorize = httpRequestKnob.getHeaderSingleValue(HttpConstants.HEADER_AUTHORIZATION);
@@ -56,10 +76,12 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
         return findCredentials( wwwAuthorize, connectionId );
     }
 
+    @Override
     protected String realm() {
         return "";
     }
 
+    @Override
     protected AssertionStatus checkAuthParams(Map authParams) {
         return AssertionStatus.NONE;
     }
@@ -71,6 +93,7 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
     private final ThreadLocal connectionCredentials = new ThreadLocal(); // stores Object[] = id, LoginCredentials
     private final Auditor auditor;
 
+    @SuppressWarnings( { "RedundantArrayCreation" } )
     private LoginCredentials findCredentials( String wwwAuthorize, Object connectionId ) throws IOException {
         if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) {
             LoginCredentials loginCreds = getConnectionCredentials(connectionId);
@@ -134,10 +157,12 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
         }
     }
 
+    @SuppressWarnings( { "unchecked" } )
     private void setConnectionCredentials(Object id, LoginCredentials credentials) {
         connectionCredentials.set(new Object[]{id,credentials});
     }
 
+    @SuppressWarnings( { "unchecked" } )
     private LoginCredentials getConnectionCredentials(Object id) {
         LoginCredentials credentials = null;
         Object[] threadCachedCreds = (Object[]) connectionCredentials.get();
@@ -153,4 +178,15 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource implements S
 
         return credentials;
     }
+
+    private String extractRealm( final String principal ) {
+        String realm = "";
+
+        int index = principal.lastIndexOf( "@" );
+        if ( index > -1 ) {
+            realm = principal.substring( index + 1 );
+        }
+
+        return realm;
+    }    
 }

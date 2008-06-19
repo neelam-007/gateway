@@ -7,6 +7,7 @@
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.transport.jms.JmsConnection;
+import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 
 import javax.jms.*;
 import javax.naming.Context;
@@ -188,6 +189,18 @@ public class JmsUtil {
         }
     }
 
+
+    public static JmsBag connect(final JmsEndpointConfig endpointCfg,
+                                 final boolean transactional,
+                                 final int acknowledgementMode)
+        throws JmsConfigException, JMSException, NamingException
+    {
+        return connect(endpointCfg.getConnection(),
+                endpointCfg.getEndpoint().getPasswordAuthentication(),
+                endpointCfg.getPropertyMapper(),
+                transactional, acknowledgementMode);
+    }
+
     private static void logit( Throwable t ) {
         logger.log( Level.WARNING, "Exception during cleanup", t);
     }
@@ -198,6 +211,28 @@ public class JmsUtil {
     public static JmsBag connect(JmsConnection connection) throws JMSException, NamingException, JmsConfigException {
         return connect(connection, null, null, false, Session.AUTO_ACKNOWLEDGE);
     }
+
+
+    public static JmsBag connect(Context jndiContext,
+                                 Connection conn,
+                                 ConnectionFactory factory,
+                                 boolean transactional, int acknowledgementMode) throws JMSException
+    {
+        // check to see whether we need to create a QueueSession or TopicSession
+        Session sess;
+        if (factory instanceof QueueConnectionFactory) {
+            sess = ((QueueConnection)conn).createQueueSession(transactional, acknowledgementMode);
+
+        } else if (factory instanceof TopicConnectionFactory) {
+            sess = ((TopicConnection)conn).createTopicSession(transactional, acknowledgementMode);
+
+        } else {
+            sess = conn.createSession(transactional, acknowledgementMode);
+        }
+
+        return new JmsBag(jndiContext, factory, conn, sess);
+    }
+
 
     static void closeQuietly(MessageConsumer consumer) {
         if (consumer == null) return;

@@ -6,6 +6,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.wsp.TypeMappingUtils;
+import com.l7tech.policy.variable.InvalidContextVariableException;
 import com.l7tech.console.policy.EnumPropertyEditor;
 
 import javax.swing.*;
@@ -100,11 +101,9 @@ public class DefaultAssertionPropertiesEditor<AT extends Assertion> extends Asse
                 } catch (IllegalAccessException e1) {
                     throw new RuntimeException(e1); // can't happen
                 } catch (BadViewValueException bv) {
-                    DialogDisplayer.showMessageDialog(DefaultAssertionPropertiesEditor.this,
+                    DialogDisplayer.showMessageDialog(DefaultAssertionPropertiesEditor.this, null,
                                                       "Invalid value for property " + bv.row.prop.getDisplayName() + ": " +
-                                                            ExceptionUtils.getMessage(bv),
-                                                      "Error",
-                                                      JOptionPane.ERROR_MESSAGE, null);
+                                                            ExceptionUtils.getMessage(bv), null);
                     return;
                 }
 
@@ -139,7 +138,6 @@ public class DefaultAssertionPropertiesEditor<AT extends Assertion> extends Asse
         gc.insets = new Insets(2, 18, 8, 8);
         main.add(buttonPanel, gc);
         gc.insets = new Insets(6, 6, 6, 6);
-
 
         try {
             Set<PropertyDescriptor> props = getWspProperties(c);
@@ -282,7 +280,15 @@ public class DefaultAssertionPropertiesEditor<AT extends Assertion> extends Asse
             } catch (IllegalAccessException e) {
                 logger.log(Level.WARNING, ExceptionUtils.getMessage(e), e);
             } catch (InvocationTargetException e) {
-                logger.log(Level.WARNING, ExceptionUtils.getMessage(e), e);
+                if (ExceptionUtils.causedBy(e, InvalidContextVariableException.class)) {
+                    // This block is to handle the case, where InvalidContextVariableException  
+                    // occurs during validating context variable.
+                    confirmed = false;
+                    logger.log(Level.WARNING, ExceptionUtils.getMessage(e));
+                    throw new BadViewValueException(ExceptionUtils.getMessage(e), e, row);
+                } else {
+                    logger.log(Level.WARNING, ExceptionUtils.getMessage(e), e);
+                }
             }
         }
 

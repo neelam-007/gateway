@@ -22,9 +22,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -52,6 +50,69 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
     }
 
     /**
+     * Produce output collection from document set.
+     *
+     * @param baseUri The URI of the base WSDL
+     * @param uriToContent map of URIs to resources
+     * @param includeBase Include the base document in the tracked set
+     * @param stripSchemas True to replace any "wsdl:import"'d schema xmls with dummy WSDL documents.
+     * @param stripDoctypes Strip the document type
+     * @return The collection of resources (base first if included)
+     * @throws IOException If an IO error occurs
+     */
+    public static Collection<WSDLResource> toWSDLResources(String baseUri,
+                                                           Map<String,String> uriToContent,
+                                                           boolean includeBase,
+                                                           boolean stripSchemas,
+                                                           boolean stripDoctypes) throws IOException {
+        List<WSDLResource> resources = new ArrayList<WSDLResource>();
+
+        if ( includeBase ) {
+            String content = uriToContent.get( baseUri );
+            if ( content == null ) {
+                throw new IOException("Missing resource '"+baseUri+"'.");
+            }
+
+            InputSource source = new InputSource();
+            source.setSystemId( baseUri );
+            source.setCharacterStream( new StringReader(content) );
+            resources.add( buildResource( source, stripDoctypes, stripSchemas ) );
+        }
+
+        for ( Map.Entry<String,String> resourceEntry : uriToContent.entrySet() ) {
+            String uri = resourceEntry.getKey();
+            if ( !baseUri.equals(uri) ) {
+                String content = resourceEntry.getValue();
+
+                InputSource source = new InputSource();
+                source.setSystemId( uri );
+                source.setCharacterStream( new StringReader(content) );
+                resources.add( buildResource( source, stripDoctypes, stripSchemas ) );                                
+            }
+        }
+
+        return Collections.unmodifiableCollection(resources);
+    }
+
+    /**
+     * Process the given resource according to the passed flags.
+     *
+     * @param resourceUri The URI of the resource
+     * @param resourceContent The content of the resource
+     * @param stripSchemas True to replace any "wsdl:import"'d schema xmls with dummy WSDL documents.
+     * @param stripDoctypes Strip the document type
+     * @return The processed resource
+     * @throws IOException If an IO error occurs
+     */
+    public static String processResource(String resourceUri, String resourceContent, boolean stripSchemas, boolean stripDoctypes) throws IOException {
+        InputSource source = new InputSource();
+        source.setSystemId( resourceUri );
+        source.setCharacterStream( new StringReader(resourceContent) );
+        WSDLResource resource = buildResource( source, stripDoctypes, stripSchemas );
+        return resource.getWsdl();
+    }
+
+    /**
      * Get the collection of retrieved documents.
      *
      * <p>The order is arbitrary.</p>
@@ -73,7 +134,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
                 InputSource is = delegate.getBaseInputSource();
                 if (is != null) {
                     uri = is.getSystemId();
-                    WSDLResource resource = buildResource(is);
+                    WSDLResource resource = buildResource(is, stripDoctypes, stripSchemas);
                     baseInputSource = resource.toInputSource();
                     resources.add(resource);
                 }
@@ -108,7 +169,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
             InputSource is = delegate.getImportInputSource(parentLocation, importLocation);
             if (is != null) {
                 uri = is.getSystemId();
-                WSDLResource resource = buildResource(is);
+                WSDLResource resource = buildResource(is, stripDoctypes, stripSchemas);
                 inputSource = resource.toInputSource();
                 resources.add(resource);
             }
@@ -184,7 +245,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
     /**
      * Build a WSDL resource for the given input
      */
-    private WSDLResource buildResource(InputSource inputSource) throws IOException {
+    private static WSDLResource buildResource(InputSource inputSource, boolean stripDoctypes, boolean stripSchemas) throws IOException {
         String uri = inputSource.getSystemId();
         String wsdl = null;
 
@@ -232,7 +293,10 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
         if (stripDoctypes || stripSchemas) {
             try {
                 DocumentBuilder db = getDocumentBuilder();
-                Document document = db.parse(new InputSource(new StringReader(wsdl)));
+                InputSource source = new InputSource();
+                source.setSystemId(uri);
+                source.setCharacterStream(new StringReader(wsdl));
+                Document document = db.parse(source);
                 if (stripSchemas && SchemaUtil.isSchema(document)) {
                     wsdl = NOOP_WSDL;
                 } else if (stripDoctypes) {
@@ -250,7 +314,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
     /**
      * Get a DOM level 3 builder
      */
-    private DocumentBuilder getDocumentBuilder() {
+    private static DocumentBuilder getDocumentBuilder() {
         try {
             DocumentBuilderFactory dbf = new com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl();
             dbf.setValidating(false);
@@ -266,7 +330,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
     /**
      * Load a WSDL string from the given URL
      */
-    private String loadFromUrl(InputSource inputSource, URLConnection connection, InputStream in) throws IOException {
+    private static String loadFromUrl(InputSource inputSource, URLConnection connection, InputStream in) throws IOException {
         String encoding = inputSource.getEncoding();
         in = new ByteOrderMarkInputStream(in);
         if (encoding == null) {
@@ -298,7 +362,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
     /**
      * Load a WSDL string from the given reader
      */
-    private String loadFromReader(InputSource inputSource, Reader reader) throws IOException {
+    private static String loadFromReader(InputSource inputSource, Reader reader) throws IOException {
         String uri = inputSource.getSystemId();
         StringBuffer buffer = new StringBuffer(4096);
         char[] charbuffer = new char[4096];
@@ -318,7 +382,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
     /**
      * Load a WSDL string from the given input stream
      */
-    private String loadFromStream(InputSource inputSource, InputStream in) throws IOException {
+    private static String loadFromStream(InputSource inputSource, InputStream in) throws IOException {
         in = new ByteOrderMarkInputStream(in);
         String encoding = inputSource.getEncoding();
         if (encoding == null) {
@@ -342,7 +406,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
      *
      * Probably should have just used a canonicalizer ...
      */
-    private String stripExternalEntities(Document document) throws SAXException, IOException {
+    private static String stripExternalEntities(Document document) throws SAXException, IOException {
         DOMImplementationLS dils = (DOMImplementationLS) document.getImplementation();
         LSSerializer lsser = dils.createLSSerializer();
         DOMConfiguration lsserDOMConfig = lsser.getDomConfig();

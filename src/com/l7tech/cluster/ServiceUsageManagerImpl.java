@@ -36,6 +36,10 @@ public class ServiceUsageManagerImpl extends HibernateDaoSupport implements Serv
                     " in class " + ServiceUsage.class.getName() +
                     " where " + TABLE_NAME + "." + NODE_ID_COLUMN_NAME + " = ?";
 
+    private final String HQL_DELETE_BY_NODE =
+            "delete from " + ServiceUsage.class.getName() + " as " + TABLE_NAME +
+                    " where " + TABLE_NAME + "." + NODE_ID_COLUMN_NAME + " = :nodeid";
+
     private final String HQL_FIND_ALL =
             "from " + TABLE_NAME + " in class " + ServiceUsage.class.getName();
 
@@ -133,12 +137,12 @@ public class ServiceUsageManagerImpl extends HibernateDaoSupport implements Serv
     public void clear(final String nodeid) throws DeleteException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                    Query q = session.createQuery(HQL_FIND_BY_NODE);
-                    q.setString(0, nodeid);
-                    for (Iterator i = q.iterate(); i.hasNext();) {
-                        session.delete(i.next());
-                    }
+                public Object doInHibernate(final Session session) throws HibernateException, SQLException {
+                    // Use a bulk delete to ensure that a replicable SQL statement is run
+                    // even if there is nothing in the table (see bug 4615)
+                    session.createQuery( HQL_DELETE_BY_NODE )
+                            .setString("nodeid", nodeid)
+                            .executeUpdate();
                     return null;
                 }
             });

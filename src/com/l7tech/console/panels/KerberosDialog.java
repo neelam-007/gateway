@@ -5,6 +5,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.Date;
 import java.util.Map;
+import java.util.TimerTask;
+import java.util.logging.Level;
 import java.text.SimpleDateFormat;
 import javax.swing.*;
 
@@ -12,7 +14,9 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.kerberos.Keytab;
 import com.l7tech.common.security.kerberos.KerberosException;
+import com.l7tech.common.util.Background;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.logging.ErrorManager;
 
 /**
  * Dialog for displaying Kerberos configuration information.
@@ -33,6 +37,15 @@ public class KerberosDialog extends JDialog {
         init();
     }
 
+    @Override
+    public void setVisible( final boolean visible ) {
+        if ( visible ) {
+            testConfiguration();
+        }
+
+        super.setVisible( visible );
+    }
+
     //- PRIVATE
 
     private JPanel mainPanel;
@@ -48,6 +61,8 @@ public class KerberosDialog extends JDialog {
     private JLabel summaryLabel;
     private JLabel encryptionTypesLabel;
     private JLabel errorMessageLabel;
+
+    private boolean validKeytab = false;
 
     private void init() {
         setTitle("Kerberos Configuration");
@@ -81,16 +96,6 @@ public class KerberosDialog extends JDialog {
                 if (realm != null) configRealmLabel.setText(realm);
             }
 
-            boolean valid = false;
-            try {
-                kerberosAdmin.getPrincipal();
-                valid = true;
-            }
-            catch(KerberosException e) {
-                errorMessageLabel.setVisible( true );
-                errorMessageLabel.setText( e.getMessage() );
-            }
-
             Keytab keytab = null;
             boolean keytabInvalid = false;
             try {
@@ -100,9 +105,9 @@ public class KerberosDialog extends JDialog {
                 keytabInvalid = true;
             }
 
-            if (keytab == null) {
+            if ( keytab == null ) {
                 validLabel.setText("No");
-                if (keytabInvalid) {
+                if ( keytabInvalid ) {
                     summaryLabel.setText("Keytab file is invalid.");
                 }
                 else {
@@ -111,14 +116,10 @@ public class KerberosDialog extends JDialog {
                 keytabPanel.setEnabled(false);
             }
             else {
-                if (valid) {
-                    validLabel.setText("Yes");
-                    summaryLabel.setText("Authentication successful.");
-                }
-                else {
-                    validLabel.setText("No");
-                    summaryLabel.setText("Authentication failed.");
-                }
+                validKeytab = true;
+
+                validLabel.setText(" - ");
+                summaryLabel.setText("Checking configuration ...");
 
                 versionLabel.setText(Long.toString(keytab.getKeyVersionNumber()));
                 dateLabel.setText(keytab.getKeyTimestamp() == 0 ?
@@ -141,6 +142,53 @@ public class KerberosDialog extends JDialog {
         }
     }
 
+    private void testConfiguration() {
+        if ( validKeytab ) {
+            Background.scheduleOneShot( new TimerTask(){
+                @Override
+                public void run() {
+                    try {
+                        KerberosAdmin kerberosAdmin = Registry.getDefault().getKerberosAdmin();
+                        if ( kerberosAdmin != null ) {
+                            boolean valid = false;
+                            String errorMessageText = null;
+
+                            try {
+                                kerberosAdmin.getPrincipal();
+                                valid = true;
+                            }
+                            catch(KerberosException e) {
+                                errorMessageText = e.getMessage();
+                            }
+
+                            final boolean wasValid = valid;
+                            final String errorMessage = errorMessageText;
+
+                            SwingUtilities.invokeLater( new Runnable() {
+                                public void run() {
+                                    if ( wasValid ) {
+                                        validLabel.setText("Yes");
+                                        summaryLabel.setText("Authentication successful.");
+                                    }
+                                    else {
+                                        validLabel.setText("No");
+                                        summaryLabel.setText("Authentication failed.");
+                                        errorMessageLabel.setVisible( true );
+                                        errorMessageLabel.setText( errorMessage );
+                                    }
+
+                                    KerberosDialog.this.pack();
+                                }
+                            } );
+                        }
+                    } catch (Exception e) {
+                        ErrorManager.getDefault().notify( Level.WARNING, e, "Error while checking kerberos configuratino." );
+                    }
+                }
+            }, 100 );
+        }
+    }
+
     private String formatName(String[] names) {
         String principal;
 
@@ -152,9 +200,9 @@ public class KerberosDialog extends JDialog {
         }
         else {
             StringBuffer nameBuffer = new StringBuffer();
-            for (int n=0; n<names.length; n++) {
-                nameBuffer.append(names[n]);
-                nameBuffer.append(' ');
+            for( String name1 : names ) {
+                nameBuffer.append( name1 );
+                nameBuffer.append( ' ' );
             }
             principal = nameBuffer.toString();
         }

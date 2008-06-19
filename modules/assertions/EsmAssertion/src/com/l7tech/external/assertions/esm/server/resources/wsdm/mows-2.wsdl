@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- =========================================================
+
+@ModifiedBy: DISA-DOD
+@ModifiedDate: November 16, 2007
+
+Modified imports to use local references.  Added <xs:schema> tags around
+<xs:import> for WSI-BP compliance.
+===========================================================-->
+<w:definitions xmlns:w="http://schemas.xmlsoap.org/wsdl/" 
+        xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+        xmlns:wsrf-rp="http://docs.oasis-open.org/wsrf/rp-2" 
+        xmlns:mows="http://docs.oasis-open.org/wsdm/mows-2.xsd" 
+        xmlns:mowsw="http://docs.oasis-open.org/wsdm/mows-2.wsdl" 
+        targetNamespace="http://docs.oasis-open.org/wsdm/mows-2.wsdl">
+
+	<w:types>
+		<xs:schema>
+			<xs:import namespace="http://docs.oasis-open.org/wsdm/mows-2.xsd" schemaLocation="mows-2-esm.xsd"/>
+		</xs:schema>
+	</w:types>
+
+	<w:message name="GetManageabilityReferencesRequest">
+		<w:part name="body" element="mows:GetManageabilityReferences"/>
+	</w:message>
+	<w:message name="GetManageabilityReferencesResponse">
+		<w:part name="body" 
+			element="mows:GetManageabilityReferencesResponse"/>
+	</w:message>
+
+</w:definitions>
+
+<!--   
+                                       WSDL COPY Material
+Copy and paste the operation specification below into a portType definition of the WSDL documents of a web service.
+
+NOTE: You must import the MOWS WSDL (mowsw).
+
+	<operation name="GetManageabilityReferences">
+		<input name="GetManageabilityReferencesRequest" 
+			message="mowsw:GetManageabilityReferencesRequest"/>
+		<output name="GetManageabilityReferencesResponse"
+ 			message="mowsw:GetManageabilityReferencesResponse"/>
+	</operation>
+
+-->

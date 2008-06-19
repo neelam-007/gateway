@@ -104,6 +104,14 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
         return new EntityHeader[] { new EntityHeader(this.endpointOid.toString(), EntityType.JMS_ENDPOINT, endpointName, null)};
     }
 
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        if(oldEntityHeader.getType().equals(EntityType.JMS_ENDPOINT) && endpointOid != null &&
+                oldEntityHeader.getOid() == endpointOid && newEntityHeader.getType().equals(EntityType.JMS_ENDPOINT))
+        {
+            endpointOid = newEntityHeader.getOid();
+        }
+    }
+
     private Long endpointOid = null;
     private String endpointName = null;
     private int responseTimeout = DEFAULT_TIMEOUT;

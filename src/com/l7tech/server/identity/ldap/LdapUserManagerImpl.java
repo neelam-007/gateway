@@ -147,6 +147,11 @@ public class LdapUserManagerImpl implements LdapUserManager {
             } finally {
                 answer.close();
             }
+
+            // close context so it can be re-used (if pooled)
+            context.close();
+            context = null;
+            
             return findByPrimaryKey(dn);
         } catch (AuthenticationException ae) {
             logger.log(Level.WARNING, "LDAP authentication error: " + ae.getMessage(), ExceptionUtils.getDebugException(ae));

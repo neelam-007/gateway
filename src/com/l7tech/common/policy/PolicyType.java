@@ -17,7 +17,7 @@ public enum PolicyType {
     /**
      * A policy that belongs to a single PublishedService
      */
-    PRIVATE_SERVICE(SERVICE, "Private Service Policy", true),
+    PRIVATE_SERVICE(SERVICE, "Private Service Policy", false),
 
     /**
      * A policy that can be used by any PublishedService
@@ -71,6 +71,12 @@ public enum PolicyType {
      * A fragment that gets run after an authorization failure
      */
     AUTHORIZATION_FAILURE_FRAGMENT(FRAGMENT, "Failed Authorization Policy Fragment", false),
+
+    /**
+     * A policy that is for internal use (see {@link Policy#getInternalTag} for what kind of internal policy it is)
+     */
+    INTERNAL(FRAGMENT, "Internal Use Policy", true),
+    
     ;
 
     @Override

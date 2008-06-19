@@ -48,6 +48,14 @@ public abstract class IdentityAssertion extends Assertion implements UsesEntitie
         return new EntityHeader[] { new EntityHeader(Long.toString(_identityProviderOid), EntityType.ID_PROVIDER_CONFIG, null, null) };
     }
 
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        if(oldEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) && oldEntityHeader.getOid() == _identityProviderOid &&
+                newEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG))
+        {
+            _identityProviderOid = newEntityHeader.getOid();
+        }
+    }
+
     /**
      * The identity to use when logging a failed authentication.  For a specific user, this will be the user name
      * or login; for a group, this will be the group name; and for other identity assertions it will be some other

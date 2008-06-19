@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.server;
 
@@ -24,6 +22,7 @@ import com.l7tech.server.event.*;
 import com.l7tech.server.event.admin.*;
 import com.l7tech.server.identity.cert.CertEntryRow;
 import com.l7tech.server.service.resolution.ResolutionParameters;
+import com.l7tech.server.wsdm.subscription.Subscription;
 import com.l7tech.service.MetricsBin;
 import org.hibernate.CallbackException;
 import org.hibernate.EntityMode;
@@ -67,6 +66,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         ignoredClassNames.add(ObjectIdentityPredicate.class.getName());
         ignoredClassNames.add(AttributePredicate.class.getName());
         ignoredClassNames.add(ServiceUsage.class.getName());
+        ignoredClassNames.add(Subscription.class.getName());
     }
 
     private final Set<String> ignoredClassNames;

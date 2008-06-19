@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:qosm="http://metadata.dod.mil/mdr/ns/netops/esm/qosm" xmlns:mows="http://docs.oasis-open.org/wsdm/mows-2.xsd" xmlns:muws1="http://docs.oasis-open.org/wsdm/muws1-2.xsd" xmlns:muws2="http://docs.oasis-open.org/wsdm/muws2-2.xsd" xmlns:wsnt="http://docs.oasis-open.org/wsn/b-2" targetNamespace="http://metadata.dod.mil/mdr/ns/netops/esm/qosm" elementFormDefault="qualified" attributeFormDefault="unqualified" version="0.5">
+	<xsd:import namespace="http://docs.oasis-open.org/wsdm/muws1-2.xsd" schemaLocation="wsdm/muws1-2-esm.xsd"/>
+	<xsd:import namespace="http://docs.oasis-open.org/wsdm/muws2-2.xsd" schemaLocation="wsdm/muws2-2-esm.xsd"/>
+	<xsd:import namespace="http://docs.oasis-open.org/wsdm/mows-2.xsd" schemaLocation="wsdm/mows-2-esm.xsd"/>
+	<xsd:import namespace="http://docs.oasis-open.org/wsn/b-2" schemaLocation="wsn/b-2-esm.xsd"/>
+	<xsd:complexType name="EsmPropertiesChoiceType">
+		<xsd:choice>
+			<xsd:element ref="muws2:OperationalStatus" minOccurs="0"/>
+			<xsd:element ref="mows:NumberOfRequests" minOccurs="0"/>
+			<xsd:element ref="mows:NumberOfFailedRequests" minOccurs="0"/>
+			<xsd:element ref="mows:NumberOfSuccessfulRequests" minOccurs="0"/>
+			<xsd:element ref="mows:ServiceTime" minOccurs="0"/>
+			<xsd:element ref="mows:MaxResponseTime" minOccurs="0"/>
+			<xsd:element ref="mows:LastResponseTime" minOccurs="0"/>
+			<xsd:element ref="qosm:Throughput" minOccurs="0"/>
+			<xsd:element ref="qosm:AvgResponseTime" minOccurs="0"/>
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:complexType name="EsmPropertiesType">
+		<xsd:sequence>
+			<xsd:element ref="muws1:ResourceId"/>
+			<xsd:element ref="muws2:CurrentTime"/>
+			<xsd:element ref="muws2:OperationalStatus" minOccurs="0"/>
+			<xsd:element ref="mows:NumberOfRequests" minOccurs="0"/>
+			<xsd:element ref="mows:NumberOfFailedRequests" minOccurs="0"/>
+			<xsd:element ref="mows:NumberOfSuccessfulRequests" minOccurs="0"/>
+			<xsd:element ref="mows:ServiceTime" minOccurs="0"/>
+			<xsd:element ref="mows:MaxResponseTime" minOccurs="0"/>
+			<xsd:element ref="mows:LastResponseTime" minOccurs="0"/>
+			<xsd:element ref="qosm:Throughput" minOccurs="0"/>
+			<xsd:element ref="qosm:AvgResponseTime" minOccurs="0"/>
+			<xsd:element ref="muws1:ManageabilityCapability" minOccurs="0" maxOccurs="unbounded"/>
+			<xsd:element ref="wsnt:Topic" minOccurs="0" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:element name="EsmProperties" type="qosm:EsmPropertiesType"/>
+	<xsd:element name="Throughput" type="mows:IntegerCounter"/>
+	<xsd:element name="AvgResponseTime" type="mows:DurationMetric"/>
+</xsd:schema>

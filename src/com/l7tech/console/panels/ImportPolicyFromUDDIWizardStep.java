@@ -1,29 +1,24 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.widgets.TextListCellRenderer;
+import com.l7tech.common.uddi.UDDIException;
+import com.l7tech.common.uddi.UDDINamedEntity;
+import com.l7tech.common.util.*;
+import com.l7tech.policy.wsp.WspConstants;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Collection;
-import java.net.URL;
-import java.io.IOException;
-
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.TextUtils;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.Functions;
-import com.l7tech.common.uddi.UDDIException;
-import com.l7tech.common.uddi.UDDINamedEntity;
-import com.l7tech.common.gui.widgets.TextListCellRenderer;
-import com.l7tech.policy.wsp.WspConstants;
 
 /**
  * Second step in the ImportPolicyFromUDDIWizard.

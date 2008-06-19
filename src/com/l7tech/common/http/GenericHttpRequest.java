@@ -7,13 +7,14 @@
 package com.l7tech.common.http;
 
 import java.io.InputStream;
+import java.io.Closeable;
 
 /**
  * Represents a generic HTTP request.
  * If it's a POST, user should write the post body to the output stream and then call getResponse().
  * If this is a GET request, user should just immediately call getResponse().
  */
-public interface GenericHttpRequest {
+public interface GenericHttpRequest extends Closeable {
     /**
      * Set the InputStream from which the request body will be read, if applicable.  Will only be read if this
      * is a POST request.

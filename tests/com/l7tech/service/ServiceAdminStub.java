@@ -19,13 +19,12 @@ import com.l7tech.server.service.ServiceManager;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
-import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.StringReader;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -128,17 +127,14 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     public JobId<PolicyValidatorResult> validatePolicy(final String policyXml,
                                                        final PolicyType policyType,
                                                        final boolean soap,
-                                                       final String wsdlXml)
+                                                       final Wsdl wsdl)
     {
         Future<PolicyValidatorResult> future = new FutureTask<PolicyValidatorResult>(new Callable<PolicyValidatorResult>() {
             public PolicyValidatorResult call() throws Exception {
                 try {
                     final Assertion assertion = WspReader.getDefault().parsePermissively(policyXml);
-                    final Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlXml));
                     return policyValidator.validate(assertion, policyType, wsdl, soap,
                             Registry.getDefault().getLicenseManager());
-                } catch (WSDLException e) {
-                    throw new RuntimeException("cannot parse passed WSDL", e);
                 } catch (IOException e) {
                     throw new RuntimeException("cannot parse passed policy xml", e);
                 }
@@ -150,10 +146,10 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     public JobId<PolicyValidatorResult> validatePolicy(final String policyXml,
                                                        final PolicyType policyType,
                                                        final boolean soap,
-                                                       final String wsdlXml,
+                                                       final Wsdl wsdl,
                                                        HashMap<String, Policy> fragments)
     {
-        return validatePolicy(policyXml, policyType, soap, wsdlXml);
+        return validatePolicy(policyXml, policyType, soap, wsdl);
     }
 
     /**
@@ -293,6 +289,10 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     public Collection<UDDIRegistryInfo> getUDDIRegistryInfo() {
+        throw new RuntimeException("Not Implemented");
+    }
+
+    public Set<ServiceTemplate> findAllTemplates() {
         throw new RuntimeException("Not Implemented");
     }
 

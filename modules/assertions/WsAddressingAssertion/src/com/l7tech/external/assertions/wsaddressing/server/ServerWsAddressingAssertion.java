@@ -76,7 +76,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
         }
 
         try {
-            Map<QName, String> addressingProperties = new HashMap();
+            Map<QName, String> addressingProperties = new HashMap<QName,String>();
             if ( assertion.isRequireSignature() ) {
                 populateAddressingFromSignedElements(getSignedElements(msg, null), addressingProperties);
             } else {
@@ -139,28 +139,29 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                                                  final Map<QName, String> addressingProperties)
             throws AddressingProcessingException, IOException {
         try {
-            moveToSoapHeader(cursor);
-            final ElementCursor.Visitor visitor = new ElementCursor.Visitor(){
-                public void visit(final ElementCursor ec) throws InvalidDocumentFormatException {
-                    if ( ArrayUtils.contains(acceptableNamespaces, ec.getNamespaceUri()) ) {
-                        QName name = new QName(ec.getNamespaceUri(), ec.getLocalName());
+            if ( moveToSoapHeader(cursor) ) {
+                final ElementCursor.Visitor visitor = new ElementCursor.Visitor(){
+                    public void visit(final ElementCursor ec) throws InvalidDocumentFormatException {
+                        if ( ArrayUtils.contains(acceptableNamespaces, ec.getNamespaceUri()) ) {
+                            QName name = new QName(ec.getNamespaceUri(), ec.getLocalName());
 
-                        if ( !addressingProperties.containsKey(name) ) {
-                            if ( WSA_FAULTTO.equals(ec.getLocalName()) || WSA_REPLYTO.equals(ec.getLocalName()) ) {
-                                // process the address child element
-                                ec.pushPosition();
-                                if (ec.moveToFirstChildElement(WSA_ADDRESS, ec.getNamespaceUri()) ) {
+                            if ( !addressingProperties.containsKey(name) ) {
+                                if ( WSA_FAULTTO.equals(ec.getLocalName()) || WSA_REPLYTO.equals(ec.getLocalName()) ) {
+                                    // process the address child element
+                                    ec.pushPosition();
+                                    if (ec.moveToFirstChildElement(WSA_ADDRESS, ec.getNamespaceUri()) ) {
+                                        addressingProperties.put(name, ec.getTextValue());
+                                    }
+                                    ec.popPosition();
+                                } else {
                                     addressingProperties.put(name, ec.getTextValue());
                                 }
-                                ec.popPosition();
-                            } else {
-                                addressingProperties.put(name, ec.getTextValue());
                             }
                         }
                     }
-                }
-            };
-            cursor.visitChildElements(visitor);
+                };
+                cursor.visitChildElements(visitor);
+            }
         } catch (InvalidDocumentFormatException idfe) {
             throw new CausedIOException(idfe);
         }
@@ -271,7 +272,8 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     /**
      * Move the given cursor to the soap:Header 
      */
-    private void moveToSoapHeader(final ElementCursor cursor) throws AddressingProcessingException {
+    private boolean moveToSoapHeader(final ElementCursor cursor) throws AddressingProcessingException {
+        boolean foundHeader = false;
         cursor.moveToDocumentElement();
 
         String elementNamespace = cursor.getNamespaceUri();
@@ -284,15 +286,16 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
             String childNamespace = cursor.getNamespaceUri();
             String childLocalName = cursor.getLocalName();
 
-            if ( !elementNamespace.equals(childNamespace) ||
-                 !SoapUtil.HEADER_EL_NAME.equals(childLocalName) ) {
-                auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP);
-                throw new AddressingProcessingException("Message is not SOAP (header not found)", AssertionStatus.FALSIFIED);
-            }
+            if ( elementNamespace.equals(childNamespace) &&
+                 SoapUtil.HEADER_EL_NAME.equals(childLocalName) ) {
+                foundHeader = true;
+            } 
         } else {
             auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP);
             throw new AddressingProcessingException("Message is not SOAP (envelope not found)", AssertionStatus.FALSIFIED);
         }
+
+        return foundHeader;
     }
 
     /**

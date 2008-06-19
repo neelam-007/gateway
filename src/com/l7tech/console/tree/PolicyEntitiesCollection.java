@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.PolicyHeader;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 
 public class PolicyEntitiesCollection implements EntitiesCollection {
     final PolicyAdmin manager;
@@ -29,7 +30,7 @@ public class PolicyEntitiesCollection implements EntitiesCollection {
         try {
             exhausted = true;
             // TODO parameterize type as more policy types are implemented
-            return manager.findPolicyHeadersByType(PolicyType.INCLUDE_FRAGMENT);
+            return manager.findPolicyHeadersWithTypes(EnumSet.of(PolicyType.INCLUDE_FRAGMENT, PolicyType.INTERNAL));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

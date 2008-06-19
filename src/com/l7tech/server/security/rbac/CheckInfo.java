@@ -32,8 +32,24 @@ class CheckInfo {
     final String otherOperationName;
 
     OperationType operation;
-    CheckBefore before;
-    CheckAfter after;
+    private CheckBefore before;
+    private CheckAfter after;
     Serializable id = null;
     Entity entity = null;
+
+    CheckBefore getBefore() {
+        return before;
+    }
+
+    void setBefore(CheckBefore before) {
+        this.before = before;
+    }
+
+    CheckAfter getAfter() {
+        return after;
+    }
+
+    void setAfter(CheckAfter after) {
+        this.after = after;
+    }
 }

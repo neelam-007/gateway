@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- edited with XMLSpy v2007 rel. 3 (http://www.altova.com) by Samuel Brown (Booz Allen Hamilton) -->
+<!--===================================================================
+	muws1-2-esm.xsd
+
+	@ModifiedBy: DISA-DOD
+	@ModifiedDate: November 16, 2007
+
+	Modified ManagementEventType to contain Situation and ResourcePropertyValueChangeNotification
+	for concrete implementation.
+
+	NOTE: Modified schemas are now imported locally.
+	-->
+<xs:schema xmlns:muws1="http://docs.oasis-open.org/wsdm/muws1-2.xsd" xmlns:muws2="http://docs.oasis-open.org/wsdm/muws2-2.xsd" xmlns:wsrf-rp="http://docs.oasis-open.org/wsrf/rp-2" xmlns:wsa="http://www.w3.org/2005/08/addressing" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://docs.oasis-open.org/wsdm/muws1-2.xsd" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<!-- ======================== Imports  ============================ -->
+	<xs:import namespace="http://www.w3.org/2005/08/addressing" schemaLocation="../wsa/ws-addr.xsd"/>
+	<xs:import namespace="http://docs.oasis-open.org/wsdm/muws2-2.xsd" schemaLocation="muws2-2-esm.xsd"/>
+	<xs:import namespace="http://docs.oasis-open.org/wsrf/rp-2" schemaLocation="../wsrf/rp-2-esm.xsd"/>
+	<!-- ======================== Elements and Types  ============================ -->
+	<!-- ======================== ResourceId Element  ============================ -->
+	<xs:element name="ResourceId" type="xs:anyURI"/>
+	<!-- ======================== ManageabilityCapability Element  ============================ -->
+	<xs:element name="ManageabilityCapability" type="xs:anyURI"/>
+	<!-- ======================== CorrelatablePropertiesType Type  ============================ -->
+	<xs:complexType name="CorrelatablePropertiesType">
+		<xs:sequence>
+			<xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="Dialect" type="xs:anyURI"/>
+		<xs:attribute name="NegativeAssertionPossible" type="xs:boolean"/>
+		<xs:anyAttribute namespace="##other"/>
+	</xs:complexType>
+	<!-- ======================== CorrelatableProperties Element  ============================ -->
+	<xs:element name="CorrelatableProperties" type="muws1:CorrelatablePropertiesType"/>
+	<!-- ======================== ComponentAddressType Type  ============================ -->
+	<xs:complexType name="ComponentAddressType">
+		<xs:sequence>
+			<xs:any namespace="##any" processContents="lax"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- ======================== ComponentType Type  ============================ -->
+	<xs:complexType name="ComponentType">
+		<xs:sequence>
+			<xs:element name="ResourceId" type="xs:anyURI" minOccurs="0"/>
+			<xs:element name="ComponentAddress" type="muws1:ComponentAddressType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:anyAttribute namespace="##other"/>
+	</xs:complexType>
+	<!-- ======================== ManagementEventType Type  ============================ 
+	=
+	=	Modified ManagementEventType
+	=
+	= Replaced xsd:any with Situation and ResourcePropertyValueChangeNotification for concrete implementation.
+	=
+	==============================================================================-->
+	<xs:complexType name="ManagementEventType">
+		<xs:sequence>
+			<xs:element name="EventId" type="xs:anyURI"/>
+			<xs:element name="SourceComponent" type="muws1:ComponentType"/>
+			<xs:element name="ReporterComponent" type="muws1:ComponentType" minOccurs="0"/>
+			<xs:element ref="muws2:Situation" minOccurs="0"/>
+			<xs:element ref="wsrf-rp:ResourcePropertyValueChangeNotification" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="ReportTime" type="xs:dateTime" use="optional"/>
+		<xs:anyAttribute namespace="##other"/>
+	</xs:complexType>
+	<!-- ======================== ManagementEvent Element  ============================ -->
+	<xs:element name="ManagementEvent" type="muws1:ManagementEventType"/>
+	<!-- ======================== ManageabilityEndpointReference Element  ============================ -->
+	<xs:element name="ManageabilityEndpointReference" type="wsa:EndpointReferenceType"/>
+	<!--   
+                                       SCHEMA COPY Material
+Copy and paste element references below into the schema of a resource properties document.
+These references are provide to insure that the correct minOccurs/maxOccurs attributes are specified in a resource property document schema.
+
+NOTE: You must import the MUWS Part 1 schema namespace (MUWS1).
+
+        **    Identity Properties    **
+          <xs:element ref="muws1:ResourceId"/>
+
+
+        **    ManageabilityCharacteristics Properties    **
+          <xs:element ref="muws1:ManageabilityCapability"
+                      minOccurs="0" maxOccurs="unbounded"/>
+
+        **    Correlatable Properties    **
+          <xs:element ref="muws1:CorrelatableProperties"
+                      minOccurs="0" maxOccurs="unbounded"/>
+
+-->
+</xs:schema>

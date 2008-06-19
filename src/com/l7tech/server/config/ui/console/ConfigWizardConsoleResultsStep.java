@@ -25,6 +25,7 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep implements P
     private String logFilename = "ssgconfig0.log";
     private File manualStepsFile;
     private static final String CONFIG_ERRORS_TEXT = getEolChar() + "*** Configuration problems detected: There were warnings and/or errors during configuration, see the logs above for details. ***" + getEolChar();
+    private String successMsg = "The configuration was successfully applied." + getEolChar() + "You must restart the SSG in order for the configuration to take effect." + getEolChar();
 
     public ConfigWizardConsoleResultsStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
@@ -42,8 +43,7 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep implements P
         if (wizard.isHadFailures())
             printText("There were errors during configuration, see below for details" + getEolChar());
         else {
-            printText("The configuration was successfully applied." + getEolChar());
-            printText("You must restart the SSG in order for the configuration to take effect." + getEolChar());
+            printText(successMsg);
         }
 
         if (needsManualSteps()) {
@@ -203,5 +203,9 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep implements P
         } catch (WizardNavigationException e) {
             logger.severe("Error while getting input. [" + e.getMessage() + "]");
         }
+    }
+
+    public void setSuccessMessage(String msg) {
+        successMsg = msg;
     }
 }

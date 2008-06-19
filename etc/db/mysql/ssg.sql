@@ -116,6 +116,7 @@ CREATE TABLE published_service (
   wsdl_xml mediumtext,
   disabled TINYINT(1) NOT NULL DEFAULT 0,
   soap TINYINT(1) NOT NULL DEFAULT 1,
+  internal TINYINT(1) NOT NULL DEFAULT 0,
   routing_uri varchar(128),
   http_methods mediumtext,
   lax_resolution TINYINT(1) NOT NULL DEFAULT 0, 
@@ -135,8 +136,11 @@ CREATE TABLE policy (
   xml mediumtext NOT NULL,
   policy_type VARCHAR(32) NOT NULL,
   soap TINYINT(1) NOT NULL DEFAULT 0,
+  guid char(36) NOT NULL,
+  internal_tag VARCHAR(64),
   PRIMARY KEY (objectid),
   UNIQUE KEY i_name (name),
+  UNIQUE KEY i_guid (guid),
   INDEX (policy_type)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -306,6 +310,7 @@ CREATE TABLE revocation_check_policy (
   revocation_policy_xml mediumtext,
   default_policy tinyint default '0',
   default_success tinyint default '0',
+  continue_server_unavailable tinyint default '0',
   PRIMARY KEY  (objectid),
   UNIQUE KEY rcp_name_idx (name)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -578,6 +583,7 @@ CREATE TABLE service_metrics (
   front_min INTEGER NOT NULL,
   front_max INTEGER NOT NULL,
   front_sum INTEGER NOT NULL,
+  service_state VARCHAR(16),
   INDEX i_sm_nodeid (nodeid),
   INDEX i_sm_serviceoid (published_service_oid),
   INDEX i_sm_resolution (resolution),
@@ -821,6 +827,7 @@ INSERT INTO rbac_permission VALUES (-351,0,-350,'READ',NULL,'GROUP');
 INSERT INTO rbac_permission VALUES (-352,0,-350,'READ',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_permission VALUES (-353,0,-350,'READ',NULL,'USER');
 INSERT INTO rbac_permission VALUES (-354,0,-350,'CREATE',NULL,'SERVICE');
+INSERT INTO rbac_permission VALUES (-355,0,-350,'READ',NULL,'SERVICE_TEMPLATE');
 
 INSERT INTO rbac_role VALUES (-400,1,'Manage Webservices', null,null, 'Users assigned to the {0} role have the ability to publish new services and edit existing ones.');
 INSERT INTO rbac_permission VALUES (-401,0,-400,'READ',NULL,'ID_PROVIDER_CONFIG');
@@ -836,6 +843,9 @@ INSERT INTO rbac_permission VALUES (-410,0,-400,'READ',NULL,'METRICS_BIN');
 INSERT INTO rbac_permission VALUES (-411,0,-400,'READ',NULL,'AUDIT_MESSAGE');
 INSERT INTO rbac_permission VALUES (-412,0,-400,'READ',NULL,'JMS_CONNECTION');
 INSERT INTO rbac_permission VALUES (-413,0,-400,'READ',NULL,'JMS_ENDPOINT');
+INSERT INTO rbac_permission VALUES (-414,0,-400,'READ',NULL,'SERVICE_TEMPLATE');
+INSERT INTO rbac_permission VALUES (-415,0,-400,'READ',NULL,'POLICY');
+INSERT INTO rbac_permission VALUES (-416,0,-400,'UPDATE',NULL,'POLICY');
 
 INSERT INTO rbac_role VALUES (-450,0,'View Audit Records and Logs', null,null, 'Users assigned to the {0} role have the ability to view audit and log details in manager.');
 INSERT INTO rbac_permission VALUES (-451,0,-450,'READ',NULL,'CLUSTER_INFO');
@@ -914,6 +924,22 @@ CREATE TABLE config_data (
   objectid bigint(20) NOT NULL,
   configdata mediumblob DEFAULT NULL,
   PRIMARY KEY (objectid)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+DROP TABLE IF EXISTS wsdm_subscription;
+CREATE TABLE wsdm_subscription (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  uuid varchar(36) NOT NULL,
+  callback_url varchar(255) NOT NULL,
+  published_service_oid bigint(20) NOT NULL,
+  termination_time bigint(20) NOT NULL,
+  topic int(11) NOT NULL,
+  notification_policy_guid CHAR(36),
+  last_notification bigint(20),
+  owner_node_id varchar(36),
+  PRIMARY KEY  (objectid),
+  UNIQUE KEY uuid (uuid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;

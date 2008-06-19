@@ -292,7 +292,7 @@ public class AdminLoginImpl
     private InternalIdentityProvider getInternalIdentityProvider() throws FindException, InvalidIdProviderCfgException {
         IdentityProviderConfig cfg = identityProviderConfigManager.findByPrimaryKey(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         if (cfg == null) {
-            throw new IllegalStateException("Could not find the internal identity manager!");
+            throw new IllegalStateException("Could not find the internal identity provider!");
         }
 
         return (InternalIdentityProvider) identityProviderFactory.makeProvider(cfg);

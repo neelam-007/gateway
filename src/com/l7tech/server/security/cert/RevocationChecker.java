@@ -26,5 +26,5 @@ public interface RevocationChecker {
      * @param auditor The auditor to use for any audit messages
      * @return the revocation status for the certificate
      */
-    CertificateValidationResult getRevocationStatus(X509Certificate certificate, X509Certificate issuer, Auditor auditor);
+    CertificateValidationResult getRevocationStatus(X509Certificate certificate, X509Certificate issuer, Auditor auditor, CertificateValidationResult resultOnNetworkFailure);
 }

@@ -8,6 +8,7 @@ import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.exceptions.DatabaseConfigException;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.exceptions.ConfigException;
+import com.l7tech.server.config.exceptions.ClusteringConfigException;
 import org.apache.commons.lang.StringUtils;
 
 import javax.crypto.BadPaddingException;
@@ -133,6 +134,12 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
                                   "*** " + ExceptionUtils.getMessage(e) + " ***" +
                                   getEolChar() +
                                   getEolChar());
+                    } catch (ClusteringConfigException e) {
+                        printText(getEolChar() +
+                                "*** There was an error while trying to retrieve the configuration from the database. ***" +
+                                getEolChar() +
+                                ExceptionUtils.getMessage(e) +
+                                getEolChar());
                     }
                 } while (configData == null);
 
@@ -155,7 +162,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
                 "Would you like to apply this configuration?", "no");
     }
 
-    private SilentConfigData loadSettingsFromDb() throws IOException, WizardNavigationException, DatabaseConfigException {
+    private SilentConfigData loadSettingsFromDb() throws IOException, WizardNavigationException, DatabaseConfigException, ClusteringConfigException {
         SilentConfigData configData = null;
         DBInformation dbInfo = SharedWizardInfo.getInstance().getDbinfo();
         String msg = "Connecting to Database using " + dbInfo.getUsername() + "@" + dbInfo.getHostname() + "/" + dbInfo.getDbName();
@@ -166,7 +173,11 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
         byte[] configBytes = silentConf.loadConfigFromDb(dbInfo);
 
         String exceptionMessage = null;
-        if (configBytes != null) {
+        if (configBytes == null) {
+            throw new ClusteringConfigException("No configuration data could be found." +
+                                                getEolChar() +
+                                                "Please run the configuration wizard on the first node of the cluster to store this data or select a different database");
+        } else  {
             String passphrase = getSecretData(new String[]{
                     "Retrieved configuration settings from the database." + getEolChar(),
                     "Please enter the passphrase to extract these settings: "},

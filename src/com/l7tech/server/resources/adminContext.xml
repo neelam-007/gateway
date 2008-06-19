@@ -192,6 +192,7 @@
         </constructor-arg>
         <constructor-arg ref="policyVersionManager"/>
         <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="serviceTemplateManager"/>
     </bean>
 
     <!-- schema admin servant -->

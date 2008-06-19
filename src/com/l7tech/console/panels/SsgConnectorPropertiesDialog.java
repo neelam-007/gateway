@@ -226,7 +226,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         inputValidator.constrainTextFieldToBeNonEmpty("Name", nameField, null);
         inputValidator.validateWhenDocumentChanges(nameField);
-        inputValidator.constrainTextFieldToNumberRange("Port", portField, 0, 65535);
+        inputValidator.constrainTextFieldToNumberRange("Port", portField, 1025, 65535);
         inputValidator.validateWhenDocumentChanges(portField);
         inputValidator.constrainTextFieldToNumberRange("Port Range Start", portRangeStartField, 0, 65535);
         inputValidator.constrainTextFieldToNumberRange("Port Range Count", portRangeCountField, 1, 65535);

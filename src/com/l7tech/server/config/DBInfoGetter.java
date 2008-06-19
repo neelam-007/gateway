@@ -13,6 +13,7 @@ import java.io.IOException;
  */
 public class DBInfoGetter {
     private static final String PROMPT_DB_PASSWORD = "SSG Database user password: ";
+    private static final String PROMPT_DB_PASSWORD_CONFIRM = "SSG Database user password again: ";
     private static final String PROMPT_DB_USERNAME = "SSG Database username: ";
     private static final String PROMPT_DB_NAME = "Name of the SSG database: ";
     private static final String PROMPT_DB_HOSTNAME = "Hostname: ";
@@ -31,6 +32,16 @@ public class DBInfoGetter {
         String dbUsername = doPrompts(defaultDbUsername, PROMPT_DB_USERNAME, false);
         //don't pass in a default password so a user can enter a blank one if so desired
         String dbPassword = doPrompts("", PROMPT_DB_PASSWORD, true);
+
+        if (createNewDb) {
+            String dbPasswordConfirm = doPrompts("", PROMPT_DB_PASSWORD_CONFIRM, true);
+            while(!dbPassword.equals(dbPasswordConfirm)) {
+                utils.printText("The passwords do not match. Please try again.\n");
+                dbPassword = doPrompts("", PROMPT_DB_PASSWORD, true);
+                dbPasswordConfirm = doPrompts("", PROMPT_DB_PASSWORD_CONFIRM, true);
+            }
+        }
+
         DBInformation dbInfo = new DBInformation(dbHostname, dbName, dbUsername, dbPassword, null, null);
         dbInfo.setNew(createNewDb);
         return dbInfo;

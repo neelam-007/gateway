@@ -97,6 +97,8 @@ public class PerformanceMetricsAggregator implements TrafficMonitor {
     }
 
     public void recordTransactionStatus(PolicyEnforcementContext context, AssertionStatus status, long processingTime) {
+        if (!WSMFService.isEnabled()) return;
+
         if (context.getService() == null) {
             logger.finest("Ignoring transactions for non resolved service");
             return;

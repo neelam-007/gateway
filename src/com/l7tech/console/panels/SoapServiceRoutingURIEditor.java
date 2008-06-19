@@ -8,7 +8,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.service.PublishedService;
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.protocol.SecureSpanConstants;
@@ -88,13 +87,20 @@ public class SoapServiceRoutingURIEditor extends JDialog {
             }
         }
         String existinguri = subject.getRoutingUri();
-        if (existinguri == null) {
-            noURIRadio.setSelected(true);
-            customURIRadio.setSelected(false);
-        } else {
-            noURIRadio.setSelected(false);
+        if (subject.isInternal()) {
+            noURIRadio.setEnabled(false);
             customURIRadio.setSelected(true);
+            uriField.setEnabled(true);
             uriField.setText(existinguri);
+        } else {
+            if (existinguri == null) {
+                noURIRadio.setSelected(true);
+                customURIRadio.setSelected(false);
+            } else {
+                noURIRadio.setSelected(false);
+                customURIRadio.setSelected(true);
+                uriField.setText(existinguri);
+            }
         }
     }
 

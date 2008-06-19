@@ -315,7 +315,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep<KeystoreCon
         defaultValue = "1";
         prompts = new String[] {
                 "\n1) Generate new SSL key\n",
-                "2) Import an external SSL key from a PKCS#12 file\n",
+                "2) Import an outside SSL key from a PKCS#12 file\n",
                 "Please make a selection: [" + defaultValue + "] ",
         };
         input = getData(prompts, defaultValue, new String[] {"1", "2"}, null);

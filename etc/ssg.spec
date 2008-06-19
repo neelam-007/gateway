@@ -1,6 +1,6 @@
 Summary: SecureSpan Gateway, Copyright Layer 7 Technologies 2003-2008
 Name: ssg
-Version: 4.4
+Version: 5.0
 Release: 1
 Group: Applications/Internet
 License: Commercial
@@ -35,6 +35,7 @@ mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/ssg/etc/profile.d/
 mv %{buildroot}/ssg/bin/ssg-utilities.sh %{buildroot}/ssg/etc/profile.d/
 mv %{buildroot}/ssg/bin/setopts.sh %{buildroot}/ssg/etc/profile.d/
 mv %{buildroot}/ssg/bin/jvmoptions %{buildroot}/ssg/etc/profile.d/
+mv %{buildroot}/ssg/bin/output_redirection.sh %{buildroot}/ssg/etc/profile.d/
 
 mv %{buildroot}/ssg/bin/ssg-java.security %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/java.security
 mv %{buildroot}/ssg/etc/conf/*.properties %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
@@ -69,6 +70,7 @@ rm %{buildroot}/ssg/migration/cfg/grandmaster_flash
 %attr(0775,gateway,gateway) /ssg/etc/profile.d/
 %config(noreplace) %attr(0775,gateway,gateway) /ssg/etc/profile.d/java.sh
 %config(noreplace) %attr(0775,gateway,gateway) /ssg/etc/profile.d/jvmoptions
+%config(noreplace) %attr(0775,gateway,gateway) /ssg/etc/profile.d/output_redirection.sh
 
 # Other stuff
 /ssg/etc/ldapTemplates

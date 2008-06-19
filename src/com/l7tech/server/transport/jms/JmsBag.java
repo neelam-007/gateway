@@ -11,8 +11,8 @@ import javax.jms.ConnectionFactory;
 import javax.jms.Session;
 import javax.naming.Context;
 import java.io.Closeable;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Holds references to a {@link javax.jms.ConnectionFactory}, {@link javax.jms.Connection}
@@ -27,7 +27,7 @@ public class JmsBag implements Closeable {
         session = sess;
         jndiContext = context;
     }
-
+    
     public ConnectionFactory getConnectionFactory() {
         check();
         return connectionFactory;
@@ -88,10 +88,21 @@ public class JmsBag implements Closeable {
         if (closed) throw new IllegalStateException("Bag has been closed");
     }
 
+    // not sure if this is necessary
+    protected void nullify() {
+        if (closed) {
+            session = null;
+            connection = null;
+            connectionFactory = null;
+            jndiContext = null;
+        }
+    }
+
     private static final Logger logger = Logger.getLogger(JmsBag.class.getName());
-    private final ConnectionFactory connectionFactory;
-    private final Connection connection;
-    private final Session session;
-    private final Context jndiContext;
-    private volatile boolean closed = false;
+    private ConnectionFactory connectionFactory;
+    private Connection connection;
+    private Session session;
+    private Context jndiContext;
+    protected volatile boolean closed;
+
 }

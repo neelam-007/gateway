@@ -1,8 +1,11 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.common.xml.xpath.XpathExpression;
 import com.l7tech.common.security.xml.XencUtil;
+import com.l7tech.common.xml.xpath.XpathExpression;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+import com.l7tech.policy.validator.RequestWssConfidentialityValidator;
 
 import java.util.List;
 /**
@@ -69,6 +72,14 @@ public class RequestWssConfidentiality extends XmlSecurityAssertionBase {
                     
     public void setKeyEncryptionAlgorithm(String keyEncryptionAlgorithm) {
         this.xencKeyAlgorithm = keyEncryptionAlgorithm;
+    }
+
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, RequestWssConfidentialityValidator.class.getName());
+
+        return meta;
     }
 
     private String findAlgWithHighestPreference() {

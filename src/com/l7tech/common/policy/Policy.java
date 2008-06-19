@@ -5,14 +5,13 @@ package com.l7tech.common.policy;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.CommentAssertion;
+import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlElement;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Arrays;
@@ -25,9 +24,11 @@ import java.util.logging.Logger;
 public class Policy extends NamedEntityImp {
     private static final Logger logger = Logger.getLogger(Policy.class.getName());
 
+    private String guid;
     private String xml;
     private PolicyType type;
     private boolean soap;
+    private String internalTag;
 
     private long versionOrdinal;   // Not persisted -- filled in by admin layer
     private boolean versionActive; // Not persisted -- filled in by admin layer
@@ -72,9 +73,11 @@ public class Policy extends NamedEntityImp {
         super(policy);
         setSoap(policy.isSoap());
         setType(policy.getType());
+        setInternalTag(policy.getInternalTag());
         setVersionActive(isVersionActive());
         setVersionOrdinal(getVersionOrdinal());
         setXml(policy.getXml());
+        setGuid(policy.getGuid());
         if ( lock ) lock();
     }
 
@@ -107,9 +110,17 @@ public class Policy extends NamedEntityImp {
     }
 
     public synchronized void setXml(String xml) {
-        if ( isLocked() ) throw new IllegalStateException("Cannot update locked policy");
+        checkLocked();
         this.xml = xml;
         this.assertion = null;
+    }
+
+    public String getGuid() {
+        return guid;
+    }
+
+    public void setGuid(String guid) {
+        this.guid = guid;
     }
 
     public PolicyType getType() {
@@ -117,7 +128,7 @@ public class Policy extends NamedEntityImp {
     }
 
     public void setType(PolicyType type) {
-        if ( isLocked() ) throw new IllegalStateException("Cannot update locked policy");
+        checkLocked();
         this.type = type;
     }
 
@@ -126,8 +137,12 @@ public class Policy extends NamedEntityImp {
     }
 
     public void setSoap(boolean soap) {
-        if ( isLocked() ) throw new IllegalStateException("Cannot update locked policy");
+        checkLocked();
         this.soap = soap;
+    }
+
+    private void checkLocked() {
+        if ( isLocked() ) throw new IllegalStateException("Cannot update locked policy");
     }
 
     /**
@@ -169,7 +184,7 @@ public class Policy extends NamedEntityImp {
      * @param versionOrdinal the version ordinal, or zero to clear it.
      */
     public void setVersionOrdinal(long versionOrdinal) {
-        if ( isLocked() ) throw new IllegalStateException("Cannot update locked policy");
+        checkLocked();
         this.versionOrdinal = versionOrdinal;
     }
 
@@ -194,30 +209,48 @@ public class Policy extends NamedEntityImp {
      * @param active the new state of the VersionActive flag
      */
     public void setVersionActive(boolean active) {
-        if ( isLocked() ) throw new IllegalStateException("Cannot update locked policy");
+        checkLocked();
         this.versionActive = active;
     }
 
-    @SuppressWarnings({"RedundantIfStatement"})
-    @Override
+    /**
+     * When {@link #getType()} is {@link PolicyType#INTERNAL}, this field can be used
+     * to distinguish between different types of internal policy.  Try to avoid stuffing too much data into the tag,
+     * as it's limited in the database to 64 characters.
+     *
+     * Suggested naming convention: moduleName-type[-subtype], e.g. esm-notification
+     */
+    public String getInternalTag() {
+        return internalTag;
+    }
+
+    public void setInternalTag(String internalTag) {
+        checkLocked();
+        this.internalTag = internalTag;
+    }
+
+    @SuppressWarnings({ "RedundantIfStatement" })
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
 
-        Policy policy = (Policy) o;
+        Policy policy = (Policy)o;
 
+        if (guid != null ? !guid.equals(policy.guid) : policy.guid != null) return false;
+        if (internalTag != null ? !internalTag.equals(policy.internalTag) : policy.internalTag != null) return false;
         if (type != policy.type) return false;
         if (xml != null ? !xml.equals(policy.xml) : policy.xml != null) return false;
 
         return true;
     }
 
-    @Override
     public int hashCode() {
         int result = super.hashCode();
+        result = 31 * result + (guid != null ? guid.hashCode() : 0);
         result = 31 * result + (xml != null ? xml.hashCode() : 0);
         result = 31 * result + (type != null ? type.hashCode() : 0);
+        result = 31 * result + (internalTag != null ? internalTag.hashCode() : 0);
         return result;
     }
 

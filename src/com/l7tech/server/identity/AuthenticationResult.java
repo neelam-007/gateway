@@ -53,6 +53,27 @@ public final class AuthenticationResult {
         this.authenticatedCert = authenticatedCert;
     }
 
+    public boolean equals(Object obj) {
+
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        if ( !(obj instanceof AuthenticationResult) ) return false;
+
+        AuthenticationResult authResult = (AuthenticationResult) obj;
+
+        if ( !authResult.getUser().equals(this.user) ) return false;
+
+        //i'm not sure if I need to compare the following, but are here just in case.
+        if ( authResult.isCertSignedByStaleCA() != this.certSignedByStaleCA ) return false;
+        X509Certificate authenticatedCert = authResult.getAuthenticatedCert();        
+        if ( authenticatedCert == this.authenticatedCert ){
+            if ( this.authenticatedCert != null && !authenticatedCert.equals(this.authenticatedCert) ) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static class CacheKey {
         private final long userProviderOid;
         private final String userId;

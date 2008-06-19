@@ -346,6 +346,7 @@
         <include name="com/l7tech/objectmodel/EntityManager.java"/>
         <include name="com/l7tech/objectmodel/EntityType.java"/>
         <include name="com/l7tech/objectmodel/FindException.java"/>
+        <include name="com/l7tech/objectmodel/GuidBasedEntityManager.java"/>
         <include name="com/l7tech/objectmodel/IdentityHeader.java"/>
         <include name="com/l7tech/objectmodel/NamedEntity.java"/>
         <include name="com/l7tech/objectmodel/ObjectModelException.java"/>
@@ -2133,6 +2134,7 @@
                 <include name="com/l7tech/objectmodel/alert/**/*"/>
                 <include name="com/l7tech/policy/**/*"/>
                 <include name="com/l7tech/objectmodel/ObjectIdentity.class"/>
+                <include name="com/l7tech/objectmodel/GuidBasedEntityManager.class"/>
                 <include name="com/l7tech/policy/assertion/ext/Category.class"/>
                 <include name="com/l7tech/policy/assertion/ext/CustomAssertion.class"/>
                 <include name="com/l7tech/policy/assertion/ext/CustomAssertionsRegistrar.class"/>
@@ -2145,10 +2147,13 @@
                 <include name="com/l7tech/service/ServiceAdminPublic.class"/>
                 <include name="com/l7tech/service/PublishedService*.class"/>
                 <include name="com/l7tech/service/ServiceDocument.class"/>
+                <include name="com/l7tech/service/ServiceTemplate.class"/>
+                <include name="com/l7tech/service/ServiceType.class"/>
                 <include name="com/l7tech/service/SampleMessage.class"/>
                 <include name="com/l7tech/service/ServiceStatistics.class"/>
                 <include name="com/l7tech/service/MetricsBin.class"/>
-                <include name="com/l7tech/service/MetricsSummaryBin.class"/>
+                <include name="com/l7tech/service/ServiceState.class"/>
+                <include name="com/l7tech/service/MetricsSummaryBin*.class"/>
                 <include name="com/l7tech/service/ResolutionParameterTooLongException.class"/>
                 <include name="com/l7tech/spring/remoting/rmi/**/*"/>
                 <include name="com/l7tech/spring/remoting/http/**/*"/>
@@ -2452,6 +2457,7 @@
             <fileset dir="${build.classes}">
                 <include name="com/l7tech/internal/audit/**/*"/>
                 <include name="com/l7tech/common/BuildInfo.class"/>
+                <include name="com/l7tech/common/gui/util/FileChooserUtil*.class"/>
                 <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream.class"/>
                 <include name="com/l7tech/common/util/CertUtils*.class"/>
                 <include name="com/l7tech/common/util/CausedIOException.class"/>
@@ -4023,6 +4029,7 @@
             <fileset dir="${src.root}/modules/assertions/NcesDecoratorAssertion/build" includes="*.aar"/>
             <fileset dir="${src.root}/modules/assertions/NcesValidatorAssertion/build" includes="*.aar"/>
             <fileset dir="${src.root}/modules/assertions/LDAPQueryAssertion/build" includes="*.aar"/>
+            <fileset dir="${src.root}/modules/assertions/EsmAssertion/build" includes="*.aar"/>
         </copy>
 
         <!-- Copy LDAP templates -->
@@ -4083,6 +4090,7 @@
                 <include name="ssg-utilities.sh"/>
                 <include name="setopts.sh"/>
                 <include name="jvmoptions"/>
+                <include name="output_redirection.sh"/>
             </fileset>
         </copy>
 
@@ -4134,7 +4142,6 @@
                 <include name="sysconfigscript-initd"/>
                 <include name="pkcs11_linux.cfg"/>
                 <include name="systeminfo.sh"/>
-                <include name="tarari.sh"/>
                 <include name="fix_banner.sh"/>
             </fileset>
             <fileset dir="${src.root}/etc">
@@ -4226,7 +4233,8 @@
         <echo level="info">Creating Tarari Gateway Tar ...</echo>
         <tar destfile="${build.dir}/tarari.tar.gz" compression="gzip" longfile="gnu">
             <tarfileset dir="${src.root}" username="root" group="root" mode="644">
-                <include name="etc/tarari-initd"/>
+                <include name="etc/appliance/tarari/tarari-initd"/>
+                <include name="etc/appliance/tarari/tarariopts.sh"/>
             </tarfileset>
         </tar>
     </target>

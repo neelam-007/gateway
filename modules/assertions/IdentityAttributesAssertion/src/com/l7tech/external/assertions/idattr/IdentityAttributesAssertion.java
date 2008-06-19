@@ -5,12 +5,14 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.wsp.*;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class IdentityAttributesAssertion extends Assertion implements UsesVariables, SetsVariables {
+public class IdentityAttributesAssertion extends Assertion implements UsesVariables, SetsVariables, UsesEntities {
     private String variablePrefix;
     private long identityProviderOid;
     private IdentityMapping[] lookupAttributes;
@@ -35,6 +37,22 @@ public class IdentityAttributesAssertion extends Assertion implements UsesVariab
 
     public void setIdentityProviderOid(long identityProviderOid) {
         this.identityProviderOid = identityProviderOid;
+    }
+
+    public EntityHeader[] getEntitiesUsed() {
+        if(identityProviderOid > 0) {
+            return new EntityHeader[] {new EntityHeader(Long.toString(identityProviderOid), EntityType.ID_PROVIDER_CONFIG, null, null)};
+        } else {
+            return new EntityHeader[0];
+        }
+    }
+
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        if(oldEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) && oldEntityHeader.getOid() == identityProviderOid &&
+                newEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG))
+        {
+            identityProviderOid = newEntityHeader.getOid();
+        }
     }
 
     public IdentityMapping[] getLookupAttributes() {

@@ -163,6 +163,28 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         return null;
     }
 
+    public ServerPolicyHandle getServerPolicy(final String policyGuid) {
+        if(policyGuid == null) {
+            throw new IllegalArgumentException( "Can't compile a brand-new policy--it must be saved first" );
+        }
+
+        final Lock read = lock.readLock();
+        read.lock();
+        try {
+            Long oid = guidToOidMap.get(policyGuid);
+            if(oid != null) {
+                PolicyCacheEntry pce = cacheGet( oid );
+                if( pce != null && pce.isValid() ) {
+                    return pce.serverPolicy.ref();
+                }
+            }
+        } finally {
+            read.unlock();
+        }
+
+        return null;
+    }
+
     /**
      *
      */
@@ -230,7 +252,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         if ( policy == null) throw new IllegalArgumentException( "policy must not be null" );
 
         // get using policies
-        Set<Long> policies = toPolicyIds( findUsagesInternal( policy.getOid() ) );
+        Set<String> policies = toPolicyGuids( findUsagesInternal( policy.getOid() ) );
         if ( !policies.isEmpty() ) {
             final Assertion thisRootAssertion;
             try {
@@ -241,8 +263,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                     final Assertion ass = (Assertion) assit.next();
                     if( ass instanceof Include ) {
                         final Include include = (Include) ass;
-                        if ( policies.contains( include.getPolicyOid() ) ) {
-                            throw new CircularPolicyException( policy, include.getPolicyOid(), include.getPolicyName() );
+                        if ( policies.contains( include.getPolicyGuid() ) ) {
+                            throw new CircularPolicyException( policy, include.getPolicyGuid(), include.getPolicyName() );
                         }
                     }
                 }
@@ -305,6 +327,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                 ResourceUtils.closeQuietly( pce );
             }
             policyCache.clear();
+            guidToOidMap.clear();
 
             // rebuild
             for( Policy policy : policyManager.findAll() ) {
@@ -471,6 +494,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     private boolean initialized = false;
     private final Set<Long> policiesThatAreUnlicensed = new HashSet<Long>();
     private final Map<Long, PolicyCacheEntry> policyCache = new HashMap<Long, PolicyCacheEntry>(); // policy cache entries must be closed on removal
+    private final Map<String, Long> guidToOidMap = new HashMap<String, Long>();
 
     private void notifyUpdate( final Policy policy ) {
           updateInternal( policy );
@@ -545,9 +569,11 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         PolicyCacheEntry replaced = policyCache.put( pce.policyId, pce );
         if ( replaced != null ) {
             ResourceUtils.closeQuietly( replaced );
+            guidToOidMap.remove(replaced.policy.getGuid());
             pce.usedBy.addAll( replaced.usedBy );
             updateUsage( pce.policyId, false, replaced.getUsedPolicyIds());
         }
+        guidToOidMap.put(pce.policy.getGuid(), pce.policyId);
         updateUsage( pce.policyId, true, pce.getUsedPolicyIds());
     }
 
@@ -562,6 +588,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         PolicyCacheEntry removed = policyCache.remove( policyId );
         if ( removed != null ) {
             ResourceUtils.closeQuietly( removed );
+            guidToOidMap.remove(removed.policy.getGuid());
             updateUsage( policyId, false, removed.getUsedPolicyIds());
 
             Set<Long> policiesToRemove = new HashSet<Long>();
@@ -752,7 +779,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             try {
                 // validate / parse policy
                 if( !seenOids.add( thisPolicyId ) ) {
-                    throw new CircularPolicyException( parentPolicy, thisPolicy.getOid(), thisPolicy.getName() );
+                    throw new CircularPolicyException( parentPolicy, thisPolicy.getGuid(), thisPolicy.getName() );
                 }
 
                 try {
@@ -768,26 +795,33 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                     if( !( ass instanceof Include ) ) continue;
 
                     final Include include = (Include) ass;
-                    final Long includedOid = include.getPolicyOid();
+                    final String includedGuid = include.getPolicyGuid();
                     if ( logger.isLoggable( Level.FINE ) )
                         logger.log( Level.FINE, "Policy #{0} ({1}) includes Policy #{2} ({3})",
-                                new Object[]{ thisPolicyId, thisPolicy.getName(), includedOid, include.getPolicyName() } );
-                    if( includedOid == null )
-                        throw new InvalidPolicyException( "Found Include assertion with no PolicyOID in Policy #" + thisPolicy.getOid() );
-
-                    descendentPolicies.add( includedOid );
+                                new Object[]{ thisPolicyId, thisPolicy.getName(), includedGuid, include.getPolicyName() } );
+                    if( includedGuid == null )
+                        throw new InvalidPolicyException( "Found Include assertion with no PolicyGUID in Policy #" + thisPolicy.getGuid() );
+                    final Long includedOid;
 
                     // Get cached info for include, rebuild if required
-                    PolicyCacheEntry includedInfo = cacheGet( includedOid );
+                    PolicyCacheEntry includedInfo = null;
+                    if(guidToOidMap.containsKey(includedGuid)) {
+                        includedInfo = cacheGet( guidToOidMap.get(includedGuid) );
+                    }
                     if( includedInfo == null || includedInfo.isDirty() ) {
                         if ( logger.isLoggable( Level.FINE ) )
                             logger.log( Level.FINE, "Creating new dependency info for #{0} ({1})",
-                                    new Object[]{ Long.toString( includedOid ), include.getPolicyName() } );
-                        final Policy  includedPolicy = policyManager.findByPrimaryKey( includedOid );
+                                    new Object[]{ includedGuid, include.getPolicyName() } );
+                        final Policy  includedPolicy = policyManager.findByGuid( includedGuid );
                         if( includedPolicy == null ) {
-                            throw new ServerPolicyInstantiationException("Include assertion in Policy #" + thisPolicy.getOid() + " refers to Policy #" + includedOid + ", which does not exist");
+                            throw new ServerPolicyInstantiationException("Include assertion in Policy #" + thisPolicy.getOid() + " refers to Policy #" + includedGuid + ", which does not exist");
                         }
+                        includedOid = includedPolicy.getOid();
+                        descendentPolicies.add( includedOid);
                         includedInfo = findDependentPolicies( new Policy(includedPolicy, true), thisPolicy, seenOids, dependentVersions, events );
+                    } else {
+                        includedOid = includedInfo.policyId;
+                        descendentPolicies.add( includedOid );
                     }
 
                     if ( includedInfo.isValid() ) {
@@ -798,7 +832,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                         descendentPolicies.addAll( includedInfo.getMetadata().getUsedPolicyIds( false ) );
                         for ( Long policyOid : includedInfo.getMetadata().getUsedPolicyIds( false ) ) {
                             if ( seenOids.contains( policyOid )) {
-                                throw new CircularPolicyException( parentPolicy, thisPolicy.getOid(), thisPolicy.getName() );
+                                throw new CircularPolicyException( parentPolicy, thisPolicy.getGuid(), thisPolicy.getName() );
                             }
                         }
                     } else {
@@ -905,14 +939,14 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
        }
     }
 
-    private Set<Long> toPolicyIds( final Set<Policy> policies ) {
-        Set<Long> ids = new HashSet<Long>();
+    private Set<String> toPolicyGuids( final Set<Policy> policies ) {
+        Set<String> guids = new HashSet<String>();
 
         for ( Policy policy : policies ) {
-            ids.add( policy.getOid() );                      
+            guids.add( policy.getGuid() );
         }
 
-        return ids;
+        return guids;
     }
 
     /**

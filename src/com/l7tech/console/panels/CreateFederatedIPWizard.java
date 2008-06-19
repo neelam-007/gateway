@@ -17,7 +17,7 @@ import java.awt.event.ActionListener;
  */
 public class CreateFederatedIPWizard extends Wizard {
 
-    public CreateFederatedIPWizard(Frame parent, WizardStepPanel panel) {
+    public CreateFederatedIPWizard(Frame parent, WizardStepPanel panel, FederatedIdentityProviderConfig fipConfig) {
         super(parent, panel);
 
         setResizable(true);
@@ -25,9 +25,16 @@ public class CreateFederatedIPWizard extends Wizard {
         setShowDescription(false);
         Utilities.setEscKeyStrokeDisposes(this);
         
-        wizardInput = new FederatedIdentityProviderConfig();
-
-        ((IdentityProviderConfig)wizardInput).setTypeVal(IdentityProviderType.FEDERATED.toVal());
+        //check to verify that a federated identity provider config is provided.
+        if ( fipConfig != null ) {
+            wizardInput = fipConfig;    //set the wizard input to the one specified
+            ((IdentityProviderConfig)wizardInput).setTypeVal(IdentityProviderType.FEDERATED.toVal());
+            panel.readSettings(fipConfig, true);    //read in the settings into the panel
+        }
+        else {
+            wizardInput = new FederatedIdentityProviderConfig();
+            ((IdentityProviderConfig)wizardInput).setTypeVal(IdentityProviderType.FEDERATED.toVal());
+        }
 
         pack();
 
@@ -38,4 +45,5 @@ public class CreateFederatedIPWizard extends Wizard {
         });
 
     }
+
 }

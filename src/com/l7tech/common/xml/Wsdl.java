@@ -1,10 +1,7 @@
 package com.l7tech.common.xml;
 
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.SchemaUtil;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
+import com.l7tech.common.util.*;
 import org.apache.ws.policy.Assertion;
 import org.apache.ws.policy.Policy;
 import org.apache.ws.policy.PolicyReference;
@@ -18,6 +15,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.*;
+import javax.wsdl.Service;
 import javax.wsdl.extensions.*;
 import javax.wsdl.extensions.http.HTTPBinding;
 import javax.wsdl.extensions.mime.MIMEMultipartRelated;
@@ -55,33 +53,37 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class Wsdl {
+public class Wsdl implements Serializable {
+
+    //- PUBLIC
+
     public static final String WSDL_SOAP_NAMESPACE = "http://schemas.xmlsoap.org/wsdl/soap/";
 
-    public static final String NS = "ns";
     /**
      * bitmask for soap bindings filtering
      */
     public static final int SOAP_BINDINGS = 0x1;
+
     /**
      * bitmask for http bindings filtering
      */
     public static final int HTTP_BINDINGS = 0x2;
+
     /**
      * bitmask that accepts all bindings
      */
     public static final int ALL_BINDINGS = SOAP_BINDINGS | HTTP_BINDINGS;
 
-    private int showBindings = ALL_BINDINGS;
-
     /**
      * rpc style constaint
      */
     public static final String STYLE_RPC = "rpc";
+
     /**
      * document style constaint
      */
     public static final String STYLE_DOCUMENT = "document";
+
 
     /**
      * SOAP binding use literal - default
@@ -92,21 +94,6 @@ public class Wsdl {
      * SOAP binding use encoded (deprecated but WS-I)
      */
     public static final String USE_ENCODED = "encoded";
-
-    /**
-     * wsp:Policy and PolicyReference parser.
-     */
-    private DOMPolicyReader policyReader = (DOMPolicyReader)PolicyFactory.getPolicyReader(PolicyFactory.DOM_POLICY_READER);
-
-    /**
-     * Stores top-level policies found in this WSDL.
-     */
-    private PolicyRegistry policyRegistry = null;
-    private List<Policy> topLevelPolicies = null;
-
-    /**
-     * bitmask that accepts all bindings
-     */
 
     /**
      * The protected constructor accepting the <code>Definition</code>
@@ -136,8 +123,10 @@ public class Wsdl {
      */
     public static Wsdl newInstance(String documentBaseURI, Reader reader)
       throws WSDLException {
-        InputSource source = new InputSource(reader);
-        WSDLFactory fac = WSDLFactory.newInstance();
+        InputSource source = new InputSource();
+        source.setSystemId(documentBaseURI);
+        source.setCharacterStream(reader);
+        WSDLFactory fac = getWSDLFactory(false);
         WSDLReader wsdlReader = fac.newWSDLReader();
         wsdlReader.setFeature("javax.wsdl.verbose", false);
         disableSchemaExtensions(fac, wsdlReader);
@@ -159,7 +148,7 @@ public class Wsdl {
      */
     public static Wsdl newInstance(String documentBaseURI, Document wsdlDocument)
       throws WSDLException {
-        WSDLFactory fac = WSDLFactory.newInstance();
+        WSDLFactory fac = getWSDLFactory(false);
         WSDLReader reader = fac.newWSDLReader();
         reader.setFeature("javax.wsdl.verbose", false);
         disableSchemaExtensions(fac, reader);
@@ -183,7 +172,7 @@ public class Wsdl {
      */
     public static Wsdl newInstance(final String documentBaseURI, final Reader reader, final boolean allowLocalImports)
             throws WSDLException {
-        WSDLFactory fac = WSDLFactory.newInstance();
+        WSDLFactory fac = getWSDLFactory(false);
         return newInstance(fac, documentBaseURI, reader, allowLocalImports);
     }
 
@@ -223,7 +212,7 @@ public class Wsdl {
      */
     public static Wsdl newInstance(final WSDLLocator locator)
             throws WSDLException {
-        return newInstance(WSDLFactory.newInstance(), locator);
+        return newInstance(getWSDLFactory(false), locator);
     }
 
     /**
@@ -259,11 +248,27 @@ public class Wsdl {
      */
     public static Wsdl newInstance(String documentBaseURI, InputSource inputSource)
       throws WSDLException {
-        WSDLFactory fac = WSDLFactory.newInstance();
+        WSDLFactory fac = getWSDLFactory(false);
         WSDLReader reader = fac.newWSDLReader();
         reader.setFeature("javax.wsdl.verbose", false);
         disableSchemaExtensions(fac, reader);
         return new Wsdl(reader.readWSDL(documentBaseURI, inputSource));
+    }
+
+    /**
+     * Get a WSDLLocator that resolves URIs to the given Map.
+     *
+     * <p>The documentBaseURI must be one of the resources in the Map.</p>
+     *
+     * @param documentBaseURI The document base URI of the WSDL definition
+     * @param resourceMap The Map of URIs to content for the WSDL and all dependencies
+     * @param logger A logger to write debug information
+     * @return a WSDLLocator instance
+     */
+    public static WSDLLocator getWSDLLocator(final String documentBaseURI,
+                                             final Map<String,String> resourceMap,
+                                             final Logger logger ) {
+        return new CachedDocumentResolver( documentBaseURI, resourceMap, logger );
     }
 
     /**
@@ -513,65 +518,6 @@ public class Wsdl {
         return readPolicyReferenceSafely(uee.getElement());
     }
 
-    /** Read a policy element, canonicalizing it first to bring down any needed namespace decls. */
-    private Policy readPolicySafely(Element e) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            XmlUtil.canonicalize(e, baos);
-            return policyReader.readPolicy(new ByteArrayInputStream(baos.toByteArray()));
-        } catch (NullPointerException npe) {
-            // TODO fix this bug in policyReader
-            logger.log(Level.WARNING, "Unable to read policy element: " + ExceptionUtils.getMessage(npe), npe);
-            return null;
-        } catch (IOException e1) {
-            throw new RuntimeException(e1); // can't happen
-        }
-    }
-
-    /** Read a policy reference element, canonicalizing it first to bring down any needed namespace decls. */
-    private PolicyReference readPolicyReferenceSafely(Element e) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            XmlUtil.canonicalize(e, baos);
-            Document d = XmlUtil.parse(new ByteArrayInputStream(baos.toByteArray()));
-            Element ele = d.getDocumentElement();
-            String uri = ele.getAttribute("URI");
-            if (uri == null || uri.length() < 1) {
-                // Work-around NPE in policy reader when reference uses wsp:URI="..." instead of just URI="..."
-                uri = ele.getAttributeNS(ele.getNamespaceURI(), "URI");
-                if (uri == null || uri.length() < 1) {
-                    logger.warning("Ignoring policy reference with no URI attribute");
-                    return null;
-                }
-                // Hack the element so it contains the correct attribute, without a wsp: prefix
-                ele.removeAttributeNS(ele.getNamespaceURI(), "URI");
-                ele.setAttribute("URI", uri);
-            }
-            return policyReader.readPolicyReference(ele);
-        } catch (NullPointerException npe) {
-            // TODO fix this bug in policyReader
-            logger.log(Level.WARNING, "Unable to read policy reference element: " + ExceptionUtils.getMessage(npe), npe);
-            return null;
-        } catch (IOException e1) {
-            throw new RuntimeException(e1); // can't happen
-        } catch (SAXException e1) {
-            throw new RuntimeException(e1); // can't happen
-        }
-    }
-
-    /** @return a UEE if this is a wsp:Policy element, or null if it isn't. */
-    private UnknownExtensibilityElement getPolicyUue(ExtensibilityElement ee) {
-        if (!(ee instanceof UnknownExtensibilityElement))
-            return null;
-
-        QName qname = ee.getElementType();
-        if (!("Policy".equals(qname.getLocalPart())))
-            return null;
-        if (!("http://schemas.xmlsoap.org/ws/2004/09/policy".equals(qname.getNamespaceURI())))
-            return null;
-
-        return (UnknownExtensibilityElement)ee;
-    }
 
     /** @return a PolicyRegistry that will find top-level policies in this WSDL. */
     public PolicyRegistry getPolicyRegistry() {
@@ -585,20 +531,6 @@ public class Wsdl {
         }
 
         return policyRegistry;
-    }
-
-    /** @return a UEE if this is a wsp:PolicyReference element, or null if it isn't. */
-    private UnknownExtensibilityElement getPolicyReferenceUue(ExtensibilityElement ee) {
-        if (!(ee instanceof UnknownExtensibilityElement))
-            return null;
-
-        QName qname = ee.getElementType();
-        if (!("PolicyReference".equals(qname.getLocalPart())))
-            return null;
-        if (!("http://schemas.xmlsoap.org/ws/2004/09/policy".equals(qname.getNamespaceURI())))
-            return null;
-
-        return (UnknownExtensibilityElement)ee;
     }
 
     /**
@@ -648,15 +580,6 @@ public class Wsdl {
         ep = mergePolicies(ep, operation.getExtensibilityElements());
         ep = mergePolicies(ep, operation.getBindingOutput().getExtensibilityElements());
         return ep;
-    }
-
-    private Assertion mergePolicies(Assertion currentPolicy, List<ExtensibilityElement> extensibilityElements) throws BadPolicyReferenceException {
-        for (ExtensibilityElement eel : extensibilityElements) {
-            Policy p = toPolicy(eel);
-            if (p == null) continue;
-            currentPolicy = currentPolicy == null ? p : currentPolicy.merge(p, getPolicyRegistry());
-        }
-        return currentPolicy;
     }
 
     /**
@@ -781,8 +704,21 @@ public class Wsdl {
      * @return the WSDL <code>Types</code> described in
      *         this definition.
      */
-    public Types getTypes() {
-        return definition.getTypes();
+    public Collection<Types> getTypes() {
+        final Collection<Types> allTypes = new ArrayList<Types>();
+
+        collectElements(new ElementCollector() {
+            public void collect(final Definition def) {
+                if (def == null) return;
+
+                Types types = def.getTypes();
+                if ( types != null ) {
+                    allTypes.add(types);
+                }
+            }
+        }, definition);
+
+        return allTypes;
     }
 
     /**
@@ -817,7 +753,7 @@ public class Wsdl {
      * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
      */
     public void toWriter(Writer writer) throws WSDLException {
-        WSDLFactory fac = WSDLFactory.newInstance();
+        WSDLFactory fac = getWSDLFactory(true);
         WSDLWriter wsdlWriter = fac.newWSDLWriter();
         wsdlWriter.writeWSDL(definition, writer);
     }
@@ -843,7 +779,7 @@ public class Wsdl {
      * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
      */
     public void toOutputStream(OutputStream os) throws WSDLException {
-        WSDLFactory fac = WSDLFactory.newInstance();
+        WSDLFactory fac = getWSDLFactory(true);
         WSDLWriter wsdlWriter = fac.newWSDLWriter();
         wsdlWriter.writeWSDL(definition, os);
     }
@@ -1147,6 +1083,14 @@ public class Wsdl {
         return result2;
     }
 
+
+    public String getTargetNamespace() {
+
+        return getDefinition().getTargetNamespace();
+
+    }
+
+
     public String getBindingOutputNS(BindingOperation operation) {
         BindingOutput output = operation.getBindingOutput();
         if (output != null) {
@@ -1356,23 +1300,6 @@ public class Wsdl {
         return null;
     }
 
-    /**
-     * Traverses all the imported definitions and invokes collect on the collector
-     * for reach definition
-     */
-    private void collectElements(ElementCollector collector, Definition def) {
-        collector.collect(def);
-        //noinspection unchecked
-        final Map<String, List<Import>> imports = def.getImports();
-        for (List<Import> importList : imports.values()) {
-            for (Import importDef : importList) {
-                if (importDef.getDefinition() != null) {
-                    collectElements(collector, importDef.getDefinition());
-                }
-            }
-        }
-    }
-
     public static interface UrlGetter {
         String get(String url) throws IOException;
     }
@@ -1389,6 +1316,8 @@ public class Wsdl {
      */
     public static Element getSchemaElement(Definition def, UrlGetter getter)
       throws IOException, SAXException {
+        String baseUrlStr = def.getDocumentBaseURI();
+        URL baseUrl = baseUrlStr != null ? new URL(baseUrlStr) : null;
         Element schemaElement = null;
         Import imp = null;
         //noinspection unchecked
@@ -1401,8 +1330,7 @@ public class Wsdl {
                     // check if the schema is inside the file
                     String url = imp.getLocationURI();
                     String resolvedXml;
-                    resolvedXml = getter.get(url);
-
+                    resolvedXml = getter.get(new URL(baseUrl, url).toString());
                     if (resolvedXml != null) {
                         Document resultDoc = XmlUtil.stringToDocument(resolvedXml);
                         if (resultDoc != null) {
@@ -1426,6 +1354,100 @@ public class Wsdl {
         return schemaElement;
     }
 
+    public static void disableSchemaExtensions(WSDLFactory factory, WSDLReader reader) {
+        if (reader.getExtensionRegistry() != null) {
+            reader.setExtensionRegistry(disableSchemaExtensions(reader.getExtensionRegistry()));
+        }
+        else {
+            reader.setExtensionRegistry(disableSchemaExtensions(factory.newPopulatedExtensionRegistry()));            
+        }
+    }
+
+    public static ExtensionRegistry disableSchemaExtensions(ExtensionRegistry extensionRegistry) {
+        return extensionRegistry == null ? null : new NoSchemaExtensionRegistry(extensionRegistry);
+    }
+
+    /**
+     * Set the builder for WSDLFactory instances.
+     *
+     * @param wsdlFactoryBuilder The builder to use.
+     */
+    public static void setWSDLFactoryBuilder(final WSDLFactoryBuilder wsdlFactoryBuilder) {
+        Wsdl.wsdlFactoryBuilder = wsdlFactoryBuilder;
+    }
+
+    /**
+     * Get a WSDLFactory instance using the configured builder.
+     *
+     * @param writeEnabled true if a factory that supports writing is required
+     * @return a WSDLFactory
+     * @throws WSDLException if a factory cannot be created
+     * @see #setWSDLFactoryBuilder
+     */
+    public static WSDLFactory getWSDLFactory(final boolean writeEnabled) throws WSDLException {
+        return wsdlFactoryBuilder.getWSDLFactory(writeEnabled);
+    }
+
+    public interface WSDLFactoryBuilder {
+        WSDLFactory getWSDLFactory(final boolean writeEnabled) throws WSDLException;
+    }
+
+    //- PRIVATE
+
+    private static final long serialVersionUID = 1L;
+
+    private static final String NS = "ns";
+
+    private static WSDLFactoryBuilder wsdlFactoryBuilder = new WSDLFactoryBuilder() {
+        public WSDLFactory getWSDLFactory(final boolean writeEnabled) throws WSDLException {
+            return WSDLFactory.newInstance();
+        }
+    };
+
+    private transient Logger logger = Logger.getLogger(getClass().getName());
+
+    /**
+     * All bindings by default
+     */
+    private int showBindings = ALL_BINDINGS;
+
+    /**
+     * The wrapped WSDL definition
+     */
+    private transient Definition definition;
+
+    /**
+     * wsp:Policy and PolicyReference parser.
+     */
+    private transient DOMPolicyReader policyReader = (DOMPolicyReader)PolicyFactory.getPolicyReader(PolicyFactory.DOM_POLICY_READER);
+
+    /**
+     * Stores top-level policies found in this WSDL.
+     */
+    private transient List<Policy> topLevelPolicies = null;
+
+    /**
+     * Registry for top-level policies in this WSDL
+     */
+    private transient PolicyRegistry policyRegistry = null;
+
+    /**
+     * Traverses all the imported definitions and invokes collect on the collector
+     * for reach definition
+     */
+    private void collectElements(ElementCollector collector, Definition def) {
+        collector.collect(def);
+        //noinspection unchecked
+        final Map<String, List<Import>> imports = def.getImports();
+        for (List<Import> importList : imports.values()) {
+            for (Import importDef : importList) {
+                if (importDef.getDefinition() != null) {
+                    collectElements(collector, importDef.getDefinition());
+                }
+            }
+        }
+    }
+
     private String getLocalName( Service service ) {
         String name = null;
 
@@ -1446,21 +1468,238 @@ public class Wsdl {
         return name;
     }
 
-    private Definition definition;
-
-    private transient Logger logger = Logger.getLogger(getClass().getName());
-
-    public static void disableSchemaExtensions(WSDLFactory factory, WSDLReader reader) {
-        if (reader.getExtensionRegistry() != null) {
-            reader.setExtensionRegistry(disableSchemaExtensions(reader.getExtensionRegistry()));
+    private Assertion mergePolicies(Assertion currentPolicy, List<ExtensibilityElement> extensibilityElements) throws BadPolicyReferenceException {
+        for (ExtensibilityElement eel : extensibilityElements) {
+            Policy p = toPolicy(eel);
+            if (p == null) continue;
+            currentPolicy = currentPolicy == null ? p : currentPolicy.merge(p, getPolicyRegistry());
         }
-        else {
-            reader.setExtensionRegistry(disableSchemaExtensions(factory.newPopulatedExtensionRegistry()));            
+        return currentPolicy;
+    }
+
+    /** Read a policy element, canonicalizing it first to bring down any needed namespace decls. */
+    private Policy readPolicySafely(Element e) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            XmlUtil.canonicalize(e, baos);
+            return policyReader.readPolicy(new ByteArrayInputStream(baos.toByteArray()));
+        } catch (NullPointerException npe) {
+            // TODO fix this bug in policyReader
+            logger.log(Level.WARNING, "Unable to read policy element: " + ExceptionUtils.getMessage(npe), npe);
+            return null;
+        } catch (IOException e1) {
+            throw new RuntimeException(e1); // can't happen
         }
     }
 
-    public static ExtensionRegistry disableSchemaExtensions(ExtensionRegistry extensionRegistry) {
-        return extensionRegistry == null ? null : new NoSchemaExtensionRegistry(extensionRegistry);
+    /** Read a policy reference element, canonicalizing it first to bring down any needed namespace decls. */
+    private PolicyReference readPolicyReferenceSafely(Element e) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            XmlUtil.canonicalize(e, baos);
+            Document d = XmlUtil.parse(new ByteArrayInputStream(baos.toByteArray()));
+            Element ele = d.getDocumentElement();
+            String uri = ele.getAttribute("URI");
+            if (uri == null || uri.length() < 1) {
+                // Work-around NPE in policy reader when reference uses wsp:URI="..." instead of just URI="..."
+                uri = ele.getAttributeNS(ele.getNamespaceURI(), "URI");
+                if (uri == null || uri.length() < 1) {
+                    logger.warning("Ignoring policy reference with no URI attribute");
+                    return null;
+                }
+                // Hack the element so it contains the correct attribute, without a wsp: prefix
+                ele.removeAttributeNS(ele.getNamespaceURI(), "URI");
+                ele.setAttribute("URI", uri);
+            }
+            return policyReader.readPolicyReference(ele);
+        } catch (NullPointerException npe) {
+            // TODO fix this bug in policyReader
+            logger.log(Level.WARNING, "Unable to read policy reference element: " + ExceptionUtils.getMessage(npe), npe);
+            return null;
+        } catch (IOException e1) {
+            throw new RuntimeException(e1); // can't happen
+        } catch (SAXException e1) {
+            throw new RuntimeException(e1); // can't happen
+        }
+    }
+
+    /** @return a UEE if this is a wsp:Policy element, or null if it isn't. */
+    private UnknownExtensibilityElement getPolicyUue(ExtensibilityElement ee) {
+        if (!(ee instanceof UnknownExtensibilityElement))
+            return null;
+
+        QName qname = ee.getElementType();
+        if (!("Policy".equals(qname.getLocalPart())))
+            return null;
+        if (!("http://schemas.xmlsoap.org/ws/2004/09/policy".equals(qname.getNamespaceURI())))
+            return null;
+
+        return (UnknownExtensibilityElement)ee;
+    }
+
+    /** @return a UEE if this is a wsp:PolicyReference element, or null if it isn't. */
+    private UnknownExtensibilityElement getPolicyReferenceUue(ExtensibilityElement ee) {
+        if (!(ee instanceof UnknownExtensibilityElement))
+            return null;
+
+        QName qname = ee.getElementType();
+        if (!("PolicyReference".equals(qname.getLocalPart())))
+            return null;
+        if (!("http://schemas.xmlsoap.org/ws/2004/09/policy".equals(qname.getNamespaceURI())))
+            return null;
+
+        return (UnknownExtensibilityElement)ee;
+    }
+
+    /**
+     * Write definition into given map of uris to contents 
+     */
+    private void writeWsdl( final Definition definition, final Map<String,String> content ) throws WSDLException {
+        String uri = definition.getDocumentBaseURI();
+
+        if ( !content.keySet().contains( uri ) ) {
+            // Add this definition
+            StringWriter writer = new StringWriter();
+            WSDLFactory fac = getWSDLFactory(true);
+            WSDLWriter wsdlWriter = fac.newWSDLWriter();
+            wsdlWriter.writeWSDL( definition, writer );
+
+            // Add Wsdl imports
+            content.put( uri, writer.toString() );
+
+            //noinspection unchecked
+            Map<String, List<Import>> imports = (Map<String, List<Import>>) definition.getImports();
+            for ( List<Import> importList : imports.values() ) {
+                for ( Import imp : importList ) {
+                    Definition importedDef = imp.getDefinition();
+                    if ( importedDef != null ) {
+                        writeWsdl( importedDef, content );
+                    }
+                }
+            }
+        }
+    }    
+
+    /**
+     * The wrapped WSDL may not be Serializable, so we'll convert to a String.
+     */
+    private void writeObject( final ObjectOutputStream out) throws IOException {
+        out.defaultWriteObject();
+
+        Map<String,String> content = new HashMap<String,String>();
+        try {
+            writeWsdl( definition, content );            
+        } catch (WSDLException we) {
+            throw new CausedIOException("Error serializing WSDL.", we);
+        }
+
+        out.writeObject( definition.getDocumentBaseURI() );
+        out.writeObject( content );
+    }
+
+    /**
+     * Restore the wrapped WSDL from String representation.
+     */
+    private void readObject( final ObjectInputStream in ) throws IOException, ClassNotFoundException {
+        logger = Logger.getLogger(getClass().getName());
+        in.defaultReadObject();
+
+        String documentBaseURI = (String) in.readObject();
+        //noinspection unchecked
+        Map<String,String> content = (Map<String,String>) in.readObject();
+
+        try {
+            Wsdl wsdl = Wsdl.newInstance( getWSDLLocator(documentBaseURI, content, logger) );
+            definition = wsdl.getDefinition();
+        } catch (WSDLException we) {
+            throw new CausedIOException("Error deserializing WSDL.", we);
+        }
+    }
+
+    private static final class CachedDocumentResolver implements WSDLLocator {
+        private final Logger logger;
+        private final String uri;
+        private final Map<String,String> contentByUri;
+        private String lastUri = null;
+
+        CachedDocumentResolver( final String uri, final Map<String,String> contentByUri, final Logger logger ) {
+            this.uri = uri;
+            this.contentByUri = contentByUri;
+            this.logger = logger;
+        }
+
+        /**
+         * WSDLLocator
+         */
+        public InputSource getBaseInputSource() {
+            InputSource inputSource = new InputSource();
+            inputSource.setSystemId(uri);
+            inputSource.setCharacterStream(new StringReader(getDocumentByUri(uri)));
+            return inputSource;
+        }
+
+        /**
+         * WSDLLocator
+         */
+        public String getBaseURI() {
+            lastUri = uri;
+            return uri;
+        }
+
+        /**
+         * WSDLLocator
+         */
+        public InputSource getImportInputSource(final String parentLocation, final String importLocation) {
+            InputSource is = null;
+            try {
+                URI resolvedUri;
+                lastUri = importLocation; // ensure set even if not valid
+
+                if (parentLocation != null) {
+                    URI base = new URI(parentLocation);
+                    URI relative = new URI(importLocation);
+                    resolvedUri = base.resolve(relative);
+                }
+                else {
+                    resolvedUri = new URI(importLocation);
+                }
+
+                lastUri = resolvedUri.toString();
+                String content = getDocumentByUri(lastUri);
+
+                logger.log(Level.FINE, "Resolving WSDL uri '"+resolvedUri.toString()+"', document found '"+(content != null)+"'.");
+
+                if (content != null) {
+                    is = new InputSource();
+                    is.setSystemId(lastUri);
+                    is.setCharacterStream(new StringReader(content));
+                }
+            }
+            catch (URISyntaxException use) {
+                // of interest?
+            }
+            return is;
+        }
+
+        /**
+         * WSDLLocator
+         */
+        public String getLatestImportURI() {
+            return lastUri;
+        }
+
+        /**
+         * WSDLLocator
+         */
+        public void close() {
+        }
+
+        /**
+         * Get the document for the given uri
+         */
+        private String getDocumentByUri(final String uri) {
+            return contentByUri.get(uri);
+        }
     }
 
     private interface ElementCollector {

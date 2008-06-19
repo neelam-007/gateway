@@ -298,7 +298,7 @@ public class ConsoleWizardUtils {
         if (InetAddressUtil.isValidIpAddress(timeserverLine))
             return timeserverLine;
 
-        String resolvedIp = null;
+        String resolvedIp;
         resolvedIp = InetAddress.getByName(timeserverLine).getHostAddress();
 
         return resolvedIp;

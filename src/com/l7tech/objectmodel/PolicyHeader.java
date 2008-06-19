@@ -1,6 +1,5 @@
 package com.l7tech.objectmodel;
 
-import com.l7tech.service.PublishedService;
 import com.l7tech.common.policy.Policy;
 
 /**
@@ -15,15 +14,15 @@ public class PolicyHeader extends EntityHeader {
     public PolicyHeader(final Policy policy) {
         this( policy.isSoap(),
               policy.getName(),
-              "",
-              policy.getId());
+              policy.getInternalTag(),
+              policy.getGuid());
     }
 
     public PolicyHeader(final boolean isSoap,
                         final String name,
                         final String description,
-                        final String policyId) {
-        super(policyId, EntityType.POLICY, name, description);
+                        final String policyGuid) {
+        super(policyGuid, EntityType.POLICY, name, description);
 
         this.isSoap = isSoap;
     }

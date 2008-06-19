@@ -79,10 +79,10 @@ public class ServicePropertiesDialog extends JDialog {
     private String ssgURL;
     private final boolean canUpdate;
 
-    public ServicePropertiesDialog(Frame owner, PublishedService svc, boolean canUpdate) {
+    public ServicePropertiesDialog(Frame owner, PublishedService svc, boolean hasUpdatePermission) {
         super(owner, true);
         subject = svc;
-        this.canUpdate = canUpdate;
+        this.canUpdate = hasUpdatePermission;
         initialize();
         DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
@@ -122,26 +122,33 @@ public class ServicePropertiesDialog extends JDialog {
             }
         }
         String existinguri = subject.getRoutingUri();
-        if (existinguri == null) {
-            noURIRadio.setSelected(true);
-            customURIRadio.setSelected(false);
-            uriField.setEnabled(false);
-        } else {
-            noURIRadio.setSelected(false);
+        if (subject.isInternal()) {
+            noURIRadio.setEnabled(false);
             customURIRadio.setSelected(true);
+            uriField.setEnabled(true);
             uriField.setText(existinguri);
-        }
-        ActionListener toggleurifield = new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                if (noURIRadio.isSelected()) {
-                    uriField.setEnabled(false);
-                } else {
-                    uriField.setEnabled(true);
-                }
+        } else {
+            if (existinguri == null) {
+                noURIRadio.setSelected(true);
+                customURIRadio.setSelected(false);
+                uriField.setEnabled(false);
+            } else {
+                noURIRadio.setSelected(false);
+                customURIRadio.setSelected(true);
+                uriField.setText(existinguri);
             }
-        };
-        noURIRadio.addActionListener(toggleurifield);
-        customURIRadio.addActionListener(toggleurifield);
+            ActionListener toggleurifield = new ActionListener() {
+                public void actionPerformed(ActionEvent actionEvent) {
+                    if (noURIRadio.isSelected()) {
+                        uriField.setEnabled(false);
+                    } else {
+                        uriField.setEnabled(true);
+                    }
+                }
+            };
+            noURIRadio.addActionListener(toggleurifield);
+            customURIRadio.addActionListener(toggleurifield);
+        }
         Set<String> methods = subject.getHttpMethods();
         if (methods.contains("GET")) {
             getCheck.setSelected(true);
@@ -164,7 +171,7 @@ public class ServicePropertiesDialog extends JDialog {
             XMLContainer xmlContainer = new XMLContainer(true);
             final UIAccessibility uiAccessibility = xmlContainer.getUIAccessibility();
             editor = uiAccessibility.getEditor();
-            editor.setText(subject.getWsdlXml());
+            setWsdl( editor, null, subject.getWsdlXml(), subject.isInternal() );
             Action reformatAction = ActionModel.getActionByName(ActionModel.FORMAT_ACTION);
             reformatAction.actionPerformed(null);
             uiAccessibility.setTreeAvailable(false);
@@ -242,12 +249,13 @@ public class ServicePropertiesDialog extends JDialog {
                 }
             }
         });
-
-        noURIRadio.addActionListener(new ActionListener(){
-            public void actionPerformed(ActionEvent actionEvent) {
-                updateURL();
-            }
-        });
+        if (!subject.isInternal()) {
+            noURIRadio.addActionListener(new ActionListener(){
+                public void actionPerformed(ActionEvent actionEvent) {
+                    updateURL();
+                }
+            });
+        }
         customURIRadio.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent actionEvent) {
                 updateURL();
@@ -280,23 +288,69 @@ public class ServicePropertiesDialog extends JDialog {
 
         updateURL();
 
-        enableIfCanUpdate(nameField);
-        enableIfCanUpdate(okButton);
-        enableIfCanUpdate(resetWSDLButton);
-        enableIfCanUpdate(noURIRadio);
-        enableIfCanUpdate(customURIRadio);
-        enableIfCanUpdate(uriField);
-        enableIfCanUpdate(editWSDLButton);
-        enableIfCanUpdate(getCheck);
-        enableIfCanUpdate(putCheck);
-        enableIfCanUpdate(postCheck);
-        enableIfCanUpdate(deleteCheck);
-        enableIfCanUpdate(disableRadio);
-        enableIfCanUpdate(enableRadio);
-        enableIfCanUpdate(laxResolutionCheckbox);
+        //ensure appropriate read only status if this service is internal
+        applyReadOnlySettings(subject.isInternal());
+
+        //apply permissions last
+        applyPermissions();
+
     }
 
-    private void enableIfCanUpdate(final Component component) {
+    /**
+     * Set the editor text to the given WSDL optionally making abstract
+     *
+     * @param editor The editor (not null)
+     * @param wsdlDocSource The source in DOM form (if available)
+     * @param wsdlSource The source in String form (required if DOM not provided)
+     * @param isAbstract True to display an abstract WSDL (remove service information)
+     */
+    private void setWsdl( final XMLEditor editor,
+                          final Document wsdlDocSource,
+                          final String wsdlSource,
+                          final boolean isAbstract ) {
+        try {
+            String wsdl;
+
+            if ( isAbstract ) {
+                Document wsdlDoc = wsdlDocSource==null ? XmlUtil.stringAsDocument( wsdlSource ) : wsdlDocSource;
+                XmlUtil.removeChildElementsByName( wsdlDoc.getDocumentElement(), "http://schemas.xmlsoap.org/wsdl/", "service" );
+                wsdl = XmlUtil.nodeToString( wsdlDoc );
+            } else {
+                wsdl = wsdlSource == null ? XmlUtil.nodeToString( wsdlDocSource ) : wsdlSource;
+            }
+
+            editor.setText( wsdl );
+            editor.setCaretPosition(0);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Cannot display new WSDL", e);
+            editor.setText( "" );
+        }
+    }
+
+    private void applyPermissions() {
+        enableIfHasUpdatePermission(nameField);
+        enableIfHasUpdatePermission(okButton);
+        enableIfHasUpdatePermission(resetWSDLButton);
+        if (! subject.isInternal()) enableIfHasUpdatePermission(noURIRadio);
+        enableIfHasUpdatePermission(customURIRadio);
+        enableIfHasUpdatePermission(uriField);
+        enableIfHasUpdatePermission(editWSDLButton);
+        enableIfHasUpdatePermission(getCheck);
+        enableIfHasUpdatePermission(putCheck);
+        enableIfHasUpdatePermission(postCheck);
+        enableIfHasUpdatePermission(deleteCheck);
+        enableIfHasUpdatePermission(disableRadio);
+        enableIfHasUpdatePermission(enableRadio);
+        enableIfHasUpdatePermission(laxResolutionCheckbox);
+    }
+
+    private void applyReadOnlySettings(boolean isReadOnly) {
+        editWSDLButton.setEnabled(!isReadOnly);
+        resetWSDLButton.setEnabled(!isReadOnly);
+        resetWSDLButton.setEnabled(!isReadOnly);        
+    }
+
+    private void enableIfHasUpdatePermission(final Component component) {
         component.setEnabled(canUpdate && component.isEnabled());
     }
 
@@ -504,12 +558,7 @@ public class ServicePropertiesDialog extends JDialog {
                     newWSDL = wsdlDocument;
 
                     // display new xml in xml display
-                    try {
-                        editor.setText(XmlUtil.nodeToString(newWSDL));
-                        editor.setCaretPosition(0);
-                    } catch (IOException e) {
-                        logger.log(Level.WARNING, "cannot display new wsdl ", e);
-                    }               
+                    setWsdl( editor, newWSDL, null, subject.isInternal() );
                 }
             };
 
@@ -536,7 +585,7 @@ public class ServicePropertiesDialog extends JDialog {
                     newWSDL = rwd.getWsdlDocument();
                     newWSDLUrl = rwd.getWsdlUrl();
 
-                    newWsdlDocuments = new ArrayList();
+                    newWsdlDocuments = new ArrayList<ServiceDocument>();
                     for (int i=1; i<rwd.getWsdlCount(); i++) {
                         ServiceDocument sd = new ServiceDocument();
                         sd.setUri(rwd.getWsdlUri(i));
@@ -547,12 +596,7 @@ public class ServicePropertiesDialog extends JDialog {
                     }
 
                     // display new xml in xml display
-                    try {
-                        editor.setText(XmlUtil.nodeToString(newWSDL));
-                        editor.setCaretPosition(0);
-                    } catch (IOException e) {
-                        logger.log(Level.WARNING, "cannot display new wsdl ", e);
-                    }
+                    setWsdl( editor, newWSDL, null, subject.isInternal() );
                 }
             }
         });

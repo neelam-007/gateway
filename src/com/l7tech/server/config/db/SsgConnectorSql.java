@@ -3,7 +3,6 @@ package com.l7tech.server.config.db;
 import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.ResourceUtils;
 
 import java.lang.reflect.Method;
 import java.sql.*;
@@ -18,7 +17,6 @@ public class SsgConnectorSql {
     protected static final Logger logger = Logger.getLogger(SsgConnectorSql.class.getName());
 
     private final SsgConnector connector;
-    private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
 
     public SsgConnectorSql(SsgConnector connector) {
         this.connector = connector;
@@ -39,7 +37,7 @@ public class SsgConnectorSql {
         // Fill in properties
         for (final SsgConnector connector : connectors) {
             long oid = connector.getOid();
-            query(c, "select name,value from connector_property where connector_oid=" + oid, new ResultVisitor() {
+            DBActions.query(c, "select name,value from connector_property where connector_oid=" + oid, new DBActions.ResultVisitor() {
                 public void visit(ResultSet rs) throws SQLException {
                     String name = rs.getString(1);
                     String value = rs.getString(2);
@@ -55,7 +53,7 @@ public class SsgConnectorSql {
         StringBuffer sql = HexUtils.join(new StringBuffer("select "), ",", columnNames).append(" from ").append(table);
         final List<T> ret = new ArrayList<T>();
         final Method[] methods = getSetterNames(clazz, columnNames);
-        query(c, sql.toString(), new ResultVisitor() {
+        DBActions.query(c, sql.toString(), new DBActions.ResultVisitor() {
             public void visit(ResultSet rs) throws SQLException {
                 ret.add(instantiate(clazz, rs, methods));
             }
@@ -96,7 +94,7 @@ public class SsgConnectorSql {
                 throw new RuntimeException("Unable to find setter in class " + clazz + " named " + methName);
             ret.add(method);
         }
-        return ret.toArray(EMPTY_METHOD_ARRAY);
+        return ret.toArray(new Method[ret.size()]);
     }
 
     private static Map<String, Method> findSetters(Class clazz) {
@@ -110,7 +108,7 @@ public class SsgConnectorSql {
     }
 
     private static <T> T instantiate(Class<T> clazz, ResultSet row, Method[] setters) throws SQLException {
-        T target = null;
+        final T target;
         try {
             target = clazz.newInstance();
         } catch (Exception e) {
@@ -183,10 +181,10 @@ public class SsgConnectorSql {
             connector.setOid(oid);
         }
 
-        delete(c, "delete from connector_property where connector_oid=" + oid);
-        delete(c, "delete from connector where objectid=" + oid);
+        DBActions.delete(c, "delete from connector_property where connector_oid=" + oid, null);
+        DBActions.delete(c, "delete from connector where objectid=" + oid, null);
 
-        insert(c, "connector",
+        DBActions.insert(c, "connector", null,
                oid,
                connector.getVersion(),
                connector.getName(),
@@ -203,7 +201,8 @@ public class SsgConnectorSql {
         for (String propName : propNames) {
             String value = connector.getProperty(propName);
             long poid = allocateOid(c, -1250, "connector_property");
-            insert(c, "connector_property",
+            DBActions.insert(c, "connector_property", 
+                   new String[] { "objectid", "version", "connector_oid", "name", "value" },
                    poid,
                    1,
                    oid,
@@ -223,72 +222,12 @@ public class SsgConnectorSql {
      */
     private long allocateOid(Connection c, int def, String table) throws SQLException {
         final long[] smallestUsed = { def };
-        query(c, "select objectid from " + table + " where objectid < 0", new ResultVisitor() {
+        DBActions.query(c, "select objectid from " + table + " where objectid < 0", new DBActions.ResultVisitor() {
             public void visit(ResultSet rs) throws SQLException {
                 long used = rs.getLong(1);
                 if (used <= smallestUsed[0]) smallestUsed[0] = used;
             }
         });
         return --smallestUsed[0];
-    }
-
-    // Can't just use Callable since we take an arg; can't use Functions since we need to throw :/
-    private interface ResultVisitor {
-        void visit(ResultSet rs) throws SQLException;
-    }
-
-    final ResultVisitor nullVisitor = new ResultVisitor() {
-        public void visit(ResultSet rs) throws SQLException {
-        }
-    };
-
-    private static void query(Connection c, String sql, ResultVisitor visitor) throws SQLException {
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        try {
-            ps = c.prepareStatement(sql);
-            rs = ps.executeQuery();
-            while (rs.next()) visitor.visit(rs);
-        } finally {
-            ResourceUtils.closeQuietly(rs);
-            ResourceUtils.closeQuietly(ps);
-        }
-    }
-
-    private void delete(Connection c, String sql) throws SQLException {
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        try {
-            ps = c.prepareStatement(sql);
-            ps.execute(sql);
-        } finally {
-            ResourceUtils.closeQuietly(rs);
-            ResourceUtils.closeQuietly(ps);
-        }
-    }
-
-    private void insert(Connection c, String tablename, Object... properties) throws SQLException {
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        try {
-            StringBuilder sql = new StringBuilder("insert into " + tablename + " values(");
-            boolean first = true;
-            //noinspection UnusedDeclaration
-            for (Object property : properties) {
-                if (!first) sql.append(",");
-                first = false;
-                sql.append("?");
-            }
-            sql.append(")");
-
-            ps = c.prepareStatement(sql.toString());
-            for (int i = 0; i < properties.length; i++)
-                ps.setObject(i + 1, properties[i]);
-            ps.execute();
-
-        } finally {
-            ResourceUtils.closeQuietly(rs);
-            ResourceUtils.closeQuietly(ps);
-        }
     }
 }

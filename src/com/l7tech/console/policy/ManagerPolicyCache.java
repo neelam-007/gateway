@@ -5,11 +5,7 @@ package com.l7tech.console.policy;
 
 import com.l7tech.common.policy.Policy;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityInvalidationListener;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ReadOnlyEntityManager;
+import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
 import java.util.Map;
@@ -18,8 +14,9 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author alex
  */
-public class ManagerPolicyCache implements EntityInvalidationListener, ReadOnlyEntityManager<Policy, EntityHeader> {
+public class ManagerPolicyCache implements EntityInvalidationListener, ReadOnlyEntityManager<Policy, EntityHeader>, GuidBasedEntityManager<Policy> {
     private final Map<Long, Policy> cache = new ConcurrentHashMap<Long, Policy>();
+    private final Map<String, Long> guidToOidMap = new ConcurrentHashMap<String, Long>();
 
     public ManagerPolicyCache() {
     }
@@ -29,8 +26,29 @@ public class ManagerPolicyCache implements EntityInvalidationListener, ReadOnlyE
         if (p != null) return p;
 
         p = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(oid);
-        if (p != null) cache.put(oid, p);
+        if (p != null) {
+            cache.put(oid, p);
+            guidToOidMap.put(p.getGuid(), p.getOid());
+        }
         return p;
+    }
+
+    public Policy findByGuid(String guid) throws FindException {
+        Long oid = guidToOidMap.get(guid);
+        if(oid == null) {
+            Policy p = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(guid);
+            if(p != null) {
+                cache.put(p.getOid(), p);
+                guidToOidMap.put(p.getGuid(), p.getOid());
+            }
+            return p;
+        } else {
+            Policy p = findByPrimaryKey(oid);
+            if(p == null) {
+                guidToOidMap.remove(guid);
+            }
+            return p;
+        }
     }
 
     public Collection<EntityHeader> findAllHeaders() throws FindException {
@@ -55,7 +73,10 @@ public class ManagerPolicyCache implements EntityInvalidationListener, ReadOnlyE
 
     private void invalidate( final EntityHeader entityHeader ) {
         if ( entityHeader.getType() == EntityType.POLICY ) {
-            cache.remove( entityHeader.getOid() );
+            Policy removed = cache.remove( entityHeader.getOid() );
+            if(removed != null) {
+                guidToOidMap.remove(removed.getGuid());
+            }
         }
     }
 }

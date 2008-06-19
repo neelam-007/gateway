@@ -9,12 +9,17 @@ package com.l7tech.console.panels;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
+import com.l7tech.common.gui.util.PauseListener;
 
 import javax.swing.*;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -51,6 +56,7 @@ public class ThroughputQuotaForm extends JDialog {
     private JRadioButton decrementRadio;
     private JRadioButton incrementOnSuccessRadio;
     private JTextField varPrefixField;
+    private JLabel varPrefixStatusLabel;
 
     public ThroughputQuotaForm(Frame owner, ThroughputQuota subject, Assertion policyRoot, boolean readOnly) {
         super(owner, true);
@@ -73,7 +79,26 @@ public class ThroughputQuotaForm extends JDialog {
         model.setSelectedItem(TIME_UNITS[subject.getTimeUnit()-1]);
         counterNameCombo.setEditable(true);
 
+        clearVariablePrefixStatus();
         varPrefixField.setText(subject.getVariablePrefix());
+        validateVariablePrefix();
+        TextComponentPauseListenerManager.registerPauseListener(
+            varPrefixField,
+            new PauseListener() {
+                public void textEntryPaused(JTextComponent component, long msecs) {
+                    if(validateVariablePrefix()) {
+                        okButton.setEnabled(true);
+                    } else {
+                        okButton.setEnabled(false);
+                    }
+                }
+
+                public void textEntryResumed(JTextComponent component) {
+                    clearVariablePrefixStatus();
+                }
+            },
+            500
+        );
 
         // get counter names from other sla assertions here
         ArrayList listofexistingcounternames = new ArrayList();
@@ -182,6 +207,24 @@ public class ThroughputQuotaForm extends JDialog {
                 help();
             }
         });
+    }
+
+    /**
+     * @see {@link com.l7tech.console.util.VariablePrefixUtil#validateVariablePrefix}
+     */
+    private boolean validateVariablePrefix() {
+        return VariablePrefixUtil.validateVariablePrefix(
+            varPrefixField.getText(),
+            PolicyVariableUtils.getVariablesSetByPredecessors(subject).keySet(),
+            subject.getVariableSuffixes(),
+            varPrefixStatusLabel);
+    }
+
+    /**
+     * @see {@link com.l7tech.console.util.VariablePrefixUtil#clearVariablePrefixStatus}
+     */
+    private void clearVariablePrefixStatus() {
+        VariablePrefixUtil.clearVariablePrefixStatus(varPrefixStatusLabel);
     }
 
     private void populateExistingCounterNamesFromPolicy(Assertion toInspect, java.util.List container) {

@@ -130,6 +130,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ChangePasswordAction changePasswordAction = null;
     private PublishServiceAction publishServiceAction = null;
     private PublishNonSoapServiceAction publishNonSoapServiceAction = null;
+    private PublishInternalServiceAction publishInternalServiceAction;
     private CreateServiceWsdlAction createServiceAction = null;
     private CreatePolicyAction createPolicyAction;
     private ViewGatewayAuditsAction viewGatewayAuditsWindowAction;
@@ -642,6 +643,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getCreateServiceAction());
             menu.add(getCreatePolicyAction());
             menu.add(getPublishNonSoapServiceAction());
+            menu.add(getPublishInternalServiceAction());
             menu.addSeparator();
 
             menu.add(getManageCertificatesMenuItem());
@@ -1840,6 +1842,11 @@ public class MainWindow extends JFrame implements SheetHolder {
         return ssmApplication.isApplet();
     }
 
+    /** @return true if we are running trusted */
+    public boolean isTrusted() {
+        return ssmApplication.isTrusted();
+    }
+
     /**
      * Return the ToolBarPane property value.
      *
@@ -2598,10 +2605,13 @@ public class MainWindow extends JFrame implements SheetHolder {
               try {
                   SsmPreferences prefs = preferences;
                   connectionContext = " @ " + prefs.getString(SsmPreferences.SERVICE_URL);
-                  if (prefs.rememberLoginId()) {
-                      prefs.putProperty(SsmPreferences.LAST_LOGIN_ID, id);
-                      prefs.store();
-                  }
+                  /**
+                   * At anytime, save the last login id.
+                   * Note: showing the login id at the logon dialog is dependent on if the property, SAVE_LAST_LOGIN_ID
+                   * is true or false.  Also see {@link AbstractSsmPreferences#rememberLoginId}
+                   */
+                  prefs.putProperty(SsmPreferences.LAST_LOGIN_ID, id);
+                  prefs.store();
               } catch (IOException e) {
                   log.log(Level.WARNING, "onAuthSuccess()", e);
               }
@@ -2865,5 +2875,16 @@ public class MainWindow extends JFrame implements SheetHolder {
             }
         }
         return new X509Certificate[] { serverSslCert };
+    }
+
+    public Action getPublishInternalServiceAction() {
+        if (publishInternalServiceAction != null) {
+            return publishInternalServiceAction;
+        }
+        publishInternalServiceAction = new PublishInternalServiceAction();
+        publishInternalServiceAction.setEnabled(false);
+        this.addLogonListener(publishInternalServiceAction);
+        addPermissionRefreshListener(publishInternalServiceAction);
+        return publishInternalServiceAction;
     }
 }

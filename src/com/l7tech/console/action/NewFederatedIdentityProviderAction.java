@@ -11,16 +11,23 @@ import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+import com.l7tech.identity.fed.FederatedGroup;
+import com.l7tech.identity.fed.FederatedUser;
+import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.IdentityHeader;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,9 +40,30 @@ import java.util.logging.Logger;
 public class NewFederatedIdentityProviderAction extends NewProviderAction {
     static final Logger log = Logger.getLogger(NewFederatedIdentityProviderAction.class.getName());
 
+    private FederatedIdentityProviderConfig fipConfig;  //holds the configuration information for federated identity provider
+    private HashMap<String, String> userUpdateMap = null;
+    private HashMap<String, String> groupUpdateMap = null;
 
     public NewFederatedIdentityProviderAction(AbstractTreeNode node) {
         super(node);
+        this.fipConfig = null;
+    }
+
+    /**
+     * Constructor that will accept a pre-config federated identity provider config object.
+     *
+     * @param node
+     * @param fipConfig
+     */
+    public NewFederatedIdentityProviderAction(AbstractTreeNode node,
+                                              FederatedIdentityProviderConfig fipConfig,
+                                              HashMap<String, String> userUpdateMap,
+                                              HashMap<String, String> groupUpdateMap)
+    {
+        super(node);
+        this.fipConfig = fipConfig;
+        this.userUpdateMap = userUpdateMap;
+        this.groupUpdateMap = groupUpdateMap;
     }
 
     /**
@@ -73,8 +101,14 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
 
                 Frame f = TopComponents.getInstance().getTopParent();
 
-                FederatedIPGeneralPanel configPanel = new FederatedIPGeneralPanel(new FederatedIPTrustedCertsPanel(new IdentityProviderCertificateValidationConfigPanel(null)));
-                CreateFederatedIPWizard w = new CreateFederatedIPWizard(f, configPanel);
+                WizardStepPanel importUsersStepPanel = null;
+                if(fipConfig != null && ((fipConfig.getImportedGroups() != null && fipConfig.getImportedGroups().size() > 0) ||
+                        (fipConfig.getImportedUsers() != null && fipConfig.getImportedUsers().size() > 0)))
+                {
+                    importUsersStepPanel = new FederatedIPImportUsersPanel(null);
+                }
+                FederatedIPGeneralPanel configPanel = new FederatedIPGeneralPanel(new FederatedIPTrustedCertsPanel(new IdentityProviderCertificateValidationConfigPanel(importUsersStepPanel)));
+                CreateFederatedIPWizard w = new CreateFederatedIPWizard(f, configPanel, fipConfig); //pass federated identity provider config
                 //FederatedIdentityProviderWindow w = new FederatedIdentityProviderWindow(f);
 
                 // register itself to listen to the addEvent
@@ -107,7 +141,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
 
             // update the provider
             Wizard w = (Wizard)we.getSource();
-            final IdentityProviderConfig iProvider = (IdentityProviderConfig)w.getWizardInput();
+            final FederatedIdentityProviderConfig iProvider = (FederatedIdentityProviderConfig)w.getWizardInput();
 
             if (iProvider != null) {
 
@@ -131,10 +165,65 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
                             ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
                             header = null;
                         }
-                        if (header == null) {
-                            removeEntityListener(listener);
-                        } else {
+
+                        if(header != null) {
+                            try {
+                                HashMap<String, FederatedUser> userOidMap = new HashMap<String, FederatedUser>();
+                                if(iProvider.getImportedUsers() != null) {
+                                    // Import the users
+                                    for(FederatedUser user : iProvider.getImportedUsers().values()) {
+                                        String oldOid = user.getId();
+                                        user.setOid(FederatedUser.DEFAULT_OID);
+                                        String newOid = getIdentityAdmin().saveUser(header.getOid(), user, null);
+                                        user.setOid(Long.parseLong(newOid));
+
+                                        userOidMap.put(oldOid, user);
+                                        if(userUpdateMap != null) {
+                                            userUpdateMap.put(oldOid, newOid);
+                                        }
+                                    }
+                                }
+
+                                if(iProvider.getImportedGroups() != null) {
+                                    // Import the groups
+                                    for(FederatedGroup group : iProvider.getImportedGroups().values()) {
+                                        String oldOid = group.getId();
+                                        group.setOid(FederatedGroup.DEFAULT_OID);
+
+                                        Set<IdentityHeader> memberHeaders = new HashSet<IdentityHeader>();
+                                        if(!(group instanceof VirtualGroup)) {
+                                            if(iProvider.getImportedGroupMembership() != null) {
+                                                Set<String> members = iProvider.getImportedGroupMembership().get(oldOid);
+                                                if(members != null) {
+                                                    for(String memberOid : members) {
+                                                        if(userOidMap.containsKey(memberOid)) {
+                                                            FederatedUser user = userOidMap.get(memberOid);
+                                                            memberHeaders.add(new IdentityHeader(header.getOid(), user.getId(), EntityType.USER, user.getName(), null));
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        String newOid = getIdentityAdmin().saveGroup(header.getOid(), group, memberHeaders);
+                                        group.setOid(Long.parseLong(newOid));
+
+                                        if(groupUpdateMap != null) {
+                                            groupUpdateMap.put(oldOid, newOid);
+                                        }
+                                    }
+                                }
+                            } catch(Exception e) {
+                                String msg = "An error occurred while importing the users and groups.";
+                                JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                                                          msg,
+                                                          "Error Importing Users/Groups",
+                                                          JOptionPane.WARNING_MESSAGE);
+                            }
+
                             fireEventProviderAdded(header);
+                        } else {
+                            removeEntityListener(listener);
                         }
                     }
                 });

@@ -37,6 +37,7 @@
                 <value>com/l7tech/server/resources/SSG.hbm.xml</value>
                 <value>com/l7tech/server/resources/audit.hbm.xml</value>
                 <value>com/l7tech/server/resources/rbac.hbm.xml</value>
+                <value>com/l7tech/server/resources/wsdm.hbm.xml</value>
             </list>
         </property>
         <property name="hibernateProperties" ref="hibernateProperties"/>
@@ -100,7 +101,8 @@
                 <idref bean="ssgConnectorManager"/>
                 <idref bean="policyManager"/>
                 <idref bean="policyVersionManager"/>
-                <idref bean="sinkManager"/> 
+                <idref bean="sinkManager"/>
+                <idref bean="esmSubscriptionManager"/>
             </list>
         </property>
     </bean>

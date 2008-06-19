@@ -1,6 +1,8 @@
 package com.l7tech.console.util;
 
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.io.NullOutputStream;
 
 import javax.wsdl.Definition;
 import javax.wsdl.WSDLException;
@@ -12,6 +14,7 @@ import javax.wsdl.xml.WSDLReader;
 import javax.wsdl.xml.WSDLWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.*;
@@ -19,6 +22,10 @@ import java.security.cert.Certificate;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.PropertyPermission;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
+import org.xml.sax.InputSource;
 
 /**
  * WSDL utility methods for the console. 
@@ -26,6 +33,31 @@ import java.util.PropertyPermission;
  * @author Steve Jones
  */
 public class WsdlUtils {
+
+    //- PUBLIC
+
+    /**
+     * Get a WSDLFactoryBuilder that delegates to {@code getWSDLFactory}
+     *
+     * @return The WSDLFactoryBuilder
+     * @see #getWSDLFactory
+     */
+    public static Wsdl.WSDLFactoryBuilder getWSDLFactoryBuilder() {
+        return new Wsdl.WSDLFactoryBuilder() {
+            public WSDLFactory getWSDLFactory(final boolean writeEnabled) throws WSDLException {
+                try {
+                    return WsdlUtils.getWSDLFactory();
+                } catch (WSDLException we) {
+                    if ( !writeEnabled ) {
+                        // then fallback to "standard" implementation. This is useful in an untrusted environment.
+                        return WSDLFactory.newInstance();
+                    } else {
+                        throw we;
+                    }
+                }
+            }
+        };
+    }
 
     /**
      * Get a new WSDLFactory.
@@ -39,6 +71,7 @@ public class WsdlUtils {
      * @throws WSDLException if a WSDLFactory cannot be created
      *         (see {@link WSDLFactory#newInstance()}).
      */
+    @SuppressWarnings({"unchecked"})
     public static WSDLFactory getWSDLFactory() throws WSDLException {
         WSDLFactory factory;
 
@@ -48,66 +81,107 @@ public class WsdlUtils {
         else {
             // See if we are trusted
             try {
-                AccessController.checkPermission(new PropertyPermission("file.encoding", "read"));
-                AccessController.checkPermission(new PropertyPermission("line.separator", "read"));
+                AccessController.doPrivileged(new PrivilegedAction(){
+                    public Object run() {
+                        AccessController.checkPermission(new PropertyPermission("file.encoding", "read"));
+                        AccessController.checkPermission(new PropertyPermission("line.separator", "read"));
+                        return null;
+                    }
+                });
             }
             catch(AccessControlException ace) {
                 throw new WSDLFactoryNotTrustedException(WSDLException.OTHER_ERROR, "Insufficient permissions for factory use.");
             }
 
             // Load classes with permission to access required property
-            try {
-                final ClassLoader resourceLoader = WSDLFactory.class.getClassLoader();
-                final CodeSource cs = new CodeSource(new URL("file:/resource/wsdl"), (Certificate[])null);
-                final Permissions permissions = new Permissions();
-                permissions.add(new PropertyPermission("file.encoding", "read"));
-                permissions.add(new PropertyPermission("line.separator", "read"));
+            Object result = AccessController.doPrivileged(new PrivilegedAction(){
+                public Object run() {
+                    try {
+                        final ClassLoader resourceLoader = WSDLFactory.class.getClassLoader();
+                        final CodeSource cs = new CodeSource(new URL("file:/resource/wsdl"), (Certificate[])null);
+                        final Permissions permissions = new Permissions();
+                        permissions.add(new PropertyPermission("file.encoding", "read"));
+                        permissions.add(new PropertyPermission("line.separator", "read"));
 
-                final ClassLoader classLoader = new SecureClassLoader(new FilterClassLoader(resourceLoader, "com.ibm.wsdl")){
-                    private ProtectionDomain pd;
-                    public Class<?> findClass(final String name) throws ClassNotFoundException {
-                        try {
-                            String resName = name.replace(".", "/").concat(".class");
-                            URL resUrl = resourceLoader.getResource(resName);
-                            if (resUrl == null)
-                                throw new ClassNotFoundException("Resource not found for class '" + name + "'.");
+                        final ClassLoader classLoader = new SecureClassLoader(new FilterClassLoader(resourceLoader, "com.ibm.wsdl")){
+                            private ProtectionDomain pd;
+                            public Class<?> findClass(final String name) throws ClassNotFoundException {
+                                try {
+                                    String resName = name.replace(".", "/").concat(".class");
+                                    URL resUrl = resourceLoader.getResource(resName);
+                                    if (resUrl == null)
+                                        throw new ClassNotFoundException("Resource not found for class '" + name + "'.");
 
-                            if (pd == null) {
-                                // lazily resolve to add in permission for URL
-                                Permission permission = resUrl.openConnection().getPermission();
-                                if (permission != null)
-                                    permissions.add(permission);
-                                pd = new ProtectionDomain(cs, permissions);
+                                    if (pd == null) {
+                                        // lazily resolve to add in permission for URL
+                                        Permission permission = resUrl.openConnection().getPermission();
+                                        if (permission != null)
+                                            permissions.add(permission);
+                                        pd = new ProtectionDomain(cs, permissions);
+                                    }
+                                    InputStream resIn = resUrl.openStream();
+                                    byte[] classData = HexUtils.slurpStream(resIn, 102400);
+                                    return defineClass(name, classData, 0, classData.length, pd);
+                                } catch(IOException ioe) {
+                                    throw new ClassNotFoundException("Error loading resource for class '" + name + "'.", ioe);
+                                }
                             }
-                            InputStream resIn = resUrl.openStream();
-                            byte[] classData = HexUtils.slurpStream(resIn, 102400);
-                            Class clazz = defineClass(name, classData, 0, classData.length, pd);
-                            return clazz;
-                        } catch(IOException ioe) {
-                            throw new ClassNotFoundException("Error loading resource for class '" + name + "'.", ioe);
+                        };
+
+                        WSDLFactory factory = new AppletSafeWSDLFactory((WSDLFactory) classLoader.loadClass("com.ibm.wsdl.factory.WSDLFactoryImpl").newInstance());
+
+                        // Process a test WSDL to ensure that classes are loaded here in a trusted section.
+                        // If this is not done then issues occur when using the factory from untrusted code
+                        try {
+                            Definition testDefinition = factory.newWSDLReader().readWSDL("urn:test", new InputSource(new StringReader("<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\"/>")));
+                            factory.newWSDLWriter().writeWSDL( testDefinition, new NullOutputStream() );
+                        } catch (WSDLException we) {
+                            logger.log(Level.WARNING, "Error processing test WSDL", we);    
                         }
+
+                        return factory;
                     }
-                };
+                    catch(MalformedURLException mue) {
+                        return mue;
+                    }
+                    catch(ClassNotFoundException cnfe) {
+                        return cnfe;
+                    }
+                    catch(InstantiationException ie) {
+                        return ie;
+                    }
+                    catch(IllegalAccessException iae) {
+                        return iae;            
+                    }
+                }
+            });
 
-                factory = new AppletSafeWSDLFactory((WSDLFactory) classLoader.loadClass("com.ibm.wsdl.factory.WSDLFactoryImpl").newInstance());
-
-            }
-            catch(MalformedURLException mue) {
-                throw new WSDLException(WSDLException.OTHER_ERROR, "Could not load factory.", mue);
-            }
-            catch(ClassNotFoundException cnfe) {
-                throw new WSDLException(WSDLException.OTHER_ERROR, "Could not load factory.", cnfe);            
-            }
-            catch(InstantiationException ie) {
-                throw new WSDLException(WSDLException.OTHER_ERROR, "Could not create factory.", ie);
-            }
-            catch(IllegalAccessException iae) {
-                throw new WSDLException(WSDLException.OTHER_ERROR, "Could not create factory.", iae);            
+            if (result instanceof Exception) {
+                throw new WSDLException(WSDLException.OTHER_ERROR, "Could not load factory.", (Exception) result);
+            } else {
+                factory = (WSDLFactory) result;
             }
         }
 
         return factory;
     }
+
+    /**
+     * WSDLException for access control issues.
+     */
+    public static final class WSDLFactoryNotTrustedException extends WSDLException {
+        public WSDLFactoryNotTrustedException(String faultCode, String msg) {
+            super(faultCode, msg);
+        }
+
+        public WSDLFactoryNotTrustedException(String faultCode, String msg, Throwable t) {
+            super(faultCode, msg, t);
+        }
+    }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(WsdlUtils.class.getName());
 
     /**
      * Delegates all WSDLFactory methods except newPopulatedExtensionRegistry. This is prepoulated with safe-for-applet
@@ -141,8 +215,8 @@ public class WsdlUtils {
         public ExtensionRegistry newPopulatedExtensionRegistry() {
             ExtensionRegistry reg = delegate.newPopulatedExtensionRegistry();
 
-            ExtensionSerializer ser = null;
-            ExtensionDeserializer deser = null;
+            ExtensionSerializer ser;
+            ExtensionDeserializer deser;
             try {
                 ser = getDefaultSerializer(reg);
                 deser = getDefaultDeserializer(reg);
@@ -289,19 +363,6 @@ public class WsdlUtils {
     }
 
     /**
-     * WSDLException for access control issues.
-     */
-    public static final class WSDLFactoryNotTrustedException extends WSDLException {
-        public WSDLFactoryNotTrustedException(String faultCode, String msg) {
-            super(faultCode, msg);
-        }
-
-        public WSDLFactoryNotTrustedException(String faultCode, String msg, Throwable t) {
-            super(faultCode, msg, t);
-        }
-    }
-
-    /**
      * Filtering class loader that will delegate to its parent for all but one
      * package prefix.
      */
@@ -353,7 +414,7 @@ public class WsdlUtils {
             if (propagate(asResource(name))) {
                 return filteredParent.getResources(name);
             }
-            return Collections.enumeration(Collections.EMPTY_LIST);
+            return Collections.enumeration(Collections.<URL>emptyList());
         }
 
         //- PRIVATE

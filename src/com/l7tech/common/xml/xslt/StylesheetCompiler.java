@@ -5,20 +5,25 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.TarariCompiledStylesheet;
+import com.l7tech.server.url.UrlCacheEntryType;
 import org.apache.xalan.templates.ElemVariable;
 import org.apache.xalan.templates.StylesheetRoot;
-import org.xml.sax.InputSource;
 import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import java.io.StringReader;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,6 +72,11 @@ public class StylesheetCompiler {
             DocumentBuilder db = dbf.newDocumentBuilder();
             db.setEntityResolver( XmlUtil.getSafeEntityResolver() );
             Document document = db.parse(new InputSource(new StringReader(thing)));
+
+            // remove any output elements that use xalan extensions from the stylesheet doc before compiling
+            removeOutputWithXalanExtension(document);
+
+            // create the XSL transform template
             Templates result = transfactory.newTemplates(new DOMSource(document));
             if (result == null) {
                 if (!fatals.isEmpty()) {
@@ -105,5 +115,46 @@ public class StylesheetCompiler {
         }
 
         return varsUsed;
+    }
+
+
+    /* Namespace attributes used for xalan extension */
+    private static final String XALAN_EXTENSION_NS1 = "http://xml.apache.org/xalan";
+    private static final String XALAN_EXTENSION_NS2 = "http://xml.apache.org/xslt";
+
+    private static void removeOutputWithXalanExtension(Document document) {
+
+        Map nsMap = XmlUtil.getNamespaceMap(document.getDocumentElement());
+        if (nsMap.containsValue(XALAN_EXTENSION_NS1) || nsMap.containsValue(XALAN_EXTENSION_NS2)){
+
+            // mark nodes for deletion
+            List<Node> tobeDeleted = new ArrayList<Node>();
+
+            // find the output elements that use xalan extensions
+            NodeList nodes = document.getElementsByTagNameNS(UrlCacheEntryType.XSLT.getNamespaceUri(), "output");
+            for (int i=0; i<nodes.getLength(); i++) {
+
+                // check the element
+                NamedNodeMap map = nodes.item(i).getAttributes();
+                for (int j=0; j<map.getLength(); j++) {
+
+                    if (XALAN_EXTENSION_NS1.equals(map.item(j).getNamespaceURI()) ||
+                        XALAN_EXTENSION_NS2.equals(map.item(j).getNamespaceURI()))
+                    {
+                        // mark node for removal
+                        tobeDeleted.add(nodes.item(i));
+                    }
+                }
+            }
+
+            // delete the output nodes from the document
+            for (Node n : tobeDeleted) {
+                n.getParentNode().removeChild(n);
+            }
+            // should we log?
+//            try {
+//                System.out.println("trimmed xsl:" + new String(XmlUtil.toByteArray(document.getDocumentElement())));
+//            } catch (java.io.IOException ioe) {}
+        }
     }
 }

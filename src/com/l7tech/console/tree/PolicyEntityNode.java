@@ -4,6 +4,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.common.policy.Policy;
+import com.l7tech.common.policy.PolicyType;
 import com.l7tech.console.action.DeletePolicyAction;
 import com.l7tech.console.action.EditPolicyAction;
 import com.l7tech.console.action.EditPolicyProperties;
@@ -60,7 +61,7 @@ public class PolicyEntityNode extends EntityHeaderNode {
      */
     public Policy refreshPolicy() throws FindException {
         EntityHeader eh = getEntityHeader();
-        policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(eh.getOid());
+        policy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(eh.getStrId());
         // throw something if null, the service may have been deleted
         if (policy == null) {
             TopComponents creg = TopComponents.getInstance();
@@ -79,7 +80,7 @@ public class PolicyEntityNode extends EntityHeaderNode {
             throw new FindException("The policy for '"+eh.getName()+"' does not exist any more.");
         }
 
-        EntityHeader newEh = new EntityHeader(policy.getId(), eh.getType(), policy.getName(), policy.getName());
+        EntityHeader newEh = new EntityHeader(policy.getGuid(), eh.getType(), policy.getName(), policy.getName());
         setUserObject(newEh);
         firePropertyChange(this, "UserObject", eh, newEh);
         return policy;
@@ -142,8 +143,10 @@ public class PolicyEntityNode extends EntityHeaderNode {
     @Override
     protected String iconResource(boolean open) {
         boolean isSoap;
+        boolean isInternal;
         try {
             isSoap = getPolicy().isSoap();
+            isInternal = getPolicy().getType() == PolicyType.INTERNAL;
         } catch (Exception e) {
             ErrorManager.getDefault().
               notify(Level.SEVERE, e,
@@ -151,10 +154,12 @@ public class PolicyEntityNode extends EntityHeaderNode {
             return "com/l7tech/console/resources/include16.png";
         }
 
-        if ( isSoap ) {
-            return "com/l7tech/console/resources/include_soap16.png";
+        if (isInternal) {
+            if (isSoap) return "com/l7tech/console/resources/include_internalsoap16.png";
+            else return "com/l7tech/console/resources/include_internal16.png";
         } else {
-            return "com/l7tech/console/resources/include16.png";
+            if (isSoap) return "com/l7tech/console/resources/include_soap16.png";
+            else return "com/l7tech/console/resources/include16.png";
         }
     }
 

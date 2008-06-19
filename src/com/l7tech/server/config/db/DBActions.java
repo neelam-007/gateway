@@ -66,6 +66,7 @@ public class DBActions {
     private OSSpecificFunctions osFunctions;
 
     private DbVersionChecker[] dbCheckers = new DbVersionChecker[] {
+        new DbVersion45Checker(),
         new DbVersion44Checker(),
         new DbVersion43Checker(),
         new DbVersion42Checker(),
@@ -706,7 +707,7 @@ public class DBActions {
         try {
             stmt = conn.createStatement();
             stmt.execute("use " + sourceDbName);
-            Set<String> tables = new HashSet<String>();
+            Set<String> tables = new LinkedHashSet<String>();
 
             DatabaseMetaData metadata = conn.getMetaData();
             String[] tableTypes = {
@@ -1064,6 +1065,147 @@ Statement getCreateTablesStmt = null;
         }
     }
 
+    /**
+     * Prepare, execute and close a new statement on the specified database connection, using the specified
+     * literal SQL which is assumed to contain a query that will produce a ResultSet,
+     * and invoking the specified visitor on each row of the resulting ResultSet.
+     *
+     * @return the number of times the visitor's visit method was called on a result row.  This will be equal
+     *         to the number of rows in the result set as long as the visitor never changes the cursor position.
+     * @param c the JDBC connection on which to run the query.  Required.
+     * @param sql A raw SQL query which will be passed to the database unmodified and without any parameter substitution. Required.
+     * @param visitor a visitor to invoke on each row of the result.  If null, the ResultSet will still be cursored through
+     *                all the resulting rows to obtain a count, but the contents of each row's data will be ignored.
+     * @throws java.sql.SQLException if the statement cannot be prepared or executed, or if the visitor throws SQLException
+     */
+    public static int query(Connection c, String sql, ResultVisitor visitor) throws SQLException {
+        return query(c, sql, null, visitor);
+    }
+
+    /**
+     * Prepare, execute and close a new statement on the specified database connection, using the specified
+     * literal SQL which is assumed to contain a query that will produce a ResultSet,
+     * and invoking the specified visitor on each row of the resulting ResultSet.
+     *
+     * @return the number of times the visitor's visit method was called on a result row.  This will be equal
+     *         to the number of rows in the result set as long as the visitor never changes the cursor position.
+     * @param c the JDBC connection on which to run the query.  Required.
+     * @param sql A raw SQL query which will be passed to the database unmodified. Required.
+     *            It may contain parameter placeholders ("?" characters) as long as a non-empty parameterValues array is provided.
+     * @param parameterValues values for parameter placeholders in the sql, or null if sql contains no placeholders.
+     * @param visitor a visitor to invoke on each row of the result.  If null, the ResultSet will still be cursored through
+     *                all the resulting rows to obtain a count, but the contents of each row's data will be ignored.
+     * @throws java.sql.SQLException if the statement cannot be prepared or executed, or if the visitor throws SQLException
+     */
+    public static int query(Connection c, String sql, Object[] parameterValues, ResultVisitor visitor) throws SQLException {
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            ps = c.prepareStatement(sql);
+            setObjects(ps, parameterValues);
+            rs = ps.executeQuery();
+            int count = 0;
+            while (rs.next()) {
+                if (visitor != null) visitor.visit(rs);
+                count++;
+            }
+            return count;
+        } finally {
+            ResourceUtils.closeQuietly(rs);
+            ResourceUtils.closeQuietly(ps);
+        }
+    }
+
+    /**
+     * Prepare, execute and close a new statement on the specified database connection, using the specified
+     * literal SQL, which is assumed to contain a query such as DELETE that will not produce a ResultSet.
+     *
+     * @param c the JDBC connection on which to run the query.  Required.
+     * @param sql A raw SQL query which will be passed to the database unmodified. Required.
+     *            It may contain parameter placeholders ("?" characters) as long as a non-empty parameterValues array is provided.
+     * @param parameterValues values for parameter placeholders in the sql, or null if sql contains no placeholders.
+     * @throws java.sql.SQLException if the statement cannot be prepared or executed
+     */
+    public static void delete(Connection c, String sql, Object[] parameterValues) throws SQLException {
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            ps = c.prepareStatement(sql);
+            setObjects(ps, parameterValues);
+            ps.executeUpdate();
+        } finally {
+            ResourceUtils.closeQuietly(rs);
+            ResourceUtils.closeQuietly(ps);
+        }
+    }
+
+    /**
+     * Prepare, execute and close a new INSERT statement on the specified database connection which will
+     * add a row to the specified table with the specified column values in order.
+     *
+     * @param c the JDBC connection on which to run the query.  Required.
+     * @param tablename the name of the table to which a row is to be added.  Required.
+     * @param columnNames  names of the columns corresponding to the values provided for columnValues, or null
+     *                     to assume that the columns exactly match the full schema of the table.
+     *                     <p/>
+     *                     If columnNames are provided, the generated SQL will resemble
+     *                     "insert into tablename (colname1, colname2) values (?,?)"; otherwise, it will resemble
+     *                     "insert into tablename values(?,?)".
+     *
+     * @param columnValues the complete column values for the row, in order.  The number of values provided
+     *                   must match the number of columns in the table, and their Java runtime types must be
+     *                   mappable by this JDBC driver's {@link java.sql.PreparedStatement#setObject(int, Object)} method
+     *                   into the correct database types of each corresponding column.  In particular, care should
+     *                   be taken when passing null values as columnValues; see the javadoc for the setObject method
+     *                   for details.
+     * @throws java.sql.SQLException if the statement cannot be prepared or executed, or if columnNames are provided
+     *                               but its size does not match the size of columnValues.
+     */
+    public static void insert(Connection c, String tablename, String[] columnNames, Object... columnValues) throws SQLException {
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            boolean first;
+            StringBuilder sql = new StringBuilder("insert into " + tablename);
+            if (columnNames != null && columnNames.length > 0) {
+                if (columnNames.length != columnValues.length)
+                    throw new SQLException("insert was given " + columnNames.length + " column names, but "
+                                            + columnValues.length + " column values");
+                sql.append(" (");
+                first = true;
+                for (String name : columnNames) {
+                    if (!first) sql.append(",");
+                    first = false;
+                    sql.append(name);
+                }
+                sql.append(")");
+            }
+            sql.append(" values(");
+            first = true;
+            //noinspection UnusedDeclaration
+            for (Object columnValue : columnValues) {
+                if (!first) sql.append(",");
+                first = false;
+                sql.append("?");
+            }
+            sql.append(")");
+
+            ps = c.prepareStatement(sql.toString());
+            setObjects(ps, columnValues);
+            ps.execute();
+
+        } finally {
+            ResourceUtils.closeQuietly(rs);
+            ResourceUtils.closeQuietly(ps);
+        }
+    }
+
+    private static void setObjects(PreparedStatement ps, Object... columnValues) throws SQLException {
+        if (columnValues != null)
+            for (int i = 0; i < columnValues.length; i++)
+                ps.setObject(i + 1, columnValues[i]);
+    }
+
     private interface StatementUser {
         void useStatement(String tableName, List<String> rowData) throws SQLException;
     }
@@ -1260,5 +1402,22 @@ Statement getCreateTablesStmt = null;
             Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
             ui.showSuccess(". ");
         }
+    }
+
+    /**
+     * Callback used to invoke the visitor on each row of the ResultSet.
+     * <p/>
+     * We don't just use Callable since we take an arg; we don't use Functions since we need to throw a checked exception.
+     */
+    public interface ResultVisitor {
+        /**
+         * Visit a row of the ResultSet.
+         * If this method returns normally, it will be assumed that the row was processed successfully.
+         *
+         * @param rs the result set, already positioned on a row and ready to have columns values read from it.
+         *           Never null.  Implementations should generally avoid changing the cursor position.
+         * @throws java.sql.SQLException if there is a SQLException while processing the row
+         */
+        void visit(ResultSet rs) throws SQLException;
     }
 }

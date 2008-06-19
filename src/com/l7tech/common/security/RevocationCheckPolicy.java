@@ -64,7 +64,14 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
         this.defaultSuccess = defaultSuccess;
     }
 
-    
+    public boolean isContinueOnServerUnavailable() {
+        return continueOnServerUnavailable;
+    }
+
+    public void setContinueOnServerUnavailable(boolean continueOnServerUnavailable) {
+        this.continueOnServerUnavailable = continueOnServerUnavailable;
+    }
+
     public List<RevocationCheckPolicyItem> getRevocationCheckItems() {
         return revocationCheckItems;
     }
@@ -93,6 +100,7 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
 
         return defaultPolicy == that.defaultPolicy &&
                 defaultSuccess == that.defaultSuccess &&
+                continueOnServerUnavailable == that.continueOnServerUnavailable &&
                 revocationCheckItems.equals( that.revocationCheckItems );
 
     }
@@ -106,6 +114,7 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
         result = 31 * result + revocationCheckItems.hashCode();
         result = 31 * result + (defaultPolicy ? 1 : 0);
         result = 31 * result + (defaultSuccess ? 1 : 0);
+        result = 31 * result + (continueOnServerUnavailable ? 1 : 0);
         return result;
     }
 
@@ -177,5 +186,6 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
     private List<RevocationCheckPolicyItem> revocationCheckItems;
     private boolean defaultPolicy;
     private boolean defaultSuccess;
+    private boolean continueOnServerUnavailable;  
 
 }

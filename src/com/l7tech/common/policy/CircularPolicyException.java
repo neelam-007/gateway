@@ -9,7 +9,7 @@ import java.text.MessageFormat;
  * @author alex
 */
 public class CircularPolicyException extends Exception {
-    public CircularPolicyException(Policy policy, long includedOid, String includedName) {
-        super(MessageFormat.format("Policy #{0} ({1}) includes a circular reference to Policy #{2} ({3})", policy.getOid(), policy.getName(), includedOid, includedName));
+    public CircularPolicyException(Policy policy, String includedGuid, String includedName) {
+        super(MessageFormat.format("Policy #{0} ({1}) includes a circular reference to Policy #{2} ({3})", policy.getOid(), policy.getName(), includedGuid, includedName));
     }
 }

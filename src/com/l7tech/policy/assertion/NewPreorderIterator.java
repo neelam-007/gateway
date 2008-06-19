@@ -90,6 +90,8 @@ public class NewPreorderIterator implements Iterator {
             if (translated instanceof CompositeAssertion) {
                 collect((CompositeAssertion) translated, results);
             }
+
+            translator.translationFinished(kid);
         }
     }
 

@@ -109,7 +109,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             logger.log(Level.SEVERE, "Failed authentication", e);
             return;
         } catch (IssuedCertNotPresentedException e) {
-            logger.log(Level.SEVERE, "Requestor is refused csr", e);
+            logger.log(Level.WARNING, "Requestor is refused csr");
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
               " Contact your administrator for more info.");
             return;

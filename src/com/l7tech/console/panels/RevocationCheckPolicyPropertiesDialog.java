@@ -129,6 +129,7 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
     private JButton moveDownButton;
     private JButton moveUpButton;
     private JCheckBox succeedOnUnknownCheckBox;
+    private JCheckBox continueOnServerUnavailableCheckBox;
 
     /**
      * Initialize the dialog
@@ -209,6 +210,7 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
         nameTextField.setText(revocationCheckPolicy.getName());
         useAsDefaultRevocationCheckBox.setSelected(revocationCheckPolicy.isDefaultPolicy());
         succeedOnUnknownCheckBox.setSelected(revocationCheckPolicy.isDefaultSuccess());
+        continueOnServerUnavailableCheckBox.setSelected(revocationCheckPolicy.isContinueOnServerUnavailable());
         policyItemModel = new DefaultListModel();
         for (RevocationCheckPolicyItem item : revocationCheckPolicy.clone().getRevocationCheckItems()) {
             policyItemModel.addElement(item);
@@ -238,6 +240,7 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
         moveDownButton.setEnabled(enableControls);
         moveUpButton.setEnabled(enableControls);
         succeedOnUnknownCheckBox.setEnabled(enableControls);
+        continueOnServerUnavailableCheckBox.setEnabled(enableControls);
 
         boolean contextualEnabled = false;
         boolean moveUpEnabled = false;
@@ -343,6 +346,7 @@ public class RevocationCheckPolicyPropertiesDialog extends JDialog {
             revocationCheckPolicy.setName(nameTextField.getText().trim());
             revocationCheckPolicy.setDefaultPolicy(useAsDefaultRevocationCheckBox.isSelected());
             revocationCheckPolicy.setDefaultSuccess(succeedOnUnknownCheckBox.isSelected());
+            revocationCheckPolicy.setContinueOnServerUnavailable(continueOnServerUnavailableCheckBox.isSelected());
             java.util.List<RevocationCheckPolicyItem> list = new ArrayList();
             for ( Object item : policyItemModel.toArray() ) {
                 list.add((RevocationCheckPolicyItem) item);

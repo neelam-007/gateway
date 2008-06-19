@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rmd:Definitions xmlns:rmd="http://docs.oasis-open.org/wsrf/rmd-1" xmlns:qosmw="http://metadata.dod.mil/mdr/ns/netops/esm/qosmw" xmlns:qosm="http://metadata.dod.mil/mdr/ns/netops/esm/qosm" xmlns:muws-p1-xs="http://docs.oasis-open.org/wsdm/2004/12/muws/wsdm-muws-part1.xsd" xmlns:muws-p2-xs="http://docs.oasis-open.org/wsdm/2004/12/muws/wsdm-muws-part2.xsd" xmlns:mows-xs="http://docs.oasis-open.org/wsdm/2004/12/mows/wsdm-mows.xsd" targetNamespace="http://metadata.dod.mil/mdr/ns/netops/esm/qosm-rmd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="wsrf/wsrf-ws_resource_metadata_descriptor-1.0-spec-pr-01.xsd">
+	<rmd:MetadataDescriptor name="QoSMetricsServiceDescriptor" interface="qosmw:QosMetricsServicePortType" wsdlLocation="http://metadata.dod.mil/mdr/ns/netops/esm/qosmw
+                    http://metadata.dod.mil/mdr/ns/netops/esm/qosmw/qosmw-0.1.wsdl">
+		<rmd:Property name="muws-p1-xs:ResourceIdType" mutability="constant" modifiability="read-only">
+			<muws-p2-xs:Capability>
+        http://docs.oasis-open.org/wsdm/muws/capabilities/Identity
+      </muws-p2-xs:Capability>
+		</rmd:Property>
+		<rmd:Property name="muws-p2-xs:CurrentTime" mutability="mutable" modifiability="read-only">
+			<muws-p2-xs:Capability>
+        http://docs.oasis-open.org/wsdm/muws/capabilities/Metrics
+      </muws-p2-xs:Capability>
+		</rmd:Property>
+		<rmd:Property name="muws-p2-xs:OperationalStatus" mutability="mutable" modifiability="read-only">
+			<rmd:ValidValues>
+				<muws-p2-xs:OperationalStatus>Available</muws-p2-xs:OperationalStatus>
+				<muws-p2-xs:OperationalStatus>PartiallyAvailable</muws-p2-xs:OperationalStatus>
+				<muws-p2-xs:OperationalStatus>Unavailable</muws-p2-xs:OperationalStatus>
+				<muws-p2-xs:OperationalStatus>Unknown</muws-p2-xs:OperationalStatus>
+			</rmd:ValidValues>
+			<muws-p2-xs:Capability>
+        http://docs.oasis-open.org/wsdm/muws/capabilities/OperationalStatus
+      </muws-p2-xs:Capability>
+		</rmd:Property>
+		<rmd:Property name="mows-xs:NumberOfRequests" mutability="mutable" modifiability="read-only">
+			<muws-p2-xs:ChangeType>Counter</muws-p2-xs:ChangeType>
+			<muws-p2-xs:TimeScope>Interval</muws-p2-xs:TimeScope>
+			<muws-p2-xs:GatheringTime>OnChange</muws-p2-xs:GatheringTime>
+			<muws-p2-xs:Capability>
+      http://docs.oasis-open.org/mows-2/capabilities/Metrics
+    </muws-p2-xs:Capability>
+		</rmd:Property>
+		<rmd:Property name="mows-xs:NumberOfFailedRequests" mutability="mutable" modifiability="read-only">
+			<muws-p2-xs:ChangeType>Counter</muws-p2-xs:ChangeType>
+			<muws-p2-xs:TimeScope>Interval</muws-p2-xs:TimeScope>
+			<muws-p2-xs:GatheringTime>OnChange</muws-p2-xs:GatheringTime>
+			<muws-p2-xs:Capability>
+      http://docs.oasis-open.org/mows-2/capabilities/Metrics
+    </muws-p2-xs:Capability>
+		</rmd:Property>
+		<rmd:Property name="mows-xs:NumberOfSuccessfulRequests" mutability="mutable" modifiability="read-only">
+			<muws-p2-xs:ChangeType>Counter</muws-p2-xs:ChangeType>
+			<muws-p2-xs:TimeScope>Interval</muws-p2-xs:TimeScope>
+			<muws-p2-xs:GatheringTime>OnChange</muws-p2-xs:GatheringTime>
+			<muws-p2-xs:Capability>
+     http://docs.oasis-open.org/mows-2/capabilities/Metrics
+    </muws-p2-xs:Capability>
+		</rmd:Property>
+		<rmd:Property name="mows-xs:ServiceTime" mutability="mutable" modifiability="read-only">
+			<muws-p2-xs:ChangeType>Gauge</muws-p2-xs:ChangeType>
+			<muws-p2-xs:TimeScope>Interval</muws-p2-xs:TimeScope>
+			<muws-p2-xs:GatheringTime>OnChange</muws-p2-xs:GatheringTime>
+			<muws-p2-xs:Capability>
+      http://docs.oasis-open.org/mows-2/capabilities/Metrics
+    </muws-p2-xs:Capability>
+		</rmd:Property>
+		<rmd:Property name="mows-xs:MaxResponseTime" mutability="mutable" modifiability="read-only">
+			<muws-p2-xs:ChangeType>Gauge</muws-p2-xs:ChangeType>
+			<muws-p2-xs:TimeScope>Interval</muws-p2-xs:TimeScope>
+			<muws-p2-xs:GatheringTime>OnChange</muws-p2-xs:GatheringTime>
+			<muws-p2-xs:Capability>
+      http://docs.oasis-open.org/mows-2/capabilities/Metrics
+    </muws-p2-xs:Capability>
+		</rmd:Property>
+		<rmd:Property name="mows-xs:LastResponseTime" mutability="mutable" modifiability="read-only">
+			<muws-p2-xs:ChangeType>Gauge</muws-p2-xs:ChangeType>
+			<muws-p2-xs:TimeScope>PointInTime</muws-p2-xs:TimeScope>
+			<muws-p2-xs:GatheringTime>OnChange</muws-p2-xs:GatheringTime>
+			<muws-p2-xs:Capability>
+     http://docs.oasis-open.org/mows-2/capabilities/Metrics
+    </muws-p2-xs:Capability>
+		</rmd:Property>
+		<rmd:Property name="qosm:Throughput" mutability="mutable" modifiability="read-only">
+			<muws-p2-xs:ChangeType>Gauge</muws-p2-xs:ChangeType>
+			<muws-p2-xs:TimeScope>Interval</muws-p2-xs:TimeScope>
+			<muws-p2-xs:GatheringTime>Periodic</muws-p2-xs:GatheringTime>
+			<muws-p2-xs:Capability>
+      http://docs.oasis-open.org/mows-2/capabilities/Metrics
+    </muws-p2-xs:Capability>
+		</rmd:Property>
+		<rmd:Property name="qosm:AvgResponseTime" mutability="mutable" modifiability="read-only">
+			<muws-p2-xs:ChangeType>Gauge</muws-p2-xs:ChangeType>
+			<muws-p2-xs:TimeScope>Interval</muws-p2-xs:TimeScope>
+			<muws-p2-xs:GatheringTime>Periodic</muws-p2-xs:GatheringTime>
+			<muws-p2-xs:Capability>
+      http://docs.oasis-open.org/mows-2/capabilities/Metrics
+    </muws-p2-xs:Capability>
+		</rmd:Property>
+		<rmd:Property name="muws-p1-xs:ManageabilityCapability" mutability="constant" modifiability="read-only">
+			<rmd:StaticValues>
+				<muws-p1-xs:ManageabilityCapability>
+          http://docs.oasis-open.org/wsdm/muws/capabilities/Identity
+        </muws-p1-xs:ManageabilityCapability>
+				<muws-p1-xs:ManageabilityCapability>
+          http://docs.oasis-open.org/wsdm/muws/capabilities/ManageabilityCharacteristics
+        </muws-p1-xs:ManageabilityCapability>
+				<muws-p1-xs:ManageabilityCapability>
+          http://docs.oasis-open.org/wsdm/muws/capabilities/OperationalStatus
+        </muws-p1-xs:ManageabilityCapability>
+				<muws-p1-xs:ManageabilityCapability>
+          http://docs.oasis-open.org/mows-2/capabilities/Metrics
+        </muws-p1-xs:ManageabilityCapability>
+				<muws-p1-xs:ManageabilityCapability>
+          http://docs.oasis-open.org/wsdm/muws/capabilities/Metrics
+        </muws-p1-xs:ManageabilityCapability>
+			</rmd:StaticValues>
+			<muws-p2-xs:Capability>
+        http://docs.oasis-open.org/wsdm/muws/capabilities/ManageabilityCharacteristics
+      </muws-p2-xs:Capability>
+		</rmd:Property>
+	</rmd:MetadataDescriptor>
+</rmd:Definitions>

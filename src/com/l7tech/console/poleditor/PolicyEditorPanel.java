@@ -5,15 +5,16 @@ package com.l7tech.console.poleditor;
 
 import com.l7tech.common.AsyncAdminMethods;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyType;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.security.rbac.OperationType;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.ContainerVetoException;
@@ -30,8 +31,9 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Include;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.PolicyReference;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
@@ -60,11 +62,11 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 
 public class PolicyEditorPanel extends JPanel implements VetoableContainerListener {
     static Logger log = Logger.getLogger(PolicyEditorPanel.class.getName());
@@ -265,7 +267,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     	r.addError(new PolicyValidatorResult.Error(Collections.<Integer>emptyList(), -1, -1, "Policy could not be loaded", null));
                     	return r;
                 	}
-                    return policyValidator.validate(assertion, policy.getType(), wsdl, soap, licenseManager);
+                    PolicyValidatorResult r = policyValidator.validate(assertion, policy.getType(), wsdl, soap, licenseManager);
+                    policyValidator.checkForCircularIncludes(policy.getName(), assertion, r);
+                    return r;
                 }
             };
         } else {
@@ -671,6 +675,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return validateAction;
     }
 
+
     /**
      * @return the policy xml that was validated, or null if validation canceled
      */
@@ -704,11 +709,13 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         if (isPolicyValidationOn()) {
             callable = new Callable<PolicyValidatorResult>() {
                 public PolicyValidatorResult call() throws Exception {
+                    final Policy policy = getPolicyNode().getPolicy();
                     PolicyValidatorResult result = policyValidator.validate(assertion, type, wsdl, soap, licenseManager);
+                    policyValidator.checkForCircularIncludes(policy.getName(), assertion, result);
                     if (getPublishedService() != null) {
                         ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
                         AsyncAdminMethods.JobId<PolicyValidatorResult> result2Job = serviceAdmin.
-                                validatePolicy(policyXml, type, soap, service.getWsdlXml(), includedFragments);
+                                validatePolicy(policyXml, type, soap, wsdl, includedFragments); //TODO fix this in a better way, but for now pass null for the WSDL
                         PolicyValidatorResult result2 = null;
                         double delay = DELAY_INITIAL;
                         Thread.sleep((long)delay);
@@ -917,7 +924,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
         private void enableButtonSave() {
             overWriteMessageArea("");
-            policyEditorToolbar.setSaveButtonsEnabled(true);
+            SecureAction saveButtonAction = (SecureAction) PolicyEditorPanel.this.getSaveOnlyAction();
+            if (saveButtonAction.isAuthorized()) {
+                policyEditorToolbar.setSaveButtonsEnabled(true);
+            } else {
+                policyEditorToolbar.setSaveButtonsEnabled(false);
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
+                "You do not have permission to update this service/policy. In order to keep your changes, you may export it.", null);
+            }
         }
     };
 
@@ -1147,16 +1161,22 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 if (!validating) {
                     try {
                         validating = true;
-                        String xml = fullValidate();
+                        boolean canValidate = TopComponents.getInstance().isTrusted();
+                        String xml = canValidate ?
+                                fullValidate() :
+                                WspWriter.getPolicyXml(getCurrentRoot().asAssertion());
                         if (xml != null) {
                             this.node = rootAssertion;
                             HashMap<String, Policy> includedFragments = new HashMap<String, Policy>();
                             extractFragmentsFromAssertion(rootAssertion.asAssertion(), includedFragments);
+                            if(PolicyEditorPanel.this.removeNameFromIncludeAssertions(rootAssertion.asAssertion())) {
+                                xml = WspWriter.getPolicyXml(rootAssertion.asAssertion());
+                            }
                             super.performAction(xml, includedFragments);
 
-                            if(getFragmentNameOidMap() != null && !getFragmentNameOidMap().isEmpty()) {
+                            if(getFragmentNameGuidMap() != null && !getFragmentNameGuidMap().isEmpty()) {
                                 try {
-                                    updateIncludeAssertions(rootAssertion.asAssertion(), getFragmentNameOidMap());
+                                    updateIncludeAssertions(rootAssertion.asAssertion(), getFragmentNameGuidMap());
                                     PolicyEditorPanel.this.renderPolicy(false);
                                     PolicyEditorPanel.this.topComponents.refreshPoliciesFolderNode();
                                 } catch(Exception e) {
@@ -1178,6 +1198,34 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return ret;
     }
 
+    private boolean removeNameFromIncludeAssertions(Assertion rootAssertion) {
+        if(rootAssertion instanceof CompositeAssertion) {
+            CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
+            boolean retVal = false;
+            for(Iterator it = compAssertion.children();it.hasNext();) {
+                Assertion child = (Assertion)it.next();
+                retVal = retVal | removeNameFromIncludeAssertions(child);
+            }
+            return retVal;
+        } else if(rootAssertion instanceof Include) {
+            Include includeAssertion = (Include)rootAssertion;
+            includeAssertion.setPolicyName(null);
+            if(includeAssertion.retrieveFragmentPolicy() != null) {
+                try {
+                    if(removeNameFromIncludeAssertions(includeAssertion.retrieveFragmentPolicy().getAssertion())) {
+                        includeAssertion.retrieveFragmentPolicy().setXml(WspWriter.getPolicyXml(includeAssertion.retrieveFragmentPolicy().getAssertion()));
+                    }
+                } catch(IOException e) {
+                    // Ignore. If there was a real error with the include, it should have been exposed during the import
+                }
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
     private void extractFragmentsFromAssertion(Assertion rootAssertion, HashMap<String, Policy> fragments) {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
@@ -1185,12 +1233,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 Assertion child = (Assertion)it.next();
                 extractFragmentsFromAssertion(child, fragments);
             }
-        } else if(rootAssertion instanceof Include) {
-            Include includeAssertion = (Include)rootAssertion;
-            if(includeAssertion.retrieveFragmentPolicy() != null) {
-                fragments.put(includeAssertion.getPolicyName(), includeAssertion.retrieveFragmentPolicy());
+        } else if(rootAssertion instanceof PolicyReference) {
+            PolicyReference policyReference = (PolicyReference)rootAssertion;
+            if(policyReference.retrieveFragmentPolicy() != null) {
+                fragments.put(policyReference.retrievePolicyGuid(), policyReference.retrieveFragmentPolicy());
                 try {
-                    extractFragmentsFromAssertion(includeAssertion.retrieveFragmentPolicy().getAssertion(), fragments);
+                    extractFragmentsFromAssertion(policyReference.retrieveFragmentPolicy().getAssertion(), fragments);
                 } catch(IOException e) {
                     // Ignore. If there was a real error with the include, it should have been exposed during the import
                 }
@@ -1198,18 +1246,23 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
     }
 
-    private void updateIncludeAssertions(Assertion rootAssertion, HashMap<String, Long> fragmentNameOidMap) {
+    private void updateIncludeAssertions(Assertion rootAssertion, HashMap<String, String> fragmentNameGuidMap) {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
             for(Iterator it = compAssertion.children();it.hasNext();) {
                 Assertion child = (Assertion)it.next();
-                updateIncludeAssertions(child, fragmentNameOidMap);
+                updateIncludeAssertions(child, fragmentNameGuidMap);
             }
         } else if(rootAssertion instanceof Include) {
             Include includeAssertion = (Include)rootAssertion;
-            if(fragmentNameOidMap.containsKey(includeAssertion.getPolicyName())) {
-                includeAssertion.setPolicyOid(fragmentNameOidMap.get(includeAssertion.getPolicyName()));
+            if(fragmentNameGuidMap.containsKey(includeAssertion.getPolicyName())) {
+                includeAssertion.setPolicyGuid(fragmentNameGuidMap.get(includeAssertion.getPolicyName()));
                 includeAssertion.replaceFragmentPolicy(null);
+            }
+        } else if(rootAssertion instanceof PolicyReference) {
+            PolicyReference policyReference = (PolicyReference)rootAssertion;
+            if(policyReference.retrieveFragmentPolicy() != null && fragmentNameGuidMap.containsKey(policyReference.retrieveFragmentPolicy().getName())) {
+                policyReference.replaceFragmentPolicy(null);
             }
         }
     }

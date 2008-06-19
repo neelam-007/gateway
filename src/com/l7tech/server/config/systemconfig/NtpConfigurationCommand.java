@@ -2,6 +2,7 @@ package com.l7tech.server.config.systemconfig;
 
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.commands.BaseConfigurationCommand;
+import com.l7tech.common.util.Pair;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
@@ -9,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.logging.Logger;
+import java.util.Map;
 
 /**
  * User: megery
@@ -76,7 +78,7 @@ public class NtpConfigurationCommand extends BaseConfigurationCommand {
 
     private boolean writeNtpLitterFiles() {
         boolean success = true;
-        if (StringUtils.isNotEmpty(ntpBean.getTimeServerAddress())) {
+        if (!ntpBean.getTimeServers().isEmpty()) {
             File currentWorkingDir = new File(".");
             File configDir = new File(currentWorkingDir, "configfiles");
             if (configDir.mkdir())
@@ -91,7 +93,10 @@ public class NtpConfigurationCommand extends BaseConfigurationCommand {
                     logger.info("editing file \"" + ntpConfFile.getAbsolutePath() + "\"");
 
                 pw = new PrintWriter(new FileOutputStream(ntpConfFile));
-                pw.println(ntpBean.getTimeServerAddress());
+
+                for (String tsInfo : ntpBean.getTimeServers().keySet()) {
+                    pw.println(tsInfo);
+                }
             } catch (IOException e) {
                 logger.severe("Error while writing the NTP configuration file: " + e.getMessage());
                 success = false;

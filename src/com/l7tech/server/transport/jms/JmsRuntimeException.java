@@ -11,15 +11,15 @@ package com.l7tech.server.transport.jms;
  * @version $Revision$
  */
 public class JmsRuntimeException extends Exception {
-    JmsRuntimeException( String message ) {
+    public JmsRuntimeException( String message ) {
         super( message );
     }
 
-    JmsRuntimeException(Throwable e) {
+    public JmsRuntimeException(Throwable e) {
         super(e);
     }
 
-    JmsRuntimeException(String message, Throwable cause) {
+    public JmsRuntimeException(String message, Throwable cause) {
         super(message, cause);
     }
 }

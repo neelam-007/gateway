@@ -35,6 +35,7 @@ import junit.textui.TestRunner;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.List;
@@ -42,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.text.MessageFormat;
@@ -87,28 +89,41 @@ public class PolicyDependencyTest extends TestCase {
 
     private void setupSimple() {
         final Policy i2 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1002, "i2", new HttpBasic());
-        final Policy i1 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1001, "i1", new Include(1002L, "i2"));
-        final Policy sp = newPolicy(PolicyType.PRIVATE_SERVICE, 2000, "test-sp", new Include(1001L, "test-i1!"));
+        i2.setGuid(UUID.nameUUIDFromBytes("i2".getBytes()).toString());
+        final Policy i1 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1001, "i1", new Include(i2.getGuid(), "i2"));
+        i1.setGuid(UUID.nameUUIDFromBytes("i1".getBytes()).toString());
+        final Policy sp = newPolicy(PolicyType.PRIVATE_SERVICE, 2000, "test-sp", new Include(i1.getGuid(), "test-i1!"));
+        sp.setGuid(UUID.nameUUIDFromBytes("test-sp".getBytes()).toString());
 
         simpleFinder = new PolicyManagerStub(new Policy[] { i1, i2, sp });
     }
 
     private void setupClonedGrandchild() {
         final Policy gc = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1234, "grandchild", new HttpBasic());
-        final Policy i2 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1002, "child2", new Include(1234L, "grandchild"));
-        final Policy i1 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1001, "child1", new Include(1234L, "grandchild"));
-        final Policy sp1 = newPolicy(PolicyType.PRIVATE_SERVICE, 2000, "parent1", new Include(1001L, "child1"), new Include(1002L, "child2"));
-        final Policy sp2 = newPolicy(PolicyType.PRIVATE_SERVICE, 2001, "parent2", new Include(1001L, "child1"), new Include(1002L, "child2"));
+        gc.setGuid(UUID.nameUUIDFromBytes("grandchild".getBytes()).toString());
+        final Policy i2 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1002, "child2", new Include(gc.getGuid(), "grandchild"));
+        i2.setGuid(UUID.nameUUIDFromBytes("child2".getBytes()).toString());
+        final Policy i1 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1001, "child1", new Include(i2.getGuid(), "grandchild"));
+        i1.setGuid(UUID.nameUUIDFromBytes("child1".getBytes()).toString());
+        final Policy sp1 = newPolicy(PolicyType.PRIVATE_SERVICE, 2000, "parent1", new Include(i1.getGuid(), "child1"), new Include(i2.getGuid(), "child2"));
+        sp1.setGuid(UUID.nameUUIDFromBytes("parent1".getBytes()).toString());
+        final Policy sp2 = newPolicy(PolicyType.PRIVATE_SERVICE, 2001, "parent2", new Include(i1.getGuid(), "child1"), new Include(i2.getGuid(), "child2"));
+        sp2.setGuid(UUID.nameUUIDFromBytes("parent2".getBytes()).toString());
 
         clonedGrandchildFinder = new PolicyManagerStub(new Policy[] { gc, i1, i2, sp1, sp2 });
     }
 
     private void setupInvalidGrandchild() {
         final Policy gc1 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1001, "grandchild1", new HttpBasic());
+        gc1.setGuid(UUID.nameUUIDFromBytes("grandchild1".getBytes()).toString());
         final Policy gc2 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1002, "grandchild2", "invalid policy xml");
-        final Policy i1 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 2001, "child1", new Include(1001L, "grandchild1"));
-        final Policy i2 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 2002, "child2", new Include(1002L, "grandchild2"));
-        final Policy sp = newPolicy(PolicyType.PRIVATE_SERVICE, 3000, "parent", new Include(2001L, "child1"), new Include(2002L, "child2"));
+        gc2.setGuid(UUID.nameUUIDFromBytes("grandchild2".getBytes()).toString());
+        final Policy i1 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 2001, "child1", new Include(gc1.getGuid(), "grandchild1"));
+        i1.setGuid(UUID.nameUUIDFromBytes("child1".getBytes()).toString());
+        final Policy i2 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 2002, "child2", new Include(gc2.getGuid(), "grandchild2"));
+        i2.setGuid(UUID.nameUUIDFromBytes("child2".getBytes()).toString());
+        final Policy sp = newPolicy(PolicyType.PRIVATE_SERVICE, 3000, "parent", new Include(i1.getGuid(), "child1"), new Include(i2.getGuid(), "child2"));
+        sp.setGuid(UUID.nameUUIDFromBytes("parent".getBytes()).toString());
 
         invalidGrandchildFinder = new PolicyManagerStub(new Policy[] { gc1, gc2, i1, i2, sp });
     }
@@ -116,17 +131,26 @@ public class PolicyDependencyTest extends TestCase {
     private void setupUnlicensedGrandchild() {
         policiesToSetAsUnlicensed.add( 11001L );
         final Policy gc1 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 11001, "grandchild1", new HttpBasic());
+        gc1.setGuid(UUID.nameUUIDFromBytes("grandchild1".getBytes()).toString());
         final Policy gc2 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 11002, "grandchild2", new HttpBasic());
-        final Policy i1 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 12001, "child1", new Include(11001L, "grandchild1"));
-        final Policy i2 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 12002, "child2", new Include(11002L, "grandchild2"));
-        final Policy sp = newPolicy(PolicyType.PRIVATE_SERVICE, 13000, "parent", new Include(12001L, "child1"), new Include(12002L, "child2"));
+        gc2.setGuid(UUID.nameUUIDFromBytes("grandchild2".getBytes()).toString());
+        final Policy i1 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 12001, "child1", new Include(gc1.getGuid(), "grandchild1"));
+        i1.setGuid(UUID.nameUUIDFromBytes("child1".getBytes()).toString());
+        final Policy i2 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 12002, "child2", new Include(gc2.getGuid(), "grandchild2"));
+        i2.setGuid(UUID.nameUUIDFromBytes("child2".getBytes()).toString());
+        final Policy sp = newPolicy(PolicyType.PRIVATE_SERVICE, 13000, "parent", new Include(i1.getGuid(), "child1"), new Include(i2.getGuid(), "child2"));
+        sp.setGuid(UUID.nameUUIDFromBytes("parent".getBytes()).toString());
 
         unlicensedGrandchildFinder = new PolicyManagerStub(new Policy[] { gc1, gc2, i1, i2, sp });
     }
 
     private void setupCycle() {
-        final Policy i1 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1001, "test-i1", new Include(2000L, "test-i2!"));
-        final Policy sp = newPolicy(PolicyType.PRIVATE_SERVICE, 2000, "test-sp", new Include(1001L, "test-i1!"));
+        UUID i1Uuid = UUID.nameUUIDFromBytes("test-i1".getBytes());
+        UUID spUuid = UUID.nameUUIDFromBytes("test-sp".getBytes());
+        final Policy i1 = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1001, "test-i1", new Include(spUuid.toString(), "test-i2!"));
+        i1.setGuid(i1Uuid.toString());
+        final Policy sp = newPolicy(PolicyType.PRIVATE_SERVICE, 2000, "test-sp", new Include(i1Uuid.toString(), "test-i1!"));
+        sp.setGuid(spUuid.toString());
 
         cycleFinder = new PolicyManagerStub(new Policy[] { i1, sp });
     }
@@ -135,9 +159,17 @@ public class PolicyDependencyTest extends TestCase {
         int cycleLength = 100;
         List<Policy> policies = new ArrayList<Policy>(cycleLength);
 
+        HashMap<Long, String> idToGuidMap = new HashMap<Long, String>();
+        for ( int p=0; p<cycleLength; p++) {
+            String name = "test-i" + p;
+            idToGuidMap.put(1000L + p, UUID.nameUUIDFromBytes(name.getBytes()).toString());
+        }
+
         for ( int p=0; p<cycleLength; p++) {
             long includeId = 1000 + ((1 + p) % cycleLength);
-            policies.add( newPolicy(PolicyType.INCLUDE_FRAGMENT, 1000 + p, "test-i" + (1000 + p), new Include(includeId, "test-i"+includeId+"!")) );
+            Policy newPolicy = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1000 + p, "test-i" + (1000 + p), new Include(idToGuidMap.get(includeId), "test-i" + includeId + "!"));
+            newPolicy.setGuid(idToGuidMap.get(1000L + p));
+            policies.add( newPolicy );
         }
 
         complexCycleFinder = new PolicyManagerStub(policies.toArray( new Policy[policies.size()] ));
@@ -178,7 +210,8 @@ public class PolicyDependencyTest extends TestCase {
 
     private void setupNotSoSimple() {
         final Policy audit = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1000, "audit", new AuditAssertion());
-        final Policy includeAudit = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1001, "include(audit)", new Include(1000L, "Include Audit"));
+        audit.setGuid(UUID.nameUUIDFromBytes("audit".getBytes()).toString());
+        final Policy includeAudit = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1001, "include(audit)", new Include(audit.getGuid(), "Include Audit"));
 
         final Policy basicAndUserOrGroup = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1002, "basicAndUserOrGroup", new AllAssertion(Arrays.asList(
                 new HttpBasic(),
@@ -186,10 +219,13 @@ public class PolicyDependencyTest extends TestCase {
                         new SpecificUser(),
                         new MemberOfGroup()
                 )))));
-        final Policy includeBasic = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1003, "include(basicAndUserOrGroup)", new Include(1002L, "Include Basic & User or Group"));
+        basicAndUserOrGroup.setGuid(UUID.nameUUIDFromBytes("basicAndUserOrGroup".getBytes()).toString());
+        final Policy includeBasic = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1003, "include(basicAndUserOrGroup)", new Include(basicAndUserOrGroup.getGuid(), "Include Basic & User or Group"));
+        includeBasic.setGuid(UUID.nameUUIDFromBytes("include(basicAndUserOrGroup".getBytes()).toString());
         final Policy servicePolicyWithTwoIncludes;
         try {
             servicePolicyWithTwoIncludes = newPolicy(PolicyType.PRIVATE_SERVICE, 1004L, "sp", includeAudit.getAssertion(), includeBasic.getAssertion());
+            servicePolicyWithTwoIncludes.setGuid(UUID.nameUUIDFromBytes("sp".getBytes()).toString());
         } catch (IOException e) {
             throw new RuntimeException(e); // Can't happen
         }
@@ -282,7 +318,9 @@ public class PolicyDependencyTest extends TestCase {
         cache.remove( 1001 );
         assertNull( "2000 is invalid", cache.getServerPolicy( 2000 ));
         System.err.println("Replacing in cache");
-        cache.update( newPolicy(PolicyType.INCLUDE_FRAGMENT, 1001, "child1", new Include(1234L, "grandchild")) );
+        Policy newPolicy = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1001, "child1", new Include(UUID.nameUUIDFromBytes("grandchild".getBytes()).toString(), "grandchild"));
+        newPolicy.setGuid(UUID.nameUUIDFromBytes("child1".getBytes()).toString());
+        cache.update( newPolicy );
         assertNotNull( "2000 is valid", cache.getServerPolicy( 2000 ));
     }
 
@@ -320,7 +358,9 @@ public class PolicyDependencyTest extends TestCase {
         assertNull( "2002 is invalid", cache.getServerPolicy( 2002 ));
         assertNull( "3000 is invalid", cache.getServerPolicy( 3000 ));
 
-        cache.update( newPolicy(PolicyType.INCLUDE_FRAGMENT, 1002, "grandchild2", new HttpBasic()) );
+        Policy newPolicy = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1002, "grandchild2", new HttpBasic());
+        newPolicy.setGuid(UUID.nameUUIDFromBytes("grandchild2".getBytes()).toString());
+        cache.update( newPolicy );
 
         assertNotNull( "1001 is valid", cache.getServerPolicy( 1001 ));
         assertNotNull( "2001 is valid", cache.getServerPolicy( 2001 ));
@@ -354,7 +394,9 @@ public class PolicyDependencyTest extends TestCase {
         validPolicies.clear();
         invalidPolicies.clear();
         System.err.println("Updating policy 1002");
-        cache.update( newPolicy(PolicyType.INCLUDE_FRAGMENT, 1002, "grandchild2", new HttpBasic()) );
+        Policy newPolicy = newPolicy(PolicyType.INCLUDE_FRAGMENT, 1002, "grandchild2", new HttpBasic());
+        newPolicy.setGuid(UUID.nameUUIDFromBytes("grandchild2".getBytes()).toString());
+        cache.update( newPolicy );
 
         System.err.println("Valid policies  : " + validPolicies);
         System.err.println("Invalid policies: " + invalidPolicies);

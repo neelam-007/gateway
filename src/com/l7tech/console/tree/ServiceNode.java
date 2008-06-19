@@ -16,7 +16,6 @@ import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
-import java.io.StringReader;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -149,7 +148,8 @@ public class ServiceNode extends PolicyEntityNode implements Comparable<ServiceN
         try {
             PublishedService s = getPublishedService();
             if (s != null && s.isSoap()) {
-                Wsdl wsdl = Wsdl.newInstance(Wsdl.extractBaseURI(s.getWsdlUrl()), new StringReader(svc.getWsdlXml()));
+                Wsdl wsdl = svc.parsedWsdl();
+//                Wsdl wsdl = Wsdl.newInstance(Wsdl.extractBaseURI(s.getWsdlUrl()), new StringReader(svc.getWsdlXml()));
                 WsdlTreeNode.Options opts = new WsdlTreeNode.Options();
                 opts.setShowMessages(false);
                 opts.setShowPortTypes(false);

@@ -240,6 +240,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements SetsVari
             new Java5EnumSetTypeMapping(EnumSet.class, DecorationType.class, "decorationTypes")
         )));
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, SamlIssuerAssertionValidator.class.getName());
+        meta.put(AssertionMetadata.SHORT_NAME, "SAML Issuer");
         return meta;
     }
 

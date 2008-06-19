@@ -4,16 +4,15 @@
 package com.l7tech.policy;
 
 import com.l7tech.common.policy.Policy;
-import com.l7tech.objectmodel.ReadOnlyEntityManager;
-import com.l7tech.objectmodel.PolicyHeader;
+import com.l7tech.objectmodel.GuidBasedEntityManager;
 
 /**
  * @author alex
  */
 public class PolicyPathBuilderFactory {
-    private final ReadOnlyEntityManager<Policy, PolicyHeader> policyFinder;
+    private final GuidBasedEntityManager<Policy> policyFinder;
 
-    public PolicyPathBuilderFactory(ReadOnlyEntityManager<Policy, PolicyHeader> policyFinder) {
+    public PolicyPathBuilderFactory(GuidBasedEntityManager<Policy> policyFinder) {
         this.policyFinder = policyFinder;
     }
 

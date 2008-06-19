@@ -5,10 +5,12 @@ import com.l7tech.console.action.NewLdapProviderAction;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.policy.exporter.IdProviderReference;
+import com.l7tech.console.policy.exporter.FederatedIdProviderReference;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.common.util.HexUtils;
@@ -22,6 +24,7 @@ import java.awt.event.ActionListener;
 import java.io.ByteArrayInputStream;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -170,7 +173,21 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
             action.addEntityListener(updateProviderListCallback);
             action.invoke();
         } else if (IdentityProviderType.FEDERATED.toVal() == unresolvedRef.getIdProviderTypeVal()) {
-            NewFederatedIdentityProviderAction action = new NewFederatedIdentityProviderAction(null);
+            //pre-populate the federated identity provider information
+            FederatedIdentityProviderConfig fipConfig = new FederatedIdentityProviderConfig();
+            fipConfig.setName(unresolvedRef.getProviderName());
+            fipConfig.setSerializedProps(unresolvedRef.getIdProviderConfProps());
+            HashMap<String, String> userUpdateMap = null;
+            HashMap<String, String> groupUpdateMap = null;
+            if(unresolvedRef instanceof FederatedIdProviderReference) {
+                FederatedIdProviderReference fedIdRef = (FederatedIdProviderReference)unresolvedRef;
+                fipConfig.setImportedGroups(fedIdRef.getImportedGroups());
+                fipConfig.setImportedUsers(fedIdRef.getImportedUsers());
+                fipConfig.setImportedGroupMembership(fedIdRef.getImportedGroupMembership());
+                userUpdateMap = fedIdRef.getUserUpdateMap();
+                groupUpdateMap = fedIdRef.getGroupUpdateMap();
+            }
+            NewFederatedIdentityProviderAction action = new NewFederatedIdentityProviderAction(null, fipConfig, userUpdateMap, groupUpdateMap);
             action.addEntityListener(updateProviderListCallback);
             action.invoke();
         } else {

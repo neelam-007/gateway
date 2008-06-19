@@ -1,10 +1,8 @@
 package com.l7tech.server.event;
 
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.PersistentEntity;
 import org.springframework.context.ApplicationEvent;
-
-import com.l7tech.objectmodel.PersistentEntity;
-import com.l7tech.objectmodel.Entity;
 
 /**
  * Event raised when a database change is detected.

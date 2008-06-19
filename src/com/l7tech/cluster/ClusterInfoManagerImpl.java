@@ -12,6 +12,7 @@ import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.orm.hibernate3.HibernateCallback;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -64,6 +65,10 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
                     " in class " + ClusterNodeInfo.class.getName() +
                     " where " + TABLE_NAME + "." + NODEID_COLUMN_NAME + " = ?";
 
+    private final String HQL_DELETE_BY_ID =
+            "delete from " + ClusterNodeInfo.class.getName() + " as " + TABLE_NAME +
+                    " where " + TABLE_NAME + "." + NODEID_COLUMN_NAME + " = :nodeid";
+
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
     }
@@ -112,9 +117,22 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     /**
      * Updates the specified {@link ClusterNodeInfo} to the database.
      */
-    public void updateSelfStatus( ClusterNodeInfo selfCI ) throws UpdateException {
+    public void updateSelfStatus( final ClusterNodeInfo selfCI ) throws UpdateException {
         try {
-            getHibernateTemplate().update(selfCI);
+            getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(final Session session) throws HibernateException, SQLException {
+                    // Use a bulk delete to ensure that a replicable SQL statement is run
+                    // even if there is nothing in the table (see bug 4615)
+                    session.createQuery( HQL_DELETE_BY_ID )
+                            .setString("nodeid", selfCI.getNodeIdentifier() )
+                            .executeUpdate();
+                    if ( session.contains( selfCI ) ) { 
+                        session.evict( selfCI );
+                    }
+                    session.save( selfCI );
+                    return null;
+                }
+            });
         } catch (HibernateException e) {
             String msg = "error updating db";
             logger.log(Level.WARNING, msg, e);

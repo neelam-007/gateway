@@ -76,13 +76,26 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
      * @throws IllegalArgumentException if the data provided by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
+        this.readSettings(settings, false);
+    }
+
+    /**
+     * Populate the configuration data from the wizard input object to the visual components of the panel.
+     *
+     * @param settings The current value of configuration items in the wizard input object.
+     * @param setNameField  TRUE to overwrite the provider name field from the 'settings' object no mattter what is in
+     *                      the 'settings' parameter object.  FALSE, will set provider name only if ObjectID exists in 'settings'
+     *                      parameter object.
+     * @throws IllegalArgumentException if the data provided by the wizard are not valid.
+     */
+    public void readSettings(Object settings, boolean setNameField) throws IllegalArgumentException {
 
         if (!(settings instanceof FederatedIdentityProviderConfig))
             throw new IllegalArgumentException("The settings object must be FederatedIdentityProviderConfig");
 
         FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
 
-        if (iProviderConfig.getOid() != -1) {
+        if (setNameField || iProviderConfig.getOid() != -1) {
             providerNameTextField.setText(iProviderConfig.getName());
         }
 

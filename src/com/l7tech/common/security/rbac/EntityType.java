@@ -32,6 +32,7 @@ import static com.l7tech.objectmodel.EntityType.UNDEFINED;
 import com.l7tech.service.MetricsBin;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
+import com.l7tech.service.ServiceTemplate;
 
 import java.util.Comparator;
 
@@ -76,6 +77,8 @@ public enum EntityType {
     SSG_CONNECTOR("Listen Port", SsgConnector.class, com.l7tech.objectmodel.EntityType.CONNECTOR, true),
 
     LOG_SINK("Log Sink", SinkConfiguration.class, UNDEFINED, true),
+
+    SERVICE_TEMPLATE("Service Template", ServiceTemplate.class, UNDEFINED, true),
     ;
 
     private final String name;

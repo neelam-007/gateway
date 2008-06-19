@@ -9,12 +9,19 @@ import com.l7tech.common.gui.util.RunOnChangeListener;
 import com.l7tech.common.gui.util.DocumentSizeFilter;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyType;
+import com.l7tech.console.util.Registry;
+import com.l7tech.service.ServiceAdmin;
+import com.l7tech.service.ServiceTemplate;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.ResourceBundle;
+import java.awt.event.ItemListener;
+import java.awt.event.ItemEvent;
+import java.util.*;
+import java.util.List;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
  * @author alex
@@ -26,16 +33,21 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
     private JTextField nameField;
     private JCheckBox soapCheckbox;
     private JComboBox typeCombo;
+    private JComboBox tagCombo;
+    private JLabel typeLabel;
+    private JLabel tagLabel;
     // TODO include a policy panel
 
     private final Policy policy;
     private final boolean canUpdate;
+    private Map<String, String> policyTags;
     
     private RunOnChangeListener syntaxListener = new RunOnChangeListener(new Runnable() {
         public void run() {
             checkSyntax();
         }
     });
+    private boolean hasInternalServiceTags;
 
     public static OkCancelDialog<Policy> makeDialog(Frame owner, Policy policy, boolean canUpdate) {
         return new OkCancelDialog<Policy>(owner, resources.getString("dialog.title"), true, new PolicyPropertiesPanel(policy, canUpdate));
@@ -58,8 +70,26 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
             if (type.isShownInGui()) types.add(type);
         }
 
+        policyTags = new LinkedHashMap<String, String>();
+
+        ServiceAdmin svcManager = Registry.getDefault().getServiceManager();
+        Set<ServiceTemplate> templates = svcManager.findAllTemplates();
+        for (ServiceTemplate template : templates) {
+            Map<String, String> templateTags = template.getPolicyTags();
+            if (templateTags != null) {
+                policyTags.putAll(templateTags);
+            }
+        }
+
         typeCombo.setModel(new DefaultComboBoxModel(types.toArray(new PolicyType[types.size()])));
 
+        List<String> tagList = new ArrayList<String>();
+        tagList.addAll(policyTags.keySet());
+        tagCombo.setModel(new DefaultComboBoxModel(tagList.toArray(new String[policyTags.size()])));
+
+        if (policy.getInternalTag() != null)
+            tagCombo.setSelectedItem(policy.getInternalTag());
+        
         // The max length of a policy name is 255. 
         ((AbstractDocument)nameField.getDocument()).setDocumentFilter(new DocumentSizeFilter(255));
 
@@ -73,9 +103,37 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
 
         soapCheckbox.addChangeListener(syntaxListener);
         typeCombo.addItemListener(syntaxListener);
+        tagCombo.addItemListener(syntaxListener);
         nameField.getDocument().addDocumentListener(syntaxListener);
 
+        typeCombo.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    enableDisable();
+                }
+            }
+        });
+        enableTagChooser();
+        showHideComponents();
         add(mainPanel, BorderLayout.CENTER);
+    }
+
+    private void enableDisable() {
+        enableTagChooser();
+    }
+
+    private void showHideComponents() {
+        hasInternalServiceTags = !policyTags.isEmpty();
+        typeCombo.setVisible(hasInternalServiceTags);
+        typeLabel.setVisible(hasInternalServiceTags);
+
+        tagCombo.setVisible(hasInternalServiceTags);
+        tagLabel.setVisible(hasInternalServiceTags);
+    }
+
+    private void enableTagChooser() {
+        PolicyType policyType = (PolicyType) typeCombo.getSelectedItem();
+        tagCombo.setEnabled(policyType == PolicyType.INTERNAL && !policyTags.isEmpty());
     }
 
     @Override
@@ -95,5 +153,14 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         policy.setName(nameField.getText().trim());
         policy.setSoap(soapCheckbox.isSelected());
         policy.setType((PolicyType)typeCombo.getSelectedItem());
+
+        if (policy.getType() == PolicyType.INTERNAL) {
+            String tag = (String) tagCombo.getSelectedItem();
+            policy.setInternalTag(tag);
+            if (policyTags.get(tag) != null) {
+                if (StringUtils.isEmpty(policy.getXml())) //only update the policy the tag specific policy if there aren't any policy contents already
+                    policy.setXml(policyTags.get(tag));
+            }
+        }
     }
 }

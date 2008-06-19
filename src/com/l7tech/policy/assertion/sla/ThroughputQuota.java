@@ -72,6 +72,16 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
         maxVariable = prefix + "." + VAR_SUFFIX_MAX;
     }
 
+    public String[] getVariableSuffixes() {
+        return new String[] {
+            VAR_SUFFIX_ID,
+            VAR_SUFFIX_VALUE,
+            VAR_SUFFIX_PERIOD,
+            VAR_SUFFIX_USER,
+            VAR_SUFFIX_MAX
+        };
+    }
+
     public String idVariable() {
         if (idVariable == null) doVarNames();
         return idVariable;

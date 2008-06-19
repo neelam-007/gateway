@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
+                  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                  xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
+                  xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/"
+                  xmlns:wsrf-rw="http://docs.oasis-open.org/wsrf/rw-2"
+                  xmlns:wsntw="http://docs.oasis-open.org/wsn/bw-2"
+                  xmlns:esmsm="http://metadata.dod.mil/mdr/ns/netops/esm/esmsm"
+                  targetNamespace="http://metadata.dod.mil/mdr/ns/netops/esm/esmsm">
+
+    <wsdl:import namespace="http://docs.oasis-open.org/wsn/bw-2" location="wsn/bw-2.wsdl"/>
+
+    <wsdl:portType name="EsmSubscriptionManagementServicePortType">
+		<wsdl:operation name="Subscribe">
+			<wsdl:input message="wsntw:SubscribeRequest"/>
+			<wsdl:output message="wsntw:SubscribeResponse"/>
+			<wsdl:fault name="ResourceUnknownFault" message="wsrf-rw:ResourceUnknownFault"/>
+			<wsdl:fault name="InvalidFilterFault" message="wsntw:InvalidFilterFault"/>
+			<wsdl:fault name="TopicExpressionDialectUnknownFault" message="wsntw:TopicExpressionDialectUnknownFault"/>
+			<wsdl:fault name="InvalidTopicExpressionFault" message="wsntw:InvalidTopicExpressionFault"/>
+			<wsdl:fault name="TopicNotSupportedFault" message="wsntw:TopicNotSupportedFault"/>
+			<wsdl:fault name="InvalidProducerPropertiesExpressionFault" message="wsntw:InvalidProducerPropertiesExpressionFault"/>
+			<wsdl:fault name="InvalidMessageContentExpressionFault" message="wsntw:InvalidMessageContentExpressionFault"/>
+			<wsdl:fault name="UnacceptableInitialTerminationTimeFault" message="wsntw:UnacceptableInitialTerminationTimeFault"/>
+			<wsdl:fault name="UnrecognizedPolicyRequestFault" message="wsntw:UnrecognizedPolicyRequestFault"/>
+			<wsdl:fault name="UnsupportedPolicyRequestFault" message="wsntw:UnsupportedPolicyRequestFault"/>
+			<wsdl:fault name="NotifyMessageNotSupportedFault" message="wsntw:NotifyMessageNotSupportedFault"/>
+			<wsdl:fault name="SubscribeCreationFailedFault" message="wsntw:SubscribeCreationFailedFault"/>
+		</wsdl:operation>
+		<wsdl:operation name="Renew">
+			<wsdl:input name="RenewRequest" message="wsntw:RenewRequest"/>
+			<wsdl:output name="RenewResponse" message="wsntw:RenewResponse"/>
+			<wsdl:fault name="ResourceUnknownFault" message="wsrf-rw:ResourceUnknownFault"/>
+			<wsdl:fault name="UnacceptableTerminationTimeFault" message="wsntw:UnacceptableTerminationTimeFault"/>
+		</wsdl:operation>
+		<wsdl:operation name="Unsubscribe">
+			<wsdl:input name="UnsubscribeRequest" message="wsntw:UnsubscribeRequest"/>
+			<wsdl:output name="UnsubscribeResponse" message="wsntw:UnsubscribeResponse"/>
+			<wsdl:fault name="ResourceUnknownFault" message="wsrf-rw:ResourceUnknownFault"/>
+			<wsdl:fault name="UnableToDestroySubscriptionFault" message="wsntw:UnableToDestroySubscriptionFault"/>
+		</wsdl:operation>
+	</wsdl:portType>
+
+    <wsdl:binding name="EsmSubscriptionManagementServiceBinding" type="esmsm:EsmSubscriptionManagementServicePortType">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<wsdl:operation name="Subscribe">
+			<wsdl:input>
+				<soap:body use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+			</wsdl:output>
+			<wsdl:fault name="ResourceUnknownFault">
+				<soap:fault name="ResourceUnknownFault" use="literal"/>
+			</wsdl:fault>
+			<wsdl:fault name="InvalidFilterFault">
+				<soap:fault name="InvalidFilterFault" use="literal"/>
+			</wsdl:fault>
+			<wsdl:fault name="TopicExpressionDialectUnknownFault">
+				<soap:fault name="TopicExpressionDialectUnknownFault" use="literal"/>
+			</wsdl:fault>
+			<wsdl:fault name="InvalidTopicExpressionFault">
+				<soap:fault name="InvalidTopicExpressionFault" use="literal"/>
+			</wsdl:fault>
+			<wsdl:fault name="TopicNotSupportedFault">
+				<soap:fault name="TopicNotSupportedFault" use="literal"/>
+			</wsdl:fault>
+			<wsdl:fault name="InvalidProducerPropertiesExpressionFault">
+				<soap:fault name="InvalidProducerPropertiesExpressionFault" use="literal"/>
+			</wsdl:fault>
+			<wsdl:fault name="InvalidMessageContentExpressionFault">
+				<soap:fault name="InvalidMessageContentExpressionFault" use="literal"/>
+			</wsdl:fault>
+			<wsdl:fault name="UnacceptableInitialTerminationTimeFault">
+				<soap:fault name="UnacceptableInitialTerminationTimeFault" use="literal"/>
+			</wsdl:fault>
+			<wsdl:fault name="UnrecognizedPolicyRequestFault">
+				<soap:fault name="UnrecognizedPolicyRequestFault" use="literal"/>
+			</wsdl:fault>
+			<wsdl:fault name="UnsupportedPolicyRequestFault">
+				<soap:fault name="UnsupportedPolicyRequestFault" use="literal"/>
+			</wsdl:fault>
+			<wsdl:fault name="NotifyMessageNotSupportedFault">
+				<soap:fault name="NotifyMessageNotSupportedFault" use="literal"/>
+			</wsdl:fault>
+			<wsdl:fault name="SubscribeCreationFailedFault">
+				<soap:fault name="SubscribeCreationFailedFault" use="literal"/>
+			</wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="Unsubscribe">
+			<wsdl:input>
+				<soap:body use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+			</wsdl:output>
+			<wsdl:fault name="ResourceUnknownFault">
+				<soap:fault name="ResourceUnknownFault" use="literal"/>
+			</wsdl:fault>
+			<wsdl:fault name="UnableToDestroySubscriptionFault">
+				<soap:fault name="UnableToDestroySubscriptionFault" use="literal"/>
+			</wsdl:fault>
+		</wsdl:operation>
+		<wsdl:operation name="Renew">
+			<wsdl:input>
+				<soap:body use="literal"/>
+			</wsdl:input>
+			<wsdl:output>
+				<soap:body use="literal"/>
+			</wsdl:output>
+			<wsdl:fault name="ResourceUnknownFault">
+				<soap:fault name="ResourceUnknownFault" use="literal"/>
+			</wsdl:fault>
+			<wsdl:fault name="UnacceptableTerminationTimeFault">
+				<soap:fault name="UnacceptableTerminationTimeFault" use="literal"/>
+			</wsdl:fault>
+		</wsdl:operation>
+	</wsdl:binding>
+
+    <wsdl:service name="EsmSubscriptionManagementService">
+      <wsdl:port binding="esmsm:EsmSubscriptionManagementServiceBinding" name="EsmSubscriptionManagement">
+         <soap:address location="^%^%_HOSTPORT_%^%^/ssg/wsdm/esmsubscriptions^%^%_SERVICEIDQUERY_%^%^"/>
+      </wsdl:port>
+   </wsdl:service>
+
+</wsdl:definitions>

@@ -17,7 +17,13 @@
       <void property="firstNameAttrName"> 
        <string>givenName</string> 
       </void> 
-      <void property="lastNameAttrName"> 
+      <void property="kerberosAttrName">
+       <string>sAMAccountName</string>
+      </void>
+      <void property="kerberosEnterpriseAttrName">
+       <string>userPrincipalName</string>
+      </void>
+      <void property="lastNameAttrName">
        <string>sn</string> 
       </void> 
       <void property="loginAttrName"> 
@@ -31,8 +37,8 @@
       </void> 
       <void property="passwdAttrName"> 
        <string>userPassword</string> 
-      </void> 
-      <void property="passwdType"> 
+      </void>
+      <void property="passwdType">
        <object class="com.l7tech.identity.ldap.PasswdStrategy"/> 
       </void> 
      </object> 

@@ -33,10 +33,15 @@
     <typedef class="com.l7tech.objectmodel.GenericEnumUserType" name="sinkconfiguration_type">
         <param name="enumClass">com.l7tech.common.log.SinkConfiguration$SinkType</param>
     </typedef>
+
     <typedef class="com.l7tech.objectmodel.GenericEnumUserType" name="sinkconfiguration_severityThreshold">
         <param name="enumClass">com.l7tech.common.log.SinkConfiguration$SeverityThreshold</param>
     </typedef>
-    
+
+    <typedef class="com.l7tech.objectmodel.GenericEnumUserType" name="service_state_type">
+        <param name="enumClass">com.l7tech.service.ServiceState</param>
+    </typedef>
+
     <class name="com.l7tech.identity.IdentityProviderConfig" table="identity_provider" lazy="false" discriminator-value="1">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
@@ -127,6 +132,7 @@
         <property name="wsdlXml" column="wsdl_xml" type="text"/>
         <property name="disabled" column="disabled" type="boolean"/>
         <property name="soap" column="soap" type="boolean"/>
+        <property name="internal" column="internal" type="boolean"/>
         <property name="routingUri" column="routing_uri" type="string"/>
         <property name="httpMethodNames" column="http_methods" type="text"/>
         <property name="laxResolution" column="lax_resolution" type="boolean"/>
@@ -139,10 +145,12 @@
             <generator class="hilo"/>
         </id>
         <version name="version" type="int"/>
+        <property name="guid" column="guid" type="string"/>
         <property name="name" column="name" type="string"/>
         <property name="type" column="policy_type" type="policy_type"/>
         <property name="xml" column="xml" type="text"/>
         <property name="soap" column="soap" type="boolean"/>
+        <property name="internalTag" column="internal_tag" type="string" length="64"/>
     </class>
 
     <class name="com.l7tech.common.policy.PolicyVersion" table="policy_version" lazy="false">
@@ -185,7 +193,7 @@
     </class>
 
     <class name="com.l7tech.cluster.ClusterNodeInfo" table="cluster_info" lazy="false">
-        <id name="nodeIdentifier" column="nodeid" type="string" unsaved-value="">
+        <id name="nodeIdentifier" column="nodeid" type="string" unsaved-value="none">
             <generator class="assigned"/>
         </id>
         <property name="mac" column="mac" type="string"/>
@@ -449,6 +457,8 @@
         <property name="maxFrontendResponseTime" column="front_max" type="int"/>
 
         <property name="interval" column="interval_size" type="int"/>
+
+        <property name="serviceState" column="service_state" type="service_state_type" length="16"/>
     </class>
 
     <class name="com.l7tech.service.ServiceDocument" table="service_documents">
@@ -481,6 +491,7 @@
         <property name="revocationCheckPolicyXml" column="revocation_policy_xml" type="string"/>
         <property name="defaultPolicy" column="default_policy" type="boolean"/>
         <property name="defaultSuccess" column="default_success" type="boolean"/>
+        <property name="continueOnServerUnavailable" column="continue_server_unavailable" type="boolean"/>
     </class>
 
     <class name="com.l7tech.common.log.SinkConfiguration" table="sink_config">

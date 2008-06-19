@@ -6,15 +6,15 @@ package com.l7tech.console.policy.exporter;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.policy.StaticResourceInfo;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.policy.assertion.Include;
-import com.l7tech.policy.assertion.JmsRoutingAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.identity.IdentityProviderType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -92,10 +92,18 @@ public class PolicyExporter {
         // create the appropriate reference if applicable
         if (assertion instanceof IdentityAssertion) {
             IdentityAssertion idassertion = (IdentityAssertion)assertion;
-            ref = new IdProviderReference(idassertion.getIdentityProviderOid());
+            IdProviderReference idProviderRef = new IdProviderReference(idassertion.getIdentityProviderOid());
+
+            if(idProviderRef.getIdProviderTypeVal() == IdentityProviderType.FEDERATED.toVal()) {
+                ref = new FederatedIdProviderReference(idassertion.getIdentityProviderOid());
+            } else {
+                ref = idProviderRef;
+            }
         } else if (assertion instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion jmsidass = (JmsRoutingAssertion)assertion;
-            ref = new JMSEndpointReference(jmsidass.getEndpointOid().longValue());
+            if(jmsidass.getEndpointOid() != null) {
+                ref = new JMSEndpointReference(jmsidass.getEndpointOid().longValue());
+            }
         } else if (assertion instanceof CustomAssertionHolder) {
             CustomAssertionHolder cahAss = (CustomAssertionHolder)assertion;
             ref = new CustomAssertionReference(cahAss.getCustomAssertion().getName());
@@ -117,16 +125,39 @@ public class PolicyExporter {
                     // about external references
                 }
             }
-        } else if (assertion instanceof Include) {
-            ref = new IncludedPolicyReference((Include) assertion);
-            IncludedPolicyReference includedReference = (IncludedPolicyReference)ref;
-            Policy fragmentPolicy = new Policy(includedReference.getType(), includedReference.getName(), includedReference.getXml(), includedReference.isSoap());
-            try {
-                traverseAssertionTreeForReferences(fragmentPolicy.getAssertion(), refs);
-            } catch(IOException e) {
-                // Ignore and continue with the export
-                logger.log(Level.WARNING, "Failed to create policy from include reference (policy OID = " + includedReference.getOid() + ")");
+        } else if (assertion instanceof PolicyReference) {
+            if(((PolicyReference)assertion).retrievePolicyGuid() == null) {
+                return;
             }
+            
+            ref = new IncludedPolicyReference((PolicyReference) assertion);
+
+            if(!refs.contains(ref)) {
+                IncludedPolicyReference includedReference = (IncludedPolicyReference)ref;
+                Policy fragmentPolicy = new Policy(includedReference.getType(), includedReference.getName(), includedReference.getXml(), includedReference.isSoap());
+                try {
+                    traverseAssertionTreeForReferences(fragmentPolicy.getAssertion(), refs);
+                } catch(IOException e) {
+                    // Ignore and continue with the export
+                    logger.log(Level.WARNING, "Failed to create policy from include reference (policy OID = " + includedReference.getGuid() + ")");
+                }
+            }
+        } else if(assertion instanceof UsesEntities) {
+            UsesEntities entitiesUser = (UsesEntities)assertion;
+            for(EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
+                ref = null;
+                if(entityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
+                    ref = new IdProviderReference(entityHeader.getOid());
+                } else if(entityHeader.getType().equals(EntityType.JMS_ENDPOINT)) {
+                    ref = new JMSEndpointReference(entityHeader.getOid());
+                }
+
+                if(ref != null && !refs.contains(ref)) {
+                    refs.add(ref);
+                }
+            }
+
+            return;
         }
 
         // if an assertion was created and it's not already recorded, add it

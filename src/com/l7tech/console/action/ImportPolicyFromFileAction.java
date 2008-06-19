@@ -12,8 +12,10 @@ import com.l7tech.console.tree.PolicyTemplatesFolderNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
+import com.l7tech.policy.assertion.PolicyReference;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.policy.wsp.PolicyConflictException;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -115,39 +117,55 @@ public abstract class ImportPolicyFromFileAction extends PolicyNodeAction {
         if (JFileChooser.APPROVE_OPTION != ret) return false;
 
         try {
-            PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(chooser.getSelectedFile());
+            PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policy, chooser.getSelectedFile());
             Assertion newRoot = (result != null) ? result.assertion : null;
             // for some reason, the PublishedService class does not allow to set a policy
             // directly, it must be set through the XML
             if (newRoot != null) {
                 String newPolicyXml = WspWriter.getPolicyXml(newRoot);
                 policy.setXml(newPolicyXml);
-                addPoliciesToIncludeAssertions(policy.getAssertion(), result.policyFragments);
+                addPoliciesToPolicyReferenceAssertions(policy.getAssertion(), result.policyFragments);
                 return true;
+            } else {
+                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                                          "The policy being imported is not a valid policy, or is empty.",
+                                          "Invalid/Empty Policy",
+                                          JOptionPane.WARNING_MESSAGE, null);
+                return false;
             }
+        } catch (PolicyConflictException e) {
+            log.log(Level.WARNING, "could not localize or read policy from " + chooser.getSelectedFile().getPath(), e);
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                                          "The policy fragment " + e.getPolicyGuid() + " in the imported file is different from the existing policy fragment.",
+                                          "Policy Fragment Conflict",
+                                          JOptionPane.WARNING_MESSAGE, null);
         } catch (IOException e) {
             log.log(Level.WARNING, "could not localize or read policy from " + chooser.getSelectedFile().getPath(), e);
             DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                                          "Could not find policy export in the selected file",
-                                          "Policy Not Found",
+                                          "Could not find policy export in the selected file or the imported policy contains errors",
+                                          "Policy Not Found/Not Valid",
                                           JOptionPane.WARNING_MESSAGE, null);
         }
 
         return false;
     }
 
-    private void addPoliciesToIncludeAssertions(Assertion rootAssertion, HashMap<String, Policy> fragments) throws IOException {
+    private void addPoliciesToPolicyReferenceAssertions(Assertion rootAssertion, HashMap<String, Policy> fragments) throws IOException {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compAssertion = (CompositeAssertion)rootAssertion;
             for(Iterator it = compAssertion.children();it.hasNext();) {
                 Assertion child = (Assertion)it.next();
-                addPoliciesToIncludeAssertions(child, fragments);
+                addPoliciesToPolicyReferenceAssertions(child, fragments);
             }
-        } else if(rootAssertion instanceof Include) {
-            Include includeAssertion = (Include)rootAssertion;
-            if(fragments.containsKey(includeAssertion.getPolicyName())) {
-                includeAssertion.replaceFragmentPolicy(fragments.get(includeAssertion.getPolicyName()));
-                addPoliciesToIncludeAssertions(includeAssertion.retrieveFragmentPolicy().getAssertion(), fragments);
+        } else if(rootAssertion instanceof PolicyReference) {
+            PolicyReference policyReference = (PolicyReference)rootAssertion;
+            Policy fragment = fragments.get(policyReference.retrievePolicyGuid());
+            if(fragment != null) {
+                policyReference.replaceFragmentPolicy(fragment);
+                if(rootAssertion instanceof Include) {
+                    ((Include)rootAssertion).setPolicyName(fragment.getName());
+                }
+                addPoliciesToPolicyReferenceAssertions(fragment.getAssertion(), fragments);
             }
         }
     }

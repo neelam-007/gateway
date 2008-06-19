@@ -859,8 +859,13 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
      *         this handle when they are finished with it.
      */
     private SchemaHandle compileAndCacheRecursive(String systemId, String schemadoc, final Set<String> seenSystemIds) throws SAXException, IOException {
-        if (seenSystemIds.contains(systemId))
-            throw new SAXException("Circular imports detected.  Schema sets with circular imports are not currently supported.");
+        if (seenSystemIds.contains(systemId)) {
+            //remove this exception and replace with patch to log circular imports
+            //throw new SAXException("Circular imports detected.  Schema sets with circular imports are not currently supported.");
+            logger.info("Circular import detected.");
+            return null;
+        }
+
         seenSystemIds.add(systemId);
 
         // Reparse, building up CompiledSchema instances as needed from the bottom up
@@ -885,8 +890,13 @@ public class SchemaManagerImpl implements SchemaManager, PropertyChangeListener 
                         handle = handle.getCompiledSchema().ref();
                     }
 
-                    directImports.put(handle.getCompiledSchema().getSystemId(), handle); // give it away without closing it
-                    return makeLsInput(handle.getCompiledSchema().getSystemId(), handle.getCompiledSchema().getSchemaDocument());
+                    //if handle is null, there was a circular import.
+                    if ( handle != null ) {
+                        directImports.put(handle.getCompiledSchema().getSystemId(), handle); // give it away without closing it
+                        return makeLsInput(handle.getCompiledSchema().getSystemId(), handle.getCompiledSchema().getSchemaDocument());
+                    }
+                    return null;
+
                 } catch (IOException e) {
                     throw new UnresolveableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
                 } catch (SAXException e) {

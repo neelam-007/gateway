@@ -67,6 +67,26 @@ public class SpecificUser extends IdentityAssertion {
         return headers2;
     }
 
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        if(!oldEntityHeader.getType().equals(newEntityHeader.getType())) {
+            return;
+        }
+
+        if(oldEntityHeader instanceof IdentityHeader && newEntityHeader instanceof IdentityHeader) {
+            IdentityHeader oldIdentityHeader = (IdentityHeader)oldEntityHeader;
+            IdentityHeader newIdentityHeader = (IdentityHeader)newEntityHeader;
+
+            if(oldIdentityHeader.getProviderOid() == _identityProviderOid && oldIdentityHeader.getStrId().equals(userUid)) {
+                _identityProviderOid = newIdentityHeader.getProviderOid();
+                userUid = newIdentityHeader.getStrId();
+
+                return;
+            }
+        }
+
+        super.replaceEntity(oldEntityHeader, newEntityHeader);
+    }
+
     public String loggingIdentity() {
         String idtomatch = getUserLogin();
         if (idtomatch == null)

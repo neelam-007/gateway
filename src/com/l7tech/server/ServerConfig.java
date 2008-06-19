@@ -139,6 +139,9 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_AUTH_CACHE_MAX_FAILURE_TIME = "authCacheMaxSuccessTime";
     public static final String PARAM_AUTH_CACHE_GROUP_MEMB_CACHE_SIZE = "authCacheGroupMembershipCacheSize";
 
+    public static final String PARAM_JMS_LISTENER_THREAD_LIMIT = "jmsListenerThreadLimit";
+    public static final String PARAM_JMS_ENDPOINT_THREAD_DISTRIBUTION = "jmsEndpointThreadDistribution";
+
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
 
     public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;

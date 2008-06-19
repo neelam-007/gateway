@@ -9,6 +9,7 @@ import com.l7tech.common.policy.PolicyDeletionForbiddenException;
 import com.l7tech.common.policy.PolicyType;
 import com.l7tech.common.policy.CircularPolicyException;
 import static com.l7tech.common.security.rbac.EntityType.POLICY;
+import static com.l7tech.common.security.rbac.EntityType.SERVICE_TEMPLATE;
 import static com.l7tech.common.security.rbac.OperationType.*;
 import com.l7tech.common.security.rbac.RbacAdmin;
 import com.l7tech.common.security.rbac.Role;
@@ -23,15 +24,14 @@ import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.criterion.Disjunction;
 import org.springframework.transaction.annotation.Propagation;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -58,6 +58,46 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
     @Transactional(propagation=Propagation.SUPPORTS)
     public void setPolicyCache(PolicyCache policyCache) {
         this.policyCache = policyCache;
+    }
+
+    public Policy findByGuid(final String guid) throws FindException {
+        try {
+            //noinspection unchecked
+            return (Policy)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
+                protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    Criteria crit = session.createCriteria(getImpClass());
+                    crit.add(Restrictions.eq("guid", guid));
+                    return crit.uniqueResult();
+                }
+            });
+        } catch (Exception e) {
+            throw new FindException("Couldn't check uniqueness", e);
+        }
+    }
+
+    public Collection<PolicyHeader> findHeadersWithTypes(final EnumSet<PolicyType> types) {
+        //noinspection unchecked
+        List<Policy> policies = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            @Override
+            protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                Criteria crit = session.createCriteria(Policy.class);
+                if (types != null && !types.isEmpty()) {
+                    Disjunction dis = Restrictions.disjunction(); // This is an "OR" :)
+                    for (PolicyType type : types) {
+                        dis.add(Restrictions.eq("type", type));
+                    }
+                    crit.add(dis);
+                }
+                return crit.list();
+            }
+        });
+        List<PolicyHeader> hs = new ArrayList<PolicyHeader>(policies.size());
+        for (Policy policy : policies) {
+            hs.add(newHeader(policy));
+        }
+        return hs;
+
     }
 
     @Override
@@ -113,20 +153,7 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
 
     @Transactional(readOnly=true)
     public Collection<PolicyHeader> findHeadersByType(final PolicyType type) throws FindException {
-        //noinspection unchecked
-        List<Policy> policies = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
-            @Override
-            protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                Criteria crit = session.createCriteria(Policy.class);
-                crit.add(Restrictions.eq("type", type));
-                return crit.list();
-            }
-        });
-        List<PolicyHeader> hs = new ArrayList<PolicyHeader>(policies.size());
-        for (Policy policy : policies) {
-            hs.add(newHeader(policy));
-        }
-        return hs;
+        return findHeadersWithTypes(EnumSet.of(type));
     }
 
     public void addManagePolicyRole(Policy policy) throws SaveException {
@@ -149,6 +176,7 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
         newRole.addPermission(READ, POLICY, policy.getId()); // Read this policy
         newRole.addPermission(UPDATE, POLICY, policy.getId()); // Update this policy
         newRole.addPermission(DELETE, POLICY, policy.getId()); // Delete this policy
+        newRole.addPermission(READ, SERVICE_TEMPLATE, null);
 
         if (currentUser != null) {
             // See if we should give the current user admin permission for this policy

@@ -234,7 +234,7 @@ public class RoleManagerImpl
         }
         String name = role.getName();
         Matcher matcher = replacePattern.matcher(name);
-        String newName = matcher.replaceAll(entity.getName());
+        String newName = matcher.replaceAll(entity.getName().replace("\\", "\\\\").replace("$", "\\$"));
         if (!newName.equals(name)) {
             logger.info(MessageFormat.format("Updating ''{0}'' Role with new name: ''{1}''", role.getName(), newName));
             role.setName(newName);

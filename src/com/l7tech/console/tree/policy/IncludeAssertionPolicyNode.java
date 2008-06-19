@@ -63,7 +63,7 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
                 sb.append("Deleted");
             }
             sb.append(" Policy #");
-            sb.append(assertion.getPolicyOid());
+            sb.append(assertion.getPolicyGuid());
             String name = assertion.getPolicyName();
             if (name != null) sb.append(" (").append(name).append(")");
         } else {
@@ -87,7 +87,7 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
         if (policy == null) {
             permissionDenied = false;
             circularImport = false;
-            if ( isParentPolicy(assertion.getPolicyOid(), assertion.getPolicyName()) ) {
+            if ( isParentPolicy(assertion.getPolicyGuid(), assertion.getPolicyName()) ) {
                 circularImport = true;
             } else {
                 try {
@@ -95,7 +95,7 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
                         policy = ((Include)assertion).retrieveFragmentPolicy();
                     }
                     if(policy == null) {
-                        policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(assertion.getPolicyOid());
+                        policy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(assertion.getPolicyGuid());
                     }
                 } catch ( PermissionDeniedException pde ) {
                     logger.log(Level.WARNING, "Couldn't load included policy [permission denied]");
@@ -108,15 +108,15 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
         return policy;
     }
 
-    private boolean isParentPolicy( final Long policyOid, final String policyName ) {
+    private boolean isParentPolicy( final String policyGuid, final String policyName ) {
         boolean found = false;
         TreeNode currentNode = getParent();
 
         while ( currentNode != null ) {
             if ( currentNode instanceof IncludeAssertionPolicyNode ) {
                 IncludeAssertionPolicyNode includeTreeNode = (IncludeAssertionPolicyNode) currentNode;
-                if ( (policyOid == null || 0 >= policyOid) && includeTreeNode.asAssertion().getPolicyName().equals(policyName) ||
-                     policyOid != null && policyOid > 0 && includeTreeNode.asAssertion().getPolicyOid().equals( policyOid ) )
+                if ( policyGuid == null && includeTreeNode.asAssertion().getPolicyName().equals(policyName) ||
+                     policyGuid != null && includeTreeNode.asAssertion().getPolicyGuid().equals( policyGuid ) )
                 {
                     found = true;
                     break;

@@ -53,6 +53,12 @@ public class LdapAttributeExtractor extends DefaultAttributeExtractor<LdapAttrib
                 return new Object[0];
             Attribute att = atts.get(mapping.getCustomAttributeName());
             try {
+                //before proceeding make sure that the custom attribute exists for the selected LDAP
+                if ( att == null ) {
+                    //cannot find the attribute, so throw exception and allow catch block to handle it accordingly
+                    throw new NoSuchAttributeException("Attribute '" + mapping.getCustomAttributeName() + "' not found in '" + ldapIdentity.getDn() +"'");
+                }
+
                 if (mapping.isMultivalued() && att.size() > 1) {
                     List<Object> vals = new ArrayList<Object>();
                     for (NamingEnumeration ne = att.getAll(); ne.hasMore(); ) {

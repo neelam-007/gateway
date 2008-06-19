@@ -5,17 +5,15 @@ package com.l7tech.server.policy;
 
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.policy.PolicyType;
-import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.PolicyHeader;
+import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
+import java.util.EnumSet;
 
 /**
  * @author alex
  */
-public interface PolicyManager extends EntityManager<Policy, PolicyHeader> {
+public interface PolicyManager extends EntityManager<Policy, PolicyHeader>, GuidBasedEntityManager<Policy> {
 
     /**
      * Find headers for policies of the given type.
@@ -36,4 +34,14 @@ public interface PolicyManager extends EntityManager<Policy, PolicyHeader> {
      * @throws com.l7tech.objectmodel.SaveException if the Role cannot be saved
      */
     void addManagePolicyRole(Policy policy) throws SaveException;
+
+    /**
+     * Find the policy that has the specified GUID
+     * @param guid The GUID of the policy to retrieve
+     * @return The policy that has the specified GUID
+     * @throws FindException If no policy can be found for the specified GUID
+     */
+    Policy findByGuid(String guid) throws FindException;
+
+    Collection<PolicyHeader> findHeadersWithTypes(EnumSet<PolicyType> types);
 }

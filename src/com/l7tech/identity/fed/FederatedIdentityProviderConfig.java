@@ -10,6 +10,8 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.HashMap;
+import java.util.Set;
 
 /**
  * @author alex
@@ -63,6 +65,30 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
         setProperty(PROP_CERT_OIDS, oids);
     }
 
+    public HashMap<String, FederatedGroup> getImportedGroups() {
+        return importedGroups;
+    }
+
+    public void setImportedGroups(HashMap<String, FederatedGroup> importedGroups) {
+        this.importedGroups = importedGroups;
+    }
+
+    public HashMap<String, FederatedUser> getImportedUsers() {
+        return importedUsers;
+    }
+
+    public void setImportedUsers(HashMap<String, FederatedUser> importedUsers) {
+        this.importedUsers = importedUsers;
+    }
+
+    public HashMap<String, Set<String>> getImportedGroupMembership() {
+        return importedGroupMembership;
+    }
+
+    public void setImportedGroupMembership(HashMap<String, Set<String>> importedGroupMembership) {
+        this.importedGroupMembership = importedGroupMembership;
+    }
+
     public String toString() {
         StringBuffer sb = new StringBuffer("<FederatedIdentityProviderConfig ");
         sb.append("oid=\"").append(_oid).append("\" ");
@@ -78,4 +104,8 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
     private static final String PROP_X509_SUPPORTED = "x509Supported";
     private static final String PROP_X509_CONFIG = "x509Config";
     private static final String PROP_CERT_OIDS = "trustedCertOids";
+
+    private HashMap<String, FederatedUser> importedUsers;
+    private HashMap<String, FederatedGroup> importedGroups;
+    private HashMap<String, Set<String>> importedGroupMembership;
 }

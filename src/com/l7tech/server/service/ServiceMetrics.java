@@ -5,6 +5,7 @@ import EDU.oswego.cs.dl.util.concurrent.Channel;
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.ReaderPreferenceReadWriteLock;
 import com.l7tech.service.MetricsBin;
+import com.l7tech.service.ServiceState;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -92,6 +93,8 @@ public class ServiceMetrics {
      */
     private final String _clusterNodeId;
 
+    private volatile ServiceState lastServiceState;
+
     /**
      * Creates a ServiceMetrics and starts new {@link MetricsBin}s right away.
      *
@@ -156,17 +159,18 @@ public class ServiceMetrics {
      *
      * @return true if the current bin was archived
      */
-    public boolean archiveFineBin() {
+    public boolean archiveFineBin(final ServiceState currentServiceState) {
         // Use locking to stop further modification to the current bin before it is archived.
         boolean archived = false;
         try {
             _fineLock.writeLock().acquire();
             final long now = System.currentTimeMillis();
+            _currentFineBin.setServiceState(currentServiceState);
             _currentFineBin.setEndTime(now);
             try {
                 // Bug 3728: Omit no-traffic fine bins to improve performance.
                 // Dashboard will use empty uptime bins to keep moving chart advancing.
-                if (_currentFineBin.getNumAttemptedRequest() > 0) {
+                if (currentServiceState != lastServiceState || _currentFineBin.getNumAttemptedRequest() > 0) {
                     _queue.put(_currentFineBin);
                     archived = true;
                 }
@@ -181,19 +185,22 @@ public class ServiceMetrics {
             Thread.currentThread().interrupt();
         } finally {
             _fineLock.writeLock().release();
+            lastServiceState = currentServiceState;
         }
         return archived;
     }
 
     /**
      * Archives the current hourly resolution bin and starts a new one.
+     * @param state
      */
-    public void archiveHourlyBin() {
+    public void archiveHourlyBin(ServiceState state) {
         // Use locking to stop further modification to the current bin before it is archived.
         try {
             _hourlyLock.writeLock().acquire();
             final long now = System.currentTimeMillis();
             _currentHourlyBin.setEndTime(now);
+            _currentHourlyBin.setServiceState(state);
             try {
                 _queue.put(_currentHourlyBin);
             } catch (InterruptedException e) {
@@ -211,13 +218,15 @@ public class ServiceMetrics {
 
     /**
      * Archives the current daily resolution bin and starts a new one.
+     * @param state
      */
-    public void archiveDailyBin() {
+    public void archiveDailyBin(ServiceState state) {
         // Use locking to stop further modification to the current bin before it is archived.
         try {
             _dailyLock.writeLock().acquire();
             final long now = System.currentTimeMillis();
             _currentDailyBin.setEndTime(now);
+            _currentDailyBin.setServiceState(state);
             try {
                 _queue.put(_currentDailyBin);
             } catch (InterruptedException e) {

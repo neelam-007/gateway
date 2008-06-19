@@ -54,11 +54,11 @@ public class EditServiceProperties extends ServiceNodeAction {
 
     protected void performAction() {
         final ServiceNode serviceNode = ((ServiceNode)node);
-        boolean canUpdate;
+        boolean hasUpdatePermission;
         PublishedService svc;
         try {
             svc = serviceNode.getPublishedService();
-            canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc));
+            hasUpdatePermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc));
         } catch (FindException e) {
             logger.log(Level.WARNING, "Cannot get service", e);
             throw new RuntimeException(e);
@@ -100,12 +100,12 @@ public class EditServiceProperties extends ServiceNodeAction {
                 }
             }
         };
-        editServiceProperties(svc, callback, canUpdate);
+        editServiceProperties(svc, callback, hasUpdatePermission);
     }
 
-    private void editServiceProperties(final PublishedService svc, final Functions.UnaryVoid<Boolean> resultCallback, boolean canUpdate) {
+    private void editServiceProperties(final PublishedService svc, final Functions.UnaryVoid<Boolean> resultCallback, boolean hasUpdatePermission) {
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final ServicePropertiesDialog dlg = new ServicePropertiesDialog(mw, svc, canUpdate);
+        final ServicePropertiesDialog dlg = new ServicePropertiesDialog(mw, svc, hasUpdatePermission);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

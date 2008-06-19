@@ -18,6 +18,7 @@ public interface AssertionPropertiesEditor<AT extends Assertion> {
      * <p>The value of this property is a {@link Boolean}</p>
      */
     String PARAM_READONLY = AssertionPropertiesEditor.class.getName() + ".readOnly";
+     
 
     /**
      * Get a dialog instance, ready for display with DialogDisplayer.

@@ -1,7 +1,13 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.common.gui.util.DialogDisplayer;
+import com.l7tech.console.util.TopComponents;
+
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 
 /**
  * Final step in the ImportPolicyFromUDDIWizard where the
@@ -42,7 +48,29 @@ public class ImportPolicyFromUDDIFinalStep extends WizardStepPanel {
     }
 
     public boolean onNextButton() {
-        data.setConfirmed(true);
-        return true;
+        boolean bad = false;
+        String xml = data.getPolicyXML();
+        if (xml == null || xml.length() == 0) {
+            bad = true;
+        } else {
+            Assertion ass = null;
+            try {
+                ass = WspReader.getDefault().parsePermissively(xml);
+                if (ass == null) {
+                    bad = true;
+                }
+            } catch (IOException e) {
+                bad = true;
+            }
+        }
+        if (bad) {
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                                          "The policy being imported is not a valid policy, or is empty.",
+                                          "Invalid/Empty Policy",
+                                          JOptionPane.WARNING_MESSAGE, null);
+        }
+        data.setConfirmed(!bad);
+
+        return !bad;
     }
 }

@@ -4,7 +4,9 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,7 +52,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
      * <p/>
      * Must be one of {@link #RES_FINE}, {@link #RES_HOURLY} or {@link #RES_DAILY}.
      */
-    private int _resolution = -1;
+    protected int _resolution = -1;
 
     /** Nominal time period interval (in milliseconds). */
     private int _interval;
@@ -97,6 +99,11 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
     /** Protects write access to {@link #_numCompletedRequest}, {@link #_minBackendResponseTime},
      * {@link #_maxBackendResponseTime} and {@link #_sumBackendResponseTime}. */
     private transient Object _completedLock = new Object();
+
+    /**
+     * State of the associated {@link PublishedService} at approximately the time this bin was archived.
+     */
+    private ServiceState serviceState;
 
     private static void checkResolutionType(int res) {
         if (res != RES_FINE && res != RES_HOURLY && res != RES_DAILY) {
@@ -556,6 +563,14 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         }
     }
 
+   public void setServiceState(ServiceState serviceState) {
+        this.serviceState = serviceState;
+    }
+
+    public ServiceState getServiceState() {
+        return serviceState;
+    }
+
     /** @return the average frontend response time (in milliseconds) of all attempted requests */
     public double getAverageFrontendResponseTime() {
         int numAttemptedRequest;
@@ -850,7 +865,6 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         if (_periodStart != that._periodStart) return false;
         if (_resolution != that._resolution) return false;
         if (_serviceOid != that._serviceOid) return false;
-        if (_startTime != that._startTime) return false;
         if (_interval != that._interval) return false;
         return !(_clusterNodeId != null ? !_clusterNodeId.equals(that._clusterNodeId) : that._clusterNodeId != null);
 

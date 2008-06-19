@@ -13,4 +13,6 @@ import com.l7tech.objectmodel.EntityHeader;
  */
 public interface UsesEntities {
     EntityHeader[] getEntitiesUsed();
+
+    void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader);
 }

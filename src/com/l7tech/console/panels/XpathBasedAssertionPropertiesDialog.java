@@ -29,6 +29,7 @@ import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SoapMessageGenerator;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.console.util.SoapMessageGenerator.Message;
 import com.l7tech.console.xmlviewer.ExchangerDocument;
 import com.l7tech.console.xmlviewer.Viewer;
@@ -142,6 +143,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     };
     private BindingOperation currentOperation;
     private JButton editSampleButton;
+    private JLabel varPrefixStatusLabel;
     private final boolean showHardwareAccelStatus;
 
     private static final String NON_SOAP_NAME = "<Non-SOAP service>";
@@ -646,12 +648,32 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
         if (assertion instanceof SimpleXpathAssertion) {
             SimpleXpathAssertion sxa = (SimpleXpathAssertion)assertion;
+            clearVariablePrefixStatus();
             varPrefixField.setText(sxa.getVariablePrefix());
             varPrefixField.setVisible(true);
             varPrefixLabel.setVisible(true);
+            validateVariablePrefix();
+            TextComponentPauseListenerManager.registerPauseListener(
+                varPrefixField,
+                new PauseListener() {
+                    public void textEntryPaused(JTextComponent component, long msecs) {
+                        if(validateVariablePrefix()) {
+                            okButton.setEnabled(true);
+                        } else {
+                            okButton.setEnabled(false);
+                        }
+                    }
+
+                    public void textEntryResumed(JTextComponent component) {
+                        clearVariablePrefixStatus();
+                    }
+                },
+                500
+            );
         } else {
             varPrefixField.setVisible(false);
             varPrefixLabel.setVisible(false);
+            varPrefixStatusLabel.setVisible(false);
         }
 
         descriptionLabel.setText(description);
@@ -1178,6 +1200,23 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         return hardwareFeedback;
     }
 
+    /**
+     * @see {@link com.l7tech.console.util.VariablePrefixUtil#validateVariablePrefix}
+     */
+    private boolean validateVariablePrefix() {
+        return VariablePrefixUtil.validateVariablePrefix(
+            varPrefixField.getText(),
+            PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
+            ((SimpleXpathAssertion)assertion).getVariableSuffixes(),
+            varPrefixStatusLabel);
+    }
+
+    /**
+     * @see {@link com.l7tech.console.util.VariablePrefixUtil#clearVariablePrefixStatus}
+     */
+    private void clearVariablePrefixStatus() {
+        VariablePrefixUtil.clearVariablePrefixStatus(varPrefixStatusLabel);
+    }
 
     private static class XpathFeedBack {
         private static final String EMPTY_MSG = "Empty XPath expression";

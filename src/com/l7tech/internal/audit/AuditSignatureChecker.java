@@ -17,8 +17,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.KeyManagementException;
@@ -84,8 +83,8 @@ public class AuditSignatureChecker extends JFrame {
 
     private static boolean isURL(final String url) {
         try {
-            new URI(url);
-        } catch (URISyntaxException e) {
+            new URL(url);
+        } catch (MalformedURLException e) {
             return false;
         }
         return true;
@@ -142,10 +141,10 @@ public class AuditSignatureChecker extends JFrame {
 
 
     private static Certificate[] loadCert(final String urlOrFile) throws IOException, CertificateException {
-        if (isFilePath(urlOrFile)) {
-            return loadCertFromFile(urlOrFile);
-        } else if (isURL(urlOrFile)) {
+        if (isURL(urlOrFile)) {
             return loadCertFromURL(urlOrFile);
+        } else if (isFilePath(urlOrFile)) {
+            return loadCertFromFile(urlOrFile);
         } else {
             throw new IOException("Neither a file path or URL: " + urlOrFile);
         }

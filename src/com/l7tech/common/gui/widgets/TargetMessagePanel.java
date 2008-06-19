@@ -22,7 +22,7 @@ public class TargetMessagePanel extends JPanel {
     private final RunOnChangeListener listener = new RunOnChangeListener(new Runnable() {
         public void run() {
             enableDisable();
-            final boolean valid = !otherRadioButton.isSelected() || otherMessageVariableTextfield.getText().length() > 0;
+            final boolean valid = !otherRadioButton.isSelected() || otherMessageVariableTextfield.getText().trim().length() > 0;
             firePropertyChange("valid", null, valid);
         }
     });
@@ -95,7 +95,7 @@ public class TargetMessagePanel extends JPanel {
             var = null;
         } else if (otherRadioButton.isSelected()) {
             type = TargetMessageType.OTHER;
-            var = otherMessageVariableTextfield.getText();
+            var = otherMessageVariableTextfield.getText().trim();
         } else {
             throw new IllegalStateException();
         }

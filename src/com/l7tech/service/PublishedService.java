@@ -291,6 +291,24 @@ public class PublishedService extends NamedEntityImp {
     }
 
     /**
+     * Gets the flag indicating whether or not this service is internal. An internal service is one that whose WSDL and
+     * other details are already specified at the time of publishing. Modular assertions can add templates for internal
+     * services which will then be made available for publishing via the "publish internal service" wizard.
+     * @return true if this service is an internal service.
+     */
+    public boolean isInternal() {
+        return internal;
+    }
+
+    /**
+     * Sets the flag indicating whether or not this service is internal.
+     * @param internal
+     */
+    public void setInternal(boolean internal) {
+        this.internal = internal;
+    }
+
+    /**
      * Get the descriptive name for this service.
      *
      * <p>This will include sufficient information to identify a service whilst
@@ -471,6 +489,7 @@ public class PublishedService extends NamedEntityImp {
     private String _wsdlXml;
     private boolean _disabled;
     private boolean soap = true;
+    private boolean internal = false;
     private String routingUri;
     private String httpMethodNames = METHODNAMES_SOAP; // invariants: never null, always in sync with httpMethods
     private boolean laxResolution;
@@ -527,7 +546,10 @@ public class PublishedService extends NamedEntityImp {
      */
     private static class DefaultWsdlStrategy implements WsdlStrategy {
         public Wsdl parseWsdl(String uri, String wsdl) throws WSDLException {
-            return Wsdl.newInstance(uri, new InputSource(new StringReader(wsdl)));
+            InputSource source = new InputSource();
+            source.setSystemId(uri);
+            source.setCharacterStream(new StringReader(wsdl));
+            return Wsdl.newInstance(uri, source);
         }
     }
 }

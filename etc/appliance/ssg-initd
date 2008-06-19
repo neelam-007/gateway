@@ -76,6 +76,9 @@ stop() {
             for partition_dir in $ALL_PARTITIONS
             do
                 touch /ssg/etc/conf/partitions/${partition_dir}/SHUTDOWN.NOW
+                if [ "$UID" = "0" ]; then
+                    chown gateway:gateway /ssg/etc/conf/partitions/${partition_dir}/SHUTDOWN.NOW
+                fi
             done
 
             for partition_dir in $ALL_PARTITIONS
@@ -103,28 +106,46 @@ status() {
     fi
 }
 
+execute_stop_command() {
+    ssg_command=$1
+    which_partition=$2
+
+    if [ "$LOG_REDIRECTION_OPERATOR" = "|" -a -n "$LOG_REDIRECTION_DEST" ]; then
+        (sh "${PARTITION_CONTROL}" "$ssg_command" "${which_partition}" | `${LOG_REDIRECTION_DEST/<PARTITION_NAME>/$which_partition}` &> /dev/null)
+    else
+        if [ "$LOG_REDIRECTION_OPERATOR" = ">" -a -n "$LOG_REDIRECTION_DEST" ]; then
+            output_file="${LOG_REDIRECTION_DEST/<PARTITION_NAME>/$which_partition}"
+        else
+            output_file="/dev/null"
+        fi
+        (sh "${PARTITION_CONTROL}" "$ssg_command" "${which_partition}" &> "$output_file")
+    fi
+
+    return $?
+}
+
 stop_ssg() {
     which_partition="${1}"
     if [ "${2}" != "silent" ] ; then
         echo -n $"Stopping $prog $(basename "${which_partition}"): "
     fi
-    (sh "${PARTITION_CONTROL}" "stop" "${which_partition}" &> /dev/null)
+    execute_stop_command "stop" "$which_partition"
     RETVAL=$?
 
     if [ ! ${RETVAL} -eq 0 ] ; then
         sleep 5;
-        (sh "${PARTITION_CONTROL}" "status" "${which_partition}" &> /dev/null)
+        execute_stop_command "status" "$which_partition"
         RET=${?}
         while [ ${RET} -eq 0 ]
         do
             count=$((count + 1))
             if [ "$count" -ge "$tries" ] ; then
-                (sh "${PARTITION_CONTROL}" forcestop "${which_partition}" &> /dev/null)
+                execute_stop_command "forcestop" "$which_partition"
                 # sleep ensures TCP cleanup if process was killed
                 RET=${?}
                 sleep 5;
             else
-                (sh "${PARTITION_CONTROL}" "status" "${which_partition}" &> /dev/null)
+                execute_stop_command "status" "$which_partition"
                 RET=${?}
             fi
         done
@@ -141,7 +162,16 @@ start_ssg() {
     which_partition=$1
     echo -n $"Starting $prog $(basename "${which_partition}"): "
 
-    (sh "${PARTITION_CONTROL}" "start" "${which_partition}" | logger -t "SSG-${which_partition}" &> /dev/null)
+    if [ "$LOG_REDIRECTION_OPERATOR" = "|" -a -n "$LOG_REDIRECTION_DEST" ]; then
+        (sh "${PARTITION_CONTROL}" "start" "${which_partition}" | `${LOG_REDIRECTION_DEST/<PARTITION_NAME>/$which_partition}` &> /dev/null)
+    else
+        if [ "$LOG_REDIRECTION_OPERATOR" = ">" -a -n "$LOG_REDIRECTION_DEST" ]; then
+            output_file="${LOG_REDIRECTION_DEST/<PARTITION_NAME>/$which_partition}"
+        else
+            output_file="/dev/null"
+        fi
+        (sh "${PARTITION_CONTROL}" "start" "${which_partition}" &> "$output_file")
+    fi
     RETVAL=$?
     [ $RETVAL -eq 0 ] && success || failure
     echo

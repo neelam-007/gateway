@@ -3,10 +3,13 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.action.JmsRoutingAssertionPropertiesAction;
 import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
+import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
+import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -35,9 +38,22 @@ public class JmsRoutingAssertionTreeNode extends LeafAssertionTreeNode {
             actor = context.localRecipient()
                     ? ""
                     : " [\'" + ass.getRecipientContext().getActor() + "\' actor]";
-        if (ass.getEndpointOid() == null)
+        String endpointName = null;
+        if (ass.getEndpointOid() == null) {
             return name + "(Not Yet Specified)" + actor;
-        return name + (ass.getEndpointName() == null ? "(unnamed)" : ass.getEndpointName()) + actor;
+        } else {
+            try {
+                JmsEndpoint endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(ass.getEndpointOid());
+                if(endpoint != null) {
+                    endpointName = endpoint.getName();
+                } else {
+                    endpointName = ass.getEndpointName();
+                }
+            } catch(FindException e) {
+                endpointName = ass.getEndpointName();
+            }
+        }
+        return name + (endpointName == null ? "(unnamed)" : endpointName) + actor;
     }
 
     /**

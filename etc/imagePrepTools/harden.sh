@@ -26,13 +26,28 @@ harden() {
   touch /var/log/btmp
 
   # GEN000460
-  if ! grep -Eq 'auth +required +.*/pam_tally.so deny=[0-9] no_magic_root reset' /etc/pam.d/system-auth; then
+  if ! grep -Eq 'auth +required +.*/pam_tally2.so deny=[0-9] no_magic_root unlock_time=1200' /etc/pam.d/system-auth; then
     sed -i -e '
 /auth\s*required\s*.*\/pam_env\.so/ i\
-auth        required      /lib/security/$ISA/pam_tally.so onerr=fail no_magic_root' /etc/pam.d/system-auth
+auth        required      /lib/security/$ISA/pam_tally2.so deny=5 onerr=fail no_magic_root unlock_time=1200' /etc/pam.d/system-auth
     sed -i -e '
 /account\s*sufficient\s*.*\/pam_succeed_if\.so/ i\
-account     required      /lib/security/$ISA/pam_tally.so deny=5 no_magic_root even_deny_root_account reset' /etc/pam.d/system-auth
+account     required      /lib/security/$ISA/pam_tally2.so no_magic_root even_deny_root_account reset' /etc/pam.d/system-auth
+  fi
+  # Use a listfile with SSH to prevent DOS attacks on system accounts
+  if [ ! -e /etc/ssh/ssh_allowed_users ]; then
+    echo 'ssgconfig' > /etc/ssh/ssh_allowed_users
+    sed -i -e '
+/#%PAM-1.0/ a\
+auth        requisite     pam_listfile.so item=user sense=allow file=/etc/ssh/ssh_allowed_users onerr=succeed' /etc/pam.d/sshd
+  fi
+  # Use a listfile with console login
+  if [ ! -e /etc/tty_users ]; then
+    echo 'root' > /etc/tty_users
+    echo 'ssgconfig' >> /etc/tty_users
+    sed -i -e '
+/auth       required\tpam_securetty.so/ a\
+auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_users onerr=succeed' /etc/pam.d/login
   fi
 
   # GEN000480
@@ -206,7 +221,12 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   rm -f /var/log/btmp
 
   # GEN000460
-  sed -i -e '/auth        required      \/lib\/security\/$ISA\/pam_tally.so deny=5 no_magic_root reset/d' /etc/pam.d/system-auth
+  sed -i -e '/auth        required      \/lib\/security\/$ISA\/pam_tally2.so deny=5 onerr=fail no_magic_root unlock_time=1200/d' /etc/pam.d/system-auth
+  sed -i -e '/account     required      \/lib\/security\/$ISA\/pam_tally2.so no_magic_root even_deny_root_account reset/d' /etc/pam.d/system-auth
+  rm -f /etc/ssh/ssh_allowed_users
+  sed -i -e '/auth       requisite    pam_listfile.so item=user sense=allow file=\/etc\/ssh\/ssh_allowed_users onerr=succeed/d' /etc/pam.d/sshd
+  rm -f /etc/tty_users
+  sed -i -e '/auth       requisite    pam_listfile.so item=user sense=allow file=\/etc\/tty_users onerr=succeed/d' /etc/pam.d/login
 
   # GEN000480
   sed -i -e '/FAIL_DELAY 4/d' /etc/login.defs

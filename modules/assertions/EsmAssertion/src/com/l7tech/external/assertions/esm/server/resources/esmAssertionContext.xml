@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+    <bean id="wsdmService" class="com.l7tech.server.wsdm.ServiceManagementAdministrationService">
+        <constructor-arg ref="qosMetricsService"/>
+        <constructor-arg ref="subscriptionNotifier"/>
+        <constructor-arg ref="serviceCache"/>
+        <constructor-arg>
+            <list>
+                <ref local="aggregator"/>
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <bean id="aggregator" class="com.l7tech.server.wsdm.Aggregator">
+        <constructor-arg ref="serviceManager"/>
+        <constructor-arg ref="serviceMetricsManager"/>
+    </bean>
+
+    <bean id="qosMetricsService" class="com.l7tech.server.wsdm.QoSMetricsService">
+        <constructor-arg ref="serviceCache"/>
+        <constructor-arg ref="serviceMetricsManager"/>
+        <constructor-arg ref="aggregator"/>
+    </bean>
+
+    <bean id="subscriptionNotifier" class="com.l7tech.server.wsdm.subscription.SubscriptionNotifier">
+        <constructor-arg ref="esmSubscriptionManager"/>
+        <constructor-arg ref="serviceCache"/>
+        <constructor-arg ref="ssgConnectorManager"/>
+        <constructor-arg ref="policyCache"/>
+        <constructor-arg ref="messageSummaryAuditFactory"/>
+        <constructor-arg ref="clusterNodeId"/>
+        <constructor-arg ref="aggregator"/>
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="httpClientFactory"/>
+    </bean>
+
+</beans>
+
+

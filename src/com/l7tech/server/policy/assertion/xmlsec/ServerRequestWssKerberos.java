@@ -42,12 +42,14 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
 
     //- PUBLIC
 
+    @SuppressWarnings( { "unchecked" } )
     public ServerRequestWssKerberos(RequestWssKerberos requestWssKerberos, ApplicationContext springContext) {
         super(requestWssKerberos);
         this.requestWssKerberos = requestWssKerberos;
         auditor = new Auditor(this, springContext, logger);
     }
 
+    @SuppressWarnings( { "RedundantArrayCreation" } )
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         ProcessorResult wssResults;
         try {
@@ -75,18 +77,15 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
 
         KerberosGSSAPReqTicket kerberosTicket = null;
         SecureConversationSession kerberosSession = null;
-        for (int i = 0; i < tokens.length; i++) {
-            XmlSecurityToken tok = tokens[i];
-            if (tok instanceof KerberosSecurityToken) {
-                kerberosTicket = ((KerberosSecurityToken) tok).getTicket();
-            }
-            else if(tok instanceof SecurityContextToken) {
-                SecurityContext securityContext = ((SecurityContextToken)tok).getSecurityContext();
-                if(securityContext instanceof SecureConversationSession) {
+        for( XmlSecurityToken tok : tokens ) {
+            if( tok instanceof KerberosSecurityToken ) {
+                kerberosTicket = ( (KerberosSecurityToken) tok ).getTicket();
+            } else if( tok instanceof SecurityContextToken ) {
+                SecurityContext securityContext = ( (SecurityContextToken) tok ).getSecurityContext();
+                if( securityContext instanceof SecureConversationSession ) {
                     kerberosSession = (SecureConversationSession) securityContext;
-                }
-                else {
-                    logger.warning("Found security context of incorrect type '"+(securityContext==null ? "null" : securityContext.getClass().getName())+"'.");
+                } else {
+                    logger.warning( "Found security context of incorrect type '" + ( securityContext == null ? "null" : securityContext.getClass().getName() ) + "'." );
                 }
             }
         }
@@ -116,6 +115,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
                 }
                 else {
                     context.addCredentials(creds);
+                    context.setVariable("kerberos.realm", extractRealm(kerberosServiceTicket.getClientPrincipalName()));
 
                     auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_SESSION, new String[] {kerberosServiceTicket.getClientPrincipalName()});
 
@@ -137,6 +137,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
                                                         null,
                                                         kerberosServiceTicket);
             context.addCredentials(loginCreds);
+            context.setVariable("kerberos.realm", extractRealm(kerberosServiceTicket.getClientPrincipalName()));
 
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_TICKET, new String[] {kerberosServiceTicket.getClientPrincipalName()});
 
@@ -168,8 +169,10 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
 
     private RequestWssKerberos requestWssKerberos;
 
+    @SuppressWarnings( { "unchecked" } )
     private void addDeferredAssertion(PolicyEnforcementContext context, final KerberosServiceTicket kerberosServiceTicket) {
         context.addDeferredAssertion(this, new AbstractServerAssertion(requestWssKerberos) {
+            @SuppressWarnings( { "unchecked" } )
             public AssertionStatus checkRequest(PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException
             {
@@ -179,5 +182,16 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
                 return AssertionStatus.NONE;
             }
         });
+    }
+    
+    private String extractRealm( final String principal ) {
+        String realm = "";
+
+        int index = principal.lastIndexOf( "@" );
+        if ( index > -1 ) {
+            realm = principal.substring( index + 1 );
+        }
+
+        return realm;
     }
 }

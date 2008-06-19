@@ -6,6 +6,7 @@
 
 package com.l7tech.common.util;
 
+import javax.swing.*;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
@@ -477,5 +478,19 @@ public class FileUtils {
         } catch (IllegalAccessException e) {
             return fallbackResult;
         }
+    }
+
+
+    /**
+     * Find the default directory, which is the same as the home directory in Linux/Unix, but different from the home
+     * directory in Windows.  For example, the default directory in Windows is "C:\...\Usernmae\My Document" and the
+     * home directory is "C:\...\Username".
+     *
+     * @return the default directory.
+     */
+    public static String getDefaultDirectory() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setCurrentDirectory(null);
+        return fileChooser.getCurrentDirectory().getAbsolutePath();
     }
 }

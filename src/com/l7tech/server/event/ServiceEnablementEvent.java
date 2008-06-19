@@ -1,0 +1,27 @@
+/**
+ * Copyright (C) 2008 Layer 7 Technologies Inc.
+ */
+package com.l7tech.server.event;
+
+import com.l7tech.common.util.ArrayUtils;
+import com.l7tech.service.PublishedService;
+
+/** @author alex */
+public class ServiceEnablementEvent extends EntityInvalidationEvent {
+    private final boolean enabled;
+
+    /**
+     * Create an EntityInvalidationEvent
+     *
+     * @param source      The source of invalidation (not usually of interest)
+     * @param entityIds   The ids of the invalidated entities
+     */
+    public ServiceEnablementEvent(final Object source, final long[] entityIds, boolean enabled) {
+        super(source, PublishedService.class, entityIds, ArrayUtils.fill(new char[entityIds.length], 'U'));
+        this.enabled = enabled;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+}

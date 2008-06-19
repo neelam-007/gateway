@@ -21,6 +21,7 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.assertion.Include;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.Syntax;
@@ -447,7 +448,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         if (policyNode == null)
             throw new IllegalArgumentException("No edited policy specified");
         try {
-            PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(templateNode.getFile());
+            PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policyNode.getPolicy(), templateNode.getFile());
             Assertion newRoot = result.assertion;
             // for some reason, the PublishedService class does not allow to set a policy
             // directly, it must be set through the XML
@@ -543,10 +544,12 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             try {
                 Policy thisPolicy = getPolicyNodeCookie().getPolicy();
                 if ( thisPolicy.getType() == PolicyType.INCLUDE_FRAGMENT && thisPolicy.getOid()>=0 ) {
-                    Set<Long> policyOids = new HashSet<Long>();
-                    Registry.getDefault().getPolicyPathBuilderFactory().makePathBuilder().inlineIncludes( include, policyOids );
-                    if ( policyOids.contains( thisPolicy.getOid() )) {
-                        logger.warning("Refusing to create circular reference to policy #" + thisPolicy.getOid() + ", not accepting drag of " + draggingNode.getClass().getSimpleName() + " into " + this.getClass().getSimpleName());
+                    Set<String> policyGuids = new HashSet<String>();
+                    policyGuids.add(thisPolicy.getGuid());
+                    try {
+                        Registry.getDefault().getPolicyPathBuilderFactory().makePathBuilder().inlineIncludes( include, policyGuids );
+                    } catch(PolicyAssertionException e) {
+                        logger.warning("Refusing to create circular reference to policy #" + thisPolicy.getGuid() + ", not accepting drag of " + draggingNode.getClass().getSimpleName() + " into " + this.getClass().getSimpleName());
                         return true;
                     }
                 }

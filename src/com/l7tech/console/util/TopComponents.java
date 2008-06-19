@@ -328,6 +328,16 @@ public class TopComponents {
         return mainWindow != null && mainWindow.isApplet();
     }
 
+    /**
+     * Is the application running in a trusted mode.
+     *
+     * @return True if trusted.
+     */
+    public boolean isTrusted() {
+        MainWindow mainWindow = getMainWindow();
+        return mainWindow != null && mainWindow.isTrusted();
+    }
+
     private final Map<String, WeakReference<Component>> componentsRegistry = new HashMap<String, WeakReference<Component>>();
     private final Map<String, ComponentFinder> componentFinderRegistry = new HashMap<String, ComponentFinder>();
 }

@@ -1,6 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.xml.DocumentReferenceProcessor;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.ExceptionUtils;
@@ -25,14 +26,18 @@ import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.policy.filter.IdentityRule;
 import com.l7tech.server.service.resolution.*;
+import com.l7tech.server.service.ServiceDocumentManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceDocument;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
+import org.xml.sax.InputSource;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -40,7 +45,9 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URL;
+import java.net.URI;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -72,12 +79,17 @@ import java.util.logging.Level;
  * Date: Sep 15, 2003<br/>
  */
 public class WsdlProxyServlet extends AuthenticatableHttpServlet {
-    public static final String PROPERTY_WSSP_ATTACH = "com.l7tech.server.wssp";
+    private static final String PARAM_SERVICEDOCOID = "servdocoid";
+    private static final String NOOP_WSDL = "<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\"/>";
+    private static final String PROPERTY_WSSP_ATTACH = "com.l7tech.server.wssp";
+    private static final String PROPERTY_WSDL_IMPORT_PROXY = "wsdlImportProxyEnabled";
+
     private ServerConfig serverConfig;
     private FilterManager wsspFilterManager;
     private FilterManager clientPolicyFilterManager;
     private SoapActionResolver sactionResolver;
     private UrnResolver nsResolver;
+    private ServiceDocumentManager serviceDocumentManager;
 
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
@@ -89,6 +101,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         serverConfig = (ServerConfig)appcontext.getBean("serverConfig", ServerConfig.class);
         clientPolicyFilterManager = (FilterManager)appcontext.getBean("policyFilterManager", FilterManager.class);
         wsspFilterManager = (FilterManager)appcontext.getBean("wsspolicyFilterManager", FilterManager.class);
+        serviceDocumentManager = (ServiceDocumentManager)appcontext.getBean("serviceDocumentManager", ServiceDocumentManager.class);
 
         sactionResolver = new SoapActionResolver(appcontext);
         nsResolver = new UrnResolver(appcontext);
@@ -390,6 +403,58 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         return "/ssg/wsil2xhtml.xml";
     }
 
+    /**
+     * Rewrite any dependency references (schema/wsdl) in the given doc to request from the gateway.
+     */
+    private void rewriteReferences( final String serviceId,
+                                    final Document wsdlDoc,
+                                    final Collection<ServiceDocument> documents,
+                                    final String requestUri ) {
+        if ( !documents.isEmpty() ) {
+            DocumentReferenceProcessor documentReferenceProcessor = new DocumentReferenceProcessor();
+            documentReferenceProcessor.processDocumentReferences( wsdlDoc, new DocumentReferenceProcessor.ReferenceCustomizer() {
+                public String customize(Document document, Node node, String documentUrl, String referenceUrl) {
+                    String uri = null;
+
+                    if ( documentUrl != null ) {
+                        try {
+                            URI base = new URI(documentUrl);
+                            String docUrl = base.resolve(new URI(referenceUrl)).toString();
+                            for ( ServiceDocument serviceDocument : documents ) {
+                                if ( docUrl.equals(serviceDocument.getUri()) ) {
+                                    // Don't proxy WSDL if we generated it in place of a directly imported XSD
+                                    // This occurred prior to 4.5 when we stripped XSDs on import since we only
+                                    // used the WSDL documents.
+                                    if ( !NOOP_WSDL.equals(serviceDocument.getContents()) ) {
+                                        uri = requestUri + "/" + getName(serviceDocument) + "?" +
+                                                SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceId + "&" +
+                                                PARAM_SERVICEDOCOID + "=" + serviceDocument.getId();
+                                    }
+                                    break;
+                                }
+                            }
+                        } catch (Exception e) {
+                            logger.log( Level.WARNING, "Error rewriting WSDL url for service '"+serviceId+"'..", e );
+                        }
+                    }
+
+                    return uri;
+                }
+            } );
+        }
+    }
+
+    private String getName( final ServiceDocument serviceDocument ) {
+        String name = serviceDocument.getUri();
+
+        int index = name.lastIndexOf('/');
+        if ( index >= 0 ) {
+            name = name.substring( index+1 );            
+        }
+
+        return name;
+    }
+
     private void substituteSoapAddressURL(Document wsdl, URL newURL) {
         // get http://schemas.xmlsoap.org/wsdl/ 'port' element
         NodeList portlist = wsdl.getElementsByTagNameNS("http://schemas.xmlsoap.org/wsdl/", "port");
@@ -434,7 +499,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                     }
                 }
                 else {
-                    logger.info("No WSSP Assertion in policy, not adding policy to WSDL.");
+                    logger.fine("No WSSP Assertion in policy, not adding policy to WSDL.");
                 }
             }
             else {
@@ -446,12 +511,40 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
     }
 
-    private void outputServiceDescription(HttpServletRequest req, HttpServletResponse res, PublishedService svc, AuthenticationResult[] results) throws IOException {
+    private void outputServiceDescription(final HttpServletRequest req,
+                                          final HttpServletResponse res,
+                                          final PublishedService svc,
+                                          final AuthenticationResult[] results) throws IOException {
+        final boolean enableImportProxy = svc.isInternal() || serverConfig.getBooleanProperty(PROPERTY_WSDL_IMPORT_PROXY, false);
+        final Collection<ServiceDocument> documents;
         Document wsdlDoc = null;
         try {
-            wsdlDoc = XmlUtil.stringToDocument(svc.getWsdlXml());
+            documents = enableImportProxy ?
+                    serviceDocumentManager.findByServiceIdAndType(svc.getOid(), "WSDL-IMPORT") :
+                    Collections.<ServiceDocument>emptyList();
+
+            String documentOid = req.getParameter(PARAM_SERVICEDOCOID);
+            if ( documentOid != null ) {
+                for ( ServiceDocument document : documents ) {
+                    if ( documentOid.equals(document.getId()) ) {
+                        wsdlDoc =  parse(document.getUri(), document.getContents());
+                    }
+                }
+
+                if ( wsdlDoc == null ) {
+                    logger.log(Level.WARNING, "Cannot find imported document with oid '"+documentOid+"' for service '"+svc.getOid()+"'.");
+                    res.sendError(HttpServletResponse.SC_NOT_FOUND, "service has no wsdl");
+                    return;
+                }
+            } else {
+                wsdlDoc = parse(svc.getWsdlUrl(), svc.getWsdlXml());
+            }
         } catch (SAXException e) {
             logger.log(Level.WARNING, "cannot parse wsdl", e);
+            res.sendError(HttpServletResponse.SC_NOT_FOUND, "service has no wsdl");
+            return;
+        } catch (FindException fe) {
+            logger.log(Level.WARNING, "cannot parse wsdl", fe);
             res.sendError(HttpServletResponse.SC_NOT_FOUND, "service has no wsdl");
             return;
         }
@@ -510,6 +603,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             ssgurl = new URL(proto + "://" + req.getServerName() +
                              portStr + routinguri);
         }
+
+        rewriteReferences(svc.getId(), wsdlDoc, documents, req.getServletPath());  // use servlet path to skip any import name
         substituteSoapAddressURL(wsdlDoc, ssgurl);
         addSecurityPolicy(wsdlDoc, svc);
 
@@ -521,6 +616,13 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             logger.log(Level.SEVERE, "error outputing wsdl", e);
             throw new IOException(e.getMessage());
         }
+    }
+
+    private Document parse( final String uri, final String content ) throws IOException, SAXException {
+        InputSource input = new InputSource();
+        input.setSystemId( uri );
+        input.setCharacterStream( new StringReader(content) );
+        return XmlUtil.parse( input, false );        
     }
 
     private void outputServiceDescriptions(HttpServletRequest req, HttpServletResponse res, Collection<PublishedService> services) throws IOException {

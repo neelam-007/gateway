@@ -10,6 +10,7 @@ import com.l7tech.common.util.JaasUtils;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityFinder;
+import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -36,11 +37,13 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
     private static final Logger logger = Logger.getLogger(SecuredMethodInterceptor.class.getName());
     private final RoleManager roleManager;
     private final EntityFinder entityFinder;
+    private final PolicyManager policyManager;
     private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);
 
-    public SecuredMethodInterceptor(RoleManager roleManager, EntityFinder entityFinder) {
+    public SecuredMethodInterceptor(RoleManager roleManager, EntityFinder entityFinder, PolicyManager policyManager) {
         this.roleManager = roleManager;
         this.entityFinder = entityFinder;
+        this.policyManager = policyManager;
     }
 
     private List<Object> filter(Iterator iter, User user, CheckInfo check) throws FindException {
@@ -55,6 +58,8 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                 if (header.getType() == com.l7tech.objectmodel.EntityType.MAXED_OUT_SEARCH_RESULT) {
                     // This one can get by without a permission check
                     testEntity = null;
+                } else if(header.getType() == com.l7tech.objectmodel.EntityType.POLICY) {
+                    testEntity = policyManager.findByGuid(header.getStrId());
                 } else {
                     testEntity = entityFinder.find(header);
                 }
@@ -157,13 +162,13 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                             ", but does not specify otherOperationName");
 
                 if (getEntityArg(check, args) != null) {
-                    check.before = CheckBefore.ENTITY;
+                    check.setBefore(CheckBefore.ENTITY);
                 } else {
                     getIdArgOrThrow(check, args);
-                    check.before = CheckBefore.ID;
+                    check.setBefore(CheckBefore.ID);
                 }
 
-                check.after = CheckAfter.NONE;
+                check.setAfter(CheckAfter.NONE);
                 break;
             default:
                 switch (check.stereotype) {
@@ -175,8 +180,8 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                             break;
                         } else {
                             // TODO this is incredibly ugly
-                            check.before = CheckBefore.NONE;
-                            check.after = CheckAfter.NONE;
+                            check.setBefore(CheckBefore.NONE);
+                            check.setAfter(CheckAfter.NONE);
                             for (EntityType type : check.types) {
                                 if (!roleManager.isPermittedForAnyEntityOfType(user, UPDATE, type)) {
                                     throw new PermissionDeniedException(UPDATE, type);
@@ -191,21 +196,21 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                         check.operation = READ;
                         Class<?> rtype = method.getReturnType();
                         if (Collection.class.isAssignableFrom(rtype)) {
-                            check.before = CheckBefore.NONE;
-                            check.after = CheckAfter.COLLECTION;
+                            check.setBefore(CheckBefore.NONE);
+                            check.setAfter(CheckAfter.COLLECTION);
                         } else if ((rtype.isArray() && (Entity.class.isAssignableFrom(rtype.getComponentType()) || EntityHeader.class.isAssignableFrom(rtype.getComponentType())))) {
-                            check.before = CheckBefore.NONE;
-                            check.after = CheckAfter.COLLECTION;
+                            check.setBefore(CheckBefore.NONE);
+                            check.setAfter(CheckAfter.COLLECTION);
                         } else {
                             // Unsupported return value type; must be able to read all
-                            check.before = CheckBefore.ALL;
-                            check.after = CheckAfter.NONE;
+                            check.setBefore(CheckBefore.ALL);
+                            check.setAfter(CheckAfter.NONE);
                         }
                         break;
                     case FIND_HEADERS:
-                        check.before = CheckBefore.NONE;
+                        check.setBefore(CheckBefore.NONE);
                         check.operation = READ;
-                        check.after = CheckAfter.COLLECTION;
+                        check.setAfter(CheckAfter.COLLECTION);
                         break;
                     case FIND_BY_PRIMARY_KEY:
                         // Check after; need to read entity before evaluating attribute predicates
@@ -243,14 +248,14 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                         checkEntityBefore(check, args, UPDATE);
                         break;
                     case SET_PROPERTY_BY_UNIQUE_ATTRIBUTE:
-                        check.before = CheckBefore.ALL;
-                        check.after = CheckAfter.NONE;
+                        check.setBefore(CheckBefore.ALL);
+                        check.setAfter(CheckAfter.NONE);
                         check.operation = UPDATE;
                         break;
                     case DELETE_BY_UNIQUE_ATTRIBUTE:
                     case DELETE_MULTI:
-                        check.before = CheckBefore.ALL;
-                        check.after = CheckAfter.NONE;
+                        check.setBefore(CheckBefore.ALL);
+                        check.setAfter(CheckAfter.NONE);
                         check.operation = DELETE;
                         break;
                     default:
@@ -258,12 +263,12 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                 }
         }
 
-        if (check.before == null) throw new NullPointerException("check.before");
-        if (check.after == null) throw new NullPointerException("check.after");
+        if (check.getBefore() == null) throw new NullPointerException("check.before");
+        if (check.getAfter() == null) throw new NullPointerException("check.after");
         if (check.operation == null || check.operation == OperationType.NONE)
             throw new NullPointerException("check.operation");
 
-        switch(check.before) {
+        switch(check.getBefore()) {
             case ENTITY:
                 if (check.entity == null) throw new NullPointerException("check.entity");
                 if (!roleManager.isPermittedForEntity(user, check.entity, check.operation, null)) {
@@ -292,7 +297,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
 
         if (rv == null) return null;
 
-        switch(check.after) {
+        switch(check.getAfter()) {
             case COLLECTION:
                 boolean skip = true;
                 for (EntityType type : check.types) {
@@ -356,19 +361,19 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
     }
 
     private void checkEntityAfter(CheckInfo check) {
-        check.before = CheckBefore.NONE;
+        check.setBefore(CheckBefore.NONE);
         check.operation = READ;
-        check.after = CheckAfter.ENTITY;
+        check.setAfter(CheckAfter.ENTITY);
     }
 
     private void checkIdentityFromId(Object[] args, CheckInfo check, OperationType operation) throws FindException {
         if (args[0] instanceof Long && args[1] instanceof String) {
             IdentityHeader header = new IdentityHeader((Long)args[0], (String)args[1], check.types[0].getOldEntityType(), null, null);
             Entity ent = entityFinder.find(header);
-            check.before = CheckBefore.ENTITY;
+            check.setBefore(CheckBefore.ENTITY);
             check.operation = operation;
             check.entity = ent;
-            check.after = CheckAfter.NONE;
+            check.setAfter(CheckAfter.NONE);
         } else {
             throwNoId(check);
         }
@@ -382,10 +387,10 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
         Serializable id = getIdArg(check, args);
         if (id == null) throwNoId(check);
 
-        check.before = CheckBefore.ENTITY;
+        check.setBefore(CheckBefore.ENTITY);
         check.operation = operation;
         check.entity = entityFinder.find(check.types[0].getEntityClass(), id);
-        check.after = CheckAfter.NONE;
+        check.setAfter(CheckAfter.NONE);
     }
 
     private String getEntityName(Entity entity) {
@@ -401,9 +406,9 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
     private void checkEntityBefore(CheckInfo check, Object[] args, OperationType operation) {
         getEntityArgOrThrow(check, args);
         logger.log(Level.FINER, "Will check Entity before invocation");
-        check.before = CheckBefore.ENTITY;
+        check.setBefore(CheckBefore.ENTITY);
         check.operation = operation;
-        check.after = CheckAfter.NONE;
+        check.setAfter(CheckAfter.NONE);
     }
 
     private Entity getEntityArgOrThrow(CheckInfo info, Object[] args) {

@@ -79,6 +79,7 @@ public class GatewayFeatureSets {
 
     public static final String UI_PUBLISH_SERVICE_WIZARD = "ui:PublishServiceWizard";
     public static final String UI_PUBLISH_XML_WIZARD = "ui:PublishXmlWizard";
+    public static final String UI_PUBLISH_INTERNAL_WIZARD = "ui:PublishInternalWizard";
     public static final String UI_WSDL_CREATE_WIZARD = "ui:WsdlCreateWizard";
     public static final String UI_AUDIT_WINDOW = "ui:AuditWindow";
     public static final String UI_RBAC_ROLE_EDITOR = "ui:RbacRoleEditor";
@@ -186,6 +187,7 @@ public class GatewayFeatureSets {
 
         GatewayFeatureSet uiPublishServiceWizard = ui(UI_PUBLISH_SERVICE_WIZARD, "Enable the SSM Publish SOAP Service Wizard");
         GatewayFeatureSet uiPublishXmlWizard = ui(UI_PUBLISH_XML_WIZARD, "Enable the SSM Publish XML Service Wizard");
+        GatewayFeatureSet uiPublishInternalWizard = ui(UI_PUBLISH_INTERNAL_WIZARD, "Enable the SSM Publish Internal Service Wizard");
         GatewayFeatureSet uiWsdlCreateWizard = ui(UI_WSDL_CREATE_WIZARD, "Enable the SSM WSDL Create Wizard");
         GatewayFeatureSet uiAuditWindow = ui(UI_AUDIT_WINDOW, "Enable the SSM Audit Window");
         GatewayFeatureSet uiRbacRoleEditor = ui(UI_RBAC_ROLE_EDITOR, "Enable the SSM RBAC Role Editor");
@@ -417,11 +419,18 @@ public class GatewayFeatureSets {
             ass(CustomAssertionHolder.class),
             moduleLoader);
 
+        GatewayFeatureSet esmAssertions =
+        fsr("set:ESM:Assertions", "The necessary assertions to enable ESM functionality",
+            mass("assertion:EsmMetrics"),
+            mass("assertion:EsmSubscription"));
+
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
             mass("assertion:NcesDecorator"),
-            mass("assertion:NcesValidator"));
+            mass("assertion:NcesValidator"),
+            esmAssertions,
+            uiPublishInternalWizard);
 
         // Formerly a profile set, now present only for backward compatibility
         fsr("set:Profile:IPS", "SecureSpan XML IPS",

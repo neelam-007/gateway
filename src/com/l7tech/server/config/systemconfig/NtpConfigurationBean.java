@@ -1,7 +1,10 @@
 package com.l7tech.server.config.systemconfig;
 
 import com.l7tech.server.config.beans.BaseConfigurationBean;
+import com.l7tech.common.util.Pair;
 import org.apache.commons.lang.StringUtils;
+
+import java.util.*;
 
 /**
  * User: megery
@@ -9,7 +12,7 @@ import org.apache.commons.lang.StringUtils;
  * Time: 10:24:14 AM
  */
 public class NtpConfigurationBean extends BaseConfigurationBean {
-    private String timeServerAddress;
+    private Map< String, String > timeServerAddresses;
     private String timeServerName;
     private String timezone;
 
@@ -19,24 +22,28 @@ public class NtpConfigurationBean extends BaseConfigurationBean {
     }
 
     private void init() {
+        timeServerAddresses = new LinkedHashMap<String, String>();
     }
 
     public void reset() {
+        timeServerAddresses.clear();
     }
 
     protected void populateExplanations() {
-        String tsAddress = getTimeServerAddress();
-        String tsName = getTimeServerName();
+        Map<String, String> tsInfos = getTimeServers();
 
-        if (StringUtils.isNotEmpty(tsAddress)) {
+        if (!tsInfos.isEmpty()) {
             explanations.add("Configure NTP on this server");
-            String s = "\tTime server: " + getTimeServerAddress();
 
-            if (!StringUtils.equals(tsName, tsAddress)) {
-               s += " (" + tsName + ")";
+            for (Map.Entry<String, String> tsInfo : tsInfos.entrySet()) {
+                String address = tsInfo.getKey();
+                String name = tsInfo.getValue();
+                String s = "\tTime server: " + address;
+                if (!StringUtils.equals(address, name)) {
+                    s += " (" + name + ")";
+                }
+                explanations.add(s);
             }
-            s += eol;
-            explanations.add(s);
         }
         if (StringUtils.isNotEmpty(timezone)) {
             explanations.add("Configure the timezone on this server");
@@ -44,12 +51,12 @@ public class NtpConfigurationBean extends BaseConfigurationBean {
         }
     }
 
-    public String getTimeServerAddress() {
-        return timeServerAddress;
+    public Map<String, String> getTimeServers() {
+        return timeServerAddresses;
     }
 
-    public void setTimeServerAddress(String timeServerAddress) {
-        this.timeServerAddress = timeServerAddress;
+    public void addTimeServer(String timeServerAddress, String timeServerName) {
+        timeServerAddresses.put(timeServerAddress, timeServerName);
     }
 
     public String getTimeServerName() {

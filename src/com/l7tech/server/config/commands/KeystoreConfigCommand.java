@@ -158,12 +158,15 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                     conn = dba.getConnection(dbInfo);
                     String pubKeyId = EncryptionUtil.computeCustomRSAPubKeyID((RSAPublicKey) newKey);
                     String encryptedSharedData = EncryptionUtil.rsaEncAndB64(sharedKeyData, newKey);
-                    logger.info("inserting encrypted shared key into the db");
-                    stmt = conn.prepareStatement("insert into shared_keys (encodingid, b64edval) values (?,?)");
-                    stmt.setString(1,pubKeyId);
-                    stmt.setString(2,encryptedSharedData);
-                    stmt.execute();
-                    logger.info("successfully updated the shared key in the database.");
+
+                    if (isSharedKeyGrantAlreadyPresent(conn, pubKeyId, encryptedSharedData)) {
+                        logger.info("a matching shared key entry for this certificate is already present");
+                    } else {
+                        logger.info("inserting encrypted shared key into the db");
+                        DBActions.delete(conn, "delete from shared_keys where encodingid=?", new Object[] { pubKeyId });
+                        insertSharedKey(conn, pubKeyId, encryptedSharedData);
+                        logger.info("successfully updated the shared key in the database.");
+                    }
                 } catch (SQLException e) {
                     logger.warning(MessageFormat.format("Error while updating the shared key in the database. {0}", e.getMessage()));
                     throw e;
@@ -191,6 +194,16 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 throw e;
             }
         }
+    }
+
+    // Check if an existing row in shared_key exactly matches the specified RSA public key ID and base64-encoded encrypted shared key
+    private static boolean isSharedKeyGrantAlreadyPresent(Connection conn, String encodingid, String b64edval) throws SQLException {
+        return 0 != DBActions.query(conn, "select encodingid,b64edval from shared_keys where encodingid=? and b64edval=?", new String[] { encodingid, b64edval }, null);
+    }
+
+    // Insert a new row into the shared_key table containing the specified RSA public key ID and the specified already-base64-encoded encrypted shared key data
+    private static void insertSharedKey(Connection conn, String pubKeyId, String encryptedSharedData) throws SQLException {
+        DBActions.insert(conn, "shared_keys", new String[] { "encodingid", "b64edval" }, pubKeyId, encryptedSharedData);
     }
 
     private void doDefaultKeyConfig(KeystoreConfigBean ksBean) throws Exception {

@@ -3,6 +3,7 @@ package com.l7tech.console.tree;
 import com.l7tech.console.action.CreateServiceWsdlAction;
 import com.l7tech.console.action.PublishServiceAction;
 import com.l7tech.console.action.PublishNonSoapServiceAction;
+import com.l7tech.console.action.PublishInternalServiceAction;
 import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
@@ -32,6 +33,7 @@ public class ServicesFolderNode extends AbstractTreeNode {
         new PublishServiceAction(),
         new CreateServiceWsdlAction(),
         new PublishNonSoapServiceAction(),
+        new PublishInternalServiceAction(),
         new RefreshTreeNodeAction(this)
     };
 
@@ -88,7 +90,7 @@ public class ServicesFolderNode extends AbstractTreeNode {
         EntitiesEnumeration en = new EntitiesEnumeration(new ServiceEntitiesCollection(serviceManager));
         Enumeration e = TreeNodeFactory.getTreeNodeEnumeration(en);
         children = null;
-        for (; e.hasMoreElements();) {
+        while (e.hasMoreElements()) {
             MutableTreeNode mn = (MutableTreeNode)e.nextElement();
             insert(mn, getInsertPosition(mn));
         }

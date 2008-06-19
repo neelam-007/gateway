@@ -20,6 +20,7 @@ class Handlers {
      */
     static ErrorHandler[] defaultHandlers() {
         return new ErrorHandler[]{
+            new RoleErrorHandler(),
             new GatewayFailureErrorHandler(),
             new LicenseErrorHandler(),
             new VersionMismatchErrorHandler(),

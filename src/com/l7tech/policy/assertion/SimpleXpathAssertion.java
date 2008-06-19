@@ -99,5 +99,16 @@ public abstract class SimpleXpathAssertion
         };
     }
 
+    public String[] getVariableSuffixes() {
+        return new String[] {
+            VAR_SUFFIX_FOUND,
+            VAR_SUFFIX_RESULT,
+            VAR_SUFFIX_MULTIPLE_RESULTS,
+            VAR_SUFFIX_COUNT,
+            VAR_SUFFIX_ELEMENT,
+            VAR_SUFFIX_MULTIPLE_ELEMENTS
+        };
+    }
+
     protected abstract String defaultVariablePrefix();
 }

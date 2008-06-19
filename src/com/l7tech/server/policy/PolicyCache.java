@@ -38,6 +38,16 @@ public interface PolicyCache {
     ServerPolicyHandle getServerPolicy(long policyOid);
 
     /**
+     * Get a handle for the ServerPolicy of the given Policy.
+     *
+     * <p>The handle MUST be closed when no longer required.</p>
+     *
+     * @param policyGuid The GUID of the policy whose ServerPolicy is desired.
+     * @return The handle for the policy or null if the policy is not valid
+     */
+    ServerPolicyHandle getServerPolicy(String policyGuid);
+
+    /**
      * Notify the PolicyCache that the specified policy is a candidate for use.
      *
      * <p>An exception is thrown if the policy would cause errors if used.</p>

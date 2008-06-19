@@ -41,8 +41,8 @@
         <constructor-arg ref="policyCache"/>
         <constructor-arg><null/></constructor-arg>
         <constructor-arg ref="serviceManager"/>
-        <constructor-arg><null/></constructor-arg>
-        <constructor-arg><null/></constructor-arg>
+        <constructor-arg ref="serviceUsageManager"/>
+        <constructor-arg ref="clusterInfoManager"/>
         <constructor-arg><list/></constructor-arg>
         <constructor-arg><null/></constructor-arg>
     </bean>
@@ -51,6 +51,8 @@
     <bean id="serviceManager" class="com.l7tech.service.ServiceManagerStub">
         <constructor-arg ref="policyManager"/>
     </bean>
+
+    <bean id="serviceUsageManager" class="com.l7tech.cluster.ServiceUsageManagerStub"/>
 
     <!-- test config uses the policy validator without persistence -->
     <bean id="defaultPolicyValidator" class="com.l7tech.policy.validator.DefaultPolicyValidator">
@@ -262,6 +264,29 @@
     <bean id="jmsEndpointManager" class="com.l7tech.server.transport.jms.JmsEndpointManagerStub"/>
 
     <bean id="jmsConnectionManager" class="com.l7tech.server.transport.jms.JmsConnectionManagerStub"/>
+
+    <!-- Jms2 -->
+    <!--<bean id="jmsRequestHandler" class="com.l7tech.server.transport.jms2.JmsRequestHandlerImpl" lazy-init="true">-->
+        <!--<property name="messageProcessor" ref="messageProcessor"/>-->
+        <!--<property name="auditContext" ref="auditContext"/>-->
+        <!--<property name="soapFaultManager" ref="soapFaultManager"/>-->
+        <!--<property name="clusterPropertyManager" ref="clusterPropertyManager"/>-->
+        <!--<property name="stashManagerFactory" ref="stashManagerFactory"/>-->
+    <!--</bean>-->
+
+    <bean id="jmsBootprocess" class="com.l7tech.server.transport.jms2.JmsBootProcess">
+        <constructor-arg type="com.l7tech.server.ServerConfig" ref="serverConfig"/>
+        <constructor-arg type="com.l7tech.common.LicenseManager" ref="licenseManager"/>
+        <constructor-arg type="com.l7tech.server.transport.jms.JmsConnectionManager" ref="jmsConnectionManager"/>
+        <constructor-arg type="com.l7tech.server.transport.jms.JmsEndpointManager" ref="jmsEndpointManager"/>
+        <constructor-arg type="com.l7tech.server.transport.jms.JmsPropertyMapper" ref="jmsPropertyMapper"/>
+        <constructor-arg type="java.util.Timer"><null/></constructor-arg>
+        <property name="jmsEndpointListenerFactory">
+            <!--<bean class="com.l7tech.server.transport.jms2.synch.LegacyJmsEndpointListenerFactory"/>-->
+            <bean class="com.l7tech.server.transport.jms2.asynch.PooledJmsEndpointListenerFactory"/>
+        </property>
+    </bean>
+    <!-- Jms2 -->
 
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy"/>
 

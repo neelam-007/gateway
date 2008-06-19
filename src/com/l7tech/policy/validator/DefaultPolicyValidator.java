@@ -6,6 +6,7 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.WsdlUtil;
 import com.l7tech.objectmodel.ReadOnlyEntityManager;
 import com.l7tech.objectmodel.PolicyHeader;
+import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
@@ -43,7 +44,7 @@ import java.util.logging.Logger;
 public class DefaultPolicyValidator extends PolicyValidator {
     static Logger log = Logger.getLogger(DefaultPolicyValidator.class.getName());
 
-    public DefaultPolicyValidator(ReadOnlyEntityManager<Policy, PolicyHeader> policyFinder, PolicyPathBuilderFactory pathBuilderFactory) {
+    public DefaultPolicyValidator(GuidBasedEntityManager<Policy> policyFinder, PolicyPathBuilderFactory pathBuilderFactory) {
         super(policyFinder, pathBuilderFactory);
     }
 

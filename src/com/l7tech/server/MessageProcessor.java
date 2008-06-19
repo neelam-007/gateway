@@ -462,10 +462,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 metrics.addRequest(authorizedRequest, completedRequest, frontTime, backTime);
             }
 
-            if (WSMFService.isEnabled()) {
-                for (TrafficMonitor tm : trafficMonitors) {
-                    tm.recordTransactionStatus(context, status, context.getEndTime() - context.getStartTime());
-                }
+            for (TrafficMonitor tm : trafficMonitors) {
+                tm.recordTransactionStatus(context, status, context.getEndTime() - context.getStartTime());
             }
 
             try {

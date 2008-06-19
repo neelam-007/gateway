@@ -243,11 +243,16 @@ public class RevocationCheckerFactory {
     private CompositeRevocationChecker buildChecker(final CertKey key,
                                                     final RevocationCheckPolicy rcp) throws FindException, CertificateException {
         CertificateValidationResult resultForUnknown = CertificateValidationResult.REVOKED;
+        CertificateValidationResult resultForNetworkFailure = CertificateValidationResult.REVOKED;
         List<RevocationChecker> revocationCheckers = new ArrayList();
 
         if (rcp != null) {
             if (rcp.isDefaultSuccess())
                 resultForUnknown =  CertificateValidationResult.OK;
+
+            if ( rcp.isContinueOnServerUnavailable() ){
+                resultForNetworkFailure = CertificateValidationResult.UNKNOWN;
+            }
 
             for (RevocationCheckPolicyItem item : rcp.getRevocationCheckItems()) {
                 String url = item.getUrl();
@@ -280,7 +285,7 @@ public class RevocationCheckerFactory {
             }
         }
 
-        return new CompositeRevocationChecker(key, resultForUnknown, revocationCheckers);
+        return new CompositeRevocationChecker(key, resultForUnknown, resultForNetworkFailure, revocationCheckers);
     }
 
     /**
@@ -316,17 +321,20 @@ public class RevocationCheckerFactory {
     private static class CompositeRevocationChecker implements RevocationChecker {
         private final CertKey key;
         private final CertificateValidationResult resultForUnknown;
+        private final CertificateValidationResult resultForNetworkFailure;
         private final List<RevocationChecker> revocationCheckers;
 
         private CompositeRevocationChecker(CertKey key,
                                            CertificateValidationResult resultForUnknown,
+                                           CertificateValidationResult resultForNetworkFailure,
                                            List<RevocationChecker> revocationCheckers) {
             this.key = key;
             this.resultForUnknown = resultForUnknown;
+            this.resultForNetworkFailure = resultForNetworkFailure;
             this.revocationCheckers = Collections.unmodifiableList(revocationCheckers);
         }
 
-        public CertificateValidationResult getRevocationStatus(final X509Certificate certificate, X509Certificate issuer, Auditor auditor) {
+        public CertificateValidationResult getRevocationStatus(final X509Certificate certificate, X509Certificate issuer, Auditor auditor, CertificateValidationResult onNetworkFailure) {
             CertificateValidationResult result = CertificateValidationResult.REVOKED;
 
             if ( certificate != null ) {
@@ -334,7 +342,7 @@ public class RevocationCheckerFactory {
 
                 checking:
                 for ( RevocationChecker checker : revocationCheckers ) {
-                    working = checker.getRevocationStatus(certificate, issuer, auditor);
+                    working = checker.getRevocationStatus(certificate, issuer, auditor, resultForNetworkFailure);
 
                     switch ( working ) {
                         case CANT_BUILD_PATH:
@@ -552,14 +560,25 @@ public class RevocationCheckerFactory {
             this.crlCache = crlCache;
         }
 
-        public CertificateValidationResult getRevocationStatus(X509Certificate certificate, X509Certificate issuerCertificate, Auditor auditor) {
+        public CertificateValidationResult getRevocationStatus(X509Certificate certificate, X509Certificate issuerCertificate, Auditor auditor, CertificateValidationResult onNetworkFailure) {
             final String crlUrl = getValidUrl(certificate, auditor);
             if (crlUrl == null) {
                 // {@link getCrlUrl()} already audited the reason
                 return CertificateValidationResult.UNKNOWN;
             }
             try {
-                X509CRL crl = crlCache.getCrl(crlUrl, auditor);
+                X509CRL crl = null;
+                try {
+                    //attempt to grab the CRL
+                    crl = crlCache.getCrl(crlUrl, auditor);
+                }
+                catch (IOException ioe) {
+                    //we have experienced a network failure when trying to retrieve CRL from a server, we need to determine
+                    //if should revoke at this point, or let it continue.  This decision is decided by "continue processing"
+                    //checkbox.                      
+                    return onNetworkFailure;
+                }
+
                 final String crlIssuerDn = crl.getIssuerDN().getName();
 
                 // Check certificate scope
@@ -686,7 +705,8 @@ public class RevocationCheckerFactory {
 
         public CertificateValidationResult getRevocationStatus(final X509Certificate certificate,
                                                                final X509Certificate issuerCertificate,
-                                                               final Auditor auditor) {
+                                                               final Auditor auditor,
+                                                               final CertificateValidationResult onNetworkFailure) {
             CertificateValidationResult result = CertificateValidationResult.REVOKED;
             final String url = getValidUrl(certificate, auditor);
             if (url == null) {
@@ -746,7 +766,7 @@ public class RevocationCheckerFactory {
                         });
                     }
                 };
-                OCSPClient.OCSPStatus status = ocspCache.getOCSPStatus(url, certificate, issuerCertificate, authorizer, auditor);
+                OCSPClient.OCSPStatus status = ocspCache.getOCSPStatus(url, certificate, issuerCertificate, authorizer, auditor, onNetworkFailure);
                 result = status.getResult();
 
                 if (result == CertificateValidationResult.OK) {
@@ -760,6 +780,7 @@ public class RevocationCheckerFactory {
                 auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_BAD_RESPONSE_STATUS, url, ExceptionUtils.getMessage(ocse));
             } catch (OCSPClient.OCSPClientException oce) {
                 auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_ERROR, new String[]{url, ExceptionUtils.getMessage(oce)}, oce);
+                result = onNetworkFailure;
             }
 
             return result;
@@ -782,7 +803,7 @@ public class RevocationCheckerFactory {
 
     private static final class RevokedChecker extends CompositeRevocationChecker {
         private RevokedChecker() {
-            super(null, null, null);
+            super(null, null, null, null);
         }
         public CertificateValidationResult getRevocationStatus(X509Certificate certificate, X509Certificate issuer, Auditor auditor) {
             return CertificateValidationResult.REVOKED;

@@ -3,7 +3,6 @@ package com.l7tech.console.panels.identity.finder;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.security.rbac.AttemptedDeleteSpecific;
-import static com.l7tech.common.security.rbac.EntityType.ID_PROVIDER_CONFIG;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListenerAdapter;
@@ -118,8 +117,6 @@ public class FindIdentitiesDialog extends JDialog {
 
     private Options options = new Options();
     private DeleteEntityAction deleteIdAction;
-    private final PermissionFlags idpFlags;
-
 
     /**
      * Creates new FindDialog for a given context
@@ -145,7 +142,6 @@ public class FindIdentitiesDialog extends JDialog {
      */
     public FindIdentitiesDialog(Frame parent, boolean modal, Options options) {
         super(parent, modal);
-        idpFlags = PermissionFlags.get(ID_PROVIDER_CONFIG);
         if (options == null) {
             throw new IllegalArgumentException();
         }
@@ -660,7 +656,6 @@ public class FindIdentitiesDialog extends JDialog {
                */
               public void valueChanged(ListSelectionEvent e) {
                   int row = searchResultTable.getSelectedRow();
-                  boolean hasUpdateIpPermissions = idpFlags.canUpdateSome();
 
                   if (row == -1) {
                       selectButton.setEnabled(false);
@@ -678,8 +673,7 @@ public class FindIdentitiesDialog extends JDialog {
 
                           deleteButton.setEnabled(
                                     getDeleteAction().isAuthorized() &&
-                                    ipc.isWritable() &&
-                                    hasUpdateIpPermissions);
+                                    ipc.isWritable());
                       }
                   }
               }

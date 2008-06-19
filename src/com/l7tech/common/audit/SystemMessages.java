@@ -58,6 +58,7 @@ public class SystemMessages extends Messages {
     public static final M CERTVAL_REV_SIGNER_IS_ISSUER        = m(2053, Level.FINE,    "Using issuer ''{1}'' as {0} signer.");
     public static final M CERTVAL_REV_SIGNER_IS_ISSUER_DELE   = m(2054, Level.FINE,    "Using issuer authorized certificate ''{1}'' as {0} signer");
     public static final M CERTVAL_REV_SIGNER_IS_TRUSTED       = m(2055, Level.FINE,    "Using trusted certificate ''{1}'' as {0} signer");
+    public static final M CERTVAL_REV_USE_CACHE               = m(2056, Level.WARNING, "Server unavailable for {0} update for {1}, using {2} cached version.");
 
     // CRL only
     public static final M CERTVAL_CRL_SCOPE                   = m(2070, Level.FINE,    "CRL scope does not cover certificate ''{0}'', CRL URL is ''{1}''");

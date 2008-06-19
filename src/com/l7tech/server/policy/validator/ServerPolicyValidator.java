@@ -98,7 +98,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
     private EntityFinder entityFinder;
     private SsgKeyStoreManager ssgKeyStoreManager;
 
-    public ServerPolicyValidator(ReadOnlyEntityManager<Policy, PolicyHeader> policyFinder, PolicyPathBuilderFactory pathBuilderFactory) {
+    public ServerPolicyValidator(GuidBasedEntityManager<Policy> policyFinder, PolicyPathBuilderFactory pathBuilderFactory) {
         super(policyFinder, pathBuilderFactory);
     }
 

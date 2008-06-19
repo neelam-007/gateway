@@ -43,12 +43,7 @@ public class ResolveForeignIncludedPolicyPanel extends WizardStepPanel {
     private IncludedPolicyReference foreignIncludedPolicyReference;
     private Policy importedPolicy;
     private Policy existingPolicy;
-    private JRadioButton useExistingRadio;
-    private JRadioButton overwriteRadio;
-    private JRadioButton renameRadio;
-    private JTree importedPolicyTree;
-    private JTree existingPolicyTree;
-    private JTextField newName;
+    private JTextField newPolicyName;
 
     public ResolveForeignIncludedPolicyPanel(WizardStepPanel next, IncludedPolicyReference policyRef)
     throws NoLongerApplicableException, IOException
@@ -73,64 +68,34 @@ public class ResolveForeignIncludedPolicyPanel extends WizardStepPanel {
         setLayout(new BorderLayout());
         add(mainPanel);
 
-        createPolicyTree(importedPolicyTree, importedPolicy);
-        createPolicyTree(existingPolicyTree, existingPolicy);
-
-        ButtonGroup actionRadios = new ButtonGroup();
-        actionRadios.add(useExistingRadio);
-        actionRadios.add(overwriteRadio);
-        actionRadios.add(renameRadio);
-        renameRadio.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                JRadioButton button = (JRadioButton)e.getSource();
-                newName.setEnabled(button.isSelected());
-            }
-        });
-
-        newName.setEnabled(false);
-        useExistingRadio.setSelected(true);
-    }
-
-    private void createPolicyTree(JTree tree, Policy policy) throws IOException {
-        tree.setRootVisible(false);
-        tree.setShowsRootHandles(true);
-        tree.setRowHeight((int)(tree.getRowHeight() * 1.3));
-        tree.setCellRenderer(new PolicyTreeCellRenderer());
-        PolicyTreeModel treeModel = PolicyTreeModel.make(policy.getAssertion());
-        tree.setModel(treeModel);
-        TreeNode root = (TreeNode)treeModel.getRoot();
-        TreePath rootPath = new TreePath(((DefaultMutableTreeNode)root).getPath());
-        tree.expandPath(rootPath);
+        newPolicyName.setEnabled(true);
+        newPolicyName.setText(importedPolicy.getName());
     }
 
     public boolean onNextButton() {
-        if(useExistingRadio.isSelected()) {
-            foreignIncludedPolicyReference.setUseType(IncludedPolicyReference.UseType.USE_EXISTING);
-        } else if(overwriteRadio.isSelected()) {
-            foreignIncludedPolicyReference.setUseType(IncludedPolicyReference.UseType.UPDATE);
-        } else if(renameRadio.isSelected()) {
-            if(newName.getText().trim().length() == 0) {
-                JOptionPane.showMessageDialog(this, "No new name was entered.", "Error", JOptionPane.ERROR_MESSAGE);
-                return false;
-            } else if(newName.getText().equals(foreignIncludedPolicyReference.getName())) {
-                JOptionPane.showMessageDialog(this, "New name is the same as the old name.", "Error", JOptionPane.ERROR_MESSAGE);
-                return false;
-            } else {
-                try {
-                    Policy p = Registry.getDefault().getPolicyAdmin().findPolicyByUniqueName(newName.getText());
-                    if(p != null) {
-                        JOptionPane.showMessageDialog(this, "There is already a policy with the name \"" + newName.getText() + "\".", "Error", JOptionPane.ERROR_MESSAGE);
-                        return false;
-                    }
-                } catch(FindException e) {
-                    // Ignore, the new name should be unique
-                }
-            }
+        String newName = newPolicyName.getText().trim();
 
-            foreignIncludedPolicyReference.setUseType(IncludedPolicyReference.UseType.RENAME);
-            foreignIncludedPolicyReference.setOldName(foreignIncludedPolicyReference.getName());
-            foreignIncludedPolicyReference.setName(newName.getText());
+        if(newName.length() == 0) {
+            JOptionPane.showMessageDialog(this, "No new name was entered.", "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        } else if(newName.equals(foreignIncludedPolicyReference.getName())) {
+            JOptionPane.showMessageDialog(this, "New name is the same as the old name.", "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        } else {
+            try {
+                Policy p = Registry.getDefault().getPolicyAdmin().findPolicyByUniqueName(newName);
+                if(p != null) {
+                    JOptionPane.showMessageDialog(this, "There is already a policy with the name \"" + newName + "\".", "Error", JOptionPane.ERROR_MESSAGE);
+                    return false;
+                }
+            } catch(FindException e) {
+                // Ignore, the new name should be unique
+            }
         }
+
+        foreignIncludedPolicyReference.setUseType(IncludedPolicyReference.UseType.RENAME);
+        foreignIncludedPolicyReference.setOldName(foreignIncludedPolicyReference.getName());
+        foreignIncludedPolicyReference.setName(newName);
 
         return true;
     }

@@ -1,8 +1,6 @@
 package com.l7tech.server.config;
 
-import com.l7tech.common.util.EncryptionUtil;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.*;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.exceptions.KeystoreActionsException;
@@ -11,10 +9,7 @@ import org.apache.commons.lang.StringUtils;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -38,7 +33,7 @@ public class SharedKeyGetter {
     public static void main(String[] args) {
         LogManager.getLogManager().getLogger("").setLevel(Level.OFF);
 
-        if (args.length < 7) {
+        if (args.length < 6) {
             System.out.println("Not enough arguments to proceed.");
             System.out.println(usage());
             System.exit(2);
@@ -49,7 +44,7 @@ public class SharedKeyGetter {
         String dbHost = args[3];
         String dbName = args[4];
         String dbUsername = args[5];
-        String dbPasssword = args[6];
+        String dbPasssword = args.length > 6 ? args[6] : null;
 
         SharedKeyGetter getter = new SharedKeyGetter();
         int result = getter.retrieveSharedKeyFromDbAndStash(ksPassword, ksType, ksFile, dbHost, dbName, dbUsername, dbPasssword);

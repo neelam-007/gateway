@@ -6,6 +6,7 @@
     <bean id="rbacAdvice" class="com.l7tech.server.security.rbac.SecuredMethodInterceptor">
         <constructor-arg ref="roleManager"/>
         <constructor-arg ref="entityFinder"/>
+        <constructor-arg ref="policyManager"/>
     </bean>
 
     <bean id="rbacAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">

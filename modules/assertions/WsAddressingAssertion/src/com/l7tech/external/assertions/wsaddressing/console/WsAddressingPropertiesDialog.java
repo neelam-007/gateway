@@ -2,11 +2,16 @@ package com.l7tech.external.assertions.wsaddressing.console;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.RunOnChangeListener;
+import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
+import com.l7tech.common.gui.util.PauseListener;
 import com.l7tech.common.gui.widgets.TargetMessagePanel;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
+import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
+import com.l7tech.policy.variable.PolicyVariableUtils;
 
 import javax.swing.*;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -30,7 +35,10 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
     private JCheckBox otherNamespaceCheckBox;
     private JTextField otherNamespaceTextField;
     private TargetMessagePanel targetMessagePanel;
+    private JLabel varPrefixStatusLabel;
+    private WsAddressingAssertion assertion;
 
+    private boolean targetMessageOk;
     private boolean ok;
     private final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
         public void run() {
@@ -57,7 +65,7 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
 
     /**
      * Create a new dialog with the given owner and data.
-     * 
+     *
      * @param owner The owner for the dialog
      * @param assertion The assertion data
      */
@@ -89,9 +97,16 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
     @Override
     protected void configureView() {
         otherNamespaceTextField.setEnabled(otherNamespaceCheckBox.isSelected());
-        final String other = otherNamespaceTextField.getText();
-        boolean ok = !otherNamespaceCheckBox.isSelected() || (other != null && other.length() > 0);
+        final String other = otherNamespaceTextField.getText().trim();
+        boolean ok;
+        if (otherNamespaceCheckBox.isSelected()) {
+            ok = (other != null && other.length() > 0);
+        } else {
+            ok = wsAddressing10CheckBox.isSelected() || wsAddressing082004CheckBox.isSelected();
+        }
+        ok &= targetMessageOk;
         ok &= !isReadOnly();
+        ok &= validateVariablePrefix();
         buttonOK.setEnabled(ok);
     }
 
@@ -105,10 +120,11 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
 
         targetMessagePanel.addPropertyChangeListener("valid", new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
-                buttonOK.setEnabled(Boolean.TRUE.equals(evt.getNewValue()));
+                targetMessageOk = Boolean.TRUE.equals(evt.getNewValue());
+                configureView();
             }
         });
-        
+
         buttonOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onOK();
@@ -121,6 +137,8 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
             }
         });
 
+        wsAddressing10CheckBox.addActionListener(changeListener);
+        wsAddressing082004CheckBox.addActionListener(changeListener);
         otherNamespaceCheckBox.addActionListener(changeListener);
         otherNamespaceCheckBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -132,6 +150,24 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
         otherNamespaceTextField.getDocument().addDocumentListener(changeListener);
 
         Utilities.setEscKeyStrokeDisposes(this);
+    }
+
+    /**
+     * @see {@link com.l7tech.console.util.VariablePrefixUtil#validateVariablePrefix}
+     */
+    private boolean validateVariablePrefix() {
+        return VariablePrefixUtil.validateVariablePrefix(
+            variablePrefixTextField.getText(),
+            PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
+            assertion.getVariableSuffixes(),
+            varPrefixStatusLabel);
+    }
+
+    /**
+     * @see {@link com.l7tech.console.util.VariablePrefixUtil#clearVariablePrefixStatus}
+     */
+    private void clearVariablePrefixStatus() {
+        VariablePrefixUtil.clearVariablePrefixStatus(varPrefixStatusLabel);
     }
 
     /**
@@ -153,6 +189,8 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
      * Initialize form from data
      */
     private void initData(final WsAddressingAssertion assertion) {
+        this.assertion = assertion;
+        targetMessageOk = true; // Since three radio buttons are grounded, the Request radio button is selected by default.
         targetMessagePanel.setModel(assertion);
         requireSignatureCheckBox.setSelected(assertion.isRequireSignature());
         wsAddressing10CheckBox.setSelected(assertion.isEnableWsAddressing10());
@@ -162,9 +200,22 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
             otherNamespaceCheckBox.setSelected(true);
             otherNamespaceTextField.setText(other);
         }
-        if ( assertion.getVariablePrefix() != null ) {
-            variablePrefixTextField.setText(assertion.getVariablePrefix());
-        }
+        clearVariablePrefixStatus();
+        variablePrefixTextField.setText(assertion.getVariablePrefix());
+        validateVariablePrefix();
+        TextComponentPauseListenerManager.registerPauseListener(
+            variablePrefixTextField,
+            new PauseListener() {
+                public void textEntryPaused(JTextComponent component, long msecs) {
+                    configureView();
+                }
+
+                public void textEntryResumed(JTextComponent component) {
+                    clearVariablePrefixStatus();
+                }
+            },
+            500
+        );
     }
 
     /**
@@ -185,7 +236,7 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
         if ( variablePrefixTextField.getText().trim().length() > 0 ) {
             assertion.setVariablePrefix(variablePrefixTextField.getText().trim());
         } else {
-            assertion.setVariablePrefix(null);            
+            assertion.setVariablePrefix(null);
         }
 
         targetMessagePanel.updateModel(assertion);
