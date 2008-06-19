@@ -25,18 +25,51 @@ chkconfig cpuspeed off
 ;;
 
 test)
-echo ""
+# Confirm SSL card is loaded and works
+MCA=`dmesg | grep mca | grep Firmware`
+if [ "$MCA" ] ; then
+	echo ""
+	echo "SSL Card loaded:"
+	echo $MCA
+	echo "" 
+else 
+	echo ""
+	echo "SSL Card NOT loaded."
+	echo ""
+fi
 
 # Confirm Tarari firmware loads.
 #
-service tarari stop ; cpp_manager -d start
+echo "Loading XML card drivers:"
+service tarari stop ; service tarari start
 echo ""
 
-# Run through Tarari tests.
-cpp_manager -t all
-echo ""
-echo ""
-echo ""
+# Ensure the drivers load
+CPP=`cat /proc/driver/cpp | grep Driver`
+if [ "$CPP" ] ; then
+	echo ""
+	echo "XML Card driver loaded:"
+	echo $CPP
+	echo ""
+	
+	# Run through Tarari tests.
+	echo "Running XML card tests (may take a few seconds):"
+	TESTS=`/usr/local/Tarari/bin/cpp_manager -v -t all`
+	if [ "`echo $TESTS | grep PASSED`" ] ; then
+		echo "Passed"
+		echo ""
+	else 
+		echo "Failed!"
+		echo "Some XML card tests didn't pass, re-running in verbose mode:"
+		/usr/local/Tarari/bin/cpp_manager -v -t all
+		echo ""
+	fi
+else 
+	echo ""
+	echo "XML Card driver NOT loaded"
+	echo ""
+fi
+
 
 
 ##########
@@ -49,7 +82,7 @@ echo ""
 # Tarari Serial Number
 #
 if [ -e "/usr/local/Tarari/bin/cpp_manager" ] ; then
-  echo "Tarari Card Serial Number = $(cpp_manager -t cpp_serial|grep "Serial Number"|cut -d = -f 2|cut -d ' ' -f 2)"
+  echo "Tarari Card Serial Number =$(cat /proc/driver/cpp0 | grep "Serial Number"|cut -d = -f 2|cut -d ':' -f 2)"
 else
   echo "ERROR cpp_manager not found. ERROR"
 fi
@@ -65,6 +98,7 @@ echo ""
 # Raid Array Status
 #
 # md0
+echo "Checking RAID status:"
 if [ "$(cat /proc/mdstat |grep md0|grep "\[0\]")" = "" ]; then
   echo "ERROR md0 device 0 ERROR"
   md00=error
