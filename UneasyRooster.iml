@@ -306,7 +306,7 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library name="net.ftp.all">
+      <library name="net.ftp.ftpserver 1.0 20070601">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/gateway/ftp/ftplet-api-1.0-543677-20070601.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/gateway/ftp/ftpserver-core-1.0-543677-20070601.jar!/" />
@@ -377,11 +377,12 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library name="test.JUnit 4.4 / Japex 1.1 / JDSL 1.1">
+      <library name="test.JUnit 4.4 / Japex 1.1 / JDSL 1.1 / NapkinLAF 1.0_001">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/tools/junit-4.4.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/test/japex-1.1.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/test/jdsl-1.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/test/napkinlaf-1.0_001.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
