@@ -91,7 +91,12 @@ echo ""
 ##########
 # Memory List
 #
-echo "Memory Total = $[$(cat /proc/meminfo |grep MemTotal|cut -d : -f 2|cut -d k -f 1)/1024] Megs"
+TOTAL_MEM="$[$(cat /proc/meminfo |grep MemTotal|cut -d : -f 2|cut -d k -f 1)/1024]"
+echo "Memory Total = $TOTAL_MEM Megs"
+if [ $TOTAL_MEM -le 8000 ] ; then
+	echo "WARN: Memory is less than 8 gigabytes"
+	echo ""
+fi
 echo ""
 
 ##########
