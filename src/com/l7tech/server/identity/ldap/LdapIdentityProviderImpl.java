@@ -30,7 +30,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.DigestAuthenticator;
-import com.l7tech.server.identity.GenericIdentityProviderFactorySpi;
+import com.l7tech.server.identity.ConfigurableIdentityProvider;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
 import com.sun.jndi.ldap.LdapURL;
@@ -61,7 +61,7 @@ import java.util.logging.Logger;
  * Date: Jan 21, 2004<br/>
  */
 public class LdapIdentityProviderImpl
-        implements LdapIdentityProvider, InitializingBean, ApplicationContextAware, GenericIdentityProviderFactorySpi.IdentityProviderConfigSetter
+        implements LdapIdentityProvider, InitializingBean, ApplicationContextAware, ConfigurableIdentityProvider
 {
     private Auditor auditor;
 
@@ -76,6 +76,10 @@ public class LdapIdentityProviderImpl
         if (this.config.getLdapUrl() == null || this.config.getLdapUrl().length < 1) {
             throw new InvalidIdProviderCfgException("This config does not contain an ldap url"); // should not happen
         }
+
+        userManager.configure( this );
+        groupManager.configure( this );
+
         initializeFallbackMechanism();
     }
 
@@ -713,6 +717,8 @@ public class LdapIdentityProviderImpl
     public void afterPropertiesSet() throws Exception {
         if (clientCertManager == null) throw new IllegalStateException("The Client Certificate Manager is required");
         if (auditor == null) throw new IllegalStateException("Auditor has not been initialized");
+        if (userManager == null) throw new IllegalStateException("UserManager has not been initialized");
+        if (groupManager == null) throw new IllegalStateException("GroupManager has not been initialized");
     }
 
 

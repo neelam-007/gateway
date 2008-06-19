@@ -19,7 +19,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.PersistentIdentityProviderImpl;
-import com.l7tech.server.identity.GenericIdentityProviderFactorySpi;
+import com.l7tech.server.identity.ConfigurableIdentityProvider;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +45,7 @@ import java.util.logging.Logger;
 @Transactional(propagation=Propagation.SUPPORTS, rollbackFor=Throwable.class)
 public class FederatedIdentityProviderImpl
         extends PersistentIdentityProviderImpl<FederatedUser, FederatedGroup, FederatedUserManager, FederatedGroupManager>
-        implements FederatedIdentityProvider, GenericIdentityProviderFactorySpi.IdentityProviderConfigSetter
+        implements FederatedIdentityProvider, ConfigurableIdentityProvider
 {
 
     public FederatedIdentityProviderImpl() {
@@ -171,6 +171,27 @@ public class FederatedIdentityProviderImpl
 
         userManager.configure( this );
         groupManager.configure( this );
+
+        long[] certOids = providerConfig.getTrustedCertOids();
+        for (long certOid : certOids) {
+            String msg = "Federated Identity Provider '" + providerConfig.getName() + "' refers to Trusted Cert #" + certOid;
+            try {
+                TrustedCert trust = trustedCertManager.getCachedCertByOid(certOid, MAX_CACHE_AGE);
+                if (trust == null) {
+                    logger.log(Level.WARNING, msg + ", which no longer exists");
+                    continue;
+                }
+                validTrustedCertOids.add(certOid);
+            } catch (FindException e) {
+                logger.log(Level.SEVERE, msg + ", which could not be found", e);
+            } catch (CertificateException e) {
+                logger.log(Level.WARNING, msg + ", which is not valid", e);
+            }
+        }
+
+        Auditor auditor = new Auditor(this, applicationContext, logger);
+        this.x509Handler = new X509AuthorizationHandler(this, trustedCertManager, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);
+        this.samlHandler = new SamlAuthorizationHandler(this, trustedCertManager, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);        
     }
 
     public void setUserManager(FederatedUserManager userManager) {
@@ -199,31 +220,8 @@ public class FederatedIdentityProviderImpl
         if (certValidationProcessor == null) {
             throw new IllegalArgumentException("The Certificate Validation Processor is required");
         }
-
-        long[] certOids = providerConfig.getTrustedCertOids();
-        for (long certOid : certOids) {
-            String msg = "Federated Identity Provider '" + providerConfig.getName() + "' refers to Trusted Cert #" + certOid;
-            try {
-                TrustedCert trust = trustedCertManager.getCachedCertByOid(certOid, MAX_CACHE_AGE);
-                if (trust == null) {
-                    logger.log(Level.WARNING, msg + ", which no longer exists");
-                    continue;
-                }
-                Long oid = new Long(certOid);
-                validTrustedCertOids.add(oid);
-            } catch (FindException e) {
-                logger.log(Level.SEVERE, msg + ", which could not be found", e);
-            } catch (CertificateException e) {
-                logger.log(Level.WARNING, msg + ", which is not valid", e);
-            }
-        }
-
-        this.auditor = new Auditor(this, applicationContext, logger);
-        this.x509Handler = new X509AuthorizationHandler(this, trustedCertManager, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);
-        this.samlHandler = new SamlAuthorizationHandler(this, trustedCertManager, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);
     }
 
-    private Auditor auditor;
     private X509AuthorizationHandler x509Handler;
     private SamlAuthorizationHandler samlHandler;
 

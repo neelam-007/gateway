@@ -29,7 +29,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
     public LdapUserManagerImpl() {
     }
 
-    public void configure(LdapIdentityProvider provider) {
+    public synchronized void configure(LdapIdentityProvider provider) {
         identityProvider = provider;
         ldapIdentityProviderConfig = (LdapIdentityProviderConfig)identityProvider.getConfig();
     }
@@ -42,6 +42,9 @@ public class LdapUserManagerImpl implements LdapUserManager {
     public LdapUser findByPrimaryKey(String dn) throws FindException {
         DirContext context = null;
         try {
+            LdapIdentityProvider identityProvider = getIdentityProvider();
+            LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
+
             context = identityProvider.getBrowseContext();
             Attributes attributes = context.getAttributes(dn);
 
@@ -111,6 +114,8 @@ public class LdapUserManagerImpl implements LdapUserManager {
     public LdapUser findByLogin(String login) throws FindException {
         DirContext context = null;
         try {
+            LdapIdentityProvider identityProvider = getIdentityProvider();
+            LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
             context = identityProvider.getBrowseContext();
 
             StringBuffer filter = new StringBuffer("(|");
@@ -211,10 +216,12 @@ public class LdapUserManagerImpl implements LdapUserManager {
      * practical equivalent to LdapIdentityProvider.search(new EntityType[] {EntityType.USER}, "*");
      */
     public Collection<IdentityHeader> findAllHeaders() throws FindException {
+        LdapIdentityProvider identityProvider = getIdentityProvider();
         return identityProvider.search(new EntityType[]{EntityType.USER}, "*");
     }
 
     public Collection<IdentityHeader> search(String searchString) throws FindException {
+        LdapIdentityProvider identityProvider = getIdentityProvider();
         return identityProvider.search(new EntityType[]{EntityType.USER}, "*");
     }
 
@@ -223,8 +230,9 @@ public class LdapUserManagerImpl implements LdapUserManager {
     }
 
     public LdapUser headerToUser(IdentityHeader header) {
+        LdapIdentityProvider identityProvider = getIdentityProvider();
         LdapUser user = new LdapUser();
-        user.setProviderId(this.identityProvider.getConfig().getOid());
+        user.setProviderId(identityProvider.getConfig().getOid());
         user.setDn(header.getStrId());
         user.setCn(header.getName());
         return user;
@@ -235,6 +243,8 @@ public class LdapUserManagerImpl implements LdapUserManager {
             logger.info("User: " + dn + " refused authentication because empty password provided.");
             return false;
         }
+        LdapIdentityProvider identityProvider = getIdentityProvider();
+        LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
         String ldapurl = identityProvider.getLastWorkingLdapUrl();
         if (ldapurl == null) {
             ldapurl = identityProvider.markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
@@ -263,7 +273,23 @@ public class LdapUserManagerImpl implements LdapUserManager {
         return false;
     }
 
+    private LdapIdentityProvider getIdentityProvider() {
+        LdapIdentityProvider provider =  identityProvider;
+        if ( provider == null ) {
+            throw new IllegalStateException("Not configured!");
+        }
+        return provider;
+    }
+
+    private LdapIdentityProviderConfig getIdentityProviderConfig() {
+        LdapIdentityProviderConfig config = ldapIdentityProviderConfig;
+        if ( config == null ) {
+            throw new IllegalStateException("Not configured!");
+        }
+        return config;
+    }
+
+    private LdapIdentityProvider identityProvider;
     private LdapIdentityProviderConfig ldapIdentityProviderConfig;
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private LdapIdentityProvider identityProvider;
 }

@@ -31,17 +31,13 @@ public class GenericIdentityProviderFactorySpi implements IdentityProviderFactor
     public IdentityProvider createIdentityProvider( final IdentityProviderConfig configuration ) throws InvalidIdProviderCfgException {
         IdentityProvider provider = (IdentityProvider) beanFactory.getBean(identityProviderBeanName, IdentityProvider.class);
 
-        if ( !(provider instanceof IdentityProviderConfigSetter) ) {
+        if ( !(provider instanceof ConfigurableIdentityProvider) ) {
             throw new InvalidIdProviderCfgException("IdentityProvider does not support configuration interface.");
         }
 
-        ((IdentityProviderConfigSetter)provider).setIdentityProviderConfig( configuration );
+        ((ConfigurableIdentityProvider)provider).setIdentityProviderConfig( configuration );
 
         return provider;
-    }
-
-    public interface IdentityProviderConfigSetter {
-        void setIdentityProviderConfig(final IdentityProviderConfig configuration) throws InvalidIdProviderCfgException;
     }
 
     //- PRIVATE

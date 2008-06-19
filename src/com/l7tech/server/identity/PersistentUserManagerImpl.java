@@ -308,7 +308,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         }
     }
 
-    public void setIdentityProvider(final PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider) {
+    public synchronized void setIdentityProvider(final PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider) {
         if ( this.identityProvider != null ) throw new IllegalStateException("identityProvider is already set");
         this.identityProvider = identityProvider;
     }

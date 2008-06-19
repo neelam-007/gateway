@@ -54,7 +54,8 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     protected PersistentGroupManagerImpl() {
     }
 
-    public void setIdentityProvider(final PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider) {
+    public synchronized void setIdentityProvider(final PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider) {
+        if ( this.identityProvider != null ) throw new IllegalStateException("identityProvider is already set");
         this.identityProvider = identityProvider;
     }
 
@@ -179,8 +180,10 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
 
     protected void preSave(GT persistentGroup) throws SaveException { }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     protected void preDelete(GT group) throws DeleteException { }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     protected void preUpdate(GT group) throws FindException, UpdateException { }
 
     protected abstract GT cast(Group group);

@@ -26,20 +26,17 @@ import java.util.logging.Logger;
  * $Id$<br/>
  */
 public class LdapGroupManagerImpl implements LdapGroupManager {
-    private IdentityHeader MAX_EXCEEDED;
-    private long providerOid;
 
     public LdapGroupManagerImpl() {
     }
 
-    public void configure(LdapIdentityProvider provider) {
-        this.identityProvider = provider;
+    public synchronized void configure(LdapIdentityProvider provider) {
+        identityProvider = provider;
         ldapIdentityProviderConfig = (LdapIdentityProviderConfig)identityProvider.getConfig();
 
         MAX_EXCEEDED = new IdentityHeader(identityProvider.getConfig().getOid(),
             "noid", EntityType.MAXED_OUT_SEARCH_RESULT, "Too Many Entries",
             "This search yields too many entities. Please narrow your search criterion.");
-        providerOid = identityProvider.getConfig().getOid();
     }
 
     /**
@@ -51,6 +48,9 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
         DirContext context = null;
         try {
             try {
+                LdapIdentityProvider identityProvider = getIdentityProvider();
+                LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
+
                 context = identityProvider.getBrowseContext();
                 Attributes attributes = context.getAttributes(dn);
 
@@ -93,6 +93,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
      * does equivalent of LdapIdentityProvider.search(new EntityType[] {EntityType.GROUP}, name);
      */
     public LdapGroup findByName(String name) throws FindException {
+        LdapIdentityProvider identityProvider = getIdentityProvider();
         Collection res = identityProvider.search(new EntityType[]{EntityType.GROUP}, name);
         switch (res.size()) {
             case 0:
@@ -166,6 +167,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
     }
 
     public Collection<IdentityHeader> search(String searchString) throws FindException {
+        LdapIdentityProvider identityProvider = getIdentityProvider();
         return identityProvider.search(new EntityType[]{EntityType.GROUP}, searchString);
     }
 
@@ -180,7 +182,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
      * @throws FindException
      */
     public boolean isMember(User user, LdapGroup group) throws FindException {
-        if (user.getProviderId() != this.providerOid) {
+        if (user.getProviderId() != getProviderOid()) {
             logger.log(Level.FINE, "User is not from this Identity Provider");
             return false;
         }
@@ -242,6 +244,9 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
      * @return a collection containing EntityHeader objects
      */
     public Set<IdentityHeader> getGroupHeaders(LdapUser user) throws FindException {
+        LdapIdentityProvider identityProvider = getIdentityProvider();
+        LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
+
         GroupMappingConfig[] groupTypes = ldapIdentityProviderConfig.getGroupMappings();
         StringBuffer uberGroupMembershipFilter = new StringBuffer("(|");
         boolean checkOuStrategyToo = false;
@@ -389,6 +394,9 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
      * @return a collection containing EntityHeader objects
      */
     private Set<IdentityHeader> getSubGroups(DirContext context, String dn) {
+        LdapIdentityProvider identityProvider = getIdentityProvider();
+        LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
+
         Set<IdentityHeader> output = new HashSet<IdentityHeader>();
         String filter = subGroupSearchString(dn);
         if (filter != null) {
@@ -448,7 +456,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
 
     private IdentityHeader groupToHeader(LdapGroup maybegrp) {
         return new IdentityHeader(
-                providerOid, maybegrp.getDn(), EntityType.GROUP,
+                getProviderOid(), maybegrp.getDn(), EntityType.GROUP,
                 maybegrp.getCn(), maybegrp.getDescription());
     }
 
@@ -458,6 +466,8 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
      * @return returns a search string or null if the group object classes dont allow for groups within groups
      */
     private String subGroupSearchString(String dnOfChildGroup) {
+        LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
+
         StringBuffer output = new StringBuffer("(|");
         GroupMappingConfig[] groupTypes = ldapIdentityProviderConfig.getGroupMappings();
         boolean searchStringValid = false;
@@ -491,6 +501,9 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
         DirContext context = null;
 
         try {
+            LdapIdentityProvider identityProvider = getIdentityProvider();
+            LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
+
             Set<IdentityHeader> headers = new HashSet<IdentityHeader>();
 
             String dn = group.getDn();
@@ -511,7 +524,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                                     String memberlogin = val.toString();
                                     LdapUser u = getUserManager().findByLogin(memberlogin);
                                     if (u != null) {
-                                        IdentityHeader h = new IdentityHeader(providerOid, u.getDn(), EntityType.USER,
+                                        IdentityHeader h = new IdentityHeader(getProviderOid(), u.getDn(), EntityType.USER,
                                                                               u.getLogin(), null);
                                         if (h == null) {
                                             logger.info("the user " + u + " is not valid according to template " +
@@ -539,7 +552,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                                     try {
                                         LdapUser u = getUserManager().findByPrimaryKey(memberhint);
                                         if (u != null) {
-                                            IdentityHeader newheader = new IdentityHeader(providerOid, u.getDn(),
+                                            IdentityHeader newheader = new IdentityHeader(getProviderOid(), u.getDn(),
                                                                                           EntityType.USER,
                                                                                           u.getLogin(), null);
                                             if (newheader == null) {
@@ -638,14 +651,8 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
      * practical equivalent to LdapIdentityProvider.search(new EntityType[] {EntityType.GROUP}, "*");
      */
     public Collection<IdentityHeader> findAllHeaders() throws FindException {
+        LdapIdentityProvider identityProvider = getIdentityProvider();
         return identityProvider.search(new EntityType[]{EntityType.GROUP}, "*");
-    }
-
-    /**
-     * throws an UnsupportedOperationException
-     */
-    public Collection<IdentityHeader> findAllHeaders(int offset, int windowSize) {
-        throw new UnsupportedOperationException();
     }
 
     /**
@@ -660,36 +667,13 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
         return output;
     }
 
-    /**
-     * like findAllHeaders but contains actual LdapUser objects instead of EntityHeader objects
-     */
-    public Collection findAll(int offset, int windowSize) throws FindException {
-        Collection<IdentityHeader> headers = findAllHeaders(offset, windowSize);
-        Collection<LdapGroup> output = new ArrayList<LdapGroup>();
-        for (IdentityHeader header : headers) {
-            output.add(findByPrimaryKey(header.getStrId()));
-        }
-        return output;
-    }
-
-    public Integer getVersion(long oid) throws FindException {
-        return new Integer(0);
-    }
-
-    public Map findVersionMap() throws FindException {
-        return Collections.EMPTY_MAP;
-    }
-
-    public Entity getCachedEntity(long o, int maxAge) {
-        throw new UnsupportedOperationException();
-    }
-
-
     protected LdapUserManager getUserManager() {
+        LdapIdentityProvider identityProvider = getIdentityProvider();
         return identityProvider.getUserManager();
     }
 
     private void collectOUGroupMembers(DirContext context, String dn, Set<IdentityHeader> memberHeaders) throws NamingException {
+        LdapIdentityProvider identityProvider = getIdentityProvider();
         long maxSize = identityProvider.getMaxSearchResultSize();
         if (memberHeaders.size() >= maxSize) return;
         // build group memberships
@@ -749,7 +733,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                                    "EntityType.MAXED_OUT_SEARCH_RESULT to the results",
                                    e);
             IdentityHeader maxExceeded = new IdentityHeader(
-                    providerOid,
+                    getProviderOid(),
                     "noid",
                     EntityType.MAXED_OUT_SEARCH_RESULT,
                     "Too Many Entries",
@@ -762,6 +746,8 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
     }
 
     private void nvSearchForUser(DirContext context, String nvhint, Set<IdentityHeader> memberHeaders) throws NamingException {
+        LdapIdentityProvider identityProvider = getIdentityProvider();
+        LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
         long maxSize = identityProvider.getMaxSearchResultSize();
         if (memberHeaders.size() >= maxSize) return;
         StringBuffer filter = new StringBuffer("(|");
@@ -800,10 +786,36 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
         }
     }
 
+    private LdapIdentityProvider getIdentityProvider() {
+        LdapIdentityProvider provider =  identityProvider;
+        if ( provider == null ) {
+            throw new IllegalStateException("Not configured!");
+        }
+        return provider;
+    }
+
+    private long getProviderOid() {
+        long oid = providerOid;
+
+        if ( oid == 0 ) {
+            oid = getIdentityProvider().getConfig().getOid();
+            providerOid = oid;
+        }
+
+        return oid;
+    }
+
+    private LdapIdentityProviderConfig getIdentityProviderConfig() {
+        LdapIdentityProviderConfig config = ldapIdentityProviderConfig;
+        if ( config == null ) {
+            throw new IllegalStateException("Not configured!");
+        }
+        return config;
+    }
 
     private LdapIdentityProviderConfig ldapIdentityProviderConfig;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private LdapIdentityProvider identityProvider;
-
-
+    private IdentityHeader MAX_EXCEEDED;
+    private long providerOid;
 }

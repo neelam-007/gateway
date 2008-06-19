@@ -11,10 +11,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.event.identity.Authenticated;
-import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.identity.DigestAuthenticator;
-import com.l7tech.server.identity.PersistentIdentityProviderImpl;
-import com.l7tech.server.identity.GenericIdentityProviderFactorySpi;
+import com.l7tech.server.identity.*;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -37,7 +34,7 @@ import java.util.logging.Logger;
 @Transactional(propagation=Propagation.SUPPORTS, rollbackFor=Throwable.class)
 public class InternalIdentityProviderImpl
         extends PersistentIdentityProviderImpl<InternalUser, InternalGroup, InternalUserManager, InternalGroupManager>
-        implements ApplicationContextAware, InternalIdentityProvider, GenericIdentityProviderFactorySpi.IdentityProviderConfigSetter
+        implements ApplicationContextAware, InternalIdentityProvider, ConfigurableIdentityProvider
 {
     private static final Logger logger = Logger.getLogger(InternalIdentityProviderImpl.class.getName());
     public static final String ENCODING = "UTF-8";
