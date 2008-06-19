@@ -47,21 +47,23 @@ echo ""
 # Ensure the drivers load
 CPP=`cat /proc/driver/cpp | grep Driver`
 if [ "$CPP" ] ; then
+	source /ssg/etc/profile.d/tarari.sh
+	source /ssg/etc/profile.d/tarariopts.sh
 	echo ""
-	echo "XML Card driver loaded:"
+	echo "Tarari XML Card driver loaded:"
 	echo $CPP
 	echo ""
 	
 	# Run through Tarari tests.
-	echo "Running XML card tests (may take a few seconds):"
-	TESTS=`/usr/local/Tarari/bin/cpp_manager -v -t all`
+	echo "Running Tarari XML card tests (may take a few minutes):"
+	TESTS=`/usr/local/Tarari/bin/cpp_manager_static -v -t all`
 	if [ "`echo $TESTS | grep PASSED`" ] ; then
 		echo "Passed"
 		echo ""
 	else 
 		echo "Failed!"
 		echo "Some XML card tests didn't pass, re-running in verbose mode:"
-		/usr/local/Tarari/bin/cpp_manager -v -t all
+		/usr/local/Tarari/bin/cpp_manager_static -v -t all
 		echo ""
 	fi
 else 
@@ -93,8 +95,8 @@ echo ""
 #
 TOTAL_MEM="$[$(cat /proc/meminfo |grep MemTotal|cut -d : -f 2|cut -d k -f 1)/1024]"
 echo "Memory Total = $TOTAL_MEM Megs"
-if [ $TOTAL_MEM -le 8000 ] ; then
-	echo "WARN: Memory is less than 8 gigabytes"
+if [ $TOTAL_MEM -le 7500 ] ; then
+	echo "WARN: Memory is less than 8 gigabytes: $TOTAL_MEM"
 	echo ""
 fi
 echo ""
