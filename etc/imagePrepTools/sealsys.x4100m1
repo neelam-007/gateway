@@ -47,8 +47,7 @@ echo ""
 # Ensure the drivers load
 CPP=`cat /proc/driver/cpp | grep Driver`
 if [ "$CPP" ] ; then
-	source /ssg/etc/profile.d/tarari.sh
-	source /ssg/etc/profile.d/tarariopts.sh
+	[ -e /ssg/etc/profile.d/tarariopts.sh ] && source /ssg/etc/profile.d/tarariopts.sh
 	echo ""
 	echo "Tarari XML Card driver loaded:"
 	echo $CPP
