@@ -33,7 +33,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
 
     public synchronized void configure(LdapIdentityProvider provider) {
         identityProvider = provider;
-        ldapIdentityProviderConfig = (LdapIdentityProviderConfig)identityProvider.getConfig();
+        identityProviderConfig = (LdapIdentityProviderConfig)identityProvider.getConfig();
 
         MAX_EXCEEDED = new IdentityHeader(identityProvider.getConfig().getOid(),
             "noid", EntityType.MAXED_OUT_SEARCH_RESULT, "Too Many Entries",
@@ -188,6 +188,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
             return false;
         }
 
+        LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
         for(GroupMappingConfig groupMappingConfig : ldapIdentityProviderConfig.getGroupMappings()) {
             if(groupMappingConfig.getMemberStrategy().equals(MemberStrategy.MEMBERS_BY_OU)) {
                 try {
@@ -220,7 +221,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
                 for(int i = 0;i < membersAttribute.size();i++) {
                     try {
                         String memberString = (String)membersAttribute.get(i);
-                        LdapGroup subgroup = null;
+                        LdapGroup subgroup;
                         if(membersByLogin) {
                             subgroup = findByName((String)membersAttribute.get(i));
                         } else {
@@ -248,6 +249,8 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
 
     // Check if the provided user is a member of the provided OU group, or the immediate subgroups
     private boolean isMemberOfGroupByOu(User user, String dn) throws NamingException {
+        LdapIdentityProvider identityProvider = getIdentityProvider();
+
         LdapName userDN = new LdapName(user.getId());
         if(userDN.startsWith(new LdapName(dn))) {
             return true;
@@ -892,14 +895,14 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
     }
 
     private LdapIdentityProviderConfig getIdentityProviderConfig() {
-        LdapIdentityProviderConfig config = ldapIdentityProviderConfig;
+        LdapIdentityProviderConfig config = identityProviderConfig;
         if ( config == null ) {
             throw new IllegalStateException("Not configured!");
         }
         return config;
     }
 
-    private LdapIdentityProviderConfig ldapIdentityProviderConfig;
+    private LdapIdentityProviderConfig identityProviderConfig;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private LdapIdentityProvider identityProvider;
     private IdentityHeader MAX_EXCEEDED;

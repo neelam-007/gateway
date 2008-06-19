@@ -31,7 +31,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
 
     public synchronized void configure(LdapIdentityProvider provider) {
         identityProvider = provider;
-        ldapIdentityProviderConfig = (LdapIdentityProviderConfig)identityProvider.getConfig();
+        identityProviderConfig = (LdapIdentityProviderConfig)identityProvider.getConfig();
     }
 
     /**
@@ -41,10 +41,10 @@ public class LdapUserManagerImpl implements LdapUserManager {
      */
     public LdapUser findByPrimaryKey(String dn) throws FindException {
         DirContext context = null;
-        try {
-            LdapIdentityProvider identityProvider = getIdentityProvider();
-            LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
+        LdapIdentityProvider identityProvider = getIdentityProvider();
+        LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
 
+        try {
             context = identityProvider.getBrowseContext();
             Attributes attributes = context.getAttributes(dn);
 
@@ -287,7 +287,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
     }
 
     private LdapIdentityProviderConfig getIdentityProviderConfig() {
-        LdapIdentityProviderConfig config = ldapIdentityProviderConfig;
+        LdapIdentityProviderConfig config = identityProviderConfig;
         if ( config == null ) {
             throw new IllegalStateException("Not configured!");
         }
@@ -295,6 +295,6 @@ public class LdapUserManagerImpl implements LdapUserManager {
     }
 
     private LdapIdentityProvider identityProvider;
-    private LdapIdentityProviderConfig ldapIdentityProviderConfig;
+    private LdapIdentityProviderConfig identityProviderConfig;
     private final Logger logger = Logger.getLogger(getClass().getName());
 }
