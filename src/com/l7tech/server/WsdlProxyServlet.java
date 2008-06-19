@@ -599,7 +599,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private boolean checkForIdPotential(Assertion assertion, User requestor) {
         if (assertion instanceof IdentityAssertion) {
             try {
-                if (IdentityRule.canUserPassIDAssertion((IdentityAssertion)assertion, requestor, providerConfigManager)) {
+                if (IdentityRule.canUserPassIDAssertion((IdentityAssertion)assertion, requestor, identityProviderFactory)) {
                     return true;
                 }
             } catch (FilteringException e) {

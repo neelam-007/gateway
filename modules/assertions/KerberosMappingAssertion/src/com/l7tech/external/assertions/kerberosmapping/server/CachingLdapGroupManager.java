@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.kerberosmapping.server;
 
 import com.l7tech.server.identity.ldap.LdapGroupManager;
+import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.identity.ldap.LdapGroup;
 import com.l7tech.identity.Group;
@@ -33,6 +34,10 @@ public class CachingLdapGroupManager implements LdapGroupManager {
     public CachingLdapGroupManager( final IdentityProvider ip, final LdapGroupManager delegate ) {
         this.providerOid = ip.getConfig().getOid();
         this.delegateGroupManager = delegate;        
+    }
+
+    public void configure(LdapIdentityProvider provider) {
+        delegateGroupManager.configure(provider);    
     }
 
     public void addUser( LdapUser user, LdapGroup group ) throws FindException, UpdateException {

@@ -10,5 +10,6 @@ import com.l7tech.identity.ldap.LdapUser;
  * @author alex
  */
 public interface LdapUserManager extends UserManager<LdapUser> {
+    void configure(LdapIdentityProvider provider);
     boolean authenticateBasic(String dn, String passwd);
 }

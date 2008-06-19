@@ -239,7 +239,6 @@
     <orderEntry type="module-library" exported="">
       <library name="misc.Commons">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/commons-logging-1.0.4.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/commons-discovery.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/commons-daemon.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/commons-configuration-1.3.jar!/" />
@@ -250,6 +249,7 @@
           <root url="jar://$MODULE_DIR$/lib/commons-lang-2.3.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/commons-pool-1.2.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/commons-codec-1.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/commons-logging-1.1.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -276,19 +276,18 @@
     <orderEntry type="module-library" exported="">
       <library name="misc.Spring">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/spring-context.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/spring-support.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/spring-remoting.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/spring-mock.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/spring-aop.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/spring-webmvc.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/spring-jdbc.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/spring-beans.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/spring-hibernate.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/spring-orm.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/spring-web.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/spring-dao.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-test.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-context.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-context-support.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-jdbc.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/spring-core.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-tx.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-orm.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/aopalliance.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-beans.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/spring-aop.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -639,10 +638,8 @@
     <orderEntry type="module-library" exported="">
       <library name="xml.security.XSS4J">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/xss4j.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/xml4j.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/xss4j.00.patch.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/are.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/xss4j.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

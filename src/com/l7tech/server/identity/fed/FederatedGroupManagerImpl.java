@@ -43,9 +43,12 @@ public class FederatedGroupManagerImpl
 
     private static final Logger logger = Logger.getLogger(FederatedGroupManagerImpl.class.getName());
 
-    public FederatedGroupManagerImpl(FederatedIdentityProvider identityProvider) {
-        super(identityProvider);
-        federatedProvider = identityProvider;
+    public FederatedGroupManagerImpl() {
+    }
+
+    public void configure(final FederatedIdentityProvider provider) {
+        this.setIdentityProvider( provider );
+        federatedProvider = provider;
         providerConfig = (FederatedIdentityProviderConfig)federatedProvider.getConfig();
     }
 
@@ -77,7 +80,7 @@ public class FederatedGroupManagerImpl
     }
 
     protected void addFindAllCriteria( Criteria allHeadersCriteria ) {
-        allHeadersCriteria.add(Restrictions.eq("providerId", new Long(getProviderOid())));
+        allHeadersCriteria.add(Restrictions.eq("providerId", getProviderOid()));
     }
 
     @Transactional(readOnly=true)
@@ -154,7 +157,7 @@ public class FederatedGroupManagerImpl
     }
 
     protected void addMembershipCriteria(Criteria crit, Group group, Identity identity) {
-        crit.add(Restrictions.eq("thisGroupProviderOid", new Long(group.getProviderId())));
+        crit.add(Restrictions.eq("thisGroupProviderOid", group.getProviderId()));
     }
 
     @Transactional(propagation=Propagation.SUPPORTS)
@@ -166,11 +169,11 @@ public class FederatedGroupManagerImpl
         }
     }
 
-    public Class getImpClass() {
+    public Class<FederatedGroup> getImpClass() {
         return FederatedGroup.class;
     }
 
-    public Class getInterfaceClass() {
+    public Class<Group> getInterfaceClass() {
         return Group.class;
     }
 

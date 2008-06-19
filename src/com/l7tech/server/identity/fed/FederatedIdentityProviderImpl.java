@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.PersistentIdentityProviderImpl;
+import com.l7tech.server.identity.GenericIdentityProviderFactorySpi;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,15 +45,10 @@ import java.util.logging.Logger;
 @Transactional(propagation=Propagation.SUPPORTS, rollbackFor=Throwable.class)
 public class FederatedIdentityProviderImpl
         extends PersistentIdentityProviderImpl<FederatedUser, FederatedGroup, FederatedUserManager, FederatedGroupManager>
-        implements FederatedIdentityProvider
+        implements FederatedIdentityProvider, GenericIdentityProviderFactorySpi.IdentityProviderConfigSetter
 {
 
-    public FederatedIdentityProviderImpl(IdentityProviderConfig config) {
-        if (config instanceof FederatedIdentityProviderConfig) {
-            this.providerConfig = (FederatedIdentityProviderConfig)config;
-        } else {
-            throw new IllegalArgumentException("Federated Provider Config required");
-        }
+    public FederatedIdentityProviderImpl() {
     }
 
     public IdentityProviderConfig getConfig() {
@@ -157,6 +153,24 @@ public class FederatedIdentityProviderImpl
 
     public void setTrustedCertManager(TrustedCertManager trustedCertManager) {
         this.trustedCertManager = trustedCertManager;
+    }
+
+    public void setIdentityProviderConfig(IdentityProviderConfig config) throws InvalidIdProviderCfgException {
+        if (config instanceof FederatedIdentityProviderConfig) {
+            this.providerConfig = (FederatedIdentityProviderConfig)config;
+        } else {
+            throw new InvalidIdProviderCfgException("Federated Provider Config required");
+        }
+
+        if ( userManager == null ) {
+            throw new InvalidIdProviderCfgException("UserManager is not set");
+        }
+        if ( groupManager == null ) {
+            throw new InvalidIdProviderCfgException("UserManager is not set");
+        }
+
+        userManager.configure( this );
+        groupManager.configure( this );
     }
 
     public void setUserManager(FederatedUserManager userManager) {

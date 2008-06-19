@@ -23,7 +23,6 @@ public class TestIdentityProviderConfigManager
         extends EntityManagerStub<IdentityProviderConfig, EntityHeader>
         implements IdentityProviderConfigManager, InitializingBean
 {
-    private IdentityProviderFactory identityProviderFactory;
     private IdentityProvider idprovider;
 
     private Map versionMap = new HashMap();
@@ -31,20 +30,8 @@ public class TestIdentityProviderConfigManager
         return idprovider;
     }
 
-    public Collection<IdentityProvider> findAllIdentityProviders() throws FindException {
-        return Arrays.asList(idprovider);
-    }
-
     public LdapIdentityProviderConfig[] getLdapTemplates() throws FindException {
         throw new UnsupportedOperationException("not implemented");
-    }
-
-    public IdentityProvider getIdentityProvider(long oid) throws FindException {
-        if (oid != idprovider.getConfig().getOid()) throw new IllegalArgumentException();
-        return idprovider;
-    }
-
-    public void test(IdentityProviderConfig identityProviderConfig) throws InvalidIdProviderCfgException {
     }
 
     public void addManageProviderRole(IdentityProviderConfig config) throws SaveException {
@@ -67,16 +54,8 @@ public class TestIdentityProviderConfigManager
         return "identity_provider";
     }
 
-    public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {
-         this.identityProviderFactory = identityProviderFactory;
-     }
-
     public void afterPropertiesSet() throws Exception {
-        if (identityProviderFactory == null) {
-            throw new IllegalArgumentException("Identity Provider Factory is required");
-        }
         final IdentityProviderConfig config = TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG;
-        idprovider =  identityProviderFactory.createProviderInstance(config);
         this.entities.put(config.getOid(), config);
     }
 }

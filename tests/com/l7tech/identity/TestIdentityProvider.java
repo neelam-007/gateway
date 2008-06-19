@@ -8,6 +8,7 @@ import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.identity.IdentityProviderFactorySpi;
 
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -31,13 +32,22 @@ public class TestIdentityProvider implements IdentityProvider {
         TEST_IDENTITY_PROVIDER_CONFIG.setVersion(PROVIDER_VERSION);
     }
 
-
     private TestUserManager userman = new TestUserManager();
     private TestGroupManager groupman = new TestGroupManager();
     private IdentityProviderConfig config;
 
     public TestIdentityProvider(IdentityProviderConfig config) {
         this.config = config;
+    }
+
+    public static class Factory implements IdentityProviderFactorySpi {
+        public String getClassname() {
+            return TestIdentityProvider.class.getName();
+        }
+
+        public IdentityProvider createIdentityProvider(IdentityProviderConfig configuration) throws InvalidIdProviderCfgException {
+            return new TestIdentityProvider(configuration);
+        }
     }
 
     private static class MyUser {

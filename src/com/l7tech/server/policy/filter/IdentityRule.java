@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.identity.*;
+import com.l7tech.server.identity.IdentityProviderFactory;
 
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -29,14 +30,14 @@ import java.util.logging.Logger;
  */
 public class IdentityRule implements Filter {
     private static final Logger logger = Logger.getLogger(IdentityRule.class.getName());
-    private final IdentityProviderConfigManager identityProviderConfigManager;
+    private final IdentityProviderFactory identityProviderFactory;
 
     public IdentityRule(FilterManager filterManager) {
         if (filterManager == null) {
             throw new IllegalArgumentException("Filter Manager cannot be null");
         }
-        this.identityProviderConfigManager = filterManager.getIdentityProviderConfigManager();
-        if (identityProviderConfigManager == null) {
+        this.identityProviderFactory = filterManager.getIdentityProviderFactory();
+        if (identityProviderFactory == null) {
             throw new IllegalArgumentException("Identity Provider Config Manager is required");
         }
     }
@@ -125,10 +126,10 @@ public class IdentityRule implements Filter {
      * check whether the user validates this assertion
      */
     private boolean validateIdAssertion(IdentityAssertion idassertion) throws FilteringException {
-        return canUserPassIDAssertion(idassertion, requestor, identityProviderConfigManager);
+        return canUserPassIDAssertion(idassertion, requestor, identityProviderFactory);
     }
 
-    public static boolean canUserPassIDAssertion(IdentityAssertion idassertion, User user, IdentityProviderConfigManager identityProviderConfigManager) throws FilteringException {
+    public static boolean canUserPassIDAssertion(IdentityAssertion idassertion, User user, IdentityProviderFactory identityProviderFactory) throws FilteringException {
         if (user == null) return false;
 
         if (idassertion.getIdentityProviderOid() != user.getProviderId()) return false;
@@ -152,7 +153,7 @@ public class IdentityRule implements Filter {
             MemberOfGroup grpmemship = (MemberOfGroup)idassertion;
             long idprovider = grpmemship.getIdentityProviderOid();
                 try {
-                    IdentityProvider prov = identityProviderConfigManager.getIdentityProvider(idprovider);
+                    IdentityProvider prov = identityProviderFactory.getProvider(idprovider);
                     if (prov == null) {
                         logger.warning("IdentityProvider #" + idprovider + " no longer exists");
                         return false;

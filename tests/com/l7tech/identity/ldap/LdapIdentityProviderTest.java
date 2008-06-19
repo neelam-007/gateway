@@ -3,6 +3,7 @@ package com.l7tech.identity.ldap;
 import com.l7tech.common.ApplicationContexts;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
+import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -110,17 +111,17 @@ public class LdapIdentityProviderTest {
         return orclTemplate;
     }
 
-    private LdapIdentityProvider getSpockProviderWithBadSearchBase() throws IOException {
-        LdapIdentityProvider spock = new LdapIdentityProviderImpl(getConfigForSpockWithBadSearchBase());
+    private LdapIdentityProvider getSpockProviderWithBadSearchBase() throws IOException, InvalidIdProviderCfgException {
+        LdapIdentityProviderImpl spock = new LdapIdentityProviderImpl();
+        spock.setIdentityProviderConfig(getConfigForSpockWithBadSearchBase());
         return spock;
     }
 
     private LdapIdentityProvider getSpockProvider() throws Exception {
-        LdapIdentityProviderImpl spock = new LdapIdentityProviderImpl(getConfigForSpock());
-        LdapUserManagerImpl usman = new LdapUserManagerImpl(spock);
-        spock.setUserManager(usman);
-        LdapGroupManager grpman = new LdapGroupManagerImpl(spock);
-        spock.setGroupManager(grpman);
+        LdapIdentityProviderImpl spock = new LdapIdentityProviderImpl();
+        spock.setUserManager(new LdapUserManagerImpl());
+        spock.setGroupManager(new LdapGroupManagerImpl());
+        spock.setIdentityProviderConfig(getConfigForSpock());
         spock.setClientCertManager((ClientCertManager)applicationContext.getBean("clientCertManager"));
         spock.setServerConfig((ServerConfig)applicationContext.getBean("serverConfig"));
 
@@ -129,11 +130,10 @@ public class LdapIdentityProviderTest {
     }
 
     private LdapIdentityProvider getBonesProvider() throws Exception {
-        LdapIdentityProviderImpl bones = new LdapIdentityProviderImpl(getConfigForBones());
-        LdapUserManagerImpl usman = new LdapUserManagerImpl(bones);
-        bones.setUserManager(usman);
-        LdapGroupManager grpman = new LdapGroupManagerImpl(bones);
-        bones.setGroupManager(grpman);
+        LdapIdentityProviderImpl bones = new LdapIdentityProviderImpl();
+        bones.setUserManager(new LdapUserManagerImpl());
+        bones.setGroupManager(new LdapGroupManagerImpl());
+        bones.setIdentityProviderConfig(getConfigForBones());        
         bones.setClientCertManager((ClientCertManager)applicationContext.getBean("clientCertManager"));
         bones.setServerConfig((ServerConfig)applicationContext.getBean("serverConfig"));
 
@@ -141,31 +141,32 @@ public class LdapIdentityProviderTest {
         return bones;
     }
 
-    private LdapIdentityProvider getTimTamProvider() throws IOException {
-        LdapIdentityProvider timtam = new LdapIdentityProviderImpl(getConfigForTimTam());
+    private LdapIdentityProvider getTimTamProvider() throws IOException, InvalidIdProviderCfgException {
+        LdapIdentityProviderImpl timtam = new LdapIdentityProviderImpl();
+        timtam.setIdentityProviderConfig(getConfigForTimTam());        
         return timtam;
     }
 
     private LdapIdentityProvider getMSADProvider() throws Exception {
-        LdapIdentityProviderImpl msad = new LdapIdentityProviderImpl(getConfigForMSAD());
-
-        LdapUserManagerImpl usman = new LdapUserManagerImpl(msad);
-        msad.setUserManager(usman);
-        LdapGroupManager grpman = new LdapGroupManagerImpl(msad);
-        msad.setGroupManager(grpman);
+        LdapIdentityProviderImpl msad = new LdapIdentityProviderImpl();
+        msad.setUserManager(new LdapUserManagerImpl());
+        msad.setGroupManager(new LdapGroupManagerImpl());
+        msad.setIdentityProviderConfig(getConfigForMSAD());        
         msad.setClientCertManager((ClientCertManager)applicationContext.getBean("clientCertManager"));
         msad.setServerConfig((ServerConfig)applicationContext.getBean("serverConfig"));
         msad.afterPropertiesSet();
         return msad;
     }
 
-    private LdapIdentityProvider getOracleProvider() throws IOException {
-        LdapIdentityProvider orcl = new LdapIdentityProviderImpl(getConfigForOracle());
+    private LdapIdentityProvider getOracleProvider() throws IOException, InvalidIdProviderCfgException {
+        LdapIdentityProviderImpl orcl = new LdapIdentityProviderImpl();
+        orcl.setIdentityProviderConfig(getConfigForOracle());
         return orcl;
     }
 
-    private LdapIdentityProvider getModifiedOracleProvider() throws IOException {
-        LdapIdentityProvider orcl = new LdapIdentityProviderImpl(getModifiedConfigForOracle());
+    private LdapIdentityProvider getModifiedOracleProvider() throws IOException, InvalidIdProviderCfgException {
+        LdapIdentityProviderImpl orcl = new LdapIdentityProviderImpl();
+        orcl.setIdentityProviderConfig(getModifiedConfigForOracle());
         return orcl;
     }
 

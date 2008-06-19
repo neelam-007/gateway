@@ -40,21 +40,6 @@ public class IdProvConfManagerServer
         this.roleManager = roleManager;
     }
 
-    /**
-     * @param oid the identity provider id to look for
-     * @return the identoty provider for a given id, or <code>null</code>
-     * @throws FindException if there was an persistence error
-     */
-    public IdentityProvider getIdentityProvider(long oid) throws FindException {
-        return identityProviderFactory.getProvider(oid);
-    }
-
-    public void test(IdentityProviderConfig identityProviderConfig)
-      throws InvalidIdProviderCfgException {
-        IdentityProvider provider = identityProviderFactory.makeProvider(identityProviderConfig);
-        provider.test(false);
-    }
-
     @Override
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
 
@@ -80,7 +65,6 @@ public class IdProvConfManagerServer
         }
 
         try {
-            identityProviderFactory.dropProvider(identityProviderConfig);
             super.update(identityProviderConfig);
         } catch (DataAccessException se) {
             throw new UpdateException(se.toString(), se);
@@ -99,28 +83,22 @@ public class IdProvConfManagerServer
             logger.warning("Attempt to delete internal id provider");
             throw new DeleteException("this type of config cannot be deleted");
         }
+
         try {
-            identityProviderFactory.dropProvider(identityProviderConfig);
             super.delete(identityProviderConfig);
         } catch (DataAccessException se) {
             throw new DeleteException(se.toString(), se);
         }
     }
 
-    public Collection<IdentityProvider> findAllIdentityProviders() throws FindException {
-        return identityProviderFactory.findAllIdentityProviders(this);
-    }
-
     @Override
     public Collection<IdentityProviderConfig> findAll() throws FindException {
-        Collection<IdentityProviderConfig> out = new ArrayList<IdentityProviderConfig>(super.findAll());
-        return out;
+        return new ArrayList<IdentityProviderConfig>(super.findAll());
     }
 
     @Override
     public Collection<IdentityProviderConfig> findAll(int offset, int windowSize) throws FindException {
-        Collection<IdentityProviderConfig> out = new ArrayList<IdentityProviderConfig>(super.findAll(offset, windowSize));
-        return out;
+        return new ArrayList<IdentityProviderConfig>(super.findAll(offset, windowSize));
     }
 
     @Override
@@ -139,10 +117,6 @@ public class IdProvConfManagerServer
 
     public LdapIdentityProviderConfig[] getLdapTemplates() throws FindException {
         return ldapTemplateManager.getTemplates();
-    }
-
-    public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {
-        this.identityProviderFactory = identityProviderFactory;
     }
 
     @Override
@@ -164,8 +138,6 @@ public class IdProvConfManagerServer
     }
 
     private final LdapConfigTemplateManager ldapTemplateManager = new LdapConfigTemplateManager();
-
-    private IdentityProviderFactory identityProviderFactory;
 
     private void fixInternalConfig(IdentityProviderConfig cfg) {
         cfg.setName("Internal Identity Provider");

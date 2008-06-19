@@ -25,12 +25,12 @@ import java.util.logging.Logger;
  * Date: Jan 21, 2004<br/>
  */
 public class LdapUserManagerImpl implements LdapUserManager {
-    public LdapUserManagerImpl(LdapIdentityProvider identityProvider) {
-        if (identityProvider == null) {
-            throw new IllegalArgumentException("Identity Provider is required");
-        }
+    
+    public LdapUserManagerImpl() {
+    }
 
-        this.identityProvider = identityProvider;
+    public void configure(LdapIdentityProvider provider) {
+        identityProvider = provider;
         ldapIdentityProviderConfig = (LdapIdentityProviderConfig)identityProvider.getConfig();
     }
 

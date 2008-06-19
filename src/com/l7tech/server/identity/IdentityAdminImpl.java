@@ -455,7 +455,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     public void testIdProviderConfig(IdentityProviderConfig identityProviderConfig)
       throws InvalidIdProviderCfgException {
         try {
-            getIdProvCfgMan().test(identityProviderConfig);
+            identityProviderFactory.test(identityProviderConfig);
         } catch (InvalidIdProviderCfgException e) {
             throw e;
         } catch (Throwable t) {

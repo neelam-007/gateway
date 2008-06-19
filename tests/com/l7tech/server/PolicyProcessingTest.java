@@ -26,6 +26,7 @@ import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.transport.http.ConnectionId;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.TestingHttpClientFactory;
+import com.l7tech.server.service.ServiceCache;
 import com.l7tech.service.PublishedService;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
@@ -139,6 +140,9 @@ public class PolicyProcessingTest extends TestCase {
                  clusterPropertyManager = (ClusterPropertyManager) applicationContext.getBean("clusterPropertyManager", ClusterPropertyManager.class);
                  testingHttpClientFactory = (TestingHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
 
+                 ServiceCache cache = (ServiceCache) applicationContext.getBean("serviceCache", ServiceCache.class);
+                 cache.initiateIntegrityCheckProcess(); Thread.sleep(4500); // sleep to wait for integrity check
+
                  auditContext.flush(); // ensure clear
              }
          };
@@ -155,7 +159,6 @@ public class PolicyProcessingTest extends TestCase {
      * Populate the service cache with the test services.
      */
     private static void buildServices() throws Exception {
-//        ServiceCache serviceCache = (ServiceCache) applicationContext.getBean("serviceCache", ServiceCache.class);
         long oid = 1;
 
         Map<Long, PublishedService> services = StubDataStore.defaultStore().getPublishedServices();
@@ -165,6 +168,7 @@ public class PolicyProcessingTest extends TestCase {
             ps.setName(serviceInfo[0].substring(1));
             ps.setRoutingUri(serviceInfo[0]);
             ps.getPolicy().setXml(new String(loadResource(serviceInfo[1])));
+            ps.getPolicy().setOid(ps.getOid());
             ps.setSoap(true);
 
             if (serviceInfo.length > 2) {

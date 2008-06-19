@@ -26,15 +26,14 @@ import java.util.logging.Logger;
  * $Id$<br/>
  */
 public class LdapGroupManagerImpl implements LdapGroupManager {
-    private final IdentityHeader MAX_EXCEEDED;
-    private final long providerOid;
+    private IdentityHeader MAX_EXCEEDED;
+    private long providerOid;
 
-    public LdapGroupManagerImpl(LdapIdentityProvider identityProvider) {
-        if (identityProvider == null) {
-            throw new IllegalArgumentException("Identity Provider is required");
-        }
+    public LdapGroupManagerImpl() {
+    }
 
-        this.identityProvider = identityProvider;
+    public void configure(LdapIdentityProvider provider) {
+        this.identityProvider = provider;
         ldapIdentityProviderConfig = (LdapIdentityProviderConfig)identityProvider.getConfig();
 
         MAX_EXCEEDED = new IdentityHeader(identityProvider.getConfig().getOid(),

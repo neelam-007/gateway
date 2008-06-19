@@ -4,7 +4,6 @@ import org.springframework.remoting.RemoteAccessException;
 import org.springframework.remoting.RemoteLookupFailureException;
 import org.springframework.remoting.RemoteConnectFailureException;
 import org.springframework.remoting.support.RemoteInvocationBasedAccessor;
-import org.springframework.remoting.rmi.RmiProxyFactoryBean;
 import org.springframework.remoting.rmi.RmiInvocationHandler;
 import org.springframework.remoting.rmi.RmiClientInterceptorUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -18,11 +17,13 @@ import org.aopalliance.aop.AspectException;
 import java.rmi.Naming;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.io.IOException;
 
 /**
  * The {@link RemoteInvocationBasedAccessor} subclass that specifies the RMI
@@ -108,7 +109,7 @@ public class ResettableRmiProxyFactoryBean extends RemoteInvocationBasedAccessor
      *
      * @throws Exception
      */
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         // cache RMI stub on initialization?
         if (getServiceInterface() == null) {
             throw new IllegalArgumentException("serviceInterface is required");
@@ -152,20 +153,26 @@ public class ResettableRmiProxyFactoryBean extends RemoteInvocationBasedAccessor
     /**
      * overriden to support programmatic stub reset
      */
-    protected Remote lookupStub() throws Exception {
+    protected Remote lookupStub() {
         final String serviceUrl = getServiceUrl();
         if (serviceUrl == null) {
             throw new RemoteAccessException("Service URL cannot be null " + getServiceInterface());
         }
         Remote stub;
-        if (registryClientSocketFactory == null) {
-            stub = Naming.lookup(serviceUrl);
-        } else {
-            NamingURL url = NamingURL.parse(serviceUrl);
-            stub = LocateRegistry.getRegistry(url.getHost(), url.getPort(), registryClientSocketFactory).lookup(url.getName());
-        }
-        if (logger.isLoggable(Level.INFO)) {
-            logger.info("Located object with RMI URL [" + serviceUrl + "]: value=[" + stub + "]");
+        try {
+            if (registryClientSocketFactory == null) {
+                stub = Naming.lookup(serviceUrl);
+            } else {
+                NamingURL url = NamingURL.parse(serviceUrl);
+                stub = LocateRegistry.getRegistry(url.getHost(), url.getPort(), registryClientSocketFactory).lookup(url.getName());
+            }
+            if (logger.isLoggable(Level.INFO)) {
+                logger.info("Located object with RMI URL [" + serviceUrl + "]: value=[" + stub + "]");
+            }
+        } catch (IOException ioe) {
+            throw new RemoteAccessException("Error during stub lookup.", ioe);
+        } catch (NotBoundException nbe) {
+            throw new RemoteAccessException("Error during stub lookup.", nbe);
         }
         return stub;
     }
@@ -210,7 +217,7 @@ public class ResettableRmiProxyFactoryBean extends RemoteInvocationBasedAccessor
      * @see java.rmi.NoSuchObjectException
      */
     public Object invoke(MethodInvocation invocation) throws Throwable {
-        Remote stub = null;
+        Remote stub;
         try {
             stub = getStub();
         } catch (Throwable ex) {
@@ -262,7 +269,7 @@ public class ResettableRmiProxyFactoryBean extends RemoteInvocationBasedAccessor
      * @see #invoke
      */
     protected Object refreshAndRetry(MethodInvocation invocation) throws Throwable {
-        Remote freshStub = null;
+        Remote freshStub;
         try {
             resetStub();
             freshStub = lookupStub();
@@ -297,7 +304,7 @@ public class ResettableRmiProxyFactoryBean extends RemoteInvocationBasedAccessor
             }
         } else {
             // traditional RMI stub
-            return RmiClientInterceptorUtils.invoke(invocation, stub, getServiceUrl());
+            return RmiClientInterceptorUtils.invokeRemoteMethod(invocation, stub);
         }
     }
 

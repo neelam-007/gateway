@@ -11,4 +11,5 @@ import com.l7tech.identity.ldap.LdapUser;
  * @author alex
  */
 public interface LdapGroupManager extends GroupManager<LdapUser, LdapGroup> {
+    void configure(LdapIdentityProvider provider);
 }

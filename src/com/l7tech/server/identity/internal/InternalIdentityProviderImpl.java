@@ -2,10 +2,7 @@ package com.l7tech.server.identity.internal;
 
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.identity.BadCredentialsException;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.MissingCredentialsException;
+import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
@@ -17,6 +14,7 @@ import com.l7tech.server.event.identity.Authenticated;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.PersistentIdentityProviderImpl;
+import com.l7tech.server.identity.GenericIdentityProviderFactorySpi;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -39,7 +37,7 @@ import java.util.logging.Logger;
 @Transactional(propagation=Propagation.SUPPORTS, rollbackFor=Throwable.class)
 public class InternalIdentityProviderImpl
         extends PersistentIdentityProviderImpl<InternalUser, InternalGroup, InternalUserManager, InternalGroupManager>
-        implements ApplicationContextAware, InternalIdentityProvider
+        implements ApplicationContextAware, InternalIdentityProvider, GenericIdentityProviderFactorySpi.IdentityProviderConfigSetter
 {
     private static final Logger logger = Logger.getLogger(InternalIdentityProviderImpl.class.getName());
     public static final String ENCODING = "UTF-8";
@@ -51,8 +49,7 @@ public class InternalIdentityProviderImpl
     private ApplicationContext springContext;
     private Auditor auditor;
 
-    public InternalIdentityProviderImpl(IdentityProviderConfig config) {
-        this.config = config;
+    public InternalIdentityProviderImpl() {
     }
 
     public InternalUserManager getUserManager() {
@@ -162,6 +159,20 @@ public class InternalIdentityProviderImpl
 
     public void setCertificateAuthenticator(CertificateAuthenticator certificateAuthenticator) {
         this.certificateAuthenticator = certificateAuthenticator;
+    }
+
+    public void setIdentityProviderConfig(IdentityProviderConfig configuration) throws InvalidIdProviderCfgException {
+        this.config = configuration;
+
+        if ( userManager == null ) {
+            throw new InvalidIdProviderCfgException("UserManager is not set");
+        }
+        if ( groupManager == null ) {
+            throw new InvalidIdProviderCfgException("UserManager is not set");
+        }
+
+        userManager.configure( this );
+        groupManager.configure( this );
     }
 
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {

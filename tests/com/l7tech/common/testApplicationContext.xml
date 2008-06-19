@@ -18,19 +18,17 @@
 
     <!-- server side identity provider factory (same as the prod)-->
     <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">
+        <constructor-arg ref="identityProviderConfigManager"/>
     </bean>
 
     <!-- test identity configuration manager -->
     <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.TestIdentityProviderConfigManager">
-        <property name="identityProviderFactory" ref="identityProviderFactory"/>
     </bean>
 
-<!--
-        Test Identity Provider
+    <!--
+        Test Identity Provider Factory
     -->
-    <bean id="testIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
-          class="com.l7tech.identity.TestIdentityProvider" singleton="false">
-    </bean>
+    <bean id="testIdentityProviderFactory" class="com.l7tech.identity.TestIdentityProvider$Factory"/>
 
     <!--  test service admin -->
     <bean id="serviceAdmin" class="com.l7tech.service.ServiceAdminStub">
@@ -52,7 +50,6 @@
     <!-- server side service manager -->
     <bean id="serviceManager" class="com.l7tech.service.ServiceManagerStub">
         <constructor-arg ref="policyManager"/>
-        <property name="serviceCache" ref="serviceCache"/>
     </bean>
 
     <!-- test config uses the policy validator without persistence -->
@@ -183,7 +180,7 @@
 
     <!-- server side policy filter manager  -->
     <bean id="policyFilterManager" class="com.l7tech.server.policy.filter.FilterManager">
-        <constructor-arg ref="identityProviderConfigManager"/>
+        <constructor-arg ref="identityProviderFactory"/>
         <constructor-arg>
             <list>
                 <value>com.l7tech.server.policy.filter.IdentityRule</value>

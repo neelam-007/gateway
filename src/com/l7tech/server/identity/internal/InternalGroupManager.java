@@ -11,4 +11,5 @@ import com.l7tech.server.identity.PersistentGroupManager;
  * @author alex
  */
 public interface InternalGroupManager extends PersistentGroupManager<InternalUser, InternalGroup> {
+    void configure( InternalIdentityProvider provider );
 }

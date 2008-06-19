@@ -375,7 +375,7 @@
         <include name="**/commons-lang-2.3.jar"/>
         <include name="**/commons-codec-1.2.jar"/>
         <include name="**/commons-collections-3.2.jar"/>
-        <include name="**/commons-logging-1.0.4.jar"/>
+        <include name="**/commons-logging-1.1.1.jar"/>
         <include name="**/commons-discovery.jar"/>
         <include name="**/concurrent-1.3.4.jar"/>
         <include name="**/whirlycache-1.0.1.jar"/>
@@ -411,7 +411,7 @@
         <include name="**/bcprov-jdk15-135.jar"/>
         <include name="**/kunststoff.jar"/>
         <include name="**/whirlycache-1.0.1.jar"/>
-        <include name="**/commons-logging-1.0.4.jar"/>
+        <include name="**/commons-logging-1.1.1.jar"/>
         <include name="**/concurrent-1.3.4.jar"/>
         <include name="**/commons-lang-2.3.jar"/>
         <include name="**/commons-collections-3.2.jar"/>
@@ -429,7 +429,7 @@
     -->
     <patternset id="systemconfigurationwizard.libs">
         <include name="**/commons-lang-2.3.jar"/>
-        <include name="**/commons-logging-1.0.4.jar"/>
+        <include name="**/commons-logging-1.1.1.jar"/>
         <include name="**/commons-configuration-1.3.jar"/>
     </patternset>
 
@@ -454,7 +454,7 @@
     -->
     <patternset id="client.libs">
         <include name="**/BrowserLauncher2-10rc4.jar"/>
-        <include name="**/commons-logging-1.0.4.jar"/>
+        <include name="**/commons-logging-1.1.1.jar"/>
         <include name="**/kunststoff.jar"/>
         <include name="**/saaj-api.jar"/>
         <include name="**/saaj-impl.jar"/>
@@ -499,6 +499,7 @@
             faster Manager Applet downloads (search for PACMANAGERJARSHERE)
     -->
     <patternset id="manager.libs">
+        <include name="**/aopalliance.jar"/>
         <include name="**/BrowserLauncher2-10rc4.jar"/>
         <include name="**/looks-1.1.3.jar"/>
         <include name="**/hibernate3.jar"/>
@@ -508,7 +509,7 @@
         <include name="**/xercesImpl.jar"/>
         <include name="**/commons-lang-2.3.jar"/>
         <include name="**/commons-collections-3.2.jar"/>
-        <include name="**/commons-logging-1.0.4.jar"/>
+        <include name="**/commons-logging-1.1.1.jar"/>
         <include name="**/commons-discovery.jar"/>
         <include name="**/qname.jar"/>
         <include name="**/forms_rt.jar"/>
@@ -520,11 +521,11 @@
         <include name="**/dom4j-1.6.1.jar"/>
         <include name="**/xss4j*.jar"/>
         <include name="**/spring-aop.jar"/>
-        <include name="**/spring-core.jar"/>
-        <include name="**/spring-context.jar"/>
-        <include name="**/spring-dao.jar"/>
         <include name="**/spring-beans.jar"/>
-        <include name="**/spring-remoting.jar"/>
+        <include name="**/spring-context.jar"/>
+        <include name="**/spring-core.jar"/>
+        <include name="**/spring-orm.jar"/>
+        <include name="**/spring-web.jar"/>
         <include name="**/mailapi-1.4.1.jar"/>
         <include name="**/antlr-2.7.7-l7p1.jar"/>
         <include name="**/log4j-1.2.14.jar"/>
@@ -558,9 +559,10 @@
         <include name="**/jgroups.jar"/>
         <include name="**/jboss-*.jar"/>
         <include name="**/trove.jar"/>
-        <include name="**/commons-logging-1.0.4.jar"/>
+        <include name="**/commons-logging-1.1.1.jar"/>
 
         <include name="**/activation.jar"/>
+        <include name="**/aopalliance.jar"/>
         <include name="**/mailapi-1.4.1.jar"/>
         <include name="**/smtp-1.4.1.jar"/>
         <include name="**/whirlycache-1.0.1.jar"/>
@@ -587,13 +589,11 @@
         <include name="**/spring-aop.jar"/>
         <include name="**/spring-beans.jar"/>
         <include name="**/spring-context.jar"/>
+        <include name="**/spring-context-support.jar"/>
         <include name="**/spring-core.jar"/>
-        <include name="**/spring-dao.jar"/>
-        <include name="**/spring-hibernate.jar"/>
         <include name="**/spring-jdbc.jar"/>
         <include name="**/spring-orm.jar"/>
-        <include name="**/spring-remoting.jar"/>
-        <include name="**/spring-support.jar"/>
+        <include name="**/spring-tx.jar"/>
         <include name="**/spring-web.jar"/>
         <include name="**/nekohtml.jar"/>
 
@@ -1473,8 +1473,8 @@
             <bottom><![CDATA[<i>Copyright &#169; 2007 Layer 7 Technologies Inc. All Rights Reserved.</i>]]></bottom>
             <link href="http://java.sun.com/j2se/1.5.0/docs/api"/>
             <link href="http://java.sun.com/j2ee/1.4/docs/api"/>
-            <link href="http://static.springframework.org/spring/docs/1.1.5/api"/>
-            <link href="http://jakarta.apache.org/commons/httpclient/2.0/apidocs"/>
+            <link href="http://static.springframework.org/spring/docs/2.5.4/api/"/>
+            <link href="http://hc.apache.org/httpclient-3.x/apidocs/"/>
             <link href="http://ws.apache.org/commons/policy/apidocs"/>
             <link href="http://www.bouncycastle.org/docs/docs1.5"/>
             <link href="http://jaxen.codehaus.org/apidocs"/>
@@ -1775,13 +1775,14 @@
         <pack-mac jarfile="${build.dir}/managerlibs/0500-wsdl4j_1.6.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/activation.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/antlr-2.7.7-l7p1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/aopalliance.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/BrowserLauncher2-10rc4.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/commons-codec-1.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/commons-collections-3.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/commons-discovery.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/commons-httpclient-3.0.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/commons-lang-2.3.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/commons-logging-1.0.4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/commons-logging-1.1.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/concurrent-1.3.4.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/dom4j-1.6.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/forms_rt.jar"/>
@@ -1809,8 +1810,8 @@
         <pack-mac jarfile="${build.dir}/managerlibs/spring-beans.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/spring-context.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/spring-core.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/spring-dao.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/spring-remoting.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/spring-orm.jar"/>
+        <pack-mac jarfile="${build.dir}/managerlibs/spring-web.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/whirlycache-1.0.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/xalan-2.7.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/serializer-xalan-2.7.1.jar"/>
@@ -2210,7 +2211,7 @@
         <include name="**/commons-discovery.jar"/>
         <include name="**/commons-httpclient-3.0.1.jar"/>
         <include name="**/commons-lang-1.0.1.jar"/>
-        <include name="**/commons-logging-1.0.4.jar"/>
+        <include name="**/commons-logging-1.1.1.jar"/>
         <include name="**/concurrent-1.3.4.jar"/>
         <include name="**/dom4j-1.6.1.jar"/>
         <include name="**/FastInfoset.jar"/>
@@ -2243,7 +2244,7 @@
         <include name="**/BrowserLauncher2*.jar"/>
         <include name="**/systinet-*.jar"/>
         <include name="**/nachocalendar*.jar"/>
-        <include name="**/spring-remoting.jar"/>
+        <include name="**/spring-web.jar"/>
         <include name="**/systray4j*.jar"/>
     </patternset>
     <target name="package.gclient" depends="compile-test-forms, testpackage.init">
@@ -2466,7 +2467,7 @@
             <include name="bcprov-jdk15-135.jar"/>
             <include name="commons-codec-1.2.jar"/>
             <include name="commons-collections-3.2.jar"/>
-            <include name="commons-logging-1.0.4.jar"/>
+            <include name="commons-logging-1.1.1.jar"/>
             <include name="concurrent-1.3.4.jar"/>
             <include name="whirlycache-1.0.1.jar"/>
         </fileset>

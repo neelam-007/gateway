@@ -98,13 +98,14 @@
     </bean>
 
     <!-- server side identity provider factory -->
-    <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory"/>
+    <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">
+        <constructor-arg ref="identityProviderConfigManager"/>
+    </bean>
 
     <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean"/>
 
     <!-- server side identity configuration manager -->
     <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.IdProvConfManagerServer" parent="hibernateBean">
-        <property name="identityProviderFactory" ref="identityProviderFactory"/>
         <property name="roleManager" ref="roleManager"/>
     </bean>
 
@@ -115,22 +116,29 @@
         programatically with the required runtime construction arguments (IdentityProviderConfig)
         See IdentityProviderFactory implementation.
     -->
-    <bean id="internalIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
-          class="com.l7tech.server.identity.internal.InternalIdentityProviderImpl" singleton="false">
+    <bean id="internalIdentityProviderFactory" class="com.l7tech.server.identity.GenericIdentityProviderFactorySpi">
+        <constructor-arg value="com.l7tech.server.identity.internal.InternalIdentityProviderImpl"/>
+        <constructor-arg value="internalIdentityProvider"/>
+    </bean>
+    <bean id="internalIdentityProvider" class="com.l7tech.server.identity.internal.InternalIdentityProviderImpl" singleton="false">
         <property name="clientCertManager" ref="clientCertManager"/>
         <property name="keystore" ref='keystore'/>
         <property name="certificateAuthenticator" ref="certificateAuthenticator"/>
+        <property name="userManager" ref="internalUserManager"/>
+        <property name="groupManager" ref="internalGroupManager"/>
     </bean>
-    <bean id="internalUserManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-          class="com.l7tech.server.identity.internal.InternalUserManagerImpl" singleton="false" parent="hibernateBean">
-        <property name="clientCertManager" ref="clientCertManager"/>
+    <bean name="internalUserManager" class="com.l7tech.server.identity.internal.InternalUserManagerImpl" singleton="false" parent="hibernateBean">
+        <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="clientCertManager"/>
     </bean>
-    <bean id="internalGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-          class="com.l7tech.server.identity.internal.InternalGroupManagerImpl" singleton="false" parent="hibernateBean"/>
+    <bean name="internalGroupManager" class="com.l7tech.server.identity.internal.InternalGroupManagerImpl" singleton="false" parent="hibernateBean"/>
 
     <!-- Federated Identity Provider, UserManager and GroupManager factories -->
-    <bean id="federatedIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
-          class="com.l7tech.server.identity.fed.FederatedIdentityProviderImpl" singleton="false">
+    <bean id="federatedIdentityProviderFactory" class="com.l7tech.server.identity.GenericIdentityProviderFactorySpi">
+        <constructor-arg value="com.l7tech.server.identity.fed.FederatedIdentityProviderImpl"/>
+        <constructor-arg value="federatedIdentityProvider"/>
+    </bean>
+    <bean id="federatedIdentityProvider" class="com.l7tech.server.identity.fed.FederatedIdentityProviderImpl" singleton="false">
         <property name="clientCertManager" ref="clientCertManager"/>
         <property name="trustedCertManager">
              <!--Caching wrapper for trustedCertManager -->
@@ -141,26 +149,32 @@
         </property>
         <property name="keystore" ref='keystore'/>
         <property name="certValidationProcessor" ref="certValidationProcessor"/>
+        <property name="userManager" ref="federatedUserManager"/>
+        <property name="groupManager" ref="federatedGroupManager"/>
     </bean>
-    <bean id="federatedUserManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-          class="com.l7tech.server.identity.fed.FederatedUserManagerImpl" singleton="false" parent="hibernateBean">
-        <property name="clientCertManager" ref="clientCertManager"/>
+    <bean name="federatedUserManager" class="com.l7tech.server.identity.fed.FederatedUserManagerImpl" singleton="false" parent="hibernateBean">
+        <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="clientCertManager"/>
     </bean>
-    <bean id="federatedGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-          class="com.l7tech.server.identity.fed.FederatedGroupManagerImpl" singleton="false" parent="hibernateBean">
-    </bean>
+    <bean name="federatedGroupManager" class="com.l7tech.server.identity.fed.FederatedGroupManagerImpl" singleton="false" parent="hibernateBean"/>
 
     <!-- LDAP IdentityProvider, UserManager and GroupManager factories -->
-    <bean id="ldapIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
-          class="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl" singleton="false">
+    <bean id="ldapIdentityProviderFactory" class="com.l7tech.server.identity.GenericIdentityProviderFactorySpi">
+        <constructor-arg value="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl"/>
+        <constructor-arg value="ldapIdentityProvider"/>
+    </bean>
+    <bean id="ldapIdentityProvider" class="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl" singleton="false">
+        <!--roleManager-->
         <property name="clientCertManager" ref="clientCertManager"/>
         <property name="serverConfig" ref="serverConfig"/>
         <property name="certificateAuthenticator" ref ="certificateAuthenticator"/>
+        <property name="userManager">
+            <bean class="com.l7tech.server.identity.ldap.LdapUserManagerImpl" singleton="false"/>
+        </property>
+        <property name="groupManager">
+            <bean class="com.l7tech.server.identity.ldap.LdapGroupManagerImpl" singleton="false"/>
+        </property>
     </bean>
-    <bean id="ldapUserManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-          class="com.l7tech.server.identity.ldap.LdapUserManagerImpl" singleton="false"/>
-    <bean id="ldapGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-          class="com.l7tech.server.identity.ldap.LdapGroupManagerImpl" singleton="false"/>
 
     <!-- server side Cluster Info manager -->
     <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManagerImpl" depends-on="clusterPropertyCache">
@@ -363,7 +377,7 @@
 
     <!-- server side policy filter manager  -->
     <bean id="policyFilterManager" class="com.l7tech.server.policy.filter.FilterManager">
-        <constructor-arg ref="identityProviderConfigManager"/>
+        <constructor-arg ref="identityProviderFactory"/>
         <constructor-arg>
             <list>
                 <value>com.l7tech.server.policy.filter.IdentityRule</value>
@@ -374,7 +388,7 @@
 
     <!-- server side policy filter manager for WS-SecurityPolicies -->
     <bean id="wsspolicyFilterManager" class="com.l7tech.server.policy.filter.FilterManager">
-        <constructor-arg ref="identityProviderConfigManager"/>
+        <constructor-arg ref="identityProviderFactory"/>
         <constructor-arg>
             <list>
                 <value>com.l7tech.server.policy.filter.HideUnsupportedClientAssertions</value>

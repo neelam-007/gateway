@@ -51,7 +51,10 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
 
     private String getMembersQuery;
 
-    protected PersistentGroupManagerImpl(PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider) {
+    protected PersistentGroupManagerImpl() {
+    }
+
+    public void setIdentityProvider(final PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider) {
         this.identityProvider = identityProvider;
     }
 
@@ -65,12 +68,6 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             getMembersQuery = queryString.toString();
         }
         return getMembersQuery;
-    }
-
-    /**
-     * empty subclassing constructor (required for class proxying)
-     */
-    protected PersistentGroupManagerImpl() {
     }
 
     public GT findByName(String name) throws FindException {

@@ -43,15 +43,14 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
                     " WHERE user.oid = ?";
 
     protected PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider;
-    protected ClientCertManager clientCertManager;
-    protected RoleManager roleManager;
+    protected final ClientCertManager clientCertManager;
+    protected final RoleManager roleManager;
 
-    public PersistentUserManagerImpl(PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider, RoleManager roleManager) {
-        this.identityProvider = identityProvider;
+    protected PersistentUserManagerImpl(final RoleManager roleManager,
+                                        final ClientCertManager clientCertManager) {
         this.roleManager = roleManager;
+        this.clientCertManager = clientCertManager;
     }
-
-    protected PersistentUserManagerImpl() { }
 
     @Secured(operation=OperationType.READ)
     public UT findByPrimaryKey(String oid) throws FindException {
@@ -62,7 +61,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
             }
             UT out = findByPrimaryKey(getImpClass(), Long.parseLong(oid));
             if (out == null) return null;
-            out.setProviderId(identityProvider.getConfig().getOid());
+            out.setProviderId(getProviderOid());
             return out;
         } catch (NumberFormatException nfe) {
             logger.log(Level.SEVERE, null, nfe);
@@ -84,7 +83,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
                 }
             });
             if (puser != null)
-                puser.setProviderId(identityProvider.getConfig().getOid());
+                puser.setProviderId(getProviderOid());
             return puser;
         } catch (Exception e) {
             logger.log(Level.SEVERE, null, e);
@@ -234,7 +233,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     @Secured(operation=OperationType.CREATE)
     public String save(UT user, Set<IdentityHeader> groupHeaders) throws SaveException {
         UT imp = cast(user);
-        imp.setProviderId(identityProvider.getConfig().getOid());
+        imp.setProviderId(getProviderOid());
 
         try {
             preSave(imp);
@@ -276,7 +275,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     public void update(UT user, Set<IdentityHeader> groupHeaders) throws UpdateException {
         UT imp = cast(user);
 
-        if (imp.getProviderId() != this.identityProvider.getConfig().getOid()) throw new UpdateException("Can't update users from a different provider");
+        if (imp.getProviderId() != getProviderOid()) throw new UpdateException("Can't update users from a different provider");
         try {
             UT originalUser = findByPrimaryKey(user.getId());
             if (originalUser == null) {
@@ -309,8 +308,9 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         }
     }
 
-    public void setClientCertManager(ClientCertManager clientCertManager) {
-        this.clientCertManager = clientCertManager;
+    public void setIdentityProvider(final PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider) {
+        if ( this.identityProvider != null ) throw new IllegalStateException("identityProvider is already set");
+        this.identityProvider = identityProvider;
     }
 
     @Override

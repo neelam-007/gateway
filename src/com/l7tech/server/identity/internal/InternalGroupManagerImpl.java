@@ -26,8 +26,11 @@ public class InternalGroupManagerImpl
         extends PersistentGroupManagerImpl<InternalUser, InternalGroup, InternalUserManager, InternalGroupManager>
         implements InternalGroupManager
 {
-    public InternalGroupManagerImpl(InternalIdentityProvider identityProvider) {
-        super(identityProvider);
+    public InternalGroupManagerImpl() {
+    }
+
+    public void configure(InternalIdentityProvider provider) {
+        this.setIdentityProvider(provider);
     }
 
     public InternalGroup reify(GroupBean bean) {
@@ -60,15 +63,15 @@ public class InternalGroupManagerImpl
         return "internal_group";
     }
 
-    public Class getImpClass() {
+    public Class<InternalGroup> getImpClass() {
         return InternalGroup.class;
     }
 
-    public Class getInterfaceClass() {
+    public Class<Group> getInterfaceClass() {
         return Group.class;
     }
 
     protected void addMembershipCriteria(Criteria crit, Group group, Identity identity) {
-        crit.add(Restrictions.eq("memberProviderOid", new Long(identity.getProviderId())));
+        crit.add(Restrictions.eq("memberProviderOid", identity.getProviderId()));
     }
 }

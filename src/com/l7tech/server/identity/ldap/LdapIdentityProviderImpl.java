@@ -30,6 +30,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.DigestAuthenticator;
+import com.l7tech.server.identity.GenericIdentityProviderFactorySpi;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
 import com.sun.jndi.ldap.LdapURL;
@@ -60,19 +61,22 @@ import java.util.logging.Logger;
  * Date: Jan 21, 2004<br/>
  */
 public class LdapIdentityProviderImpl
-        implements LdapIdentityProvider, InitializingBean, ApplicationContextAware
+        implements LdapIdentityProvider, InitializingBean, ApplicationContextAware, GenericIdentityProviderFactorySpi.IdentityProviderConfigSetter
 {
     private Auditor auditor;
 
-    public LdapIdentityProviderImpl(IdentityProviderConfig config) {
-        this.config = (LdapIdentityProviderConfig)config;
-        if (this.config.getLdapUrl() == null || this.config.getLdapUrl().length < 1) {
-            throw new IllegalArgumentException("This config does not contain an ldap url"); // should not happen
-        }
+    public LdapIdentityProviderImpl() {
     }
 
-    /** for subclassing such as class proxying */
-    protected LdapIdentityProviderImpl() {
+    public void setIdentityProviderConfig(IdentityProviderConfig configuration) throws InvalidIdProviderCfgException {
+        if (this.config != null) {
+            throw new InvalidIdProviderCfgException("Provider is already configured");
+        }
+        this.config = (LdapIdentityProviderConfig) configuration;
+        if (this.config.getLdapUrl() == null || this.config.getLdapUrl().length < 1) {
+            throw new InvalidIdProviderCfgException("This config does not contain an ldap url"); // should not happen
+        }
+        initializeFallbackMechanism();
     }
 
     public void setServerConfig(ServerConfig serverConfig) {
@@ -152,7 +156,7 @@ public class LdapIdentityProviderImpl
                     //noinspection StringEquality
                     if (ldapUrls[i] == urlThatFailed) {
                         failurePos = i;
-                        urlStatus[i] = new Long(System.currentTimeMillis());
+                        urlStatus[i] = System.currentTimeMillis();
                         logger.info("Blacklisting url for next " + (retryFailedConnectionTimeout / 1000) +
                           " seconds : " + ldapUrls[i]);
                     }
@@ -168,7 +172,7 @@ public class LdapIdentityProviderImpl
                     thisoneok = true;
                     logger.fine("Try url not on blacklist yet " + ldapUrls[i]);
                 } else {
-                    long howLong = System.currentTimeMillis() - urlStatus[i].longValue();
+                    long howLong = System.currentTimeMillis() - urlStatus[i];
                     if (howLong > retryFailedConnectionTimeout) {
                         thisoneok = true;
                         urlStatus[i] = null;
@@ -397,7 +401,7 @@ public class LdapIdentityProviderImpl
                     UserMappingConfig userMappingConfig = config.getUserMappings()[i];
                     terms.add(new LdapSearchTerm(userMappingConfig.getObjClass(), attName, attValue.toString()));
                 }
-                userFilter = makeSearchFilter(terms.toArray(new LdapSearchTerm[0]));
+                userFilter = makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]));
             }
 
             if (getusers) {
@@ -406,7 +410,7 @@ public class LdapIdentityProviderImpl
                     GroupMappingConfig groupMappingConfig = config.getGroupMappings()[i];
                     terms.add(new LdapSearchTerm(groupMappingConfig.getObjClass(), attName, attValue.toString()));
                 }
-                groupFilter = makeSearchFilter(terms.toArray(new LdapSearchTerm[0]));
+                groupFilter = makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]));
             }
 
             String filter;
@@ -442,7 +446,7 @@ public class LdapIdentityProviderImpl
             terms.add(new LdapSearchTerm(userType.getObjClass(), userType.getLoginAttrName(), param));
             terms.add(new LdapSearchTerm(userType.getObjClass(), userType.getNameAttrName(), param));
         }
-        return makeSearchFilter(terms.toArray(new LdapSearchTerm[0]));
+        return makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]));
     }
 
     private String makeSearchFilter(LdapSearchTerm[] terms) {
@@ -475,7 +479,7 @@ public class LdapIdentityProviderImpl
             terms.add(new LdapSearchTerm(groupType.getObjClass(), groupType.getNameAttrName(), param));
         }
 
-        return makeSearchFilter(terms.toArray(new LdapSearchTerm[0]));
+        return makeSearchFilter(terms.toArray(new LdapSearchTerm[terms.size()]));
     }
 
     public DirContext getBrowseContext() throws NamingException {
@@ -709,7 +713,6 @@ public class LdapIdentityProviderImpl
     public void afterPropertiesSet() throws Exception {
         if (clientCertManager == null) throw new IllegalStateException("The Client Certificate Manager is required");
         if (auditor == null) throw new IllegalStateException("Auditor has not been initialized");
-        initializeFallbackMechanism();
     }
 
 
@@ -747,13 +750,13 @@ public class LdapIdentityProviderImpl
                   "is of unexpected type: " + found.getClass().getName());
             }
             if (value != null) {
-                if ((value.longValue() & DISABLED_FLAG) == DISABLED_FLAG) {
+                if ((value & DISABLED_FLAG) == DISABLED_FLAG) {
                     auditor.logAndAudit(SystemMessages.AUTH_USER_DISABLED, userDn);
                     return false;
-                } else if ((value.longValue() & LOCKED_FLAG) == LOCKED_FLAG) {
+                } else if ((value & LOCKED_FLAG) == LOCKED_FLAG) {
                     auditor.logAndAudit(SystemMessages.AUTH_USER_LOCKED, userDn);
                     return false;
-                }  else if ((value.longValue() & EXPIRED_FLAG) == EXPIRED_FLAG) {
+                }  else if ((value & EXPIRED_FLAG) == EXPIRED_FLAG) {
                     auditor.logAndAudit(SystemMessages.AUTH_USER_EXPIRED, userDn);
                     return false;
                 }

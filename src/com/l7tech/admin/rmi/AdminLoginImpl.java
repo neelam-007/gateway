@@ -320,7 +320,7 @@ public class AdminLoginImpl
         // Find any non-internal providers that support admin
         SortedSet<IdentityProvider> adminProviders = new TreeSet<IdentityProvider>(INTERNAL_FIRST_COMPARATOR);
 
-        for (IdentityProvider provider : identityProviderFactory.findAllIdentityProviders(identityProviderConfigManager)) {
+        for (IdentityProvider provider : identityProviderFactory.findAllIdentityProviders()) {
             IdentityProviderConfig config = provider.getConfig();
             if (config.isAdminEnabled()) {
                 logger.info("Enabling " + config.getName() + " for admin logins");

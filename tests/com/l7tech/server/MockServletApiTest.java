@@ -88,7 +88,7 @@ public class MockServletApiTest extends TestCase {
             SoapMessageGenerator.Message soapRequest = soapRequests[i];
             servletApi.reset();
             servletApi.setPublishedService(publishedService);
-            servletApi.setSoapRequest(soapRequest.getSOAPMessage(), soapRequest.getSOAPAction());
+            servletApi.setSoapRequest(soapRequest.getSOAPMessage(), soapRequest.getSOAPAction() == null ? "" : soapRequest.getSOAPAction());
             HttpServletRequest mhreq = servletApi.getServletRequest();
             MockHttpServletResponse mhres = servletApi.getServletResponse();
             messageProcessingServlet = new SoapMessageProcessingServlet();

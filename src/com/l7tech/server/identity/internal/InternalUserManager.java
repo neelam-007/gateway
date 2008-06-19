@@ -10,4 +10,5 @@ import com.l7tech.server.identity.PersistentUserManager;
  * @author alex
  */
 public interface InternalUserManager extends PersistentUserManager<InternalUser> {
+    void configure( InternalIdentityProvider provider );
 }

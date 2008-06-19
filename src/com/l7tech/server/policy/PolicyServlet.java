@@ -434,7 +434,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         ArrayList<CertificateCheckInfo> checkInfos = new ArrayList<CertificateCheckInfo>();
         final String trimmedUsername = username.trim();
 
-        Collection<IdentityProvider> idps = providerConfigManager.findAllIdentityProviders();
+        Collection<IdentityProvider> idps = identityProviderFactory.findAllIdentityProviders();
         for (IdentityProvider provider : idps) {
             try {
                 User user = provider.getUserManager().findByLogin(trimmedUsername);

@@ -17,4 +17,6 @@ public interface FederatedUserManager extends PersistentUserManager<FederatedUse
 
     @Transactional(readOnly=true)
     FederatedUser findByEmail(String email) throws FindException;
+
+    void configure( FederatedIdentityProvider provider );
 }

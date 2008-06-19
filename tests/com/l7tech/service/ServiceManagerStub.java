@@ -1,37 +1,38 @@
 package com.l7tech.service;
 
 import com.l7tech.common.policy.Policy;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.policy.PolicyManager;
-import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceManager;
-import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContext;
 
 import javax.wsdl.WSDLException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URL;
 import java.util.Collection;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Class ServiceManagerStub.
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
-public class ServiceManagerStub extends EntityManagerStub<PublishedService,ServiceHeader> implements ServiceManager, InitializingBean {
-    private static Logger logger = Logger.getLogger(ServiceManagerStub.class.getName());
-    private ServiceCache serviceCache;
+public class ServiceManagerStub extends EntityManagerStub<PublishedService,ServiceHeader> implements ServiceManager, ApplicationContextAware {
     private final PolicyManager policyManager;
+    private ApplicationContext applicationContext;
 
     public ServiceManagerStub(PolicyManager policyManager) {
         super(toArray(StubDataStore.defaultStore().getPublishedServices().values()));
         this.policyManager = policyManager;
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 
     /**
@@ -62,11 +63,16 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService,Servi
         if (policy.getOid() == Policy.DEFAULT_OID) policyManager.save(policy);
         long oid = super.save(service);
         try {
+            ServiceCache serviceCache = getServiceCache();
             serviceCache.cache(service);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         return oid;
+    }
+
+    private ServiceCache getServiceCache() {
+        return (ServiceCache) applicationContext.getBean("serviceCache", ServiceCache.class);
     }
 
     public void addManageServiceRole(PublishedService service) throws SaveException {
@@ -83,6 +89,7 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService,Servi
     public void update(PublishedService service) throws UpdateException {
         super.update(service);
         try {
+            ServiceCache serviceCache = getServiceCache();
             serviceCache.removeFromCache(service);
             serviceCache.cache(service);
         } catch (Exception e) {
@@ -94,6 +101,7 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService,Servi
     @Override
     public void delete(PublishedService service) throws DeleteException {
         super.delete(service);
+        ServiceCache serviceCache = getServiceCache();
         serviceCache.removeFromCache(service);
     }
 
@@ -115,36 +123,6 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService,Servi
     @Override
     public String getTableName() {
         return "published_service";
-    }
-
-    public void setServiceCache(ServiceCache serviceCache) {
-        this.serviceCache = serviceCache;
-    }
-
-    public void afterPropertiesSet() throws Exception {
-        initializeServiceCache();
-    }
-
-    private void initializeServiceCache() throws ObjectModelException {
-        // build the cache if necessary
-        if (serviceCache.size() > 0) {
-            logger.finest("cache already built (?)");
-        } else {
-            logger.finest("building service cache");
-            Collection<PublishedService> services = findAll();
-            for (PublishedService service : services) {
-                Policy policy = service.getPolicy();
-                if (policy.getOid() == Policy.DEFAULT_OID) policyManager.save(policy);
-
-                try {
-                    serviceCache.cache(service);
-                } catch (ServerPolicyException e) {
-                    logger.log(Level.WARNING, "Service disabled: " + ExceptionUtils.getMessage(e), e);
-                }
-            }
-        }
-        // make sure the integrity check is running
-        serviceCache.initiateIntegrityCheckProcess();
     }
 
     @Override

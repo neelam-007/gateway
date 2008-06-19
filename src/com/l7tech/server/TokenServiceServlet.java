@@ -17,7 +17,6 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
 import com.l7tech.identity.InvalidClientCertificateException;
 import com.l7tech.objectmodel.FindException;
@@ -198,15 +197,13 @@ public class TokenServiceServlet extends HttpServlet {
     private TokenServiceImpl.CredentialsAuthenticator authenticator(final PolicyEnforcementContext context) {
         return new TokenServiceImpl.CredentialsAuthenticator() {
             public User authenticate(LoginCredentials creds) {
-                IdentityProviderConfigManager idpcm =
-                  (IdentityProviderConfigManager)applicationContext.getBean("identityProviderConfigManager");
                 User authenticatedUser = null;
                 Collection<IdentityProvider> providers;
                 boolean sawInvalidClientCertException = false;
                 try {
                     // go through providers and try to authenticate the cert
                     IdentityProviderFactory ipf = (IdentityProviderFactory)applicationContext.getBean("identityProviderFactory");
-                    providers = ipf.findAllIdentityProviders(idpcm);
+                    providers = ipf.findAllIdentityProviders();
                     for (IdentityProvider provider : providers) {
                         try {
                             AuthenticationResult authResult = provider.authenticate(creds);

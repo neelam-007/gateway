@@ -4,7 +4,6 @@ import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.policy.Policy;
 import com.l7tech.common.transport.SsgConnector.Endpoint;
-import com.l7tech.common.transport.SsgConnector;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -60,9 +59,8 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
     protected ServiceManager serviceManager;
     protected ClientCertManager clientCertManager;
-    protected IdentityProviderConfigManager providerConfigManager;
     protected WspReader wspReader;
-    private IdentityProviderFactory identityProviderFactory;
+    protected IdentityProviderFactory identityProviderFactory;
     private LicenseManager licenseManager;
 
     public void init(ServletConfig config) throws ServletException {
@@ -74,7 +72,6 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         }
 
         clientCertManager = (ClientCertManager)getBean("clientCertManager");
-        providerConfigManager = (IdentityProviderConfigManager)getBean("identityProviderConfigManager");
         identityProviderFactory = (IdentityProviderFactory)getBean("identityProviderFactory");
         licenseManager = (LicenseManager)getBean("licenseManager");
         serviceManager = (ServiceManager)getBean("serviceManager");
@@ -180,7 +177,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      */
     private AhsAuthResult authenticateRequestAgainstAllIdProviders(HttpServletRequest req) throws FindException, IssuedCertNotPresentedException {
         Collection<AuthenticationResult> authResults = new ArrayList<AuthenticationResult>();
-        Collection<IdentityProvider> providers = providerConfigManager.findAllIdentityProviders();
+        Collection<IdentityProvider> providers = identityProviderFactory.findAllIdentityProviders();
         LoginCredentials creds = findCredentialsBasic(req);
         boolean sawCreds = creds != null;
         if (creds == null) {
@@ -257,7 +254,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             logger.warning(msg);
             throw new IssuedCertNotPresentedException(msg);
         }
-        return new AhsAuthResult(sawCreds, authResults.toArray(new AuthenticationResult[0]));
+        return new AhsAuthResult(sawCreds, authResults.toArray(new AuthenticationResult[authResults.size()]));
     }
 
     /**

@@ -4,6 +4,7 @@ import com.l7tech.common.security.rbac.Role;
 import com.l7tech.common.security.rbac.UserRoleAssignment;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
+import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
@@ -30,11 +31,14 @@ public class InternalUserManagerImpl
         extends PersistentUserManagerImpl<InternalUser, InternalGroup, InternalUserManager, InternalGroupManager>
         implements InternalUserManager 
 {
-    public InternalUserManagerImpl(InternalIdentityProvider identityProvider, RoleManager roleManager) {
-        super(identityProvider, roleManager);
+    public InternalUserManagerImpl(final RoleManager roleManager,
+                                   final ClientCertManager clientCertManager) {
+        super(roleManager, clientCertManager);
     }
 
-    protected InternalUserManagerImpl() {}
+    public void configure(InternalIdentityProvider provider) {
+        this.setIdentityProvider( provider );
+    }
 
     public String getTableName() {
         return "internal_user";
@@ -72,7 +76,7 @@ public class InternalUserManagerImpl
         return InternalUser.class;
     }
 
-    public Class getInterfaceClass() {
+    public Class<User> getInterfaceClass() {
         return User.class;
     }
 

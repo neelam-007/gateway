@@ -10,13 +10,16 @@ import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
+import org.springframework.beans.factory.config.RuntimeBeanNameReference;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
+import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.core.io.ClassPathResource;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Collections;
 
 /**
  * Basic test for spring application context.
@@ -61,6 +64,7 @@ public class ApplicationContextTest  extends TestCase {
     /**
      * Ensure that bean references are valid (constructor args and properties)
      */
+    @SuppressWarnings({"unchecked"})
     public void testApplicationContextReferences() {
         //
         DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
@@ -75,7 +79,7 @@ public class ApplicationContextTest  extends TestCase {
 
             ConstructorArgumentValues cav = bd.getConstructorArgumentValues();
             if (cav != null) {
-                List<ConstructorArgumentValues.ValueHolder> constructorArgs = new ArrayList();
+                List<ConstructorArgumentValues.ValueHolder> constructorArgs = new ArrayList<ConstructorArgumentValues.ValueHolder>();
                 constructorArgs.addAll((Collection<ConstructorArgumentValues.ValueHolder>) cav.getGenericArgumentValues());
                 constructorArgs.addAll((Collection<ConstructorArgumentValues.ValueHolder>) cav.getIndexedArgumentValues().values());
                 for (ConstructorArgumentValues.ValueHolder holder : constructorArgs) {
@@ -107,6 +111,7 @@ public class ApplicationContextTest  extends TestCase {
     /*
      * Ensure that all EntityManager beans in the application context are registered with the BeanNameAutoProxyCreator
      */
+    @SuppressWarnings({"unchecked"})                  
     public void testEntityManagerAutoProxy() throws Exception {
         //
         DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
@@ -116,17 +121,24 @@ public class ApplicationContextTest  extends TestCase {
             xbdr.loadBeanDefinitions(new ClassPathResource(context));
         }
 
-        String[] autoProxyDefn = dlbf.getBeanDefinitionNames(BeanNameAutoProxyCreator.class);
+        String[] autoProxyDefn = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(dlbf, BeanNameAutoProxyCreator.class, false, false);
         assertNotNull(autoProxyDefn); assertTrue(autoProxyDefn.length == 1);
         BeanDefinition proxyDef = dlbf.getBeanDefinition(autoProxyDefn[0]);
 
         //noinspection unchecked
-        List<String> regbeans = (List<String>)proxyDef.getPropertyValues().getPropertyValue("beanNames").getValue();
+        List<String> regbeans = new ArrayList<String>();
+        for ( RuntimeBeanNameReference nameRef : (List<RuntimeBeanNameReference>)proxyDef.getPropertyValues().getPropertyValue("beanNames").getValue() ) {
+            regbeans.add( nameRef.getBeanName() );
+        }
+        Collections.sort(regbeans);
 
-        String[] entityManagerDefns = dlbf.getBeanDefinitionNames(EntityManager.class);
+        System.out.println("Bean names: " + regbeans);
+
+        String[] entityManagerDefns = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(dlbf, EntityManager.class, false, false);
         assertNotNull(entityManagerDefns); assertTrue(entityManagerDefns.length > 0);
 
         for (String name : entityManagerDefns) {
+            System.out.println("Checking for bean auto-proxy: " + name);
             assertTrue("Bean " + name + " should be registered with BeanNameAutoProxyCreator", regbeans.contains(name));
         }
     }

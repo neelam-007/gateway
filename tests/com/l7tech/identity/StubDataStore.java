@@ -214,6 +214,7 @@ public class StubDataStore {
             WspWriter.writePolicy(assertion, bo);
 
             service.setPolicy(new Policy(PolicyType.PRIVATE_SERVICE, null, bo.toString(), true));
+            service.getPolicy().setOid(service.getOid());
             encoder.writeObject(service);
             populate(service);
         }

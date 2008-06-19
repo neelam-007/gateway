@@ -8,6 +8,7 @@ package com.l7tech.server.identity.fed;
 
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
+import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.fed.FederatedGroup;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.*;
@@ -34,8 +35,13 @@ public class FederatedUserManagerImpl
         extends PersistentUserManagerImpl<FederatedUser, FederatedGroup, FederatedUserManager, FederatedGroupManager>
         implements FederatedUserManager
 {
-    public FederatedUserManagerImpl(FederatedIdentityProvider identityProvider, RoleManager roleManager) {
-        super(identityProvider, roleManager);
+    public FederatedUserManagerImpl(final RoleManager roleManager,
+                                    final ClientCertManager clientCertManager) {
+        super(roleManager, clientCertManager);
+    }
+
+    public void configure(FederatedIdentityProvider provider) {
+        this.setIdentityProvider( provider );
     }
 
     @Transactional(propagation=Propagation.SUPPORTS)
@@ -62,11 +68,11 @@ public class FederatedUserManagerImpl
         return fu;
     }
 
-    public Class getImpClass() {
+    public Class<FederatedUser> getImpClass() {
         return FederatedUser.class;
     }
 
-    public Class getInterfaceClass() {
+    public Class<User> getInterfaceClass() {
         return User.class;
     }
 
@@ -78,7 +84,7 @@ public class FederatedUserManagerImpl
     public FederatedUser findBySubjectDN(String dn) throws FindException {
         try {
             List results = getHibernateTemplate().find(FIND_BY_DN,
-                                                    new Object[] { new Long(getProviderOid()), dn } );
+                                                    new Object[] { getProviderOid(), dn } );
             switch( results.size() ) {
                 case 0:
                     return null;
@@ -95,7 +101,7 @@ public class FederatedUserManagerImpl
     @Transactional(readOnly=true)
     public FederatedUser findByEmail(String email) throws FindException {
         try {
-            List results = getHibernateTemplate().find(FIND_BY_EMAIL, new Object[] { new Long(getProviderOid()), email } );
+            List results = getHibernateTemplate().find(FIND_BY_EMAIL, new Object[] { getProviderOid(), email } );
             switch( results.size() ) {
                 case 0:
                     return null;
@@ -143,7 +149,7 @@ public class FederatedUserManagerImpl
     }
 
     protected void addFindAllCriteria( Criteria findHeadersCriteria ) {
-        findHeadersCriteria.add(Restrictions.eq("providerId", new Long(getProviderOid())));
+        findHeadersCriteria.add(Restrictions.eq("providerId", getProviderOid()));
     }
 
     @Override

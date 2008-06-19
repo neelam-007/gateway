@@ -9,7 +9,6 @@ import java.rmi.NoSuchObjectException;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
@@ -57,12 +56,12 @@ public class RmiServiceExporterStubFactoryBean
 
     private RemoteInvocationFactory stubRemoteInvocationFactory;
 
-    private final List exportedObjects;
+    private final List<Object> exportedObjects;
 
     private static int rmiExportCount = 0;
 
     public RmiServiceExporterStubFactoryBean() {
-        exportedObjects = new LinkedList();
+        exportedObjects = new LinkedList<Object>();
     }
 
     /**
@@ -166,7 +165,7 @@ public class RmiServiceExporterStubFactoryBean
 
     private RmiProxyStub exportService() throws RemoteException {
         Object service = getService();
-        Remote exportedObject = null;
+        Remote exportedObject;
         if(service instanceof Remote) {
             exportedObject = (Remote) service;
         }
@@ -193,8 +192,7 @@ public class RmiServiceExporterStubFactoryBean
               "', export count is: " + rmiExportCount);
         }
         try {
-            RmiProxyStub stub = new RmiProxyStub(exportedObject, objectStub, getServiceInterface(), stubRemoteInvocationFactory);
-            return stub;
+            return new RmiProxyStub(exportedObject, objectStub, getServiceInterface(), stubRemoteInvocationFactory);
         } catch (Exception e) {
             throw new RemoteException("Error exporting service '"+this.serviceName+"'.", e);
         }
@@ -211,6 +209,9 @@ public class RmiServiceExporterStubFactoryBean
             public Object invoke(RemoteInvocation invocation)
                 throws RemoteException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
                     return RmiServiceExporterStubFactoryBean.this.invoke(invocation, wrappedObject);
+            }
+            public String getTargetInterfaceName() throws RemoteException {
+                return getServiceInterface().getName();
             }
         };
     }
@@ -258,7 +259,7 @@ public class RmiServiceExporterStubFactoryBean
                     }
                 }
             }
-            Object refOrObject = singleton ? exportedObject : (Object) new WeakReference(exportedObject);
+            Object refOrObject = singleton ? exportedObject : new WeakReference<Remote>(exportedObject);
             exportedObjects.add(refOrObject);
         }
     }
@@ -267,7 +268,7 @@ public class RmiServiceExporterStubFactoryBean
         synchronized(exportedObjects) {
             for (Iterator iterator = exportedObjects.iterator(); iterator.hasNext();) {
                 Object refOrObject = iterator.next();
-                Remote exported = null;
+                Remote exported;
                 if(refOrObject instanceof WeakReference) {
                     WeakReference weakReference = (WeakReference) refOrObject;
                     exported = (Remote) weakReference.get();

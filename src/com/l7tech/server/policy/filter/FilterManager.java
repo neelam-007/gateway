@@ -1,13 +1,13 @@
 package com.l7tech.server.policy.filter;
 
 import com.l7tech.common.util.ConstructorInvocation;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
+import com.l7tech.server.identity.IdentityProviderFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -23,14 +23,14 @@ import java.util.logging.Logger;
  */
 public class FilterManager {
     private final Logger logger = Logger.getLogger(FilterManager.class.getName());
-    private final IdentityProviderConfigManager identityProviderConfigManager;
+    private final IdentityProviderFactory identityProviderFactory;
     private Class[] filterTypes = null;
 
-    public FilterManager(IdentityProviderConfigManager identityProviderConfigManager, Class[] filters) {
-        if (identityProviderConfigManager == null) {
-            throw new IllegalArgumentException("Identity Provider Config Manager cannot be null");
+    public FilterManager(IdentityProviderFactory identityProviderFactory, Class[] filters) {
+        if (identityProviderFactory == null) {
+            throw new IllegalArgumentException("Identity Provider Factory cannot be null");
         }
-        this.identityProviderConfigManager = identityProviderConfigManager;
+        this.identityProviderFactory = identityProviderFactory;
 
         if (filters == null) {
             throw new IllegalArgumentException("Filters cannot be null");
@@ -38,8 +38,8 @@ public class FilterManager {
         filterTypes = filters;
     }
 
-    public IdentityProviderConfigManager getIdentityProviderConfigManager() {
-        return identityProviderConfigManager;
+    public IdentityProviderFactory getIdentityProviderFactory() {
+        return identityProviderFactory;
     }
 
     /**

@@ -11,4 +11,5 @@ import com.l7tech.server.identity.PersistentGroupManager;
  * @author alex
  */
 public interface FederatedGroupManager extends PersistentGroupManager<FederatedUser, FederatedGroup> {
+    void configure( FederatedIdentityProvider provider );
 }

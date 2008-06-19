@@ -5,7 +5,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
 import com.l7tech.cluster.ClusterPropertyManager;
 import com.l7tech.cluster.ClusterProperty;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.mapping.LdapAttributeMapping;
@@ -100,9 +99,8 @@ public class CachingLdapGroupManagerController {
     private static void updateLdapIdentityProviders( final ApplicationContext context ) {
         try {
             ClusterPropertyManager cpm = (ClusterPropertyManager) context.getBean( "clusterPropertyManager", ClusterPropertyManager.class );
-            IdentityProviderConfigManager ipcm = (IdentityProviderConfigManager) context.getBean( "identityProviderConfigManager", IdentityProviderConfigManager.class );
             IdentityProviderFactory ipf = (IdentityProviderFactory) context.getBean( "identityProviderFactory", IdentityProviderFactory.class );
-            Collection<IdentityProvider> ips = ipf.findAllIdentityProviders( ipcm );
+            Collection<IdentityProvider> ips = ipf.findAllIdentityProviders();
 
             for (IdentityProvider ip : ips) {
                 if ( ip instanceof LdapIdentityProvider ) {
