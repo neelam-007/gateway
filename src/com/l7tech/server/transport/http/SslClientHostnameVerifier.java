@@ -53,16 +53,19 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
                                 CertUtils.certsAreEqual(trustedCert.getCertificate(), certificate) &&
                                 !trustedCert.isVerifyHostname()) {
                             verified = true;
-                        } else if (certChain.length > 1 && certChain[1] instanceof X509Certificate) {
+                        } else {
                             // see if this is signed by a trusted cert
-                            X509Certificate signCertificate = (X509Certificate) certChain[1];
-                            String signerSubjectDn = certificate.getSubjectDN().getName();
+                            String issuerDn = certificate.getIssuerDN().getName();
                             TrustedCert trustedSignerCert =
-                                trustedCertManager.getCachedCertBySubjectDn(signerSubjectDn, 30000);
-                            if (trustedSignerCert != null &&
-                                    CertUtils.certsAreEqual(trustedSignerCert.getCertificate(), certificate) &&
-                                    !trustedSignerCert.isVerifyHostname()) {
-                                verified = true;
+                                trustedCertManager.getCachedCertBySubjectDn(issuerDn, 30000);
+                            if ( trustedSignerCert != null &&
+                                 !trustedSignerCert.isVerifyHostname()) {
+                                try {
+                                    CertUtils.cachedVerify( certificate, trustedSignerCert.getCertificate().getPublicKey() );
+                                    verified = true;
+                                } catch (Exception e) {
+                                    verified = !isDefaultVerifyHostname();
+                                }
                             } else {
                                 verified = !isDefaultVerifyHostname();
                             }
