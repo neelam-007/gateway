@@ -324,6 +324,7 @@ configureAutoTest() {
   hostname=$(hostname -f)
   cd $AUTOTEST_DIR/etc
   sed -i -e 's/^host=.*/host='"$hostname"'/' junit.properties
+  sed -i -e 's/^host_callback=.*/host_callback='"$hostname"'/' junit.properties  
   sed -i -e 's/^host_db=.*/host_db=localhost/' junit.properties
   sed -i -e 's/^db=.*/db='"$DB_NAME"'/' junit.properties
   sed -i -e 's/^db_user=.*/db_user='"$DB_USER"'/' junit.properties
