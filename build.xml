@@ -525,6 +525,7 @@
         <include name="**/spring-beans.jar"/>
         <include name="**/spring-context.jar"/>
         <include name="**/spring-core.jar"/>
+        <include name="**/spring-tx.jar"/>        
         <include name="**/spring-orm.jar"/>
         <include name="**/spring-web.jar"/>
         <include name="**/mailapi-1.4.1.jar"/>
@@ -3169,7 +3170,7 @@
         <zip destfile="${build.dir}/BridgeAPI-${build.version}.zip" basedir="${build.dir}/docs" includes="bridge-api/**" />
 
         <!-- package layer7 api for distribution -->
-        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}"/>
+        <mkdir dir="${build.dir}/www.AssertionAPI-${build.version}"/>
         <copy todir="${build.dir}/CustomAssertionAPI-${build.version}">
           <fileset dir="${src.root}/CustomAssertionSample/">
             <include name="*.txt"/>
