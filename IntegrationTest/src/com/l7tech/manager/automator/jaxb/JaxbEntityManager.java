@@ -25,6 +25,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceTemplate;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.*;
@@ -234,6 +235,7 @@ public class JaxbEntityManager {
         uploadAllJmsConnections();
         uploadAllJmsEndpoints();
         uploadAllPublishedServices();//this includes private policies
+        createInternalServices();
     }
 
     /*Delete all entities we know about.
@@ -344,43 +346,14 @@ public class JaxbEntityManager {
 
         if(action.equalsIgnoreCase("Download")){
             //this.deleteAllEntities();
-           this.downloadAllTransports();
-            //this.downloadPublishedServices("655407");
+           //this.downloadAllTransports();
+            this.downloadPublishedServices("131072");
+            this.downloadPublishedServices("131073");
             //this.downloadAllPublishedServices();
         }else if(action.equalsIgnoreCase("Upload")){
-            //this.uploadAllClusterProperties();
-            //this.uploadPublishedServices("23691272");
-            //this.uploadAllTransports();
-            //this.uploadAllJmsConnections();
-            //this.uploadAllJmsEndpoints();
-            //this.uploadPublishedServices("51609604");
-            /*
-            this.uploadLicense();
-            for(int i = 0; i < 1000; i++){
-                this.deleteSchemaEntries();
-                this.uploadSchemasEntries();
-                processedSchemas.clear();
-            }
-            */
-
-            //this.deleteAllEntities();
-            uploadLicense();
-            //deleteAllNonStandardTransports();
-            this.uploadAllTransports();
-/*
-            oldIdToNewForIdentityProvider = new HashMap<Long, IdentityProviderConfig>();
-            uploadGroupsInternalProvider();
-            uploadUsersInternalProvider();
-            uploadLdapIdentityProviders();
-            uploadAllClusterProperties();
-            uploadTrustedCerts();
-            uploadFedIdentityProviders();
-            uploadSchemasEntries();
-            uploadAllTransports();
-            uploadAllJmsConnections();
-            uploadAllJmsEndpoints();
-            this.uploadPublishedServices("18677761");
-*/
+            createInternalServices();
+        }else if(action.equalsIgnoreCase("Delete")){
+            this.deleteAllPublishedServices();
         }else if(action.equalsIgnoreCase("TestJaxb")){
             //1) Create a canned version of this version of TestJaxb
             /*
@@ -413,6 +386,32 @@ public class JaxbEntityManager {
 
     }
 
+
+    /*Cerate the ESM Services*/
+    public void createInternalServices() throws Exception{
+        System.out.println("Creating Internal Services");
+        Set<ServiceTemplate> templates = this.serviceAdmin.findAllTemplates();
+        for(ServiceTemplate sT: templates){
+            System.out.println(sT.getName());
+            PublishedService service = new PublishedService();
+
+            service.setName(sT.getName());
+            service.getPolicy().setXml(sT.getDefaultPolicyXml());
+            service.setRoutingUri(sT.getDefaultUriPrefix());
+
+            service.setSoap(true);
+            service.setInternal(true);
+            service.setWsdlXml(sT.getWsdlXml());
+            service.setWsdlUrl(sT.getWsdlUrl());
+
+            service.setDisabled(false);
+
+            this.serviceAdmin.savePublishedServiceWithDocuments(service, sT.getServiceDocuments());
+            System.out.println("Created Internal Service: " + sT.getName());
+        }
+        System.out.println("Finished Creating Internal Services");
+    }
+    
     /*
     * Download all connectors - this is important for connectors which
     * are not default like FTP..should prob call it download optional connectors
@@ -539,7 +538,6 @@ public class JaxbEntityManager {
 
         for(File f: files){
             SchemaEntry schemaEntry = (SchemaEntry)this.unmarshaller.unmarshal(f);
-            System.out.println("Working on schema: " + f.getName());
             //Before we load a schema we need to make sure we have loaded any file it's
             //dependent on first, that will exist as an entry in the  community_schema table.
             try{
@@ -568,7 +566,6 @@ public class JaxbEntityManager {
         //If an included file was found it may have been loaded before we come to it on disk
         //in that case don't save it twice, the SSG will accept duplicate schemas.
         if(!processedSchemas.contains(schemaEntry.getName())){
-            System.out.println("UPLOADING Schema: " + schemaEntry.getName());
             uploadSchema(schemaEntry);
             processedSchemas.add(schemaEntry.getName());
         }
@@ -665,8 +662,6 @@ public class JaxbEntityManager {
     private void uploadSchema(SchemaEntry schemaEntry) throws Exception{
         if(!schemaEntry.getName().equals(SOAP_SCHEMA)){
             schemaEntry.setOid(SchemaEntry.DEFAULT_OID);
-            System.out.println("Saving Schema:");
-            System.out.println(schemaEntry.getName());
             this.schemaAdmin.saveSchemaEntry(schemaEntry);
         }
     }
@@ -726,11 +721,9 @@ public class JaxbEntityManager {
             uniqIdToJmsConn = this.getJmsConnectionUniqueIdentifiers();
         }
 
-        System.out.println("Found : " + files.length+ " JmsEndpoints");
         for(File f: files){
             JaxbJmsEndpoint jaxbEndPoint = (JaxbJmsEndpoint) this.unmarshaller.unmarshal(f);
             String uniqueIdentifier = jaxbEndPoint.getJmsConnectionUniqueIdentifier();
-            System.out.println("Uploading endpoint: " + uniqueIdentifier);
             if(!uniqIdToJmsConn.containsKey(uniqueIdentifier)){
                 throw new RuntimeException("JmsConnection required for JmsEndpoint not found on SSG");
             }
@@ -1086,7 +1079,6 @@ public class JaxbEntityManager {
             long id = this.identityAdmin.saveIdentityProviderConfig(providerCfg);
             providerCfg.setOid(id);
             oldIdToNewForIdentityProvider.put(oldId, providerCfg);
-            System.out.println("Added: " + oldId+" - " + id);
         }
 
     }
@@ -1156,7 +1148,6 @@ public class JaxbEntityManager {
                 long id = this.identityAdmin.saveIdentityProviderConfig(config);
                 config.setOid(id);//update so we can use in uploadGroups
                 oldIdToNewForIdentityProvider.put(oldId, config);
-                System.out.println("Added: " + oldId+" - " + id);
                 //Test for Fed Groups
                 String fileName = jaxbDir+"/IdentityProviders/FED/"+f.getName()+"/FedGroup";
                 File testFile = new File(fileName);
@@ -1237,6 +1228,12 @@ public class JaxbEntityManager {
         int count = 0;
         for(ServiceHeader sH: serviceHeaders){
             PublishedService pService = serviceAdmin.findServiceByID(sH.getStrId());
+            if(pService.isInternal()){
+                //don't serialize internal service as we can't upload them
+                //createInternalServices is used instead
+                System.out.println("Not serializing internal service: " + pService.getName());
+                continue;
+            }
             JaxbPublishedService jService = new JaxbPublishedService(pService);
             this.doMarshall(jService, jaxbDir+"/PublishedService/", pService.getOid() +".xml");
             System.out.print(".");

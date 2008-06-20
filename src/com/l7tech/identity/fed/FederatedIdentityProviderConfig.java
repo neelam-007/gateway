@@ -10,6 +10,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -81,6 +82,7 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
         this.importedUsers = importedUsers;
     }
 
+    @XmlTransient
     public HashMap<String, Set<String>> getImportedGroupMembership() {
         return importedGroupMembership;
     }
