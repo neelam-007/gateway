@@ -96,8 +96,8 @@ checkSoftware() {
 checkServer() {
   nc -z "$1" "$2"
   if [ $? -ne 0 ]; then
-    echo "Required AutoTest server not available: $1:$2"
-    exit 1
+    echo "Required AutoTest server not available: $1:$2. Continuing with out server. Dependent tests will fail."
+    #exit 1
   fi
 }
 
