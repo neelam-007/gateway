@@ -27,12 +27,26 @@ harden() {
 
   # GEN000460
   if ! grep -Eq 'auth +required +.*/pam_tally2.so deny=[0-9] no_magic_root unlock_time=1200' /etc/pam.d/system-auth; then
-    sed -i -e '
-/auth\s*required\s*.*\/pam_env\.so/ i\
-auth        required      /lib/security/$ISA/pam_tally2.so deny=5 onerr=fail no_magic_root unlock_time=1200' /etc/pam.d/system-auth
-    sed -i -e '
-/account\s*sufficient\s*.*\/pam_succeed_if\.so/ i\
-account     required      /lib/security/$ISA/pam_tally2.so no_magic_root even_deny_root_account reset' /etc/pam.d/system-auth
+	 # delete any auth required pam_tally2 lines to be sure
+	 sed -i -e '/auth\s*required\s*.*\/pam_tally2.so/d' /etc/pam.d/system-auth
+	 # add in the new line before the pam_env line, use \2 as the substitution to ensure we have the same lib or lib64 line
+	 sed -i -r -e 's/^(.*(auth\s*required\s*.*)\/pam_env\.so.*)$/\2\/pam_tally2\.so deny=5 onerr=fail no_magic_root unlock_time=1200\n\1/' /etc/pam.d/system-auth
+
+# orig
+#	 sed -i -r -e '
+#/(auth\s*required\s*.*)\/pam_env\.so/ i\
+#$1/pam_tally2\.so deny=5 onerr=fail no_magic_root unlock_time=1200' /etc/pam.d/system-auth
+
+	 # delete any account sufficient pam_tally2 lines to be sure
+	 sed -i -e '/account\s*required\s*.*\/pam_tally2.so/d' /etc/pam.d/system-auth
+
+	 sed -i -r -e 's/^(.*(account\s*)sufficient(\s*.*)\/pam_succeed_if\.so.*)$/\2required  \3\/pam_tally2.so no_magic_root even_deny_root_account reset\n\1/' /etc/pam.d/system-auth
+
+# orig
+#	 sed -i -r -e '
+#/(account\s*)sufficient(\s*.*)\/pam_succeed_if\.so/ i\
+#\1 required \2/pam_tally2.so no_magic_root even_deny_root_account reset' /etc/pam.d/system-auth
+#account     required      /lib64/security/$ISA/pam_tally2.so no_magic_root even_deny_root_account reset' /etc/pam.d/system-auth
   fi
   # Use a listfile with SSH to prevent DOS attacks on system accounts
   if [ ! -e /etc/ssh/ssh_allowed_users ]; then
@@ -63,10 +77,13 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
 
   # GEN000580, GEN000600, GEN000620 GEN000640
   sed -i -e 's/PASS_MIN_LEN\t5/PASS_MIN_LEN\t9/' /etc/login.defs
-  sed -i -e 's/\(password\s*requisite\s*.*\/pam_cracklib.so\s.*\)/\1 minlen=9 ucredit=-2 lcredit=-2 dcredit=-2 ocredit=-2/' /etc/pam.d/system-auth
+  sed -i -e 's/\(password\s*requisite\s*.*\/pam_cracklib.so\)\(\s.*\)/\1 retry=3 minlen=9 ucredit=-2 lcredit=-2 dcredit=-2 ocredit=-2/' /etc/pam.d/system-auth
 
   # GEN000800
-  sed -i -e 's/\(password\s*sufficient\s*.*\/pam_unix.so\s.*\)/\1 remember=5/' /etc/pam.d/system-auth
+  # remove the pam_unix line with potentially the remember=5 already at the end
+  sed -i -e '/password\s*sufficient\s*.*\/pam_unix.so\s*.*/d' /etc/pam.d/system-auth
+  # and now add it back in properly with all arguments
+  sed -i -r -e 's/^(password\s*required\s*\/(.*)\/pam_deny.so\s*)$/password    sufficient    \/\2\/pam_unix.so nullok use_authtok md5 shadow remember=5\n\1/' /etc/pam.d/system-auth
 
   # GEN000820
   sed -i -e 's/PASS_MAX_DAYS\t99999/PASS_MAX_DAYS\t60/' -e 's/PASS_MIN_DAYS\t0/PASS_MIN_DAYS\t1/' /etc/login.defs
@@ -149,7 +166,9 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
   chmod 640 /etc/syslog.conf
 
   # GEN005540, GEN006620
+  sed -i -e '/ALL:\s*ALL/d' /etc/hosts.deny
   echo 'ALL: ALL' >> /etc/hosts.deny
+  sed -i -e '/sshd:\s*ALL/d' /etc/hosts.allow
   echo 'sshd: ALL' >> /etc/hosts.allow
 
   # LNX00340
@@ -172,39 +191,58 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
 
 soften() {
   # GEN005020
-  sed -i -e '
+  if [ ! "`grep 'ftp:x:50:' /etc/group`" ] ; then
+	  sed -i -e '
 /^lock:/ i\
 ftp:x:50:' /etc/group
-  sed -i -e '
+  fi
+  if [ ! "`grep 'ftp:::' /etc/gshadow`" ] ; then
+	  sed -i -e '
 /^lock:/ i\
 ftp:::' /etc/gshadow
-  sed -i -e '
+  fi
+  if [ ! "`grep 'ftp:x:14:50:FTP' /etc/passwd`" ] ; then
+	  sed -i -e '
 /^nobody:/ i\
 ftp:x:14:50:FTP User:/var/ftp:/sbin/nologin' /etc/passwd
-  sed -i -e '
+  fi
+  if [ ! "`grep 'ftp:\*:13637:0:9999:7:::' /etc/shadow`" ] ; then
+	  sed -i -e '
 /^nobody:/ i\
 ftp:*:13637:0:99999:7:::' /etc/shadow
+  fi
 
   # LNX00320
-  sed -i -e '
+  if [ ! "`grep 'sync:x:5:0:sync:/sbin:/bin/sync' /etc/passwd`" ] ; then 
+	  sed -i -e '
 /^mail:/ i\
 sync:x:5:0:sync:/sbin:/bin/sync' /etc/passwd
-  sed -i -e '
+  fi
+  if [ ! "`grep 'sync:\*:13637:0:99999:7:::' /etc/shadow`" ] ; then 
+	  sed -i -e '
 /^mail:/ i\
 sync:*:13637:0:99999:7:::' /etc/shadow
-  sed -i -e '
+  fi
+  if [ ! "`grep 'shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown' /etc/passwd`" ] ; then
+	  sed -i -e '
 /^mail:/ i\
 shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown' /etc/passwd
-  sed -i -e '
+  fi
+  if [ ! "`grep 'shutdown:\*:13637:0:99999:7:::' /etc/shadow`" ] ; then
+	  sed -i -e '
 /^mail:/ i\
 shutdown:*:13637:0:99999:7:::' /etc/shadow
-sed -i -e '
+  fi
+  if [ ! "`grep 'halt:x:7:0:halt:/sbin:/sbin/halt' /etc/passwd`" ] ; then
+		sed -i -e '
 /^mail:/ i\
 halt:x:7:0:halt:/sbin:/sbin/halt' /etc/passwd
-  sed -i -e '
+  fi
+  if [ ! "`grep 'halt:\*:13637:0:99999:7:::' /etc/shadow`" ] ; then
+	  sed -i -e '
 /^mail:/ i\
 halt:*:13637:0:99999:7:::' /etc/shadow
-
+  fi
   # LNX00580
   sed -i -e 's/^#\(ca::ctrlaltdel:\)/\1/' /etc/inittab
 
@@ -221,8 +259,8 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   rm -f /var/log/btmp
 
   # GEN000460
-  sed -i -e '/auth        required      \/lib\/security\/$ISA\/pam_tally2.so deny=5 onerr=fail no_magic_root unlock_time=1200/d' /etc/pam.d/system-auth
-  sed -i -e '/account     required      \/lib\/security\/$ISA\/pam_tally2.so no_magic_root even_deny_root_account reset/d' /etc/pam.d/system-auth
+  sed -i -e '/auth\s*required\s*\/lib.*\/security\/$ISA\/pam_tally2.so deny=5 onerr=fail no_magic_root unlock_time=1200/d' /etc/pam.d/system-auth
+  sed -i -e '/account\s*required\s*\/lib.*\/security\/$ISA\/pam_tally2.so no_magic_root even_deny_root_account reset/d' /etc/pam.d/system-auth
   rm -f /etc/ssh/ssh_allowed_users
   sed -i -e '/auth       requisite    pam_listfile.so item=user sense=allow file=\/etc\/ssh\/ssh_allowed_users onerr=succeed/d' /etc/pam.d/sshd
   rm -f /etc/tty_users
@@ -237,7 +275,8 @@ halt:*:13637:0:99999:7:::' /etc/shadow
 
   # GEN000580, GEN000600, GEN000620, GEN000640
   sed -i -e 's/PASS_MIN_LEN\t9/PASS_MIN_LEN\t5/' /etc/login.defs
-  sed -i -e 's/\(password\s*requisite\s*.*\/pam_cracklib.so\s.*\) minlen=9 ucredit=2 lcredit=2 dcredit=2 ocredit=2/\1/' /etc/pam.d/system-auth
+#  sed -i -e 's/(password\s*requisite\s*.*\/pam_cracklib.so\s.*) minlen=9 ucredit=2 lcredit=2 dcredit=2 ocredit=2.*$/\1/' /etc/pam.d/system-auth
+  sed -i -e 's/^\(password\s*requisite\s*.*\/pam_cracklib\.so\s\)\(.*\)\(minlen.*\)/\1\2/' /etc/pam.d/system-auth
 
   # GEN000800
   sed -i -e 's/\(password\s*sufficient\s*.*\/pam_unix.so\s.*\) remember=5/\1/' /etc/pam.d/system-auth
@@ -343,32 +382,48 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   sed -i -e '/ALL: ALL/d' /etc/hosts.deny
 
   # LNX00340
-  sed -i -e 's/news:x:13:/news:x:13:news/' /etc/group
-  sed -i -e 's/news:::/news:::news/' /etc/gshadow
-  sed -i -e '
+  sed -i -e 's/news:x:13:.*/news:x:13:news/' /etc/group
+  sed -i -e 's/news:::.*/news:::news/' /etc/gshadow
+  if [ ! "`grep 'news:x:9:13:news:/etc/news:' /etc/passwd`" ] ; then
+	  sed -i -e '
 /^uucp:/ i\
 news:x:9:13:news:/etc/news:' /etc/passwd
-  sed -i -e '
+  fi
+  if [ ! "`grep 'news:\*:13637:0:99999:7:::' /etc/shadow`" ] ; then 
+	  sed -i -e '
 /^uucp:/ i\
 news:*:13637:0:99999:7:::' /etc/shadow
-  sed -i -e '
+  fi
+  if [ ! "`grep 'games:x:12:100:games:/usr/games:/sbin/nologin' /etc/passwd`" ] ; then
+	  sed -i -e '
 /^ftp:/ i\
 games:x:12:100:games:/usr/games:/sbin/nologin' /etc/passwd
-  sed -i -e '
+  fi
+  if [ ! "`grep 'games:\*:13637:0:99999:7:::' /etc/shadow`" ] ; then 
+	  sed -i -e '
 /^ftp:/ i\
 games:*:13637:0:99999:7:::' /etc/shadow
-  sed -i -e '
+  fi
+  if [ ! "`grep 'gopher:x:30:' /etc/group`" ] ; then
+	  sed -i -e '
 /^dip:/ i\
 gopher:x:30:' /etc/group
-  sed -i -e '
+  fi
+  if [ ! "`grep 'gopher:::' /etc/gshadow`" ] ; then
+	  sed -i -e '
 /^dip:/ i\
 gopher:::' /etc/gshadow
-  sed -i -e '
+  fi
+  if [ ! "`grep 'gopher:x:13:30:gopher:/var/gopher:/sbin/nologin' /etc/passwd`" ] ; then
+	  sed -i -e '
 /^ftp:/ i\
 gopher:x:13:30:gopher:/var/gopher:/sbin/nologin' /etc/passwd
-  sed -i -e '
+  fi
+  if [ "`grep 'gopher:*:13637:0:99999:7:::' /etc/shadow`" ] ; then
+	  sed -i -e '
 /^ftp:/ i\
 gopher:*:13637:0:99999:7:::' /etc/shadow
+  fi
 
   # LNX00440
   chmod 644 /etc/security/access.conf
@@ -380,9 +435,283 @@ gopher:*:13637:0:99999:7:::' /etc/shadow
   sed -i -e 's/O SmtpGreetingMessage= Mail Server Ready ; \$b/O SmtpGreetingMessage=$j Sendmail $v\/$Z; $b/' /etc/mail/sendmail.cf
 }
 
-if [ "$1" = "-r" ]; then
-  soften
-else
-  harden
+stigtest() {
+
+# Run through the STIG Resolutions at 
+# http://sarek.l7tech.com/mediawiki/index.php?title=4.3_STIG_Resolutions 
+# and confirm each note on a system post-harden
+
+# GEN005020
+if [ "`getent passwd ftp`" ]; then
+	echo "Error - user FTP exists"
 fi
 
+# LNX00260
+if [ -e /etc/yum.conf ] ; then
+	echo "Error - yum.conf exists"
+fi
+if [ "`rpm -qa | grep yum`" ] ; then
+	echo "Error - yum package installed"
+fi
+
+# LNX00320
+if [ "`getent passwd sync shutdown halt`" ] ; then
+	echo "Error - user sync/shutdown/halt still may exist"
+fi
+
+# LNX00580
+if [ -z "`grep ctrlaltdel /etc/inittab`" ] ; then
+	echo "Error - ctrlaltdel is in /etc/inittab"
+fi
+
+# GEN000500
+if [ ! "`grep TMOUT /etc/profile | grep 900 | grep -i export`" ] ; then  
+	echo "Error - TMOUT is not 900 in /etc/profile"
+fi
+
+# GEN002860
+if [ ! -x /etc/cron.daily/auditd-rotate ]; then
+	echo "Error - /etc/cron.daily/auditd-rotate isn't there or isn't executable (only needed for NCES images)"
+fi
+if [ -x /etc/cron.daily/auditd-rotate ] ; then
+	if [ ! "`grep USR1 /etc/cron.daily/auditd-rotate | grep auditd`" ] ; then
+		echo "Error - No USR1 sent to auditd"
+	fi
+fi
+
+# GEN000020
+if [ ! "`grep '~~:S:wait:/sbin/sulogin' /etc/inittab`" ] ; then
+	echo "Error - sulogin not in /etc/inittab"
+fi
+
+# GEN000440
+if [ ! -e /var/log/btmp ] ; then 
+	echo "Error /var/log/btmp doesn't exist"
+fi
+
+# GEN000460
+if [ ! "$(cat /etc/pam.d/system-auth | grep ^auth | head -n 1 | egrep 'auth\s*required\s*/lib(.*)/security/\$ISA/pam_tally2.so deny=5 onerr=fail no_magic_root unlock_time=1200')" ] ; then
+	echo "Error - pam_tally2 not set up properly"
+fi
+
+# GEN000480
+if [ ! "`grep "FAIL_DELAY 4" /etc/login.defs`" ] ; then
+	echo "Error - FAIL_DELAY 4 not in /etc/login.defs"
+fi
+
+# GEN000540 GEN000700 GEN000820
+if [ ! "`getent shadow root ssgconfig | awk -F : '{print $4, $5}' | grep "1 60" | wc -l`" = "2" ] ; then
+	echo "Error - Invalid password change rules"
+fi
+
+# GEN000580 GEN000600 GEN000620 GEN000640
+if [ ! "`cat /etc/login.defs | grep PASS_MIN_LEN | grep 9`" ] ; then 
+	echo "Error - PASS_MIN_LEN setting invalid in /etc/login.defs"
+fi
+
+if [ ! "$(cat /etc/pam.d/system-auth | grep ^password | head -n 1 | egrep 'password\s*requisite\s*/lib(.*)/security/\$ISA/pam_cracklib.so retry=3 minlen=9 ucredit=-2 lcredit=-2 dcredit=-2 ocredit=-2(\s*)$')" ] ; then 
+	echo "Error - Invalid password complexity requirements"
+fi
+
+# GEN000800
+if [ ! "$(egrep 'password\s*sufficient\s*/lib(.*)/security/\$ISA/pam_unix.so nullok use_authtok md5 shadow remember=5' /etc/pam.d/system-auth)" ] ; then 
+	echo "Error - Invalid password reuse requirements"
+fi
+
+# GEN000920
+if [ ! "`stat --format=%a /root`" = "700" ] ; then
+	echo "Error - Invalid permissions on /root"
+fi
+
+# GEN000980
+if [ "`cat /etc/securetty | grep -v console | grep -v tty1 | grep -v ttyS0`" ] ; then
+	echo "Error - extra lines in /etc/securetty"
+fi
+
+# GEN001880
+if [ "`stat --format=%a /home/ssgconfig/.bash_logout /home/ssgconfig/.bash_profile /home/ssgconfig/.bashrc 2>/dev/null | grep -v 740`" ] ; then
+	echo "Error - invalid permissions on ssh initialization files"
+fi
+
+# GEN002480
+F1=`find / -type f -perm -002 -printf '%p %m\n' | grep -v '^/tmp/' | grep -v '^/var/tmp/'`
+F2=`find / -type d -perm -002 -printf '%p %m\n' | grep -v '^/tmp ' | grep -v '^/tmp/' | grep -v '^/var/tmp ' | grep -v '^/var/tmp/' | grep -v '^/dev/'`
+if [ "$F1" -o "$F2" ] ; then
+	echo "Error - invalid world write access"
+fi
+
+# GEN002740 GEN002760
+if [ $ISNCES ] ; then
+	if [ ! "`/sbin/chkconfig --list auditd | grep "3:on"`" ] ; then 
+		echo "Error - auditd missing from runlevel 3"
+	fi
+
+	if [ ! "`grep max_log_file /efc/auditd.conf | grep 125`" ] ; then
+		echo "Error - bad max_log_file setting for /etc/auditd.conf"
+	fi
+
+	F="/etc/audit.rules"
+	if [ ! "`grep "-a exit,always -S open -F success=0" $F`" -o \
+		  ! "`grep "-a exit,always -S unlink -S rmdir" $F`" -o \
+		  ! "`grep "-w /var/log/audit/" $F`" -o \
+		  ! "`grep "-w /etc/auditd.conf" $F`" -o \
+		  ! "`grep "-w /etc/audit.rules" $F`" -o \
+		  ! "`grep "-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon" $F`" -o \
+		  ! "`grep "-a exit,always -S settimeofday -S setrlimit -S setdomainname" $F`" -o \
+		  ! "`grep "# The mysqld program is expected to call sched_setscheduler" $F`" -o \
+		  ! "`grep "-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27" $F`" ] ; then
+		  echo "Error - Missing settings in /etc/audit.rules"
+	fi
+fi
+
+# Non NCES, non VM
+if [ $ISHARDWARE ] ; then 
+	if [ ! "`grep max_log_file /efc/auditd.conf | grep 125`" ] ; then
+		echo "Error - bad max_log_file setting for /etc/auditd.conf"
+	fi
+
+	F="/etc/audit.rules"
+	if [ ! "`grep "-a exit,always -S unlink -S rmdir" $F`" -o \
+		  ! "`grep "-w /var/log/audit/" $F`" -o \
+		  ! "`grep "-w /etc/auditd.conf" $F`" -o \
+		  ! "`grep "-w /etc/audit.rules" $F`" -o \
+		  ! "`grep "-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon" $F`" -o \
+		  ! "`grep "-a exit,always -S settimeofday -S setrlimit -S setdomainname" $F`" -o \
+		  ! "`grep "# The mysqld program is expected to call sched_setscheduler" $F`" -o \
+		  ! "`grep "-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27" $F`" ] ; then
+		  echo "Error - Missing settings in /etc/audit.rules"
+	fi
+fi
+
+# Settings for virtual machines
+if [ $ISVM ] ; then
+	if [ ! "`grep max_log_file /efc/auditd.conf | grep 5`" ] ; then
+		echo "Error - bad max_log_file setting for /etc/auditd.conf"
+	fi
+
+	F="/etc/audit.rules"
+	if [ ! "`grep "-a exit,always -S unlink -S rmdir" $F`" -o \
+		  ! "`grep "-w /var/log/audit/" $F`" -o \
+		  ! "`grep "-w /etc/auditd.conf" $F`" -o \
+		  ! "`grep "-w /etc/audit.rules" $F`" -o \
+		  ! "`grep "-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon" $F`" -o \
+		  ! "`grep "-a exit,always -S settimeofday -S setrlimit -S setdomainname" $F`" -o \
+		  ! "`grep "# The mysqld program is expected to call sched_setscheduler" $F`" -o \
+		  ! "`grep "-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27" $F`" ] ; then
+		  echo "Error - Missing settings in /etc/audit.rules"
+	fi
+fi
+
+# GEN002960
+if [ ! -e /etc/cron.allow ] ; then
+	echo "Error - /etc/cron.allow missing"
+fi
+if [ ! "`grep ssgconfig /etc/cron.deny`" ] ; then
+	echo "Error - ssgconfig missing from /etc/cron.deny"
+fi
+
+# GEN003080
+if [ ! "`stat --format=%a /etc/crontab | grep 600`" -o \
+	    "`stat --format=%a /etc/cron.daily/* /etc/cron.monthly/* /etc/cron.weekly/* | grep -v 700`" ] ; then
+		 echo "Error - bad permissions on /etc/crontab or /etc/cron.*/*"
+fi
+
+# GEN003320
+if [ ! -e /etc/at.allow ] ; then
+	echo "Error - /etc/at.allow missing"
+fi
+if [ ! "`stat --format=%a /etc/at.allow | grep 600`" ] ; then
+	echo "Error - bad permissions on /etc/at.allow"
+fi
+
+# GEN003540
+if [ ! "`stat --format=%a /var/crash | grep 700`" ] ; then 
+	echo "Error - bad permissions on /var/crash"
+fi
+
+# GEN003740
+if [ ! "`stat --format=%a /etc/xinetd.conf | grep 440`" ] ; then
+	echo "Error - bad permissions on /etc/xinetd.conf"
+fi
+
+# GEN003865
+if [ "`find / -name tcpdump`" ] ; then
+	echo "Error - tcpdump is installed"
+fi
+
+# GEN004000
+if [ ! "`stat --format=%a /bin/traceroute | grep 4700`" ] ; then
+	echo "Error - bad permissions on traceroute"
+fi
+
+# GEN004540
+if [ -e /etc/mail/helpfile ] ; then
+	echo "Error - sendmail help exists"
+fi
+
+# GEN005360
+if [ -e /etc/snmp/snmpd.conf ] ; then 
+	if [ ! "`stat --format=%G /etc/snmp/snmpd.conf | grep sys`" ] ; then
+		echo "Error - bad group ownership of /etc/snmp/snmpd.conf"
+	fi
+fi
+if [ -e /etc/snmp/snmpd.conf_example ] ; then 
+	if [ ! "`stat --format=%G /etc/snmp/snmpd.conf_example | grep sys`" ] ; then
+		echo "Error - bad group ownership of /etc/snmp/snmpd.conf_example"
+	fi
+fi
+
+# GEN005400
+if [ ! "`stat --format=%a /etc/syslog.conf | grep 640`" ] ; then
+	echo "Error - bad permissions on /etc/syslog.conf"
+fi
+
+# GEN005540
+if [ ! $ISNCES ] ; then
+	if [ ! "`grep "ALL: ALL" /etc/hosts.deny`" ] ; then
+		echo "Error - missing ALL: ALL in /etc/hosts.deny"
+	fi
+	if [ ! "`grep "sshd: ALL" /etc/hosts.allow`" ] ; then
+		echo "Error - missing sshd: ALL in /etc/hosts.allow"
+	fi
+fi
+if [ $ISNCES ] ; then
+	if [ ! "`grep "ALL: ALL" /etc/hosts.deny`" ] ; then
+		echo "Error - missing ALL: ALL in /etc/hosts.deny"
+	fi
+	if [ "`cat /etc/hosts.allow`" ] ; then
+		echo "Error - hosts.allow is not empty"
+	fi
+fi
+
+# GEN006620
+if [ ! "`grep "ALL: ALL" /etc/hosts.deny`" ] ; then
+	echo "Error - missing ALL: ALL in /etc/hosts.deny"
+fi
+
+# LNX00340
+if [ "`getent passwd news games gopher`" ] ; then
+	echo "Error - news gopher or games account exists"
+fi
+
+# LNX00440
+if [ ! "`stat --format=%a /etc/security/access.conf | grep 640`" ] ; then
+	echo "Error - bad permissions on /etc/security/access.conf"
+fi
+
+# LNX00520
+if [ ! "`stat --format=%a /etc/sysctl.conf | grep 600`" ] ; then
+	echo "Error - bad permissions on /etc/sysctl.conf"
+fi
+
+# GEN001280
+if [ "`find /usr/share/man -type f -a -perm +133`" ] ; then
+	echo "Error - extra permissions over 644 on manpages"
+fi
+}
+
+case "$1" in
+  "-r"  ) soften;;
+  "-t"  ) stigtest;;
+  *     ) harden;;
+esac
