@@ -25,6 +25,8 @@ chkconfig cpuspeed off
 ;;
 
 test)
+
+ERROR=0
 # Confirm SSL card is loaded and works
 MCA=`dmesg | grep mca | grep Firmware`
 if [ "$MCA" ] ; then
@@ -32,6 +34,13 @@ if [ "$MCA" ] ; then
 	echo "SSL Card loaded:"
 	echo $MCA
 	echo "" 
+	MCA_DRIVER_VERSION="`echo $MCA | cut -d ' ' -f 6`"
+	echo "Driver version is $MCA_DRIVER_VERSION"
+	MCA_DRIVER_MINOR_VERSION="`echo $MCA_DRIVER_VERSION | cut -f 3 -d '.'`"
+	if [ ! $MCA_DRIVER_MINOR_VERSION -ge 8 ] ; then
+		echo "ERROR - SSL Card has old firmware on it, update"
+		ERROR=1
+	fi
 else 
 	echo ""
 	echo "SSL Card NOT loaded."
@@ -40,7 +49,7 @@ fi
 
 # Confirm Tarari firmware loads.
 #
-echo "Loading XML card drivers:"
+echo "Loading Tarari XML card drivers:"
 service tarari stop ; service tarari start
 echo ""
 
@@ -61,13 +70,14 @@ if [ "$CPP" ] ; then
 		echo ""
 	else 
 		echo "Failed!"
-		echo "Some XML card tests didn't pass, re-running in verbose mode:"
+		echo "Some Tarari XML card tests didn't pass, re-running in verbose mode:"
 		/usr/local/Tarari/bin/cpp_manager_static -v -t all
+		ERROR=1
 		echo ""
 	fi
 else 
 	echo ""
-	echo "XML Card driver NOT loaded"
+	echo "Tarari XML Card driver NOT loaded"
 	echo ""
 fi
 
@@ -86,6 +96,7 @@ if [ -e "/usr/local/Tarari/bin/cpp_manager" ] ; then
   echo "Tarari Card Serial Number =$(cat /proc/driver/cpp0 | grep "Serial Number"|cut -d = -f 2|cut -d ':' -f 2)"
 else
   echo "ERROR cpp_manager not found. ERROR"
+  ERROR=1
 fi
 echo ""
 
@@ -97,6 +108,7 @@ echo "Memory Total = $TOTAL_MEM Megs"
 if [ $TOTAL_MEM -le 7500 ] ; then
 	echo "WARN: Memory is less than 8 gigabytes: $TOTAL_MEM"
 	echo ""
+	ERROR=1
 fi
 echo ""
 
@@ -108,12 +120,14 @@ echo "Checking RAID status:"
 if [ "$(cat /proc/mdstat |grep md0|grep "\[0\]")" = "" ]; then
   echo "ERROR md0 device 0 ERROR"
   md00=error
+  ERROR=1
 else
   echo "PASS md0 device 0"
 fi
 if [ "$(cat /proc/mdstat |grep md0|grep "\[1\]")" = "" ]; then
   echo "ERROR md0 device 1 ERROR"
   md01=error
+  ERROR=1
 else
   echo "PASS md0 device 1"
 fi
@@ -123,12 +137,14 @@ echo ""
 if [ "$(cat /proc/mdstat |grep md1|grep "\[0\]")" = "" ]; then
   echo "ERROR md1 device 0 ERROR"
   md10=error
+  ERROR=1
 else
   echo "PASS md1 device 0"
 fi
 if [ "$(cat /proc/mdstat |grep md1|grep "\[1\]")" = "" ]; then
   echo "ERROR md1 device 1 ERROR"
   md11=error
+  ERROR=1
 else
   echo "PASS md1 device 1"
 fi
@@ -136,6 +152,7 @@ fi
 if [ "$(cat /proc/mdstat |grep recovery)" != "" ]; then
   echo "ERROR Failed Raid Device Rebuilding ERROR"
   recovery=error
+  ERROR=1
 fi
 # Exit if there are any error with the raid sets.
 if [ "$md00" = "error" ] || [ "$md01" = "error" ] || [ "$md10" = "error" ] || [ "$md11" = "error" ] || [ "$recovery" = "error" ]; then
@@ -146,6 +163,15 @@ if [ "$md00" = "error" ] || [ "$md01" = "error" ] || [ "$md10" = "error" ] || [ 
   exit 1
 fi
 echo ""
+
+if [ $ERROR -eq 1 ] ; then
+	echo ""
+	echo "* * * * * * * WARNING * * * * * * * * * "
+	echo "There was an error detected somewhere in the test process, please"
+	echo "scroll up and check to see if this was in fact a fatal error or not."
+	echo "* * * * * * * WARNING * * * * * * * * * "
+	echo ""
+fi 
 
 ;;
 
