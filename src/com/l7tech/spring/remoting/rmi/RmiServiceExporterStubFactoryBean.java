@@ -52,6 +52,8 @@ public class RmiServiceExporterStubFactoryBean
 
     private boolean singleton = true;
 
+    private boolean initialized = false;
+
     private RmiProxyStub proxyStub; // proxy stub for singletons
 
     private RemoteInvocationFactory stubRemoteInvocationFactory;
@@ -127,8 +129,13 @@ public class RmiServiceExporterStubFactoryBean
     }
 
     public Class getObjectType() {
-        checkService();
-        return getService().getClass();
+        Class clazz = null;
+
+        if ( initialized ) {
+            clazz = getService().getClass();
+        }
+
+        return clazz;
     }
 
     public void setSingleton(boolean singleton) {
@@ -161,6 +168,7 @@ public class RmiServiceExporterStubFactoryBean
         if (singleton) {
             proxyStub = exportService();
         }
+        initialized = true;
     }
 
     private RmiProxyStub exportService() throws RemoteException {
