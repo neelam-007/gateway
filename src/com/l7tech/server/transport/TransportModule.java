@@ -8,6 +8,7 @@ import com.l7tech.server.LifecycleBean;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.event.FaultProcessed;
+import com.l7tech.objectmodel.FindException;
 import org.springframework.context.ApplicationEvent;
 
 import java.util.Map;
@@ -122,42 +123,53 @@ public abstract class TransportModule extends LifecycleBean {
         }
 
         super.onApplicationEvent(applicationEvent);
+
         if (!isStarted())
             return;
+
         if (applicationEvent instanceof EntityInvalidationEvent) {
             EntityInvalidationEvent event = (EntityInvalidationEvent)applicationEvent;
-            if (SsgConnector.class.equals(event.getEntityClass())) {
-                long[] ids = event.getEntityIds();
-                char[] ops = event.getEntityOperations();
-                for (int i = 0; i < ids.length; i++) {
-                    long id = ids[i];
-                    try {
-                        switch (ops[i]) {
-                        case EntityInvalidationEvent.CREATE:
-                        case EntityInvalidationEvent.UPDATE:
-                            SsgConnector c = ssgConnectorManager.findByPrimaryKey(id);
-                            if (c == null) {
-                                // Already removed
-                                return;
-                            }
-                            if (c.isEnabled() && connectorIsOwnedByThisModule(c) && isValidConnectorConfig(c))
-                                addConnector(c);
-                            else
-                                removeConnector(id);
-                            break;
-                        case EntityInvalidationEvent.DELETE:
-                            removeConnector(id);
-                            break;
-                        default:
-                            logger.warning("Unrecognized entity operation: " + ops[i]);
-                            break;
-                        }
-                    } catch (Throwable t) {
-                        logger.log(Level.WARNING, "Error processing change for connector oid " + id + ": " + ExceptionUtils.getMessage(t), t);
-                        connectorErrors.put(id, t);
-                    }
-                }
-            }
+            if (SsgConnector.class.equals(event.getEntityClass()))
+                handleSsgConnectorInvalidationEvent(event);
         }
+    }
+
+    private void handleSsgConnectorInvalidationEvent(EntityInvalidationEvent event) {
+        long[] ids = event.getEntityIds();
+        char[] operations = event.getEntityOperations();
+        for (int i = 0; i < ids.length; i++)
+            handleSsgConnectorOperation(operations[i], ids[i]);
+    }
+
+    private void handleSsgConnectorOperation(char operation, long connectorId) {
+        try {
+            switch (operation) {
+                case EntityInvalidationEvent.CREATE:
+                case EntityInvalidationEvent.UPDATE:
+                    createOrUpdateConnector(connectorId);
+                    break;
+                case EntityInvalidationEvent.DELETE:
+                    removeConnector(connectorId);
+                    break;
+                default:
+                    logger.warning("Unrecognized entity operation: " + operation);
+                    break;
+            }
+        } catch (Throwable t) {
+            logger.log(Level.WARNING, "Error processing change for connector oid " + connectorId + ": " + ExceptionUtils.getMessage(t), t);
+            connectorErrors.put(connectorId, t);
+        }
+    }
+
+    private void createOrUpdateConnector(long connectorId) throws FindException, ListenerException {
+        SsgConnector c = ssgConnectorManager.findByPrimaryKey(connectorId);
+        if (c == null) {
+            // Already removed
+            return;
+        }
+        if (c.isEnabled() && connectorIsOwnedByThisModule(c) && isValidConnectorConfig(c))
+            addConnector(c);
+        else
+            removeConnector(connectorId);
     }
 }
