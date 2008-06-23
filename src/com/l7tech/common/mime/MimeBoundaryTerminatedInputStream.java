@@ -7,6 +7,7 @@
 package com.l7tech.common.mime;
 
 import com.l7tech.common.util.ArrayUtils;
+import com.l7tech.common.util.BufferPool;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -267,11 +268,16 @@ class MimeBoundaryTerminatedInputStream extends FilterInputStream {
 
     public void close() throws IOException {
         // Read ourself up to EOF
-        byte[] junk = new byte[512];
-        while (this.read(junk, 0, 512) > 0) {
-            // do nothing
+        final byte[] buf = BufferPool.getBuffer(4096);
+        final int buflen = buf.length;
+        try {
+            while (this.read(buf, 0, buflen) > 0) {
+                // do nothing
+            }
+            atEof = true;
+        } finally {
+            BufferPool.returnBuffer(buf);
         }
-        atEof = true;
     }
 
     public synchronized void reset() throws IOException {
