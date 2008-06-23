@@ -23,10 +23,10 @@ public class EmsHomePage extends Resource {
         LicenseManager licenseManager = (LicenseManager) Ems.getAppContext(this).getBean("licenseManager", LicenseManager.class);
         if (licenseManager.isFeatureEnabled("set:core")) {
             // Already licensed -- redirect to login page
-            target.setPath("/images/login.html");
+            target.setPath("/ems/Login.html");
         } else {
             // Not yet licensed -- redirect to setup page
-            target.setPath("/images/setup.html");
+            target.setPath("/ems/Setup.html");
         }
         getResponse().redirectTemporary(target);
     }

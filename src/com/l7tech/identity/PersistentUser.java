@@ -8,10 +8,15 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.persistence.Column;
+import javax.persistence.MappedSuperclass;
+import javax.persistence.Transient;
+
 /**
  * @author alex
  * @version $Revision$
  */
+@MappedSuperclass
 public abstract class PersistentUser extends NamedEntityImp implements User {
     protected String login;
     protected long providerOid;
@@ -39,6 +44,7 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
         this.providerOid = providerId;
     }
 
+    @Transient
     public String getSubjectDn() {
         return subjectDn;
     }
@@ -62,18 +68,22 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
         return login;
     }
 
+    @Column(name="first_name", length=32)
     public String getFirstName() {
         return firstName;
     }
 
+    @Column(name="last_name", length=32)
     public String getLastName() {
         return lastName;
     }
 
+    @Column(length=128)
     public String getEmail() {
         return email;
     }
 
+    @Transient
     public String getDepartment() {
         return department;
     }

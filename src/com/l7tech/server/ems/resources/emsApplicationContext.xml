@@ -11,6 +11,7 @@
         <property name="annotatedClasses">
             <list>
                 <value>com.l7tech.cluster.ClusterProperty</value>
+                <value>com.l7tech.identity.internal.InternalUser</value>
             </list>
         </property>
         <property name="hibernateProperties" value="hibernate.dialect=org.hibernate.dialect.DerbyDialect"/>
@@ -58,6 +59,32 @@
 
     <bean id="licenseManager" class="com.l7tech.server.GatewayLicenseManager">
         <constructor-arg ref="clusterPropertyManager"/>
+    </bean>
+
+    <!-- ID provider framework -->
+    <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">
+        <constructor-arg ref="identityProviderConfigManager"/>
+    </bean>
+    <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.IdProvConfManagerServer" parent="hibernateBean">
+        <!-- roleManager can be null since the EMS currently does not allow ID provider configs to be created or updated -->
+        <property name="roleManager"><null/></property>
+    </bean>
+
+    <!-- Internal identity provider -->
+    <bean id="internalIdentityProviderFactory" class="com.l7tech.server.identity.GenericIdentityProviderFactorySpi">
+        <constructor-arg value="com.l7tech.server.identity.internal.InternalIdentityProviderImpl"/>
+        <constructor-arg value="internalIdentityProvider"/>
+    </bean>
+    <bean id="internalIdentityProvider" class="com.l7tech.server.identity.internal.InternalIdentityProviderImpl" singleton="false">
+        <property name="clientCertManager"><null/></property>
+        <property name="keystore"><null/></property>
+        <property name="certificateAuthenticator"><null/></property>
+        <property name="userManager" ref="internalUserManager"/>
+        <property name="groupManager"><null/></property>
+    </bean>
+    <bean name="internalUserManager" class="com.l7tech.server.identity.internal.InternalUserManagerImpl" singleton="false" parent="hibernateBean">
+        <constructor-arg><null/></constructor-arg>
+        <constructor-arg><null/></constructor-arg>
     </bean>
 
 </beans>

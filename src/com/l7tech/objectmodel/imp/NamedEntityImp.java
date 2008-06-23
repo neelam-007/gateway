@@ -17,7 +17,7 @@ public abstract class NamedEntityImp extends PersistentEntityImp implements Name
         setName(entity.getName());
     }
 
-    @Column(name="name", nullable=false)
+    @Column(name="name", nullable=false, length=128)
     public String getName() {
         return _name;
     }

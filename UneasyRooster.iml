@@ -251,9 +251,14 @@
           <root url="jar://$MODULE_DIR$/lib/commons-pool-1.2.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/commons-codec-1.2.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/commons-logging-1.1.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/commons-fileupload-1.2.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/commons-io-1.4.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../src/commons-fileupload-1.2.1/lib/commons-fileupload-1.2.1-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../src/commons-io-1.4/commons-io-1.4-sources.jar!/" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
@@ -335,6 +340,8 @@
           <root url="jar://$MODULE_DIR$/lib/gateway/restlet/com.noelios.restlet.ext.jetty_6.1.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/gateway/restlet/com.noelios.restlet.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/gateway/restlet/org.restlet.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/restlet/org.restlet.ext.freemarker_2.3.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/restlet/org.restlet.ext.fileupload_1.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
@@ -421,6 +428,17 @@
         </CLASSES>
         <JAVADOC />
         <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library name="text.FreeMarker 2.3.13">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/freemarker.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../../src/freemarker-2.3.13/src" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">

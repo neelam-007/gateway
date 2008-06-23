@@ -6,6 +6,9 @@ import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.InvalidPasswordException;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
@@ -21,6 +24,8 @@ import javax.xml.bind.annotation.XmlRootElement;
  *
  */
 @XmlRootElement
+@Entity
+@Table(name="internal_user")
 public class InternalUser extends PersistentUser {
     private long expiration = -1;
     protected String hashedPassword;
@@ -55,6 +60,7 @@ public class InternalUser extends PersistentUser {
         this.hashedPassword = password;
     }
 
+    @Column(name="password", nullable=false, length=32)
     public String getHashedPassword() {
         return hashedPassword;
     }
@@ -63,6 +69,7 @@ public class InternalUser extends PersistentUser {
      * Account expiration.
      * @return -1 if not set (never expires) or the time in millis after which this account should be considered expired.
      */
+    @Column(nullable=false)
     public long getExpiration() {
         return expiration;
     }

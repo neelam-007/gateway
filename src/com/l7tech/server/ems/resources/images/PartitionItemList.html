@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+
+
+    <!-- PROTOTYPE ONLY BEGIN -->
+    <meta http-equiv="Expires" content="-1">
+    <meta http-equiv="Cache-Control" content="no-cache">
+    <meta http-equiv="Pragma" content="no-cache">
+    <!-- PROTOTYPE ONLY END -->
+    <meta http-equiv="Content-type" content="text/html; charset=UTF-8">
+    <title>Partition Items List [SecureSpan Enterprise Manager]</title>
+    <link rel="stylesheet" href="../images/site.css" media="all" type="text/css">
+    <script type="text/javascript" src="../images/site.js"></script>
+    <script type="text/javascript">
+        /** Name of the IFrame in the parent document that is used for showing item details.
+            When the zoom icon of an item in here is clicked on, that IFrame will be
+            populated accordingly. */
+        var detailsIFrameName = /* JSP GENERATED BEGIN */ 'destItemDetails' /* JSP GENERATED END */;
+        var selectedRow = null;
+        var selectedRowOriginalBackgroundColor = new Array();
+
+        function init() {
+            // Blanks out the details IFrame.
+            parent.document.getElementById(detailsIFrameName).src = '';
+        }
+
+        /**
+         * Assign the src URL of the detailsIFrame in the parent document.
+         *
+         * @param img   the zoom image clicked on
+         * @param url   ( "publishedService" | "policyFragment" ) "/" partition-GUID "/" ( folder-GUID "/" )* item-GUID
+         */
+        function showDetails(img, url) {
+            var row = img.parentNode.parentNode;
+            var cells, i;
+            if (selectedRow != null) {
+                cells = selectedRow.cells;
+                for (i in cells) {
+                    if (cells[i].style) {
+                        cells[i].style.backgroundColor = selectedRowOriginalBackgroundColor[i];
+                    }
+                }
+            }
+
+            cells = row.cells;
+            for (i in cells) {
+                if (cells[i].style) {
+                    selectedRowOriginalBackgroundColor[i] = cells[i].style.backgroundColor;
+                    cells[i].style.backgroundColor = '#dbdbdb';
+                }
+            }
+            selectedRow = row;
+
+            parent.document.getElementById(detailsIFrameName).src = url;
+        }
+    </script>
+</head><body class="enterpriseTreeIFrame">
+<form action="">
+    <table id="partitionItemsList" class="enterpriseTree enterpriseTable" width="100%">
+        <thead>
+            <tr>
+                <th class="name">Name</th>
+                <th class="edit"></th>
+                <th>Type</th>
+                <th class="parentId"><!-- hidden column --></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr id="-1" class="enterpriseGroup">
+                <td class="name" style="padding-left: 0;"><img class="plusMinus" src="../images/minus.png" alt=""><input name="folder" value="-1" type="radio"><img src="../images/group.png" alt="">/</td>
+                <td class="edit"><img src="../images/addGroup.png" alt="" title="Add a new subfolder to this folder"><img src="../images/remove.png" alt="" title="Remove this folder"></td>
+                <td class="type">group</td>
+                <td class="parentId">-1</td>
+            </tr>
+            <tr id="36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4" class="enterpriseGroup">
+                <td class="name" style="padding-left: 16px;"><img class="plusMinus" src="../images/minus.png" alt=""><input name="folder" value="36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4" type="radio"><img src="../images/group.png" alt="">Standby for Electricity</td>
+                <td class="edit"><img src="../images/addGroup.png" alt="" title="Add a new subfolder to this folder"><img src="../images/remove.png" alt="" title="Remove this folder"></td>
+                <td class="type">group</td>
+                <td class="parentId">-1</td>
+            </tr>
+            <tr id="02f6bdfa-b98a-41d4-823d-03f8c1592699" class="enterprisePublishedService">
+                <td class="name" style="padding-left: 32px;"><img class="plusMinus" src="../images/noPlus.png" alt=""><img src="../images/noRadio.png" alt=""><img src="../images/publishedService.png" alt="">billing</td>
+                <td class="edit"><img src="../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'publishedService/a14df4d4-0c62-4d8e-ac3a-82cd8a442a26/36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4/02f6bdfa-b98a-41d4-823d-03f8c1592699.xml');"></td>
+                <td class="type">published service</td>
+                <td class="parentId">36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4</td>
+            </tr>
+            <tr id="d2b36463-acf1-40c2-a121-942319fabb77" class="enterprisePublishedService">
+                <td class="name" style="padding-left: 32px;"><img class="plusMinus" src="../images/noPlus.png" alt=""><img src="../images/noRadio.png" alt=""><img src="../images/publishedService.png" alt="">sale</td>
+                <td class="edit"><img src="../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'publishedService/a14df4d4-0c62-4d8e-ac3a-82cd8a442a26/36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4/d2b36463-acf1-40c2-a121-942319fabb77.xml');"></td>
+                <td class="type">published service</td>
+                <td class="parentId">36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4</td>
+            </tr>
+            <tr id="68e36d9f-d80c-429a-aca4-f8d34fe0d2f0" class="enterprisePublishedService">
+                <td class="name" style="padding-left: 32px;"><img class="plusMinus" src="../images/noPlus.png" alt=""><img src="../images/noRadio.png" alt=""><img src="../images/policyFragment.png" alt="">Policy Fragment 1</td>
+                <td class="edit"><img src="../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'policyFragment/a14df4d4-0c62-4d8e-ac3a-82cd8a442a26/36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4/68e36d9f-d80c-429a-aca4-f8d34fe0d2f0.xml');"></td>
+                <td class="type">policy fragment</td>
+                <td class="parentId">36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4</td>
+            </tr>
+            <tr id="aad2d451-aaa5-43f0-8c6a-4171c10d03eb" class="enterprisePublishedService">
+                <td class="name" style="padding-left: 32px;"><img class="plusMinus" src="../images/noPlus.png" alt=""><img src="../images/noRadio.png" alt=""><img src="../images/policyFragment.png" alt="">Policy Fragment 2</td>
+                <td class="edit"><img src="../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'policyFragment/a14df4d4-0c62-4d8e-ac3a-82cd8a442a26/36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4/aad2d451-aaa5-43f0-8c6a-4171c10d03eb.xml');"></td>
+                <td class="type">policy fragment</td>
+                <td class="parentId">36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4</td>
+            </tr>
+            <tr id="11a06c26-cc77-4a39-a16b-79687d575c50" class="enterprisePublishedService">
+                <td class="name" style="padding-left: 16px;"><img class="plusMinus" src="../images/noPlus.png" alt=""><img src="../images/noRadio.png" alt=""><img src="../images/publishedService.png" alt="">inventory</td>
+                <td class="edit"><img src="../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'publishedService/a14df4d4-0c62-4d8e-ac3a-82cd8a442a26/11a06c26-cc77-4a39-a16b-79687d575c50.xml');"></td>
+                <td class="type">published service</td>
+                <td class="parentId">-1</td>
+            </tr>
+            <tr id="4e079592-70c3-499e-ad2e-abba3b6c987c" class="enterprisePublishedService">
+                <td class="name" style="padding-left: 16px;"><img class="plusMinus" src="../images/noPlus.png" alt=""><img src="../images/noRadio.png" alt=""><img src="../images/publishedService.png" alt="">bidding</td>
+                <td class="edit"><img src="../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'publishedService/a14df4d4-0c62-4d8e-ac3a-82cd8a442a26/4e079592-70c3-499e-ad2e-abba3b6c987c.xml');"></td>
+                <td class="type">published service</td>
+                <td class="parentId">-1</td>
+            </tr>
+            <tr id="aa1ccd2e-8c5e-44ef-95c8-95be8f58a0b9" class="enterprisePublishedService">
+                <td class="name" style="padding-left: 16px;"><img class="plusMinus" src="../images/noPlus.png" alt=""><img src="../images/noRadio.png" alt=""><img src="../images/policyFragment.png" alt="">Policy Fragment 1</td>
+                <td class="edit"><img src="../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'policyFragment/a14df4d4-0c62-4d8e-ac3a-82cd8a442a26/aa1ccd2e-8c5e-44ef-95c8-95be8f58a0b9.xml');"></td>
+                <td class="type">policy fragment</td>
+                <td class="parentId">-1</td>
+            </tr>
+            <tr id="3e17c348-9d2c-466e-ac8d-d47adee5cc3b" class="enterprisePublishedService">
+                <td class="name" style="padding-left: 16px;"><img class="plusMinus" src="../images/noPlus.png" alt=""><img src="../images/noRadio.png" alt=""><img src="../images/policyFragment.png" alt="">Policy Fragment 2</td>
+                <td class="edit"><img src="../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'policyFragment/a14df4d4-0c62-4d8e-ac3a-82cd8a442a26/3e17c348-9d2c-466e-ac8d-d47adee5cc3b.xml');"></td>
+                <td class="type">policy fragment</td>
+                <td class="parentId">-1</td>
+            </tr>
+        </tbody>
+    </table>
+</form>
+</body></html>

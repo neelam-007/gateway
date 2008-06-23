@@ -15,11 +15,11 @@ public class EmsMain {
         try {
             new Ems().start();
 
-        } catch (Exception e) {
-            final String msg = "Unable to start EMS: " + ExceptionUtils.getMessage(e);
-            logger.log(Level.SEVERE, msg, e);
+        } catch (Throwable t) {
+            final String msg = "Unable to start EMS: " + ExceptionUtils.getMessage(t);
+            logger.log(Level.SEVERE, msg, t);
             System.err.println(msg);
-            e.printStackTrace(System.err);
+            t.printStackTrace(System.err);
             System.exit(1);
         }
     }

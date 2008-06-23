@@ -1,0 +1,247 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+
+
+    <!-- PROTOTYPE ONLY BEGIN -->
+    <meta http-equiv="Expires" content="-1">
+    <meta http-equiv="Cache-Control" content="no-cache">
+    <meta http-equiv="Pragma" content="no-cache">
+    <!-- PROTOTYPE ONLY END -->
+    <meta http-equiv="Content-type" content="text/html; charset=UTF-8">
+    <title>Manage Gateways [SecureSpan Enterprise Manager]</title>
+    <link rel="stylesheet" href="../images/site.css" media="all" type="text/css">
+    <script type="text/javascript" src="../images/site.js"></script>
+</head><body>
+<table width="100%">
+    <tbody><tr>
+        <td>
+            <div class="header">
+                <table width="100%">
+                    <tbody><tr class="header">
+                        <td class="logoLeft"><img src="../images/logoLeft.png" alt=""></td>
+                        <td class="logo"><a style="" href="http://www.layer7tech.com/" target="_blank"><img src="../images/l7Logo.png" alt="Layer 7 Technologies Inc."></a>
+                            <img src="../images/emLogo.png" alt=""></td>
+                        <td class="logoRight"><img src="../images/logoRight.png" alt=""></td>
+                        <td width="100%"><img src="../images/spacer.png" alt=""></td>
+                        <td class="middle nowrap">Logged in as "admin"<br>since May 5, 2008 05:57:54 PM</td>
+                        <td class="middle">
+                            <form method="get" action="Login.html"><input value="Log Out" onmouseover="this.style.backgroundColor = '#be9422';" onmouseout="this.style.backgroundColor = '#433e29';" type="submit">
+                            </form>
+                        </td>
+                        <td class="middle help"><a href="Help.html" target="_blank" title="Open help page in a new window">Help</a></td>
+                    </tr>
+                </tbody></table>
+            </div>
+            <div class="divider"><img src="../images/spacer.png" alt=""></div>
+            <div>
+                <table>
+                    <tbody><tr>
+                        <td id="tabLTGateways"><img src="../images/tabLT.png" alt=""></td>
+                        <td id="tabCTGateways" class="tabCT"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabRTGateways"><img src="../images/tabRT.png" alt=""></td>
+                        <td id="tabLTPolicies"><img src="../images/tabLT.png" alt=""></td>
+                        <td id="tabCTPolicies" class="tabCT"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabRTPolicies"><img src="../images/tabRT.png" alt=""></td>
+                        <td id="tabLTReports"><img src="../images/tabLT.png" alt=""></td>
+                        <td id="tabCTReports" class="tabCT"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabRTReports"><img src="../images/tabRT.png" alt=""></td>
+                        <td id="tabLTBackup"><img src="../images/tabLT.png" alt=""></td>
+                        <td id="tabCTBackup" class="tabCT"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabRTBackup"><img src="../images/tabRT.png" alt=""></td>
+                        <td id="tabLTTools"><img src="../images/tabLT.png" alt=""></td>
+                        <td id="tabCTTools" class="tabCT"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabRTTools"><img src="../images/tabRT.png" alt=""></td>
+                        <td id="tabLTSettings"><img src="../images/tabLT.png" alt=""></td>
+                        <td id="tabCTSettings" class="tabCT"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabRTSettings"><img src="../images/tabRT.png" alt=""></td>
+                        <td><img src="../images/tabLT.png" alt=""></td>
+                        <td class="tabCT"><img src="../images/spacer.png" alt=""></td>
+                        <td><img src="../images/tabRT.png" alt=""></td>
+                    </tr>
+                    <tr>
+                        <td id="tabLMGateways" class="tabLM"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabCMGateways" class="tabCMon">Manage Gateways</td>
+                        <td id="tabRMGateways" class="tabRM"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabLMPolicies" class="tabLM"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabCMPolicies" class="tabCM"><a href="PolicyMigration.html">Manage Policies</a></td>
+                        <td id="tabRMPolicies" class="tabRM"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabLMReports" class="tabLM"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabCMReports" class="tabCM"><a href="Reports.html">Reports</a></td>
+                        <td id="tabRMReports" class="tabRM"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabLMBackup" class="tabLM"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabCMBackup" class="tabCM"><a href="Backup.html">Backup &amp; Restore</a></td>
+                        <td id="tabRMBackup" class="tabRM"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabLMTools" class="tabLM"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabCMTools" class="tabCM"><a href="Notifications.html">Tools</a></td>
+                        <td id="tabRMTools" class="tabRM"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabLMSettings" class="tabLM"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabCMSettings" class="tabCM"><a href="SystemSettings.html">Settings</a></td>
+                        <td id="tabRMSettings" class="tabRM"><img src="../images/spacer.png" alt=""></td>
+                        <td class="tabLM"><img src="../images/spacer.png" alt=""></td>
+                        <td class="tabCM" width="100%"><img src="../images/spacer.png" alt=""></td>
+                        <td class="tabRM"><img src="../images/spacer.png" alt=""></td>
+                    </tr>
+                    <tr>
+                        <td id="tabLBGateways"><img src="../images/tabLBon.png" alt=""></td>
+                        <td id="tabCBGateways" class="tabCBon"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabRBGateways"><img src="../images/tabRBon.png" alt=""></td>
+                        <td id="tabLBPolicies"><img src="../images/tabLBoff.png" alt=""></td>
+                        <td id="tabCBPolicies" class="tabCBoff"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabRBPolicies"><img src="../images/tabRBoff.png" alt=""></td>
+                        <td id="tabLBReports"><img src="../images/tabLBoff.png" alt=""></td>
+                        <td id="tabCBReports" class="tabCBoff"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabRBReports"><img src="../images/tabRBoff.png" alt=""></td>
+                        <td id="tabLBBackup"><img src="../images/tabLBoff.png" alt=""></td>
+                        <td id="tabCBBackup" class="tabCBoff"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabRBBackup"><img src="../images/tabRBoff.png" alt=""></td>
+                        <td id="tabLBTools"><img src="../images/tabLBoff.png" alt=""></td>
+                        <td id="tabCBTools" class="tabCBoff"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabRBTools"><img src="../images/tabRBoff.png" alt=""></td>
+                        <td id="tabLBSettings"><img src="../images/tabLBoff.png" alt=""></td>
+                        <td id="tabCBSettings" class="tabCBoff"><img src="../images/spacer.png" alt=""></td>
+                        <td id="tabRBSettings"><img src="../images/tabRBoff.png" alt=""></td>
+                        <td><img src="../images/tabLBoff.png" alt=""></td>
+                        <td class="tabCBoff"><img src="../images/spacer.png" alt=""></td>
+                        <td><img src="../images/tabRBoff.png" alt=""></td>
+                    </tr>
+                </tbody></table>
+            </div>
+            <script language="JavaScript" type="text/javascript">
+                initTab('Policies', 'PolicyMigration.html');
+                initTab('Reports', 'Reports.html');
+                initTab('Backup', 'Backup.html');
+                initTab('Tools', 'Notifications.html');
+                initTab('Settings', 'SystemSettings.html');
+            </script>
+            <div class="tabBarBottom"><img src="../images/spacer.png" alt=""><!-- no subtab --></div>
+            <div class="content">
+                <div class="panel">
+                    <div class="panelTitle tippy"><img class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'enterpriseTree')">Enterprise Tree</div>
+                    <div id="enterpriseTree" class="panelContent">
+                        <table class="enterpriseTree enterpriseTable" width="100%">
+                            <tbody><tr>
+                                <th class="name">Name</th>
+                                <th class="edit"></th>
+                                <th><img src="../images/dashboard.png" title="Dashboard" alt=""></th>
+                                <th>Type</th>
+                                <th width="100%">Details <img src="../images/tooltip.png" title="Mouse over for more details" alt="">
+                                </th><th class="parentId"><!-- hidden column --></th>
+                            </tr>
+                            <tr class="enterpriseGroup">
+                                <td id="3d7fa710-334c-11dd-bd11-0800200c9a66" class="name" style="padding-left: 5px;"><img src="../images/minus.png" alt=""><img src="../images/group.png" alt="">Springfield Nuclear Power Plant </td>
+                                <td class="edit"><img src="../images/addGroup.png" alt="" title="Add a new subgroup to this group"><img src="../images/addPartition.png" alt="" title="Add an existing partition to this group"><img class="nocursor" src="../images/spacer.png" width="16" alt=""><img src="../images/remove.png" alt="" title="Remove this group"><img class="nocursor" src="../images/spacer.png" width="16" alt=""></td>
+                                <td class="dashboard"></td>
+                                <td>group</td>
+                                <td class="details"></td>
+                                <td class="parentId">-1</td>
+                            </tr>
+                            <tr class="enterpriseGroup">
+                                <td id="40f62d36-4146-4f4b-bdd6-14489526b1a6" class="name" style="padding-left: 21px;"><img src="../images/minus.png" alt=""><img src="../images/group.png" alt="">Electricity</td>
+                                <td class="edit"><img src="../images/addGroup.png" alt="" title="Add a new subgroup to this group"><img src="../images/addPartition.png" alt="" title="Add an existing partition to this group"><img src="../images/move.png" alt="" title="Move this group"><img src="../images/remove.png" alt="" title="Remove this group"><img class="nocursor" src="../images/spacer.png" width="16" alt=""></td>
+                                <td class="dashboard"></td>
+                                <td>group</td>
+                                <td class="details"></td>
+                                <td class="parentId">3d7fa710-334c-11dd-bd11-0800200c9a66</td>
+                            </tr>
+                            <tr class="enterprisePartition">
+                                <td id="d15ce378-df33-44f3-a632-89458f421c24" class="name" style="padding-left: 37px;"><img src="../images/minus.png" alt=""><img src="../images/partition.png" alt="">Dev</td>
+                                <td class="edit"><img src="../images/addClusterNode.png" alt="" title="Create a new cluster node to run this partition"><img src="../images/move.png" alt="" title="Move this partition"><img src="../images/remove.png" alt="" title="Remove this partition"><img src="../images/ssm.png" alt="" title="Launch SecureSpan Manager for this partition"></td>
+                                <td class="dashboard"><input title="Show/Hide dashboard for this partition" type="checkbox"></td>
+                                <td>partition</td>
+                                <td class="details"><span class="hasTooltip" title="host name and port number">dev.electricity.springfield.com:8443</span></td>
+                                <td class="parentId">40f62d36-4146-4f4b-bdd6-14489526b1a6</td>
+                            </tr>
+                            <tr class="enterpriseClusterNode">
+                                <td id="67f0a6f8-12c5-48af-b1fb-0058d8b1ca64" class="name" style="padding-left: 53px;"><img src="../images/noPlus.png" alt=""><img src="../images/clusterNode.png" alt="">SSG1</td>
+                                <td class="edit"><img src="../images/delete.png" alt="" title="Destroy this cluster node"><img class="nocursor" src="../images/spacer.png" width="16" alt=""></td>
+                                <td class="dashboard"></td>
+                                <td>cluster node</td>
+                                <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.1:8443</span><span class="hasTooltip" title="self host name">(host-1)</span></td>
+                                <td class="parentId">d15ce378-df33-44f3-a632-89458f421c24</td>
+                            </tr>
+                            <tr class="enterpriseClusterNode">
+                                <td id="899afe70-2490-471f-997b-a52815322b27" class="name" style="padding-left: 53px;"> <img src="../images/noPlus.png" alt=""><img src="../images/clusterNode.png" alt="">SSG2</td>
+                                <td class="edit"><img src="../images/delete.png" alt="" title="Destroy this cluster node"><img class="nocursor" src="../images/spacer.png" width="16" alt=""></td>
+                                <td class="dashboard"></td>
+                                <td>cluster node</td>
+                                <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.2:8443</span><span class="hasTooltip" title="self host name">(host-2)</span></td>
+                                <td class="parentId">d15ce378-df33-44f3-a632-89458f421c24</td>
+                            </tr>
+                            <tr class="enterpriseClusterNode">
+                                <td id="e0a71bdd-317c-498c-8b00-9815af2594f0" class="name" style="padding-left: 53px;"><img src="../images/noPlus.png" alt=""><img src="../images/clusterNode.png" alt="">SSG3</td>
+                                <td class="edit"><img src="../images/delete.png" alt="" title="Destroy this cluster node"><img class="nocursor" src="../images/spacer.png" width="16" alt=""></td>
+                                <td class="dashboard"></td>
+                                <td>cluster node</td>
+                                <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.3:8443</span><span class="hasTooltip" title="self host name">(host-3)</span></td>
+                                <td class="parentId">d15ce378-df33-44f3-a632-89458f421c24</td>
+                            </tr>
+                            <tr class="enterprisePartition">
+                                <td id="c32bb1a9-1538-4792-baa1-566bfd418020" class="name" style="padding-left: 37px;"><img src="../images/plus.png" alt=""><img src="../images/partition.png" alt="">Production</td>
+                                <td class="edit"><img src="../images/addClusterNode.png" alt="" title="Create a new cluster node to run this partition"><img src="../images/move.png" alt="" title="Move this partition"><img src="../images/remove.png" alt="" title="Remove this partition"><img src="../images/ssm.png" alt="" title="Launch SecureSpan Manager for this partition"></td>
+                                <td class="dashboard"><input title="Show/Hide dashboard for this partition" type="checkbox"></td>
+                                <td>partition</td>
+                                <td class="details"><span class="hasTooltip" title="host name and port number">production.electricity.springfield.com:8444</span></td>
+                                <td class="parentId">40f62d36-4146-4f4b-bdd6-14489526b1a6</td>
+                            </tr>
+                            <tr class="enterpriseGroup">
+                                <td id="b614e196-44ea-457b-b38d-567c3541fabd" class="name" style="padding-left: 21px;"><img src="../images/minus.png" alt=""><img src="../images/group.png" alt="">Uranium</td>
+                                <td class="edit"><img src="../images/addGroup.png" alt="" title="Add a new subgroup to this group"><img src="../images/addPartition.png" alt="" title="Add an existing partition to this group"><img src="../images/move.png" alt="" title="Move this group"><img src="../images/remove.png" alt="" title="Remove this group"><img class="nocursor" src="../images/spacer.png" width="16" alt=""></td>
+                                <td class="dashboard"></td>
+                                <td>group</td>
+                                <td class="details"></td>
+                                <td class="parentId">3d7fa710-334c-11dd-bd11-0800200c9a66</td>
+                            </tr>
+                            <tr class="enterprisePartition">
+                                <td id="1c9d5a50-6a58-48a5-b7d4-b0cb356820f2" class="name" style="padding-left: 37px;"><img src="../images/plus.png" alt=""><img src="../images/partition.png" alt="">Dev</td>
+                                <td class="edit"><img src="../images/addClusterNode.png" alt="" title="Create a new cluster node to run this partition"><img src="../images/move.png" alt="" title="Move this partition"><img src="../images/remove.png" alt="" title="Remove this partition"><img src="../images/ssm.png" alt="" title="Launch SecureSpan Manager for this partition"></td>
+                                <td class="dashboard"><input title="Show/Hide dashboard for this partition" type="checkbox"></td>
+                                <td>partition</td>
+                                <td class="details"><span class="hasTooltip" title="host name and port number">uranium.springfield.com:8443</span></td>
+                                <td class="parentId">b614e196-44ea-457b-b38d-567c3541fabd</td>
+                            </tr>
+                            <tr class="enterprisePartition">
+                                <td id="a14df4d4-0c62-4d8e-ac3a-82cd8a442a26" class="name" style="padding-left: 37px;"><img src="../images/plus.png" alt=""><img src="../images/partition.png" alt="">Production</td>
+                                <td class="edit"><img src="../images/addClusterNode.png" alt="" title="Create a new cluster node to run this partition"><img src="../images/move.png" alt="" title="Move this partition"><img src="../images/remove.png" alt="" title="Remove this partition"><img src="../images/ssm.png" alt="" title="Launch SecureSpan Manager for this partition"></td>
+                                <td class="dashboard"><input title="Show/Hide dashboard for this partition" type="checkbox"></td>
+                                <td>partition</td>
+                                <td class="details"><span class="hasTooltip" title="host name and port number">uranium.springfield.com:8444</span></td>
+                                <td class="parentId">b614e196-44ea-457b-b38d-567c3541fabd</td>
+                            </tr>
+                        </tbody></table>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panelTitle tippy"><img class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'dashboards')">Dashboards (monitoring <span id="numDashboards">3</span> partitions)</div>
+                    <div id="dashboards" class="panelContent">
+                        <div class="indent">
+                            <input value="Expand All" onmouseover="this.style.backgroundColor = '#be9422';" onmouseout="this.style.backgroundColor = '#433e29';" onclick="expandTippies('dashboard-tippy-.+');" type="button">
+                            <input value="Collapse All" onmouseover="this.style.backgroundColor = '#be9422';" onmouseout="this.style.backgroundColor = '#433e29';" onclick="collapseTippies('dashboard-tippy-.+')" type="button">
+                        </div>
+                        <div class="dashboardPanel">
+                            <div class="panelTitle"><img id="dashboard-tippy-1" class="tippy dashboardTippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'dashboard-1')">Springfield Nuclear Power Plant / Electricity / Dev</div>
+                            <div class="dashboardPanelContent" id="dashboard-1"><img src="../images/FAKE_DASHBOARD_1.png" alt=""></div>
+                        </div>
+                        <div class="dashboardPanel">
+                            <div class="panelTitle"><img id="dashboard-tippy-2" class="tippy dashboardTippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'dashboard-2')">Springfield Nuclear Power Plant / Uranium / Dev</div>
+                            <div class="dashboardPanelContent" id="dashboard-2"><img src="../images/FAKE_DASHBOARD_2.png" alt=""></div>
+                        </div>
+                        <div class="dashboardPanel">
+                            <div class="panelTitle"><img id="dashboard-tippy-3" class="tippy dashboardTippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'dashboard-3')">Springfield Nuclear Power Plant / Uranium / Production</div>
+                            <div class="dashboardPanelContent" id="dashboard-3"><img src="../images/FAKE_DASHBOARD_1.png" alt=""></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="statusBar">
+                <table>
+                    <tbody><tr>
+                        <td width="100%">Time Zone: Canada/Pacific (GMT-08:00/-07:00)</td>
+                        <td><a class="nowrap" href="http://www.layer7tech.com/" target="_blank">Layer 7 Technologies Inc.</a></td>
+                    </tr>
+                </tbody></table>
+            </div>
+            <div class="divider"><img src="../images/spacer.png" alt=""></div>
+        </td>
+    </tr>
+</tbody></table>
+</body></html>
