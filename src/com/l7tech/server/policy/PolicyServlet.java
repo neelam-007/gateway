@@ -164,7 +164,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 PolicyService service = getPolicyService();
 
                 try {
-                    service.respondToPolicyDownloadRequest(context, true, normalPolicyGetter(), pre32PolicyCompat);
+                    service.respondToPolicyDownloadRequest(context, true, normalPolicyGetter(true), pre32PolicyCompat);
                 }
                 catch (IllegalStateException ise) { // throw by policy getter on policy not found
                     sendExceptionFault(context, ise, servletResponse);
@@ -217,7 +217,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         return (PolicyService)getApplicationContext().getBean("policyService");
     }
 
-    protected PolicyService.PolicyGetter normalPolicyGetter() {
+    protected PolicyService.PolicyGetter normalPolicyGetter(final boolean inlineIncludes) {
         return new PolicyService.PolicyGetter() {
             public PolicyService.ServiceInfo getPolicy(String serviceId) {
                 try {
@@ -228,16 +228,19 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                     final String servicePolicyVersion = policyCache.getUniquePolicyVersionIdentifer( targetService.getPolicy().getOid() );
 
                     return new PolicyService.ServiceInfo() {
-                        private Assertion inlinedIncludesPolicy = null;
+                        // if not processing then initialize with the service policy, else we'll process it when required 
+                        private Assertion policy = inlineIncludes ? null : servicePolicy;
+
                         public synchronized Assertion getPolicy() throws PolicyAssertionException {
-                            if (inlinedIncludesPolicy == null) {
+                            // process if not already initialized
+                            if (policy == null) {
                                 try {
-                                    inlinedIncludesPolicy = Policy.simplify(policyPathBuilder.inlineIncludes(servicePolicy, null));
+                                    policy = Policy.simplify(policyPathBuilder.inlineIncludes(servicePolicy, null));
                                 } catch (InterruptedException e) {
                                     throw new RuntimeException(e); // Not possible on server side (hopefully)
                                 }
                             }
-                            return inlinedIncludesPolicy;
+                            return policy;
                         }
 
                         public String getVersion() {
@@ -321,10 +324,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         try {
             switch (results.length) {
                 case 0:
-                    response = service.respondToPolicyDownloadRequest(str_oid, null, this.normalPolicyGetter(), pre32PolicyCompat, isFullDoc);
+                    response = service.respondToPolicyDownloadRequest(str_oid, null, this.normalPolicyGetter(!isFullDoc), pre32PolicyCompat, isFullDoc);
                     break;
                 case 1:
-                    response = service.respondToPolicyDownloadRequest(str_oid, results[0].getUser(), this.normalPolicyGetter(), pre32PolicyCompat, isFullDoc);
+                    response = service.respondToPolicyDownloadRequest(str_oid, results[0].getUser(), this.normalPolicyGetter(!isFullDoc), pre32PolicyCompat, isFullDoc);
                     break;
                 default:
                     // todo use the best response (?)
