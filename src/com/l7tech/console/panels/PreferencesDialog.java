@@ -6,6 +6,7 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.common.gui.MaxLengthDocument;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.SsmPreferences;
+import com.l7tech.console.util.History;
 import com.l7tech.console.SsmApplication;
 
 import javax.swing.*;
@@ -448,23 +449,37 @@ public class PreferencesDialog extends JDialog {
             getPreferences().setProperty(SsmPreferences.INACTIVITY_TIMEOUT, Integer.toString(timeout));
             TopComponents.getInstance().setInactivitiyTimeout(timeout);
 
-            int numHostsHistory = DEFAULT_NUM_HOSTS_HISTORY;
+            int numHostsHistory = -1;
             try {
                 numHostsHistory = Integer.parseInt(numHostsHistoryTextField.getText());
             } catch (NumberFormatException e) {
-                numHostsHistory = DEFAULT_NUM_HOSTS_HISTORY;
+                numHostsHistory = -1;
             }
 
-            if (numHostsHistory < 1 || numHostsHistory > 50) {
+            if (numHostsHistory < 0 || numHostsHistory > 50) {
                 JOptionPane.showMessageDialog(null,
                   "The Server URL history value should be a number\n" +
-                  " between 1 and 50",
+                  "between 0 and 50",
                   "Bad Server URL history",
                   JOptionPane.ERROR_MESSAGE);
                 return false;
             }
 
             getPreferences().setProperty(SsmPreferences.NUM_SSG_HOSTS_HISTORY, Integer.toString(numHostsHistory));            
+            //if the user sets the value to be 0, we want to be sure that this is reflected immediately in the
+            //ssg.properties file and also on the logon dialog if they logout
+            //This is achieved by setting the max size on the History
+            SsmPreferences preferences = TopComponents.getInstance().getPreferences();
+            History serverUrlHistory = preferences.getHistory(SsmPreferences.SERVICE_URL);
+            String sMaxSize = preferences.getString(SsmPreferences.NUM_SSG_HOSTS_HISTORY, "5");
+            if(sMaxSize != null && !sMaxSize.equals("")){
+                try{
+                    serverUrlHistory.setMaxSize((new Integer(sMaxSize)));
+                }catch(NumberFormatException nfe){
+                    ;//Swallow - incorrectly set property
+                    //don't need to set, it's has an internal default value
+                }
+            }
 
             return true;
         } catch (IOException e) {

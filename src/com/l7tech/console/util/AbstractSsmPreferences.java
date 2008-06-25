@@ -284,10 +284,14 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
         }
 
         /*
-       * Set how large the history get be
-           * */
+       * Set how large the history can get
+       * What ever value you set here is reflected immediately in the number of values
+       * returned by getEntries()
+       * */
         public void setMaxSize(int maxSize) {
             this.maxSize = maxSize;
+            LinkedList<Object> values = values();
+            rekeyValues(values);
         }
 
         /*

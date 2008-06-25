@@ -24,7 +24,9 @@ public interface History {
     Object[] getEntries();
 
     /*
-    * Set how large the history get be
+    * Set the history size
+    * Setting this should cause the history to be updated immediately
+    * such that the number of values returned by getEntries() is equal to maxSize
     * */
     public void setMaxSize(int maxSize);
 
