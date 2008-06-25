@@ -1,6 +1,7 @@
 package com.l7tech.console.util;
 
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.ResourceUtils;
 
 import java.io.*;
 import java.security.KeyStore;
@@ -10,6 +11,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 
 /**
  * The Preferencs class is a console property manager, that is
@@ -30,7 +32,7 @@ import java.util.Map;
  * @see java.beans.PropertyChangeSupport
  */
 public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPreferences {
-    private static HeavySsmPreferences prefs = null;
+
     /**
      * the file name for the preferences
      */
@@ -43,12 +45,20 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
     protected final String TRUST_STORE_FILE = SSM_USER_HOME + File.separator + "trustStore";
     protected final String TRUST_STORE_PASSWORD = "password";
 
+    public HeavySsmPreferences() {
+        setupDefaults();
+        try {
+            initialize();
+        } catch (IOException e) {
+            log("initialize", e);
+        }
 
-    /**
-     * private constructor use getPreferences to
-     * instantiate the HeavySsmPreferences
-     */
-    protected HeavySsmPreferences() {
+        /* load user preferences and merge them with system props */
+        updateFromProperties(System.getProperties(), false);
+        /* so it is visible in help/about */
+        updateSystemProperties();
+        // ensure trust store exists
+        initializeSsgCertStorage();
     }
 
     /**
@@ -100,26 +110,6 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
         }
     }
 
-
-    public static HeavySsmPreferences getPreferences() {
-        if (prefs != null) return prefs;
-        prefs = new HeavySsmPreferences();
-
-//        if (null == System.getProperties().getProperty("javawebstart.version")) {
-//            prefs = new HeavySsmPreferences();
-//        } else { // app is invoked from JWS
-//            prefs = new JNLPPreferences();
-//        }
-        prefs.setupDefaults();
-        try {
-            prefs.initialize();
-        } catch (IOException e) {
-            prefs.log("initialize", e);
-        }
-
-        return prefs;
-    }
-
     public void updateSystemProperties() {
         System.getProperties().putAll(props);
     }
@@ -142,7 +132,6 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
 
     public void importSsgCert(X509Certificate cert, String hostname) throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
         KeyStore ks = KeyStore.getInstance("JKS");
-        HeavySsmPreferences preferences = HeavySsmPreferences.getPreferences();
         char[] trustStorPassword = TRUST_STORE_PASSWORD.toCharArray();
         String trustStoreFile = TRUST_STORE_FILE;
         try {
@@ -170,8 +159,12 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
         }
     }
 
-    public void initializeSsgCertStorage() throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
-        getTrustStore();
+    private void initializeSsgCertStorage() {
+        try {
+            getTrustStore();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error initializing certificate storage.", e);
+        }
     }
 
     private KeyStore getTrustStore()
@@ -184,11 +177,11 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
         if (!storeFile.exists()) {
             ts.load(null, null);
             FileOutputStream fo = null;
-            fo = new FileOutputStream(storeFile);
             try {
+                fo = new FileOutputStream(storeFile);
                 ts.store(fo, password);
             } finally {
-                fo.close();
+                ResourceUtils.closeQuietly(fo);
             }
             logger.fine("Emtpy Internal Admin trustStore created - " + TRUST_STORE_FILE);
             return ts;

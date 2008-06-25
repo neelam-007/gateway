@@ -5,8 +5,7 @@
     <bean id="ssmApplication" class="com.l7tech.console.SsmApplicationHeavy">
     </bean>
 
-    <bean id="preferences" class="com.l7tech.console.util.HeavySsmPreferences" factory-method="getPreferences">
-    </bean>
+    <bean id="preferences" class="com.l7tech.console.util.HeavySsmPreferences"/>
 
     <bean id="httpRequestExecutor" class="com.l7tech.spring.remoting.http.SecureHttpInvokerRequestExecutor">
         <constructor-arg>

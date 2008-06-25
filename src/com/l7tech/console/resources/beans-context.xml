@@ -86,16 +86,6 @@
         <property name="serviceInterface" value="com.l7tech.common.log.LogSinkAdmin"/>
     </bean>
 
-    <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-         <property name="targetClass" value="com.l7tech.console.util.Registry"/>
-         <property name="targetMethod" value="setDefault"/>
-         <property name="arguments">
-            <list>
-                <ref local="registry"/>
-            </list>
-        </property>
-    </bean>
-
     <bean id="assertionRegistry" class="com.l7tech.console.policy.ConsoleAssertionRegistry"/>
 
     <bean id="wspReader" class="com.l7tech.policy.wsp.WspReader">

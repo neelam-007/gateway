@@ -16,14 +16,6 @@ import java.security.cert.X509Certificate;
  * between sessions.
  */
 public class AppletSsmPreferences extends AbstractSsmPreferences {
-    private static AppletSsmPreferences prefs = new AppletSsmPreferences();
-
-    private AppletSsmPreferences() {
-    }
-
-    public static AppletSsmPreferences getPreferences() {
-        return prefs;
-    }
 
     public void updateSystemProperties() {
         // Takes no action for applet
@@ -45,7 +37,4 @@ public class AppletSsmPreferences extends AbstractSsmPreferences {
         return false; // no status bar on applet
     }
 
-    public void initializeSsgCertStorage() throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
-        // Takes no action for applet
-    }
 }

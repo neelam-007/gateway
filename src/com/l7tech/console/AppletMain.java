@@ -18,6 +18,7 @@ import com.l7tech.console.panels.AppletContentStolenPanel;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.WsdlUtils;
+import com.l7tech.console.util.Registry;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -186,7 +187,7 @@ public class AppletMain extends JApplet implements SheetHolder {
 
     private SsmApplication getApplication() {
         if (application != null) return application;
-        application = (SsmApplication)getApplicationContext().getBean("ssmApplication");
+        application = (SsmApplication)getApplicationContext().getBean("ssmApplication", SsmApplication.class);
         return application;
     }
 
@@ -299,7 +300,11 @@ public class AppletMain extends JApplet implements SheetHolder {
     private static ApplicationContext createApplicationContext() {
         String ctxName = "com/l7tech/console/resources/beans-context.xml";
         String appletName = "com/l7tech/console/resources/beans-applet.xml";
-        return new ClassPathXmlApplicationContext(new String[]{appletName, ctxName});
+        ApplicationContext context = new ClassPathXmlApplicationContext(new String[]{appletName, ctxName});
+
+        Registry.setDefault( (Registry) context.getBean("registry", Registry.class) );
+        
+        return context;
     }
 
     public String getAppletInfo() {

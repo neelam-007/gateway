@@ -11,9 +11,9 @@ import com.l7tech.common.gui.util.DialogDisplayer;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.util.SyspropUtil;
-import com.l7tech.console.util.HeavySsmPreferences;
 import com.l7tech.console.util.SplashScreen;
 import com.l7tech.console.util.SsmPreferences;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.security.ManagerTrustProvider;
 import com.l7tech.console.logging.ErrorManager;
 
@@ -51,28 +51,23 @@ public class Main {
             try {
                 screen.splash();
                 JdkLoggerConfigurator.configure("com.l7tech.console", "com/l7tech/console/resources/logging.properties");
-                Logger log = Logger.getLogger(getClass().getName());
 
                 configureSecurity();
 
-                initializeUIPreferences();
                 if (!SyspropUtil.getBoolean("com.l7tech.console.useSheets"))
                     DialogDisplayer.setForceNative(true);
 
-                /* load user preferences and merge them with system props */
-                HeavySsmPreferences prefs = HeavySsmPreferences.getPreferences();
-                prefs.updateFromProperties(System.getProperties(), false);
-                /* so it is visible in help/about */
-                prefs.updateSystemProperties();
-                // ensure trust store exists
-                prefs.initializeSsgCertStorage();
+                ApplicationContext ctx = createApplicationContext();
+
+                SsmPreferences prefs = (SsmPreferences) ctx.getBean("preferences", SsmPreferences.class);
                 try {
                     copyResources(new String[]{"com/l7tech/console/resources/logger.dtd"}, prefs.getHomePath());
                 } catch (IOException e) {
                     log.log(Level.WARNING, "error on copying resources", e);
                 }
-                ApplicationContext ctx = createApplicationContext();
-                SsmApplication app = (SsmApplication)ctx.getBean("ssmApplication");
+                initializeUIPreferences(prefs);
+
+                SsmApplication app = (SsmApplication) ctx.getBean("ssmApplication", SsmApplication.class);
                 app.run();
             } finally {
                 screen.dispose();
@@ -83,7 +78,7 @@ public class Main {
     }
 
 
-    private void installLookAndFeel() {
+    private void installLookAndFeel(final SsmPreferences prefs) {
         // register L&F
         new KunststoffLookAndFeel();
         LookAndFeel addlf = new ExtWindowsLookAndFeel();
@@ -100,7 +95,6 @@ public class Main {
         if (!SsmApplication.isSuppressAutoLookAndFeel())
             return; // Will choose auto look-and-feel
 
-        HeavySsmPreferences prefs = HeavySsmPreferences.getPreferences();
         String lfName = prefs.getString(SsmPreferences.LOOK_AND_FEEL);
         LookAndFeel lf = null;
         if (lfName == null) {
@@ -127,9 +121,9 @@ public class Main {
     /**
      * Tweak any global preferences.
      */
-    private void initializeUIPreferences() {
+    private void initializeUIPreferences(SsmPreferences prefs) {
         UIManager.put("ClassLoader", cl);
-        installLookAndFeel();
+        installLookAndFeel(prefs);
     }
 
     /**
@@ -210,7 +204,11 @@ public class Main {
             ctxName = "com/l7tech/console/resources/beans-context.xml";
         }
         String ctxHeavy = "com/l7tech/console/resources/beans-application.xml";
-        return new ClassPathXmlApplicationContext(new String[]{ctxHeavy, ctxName});
+        ApplicationContext context = new ClassPathXmlApplicationContext(new String[]{ctxHeavy, ctxName});
+
+        Registry.setDefault( (Registry) context.getBean("registry", Registry.class) );
+
+        return context;
     }
 
 

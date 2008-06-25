@@ -5,9 +5,8 @@
     <bean id="ssmApplication" class="com.l7tech.console.SsmApplicationApplet">
     </bean>
 
-    <bean id="preferences" class="com.l7tech.console.util.AppletSsmPreferences" factory-method="getPreferences">
-    </bean>
-
+    <bean id="preferences" class="com.l7tech.console.util.AppletSsmPreferences"/>
+        
     <bean id="httpRequestExecutor" class="com.l7tech.spring.remoting.http.SimpleBrowserHttpInvokerRequestExecutor"/>
 
     <!-- shared invoker properties, inherited with parent= -->

@@ -116,18 +116,6 @@ public interface SsmPreferences {
     void importSsgCert(X509Certificate cert, String hostname) throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException;
 
     /**
-     * Prepare storage for saving the Gateway server cert.  The heavy prefs verifies or creates the trust store.
-     * The applet prefs takes no action.
-     *
-     * @throws KeyStoreException
-     * @throws NoSuchAlgorithmException
-     * @throws IOException
-     * @throws CertificateException
-     */
-    void initializeSsgCertStorage()
-        throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException;
-
-    /**
      * Returns the value associated with the specified key
      * Returns the specified default if there is no value
      * associated with the key.

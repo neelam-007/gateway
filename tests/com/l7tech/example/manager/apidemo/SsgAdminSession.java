@@ -35,7 +35,7 @@ public class SsgAdminSession {
         this.adminPass = adminPasswd;
 
         // initialize preferences
-        HeavySsmPreferences preferences =  HeavySsmPreferences.getPreferences();
+        HeavySsmPreferences preferences = new HeavySsmPreferences();
 	 	preferences.updateFromProperties(System.getProperties(), false);
         preferences.updateSystemProperties();
 
