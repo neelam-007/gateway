@@ -53,6 +53,10 @@ public class SimpleBrowserHttpInvokerRequestExecutor extends SimpleHttpInvokerRe
         synchronized (this) {
             connection.setRequestProperty("X-Layer7-SessionId", sessionId);
         }
+
+        connection.setConnectTimeout(30000);
+        connection.setReadTimeout(60000);
+
         return connection;
     }
 

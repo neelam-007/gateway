@@ -7,6 +7,7 @@ import com.l7tech.admin.TimeoutRuntimeException;
 import org.springframework.remoting.RemoteAccessException;
 
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.rmi.*;
 import java.security.AccessControlException;
 import java.util.logging.Level;
@@ -27,11 +28,14 @@ public class RmiErrorHandler implements ErrorHandler {
      */
     public void handle(ErrorEvent e) {
         final Throwable throwable = ExceptionUtils.unnestToRoot(e.getThrowable());
-        final RemoteException rex = (RemoteException) ExceptionUtils.getCauseIfCausedBy(e.getThrowable(), RemoteException.class);
-        final RemoteAccessException raex = (RemoteAccessException) ExceptionUtils.getCauseIfCausedBy(e.getThrowable(), RemoteAccessException.class);
+        final RemoteException rex = ExceptionUtils.getCauseIfCausedBy(e.getThrowable(), RemoteException.class);
+        final RemoteAccessException raex = ExceptionUtils.getCauseIfCausedBy(e.getThrowable(), RemoteAccessException.class);
+
+
 
         final Frame topParent = TopComponents.getInstance().getTopParent();
         if (throwable instanceof SocketException ||
+            throwable instanceof SocketTimeoutException ||
             throwable instanceof TimeoutRuntimeException ||
             rex instanceof ConnectException ||
             rex instanceof ConnectIOException ||
@@ -48,6 +52,7 @@ public class RmiErrorHandler implements ErrorHandler {
         if (topParent != null &&
             (throwable instanceof RemoteException ||
              throwable instanceof SocketException ||
+             throwable instanceof SocketTimeoutException ||
              throwable instanceof AccessControlException ||
              throwable instanceof TimeoutRuntimeException ||
              (throwable instanceof NoClassDefFoundError && TopComponents.getInstance().isApplet()))) {
@@ -61,7 +66,7 @@ public class RmiErrorHandler implements ErrorHandler {
                 t = null;
             }
             else if ((rex instanceof ConnectException) ||
-                     (raex != null && throwable instanceof java.net.SocketException) ||
+                     (raex != null && (throwable instanceof SocketException || throwable instanceof SocketTimeoutException)) ||
                     (throwable instanceof NoClassDefFoundError && TopComponents.getInstance().isApplet()) ||
                     (throwable instanceof TimeoutRuntimeException)) {
                 message = "SecureSpan Gateway unavailable (Network issue or server stopped).";
