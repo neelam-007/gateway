@@ -76,6 +76,13 @@ public class LdapIdentityProviderImpl
             throw new InvalidIdProviderCfgException("This config does not contain an ldap url"); // should not happen
         }
 
+        if ( userManager == null ) {
+            throw new InvalidIdProviderCfgException("UserManager is not set");
+        }
+        if ( groupManager == null ) {
+            throw new InvalidIdProviderCfgException("GroupManager is not set");
+        }
+
         userManager.configure( this );
         groupManager.configure( this );
 

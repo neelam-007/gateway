@@ -166,7 +166,7 @@ public class FederatedIdentityProviderImpl
             throw new InvalidIdProviderCfgException("UserManager is not set");
         }
         if ( groupManager == null ) {
-            throw new InvalidIdProviderCfgException("UserManager is not set");
+            throw new InvalidIdProviderCfgException("GroupManager is not set");
         }
 
         userManager.configure( this );
