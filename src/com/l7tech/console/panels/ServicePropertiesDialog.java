@@ -76,6 +76,7 @@ public class ServicePropertiesDialog extends JDialog {
     private JButton editWSDLButton;
     private JEditorPane routingURL;
     private JCheckBox laxResolutionCheckbox;
+    private JTextField oidField;
     private String ssgURL;
     private final boolean canUpdate;
 
@@ -100,6 +101,7 @@ public class ServicePropertiesDialog extends JDialog {
 
         // set initial data
         nameField.setText(subject.getName());
+        oidField.setText(subject.getId());        
         if (subject.isDisabled()) {
             disableRadio.setSelected(true);
         } else {
