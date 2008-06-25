@@ -3,6 +3,22 @@
   <component name="FacetManager">
     <facet type="Spring" name="Spring">
       <configuration>
+        <fileset id="fileset1" name="EMS context" removed="false">
+          <file>file://$MODULE_DIR$/src/com/l7tech/server/ems/resources/restletContext.xml</file>
+          <file>file://$MODULE_DIR$/src/com/l7tech/server/ems/resources/emsApplicationContext.xml</file>
+        </fileset>
+        <fileset id="fileset2" name="Gateway context" removed="false">
+          <file>file://$MODULE_DIR$/src/com/l7tech/server/resources/dataAccessContext.xml</file>
+          <file>file://$MODULE_DIR$/src/com/l7tech/server/resources/ssgApplicationContext.xml</file>
+          <file>file://$MODULE_DIR$/src/com/l7tech/server/resources/adminContext.xml</file>
+          <file>file://$MODULE_DIR$/src/com/l7tech/server/resources/admin-servlet.xml</file>
+          <file>file://$MODULE_DIR$/src/com/l7tech/server/resources/rbacEnforcementContext.xml</file>
+          <file>file://$MODULE_DIR$/src/com/l7tech/server/resources/xfire-servlet.xml</file>
+        </fileset>
+        <fileset id="fileset3" name="SSM context" removed="false">
+          <file>file://$MODULE_DIR$/src/com/l7tech/console/resources/beans-application.xml</file>
+          <file>file://$MODULE_DIR$/src/com/l7tech/console/resources/beans-context.xml</file>
+        </fileset>
         <options>
           <option name="enableValidation" value="false" />
           <option name="reportErrorsAsWarnings" value="true" />
