@@ -15,14 +15,12 @@ public class GenericWSRFExceptionFault extends FaultMappableException {
         super(msg);
     }
 
-    protected String getDetailContent() {
-        return "";
-    }
-
+    @Override
     protected String getFaultString() {
         return getMessage();
     }
 
+    @Override
     protected String getWSAAction() {
         return "http://docs.oasis-open.org/wsrf/fault";
     }

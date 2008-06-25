@@ -14,7 +14,7 @@ import java.util.Date;
  * User: flascell<br/>
  * Date: Nov 19, 2007<br/>
  */
-public abstract class FaultMappableException extends Exception {
+public class FaultMappableException extends Exception {
     private String actor;
     protected String msg;
 
@@ -44,7 +44,14 @@ public abstract class FaultMappableException extends Exception {
         "</soap:Envelope>";
     }
 
-    protected abstract String getDetailContent();
+    /**
+     * Subclasses may override to provide details.
+     *
+     * @return The detail content for the fault.
+     */
+    protected String getDetailContent(){
+        return "";
+    }
 
     protected String getFaultString() {
         return getMessage();

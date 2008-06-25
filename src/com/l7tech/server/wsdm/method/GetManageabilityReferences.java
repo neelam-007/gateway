@@ -31,11 +31,7 @@ public class GetManageabilityReferences extends ESMMethod {
                 resourceIdRequested = XmlUtil.getTextValue(resId);
             }
         } catch (Exception e) {
-            throw new FaultMappableException(e.getMessage()) {
-                protected String getDetailContent() {
-                    return "";
-                }
-            };
+            throw new FaultMappableException(e.getMessage());
         }
     }
 
@@ -52,11 +48,7 @@ public class GetManageabilityReferences extends ESMMethod {
             }
             return null;
         } catch (Exception e) {
-            throw new FaultMappableException(e.getMessage()) {
-                protected String getDetailContent() {
-                    return "";
-                }
-            };
+            throw new FaultMappableException(e.getMessage());
         }
     }
 

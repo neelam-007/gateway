@@ -70,13 +70,9 @@ public class ServiceManagementAdministrationService implements ApplicationListen
 
         if (method instanceof GetMultipleResourceProperties) {
             return qosService.handleMultipleResourcePropertiesRequest(incomingURL, (GetMultipleResourceProperties)method, incomingDocument);
+        } else {
+            throw new FaultMappableException( buildUnknownMethodMessage(method) );
         }
-
-        throw new FaultMappableException("Method not supported: " + method.toString()) {
-            protected String getDetailContent() {
-                return "";
-            }
-        };
     }
 
     /**
@@ -99,21 +95,24 @@ public class ServiceManagementAdministrationService implements ApplicationListen
                 return respondToSubscribe((Subscribe)method, incomingURL, incomingDocument, policyGuid);
             } else if (method instanceof Unsubscribe) {
                 return respondToUnsubscribe((Unsubscribe)method, incomingURL);
+            } else {
+                throw new FaultMappableException( buildUnknownMethodMessage(method) );
             }
         } catch (SAXException e) {
             logger.log(Level.WARNING, "Problem constructing response to " + method, e);
-            throw new FaultMappableException(e.getMessage()) {
-                protected String getDetailContent() {
-                    return "";
-                }
-            };
+            throw new FaultMappableException(e.getMessage());
+        }
+    }
+
+    private String buildUnknownMethodMessage( final ESMMethod method ) {
+        String message;
+        if ( method == null ) {
+            message = "Unsupported operation.";
+        } else {
+            message = "Method not supported: " + method.toString();
         }
 
-        throw new FaultMappableException("Method not supported: " + method.toString()) {
-            protected String getDetailContent() {
-                return "";
-            }
-        };
+        return message;
     }
 
     private Document respondToUnsubscribe(Unsubscribe unsubscribe, URL incomingURL)

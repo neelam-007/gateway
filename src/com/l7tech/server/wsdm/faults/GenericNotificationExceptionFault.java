@@ -15,10 +15,7 @@ public class GenericNotificationExceptionFault extends FaultMappableException {
         super(msg);
     }
 
-    protected String getDetailContent() {
-        return "";
-    }
-
+    @Override
     protected String getWSAAction() {
         return "http://docs.oasis-open.org/wsn/fault";
     }
