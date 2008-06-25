@@ -340,26 +340,22 @@ public class LogonDialog extends JDialog {
         contents.add(serverComboBox, constraints);
 
         serverUrlHistory = preferences.getHistory(SsmPreferences.SERVICE_URL);
+        String sMaxSize = preferences.getString(SsmPreferences.NUM_SSG_HOSTS_HISTORY, "5");
+        if(sMaxSize != null && !sMaxSize.equals("")){
+            try{
+                serverUrlHistory.setMaxSize((new Integer(sMaxSize)));
+            }catch(NumberFormatException nfe){
+                ;//Swallow - incorrectly set property
+                //don't need to set, it's has an internal default value
+            }
+        }
 
         Runnable runnable = new Runnable() {
             public void run() {
-                Object[] urls = serverUrlHistory.getEntries();
-                for (int i = 0; i < urls.length; i++) {
-                    String surl = urls[i].toString();
-                    String hostName = surl;
-                    try {
-                        URL url = new URL(surl);
-                        hostName = url.getHost();
-                    } catch (MalformedURLException e) {
-                        // can't happen, but omit from list
-                    }
-                    serverComboBox.addItem(hostName);
-                    if (i == 0) {
-                        serverComboBox.setSelectedIndex(0);
-                    }
-                }
+                updateServerUrlHistory();
             }
         };
+
         SwingUtilities.invokeLater(runnable);
         serverComboBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -380,7 +376,29 @@ public class LogonDialog extends JDialog {
         getRootPane().setDefaultButton(loginButton);
     }
 
-
+    /*
+    * Caller thread should be event thread only
+    * Factored out code to build up Server host list as will get updated while user is interacting
+    * with the log on component
+    * */
+    private void updateServerUrlHistory(){
+        Object[] urls = serverUrlHistory.getEntries();
+        serverComboBox.removeAllItems();
+        for (int i = 0; i < urls.length; i++) {
+            String surl = urls[i].toString();
+            String hostName = surl;
+            try {
+                URL url = new URL(surl);
+                hostName = url.getHost();
+            } catch (MalformedURLException e) {
+                // can't happen, but omit from list
+            }
+            serverComboBox.addItem(hostName);
+            if (i == 0) {
+                serverComboBox.setSelectedIndex(0);
+            }
+        }
+    }
     /**
      * Creates the panel of buttons that goes along the bottom
      * of the dialog
@@ -503,13 +521,13 @@ public class LogonDialog extends JDialog {
                       if (memoException != null) {
                           handleLogonThrowable(memoException, sHost);
                       }
+                      try {
+                          preferences.store();
+                      } catch (IOException e) {
+                          log.log(Level.WARNING, "error saving properties", e);
+                      }
                       if (get() != null) {
                           dispose();
-                          try {
-                              preferences.store();
-                          } catch (IOException e) {
-                              log.log(Level.WARNING, "error saving properties", e);
-                          }
                           preferences.updateSystemProperties();
                           // invoke the listener
                           if (logonListener != null) {
@@ -539,6 +557,8 @@ public class LogonDialog extends JDialog {
         } catch (Exception e) {
             handleLogonThrowable(e, sHost);
         } finally {
+            //Update the host drop down with any host just entered in
+            updateServerUrlHistory();
             if (threw) {
                 parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                 if (progressDialog != null) progressDialog.dispose();

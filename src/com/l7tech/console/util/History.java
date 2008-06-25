@@ -22,4 +22,14 @@ public interface History {
      * @return the array of history entries.
      */
     Object[] getEntries();
+
+    /*
+    * Set how large the history get be
+    * */
+    public void setMaxSize(int maxSize);
+
+    /*
+    * @return how large the history is allowed for this instance of History
+    * */
+    public int getMaxSize();
 }

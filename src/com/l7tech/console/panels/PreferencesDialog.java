@@ -26,6 +26,7 @@ public class PreferencesDialog extends JDialog {
     static Logger log = Logger.getLogger(PreferencesDialog.class.getName());
 
     private static final int DEFAULT_INACTIVITY_TIMEOUT = 30;
+    private static final int DEFAULT_NUM_HOSTS_HISTORY = 5;    
 
     /**
      * Resource bundle with default locale
@@ -37,7 +38,7 @@ public class PreferencesDialog extends JDialog {
     private JTextField inactivityTextField = null;
     private JCheckBox rememberLastIdCheckBox = null;
     private JCheckBox enableValidationCheckBox = null;
-
+    private JTextField numHostsHistoryTextField = null;
 
     /**
      * Command string for a cancel action (e.g., a button or menu item).
@@ -263,6 +264,27 @@ public class PreferencesDialog extends JDialog {
           });
 
 
+        //new in 5.0 allow configurable SSG history in Logon dialog
+        JLabel numHostsHistoryLabel = new JLabel(resources.getString(("numHostsHistory.label")));
+        constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 18;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(11, 12, 0, 0);
+        contents.add(numHostsHistoryLabel, constraints);
+
+        numHostsHistoryTextField = new JTextField(3);
+        numHostsHistoryTextField.setDocument(new MaxLengthDocument(2));
+        numHostsHistoryTextField.setToolTipText(resources.getString(("numHostsHistory.tooltip")));
+        constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = 18;
+        constraints.gridwidth = 1;
+        constraints.weightx = 0.0;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.insets = new Insets(11, 7, 0, 11);
+        contents.add(numHostsHistoryTextField, constraints);
+
         // Button panel at the bottom of the window
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, 0));
@@ -328,7 +350,7 @@ public class PreferencesDialog extends JDialog {
 
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
-        constraints.gridy = 18;
+        constraints.gridy = 20;
         constraints.gridwidth = 7;
         constraints.anchor = GridBagConstraints.EAST;
         constraints.insets = new Insets(17, 12, 11, 11);
@@ -426,6 +448,24 @@ public class PreferencesDialog extends JDialog {
             getPreferences().setProperty(SsmPreferences.INACTIVITY_TIMEOUT, Integer.toString(timeout));
             TopComponents.getInstance().setInactivitiyTimeout(timeout);
 
+            int numHostsHistory = DEFAULT_NUM_HOSTS_HISTORY;
+            try {
+                numHostsHistory = Integer.parseInt(numHostsHistoryTextField.getText());
+            } catch (NumberFormatException e) {
+                numHostsHistory = DEFAULT_NUM_HOSTS_HISTORY;
+            }
+
+            if (numHostsHistory < 1 || numHostsHistory > 50) {
+                JOptionPane.showMessageDialog(null,
+                  "The Server URL history value should be a number\n" +
+                  " between 1 and 50",
+                  "Bad Server URL history",
+                  JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+
+            getPreferences().setProperty(SsmPreferences.NUM_SSG_HOSTS_HISTORY, Integer.toString(numHostsHistory));            
+
             return true;
         } catch (IOException e) {
             log.log(Level.SEVERE, "preferences", e);
@@ -458,6 +498,16 @@ public class PreferencesDialog extends JDialog {
                 ; // swallow; bad property value
             }
             inactivityTextField.setText(Integer.toString(timeout));
+
+            String sNumHostsHistory = getPreferences().getProperty(SsmPreferences.NUM_SSG_HOSTS_HISTORY);
+            int numHosts = DEFAULT_NUM_HOSTS_HISTORY;
+            try {
+                numHosts = Integer.parseInt(sNumHostsHistory);
+            } catch (NumberFormatException e) {
+                ; // swallow; bad property value
+            }
+            numHostsHistoryTextField.setText(Integer.toString(numHosts));
+            
         } catch (IOException e) {
             log.log(Level.SEVERE, "Error retrieving Preferences", e);
         }

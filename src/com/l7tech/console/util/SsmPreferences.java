@@ -37,6 +37,12 @@ public interface SsmPreferences {
     String SAVE_LAST_LOGIN_ID = "last.login.id.save";
 
     String ENABLE_POLICY_VALIDATION_ID = "enable.policy.validation";
+
+    /*
+    * key for value for how many ssg url's the Manager remembers 
+    * */
+    String NUM_SSG_HOSTS_HISTORY = "num.ssg.hosts.history";
+    
     /**
      * toolbars property (icons, text, icons and text)
      */

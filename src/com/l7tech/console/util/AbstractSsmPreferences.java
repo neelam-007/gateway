@@ -202,6 +202,10 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
 
     private class PropertyHistory implements History {
         private String propertyName;
+        /*For 5.0 added getter and setter for this property
+        * leaving default here as 5. Only use case of this class so far is in the Logon Dialog for Server URL
+        * however as it is generic and can be used for any property, I'm leaving maxSize's with it's original default
+        * value and not pulling any default value out from a property file */
         private int maxSize = 5;
 
         public PropertyHistory(String propertyName) {
@@ -277,6 +281,20 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
          */
         public Object[] getEntries() {
             return values().toArray();
+        }
+
+        /*
+       * Set how large the history get be
+           * */
+        public void setMaxSize(int maxSize) {
+            this.maxSize = maxSize;
+        }
+
+        /*
+       * @return how large the history is allowed for this instance of History
+           * */
+        public int getMaxSize() {
+            return maxSize;
         }
     }
 }
