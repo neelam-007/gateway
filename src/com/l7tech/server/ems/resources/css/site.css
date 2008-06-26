@@ -53,7 +53,7 @@ input, select {
 }
 
 input[type='button'], input[type='submit'] {
-    background-color: #433e29;
+    background-color: #665d3c;
     border: 1px #ffffff solid;
     color: #ffffff;
     cursor: pointer;
@@ -63,22 +63,28 @@ input[type='button'], input[type='submit'] {
     padding: 1px 3px 1px 3px;
 }
 
+input[type='button']:hover, input[type='submit']:hover {
+    background-color: #be9422;
+}
+
 input[type='button']:focus, input[type='submit']:focus {
     outline: 1px black solid;
 }
 
 input[type='text'], input[type='password'] {
+    font-size: 1em;
     padding-left: 4px;
     padding-right: 4px;
 }
 
 input[type='checkbox'], input[type='radio'] {
     border: none;
-    vertical-align: baseline;
+    vertical-align: middle;
 }
 
-input[type='radio'] {
-    width: 12px;
+textarea {
+    font-size: 1em;
+    padding: 2px 4px 2px 4px;
 }
 
 table {
@@ -137,11 +143,26 @@ table.center {
 }
 
 .hasTooltip {
-    cursor: url('../images/tooltip.cur'), url('images/tooltip.cur'), help;
+    cursor: url('../images/tooltip.cur'), help;
 }
 
-.nocursor {
+.hasTooltip:hover {
+    background-color: #c1e8ff;
+}
+
+.noCursor {
     cursor: default !important;
+}
+
+.unselected {
+    opacity: 0.2;
+    filter: alpha(opacity=20);
+}
+
+/** Used by treeTable.js. */
+.mixedStateCheckbox {
+    opacity: 0.4;
+    filter: alpha(opacity=40);
 }
 
 .page {
@@ -226,7 +247,8 @@ div.header {
     color: #ffffff;
 }
 
-.tabCM a:link, a:active, a:visited, a:hover {
+.tabCM a:link, .tabCM a:active, .tabCM a:visited, .tabCM a:hover,
+.tabCMover a:link, .tabCMover a:active, .tabCMover a:visited, .tabCMover a:hover {
     color: #ffffff;
     text-decoration: none;
 }
@@ -234,7 +256,6 @@ div.header {
 .tabCMon {
     background-color: #565d37;
     color: #ffff21;
-
 }
 
 .tabCMover {
@@ -298,7 +319,7 @@ div.header {
 }
 
 .content {
-    background-color: #fcfaf7;
+    background-color: #f4f7ed;
     padding: 8px 10px 8px 10px;
 }
 
@@ -315,7 +336,7 @@ div.header {
 }
 
 .panelContent {
-    background-color: #f8f8f8;
+    background-color: #ffffff;
     padding: 8px;
 }
 
@@ -324,13 +345,6 @@ table.spaced th, table.spaced td {
     text-align: left;
     vertical-align: middle;
     white-space: nowrap;
-}
-
-.hrule {
-    background-image: url('../images/hrule.png');
-    background-repeat: repeat-x;
-    height: 21px;
-    width: 100%;
 }
 
 div.tippy {
@@ -342,77 +356,82 @@ img.tippy {
     padding-right: 6px;
 }
 
-.enterpriseTree th, .enterpriseTree td {
-    padding: 2px 7px 1px 7px;
-    white-space: nowrap;
-}
-
-.enterpriseTree th {
-    background-color: #dbd3b0;
-}
-
-.enterpriseTree td {
+.dataIFrame {
     background-color: #eeeeee;
 }
 
-.enterpriseTable th {
+.dataTree td {
+    background-color: #eeeeee;
+    padding: 2px 7px 2px 7px;
+    white-space: nowrap;
+}
+
+.dataTable {
+    border-bottom: 1px #cccccc solid;
+}
+
+.dataTable th {
+    background-color: #dbd3b0;
     border: 1px #bfb173 solid;
 }
 
-.enterpriseTable td {
+.dataTable td {
+    background-color: #eeeeee;
     border: 1px #cccccc solid;
 }
 
-.enterpriseTree td.edit, .enterpriseTree th.edit {
+.dataTable th, .dataTable td {
+    padding: 2px 7px 2px 7px;
+    white-space: nowrap;
+}
+
+.dataTable td.dashboard {
+    text-align: center;
+}
+
+.dataTable td.details {
+    white-space: normal;
+}
+
+.dataTable th.parentId, .dataTable td.parentId, .dataTree th.parentId, .dataTree td.parentId {
+    display: none;
+}
+
+.dataTable td img {
+    padding-left: 2px;
+    padding-right: 2px;
+    vertical-align: middle;
+}
+
+.dataTable td.edit img {
+    cursor: pointer;
+}
+
+.edit {
     padding-left: 2px;
     padding-right: 2px;
     text-align: right;
 }
 
-.enterpriseTree td.dashboard {
-    text-align: center;
-}
-
-.enterpriseTree td.details {
-    white-space: normal;
-}
-
-.enterpriseTree td.parentId, .enterpriseTree th.parentId {
-    display: none;
-}
-
-.enterpriseTree td img {
-    padding-left: 2px;
-    padding-right: 2px;
-}
-
-.enterpriseTree td img.plusMinus {
-    padding-left: 4px;
-    padding-right: 2px;
-}
-
-.enterpriseTree td.edit img {
-    cursor: pointer;
-}
-
-.enterpriseTreeIFrame {
-    background-color: #eeeeee;
+.dashboardsPanelContent {
+    background-color: #ffffff;
+    padding: 4px;
 }
 
 .dashboardPanel {
     border: 1px black solid;
-    margin: 8px 0 8px 0;
+    margin: 4px;
 }
 
 .dashboardPanelContent {
     background-color: #f8f8f8;
 }
 
-.policyMigration {
+.sideBySide {
     padding: 4px 0 4px 0;
 }
 
-.policyMigration iframe {
+.sideBySide iframe {
     background-color: #eeeeee;
     border: 1px #433e29 solid;
 }
@@ -457,7 +476,7 @@ img.tippy {
 }
 
 .srcDestCenter {
-    background-color: #fcfaf7;
+    background-color: #f4f7ed;
     font-weight: bold;
     padding-left: 6px;
     padding-right: 6px;
@@ -468,6 +487,39 @@ img.tippy {
 .srcDestCenter img {
     cursor: pointer;
     margin-top: 4px;
+}
+
+.submissionMessageEntry div {
+    padding: 2px 0 2px 0;
+}
+
+.submissionMessageEntry input[type='text'] {
+    border: 1px #433e29 solid;
+    width: 98%;
+}
+
+.submissionMessageEntry textarea {
+    border: 1px #433e29 solid;
+    height: 280px;
+    width: 96%;
+}
+
+td.submissionMessageDisplay {
+    vertical-align: top;
+}
+
+td.submissionMessageDisplay textarea {
+    border: 1px #433e29 solid;
+    width: 96%;
+}
+
+td.submissionMessageDisplay textarea {
+    height: 150px;
+}
+
+.userSelector {
+    background-color: #eeeeee;
+    padding: 2px 8px 2px 8px;
 }
 
 .statusBar {
@@ -481,4 +533,8 @@ img.tippy {
     border: 1px #000000 solid;
     width: 100%;
     height: 400px;
+}
+
+#dashboardsTable td {
+    vertical-align: top;
 }

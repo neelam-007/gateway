@@ -54,6 +54,44 @@
         </constructor-arg>
     </bean>
 
+    <!-- Exposes the resources/css classpath subdirectory as a Restlet Directory.  Ignores query vars when resolving files. -->
+    <bean name="restCssDirectory" class="com.l7tech.server.ems.StripQueryFilter">
+        <constructor-arg index="0" ref="restApplication.context"/>
+        <constructor-arg index="1">
+            <bean class="org.restlet.Directory">
+                <constructor-arg index="0" type="org.restlet.Context" ref="restApplication.context"/>
+                <constructor-arg index="1" type="org.restlet.data.Reference">
+                    <bean class="org.restlet.data.LocalReference">
+                        <constructor-arg type="java.lang.String"
+                                         value="clap://thread/com/l7tech/server/ems/resources/css"/>
+                    </bean>
+                </constructor-arg>
+
+                <!-- content negotation won't work with classpath directories since they aren't listable -->
+                <property name="negotiateContent" value="false"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <!-- Exposes the resources/js classpath subdirectory as a Restlet Directory.  Ignores query vars when resolving files. -->
+    <bean name="restJsDirectory" class="com.l7tech.server.ems.StripQueryFilter">
+        <constructor-arg index="0" ref="restApplication.context"/>
+        <constructor-arg index="1">
+            <bean class="org.restlet.Directory">
+                <constructor-arg index="0" type="org.restlet.Context" ref="restApplication.context"/>
+                <constructor-arg index="1" type="org.restlet.data.Reference">
+                    <bean class="org.restlet.data.LocalReference">
+                        <constructor-arg type="java.lang.String"
+                                         value="clap://thread/com/l7tech/server/ems/resources/js"/>
+                    </bean>
+                </constructor-arg>
+
+                <!-- content negotation won't work with classpath directories since they aren't listable -->
+                <property name="negotiateContent" value="false"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
     <!-- Exposes templates in the temlates subdirectory as a Restlet Directory. -->
     <bean name="restTemplatesDirectory" class="com.l7tech.server.ems.TemplateFinder">
         <constructor-arg index="0" ref="restApplication.context"/>
@@ -61,14 +99,14 @@
         <constructor-arg index="2" value="/com/l7tech/server/ems/resources/templates"/>
         <constructor-arg index="3">
             <list>
-                <value>Setup.html</value>
-                <value>Gateways.html</value>
                 <value>Audits.html</value>
                 <value>Backup.html</value>
+                <value>Gateways.html</value>
                 <value>Help.html</value>
                 <value>Login.html</value>
                 <value>Logs.html</value>
                 <value>Notifications.html</value>
+                <value>PartitionSelector.html</value>
                 <value>PolicyApproval.html</value>
                 <value>PolicyMapping.html</value>
                 <value>PolicyMigration.html</value>
@@ -76,9 +114,35 @@
                 <value>Reports.html</value>
                 <value>Restore.html</value>
                 <value>Setup.html</value>
+                <value>SubmissionReceived.html</value>
                 <value>SystemSettings.html</value>
                 <value>TestWebService.html</value>
+                <value>UserSelector.html</value>
                 <value>UserSettings.html</value>
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <!-- TODO This is just temporary simulation for REST GET. Remove them when RESTlet is in place. -->
+    <bean name="restPartitionContentWithCheckboxDirectory" class="com.l7tech.server.ems.TemplateFinder">
+        <constructor-arg index="0" ref="restApplication.context"/>
+        <constructor-arg index="1" ref="templateDataModel" />
+        <constructor-arg index="2" value="/com/l7tech/server/ems/resources/templates/partitionContentWithCheckbox"/>
+        <constructor-arg index="3">
+            <list>
+                <value>xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.html</value>
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <!-- TODO This is just temporary simulation for REST GET. Remove them when RESTlet is in place. -->
+    <bean name="restPartitionContentWithFolderRadioDirectory" class="com.l7tech.server.ems.TemplateFinder">
+        <constructor-arg index="0" ref="restApplication.context"/>
+        <constructor-arg index="1" ref="templateDataModel" />
+        <constructor-arg index="2" value="/com/l7tech/server/ems/resources/templates/partitionContentWithFolderRadio"/>
+        <constructor-arg index="3">
+            <list>
+                <value>xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.html</value>
             </list>
         </constructor-arg>
     </bean>
@@ -116,7 +180,14 @@
                 <entry key="/setup"><bean class="org.restlet.ext.spring.SpringFinder"><lookup-method name="createResource" bean="restSetupResource"/></bean></entry>
                 <entry key="/license"><bean class="org.restlet.ext.spring.SpringFinder"><lookup-method name="createResource" bean="restLicenseResource"/></bean></entry>
                 <entry key="/images/" value-ref="restImagesDirectory"/>
+                <entry key="/css/" value-ref="restCssDirectory"/>
+                <entry key="/js/" value-ref="restJsDirectory"/>
                 <entry key="/ems/{templateName}" value-ref="restTemplatesDirectory"/>
+
+                <!-- TODO These are just temporary simulation for REST GET. Remove them when RESTlet is in place. -->
+                <entry key="/ems/partitionContentWithCheckbox/{templateName}" value-ref="restPartitionContentWithCheckboxDirectory"/>
+                <entry key="/ems/partitionContentWithFolderRadio/{templateName}" value-ref="restPartitionContentWithFolderRadioDirectory"/>
+
             </map>
         </property>
         <property name="defaultRoute" ref="restEmsHomePageRoute" />
