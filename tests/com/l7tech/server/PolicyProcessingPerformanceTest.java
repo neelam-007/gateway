@@ -23,11 +23,11 @@ import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.service.ServiceCacheStub;
 import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.transport.http.ConnectionId;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.TestingHttpClientFactory;
-import com.l7tech.server.service.ServiceCacheStub;
 import com.l7tech.service.PublishedService;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
@@ -229,6 +229,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
             ps.setName(serviceInfo[0].substring(1));
             ps.setRoutingUri(serviceInfo[0]);
             ps.getPolicy().setXml(new String(loadResource(serviceInfo[1])));
+            ps.getPolicy().setOid(ps.getOid());
             ps.setSoap(true);
 
             if (serviceInfo.length > 2) {
