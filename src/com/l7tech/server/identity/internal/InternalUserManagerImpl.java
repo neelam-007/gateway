@@ -116,7 +116,7 @@ public class InternalUserManagerImpl
      */
     protected void preDelete(InternalUser user) throws DeleteException {
         try {
-            Collection<Role> roles = roleManager.getAssignedRoles(user);
+            Collection<Role> roles = getAssignedRoles(user);
             for (Role role : roles) {
                 if (role.getOid() == Role.ADMIN_ROLE_OID) {
                     boolean anybodyElse = false;

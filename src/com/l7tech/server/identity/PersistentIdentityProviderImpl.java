@@ -74,9 +74,6 @@ public abstract class PersistentIdentityProviderImpl<UT extends PersistentUser, 
      * @throws Exception if initialization fails
      */
     public void afterPropertiesSet() throws Exception {
-        if (clientCertManager == null) {
-            throw new IllegalArgumentException("The Client Certificate Manager is required");
-        }
     }
 
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {

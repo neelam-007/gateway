@@ -34,7 +34,7 @@
         </constructor-arg>
     </bean>
 
-    <bean id="auditDetailFilter" class="com.l7tech.server.audit.AuditDetailFilter">
+    <bean id="auditDetailFilter" class="com.l7tech.server.audit.GatewayAuditDetailFilter">
         <constructor-arg ref="serverConfig"/>
     </bean>
 </beans>

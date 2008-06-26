@@ -164,12 +164,9 @@ public class InternalIdentityProviderImpl
         if ( userManager == null ) {
             throw new InvalidIdProviderCfgException("UserManager is not set");
         }
-        if ( groupManager == null ) {
-            throw new InvalidIdProviderCfgException("UserManager is not set");
-        }
 
         userManager.configure( this );
-        groupManager.configure( this );
+        if (groupManager != null) groupManager.configure( this );
     }
 
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {

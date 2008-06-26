@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
-<beans>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation= "http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+                            http://www.springframework.org/schema/aop
+                            http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+                            http://www.springframework.org/schema/tx
+                            http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+    <!-- enable automatic proxy generation for any class or superclass annotated with @Transactional -->
+    <tx:annotation-driven/>
+
     <bean id="dataSource" class="org.apache.derby.jdbc.EmbeddedDataSource40">
         <property name="databaseName" value="emsdb"/>
         <property name="createDatabase" value="create"/>
@@ -20,33 +32,6 @@
 
     <bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
         <property name="sessionFactory" ref="sessionFactory"/>
-    </bean>
-
-    <!-- Hibernate managers that need transaction interception -->
-    <bean class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
-        <property name="proxyTargetClass" value="false"/>
-        <property name="interceptorNames">
-            <list>
-                <idref bean="annotationTransactionInterceptor"/>
-            </list>
-        </property>
-        <property name="beanNames">
-            <list>
-                <idref bean="clusterPropertyManager"/>
-            </list>
-        </property>
-    </bean>
-
-
-    <bean class="org.springframework.transaction.interceptor.TransactionAttributeSourceAdvisor">
-        <property name="transactionInterceptor" ref="annotationTransactionInterceptor"/>
-    </bean>
-
-    <bean id="annotationTransactionInterceptor" class="org.springframework.transaction.interceptor.TransactionInterceptor">
-        <property name="transactionManager" ref="transactionManager"/>
-        <property name="transactionAttributeSource">
-            <bean class="org.springframework.transaction.annotation.AnnotationTransactionAttributeSource"/>
-        </property>
     </bean>
 
     <!-- Abstract "parent" of any bean that needs access to sessionFactory and transactionManager -->
@@ -70,21 +55,48 @@
         <property name="roleManager"><null/></property>
     </bean>
 
+    <!-- Placeholders for future auditing functionality -->
+    <bean name="auditLogListener" class="com.l7tech.server.ems.EmsAuditLogListener"/>
+    <bean name="auditDetailFilter" class="com.l7tech.server.ems.EmsAuditDetailFilter"/>
+
     <!-- Internal identity provider -->
-    <bean id="internalIdentityProviderFactory" class="com.l7tech.server.identity.GenericIdentityProviderFactorySpi">
-        <constructor-arg value="com.l7tech.server.identity.internal.InternalIdentityProviderImpl"/>
-        <constructor-arg value="internalIdentityProvider"/>
+    <bean name="internalUserManager" class="com.l7tech.server.identity.internal.InternalUserManagerImpl" parent="hibernateBean">
+        <constructor-arg index="0"><null/></constructor-arg>
+        <constructor-arg index="1"><null/></constructor-arg>
     </bean>
-    <bean id="internalIdentityProvider" class="com.l7tech.server.identity.internal.InternalIdentityProviderImpl" singleton="false">
+    <bean id="internalIdentityProvider" class="com.l7tech.server.identity.internal.InternalIdentityProviderImpl">
         <property name="clientCertManager"><null/></property>
         <property name="keystore"><null/></property>
         <property name="certificateAuthenticator"><null/></property>
         <property name="userManager" ref="internalUserManager"/>
         <property name="groupManager"><null/></property>
+        <property name="identityProviderConfig">
+            <bean class="com.l7tech.identity.IdentityProviderConfig">
+                <property name="typeVal" value="1"/>
+                <property name="certificateValidationType" value="CERTIFICATE_ONLY"/>
+                <property name="adminEnabled" value="true"/>
+                <property name="name" value="EMS Internal ID Provider"/>
+                <property name="oid" value="-2"/>
+            </bean>
+        </property>
     </bean>
-    <bean name="internalUserManager" class="com.l7tech.server.identity.internal.InternalUserManagerImpl" singleton="false" parent="hibernateBean">
-        <constructor-arg><null/></constructor-arg>
-        <constructor-arg><null/></constructor-arg>
+
+    <!-- Initial setup manager -->
+    <bean name="setupManager" class="com.l7tech.server.ems.SetupManager" depends-on="internalIdentityProvider">
+        <property name="internalUserManager" ref="internalUserManager"/>
+        <property name="licenseManager" ref="licenseManager"/>
+    </bean>
+
+    <!--
+      Values provided to the FreeMarker templates.  This constitutes the API the templates are "coded" against.
+      In addition to these values, the TemplateFinder adds a value "applicationContext" after initialization.
+    -->
+    <bean name="templateDataModel" class="java.util.HashMap">
+        <constructor-arg index="0">
+            <map key-type="java.lang.String" value-type="java.lang.Object">
+                <entry key="emsVersion" value="0.1"/>
+            </map>
+        </constructor-arg>
     </bean>
 
 </beans>

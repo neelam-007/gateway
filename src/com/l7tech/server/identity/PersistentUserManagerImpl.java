@@ -7,11 +7,13 @@
 package com.l7tech.server.identity;
 
 import com.l7tech.identity.*;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.common.security.rbac.Secured;
 import com.l7tech.common.security.rbac.OperationType;
+import com.l7tech.common.security.rbac.Role;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.server.security.rbac.RoleManager;
 import org.springframework.dao.DataAccessException;
@@ -43,8 +45,8 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
                     " WHERE user.oid = ?";
 
     protected PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider;
-    protected final ClientCertManager clientCertManager;
-    protected final RoleManager roleManager;
+    private final ClientCertManager clientCertManager;
+    private final RoleManager roleManager;
 
     protected PersistentUserManagerImpl(final RoleManager roleManager,
                                         final ClientCertManager clientCertManager) {
@@ -132,6 +134,13 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
 
     protected long getProviderOid() {
         return identityProvider.getConfig().getOid();
+    }
+
+    protected Collection<Role> getAssignedRoles(InternalUser user) throws FindException {
+        if (roleManager == null)
+            return Collections.emptyList();
+        else
+            return roleManager.getAssignedRoles(user);
     }
 
     @Secured(operation=OperationType.DELETE)
@@ -242,7 +251,8 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
 
             if (groupHeaders != null) {
                 try {
-                    identityProvider.getGroupManager().setGroupHeaders(user, groupHeaders);
+                    GMT gman = identityProvider.getGroupManager();
+                    if (gman != null) gman.setGroupHeaders(user, groupHeaders);
                 } catch (FindException e) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                     throw new SaveException(e.getMessage(), e);
@@ -332,12 +342,6 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     @Override
     protected void initDao() throws Exception {
         super.initDao();
-        if (clientCertManager == null) {
-            throw new IllegalArgumentException("The Client Certificate Manager is required");
-        }
-        if (roleManager == null) {
-            throw new IllegalArgumentException("The RoleManager is required");
-        }
     }
 
     /**
