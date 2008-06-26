@@ -385,7 +385,7 @@ public class ServerVariables {
                         name = name.substring(BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 1);
                         // TODO make this cache timeout configurable
                         ClusterProperty cp = context.getClusterPropertyManager().getCachedEntityByName(name, 30000);
-                        if (cp == null) return null;
+                        if (cp == null || cp.isHiddenProperty()) return null;
                         return cp.getValue();
                     } catch (FindException e) {
                         logger.log(Level.WARNING, "exception querying for cluster property", e);

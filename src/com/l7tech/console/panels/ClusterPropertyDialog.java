@@ -364,7 +364,7 @@ public class ClusterPropertyDialog extends JDialog {
             try {
                 Collection<ClusterProperty> allProperties = reg.getClusterStatusAdmin().getAllProperties();
                 for (ClusterProperty property : allProperties) {
-                    if (!property.isHiddenInGui())
+                    if (!property.isHiddenProperty())
                         properties.add(property);
                 }
 

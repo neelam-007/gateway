@@ -56,9 +56,12 @@ public class ClusterProperty extends NamedEntityImp {
         this.description = description;
     }
 
-    /** @return true if this property should be hidden in the cluster property GUI. */
+    /**
+     * Check if this property is allowed to be used by the SSM or from within Policies.
+     * Within a policy if this returns true, it will seem as this property doesn't exist
+     *  @return true if this property should be hidden from users */
     @Transient
-    public boolean isHiddenInGui() {
+    public boolean isHiddenProperty() {
         // Currently, there's only 1 hidden property, so for now we'll just hardcode it rather than
         // add a whole new DB column and support code
         return "license".equals(_name)
