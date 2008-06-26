@@ -92,12 +92,8 @@
         </constructor-arg>
     </bean>
 
-    <!-- Exposes templates in the temlates subdirectory as a Restlet Directory. -->
-    <bean name="restTemplatesDirectory" class="com.l7tech.server.ems.TemplateFinder">
-        <constructor-arg index="0" ref="restApplication.context"/>
-        <constructor-arg index="1" ref="templateDataModel" />
-        <constructor-arg index="2" value="/com/l7tech/server/ems/resources/templates"/>
-        <constructor-arg index="3">
+    <bean name="restTemplatesList" class="java.util.ArrayList">
+        <constructor-arg>
             <list>
                 <value>Audits.html</value>
                 <value>Backup.html</value>
@@ -121,6 +117,14 @@
                 <value>UserSettings.html</value>
             </list>
         </constructor-arg>
+    </bean>
+
+    <!-- Exposes templates in the temlates subdirectory as a Restlet Directory. -->
+    <bean name="restTemplatesDirectory" class="com.l7tech.server.ems.TemplateFinder">
+        <constructor-arg index="0" ref="restApplication.context"/>
+        <constructor-arg index="1" ref="templateDataModel" />
+        <constructor-arg index="2" value="/com/l7tech/server/ems/resources/templates"/>
+        <constructor-arg index="3" ref="restTemplatesList"/>
     </bean>
 
     <!-- TODO This is just temporary simulation for REST GET. Remove them when RESTlet is in place. -->
