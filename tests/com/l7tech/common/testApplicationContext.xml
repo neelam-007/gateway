@@ -37,7 +37,7 @@
     </bean>
 
     <!-- server side service manager -->
-    <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache">
+    <bean id="serviceCache" class="com.l7tech.server.service.ServiceCacheStub">
         <constructor-arg ref="policyCache"/>
         <constructor-arg><null/></constructor-arg>
         <constructor-arg ref="serviceManager"/>

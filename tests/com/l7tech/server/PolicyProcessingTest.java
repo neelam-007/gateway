@@ -26,7 +26,7 @@ import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.transport.http.ConnectionId;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.TestingHttpClientFactory;
-import com.l7tech.server.service.ServiceCache;
+import com.l7tech.server.service.ServiceCacheStub;
 import com.l7tech.service.PublishedService;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
@@ -140,8 +140,8 @@ public class PolicyProcessingTest extends TestCase {
                  clusterPropertyManager = (ClusterPropertyManager) applicationContext.getBean("clusterPropertyManager", ClusterPropertyManager.class);
                  testingHttpClientFactory = (TestingHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
 
-                 ServiceCache cache = (ServiceCache) applicationContext.getBean("serviceCache", ServiceCache.class);
-                 cache.initiateIntegrityCheckProcess(); Thread.sleep(4500); // sleep to wait for integrity check
+                 ServiceCacheStub cache = (ServiceCacheStub) applicationContext.getBean("serviceCache", ServiceCacheStub.class);
+                 cache.initializeServiceCache();
 
                  auditContext.flush(); // ensure clear
              }

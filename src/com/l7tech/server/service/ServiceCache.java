@@ -253,7 +253,7 @@ public class ServiceCache
         });
     }
 
-    private void initializeServiceCache() throws ObjectModelException {
+    protected void initializeServiceCache() throws ObjectModelException {
         // build the cache if necessary
         try {
             if (size() > 0) {

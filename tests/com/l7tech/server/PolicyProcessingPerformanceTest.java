@@ -27,6 +27,7 @@ import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.transport.http.ConnectionId;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.TestingHttpClientFactory;
+import com.l7tech.server.service.ServiceCacheStub;
 import com.l7tech.service.PublishedService;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
@@ -169,6 +170,9 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         soapFaultManager = (SoapFaultManager) applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
         clusterPropertyManager = (ClusterPropertyManager) applicationContext.getBean("clusterPropertyManager", ClusterPropertyManager.class);
         testingHttpClientFactory = (TestingHttpClientFactory) applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+
+        ServiceCacheStub cache = (ServiceCacheStub) applicationContext.getBean("serviceCache", ServiceCacheStub.class);
+        cache.initializeServiceCache();
 
         auditContext.flush(); // ensure clear
 
