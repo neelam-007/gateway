@@ -619,10 +619,9 @@
         <include name="**/log4j-1.2.14.jar"/>
         <include name="**/slf4j-*.jar"/>
 
-        <include name="**/systinet-*.jar" if="include.systinet"/>
         <include name="**/guddi-1.0.0.jar"/>
-        <include name="**/saaj-api.jar" unless="include.systinet"/>
-        <include name="**/saaj-impl.jar" unless="include.systinet"/>
+        <include name="**/saaj-api.jar"/>
+        <include name="**/saaj-impl.jar"/>
 
         <include name="**/xalan-2.7.1.jar"/>
         <include name="**/serializer-xalan-2.7.1.jar"/>
@@ -663,12 +662,7 @@
         <include name="**/tibjmsapps.jar" if="include.jms.tibco"/>
         <include name="**/tibrvjms.jar" if="include.jms.tibco"/>
 
-        <include name="**/ojdbc14.jar" if="db.oracle8"/>
-        <include name="**/ojdbc14.jar" if="db.oracle9"/>
-        <include name="**/ojdbc14.jar" if="db.oracle10"/>
-
         <include name="**/mysql-connector-java-5.0.4-bin.jar" if="db.mysql"/>
-        <include name="**/postgresql.jar" if="db.postgres"/>
 
         <!-- Include embedded Tomcat libraries -->
         <include name="**/annotations-api.jar"/>
@@ -717,22 +711,6 @@
 
         <condition property="db.mysql">
             <equals arg1="${database.type}" arg2="mysql"/>
-        </condition>
-
-        <condition property="db.postgres">
-            <equals arg1="${database.type}" arg2="postgres"/>
-        </condition>
-
-        <condition property="db.oracle8">
-            <equals arg1="${database.type}" arg2="oracle8"/>
-        </condition>
-
-        <condition property="db.oracle9">
-            <equals arg1="${database.type}" arg2="oracle9"/>
-        </condition>
-
-        <condition property="db.oracle10">
-            <equals arg1="${database.type}" arg2="oracle10"/>
         </condition>
 
         <!-- paths with dynamic components -->
@@ -1751,9 +1729,6 @@
         <mkdir dir="${build.dir}/managerlibs"/>
         <copy todir="${build.dir}/managerlibs" preservelastmodified="true">
             <fileset dir="${build.dir}/lib">
-                <patternset>
-                    <exclude name="**/systinet-*"/>
-                </patternset>
                 <patternset refid="manager.libs"/>
             </fileset>
         </copy>
@@ -1885,17 +1860,6 @@
           Gateway jar file date is used to detect if rebuild is required, so always update it
         -->
         <touch file="${build.dir}/Gateway.jar"/>
-
-        <jar jarfile="${build.dir}/ssg-uddi-module-systinetv3.jar">
-            <zipfileset dir="${src.root}/lib/gateway/uddi/systinet" includes="*.jar" prefix="lib"/>
-            <zipfileset dir="${src.root}/lib" prefix="lib">
-                <include name="activation.jar"/>
-            </zipfileset>
-            <zipfileset dir="${src.root}/etc/services/uddi-systinet" prefix="META-INF/services"/>
-            <fileset dir="${build.classes}">
-                <include name="com/l7tech/server/service/uddi/impl/systinet/**"/>
-            </fileset>
-        </jar>
 
         <jar jarfile="${build.dir}/ssg-uddi-module-genericv3.jar">
             <zipfileset dir="${src.root}/etc/services/uddi-generic" prefix="META-INF/services"/>
@@ -2248,7 +2212,6 @@
         <include name="**/jcommon*.jar"/>
         <include name="**/jfreechart*.jar"/>
         <include name="**/BrowserLauncher2*.jar"/>
-        <include name="**/systinet-*.jar"/>
         <include name="**/nachocalendar*.jar"/>
         <include name="**/spring-web.jar"/>
         <include name="**/systray4j*.jar"/>
@@ -3454,13 +3417,7 @@
 
     <target name="prepare.jms" depends="prepare.jms.mqseries5, prepare.jms.mqseries6, prepare.jms.tibco"/>
 
-    <target name="prepare.db" depends="
-        prepare.db.oracle8,
-        prepare.db.oracle9,
-        prepare.db.oracle10,
-        prepare.db.mysql,
-        prepare.db.postgres
-    "/>
+    <target name="prepare.db" depends="prepare.db.mysql"/>
 
     <!--
       Task to copy jars from the given path to the build/lib directory
@@ -3493,29 +3450,6 @@
 
     <target name="prepare.db.mysql" if="db.mysql">
         <prepare-named-libs name="MySQL" dir="${src.root}/lib/gateway/jdbc/mysql"/>
-    </target>
-
-    <target name="prepare.db.postgres" if="db.postgres">
-        <prepare-named-libs name="PostgreSQL" dir="${src.root}/lib/gateway/jdbc/postgres"/>
-    </target>
-
-    <target name="prepare.db.oracle8" if="db.oracle8">
-        <prepare-named-libs name="Oracle 8" dir="${src.root}/lib/gateway/jdbc/oracle8"/>
-    </target>
-
-    <target name="prepare.db.oracle9" if="db.oracle9">
-        <prepare-named-libs name="Oracle 9" dir="${src.root}/lib/gateway/jdbc/oracle9"/>
-    </target>
-
-    <target name="prepare.db.oracle10" if="db.oracle10">
-        <prepare-named-libs name="Oracle 10" dir="${src.root}/lib/gateway/jdbc/oracle10"/>
-    </target>
-
-    <!--
-      NOTE: Don't use if="include.systinet" here since the JARs are required for the SSM.
-    -->
-    <target name="prepare.systinet">
-        <prepare-named-libs name="Systinet" dir="${src.root}/lib/gateway/uddi/systinet"/>
     </target>
 
     <target name="prepare.genericuddi">
@@ -3574,7 +3508,7 @@
       update version tokens
     -->
     <target name="prepare"
-            depends="prepare.base, prepare.jms, prepare.db, prepare.systinet, prepare.genericuddi, keystore.properties, INTERNAL-buildinfo">
+            depends="prepare.base, prepare.jms, prepare.db, prepare.genericuddi, keystore.properties, INTERNAL-buildinfo">
 
         <!-- set up build number if it isn't already set -->
         <property file="build.number"/>
@@ -3657,7 +3591,7 @@
       Set database properties for configured DB
     -->
     <target name="db.properties"
-            depends="db.properties.mysql, db.properties.postgres, db.properties.oracle8, db.properties.oracle9, db.properties.oracle10"/>
+            depends="db.properties.mysql"/>
 
     <macrodef name="set-db-properties">
         <attribute name="driver"/>
@@ -3682,46 +3616,6 @@
                 user="${my.database.user}"
                 password="${my.database.password}"
                 pingstmt="${my.database.pingstmt}"/>
-    </target>
-
-    <target name="db.properties.postgres" if="db.postgres">
-        <echo>Setting database properties for PostgreSQL...</echo>
-        <set-db-properties
-                driver="${pg.database.driver}"
-                url="${pg.database.url}"
-                user="${pg.database.user}"
-                password="${pg.database.password}"
-                pingstmt="${pg.database.pingstmt}"/>
-    </target>
-
-    <target name="db.properties.oracle8" if="db.oracle8">
-        <echo>Setting database properties for Oracle 8...</echo>
-        <set-db-properties
-                driver="${oracle8.database.driver}"
-                url="${oracle8.database.url}"
-                user="${oracle8.database.user}"
-                password="${oracle8.database.password}"
-                pingstmt="${oracle8.database.pingstmt}"/>
-    </target>
-
-    <target name="db.properties.oracle9" if="db.oracle9">
-        <echo>Setting database properties for Oracle 9...</echo>
-        <set-db-properties
-                driver="${oracle9.database.driver}"
-                url="${oracle9.database.url}"
-                user="${oracle9.database.user}"
-                password="${oracle9.database.password}"
-                pingstmt="${oracle9.database.pingstmt}"/>
-    </target>
-
-    <target name="db.properties.oracle10" if="db.oracle10">
-        <echo>Setting database properties for Oracle 10...</echo>
-        <set-db-properties
-                driver="${oracle10.database.driver}"
-                url="${oracle10.database.url}"
-                user="${oracle10.database.user}"
-                password="${oracle10.database.password}"
-                pingstmt="${oracle10.database.pingstmt}"/>
     </target>
 
     <!--

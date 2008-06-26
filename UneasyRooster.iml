@@ -467,24 +467,6 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
-      <library name="uddi.Systinet">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-wasp.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-saaj.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-builtin_serialization.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-wsdl_api.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-jaxrpc.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-jaxm.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-wsdl2uddi_client_v3.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-uddiclient_api_v3.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-core_services_client.jar!/" />
-          <root url="jar://$MODULE_DIR$/lib/gateway/uddi/systinet/systinet-uddiclient_core.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
       <library name="ui.BrowserLauncher 2.10rc4">
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/BrowserLauncher2-10rc4.jar!/" />

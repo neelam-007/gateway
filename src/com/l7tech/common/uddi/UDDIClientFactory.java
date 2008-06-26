@@ -1,7 +1,6 @@
 package com.l7tech.common.uddi;
 
 import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.net.URI;
 import java.lang.reflect.Constructor;
 
@@ -93,19 +92,12 @@ public class UDDIClientFactory {
                 getDefaultPolicyAttachmentVersion() :
                 attachmentVersion;
 
-        if ( systinetAvailable ) {
-            if ( PolicyAttachmentVersion.v1_5 == policyAttachmentVersion ) {
-                throw new IllegalStateException("Systinet client does not support " + PolicyAttachmentVersion.v1_5.getName());
-            }
-            client = new SystinetUDDIClient(inquiryUrl, publishUrl, securityUrl, login, password);
-        } else {
-            try {
-                Class genericUddiClass = Class.forName("com.l7tech.common.uddi.GenericUDDIClient");
-                Constructor constructor = genericUddiClass.getConstructor(String.class, String.class, String.class, String.class, String.class, PolicyAttachmentVersion.class);
-                client = (UDDIClient) constructor.newInstance(inquiryUrl, publishUrl, securityUrl, login, password, policyAttachmentVersion);
-            } catch (Exception e) {
-                throw new RuntimeException("Generic UDDI client error.", e);
-            }
+        try {
+            Class genericUddiClass = Class.forName(clientClass);
+            Constructor constructor = genericUddiClass.getConstructor(String.class, String.class, String.class, String.class, String.class, PolicyAttachmentVersion.class);
+            client = (UDDIClient) constructor.newInstance(inquiryUrl, publishUrl, securityUrl, login, password, policyAttachmentVersion);
+        } catch (Exception e) {
+            throw new RuntimeException("Generic UDDI client error.", e);
         }
 
         return client;
@@ -114,22 +106,17 @@ public class UDDIClientFactory {
     //- PRIVATE
 
     private static final String SYSPROP_DEFAULT_VERSION = "com.l7tech.common.uddi.defaultVersion";
-    private static final UDDIClientFactory instance = new UDDIClientFactory();
+    private static final String SYSPROP_UDDICLIENT = "com.l7tech.common.uddi.client";
+    private static final String DEFAULT_UDDICLIENT = "com.l7tech.common.uddi.GenericUDDIClient";
     private static final Logger logger = Logger.getLogger(UDDIClientFactory.class.getName());
-    private static final boolean systinetAvailable;
+    private static final UDDIClientFactory instance = new UDDIClientFactory();
 
-    static {
-        boolean systinetDetected = false;
-        try {
-            Class.forName("org.systinet.uddi.client.v3.struct.Find_service");
-            systinetDetected = true;
-        } catch (ClassNotFoundException cnfe) {
-        }
-        systinetAvailable = systinetDetected;
-        logger.log(Level.INFO, "Using generic UDDI Client is " + (!systinetAvailable) + ".");
-    }
+    private final String clientClass;
 
     private UDDIClientFactory() {
+        clientClass = SyspropUtil.getString(SYSPROP_UDDICLIENT, DEFAULT_UDDICLIENT);
+
+        logger.config("Using UDDIClient implementation '"+clientClass+"'.");
     }
 
     private String calculateBaseUrl(String url, String suffix) {
