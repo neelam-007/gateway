@@ -1,30 +1,60 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
-
 <!--
     The Spring Hibernate configuration. References Hibernate mappings, defines transaction managers
     persistence interceptors, and transactional behaviour.
- -->
+-->
 <!--suppress SpringModelInspection -->
 <beans>
 
     <!--
-    Hibernate Properties location
-
-    Note that serverConfig has to initialize first, since it will set the configDirectory
-    system property.
+    Hibernate / C3P0 Properties location
     -->
     <bean id="hibernateProperties"
           class="com.l7tech.server.util.PasswordDecryptingPropertiesFactoryBean"
-          depends-on="serverConfig">
+          depends-on="systemProperties">
         <constructor-arg ref="propertiesDecryptor"/>
         <property name="ignoreResourceNotFound" value="true"/>
         <property name="locations">
             <list>
+                <value>classpath:com/l7tech/server/resources/database.properties</value>
+                <value>classpath:com/l7tech/server/resources/c3p0.properties</value>
                 <value>classpath:com/l7tech/server/resources/hibernate_default.properties</value>
                 <value>classpath:hibernate.properties</value>
+                <value>file:${com.l7tech.server.configDirectory}${file.separator}database.properties</value>
                 <value>file:${com.l7tech.server.configDirectory}${file.separator}hibernate.properties</value>
             </list>
+        </property>
+    </bean>
+
+    <!-- Configures data source based on hibernateProperties -->
+    <bean class="org.springframework.beans.factory.config.PropertyOverrideConfigurer">
+        <property name="ignoreInvalidKeys" value="true"/>
+        <property name="propertiesArray">
+            <list>
+                <ref local="hibernateProperties"/>
+            </list>
+        </property>
+    </bean>
+
+    <!-- General purpose pooled data source -->
+    <bean id="c3p0DataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+        <constructor-arg value="c3p0DataSource"/> <!-- Name used for identification only, does not affect configuration -->
+    </bean>
+
+    <!-- Administrative pooled data source, smaller pool, shorter timeouts -->
+    <bean id="c3p0AdminDataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+        <constructor-arg value="c3p0AdminDataSource"/> <!-- Name used for identification only, does not affect configuration -->
+    </bean>
+
+    <!-- Data source that can be switched for different pooling strategies -->
+    <bean id="switchedDataSource" class="com.l7tech.server.util.UserSwitchedRoutingDataSource">
+        <property name="defaultTargetDataSource" ref="c3p0DataSource"/>
+        <property name="targetDataSources">
+            <map>
+                <entry key="default"><ref local="c3p0DataSource"/></entry>
+                <entry key="admin"><ref local="c3p0AdminDataSource"/></entry>
+            </map>
         </property>
     </bean>
 
@@ -40,6 +70,7 @@
                 <value>com/l7tech/server/resources/wsdm.hbm.xml</value>
             </list>
         </property>
+        <property name="dataSource" ref="switchedDataSource"/>
         <property name="hibernateProperties" ref="hibernateProperties"/>
         <property name="entityInterceptor" ref="persistenceEventInterceptor"/>
     </bean>

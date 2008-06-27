@@ -17,9 +17,13 @@
     <!-- Exception advices for server side error handling -->
     <bean id="unsupportedExceptionInterceptor" class="com.l7tech.server.util.UnsupportedExceptionsThrowsAdvice"/>
 
-    <bean id ="mysqlFailureThrowsAdvice" class="com.l7tech.server.util.MySqlFailureThrowsAdvice"/>
+    <bean id="mysqlFailureThrowsAdvice" class="com.l7tech.server.util.MySqlFailureThrowsAdvice"/>
 
     <bean id="constraintViolationThrowsAdvice" class="com.l7tech.server.util.ConstraintViolationThrowsAdvice"/>
+
+    <bean id="adminConnectionPoolSelector" class="com.l7tech.server.util.UserSwitchedRoutingDataSourceSelector">
+        <constructor-arg value="admin"/>
+    </bean>
 
     <!-- Transaction and RBAC interception -->
     <bean id="rbacIntercepted" abstract="true" class="org.springframework.aop.framework.ProxyFactoryBean">
@@ -28,6 +32,7 @@
                 <idref bean="unsupportedExceptionInterceptor"/>
                 <idref bean="mysqlFailureThrowsAdvice"/>
                 <idref bean="constraintViolationThrowsAdvice"/>
+                <idref bean="adminConnectionPoolSelector"/>
                 <idref bean="annotationTransactionInterceptor"/>
                 <idref bean="rbacAdvisor"/>
             </list>

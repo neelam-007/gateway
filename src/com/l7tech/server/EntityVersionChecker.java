@@ -63,11 +63,11 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
      * @throws IllegalStateException if the managers are already set
      * @throws ClassCastException if the list contains a non-HibernateEntityManager
      */
-    public void setEntityManagers(List<EntityManager<PersistentEntity,EntityHeader>> managers) {
+    public void setEntityManagers(List<EntityManager<? extends PersistentEntity,? extends EntityHeader>> managers) {
         if(btt!=null) throw new IllegalStateException("manager already set");
         if(managers!=null && !managers.isEmpty()) {
             List<EntityInvalidationVersionCheck> tasks = new ArrayList<EntityInvalidationVersionCheck>();
-            for (EntityManager<PersistentEntity,EntityHeader> manager : managers) {
+            for (EntityManager<? extends PersistentEntity,? extends EntityHeader> manager : managers) {
                 try {
                     tasks.add(new EntityInvalidationVersionCheck(manager));
                 } catch (Exception e) {
@@ -298,7 +298,7 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
         private List<Long> invalidationOids;
         private List<Character> invalidationOps;
 
-        private EntityInvalidationVersionCheck(EntityManager<PersistentEntity, EntityHeader> manager) throws Exception {
+        private EntityInvalidationVersionCheck(EntityManager<? extends PersistentEntity, ? extends EntityHeader> manager) throws Exception {
             super(manager);
             entityType = manager.getInterfaceClass();
         }

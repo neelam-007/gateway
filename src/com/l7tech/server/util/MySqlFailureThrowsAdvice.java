@@ -6,6 +6,7 @@ import java.util.logging.Level;
 
 import com.l7tech.admin.GatewayRuntimeException;
 import com.l7tech.common.util.ExceptionUtils;
+import com.mchange.v2.resourcepool.CannotAcquireResourceException;
 
 import org.hibernate.exception.JDBCConnectionException;
 
@@ -18,18 +19,22 @@ public class MySqlFailureThrowsAdvice extends ThrowsAdviceSupport {
 
     //- PUBLIC
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public void afterThrowing(final Method method,
                               final Object[] args,
                               final Object target,
                               final Throwable throwable) throws GatewayRuntimeException {
-        if (MYSQL_COMMUNICATIONS != null) {
+        if ( ExceptionUtils.causedBy(throwable, CannotAcquireResourceException.class) ) {
+            doMySQLFailure(throwable);
+        } else if (MYSQL_COMMUNICATIONS != null) {
             if ( !ExceptionUtils.causedBy(throwable, MYSQL_PACKET_TOO_BIG) &&
                  ExceptionUtils.causedBy(throwable, MYSQL_COMMUNICATIONS)) {
-                // handle communication failure if not caused by large packet
+                // handle communication failure if not caused by large packet,
+                // if there is a JDBCConnectionException check the SQLState.
                 JDBCConnectionException jce = ExceptionUtils.getCauseIfCausedBy(throwable, JDBCConnectionException.class);
-                if (jce != null && CONNECT_FAILURE_STATE.equals(jce.getSQLState())) {
+                if (jce == null || CONNECT_FAILURE_STATE.equals(jce.getSQLState())) {
                     doMySQLFailure(throwable);
-                }
+                } 
             } else if (ExceptionUtils.causedBy(throwable, MYSQL_TRANSIENT)) {
                 // handle any transient failure
                 doMySQLFailure(throwable);
