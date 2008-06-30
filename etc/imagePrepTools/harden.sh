@@ -17,9 +17,11 @@ harden() {
   sed -i -e 's/^\(ca::ctrlaltdel:\)/#\1/' /etc/inittab
 
   # GEN000500
+  sed -i -e '/^TMOUT=900/d' /etc/profile
   echo 'export TMOUT=900' >> /etc/profile
 
   # GEN000020
+  sed -i -e '/~~:S:wait:/sbin/sulogin/d' /etc/inittab
   echo "~~:S:wait:/sbin/sulogin" >> /etc/inittab
 
   # GEN000440
@@ -93,8 +95,8 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
 
   # GEN000980
   echo 'console' > /etc/securetty
-  echo 'tty1' >> /etc/securetty
-  echo 'ttyS0' >> /etc/securetty
+  echo 'tty1'   >> /etc/securetty
+  echo 'ttyS0'  >> /etc/securetty
 
   # GEN001880
   if [ -e /home/ssgconfig/.bash_logout ]; then
@@ -115,6 +117,9 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
   fi
   rm -f /root/original_permissions
 
+  # Remove audit.rules added contents first to ensure not duplication
+  sed -i -e '/^\-a exit,always \-S unlink \-S rmdir/, /sched_setscheduler \-F euid\!=27$/d' /etc/audit.rules
+
   # GEN002740
   sed -i -e 's/max_log_file = 5/max_log_file = 125/' /etc/auditd.conf
   echo '-a exit,always -S unlink -S rmdir' >> /etc/audit.rules
@@ -131,6 +136,7 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
   # GEN002960
   touch /etc/cron.allow
   chmod 600 /etc/cron.allow
+  sed -i -e '/^ssgconfig/d' /etc/cron.deny
   echo 'ssgconfig' >> /etc/cron.deny
 
   # GEN003080
@@ -142,6 +148,7 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
   # GEN003320
   touch /etc/at.allow
   chmod 600 /etc/at.allow
+  sed -i -e '/^ssgconfig/d' /etc/at.deny
   echo 'ssgconfig' >> /etc/at.deny
 
   # GEN003540
@@ -157,7 +164,7 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
   chmod 4700 /bin/traceroute*
 
   # GEN004540
-  mv /etc/mail/helpfile /etc/mail/helpfile.old
+  mv -f /etc/mail/helpfile /etc/mail/helpfile.old
 
   # GEN005360
   chgrp sys /etc/snmp/snmpd.conf
@@ -329,6 +336,7 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   sed -i -e '/-a exit,always -S unlink -S rmdir/d' /etc/audit.rules
 
   # GEN002760
+  if [ ! "`grep euid\!=27 /etc/audit.rules`" ] ; then
   sed -i -e '/-w \/var\/log\/audit\//d' \
          -e '/-w \/etc\/auditd.conf/d' \
          -e '/-w \/etc\/audit.rules/d' \
@@ -337,7 +345,7 @@ halt:*:13637:0:99999:7:::' /etc/shadow
          -e '/# The mysqld program is expected to call sched_setscheduler/d' \
          -e '/-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27/d' \
       /etc/audit.rules
-
+  fi
   # GEN002960
   rm -f /etc/cron.allow
   sed -i -e '/ssgconfig/d' /etc/cron.deny
