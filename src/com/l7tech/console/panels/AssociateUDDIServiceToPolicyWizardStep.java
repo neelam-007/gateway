@@ -106,10 +106,11 @@ public class AssociateUDDIServiceToPolicyWizardStep extends WizardStepPanel {
             for (UDDINamedEntity serviceInfo : serviceInfos) {
                 listData.add(new ListMember(serviceInfo.getName(), serviceInfo.getKey()));
             }
-            serviceList.setListData(listData.toArray());
         } catch (Throwable e) {
             logger.log(Level.SEVERE, "cannot find service or get inquiry", e);
             showError("Cannot find services. Consult log for more info.");
+        } finally {
+            serviceList.setListData(listData.toArray());            
         }
     }
 
