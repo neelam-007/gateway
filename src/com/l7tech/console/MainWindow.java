@@ -172,6 +172,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     public static final String TITLE = "SSG Management Console";
     public static final String NAME = "main.window"; // registered
     private EventListenerList listenerList = new WeakEventListenerList();
+    @SuppressWarnings({"FieldCanBeLocal"})
     private LogonListener closeWindowListener;
     // cached credential manager
     private String connectionContext = "";
@@ -1414,6 +1415,12 @@ public class MainWindow extends JFrame implements SheetHolder {
         getServicesAndPoliciesTree().setModel(servicesTreeModel);
         getServicesAndPoliciesTree().setShowsRootHandles(true);
         getServicesAndPoliciesTree().setRootVisible(false);
+
+        // disable items that depend on serivces and policies tree selection
+        getEditPolicyMenuItem().setEnabled(false);
+        getServicePropertiesMenuItem().setEnabled(false);
+        getPublishToUDDIMenuItem().setEnabled(false);
+        getDeleteServiceMenuItem().setEnabled(false);        
 
         TreeSelectionListener treeSelectionListener =
           new TreeSelectionListener() {
