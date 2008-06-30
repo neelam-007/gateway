@@ -159,7 +159,8 @@ public class WsdlLocationPanel extends JPanel {
      * @return the URL / path.
      */
     public String getWsdlUrl() {
-        return wsdlUrlTextField.getText();
+        String wsdlUrl = wsdlUrlTextField.getText();
+        return isUrlOk(wsdlUrl, null)? wsdlUrl : addDefaultDirectoryIntoPath(wsdlUrl);
     }
 
     /**
@@ -178,7 +179,7 @@ public class WsdlLocationPanel extends JPanel {
      */
     public boolean isLocationValid() {
         String location = wsdlUrlTextField.getText();
-        return isUrlOk(location, null) || isFileOk(location);
+        return isUrlOk(location, null) || isFileOk(addDefaultDirectoryIntoPath(location));
     }
 
     //- PRIVATE
@@ -201,6 +202,32 @@ public class WsdlLocationPanel extends JPanel {
     private JLabel exampleFileLabel;
     private JLabel exampleUrlLabel;
     private JTextField wsdlUrlTextField;
+
+    /**
+     * A helper method to add a default directory into a file path if the file path is a relative path.
+     * There is no effect for a absolute file path.
+     */
+    private String addDefaultDirectoryIntoPath(String filePath) {
+        String newFilePath = filePath;
+        if (newFilePath == null || newFilePath.trim().length() == 0) return newFilePath;
+
+        File wsdlFile = new File(filePath);
+        try {
+            // Check if the filePath is an absolute path or not.
+            // If so, then check if the file exists or not.
+            // If not, it means that the filePath is a relative path, then append the default directory at the front of the filePath.
+            if (! wsdlFile.isAbsolute()) {
+                String defaultDirectory = FileUtils.getDefaultDirectory();
+                String separator = System.getProperty("file.separator");
+                newFilePath = defaultDirectory + separator + newFilePath;
+            }
+
+            return newFilePath;
+        } catch (AccessControlException e) {
+            // We're probably running as an unsigned applet
+            return null;
+        }
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -333,20 +360,22 @@ public class WsdlLocationPanel extends JPanel {
         return urlOk;
     }
 
+    /**
+     * The precondition of the method is that filePath is an absolution file path if filePath refers a file.
+     */
     private boolean isFileOk(String filePath) {
-        boolean isFile;
+        boolean isFileExisting;
 
         File wsdlFile = new File(filePath);
         try {
-            isFile = wsdlFile.isFile();
+            isFileExisting = wsdlFile.isFile() && wsdlFile.exists();
         } catch (AccessControlException e) {
             // We're probably running as an unsigned applet
             return false;
         }
 
-        return isFile;
+        return isFileExisting;
     }
-
 
     /**
      * Attempt to resolve the WSDL.  Returns true if we have a valid one, or false otherwise.
@@ -362,7 +391,7 @@ public class WsdlLocationPanel extends JPanel {
         if (isUrlOk(wsdlUrl, null) && !isUrlOk(wsdlUrl, "file")) { // then it is http or https so the Gateway should resolve it
             locator = gatewayHttpWSDLLocator(wsdlUrl);
         }
-        else { // it is a file url or is invalid
+        else { // it is a file url (such as "file:///"), a relative file path, an absolute file fath, or invalid.
            locator = fileWSDLLocator(wsdlUrl);
         }
 
@@ -623,6 +652,7 @@ public class WsdlLocationPanel extends JPanel {
 
     /**
      * Get a WSDLLocator suitable for retrieval of a single document (will not work for includes)
+     * @param wsdlUrl it could be a file url (such as "file:///"), a relative file path, an absolute file fath, or invalid.
      */
     private WSDLLocator fileWSDLLocator(final String wsdlUrl) {
         FileInputStream fin = null;
@@ -633,7 +663,7 @@ public class WsdlLocationPanel extends JPanel {
                 wsdlFile = new File(new URI(wsdlUrl));
             }
             else {
-                wsdlFile = new File(wsdlUrl);
+                wsdlFile = new File(addDefaultDirectoryIntoPath(wsdlUrl));
             }
 
             if (wsdlFile.length() > 8000000) throw new IOException("File is too large.");
