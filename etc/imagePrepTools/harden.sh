@@ -1,5 +1,32 @@
 #!/bin/bash
 
+ISVM="`dmesg | grep VMware`"
+ISHARDWARE="`uname -a | grep x86_64`"
+# set this manually as there's no way to tell by script the difference between normal hardware and NCES
+ISNCES=""
+
+# Notes: a correct hardened pam.d/system-auth file looks like:
+## #%PAM-1.0
+## # This file is auto-generated.
+## # User changes will be destroyed the next time authconfig is run.
+## auth        required      /lib/security/$ISA/pam_tally2.so deny=5 even_deny_root_account onerr=fail no_magic_root unlock_time=1200
+## auth        required      /lib/security/$ISA/pam_env.so
+## auth        sufficient    /lib/security/$ISA/pam_unix.so likeauth nullok
+## auth        required      /lib/security/$ISA/pam_deny.so
+## 
+## account     required      /lib/security/$ISA/pam_unix.so
+## account     required      /lib/security/$ISA/pam_tally2.so no_magic_root reset
+## account     sufficient    /lib/security/$ISA/pam_succeed_if.so uid < 100 quiet
+## account     required      /lib/security/$ISA/pam_permit.so
+## 
+## password    requisite     /lib/security/$ISA/pam_cracklib.so retry=3 minlen=9 ucredit=-2 lcredit=-2 dcredit=-2 ocredit=-2
+## password    sufficient    /lib/security/$ISA/pam_unix.so nullok use_authtok md5 shadow remember=5
+## password    required      /lib/security/$ISA/pam_deny.so
+## 
+## session     required      /lib/security/$ISA/pam_limits.so
+## session     required      /lib/security/$ISA/pam_unix.so
+
+
 harden() {
   # GEN005020
   userdel ftp
@@ -28,27 +55,17 @@ harden() {
   touch /var/log/btmp
 
   # GEN000460
-  if ! grep -Eq 'auth +required +.*/pam_tally2.so deny=[0-9] no_magic_root unlock_time=1200' /etc/pam.d/system-auth; then
+  if ! grep -Eq 'auth +required +.*/pam_tally2.so deny=[0-9].*no_magic_root unlock_time=1200' /etc/pam.d/system-auth; then
 	 # delete any auth required pam_tally2 lines to be sure
 	 sed -i -e '/auth\s*required\s*.*\/pam_tally2.so/d' /etc/pam.d/system-auth
 	 # add in the new line before the pam_env line, use \2 as the substitution to ensure we have the same lib or lib64 line
-	 sed -i -r -e 's/^(.*(auth\s*required\s*.*)\/pam_env\.so.*)$/\2\/pam_tally2\.so deny=5 onerr=fail no_magic_root unlock_time=1200\n\1/' /etc/pam.d/system-auth
-
-# orig
-#	 sed -i -r -e '
-#/(auth\s*required\s*.*)\/pam_env\.so/ i\
-#$1/pam_tally2\.so deny=5 onerr=fail no_magic_root unlock_time=1200' /etc/pam.d/system-auth
+	 sed -i -r -e 's/^(.*(auth\s*required\s*.*)\/pam_env\.so.*)$/\2\/pam_tally2\.so deny=5 even_deny_root_account onerr=fail no_magic_root unlock_time=1200\n\1/' /etc/pam.d/system-auth
 
 	 # delete any account sufficient pam_tally2 lines to be sure
 	 sed -i -e '/account\s*required\s*.*\/pam_tally2.so/d' /etc/pam.d/system-auth
 
-	 sed -i -r -e 's/^(.*(account\s*)sufficient(\s*.*)\/pam_succeed_if\.so.*)$/\2required  \3\/pam_tally2.so no_magic_root even_deny_root_account reset\n\1/' /etc/pam.d/system-auth
+	 sed -i -r -e 's/^(.*(account\s*)sufficient(\s*.*)\/pam_succeed_if\.so.*)$/\2required  \3\/pam_tally2.so no_magic_root reset\n\1/' /etc/pam.d/system-auth
 
-# orig
-#	 sed -i -r -e '
-#/(account\s*)sufficient(\s*.*)\/pam_succeed_if\.so/ i\
-#\1 required \2/pam_tally2.so no_magic_root even_deny_root_account reset' /etc/pam.d/system-auth
-#account     required      /lib64/security/$ISA/pam_tally2.so no_magic_root even_deny_root_account reset' /etc/pam.d/system-auth
   fi
   # Use a listfile with SSH to prevent DOS attacks on system accounts
   if [ ! -e /etc/ssh/ssh_allowed_users ]; then
@@ -117,14 +134,27 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
   fi
   rm -f /root/original_permissions
 
+  # GEN002740
+  # VM has max_log_file set to 5, hardware is 125
+  if [ "$ISVM" ] ; then
+	  sed -i -e 's/\(max_log_file = .*\)/max_log_file = 5/' /etc/auditd.conf
+  fi
+  if [ "$ISHARDWARE" ] ; then
+	  sed -i -e 's/\(max_log_file = .*\)/max_log_file = 125/' /etc/auditd.conf
+  fi
+  if [ "$ISNCES" ] ; then
+	  sed -i -e 's/\(max_log_file = .*\)/max_log_file = 125/' /etc/auditd.conf
+  fi
+
   # Remove audit.rules added contents first to ensure not duplication
+  sed -i -e '/^\-a exit,always \-S open \-F success=0$/d' /etc/audit.rules
   sed -i -e '/^\-a exit,always \-S unlink \-S rmdir/, /sched_setscheduler \-F euid\!=27$/d' /etc/audit.rules
 
-  # GEN002740
-  sed -i -e 's/max_log_file = 5/max_log_file = 125/' /etc/auditd.conf
-  echo '-a exit,always -S unlink -S rmdir' >> /etc/audit.rules
-
   # GEN002760
+  if [ "$ISNCES" ] ; then 
+	  echo '-a exit,always -S open -F success=0' >> /etc/audit.rules
+  fi
+  echo '-a exit,always -S unlink -S rmdir' >> /etc/audit.rules
   echo '-w /var/log/audit/' >> /etc/audit.rules
   echo '-w /etc/auditd.conf' >> /etc/audit.rules
   echo '-w /etc/audit.rules' >> /etc/audit.rules
@@ -266,8 +296,8 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   rm -f /var/log/btmp
 
   # GEN000460
-  sed -i -e '/auth\s*required\s*\/lib.*\/security\/$ISA\/pam_tally2.so deny=5 onerr=fail no_magic_root unlock_time=1200/d' /etc/pam.d/system-auth
-  sed -i -e '/account\s*required\s*\/lib.*\/security\/$ISA\/pam_tally2.so no_magic_root even_deny_root_account reset/d' /etc/pam.d/system-auth
+  sed -i -e '/auth\s*required\s*\/lib.*\/security\/$ISA\/pam_tally2.so deny=5.* onerr=fail no_magic_root unlock_time=1200/d' /etc/pam.d/system-auth
+  sed -i -e '/account\s*required\s*\/lib.*\/security\/$ISA\/pam_tally2.so no_magic_root.* reset/d' /etc/pam.d/system-auth
   rm -f /etc/ssh/ssh_allowed_users
   sed -i -e '/auth       requisite    pam_listfile.so item=user sense=allow file=\/etc\/ssh\/ssh_allowed_users onerr=succeed/d' /etc/pam.d/sshd
   rm -f /etc/tty_users
@@ -332,12 +362,13 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   fi
 
   # GEN002740
-  sed -i -e 's/max_log_file = 125/max_log_file = 5/' /etc/auditd.conf
-  sed -i -e '/-a exit,always -S unlink -S rmdir/d' /etc/audit.rules
+  # I don't think we need to change this on soften, it'll be set correctly by the harden() regardless
+  #sed -i -e 's/max_log_file = 125/max_log_file = 5/' /etc/auditd.conf
 
   # GEN002760
-  if [ ! "`grep euid\!=27 /etc/audit.rules`" ] ; then
-  sed -i -e '/-w \/var\/log\/audit\//d' \
+  sed -i -e '/-a exit,always -S open -F success=0/d' \
+  			-e '/-a exit,always -S unlink -S rmdir/d' \
+  			-e '/-w \/var\/log\/audit\//d' \
          -e '/-w \/etc\/auditd.conf/d' \
          -e '/-w \/etc\/audit.rules/d' \
          -e '/-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon/d' \
@@ -345,7 +376,6 @@ halt:*:13637:0:99999:7:::' /etc/shadow
          -e '/# The mysqld program is expected to call sched_setscheduler/d' \
          -e '/-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27/d' \
       /etc/audit.rules
-  fi
   # GEN002960
   rm -f /etc/cron.allow
   sed -i -e '/ssgconfig/d' /etc/cron.deny
@@ -478,8 +508,10 @@ if [ ! "`grep TMOUT /etc/profile | grep 900 | grep -i export`" ] ; then
 fi
 
 # GEN002860
-if [ ! -x /etc/cron.daily/auditd-rotate ]; then
-	echo "Error - /etc/cron.daily/auditd-rotate isn't there or isn't executable (only needed for NCES images)"
+if [ "$ISNCES" ] ; then
+	if [ ! -x /etc/cron.daily/auditd-rotate ]; then
+		echo "Error - /etc/cron.daily/auditd-rotate isn't there or isn't executable (only needed for NCES images)"
+	fi
 fi
 if [ -x /etc/cron.daily/auditd-rotate ] ; then
 	if [ ! "`grep USR1 /etc/cron.daily/auditd-rotate | grep auditd`" ] ; then
@@ -498,8 +530,8 @@ if [ ! -e /var/log/btmp ] ; then
 fi
 
 # GEN000460
-if [ ! "$(cat /etc/pam.d/system-auth | grep ^auth | head -n 1 | egrep 'auth\s*required\s*/lib(.*)/security/\$ISA/pam_tally2.so deny=5 onerr=fail no_magic_root unlock_time=1200')" ] ; then
-	echo "Error - pam_tally2 not set up properly"
+if [ ! "$(cat /etc/pam.d/system-auth | grep ^auth | head -n 1 | egrep 'auth\s*required\s*/lib(.*)/security/\$ISA/pam_tally2.so deny=5 even_deny_root_account onerr=fail no_magic_root unlock_time=1200')" ] ; then
+	echo "Error - pam_tally2 not set up properly - auth required"
 fi
 
 # GEN000480
@@ -538,77 +570,94 @@ fi
 
 # GEN001880
 if [ "`stat --format=%a /home/ssgconfig/.bash_logout /home/ssgconfig/.bash_profile /home/ssgconfig/.bashrc 2>/dev/null | grep -v 740`" ] ; then
-	echo "Error - invalid permissions on ssh initialization files"
+	echo "Error - Invalid permissions on ssh initialization files"
 fi
 
 # GEN002480
-F1=`find / -type f -perm -002 -printf '%p %m\n' | grep -v '^/tmp/' | grep -v '^/var/tmp/'`
-F2=`find / -type d -perm -002 -printf '%p %m\n' | grep -v '^/tmp ' | grep -v '^/tmp/' | grep -v '^/var/tmp ' | grep -v '^/var/tmp/' | grep -v '^/dev/'`
+F1="`find / -type f -perm -002 -printf '%p %m\n' | grep -v '^/tmp/' | grep -v '^/var/tmp/'`"
+F2="`find / -type d -perm -002 -printf '%p %m\n' | grep -v '^/tmp ' | grep -v '^/tmp/' | grep -v '^/var/tmp ' | grep -v '^/var/tmp/' | grep -v '^/dev/'`"
 if [ "$F1" -o "$F2" ] ; then
-	echo "Error - invalid world write access"
+	echo "Error - invalid world write access for files or dirs:
+$F1
+$F2"
 fi
 
 # GEN002740 GEN002760
-if [ $ISNCES ] ; then
+F="/etc/audit.rules"
+
+if [ "$ISNCES" ] ; then
 	if [ ! "`/sbin/chkconfig --list auditd | grep "3:on"`" ] ; then 
 		echo "Error - auditd missing from runlevel 3"
 	fi
-
-	if [ ! "`grep max_log_file /efc/auditd.conf | grep 125`" ] ; then
-		echo "Error - bad max_log_file setting for /etc/auditd.conf"
-	fi
-
-	F="/etc/audit.rules"
-	if [ ! "`grep "-a exit,always -S open -F success=0" $F`" -o \
-		  ! "`grep "-a exit,always -S unlink -S rmdir" $F`" -o \
-		  ! "`grep "-w /var/log/audit/" $F`" -o \
-		  ! "`grep "-w /etc/auditd.conf" $F`" -o \
-		  ! "`grep "-w /etc/audit.rules" $F`" -o \
-		  ! "`grep "-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon" $F`" -o \
-		  ! "`grep "-a exit,always -S settimeofday -S setrlimit -S setdomainname" $F`" -o \
-		  ! "`grep "# The mysqld program is expected to call sched_setscheduler" $F`" -o \
-		  ! "`grep "-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27" $F`" ] ; then
-		  echo "Error - Missing settings in /etc/audit.rules"
+	if [ ! "`grep -- "-a exit,always -S open -F success=0" $F`" ] ; then
+	  echo "Error - Missing settings in /etc/audit.rules"
 	fi
 fi
 
-# Non NCES, non VM
-if [ $ISHARDWARE ] ; then 
-	if [ ! "`grep max_log_file /efc/auditd.conf | grep 125`" ] ; then
+if [ "$ISVM" ] ; then 
+	if [ ! "`egrep 'max_log_file = 5' /etc/auditd.conf`" ] ; then
 		echo "Error - bad max_log_file setting for /etc/auditd.conf"
 	fi
+fi
 
-	F="/etc/audit.rules"
-	if [ ! "`grep "-a exit,always -S unlink -S rmdir" $F`" -o \
-		  ! "`grep "-w /var/log/audit/" $F`" -o \
-		  ! "`grep "-w /etc/auditd.conf" $F`" -o \
-		  ! "`grep "-w /etc/audit.rules" $F`" -o \
-		  ! "`grep "-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon" $F`" -o \
-		  ! "`grep "-a exit,always -S settimeofday -S setrlimit -S setdomainname" $F`" -o \
-		  ! "`grep "# The mysqld program is expected to call sched_setscheduler" $F`" -o \
-		  ! "`grep "-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27" $F`" ] ; then
-		  echo "Error - Missing settings in /etc/audit.rules"
+# For NCES only 
+#if [ "$ISNCES" ] ; then
+#	  ! "`grep -- "-a exit,always -S unlink -S rmdir" $F`" -o \
+#	  ! "`grep -- "-w /var/log/audit/" $F`" -o \
+#	  ! "`grep -- "-w /etc/auditd.conf" $F`" -o \
+#	  ! "`grep -- "-w /etc/audit.rules" $F`" -o \
+#	  ! "`grep -- "-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon" $F`" -o \
+#	  ! "`grep -- "-a exit,always -S settimeofday -S setrlimit -S setdomainname" $F`" -o \
+#	  ! "`grep -- "# The mysqld program is expected to call sched_setscheduler" $F`" -o \
+#	  ! "`grep -- "-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27" $F`" ] ; then
+#	  echo "Error - Missing settings in /etc/audit.rules"
+#	fi
+#fi
+
+# Non NCES, non VM
+if [ "$ISHARDWARE" ] ; then 
+	if [ ! "`egrep 'max_log_file = 125' /etc/auditd.conf`" ] ; then
+		echo "Error - bad max_log_file setting for /etc/auditd.conf"
 	fi
+fi
+
+# for all
+if [ ! "`grep -- "-a exit,always -S unlink -S rmdir" $F`" -o \
+	  ! "`grep -- "-w /var/log/audit/" $F`" -o \
+	  ! "`grep -- "-w /etc/auditd.conf" $F`" -o \
+	  ! "`grep -- "-w /etc/audit.rules" $F`" -o \
+	  ! "`grep -- "-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon" $F`" -o \
+	  ! "`grep -- "-a exit,always -S settimeofday -S setrlimit -S setdomainname" $F`" -o \
+	  ! "`grep -- "# The mysqld program is expected to call sched_setscheduler" $F`" -o \
+	  ! "`grep -- "-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27" $F`" ] ; then
+	  echo "Error - Missing settings in /etc/audit.rules"
 fi
 
 # Settings for virtual machines
-if [ $ISVM ] ; then
-	if [ ! "`grep max_log_file /efc/auditd.conf | grep 5`" ] ; then
+if [ "$ISVM" ] ; then
+	if [ ! "`grep max_log_file /etc/auditd.conf | grep 5`" ] ; then
 		echo "Error - bad max_log_file setting for /etc/auditd.conf"
 	fi
-
-	F="/etc/audit.rules"
-	if [ ! "`grep "-a exit,always -S unlink -S rmdir" $F`" -o \
-		  ! "`grep "-w /var/log/audit/" $F`" -o \
-		  ! "`grep "-w /etc/auditd.conf" $F`" -o \
-		  ! "`grep "-w /etc/audit.rules" $F`" -o \
-		  ! "`grep "-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon" $F`" -o \
-		  ! "`grep "-a exit,always -S settimeofday -S setrlimit -S setdomainname" $F`" -o \
-		  ! "`grep "# The mysqld program is expected to call sched_setscheduler" $F`" -o \
-		  ! "`grep "-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27" $F`" ] ; then
-		  echo "Error - Missing settings in /etc/audit.rules"
-	fi
 fi
+
+# GEN002740, GEN002760 
+# FIXME - duplication?
+#F="/etc/audit.rules"
+#if [ "$ISNCES" ] ; then
+#	if [ ! "`grep -- '-a exit,always -S open -F success=0' $F`" ] ; then
+#		echo "NCES: Missing rule in /etc/audit.rules"
+#	fi
+#fi
+#if [ ! "`grep -- "-a exit,always -S unlink -S rmdir" $F`" -o \
+#	  ! "`grep -- "-w /var/log/audit/" $F`" -o \
+#	  ! "`grep -- "-w /etc/auditd.conf" $F`" -o \
+#	  ! "`grep -- "-w /etc/audit.rules" $F`" -o \
+#	  ! "`grep -- "-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon" $F`" -o \
+#	  ! "`grep -- "-a exit,always -S settimeofday -S setrlimit -S setdomainname" $F`" -o \
+#	  ! "`grep -- "# The mysqld program is expected to call sched_setscheduler" $F`" -o \
+#	  ! "`grep -- "-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27" $F`" ] ; then
+#	  echo "Error - Missing settings in /etc/audit.rules"
+#fi
 
 # GEN002960
 if [ ! -e /etc/cron.allow ] ; then
@@ -675,7 +724,7 @@ if [ ! "`stat --format=%a /etc/syslog.conf | grep 640`" ] ; then
 fi
 
 # GEN005540
-if [ ! $ISNCES ] ; then
+if [ ! "$ISNCES" ] ; then
 	if [ ! "`grep "ALL: ALL" /etc/hosts.deny`" ] ; then
 		echo "Error - missing ALL: ALL in /etc/hosts.deny"
 	fi
@@ -683,7 +732,7 @@ if [ ! $ISNCES ] ; then
 		echo "Error - missing sshd: ALL in /etc/hosts.allow"
 	fi
 fi
-if [ $ISNCES ] ; then
+if [ "$ISNCES" ] ; then
 	if [ ! "`grep "ALL: ALL" /etc/hosts.deny`" ] ; then
 		echo "Error - missing ALL: ALL in /etc/hosts.deny"
 	fi
