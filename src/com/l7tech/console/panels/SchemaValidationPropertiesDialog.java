@@ -517,7 +517,13 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             }
         } catch (XmlUtil.BadSchemaException e) {
             log.log(Level.WARNING, "issue with schema at hand", e);
-            displayError(ExceptionUtils.getMessage(e), null);
+            String errMsg = ExceptionUtils.getMessage(e);
+            if (e.getCause() instanceof SAXException) {
+                errMsg = "A schema-parsing error occurred.\n" + errMsg + "\nPlease correct the invalid content in the schema.";
+            } else if (e.getCause() instanceof IOException) {
+                errMsg = "An IO error occurred.\n" + errMsg + "\nPlease try it again.";
+            }
+            displayError(errMsg, null);
             return false;
         }
         try {
