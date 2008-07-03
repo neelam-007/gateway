@@ -14,6 +14,7 @@ import com.l7tech.common.gui.util.FileChooserUtil;
 import com.l7tech.common.gui.widgets.OkCancelDialog;
 import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.WsdlSchemaAnalizer;
 import com.l7tech.common.xml.schema.SchemaEntry;
@@ -516,7 +517,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             }
         } catch (XmlUtil.BadSchemaException e) {
             log.log(Level.WARNING, "issue with schema at hand", e);
-            displayError("This does not appear to be a legal schema. Consult log for more information", null);
+            displayError(ExceptionUtils.getMessage(e), null);
             return false;
         }
         try {
