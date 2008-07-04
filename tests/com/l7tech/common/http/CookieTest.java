@@ -205,6 +205,186 @@ public class CookieTest extends TestCase {
         assertEquals("Value correct", "AQIC5wM2LY4SfcyETgWNhyoF+BR2H4zTz5vMoPKxzP2EPDA=@AAJTSQACMDE=#", cookie2.getCookieValue());
     }
 
+    /*
+    * Date Format: Sun, 17-Jan-2038 19:14:07 GMT
+    * */
+    public void testCookieExpiresNetscape() throws Exception{
+        String name = "test";
+        String value = "testvalue";
+        String path = "/test/path";
+        String domain = ".testdomain.com";
+        String expires = "Sun, 17-Jan-2038 19:14:07 GMT";
+        String headerValue = name + "=" + value + "; expires="+expires+"; Path=" + path + "; Domain=" + domain + "; Version=0";
+
+        SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.NETSCAPE_RFC850_DATEFORMAT, Locale.US);
+        expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        expiryFormat.setLenient(false);
+        Date expiresDate = expiryFormat.parse(expires);
+        int maxAgeTarget = (int)((expiresDate.getTime()-System.currentTimeMillis())/1000L);
+
+        HttpCookie cookie = new HttpCookie(domain, path, headerValue);
+
+        assertEquals("Cookie should be new", true, cookie.isNew());
+        assertEquals("Checking name property", name, cookie.getCookieName());
+        assertEquals("Checking value property", value, cookie.getCookieValue());
+        assertEquals("Expiry set", true, cookie.hasExpiry());
+        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge()-maxAgeTarget)); //allow few secs difference
+        assertEquals("Checking path property", path, cookie.getPath());
+        assertEquals("Checking domain property", domain, cookie.getDomain());
+        assertEquals("Should not be secure", false, cookie.isSecure());
+    }
+
+    /*
+    * Date format: Sun, 06 Nov 1994 08:49:37 GMT
+    * */
+    public void testCookieExpiresRfc1123() throws Exception{
+        String name = "test";
+        String value = "testvalue";
+        String path = "/test/path";
+        String domain = ".testdomain.com";
+        String expires = "Sun, 17 Jan 2038 19:14:07 GMT";
+        String headerValue = name + "=" + value + "; expires="+expires+"; Path=" + path + "; Domain=" + domain + "; Version=0";
+
+        SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.RFC1123_RFC1036_RFC822_DATEFORMAT, Locale.US);
+        expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        expiryFormat.setLenient(false);
+        Date expiresDate = expiryFormat.parse(expires);
+        int maxAgeTarget = (int)((expiresDate.getTime()-System.currentTimeMillis())/1000L);
+
+        HttpCookie cookie = new HttpCookie(domain, path, headerValue);
+
+        assertEquals("Cookie should be new", true, cookie.isNew());
+        assertEquals("Checking name property", name, cookie.getCookieName());
+        assertEquals("Checking value property", value, cookie.getCookieValue());
+        assertEquals("Expiry set", true, cookie.hasExpiry());
+        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge()-maxAgeTarget)); //allow few secs difference
+        assertEquals("Checking path property", path, cookie.getPath());
+        assertEquals("Checking domain property", domain, cookie.getDomain());
+        assertEquals("Should not be secure", false, cookie.isSecure());
+    }
+
+    /*
+    * Date format: Sunday, 06-Nov-94 08:49:37 GMT
+    * This date format accepts two digit years. SimpleDateFormat will not always handle this two digit year as we
+    * need it done as it may assume it's in the last century.
+    * Internally HttpCookie will expand the year to the current century
+    * */
+    public void testCookieExpiresRfc850() throws Exception{
+        String name = "test";
+        String value = "testvalue";
+        String path = "/test/path";
+        String domain = ".testdomain.com";
+        String expires = "Sunday, 04-Nov-38 08:49:37 GMT";
+        String expiresFullYear = "Sunday, 04-Nov-2038 08:49:37 GMT";
+        String headerValue = name + "=" + value + "; expires="+expires+"; Path=" + path + "; Domain=" + domain + "; Version=0";
+
+        SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.NETSCAPE_RFC850_DATEFORMAT, Locale.US);
+        expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        Date expiresDate = expiryFormat.parse(expiresFullYear);
+        int maxAgeTarget = (int)((expiresDate.getTime()-System.currentTimeMillis())/1000L);
+
+        HttpCookie cookie = new HttpCookie(domain, path, headerValue);
+
+        assertEquals("Cookie should be new", true, cookie.isNew());
+        assertEquals("Checking name property", name, cookie.getCookieName());
+        assertEquals("Checking value property", value, cookie.getCookieValue());
+        assertEquals("Expiry set", true, cookie.hasExpiry());
+        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge()-maxAgeTarget)); //allow few secs difference
+        assertEquals("Checking path property", path, cookie.getPath());
+        assertEquals("Checking domain property", domain, cookie.getDomain());
+        assertEquals("Should not be secure", false, cookie.isSecure());
+    }
+
+    /*
+    * Date format: Sun, 06 Nov 16 08:49:37 GMT
+    * This date format accepts two digit years. SimpleDateFormat will not always handle this two digit year as we
+    * need it done as it may assume it's in the last century.
+    * Internally HttpCookie will expand the year to the current century
+    * */
+    public void testCookieExpiresRfc1036AndRfc822() throws Exception{
+        String name = "test";
+        String value = "testvalue";
+        String path = "/test/path";
+        String domain = ".testdomain.com";
+        String expires = "Sun, 06 Nov 16 08:49:37 GMT";
+        String expiresFullYear = "Sun, 06 Nov 2016 08:49:37 GMT";
+        String headerValue = name + "=" + value + "; expires="+expires+"; Path=" + path + "; Domain=" + domain + "; Version=0";
+
+        SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.RFC1123_RFC1036_RFC822_DATEFORMAT, Locale.US);
+        expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        Date expiresDate = expiryFormat.parse(expiresFullYear);
+        int maxAgeTarget = (int)((expiresDate.getTime()-System.currentTimeMillis())/1000L);
+
+        HttpCookie cookie = new HttpCookie(domain, path, headerValue);
+
+        assertEquals("Cookie should be new", true, cookie.isNew());
+        assertEquals("Checking name property", name, cookie.getCookieName());
+        assertEquals("Checking value property", value, cookie.getCookieValue());
+        assertEquals("Expiry set", true, cookie.hasExpiry());
+        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge()-maxAgeTarget)); //allow few secs difference
+        assertEquals("Checking path property", path, cookie.getPath());
+        assertEquals("Checking domain property", domain, cookie.getDomain());
+        assertEquals("Should not be secure", false, cookie.isSecure());
+    }
+
+    /*
+    * Date Format: Sun Nov  6 08:49:37 1994
+    * */
+    public void testCookieExpiresAnsiC_SingleDayDigit() throws Exception{
+        String name = "test";
+        String value = "testvalue";
+        String path = "/test/path";
+        String domain = ".testdomain.com";
+        String expires = "Sun Nov  6 08:49:37 2038";
+        String headerValue = name + "=" + value + "; expires="+expires+"; Path=" + path + "; Domain=" + domain + "; Version=0";
+
+        SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.ANSI_C_DATEFORMAT, Locale.US);
+        //Don't set a time zone as this time format doesn't specify. Will have to go with our local timezone
+        //expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        Date expiresDate = expiryFormat.parse(expires);
+        int maxAgeTarget = (int)((expiresDate.getTime()-System.currentTimeMillis())/1000L);
+
+        HttpCookie cookie = new HttpCookie(domain, path, headerValue);
+
+        assertEquals("Cookie should be new", true, cookie.isNew());
+        assertEquals("Checking name property", name, cookie.getCookieName());
+        assertEquals("Checking value property", value, cookie.getCookieValue());
+        assertEquals("Expiry set", true, cookie.hasExpiry());
+        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge()-maxAgeTarget)); //allow few secs difference
+        assertEquals("Checking path property", path, cookie.getPath());
+        assertEquals("Checking domain property", domain, cookie.getDomain());
+        assertEquals("Should not be secure", false, cookie.isSecure());
+    }
+
+    /*
+    * Date Format: Sun Nov  6 08:49:37 1994
+    * */
+    public void testCookieExpiresAnsiC_DoubleDayDigit() throws Exception{
+        String name = "test";
+        String value = "testvalue";
+        String path = "/test/path";
+        String domain = ".testdomain.com";
+        String expires = "Sun Nov 06 08:49:37 2038";
+        String headerValue = name + "=" + value + "; expires="+expires+"; Path=" + path + "; Domain=" + domain + "; Version=0";
+
+        SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.ANSI_C_DATEFORMAT, Locale.US);
+        //Don't set a time zone as this time format doesn't specify. Will have to go with our local timezone
+        //expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        Date expiresDate = expiryFormat.parse(expires);
+        int maxAgeTarget = (int)((expiresDate.getTime()-System.currentTimeMillis())/1000L);
+
+        HttpCookie cookie = new HttpCookie(domain, path, headerValue);
+
+        assertEquals("Cookie should be new", true, cookie.isNew());
+        assertEquals("Checking name property", name, cookie.getCookieName());
+        assertEquals("Checking value property", value, cookie.getCookieValue());
+        assertEquals("Expiry set", true, cookie.hasExpiry());
+        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge()-maxAgeTarget)); //allow few secs difference
+        assertEquals("Checking path property", path, cookie.getPath());
+        assertEquals("Checking domain property", domain, cookie.getDomain());
+        assertEquals("Should not be secure", false, cookie.isSecure());
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(CookieTest.class.getName());

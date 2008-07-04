@@ -9,10 +9,9 @@ package com.l7tech.common.http;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Locale;
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
  * <p>Represents a cookie. Can be used on the client side (bridge) or server side (gateway).</p>
@@ -119,19 +118,34 @@ public class HttpCookie {
         }
 
         if(parsedVersion==0 && parsedExpires!=null) {
-             try {
-                SimpleDateFormat expiryFormat = new SimpleDateFormat(NETSCAPE_EXPIRES_DATEFORMAT, Locale.US);
-                long calculatedMaxAge = expiryFormat.parse(parsedExpires).getTime() - System.currentTimeMillis();
-                if(calculatedMaxAge>1000) {
-                    parsedMaxAge = (int)(calculatedMaxAge/1000L);
+            List<Pattern> datePatternToFormat = CookieUtils.getDatePatterns();
+            boolean match = false;
+            for(Pattern p: datePatternToFormat){
+                Matcher m = p.matcher(parsedExpires);
+                if(m.matches()){
+                    try{
+                        String pattern = p.pattern();
+                        parsedExpires = CookieUtils.expandYear(pattern, parsedExpires);
+                        SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.getDateFormat(p), Locale.US);
+                        long calculatedMaxAge = expiryFormat.parse(parsedExpires).getTime() - System.currentTimeMillis();
+                        if(calculatedMaxAge>1000){
+                            parsedMaxAge = (int)(calculatedMaxAge/1000L);
+                        }
+                        else{
+                            parsedMaxAge = 0;
+                        }
+                        match = true;
+                        break;
+                     }catch (ParseException e){
+                        throw new HttpCookie.IllegalFormatException("Invalid expires attribute: " + e.getMessage());
+                     }
                 }
-                else {
-                    parsedMaxAge = 0;
-                }
-            } catch (ParseException e) {
-                throw new HttpCookie.IllegalFormatException("Invalid expires attribute: " + e.getMessage());
+            }
+            if(!match){
+                throw new HttpCookie.IllegalFormatException("Unknown expires format in Cookie");                
             }
         }
+
 
         secure = parsedSecure;
         maxAge = parsedMaxAge;
@@ -455,7 +469,7 @@ public class HttpCookie {
 
     private static final Pattern WHITESPACE = Pattern.compile(";\\s*");
     private static final Pattern EQUALS = Pattern.compile("=");
-    private static final String NETSCAPE_EXPIRES_DATEFORMAT = "EEE, dd-MMM-yyyy HH:mm:ss z";
+
     private static final String NON_TOKEN_CHARS = ",; ";
 
     //store the full initial value of the cookie so that it can be regenerated later with ease
