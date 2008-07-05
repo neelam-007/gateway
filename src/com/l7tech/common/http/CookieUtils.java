@@ -27,6 +27,8 @@ public class CookieUtils {
     private static final Pattern rfc1123DatePattern;
     private static final Pattern rfc1036AndRfc822DatePattern;
     private static final Pattern ansiCDatePattern;
+    private static final Pattern amazonDatePattern;
+    
     private static final Map<Pattern, String> datePatternToFormat;
 
     /*NETSCAPE_RFC850_DATEFORMAT matches both netscape and rfc1123 date formats for parsing dates*/
@@ -35,6 +37,7 @@ public class CookieUtils {
     * is called on the SimpleDateFormat instance used to parse*/
     public static final String RFC1123_RFC1036_RFC822_DATEFORMAT = "EEE, dd MMM yyyy HH:mm:ss z";
     public static final String ANSI_C_DATEFORMAT = "EEE MMM dd HH:mm:ss yyyy";
+    public static final String AMAZON_DATEFORMAT = "EEE MMM dd HH:mm:ss yyyy z";
 
     /*datePatterns is a list which is ordered in the static initializer below.
     * No other mechanism is proivded for iteration so a client will go through our List in the order we specify here
@@ -42,11 +45,13 @@ public class CookieUtils {
     */
     private static List<Pattern> datePatterns;
 
-    public static final String NETSCAPE_PATTERN = "[a-zA-Z]{3},\\s[0-9]{2}-[a-zA-Z]{3}-[0-9]{4}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\sGMT";
-    public static final String RFC850_PATTERN = "(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday){1},\\s[0-9]{2}-[a-zA-Z]{3}-[0-9]{2}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\sGMT";
-    public static final String RFC1123_PATTERN = "[a-zA-Z]{3},\\s[0-9]{2}\\s[a-zA-Z]{3}\\s[0-9]{4}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\sGMT";
-    public static final String RFC1036_RFC822_PATTERN = "[a-zA-Z]{3},\\s[0-9]{2}\\s[a-zA-Z]{3}\\s[0-9]{2}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\sGMT";
+    public static final String NETSCAPE_PATTERN = "[a-zA-Z]{3},\\s[0-9]{2}-[a-zA-Z]{3}-[0-9]{4}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\s[a-zA-Z]{3}";
+    public static final String RFC850_PATTERN = "(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday){1},\\s[0-9]{2}-[a-zA-Z]{3}-[0-9]{2}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\s[a-zA-Z]{3}";
+    public static final String RFC1123_PATTERN = "[a-zA-Z]{3},\\s[0-9]{2}\\s[a-zA-Z]{3}\\s[0-9]{4}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\s[a-zA-Z]{3}";
+    public static final String RFC1036_RFC822_PATTERN = "[a-zA-Z]{3},\\s[0-9]{2}\\s[a-zA-Z]{3}\\s[0-9]{2}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\s[a-zA-Z]{3}";
     public static final String ANSI_C_PATTERN = "[a-zA-Z]{3}\\s[a-zA-Z]{3}\\s([0-9]{2}|\\s\\d){1}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\s[0-9]{4}";
+    public static final String AMAZON_PATTERN = "[a-zA-Z]{3}\\s[a-zA-Z]{3}\\s[0-9]{2}\\s[0-9]{2}:[0-9]{2}:[0-9]{2}\\s[0-9]{4}\\s[a-zA-Z]{3}";
+    
     private static Calendar calendar = Calendar.getInstance();
 
     static{
@@ -54,21 +59,31 @@ public class CookieUtils {
         //This could live somewhere else, or driven from configuration. Either way compile the patterns once and reuse
         datePatternToFormat = new HashMap<Pattern, String>();
         datePatterns = new ArrayList<Pattern>();
+        
         netscapeDatePattern = Pattern.compile(NETSCAPE_PATTERN);
         datePatterns.add(netscapeDatePattern);
         datePatternToFormat.put(netscapeDatePattern, NETSCAPE_RFC850_DATEFORMAT);
+
         rfc850DatePattern = Pattern.compile(RFC850_PATTERN);
         datePatterns.add(rfc850DatePattern);
         datePatternToFormat.put(rfc850DatePattern, NETSCAPE_RFC850_DATEFORMAT);
+
         rfc1123DatePattern = Pattern.compile(RFC1123_PATTERN);
         datePatterns.add(rfc1123DatePattern);
         datePatternToFormat.put(rfc1123DatePattern, RFC1123_RFC1036_RFC822_DATEFORMAT);
+
         rfc1036AndRfc822DatePattern = Pattern.compile(RFC1036_RFC822_PATTERN);
         datePatterns.add(rfc1036AndRfc822DatePattern);
         datePatternToFormat.put(rfc1036AndRfc822DatePattern, RFC1123_RFC1036_RFC822_DATEFORMAT);
+
         ansiCDatePattern = Pattern.compile(ANSI_C_PATTERN);
         datePatterns.add(ansiCDatePattern);
         datePatternToFormat.put(ansiCDatePattern, ANSI_C_DATEFORMAT);
+        
+        amazonDatePattern = Pattern.compile(AMAZON_PATTERN);
+        datePatterns.add(amazonDatePattern);
+        datePatternToFormat.put(amazonDatePattern, AMAZON_DATEFORMAT);
+        
     }
 
     /*

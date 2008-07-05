@@ -385,6 +385,32 @@ public class CookieTest extends TestCase {
         assertEquals("Should not be secure", false, cookie.isSecure());
     }
 
+    //Wed Aug 29 07:00:00 2007 GMT
+    public void testCookieExpiresAmazon() throws Exception{
+        String name = "test";
+        String value = "testvalue";
+        String path = "/test/path";
+        String domain = ".testdomain.com";
+        String expires = "Wed Aug 29 07:00:00 2038 GMT";
+        String headerValue = name + "=" + value + "; expires="+expires+"; Path=" + path + "; Domain=" + domain + "; Version=0";
+
+        SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.AMAZON_DATEFORMAT, Locale.US);
+        //Don't set a time zone as this time format doesn't specify. Will have to go with our local timezone
+        //expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        Date expiresDate = expiryFormat.parse(expires);
+        int maxAgeTarget = (int)((expiresDate.getTime()-System.currentTimeMillis())/1000L);
+
+        HttpCookie cookie = new HttpCookie(domain, path, headerValue);
+
+        assertEquals("Cookie should be new", true, cookie.isNew());
+        assertEquals("Checking name property", name, cookie.getCookieName());
+        assertEquals("Checking value property", value, cookie.getCookieValue());
+        assertEquals("Expiry set", true, cookie.hasExpiry());
+        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge()-maxAgeTarget)); //allow few secs difference
+        assertEquals("Checking path property", path, cookie.getPath());
+        assertEquals("Checking domain property", domain, cookie.getDomain());
+        assertEquals("Should not be secure", false, cookie.isSecure());
+    }
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(CookieTest.class.getName());
