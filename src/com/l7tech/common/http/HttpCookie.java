@@ -6,6 +6,8 @@
 
 package com.l7tech.common.http;
 
+import com.l7tech.common.util.SyspropUtil;
+
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -19,6 +21,8 @@ import java.util.regex.Matcher;
  * <p>A cookie can be constructed using a "SetCookie" header (in which case it is counted as "new").</p>
  */
 public class HttpCookie {
+
+    private static final boolean LENIENT_COOKIE_EXPIRY_FORMAT = SyspropUtil.getBoolean("com.l7tech.common.http.lenientCookieExpiryFormat");
 
     //- PUBLIC
 
@@ -141,7 +145,7 @@ public class HttpCookie {
                      }
                 }
             }
-            if(!match){
+            if(LENIENT_COOKIE_EXPIRY_FORMAT && !match){
                 throw new HttpCookie.IllegalFormatException("Unknown expires format in Cookie");                
             }
         }
