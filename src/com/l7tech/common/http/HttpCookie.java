@@ -22,7 +22,7 @@ import java.util.regex.Matcher;
  */
 public class HttpCookie {
 
-    private static final boolean LENIENT_COOKIE_EXPIRY_FORMAT = SyspropUtil.getBoolean("com.l7tech.common.http.lenientCookieExpiryFormat");
+    private static final boolean STRICT_COOKIE_EXPIRY_FORMAT = SyspropUtil.getBoolean("com.l7tech.common.http.strickCookieExpiryFormat");
 
     //- PUBLIC
 
@@ -145,7 +145,7 @@ public class HttpCookie {
                      }
                 }
             }
-            if(LENIENT_COOKIE_EXPIRY_FORMAT && !match){
+            if(STRICT_COOKIE_EXPIRY_FORMAT && !match){
                 throw new HttpCookie.IllegalFormatException("Unknown expires format in Cookie");                
             }
         }
