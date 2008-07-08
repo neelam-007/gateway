@@ -345,15 +345,21 @@ public class ServerVariables {
             }
         }),
 
-        new Variable(BuiltinVariables.PREFIX_SERVICE_URL, new Getter() {
+        new Variable(BuiltinVariables.PREFIX_SERVICE+"."+BuiltinVariables.SERVICE_SUFFIX_URL, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                return getUrlValue(BuiltinVariables.PREFIX_SERVICE_URL, name, context.getRoutedServiceUrl());
+                return getUrlValue(BuiltinVariables.PREFIX_SERVICE+"."+BuiltinVariables.SERVICE_SUFFIX_URL, name, context.getRoutedServiceUrl());
             }
         }),
 
-        new Variable(BuiltinVariables.PREFIX_SERVICE_NAME, new Getter() {
+        new Variable(BuiltinVariables.PREFIX_SERVICE+"."+BuiltinVariables.SERVICE_SUFFIX_NAME, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 return context.getService().getName();
+            }
+        }),
+
+        new Variable(BuiltinVariables.PREFIX_SERVICE+"."+BuiltinVariables.SERVICE_SUFFIX_OID, new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                return context.getService().getId();
             }
         }),
 
@@ -455,11 +461,11 @@ public class ServerVariables {
             }
         }
         final String protocol = url.getProtocol();
-        if (BuiltinVariables.URLSUFFIX_HOST.equalsIgnoreCase(part)) {
+        if (BuiltinVariables.SERVICE_SUFFIX_HOST.equalsIgnoreCase(part)) {
             return url.getHost();
-        } else if (BuiltinVariables.URLSUFFIX_PROTOCOL.equalsIgnoreCase(part)) {
+        } else if (BuiltinVariables.SERVICE_SUFFIX_PROTOCOL.equalsIgnoreCase(part)) {
             return protocol;
-        } else if (BuiltinVariables.URLSUFFIX_PORT.equalsIgnoreCase(part)) {
+        } else if (BuiltinVariables.SERVICE_SUFFIX_PORT.equalsIgnoreCase(part)) {
             int port = url.getPort();
             if (port == -1) {
                 if ("http".equalsIgnoreCase(protocol)) {
@@ -477,13 +483,13 @@ public class ServerVariables {
                 }
             }
             return Integer.toString(port);
-        } else if (BuiltinVariables.URLSUFFIX_FILE.equalsIgnoreCase(part)) {
+        } else if (BuiltinVariables.SERVICE_SUFFIX_FILE.equalsIgnoreCase(part)) {
             return url.getFile();
-        } else if (BuiltinVariables.URLSUFFIX_PATH.equalsIgnoreCase(part)) {
+        } else if (BuiltinVariables.SERVICE_SUFFIX_PATH.equalsIgnoreCase(part)) {
             return url.getPath();
-        } else if (BuiltinVariables.URLSUFFIX_QUERY.equalsIgnoreCase(part)) {
+        } else if (BuiltinVariables.SERVICE_SUFFIX_QUERY.equalsIgnoreCase(part)) {
             return url.getQuery() == null ? null : "?" + url.getQuery();
-        } else if (BuiltinVariables.URLSUFFIX_FRAGMENT.equalsIgnoreCase(part)) {
+        } else if (BuiltinVariables.SERVICE_SUFFIX_FRAGMENT.equalsIgnoreCase(part)) {
             return url.getRef();
         } else {
             logger.log(Level.WARNING, "Can't handle variable named " + name);

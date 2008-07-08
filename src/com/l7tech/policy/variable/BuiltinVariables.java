@@ -24,8 +24,7 @@ public class BuiltinVariables {
 
     public static final String PREFIX_GATEWAY_TIME = "gateway.time";
     public static final String PREFIX_REQUEST_TIME = "request.time";
-    public static final String PREFIX_SERVICE_URL = "service.url";
-    public static final String PREFIX_SERVICE_NAME = "service.name";
+    public static final String PREFIX_SERVICE = "service";
 
     public static final String PREFIX_REQUEST_URL = "request.url";
     public static final String PREFIX_CLUSTER_PROPERTY = "gateway"; // value of a variable in the cluster property table
@@ -40,13 +39,16 @@ public class BuiltinVariables {
     public static final String TIMESUFFIX_ZONE_UTC = "utc";
     public static final String TIMESUFFIX_ZONE_LOCAL = "local";
 
-    public static final String URLSUFFIX_HOST = "host";
-    public static final String URLSUFFIX_PROTOCOL = "protocol";
-    public static final String URLSUFFIX_PORT = "port";
-    public static final String URLSUFFIX_FILE = "file";
-    public static final String URLSUFFIX_PATH = "path";
-    public static final String URLSUFFIX_QUERY = "query";
-    public static final String URLSUFFIX_FRAGMENT = "fragment";
+    public static final String SERVICE_SUFFIX_URL = "url";
+    public static final String SERVICE_SUFFIX_NAME = "name";
+    public static final String SERVICE_SUFFIX_OID = "oid";
+    public static final String SERVICE_SUFFIX_HOST = "host";
+    public static final String SERVICE_SUFFIX_PROTOCOL = "protocol";
+    public static final String SERVICE_SUFFIX_PORT = "port";
+    public static final String SERVICE_SUFFIX_FILE = "file";
+    public static final String SERVICE_SUFFIX_PATH = "path";
+    public static final String SERVICE_SUFFIX_QUERY = "query";
+    public static final String SERVICE_SUFFIX_FRAGMENT = "fragment";
 
     public static boolean isSupported(String name) {
         return getMetadata(name) != null;
@@ -97,8 +99,11 @@ public class BuiltinVariables {
         new VariableMetadata("request.elapsedTime", false, false, null, false, DataType.INTEGER),
         new VariableMetadata(PREFIX_GATEWAY_TIME, true, false, null, false),
         new VariableMetadata(PREFIX_REQUEST_TIME, true, false, null, false),
-        new VariableMetadata(PREFIX_SERVICE_URL, true, false, null, false),
-        new VariableMetadata(PREFIX_SERVICE_NAME, false, false, null, false),//not prefixed no service.name.somethingelse
+        new VariableMetadata(PREFIX_SERVICE+"."+SERVICE_SUFFIX_URL, true, false, null, false),
+        //service.name and service.oid have no suffixes => have no need to be stored as a variable
+        //which can have suffixes attached to it, unlike service.url which can have service.url.host etc...
+        new VariableMetadata(PREFIX_SERVICE+"."+SERVICE_SUFFIX_NAME, false, false, null, false),
+        new VariableMetadata(PREFIX_SERVICE+"."+SERVICE_SUFFIX_OID, false, false, null, false),
 
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER, true, false, null, false),
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER_VALUES, true, true, null, false),
@@ -121,7 +126,7 @@ public class BuiltinVariables {
         for (int i = 0; i < VARS.length; i++) {
             metadataByName.put(VARS[i].getName().toLowerCase(), VARS[i]);
             // builtin variables that are not set at beginning of context
-            if (!VARS[i].getName().equals(PREFIX_SERVICE_URL)) { // bugzilla 3208, add other non-preset variables as needed
+            if (!VARS[i].getName().equals(PREFIX_SERVICE+"."+SERVICE_SUFFIX_URL)) { // bugzilla 3208, add other non-preset variables as needed
                 metadataPresetByName.put(VARS[i].getName().toLowerCase(), VARS[i]);
             }
         }
