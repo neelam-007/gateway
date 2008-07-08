@@ -2,6 +2,7 @@ package com.l7tech.server.policy.variable;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
 import com.l7tech.service.PublishedService;
@@ -62,7 +63,7 @@ public class ServerVariablesTest extends TestCase {
     * : host, protocol, path, file, query
     * */
     public void testServiceUrlContextVariables() throws Exception{
-        ApplicationContext applicationContext = getApplicationContext();
+        ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
         Message request = new Message();
         request.initialize(XmlUtil.stringAsDocument("<myrequest/>"));
         Message response = new Message();
@@ -124,16 +125,4 @@ public class ServerVariablesTest extends TestCase {
         return pec;
     }
 
-    private ApplicationContext getApplicationContext(){
-        //this context is the same as in the gateway boot process
-        //probably don't need all of these resources, just loading all for now
-        ApplicationContext applicationContext = new ClassPathXmlApplicationContext(new String[]{
-                "com/l7tech/server/resources/dataAccessContext.xml",
-                "com/l7tech/server/resources/ssgApplicationContext.xml",
-                "com/l7tech/server/resources/adminContext.xml",
-                "com/l7tech/server/resources/rbacEnforcementContext.xml",
-                "org/codehaus/xfire/spring/xfire.xml",
-        });
-        return applicationContext;        
-    }
 }

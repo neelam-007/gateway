@@ -985,7 +985,7 @@
             <test name="com.l7tech.proxy.BridgeWsdlProxyTest" haltonfailure="no"/>
             <test name="com.l7tech.server.policy.PolicyDependencyTest" haltonfailure="no"/>
             <test name="com.l7tech.common.http.GenericHttpClientXmlDecodingTest" haltonfailure="no"/>
-            <!--<test name="com.l7tech.server.policy.variable.ServerVariablesTest" haltonfailure="no"/>-->
+            <test name="com.l7tech.server.policy.variable.ServerVariablesTest" haltonfailure="no"/>
 
             <!--
               Add possibly-slow intensive nightly tests here **
