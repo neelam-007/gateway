@@ -350,6 +350,13 @@ public class ServerVariables {
                 return getUrlValue(BuiltinVariables.PREFIX_SERVICE_URL, name, context.getRoutedServiceUrl());
             }
         }),
+
+        new Variable(BuiltinVariables.PREFIX_SERVICE_NAME, new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                return context.getService().getName();
+            }
+        }),
+
         new Variable(BuiltinVariables.PREFIX_GATEWAY_TIME, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 return TimeVariableUtils.getTimeValue(BuiltinVariables.PREFIX_GATEWAY_TIME, name, new TimeVariableUtils.LazyLong() {

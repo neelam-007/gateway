@@ -25,6 +25,8 @@ public class BuiltinVariables {
     public static final String PREFIX_GATEWAY_TIME = "gateway.time";
     public static final String PREFIX_REQUEST_TIME = "request.time";
     public static final String PREFIX_SERVICE_URL = "service.url";
+    public static final String PREFIX_SERVICE_NAME = "service.name";
+
     public static final String PREFIX_REQUEST_URL = "request.url";
     public static final String PREFIX_CLUSTER_PROPERTY = "gateway"; // value of a variable in the cluster property table
 
@@ -96,6 +98,7 @@ public class BuiltinVariables {
         new VariableMetadata(PREFIX_GATEWAY_TIME, true, false, null, false),
         new VariableMetadata(PREFIX_REQUEST_TIME, true, false, null, false),
         new VariableMetadata(PREFIX_SERVICE_URL, true, false, null, false),
+        new VariableMetadata(PREFIX_SERVICE_NAME, false, false, null, false),//not prefixed no service.name.somethingelse
 
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER, true, false, null, false),
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER_VALUES, true, true, null, false),
