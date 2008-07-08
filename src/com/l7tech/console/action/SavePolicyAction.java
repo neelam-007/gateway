@@ -16,9 +16,7 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspWriter;
@@ -123,17 +121,20 @@ public class SavePolicyAction extends PolicyNodeAction {
                 throw new IllegalArgumentException("No edited policy or service specified");
             }
             final long policyOid;
+            final int policyVersion;
             if (policyNode instanceof ServiceNode) {
                 final PublishedService svc = ((ServiceNode) policyNode).getPublishedService();
                 name = svc.getName();
                 policyOid = svc.getPolicy().getOid();
+                policyVersion = svc.getPolicy().getVersion();
             } else {
                 Policy policy = policyNode.getPolicy();
                 name = policy.getName();
                 policyOid = policy.getOid();
+                policyVersion = policy.getVersion();
             }
 
-            PolicyAdmin.SavePolicyWithFragmentsResult result = updatePolicyXml(policyOid, xml, fragments, activateAsWell);
+            PolicyAdmin.SavePolicyWithFragmentsResult result = updatePolicyXml(policyOid, policyVersion, xml, fragments, activateAsWell);
             fragmentNameGuidMap = result.fragmentNameGuidMap;
             PolicyCheckpointState checkpointState = result.policyCheckpointState;
             final long newVersionOrdinal = checkpointState.getPolicyVersionOrdinal();
@@ -155,6 +156,12 @@ public class SavePolicyAction extends PolicyNodeAction {
                       "The policy contains an include that causes circularity.",
                       "Policy include circularity",
                       JOptionPane.ERROR_MESSAGE);
+            } else if ( ExceptionUtils.causedBy( ome, StaleUpdateException.class )) {
+                JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                      "Unable to save the policy '" + name + "'.\n" +
+                      "The policy was modified by another user.",
+                      "Policy not updated.",
+                      JOptionPane.ERROR_MESSAGE);
             } else {
                 throw new RuntimeException("Error saving service and policy", ome);                
             }
@@ -163,9 +170,18 @@ public class SavePolicyAction extends PolicyNodeAction {
         }
     }
 
-    private static PolicyAdmin.SavePolicyWithFragmentsResult updatePolicyXml(long policyOid, String xml, HashMap<String, Policy> fragments, boolean activateAsWell) throws FindException, SaveException, PolicyAssertionException {
+    private static PolicyAdmin.SavePolicyWithFragmentsResult updatePolicyXml(final long policyOid,
+                                                                             final int version,
+                                                                             final String xml,
+                                                                             final HashMap<String, Policy> fragments,
+                                                                             final boolean activateAsWell)
+            throws FindException, UpdateException, SaveException, PolicyAssertionException {
         Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(policyOid);
-        if (policy == null) throw new SaveException("Unable to save policy -- this policy no longer exists");
+        if (policy == null)
+            throw new SaveException("Unable to save policy -- this policy no longer exists");
+        if (version != policy.getVersion())
+            throw new StaleUpdateException("Unable to save policy, the policy was edited by another user.");
+
         policy.setXml(xml);
         return Registry.getDefault().getPolicyAdmin().savePolicy(policy, activateAsWell, fragments);
     }
