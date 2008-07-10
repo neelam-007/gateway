@@ -8,6 +8,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.console.action.ActionManager;
 import com.l7tech.console.action.DeleteAssertionAction;
 import com.l7tech.console.action.EditPolicyAction;
@@ -257,13 +258,25 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         private boolean canDelete(AssertionTreeNode node, AssertionTreeNode[] nodes) {
             if (!Registry.getDefault().isAdminContextPresent()) return false;
-            PublishedService svc;
+
             try {
-                svc = node.getService();
+                // Case 1: if the node is associated to a published service
+                PublishedService svc = node.getService();
+                boolean hasPermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc));
+
+                // Case 2: if the node is associated to a policy fragment
+                if (svc == null && !hasPermission) {
+                    Policy policy = node.getPolicy();
+                    hasPermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.POLICY, policy));
+                }
+
+                if (!hasPermission) {
+                    return false;
+                }
             } catch (Exception e) {
-                throw new RuntimeException("Couldn't get current service", e);
+                throw new RuntimeException("Couldn't get current service or policy", e);
             }
-            if (!Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc))) return false;
+
             boolean delete = false;
 
             if (nodes == null) {

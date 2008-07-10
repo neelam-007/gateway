@@ -6,6 +6,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.util.Functions;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -83,10 +84,18 @@ public class DeleteAssertionAction extends SecureAction {
     public boolean isAuthorized() {
         if (node == null) return true;
         try {
+            // Case 1: if the node is associated to a published service
             PublishedService svc = node.getService();
-            return svc == null || canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc));
+            boolean authorized = canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc));
+
+            // Case 2: if the node is associated to a policy fragment
+            if (svc == null && !authorized) {
+                Policy policy = node.getPolicy();
+                authorized = canAttemptOperation(new AttemptedUpdate(EntityType.POLICY, policy));
+            }
+            return authorized;
         } catch (Exception e) {
-            throw new RuntimeException("Couldn't get current service", e);
+            throw new RuntimeException("Couldn't get current service or policy", e);
         }
     }
 

@@ -83,7 +83,7 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
         return false;
     }
 
-    private Policy getPolicy() {
+    public Policy getPolicy() {
         if (policy == null) {
             permissionDenied = false;
             circularImport = false;

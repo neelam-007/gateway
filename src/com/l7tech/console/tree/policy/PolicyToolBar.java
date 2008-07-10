@@ -3,6 +3,7 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.console.action.AddAssertionAction;
 import com.l7tech.console.action.AssertionMoveDownAction;
 import com.l7tech.console.action.AssertionMoveUpAction;
@@ -254,23 +255,30 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         }
         SecurityProvider sp = Registry.getDefault().getSecurityProvider();
         if (rootAssertionNode == null) return;
-        boolean canUpdateService;
+        boolean canUpdate;
         try {
+            // Case 1: if the node is associated to a published service
             PublishedService svc = rootAssertionNode.getService();
-            canUpdateService = sp.hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc));
+            canUpdate = sp.hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc));
+
+            // Case 2: if the node is associated to apolicy fragment
+            if (svc == null && !canUpdate) {
+                Policy policy = rootAssertionNode.getPolicy();
+                canUpdate = sp.hasPermission(new AttemptedUpdate(EntityType.POLICY, policy));
+            }
         } catch (Exception e) {
-            throw new RuntimeException("Couldn't get current service", e);
+            throw new RuntimeException("Couldn't get current service or policy", e);
         }
 
         if (validPolicyAssertionNode) {
-            getDeleteAssertionAction().setEnabled(canUpdateService && canDelete(lastAssertionNode, lastAssertionNodes));
-            getAssertionMoveDownAction().setEnabled(canUpdateService && canMoveDown(lastAssertionNode, lastAssertionNodes));
-            getAssertionMoveUpAction().setEnabled(canUpdateService && canMoveUp(lastAssertionNode, lastAssertionNodes));
+            getDeleteAssertionAction().setEnabled(canUpdate && canDelete(lastAssertionNode, lastAssertionNodes));
+            getAssertionMoveDownAction().setEnabled(canUpdate && canMoveDown(lastAssertionNode, lastAssertionNodes));
+            getAssertionMoveUpAction().setEnabled(canUpdate && canMoveUp(lastAssertionNode, lastAssertionNodes));
         }
         if (validPNode) {
             validPNode = lastAssertionNode == null || lastAssertionNode.accept(lastPaletteNode);
         }
-        getAddAssertionAction().setEnabled(canUpdateService && validPNode && validPolicyAssertionNode);
+        getAddAssertionAction().setEnabled(canUpdate && validPNode && validPolicyAssertionNode);
     }
 
     private boolean validPolicyAssertionNode() {

@@ -6,6 +6,7 @@ package com.l7tech.console.action;
 import com.l7tech.common.security.rbac.AttemptedOperation;
 import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
+import com.l7tech.common.policy.Policy;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.service.PublishedService;
@@ -43,10 +44,18 @@ public abstract class PolicyUpdatingAssertionAction extends SecureAction {
         if (!Registry.getDefault().isAdminContextPresent()) return false;
         if (assertionTreeNode == null) return false;
         try {
+            // Case 1: if the node is associated to a published service
             PublishedService svc = assertionTreeNode.getService();
-            return canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc));
+            boolean authorized = canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc));
+
+            // Case 2: if the node is associated to a policy fragment
+            if (svc == null && !authorized) {
+                Policy policy = assertionTreeNode.getPolicy();
+                authorized = canAttemptOperation(new AttemptedUpdate(EntityType.POLICY, policy));
+            }
+            return authorized;
         } catch (Exception e) {
-            throw new RuntimeException("Couldn't get current service", e);
+            throw new RuntimeException("Couldn't get current service or policy", e);
         }
     }
 }

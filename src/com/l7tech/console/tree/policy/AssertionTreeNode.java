@@ -296,8 +296,17 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         }
 
         try {
+            // Case 1: if the node is associated to a published service
             PublishedService svc = getService();
-            if (Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc))) {
+            boolean hasPermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc));
+
+            // Case 2: if the node is associated to a policy fragment
+            if (svc == null && !hasPermission) {
+                Policy policy = getPolicy();                
+                hasPermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.POLICY, policy));
+            }
+
+            if (hasPermission) {
                 Action da = new DeleteAssertionAction(this);
                 da.setEnabled(canDelete());
                 list.add(da);
@@ -318,7 +327,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
                 list.add(md);
             }
         } catch (Exception e) {
-            throw new RuntimeException("Couldn't get current service", e);
+            throw new RuntimeException("Couldn't get current service or policy", e);
         }
 
         /*
@@ -482,6 +491,12 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         ServiceNode sn = getServiceNodeCookie();
         if (sn == null) return null;
         return sn.getPublishedService();
+    }
+
+    public Policy getPolicy() throws FindException {
+        PolicyEntityNode pn = getPolicyNodeCookie();
+        if (pn == null) return null;
+        return pn.getPolicy();
     }
 
     /**
