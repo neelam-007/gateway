@@ -169,6 +169,7 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
 
         Role newRole = new Role();
         newRole.setName(name);
+        newRole.setDescription("Users assigned to the {0} role have the ability to read, update and delete the {1} policy.");        
         newRole.setEntityType(POLICY);
         newRole.setEntityOid(policy.getOid());
 
