@@ -184,7 +184,12 @@ public class SsgConnectorManagerWindow extends JDialog {
                     } catch (UpdateException e) {
                         showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), e, reedit);
                     } catch (TransportAdmin.CurrentAdminConnectionException e) {
-                        showErrorMessage("Save Failed", "Unable to modify the listen port for the current admin connection.", null);
+                        showErrorMessage("Save Failed", "Unable to modify the listen port for the current admin connection.", null,
+                            new Runnable() {
+                                public void run() {
+                                    loadConnectors();
+                                }
+                            });
                     }
                 }
             }
