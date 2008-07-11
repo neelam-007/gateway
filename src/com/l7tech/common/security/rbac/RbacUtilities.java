@@ -6,6 +6,7 @@
 package com.l7tech.common.security.rbac;
 
 import com.l7tech.common.util.SyspropUtil;
+import com.l7tech.common.policy.PolicyAdmin;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.PublishedService;
@@ -36,6 +37,7 @@ public class RbacUtilities {
     static {
         patternMap.put(EntityType.SERVICE, Pattern.compile(MessageFormat.format(REGEX_PATTERN, ServiceAdmin.ROLE_NAME_TYPE_SUFFIX)));
         patternMap.put(EntityType.ID_PROVIDER_CONFIG, Pattern.compile(MessageFormat.format(REGEX_PATTERN, IdentityAdmin.ROLE_NAME_TYPE_SUFFIX)));
+        patternMap.put(EntityType.POLICY, Pattern.compile(MessageFormat.format(REGEX_PATTERN, PolicyAdmin.ROLE_NAME_TYPE_SUFFIX)));
     }
 
     public static boolean isEnableRoleEditing() {
