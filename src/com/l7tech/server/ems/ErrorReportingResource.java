@@ -9,6 +9,7 @@ import org.restlet.resource.Resource;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.StringRepresentation;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -18,12 +19,21 @@ import java.util.logging.Logger;
  */
 public class ErrorReportingResource extends Resource {
     private static final Logger logger = Logger.getLogger(ErrorReportingResource.class.getName());
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     public ErrorReportingResource() {
     }
 
     public ErrorReportingResource(Context context, Request request, Response response) {
         super(context, request, response);
+        initialized.set(true);
+    }
+
+    @Override
+    public void init(Context context, Request request, Response response) {
+        if (initialized.getAndSet(true))
+            throw new IllegalStateException("ErrorReportingResource with concrete type " + getClass() + " is being reused for a second request; missing scope=prototype?");
+        super.init(context, request, response);
     }
 
     @Override

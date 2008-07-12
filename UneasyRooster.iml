@@ -358,6 +358,7 @@
           <root url="jar://$MODULE_DIR$/lib/gateway/restlet/org.restlet.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/gateway/restlet/org.restlet.ext.freemarker_2.3.jar!/" />
           <root url="jar://$MODULE_DIR$/lib/gateway/restlet/org.restlet.ext.fileupload_1.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/gateway/restlet/com.noelios.restlet.ext.servlet_2.5.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>

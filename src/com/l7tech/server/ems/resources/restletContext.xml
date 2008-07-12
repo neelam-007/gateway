@@ -20,16 +20,16 @@
 
     <bean name="restComponent" class="com.l7tech.server.ems.LifecycleSpringComponent">
         <property name="defaultTarget" ref="restRouter"/>
-        <property name="server" ref="restServer"/>
         <property name="client" value="CLAP"/> <!-- Protocol.CLAP, for loading resources from class path -->
-    </bean>
-    <bean name="restServer" class="org.restlet.ext.spring.SpringServer" depends-on="systemProperties">
-        <constructor-arg index="0" value="http"/>
-        <constructor-arg index="1" value="${com.l7tech.ems.httpPort}"/>
+        <!-- no Server attached yet; the EmsRestServlet will attach an appropriate pseudo-Server to this Component when it initializes -->
     </bean>
     <bean name="restComponent.context" class="org.springframework.beans.factory.config.PropertyPathFactoryBean"/>
     <bean name="restApplication" class="org.restlet.Application">
         <constructor-arg ref="restComponent.context"/>
+    </bean>
+
+    <bean name="servletContainer" class="com.l7tech.server.ems.EmsServletContainer">
+        <constructor-arg index="0" value="${com.l7tech.ems.httpPort}"/>
     </bean>
 
     <!-- Restlet context of top level Application.  Not to be confused with the Spring ApplicationContext. -->
