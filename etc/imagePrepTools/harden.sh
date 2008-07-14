@@ -136,8 +136,8 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
   fi
 
   # GEN002480
-  find / -type f -perm -002 -printf '%p %m\n' | grep -v '^/tmp/' | grep -v '^/var/tmp/' > /root/original_permissions
-  find / -type d -perm -002 -printf '%p %m\n' | grep -v '^/tmp ' | grep -v '^/tmp/' | grep -v '^/var/tmp ' | grep -v '^/var/tmp/' | grep -v '^/dev/' >> /root/original_permissions
+  find / -type f -perm -002 -printf '%p %m\n' | grep -v '^/tmp/' | grep -v '^/proc/' | grep -v '^/var/tmp/' > /root/original_permissions
+  find / -type d -perm -002 -printf '%p %m\n' | grep -v '^/tmp ' | grep -v '^/proc/' | grep -v '^/tmp/' | grep -v '^/var/tmp ' | grep -v '^/var/tmp/' | grep -v '^/dev/' >> /root/original_permissions
   if [ -s /root/original_permissions ]; then
     sed -e 's/\(.*\) [0-9]\{1,\}$/"\1"/' /root/original_permissions | xargs chmod o-w
   fi
@@ -583,8 +583,8 @@ if [ "`stat --format=%a /home/ssgconfig/.bash_logout /home/ssgconfig/.bash_profi
 fi
 
 # GEN002480
-F1="`find / -type f -perm -002 -printf '%p %m\n' | grep -v '^/tmp/' | grep -v '^/var/tmp/'`"
-F2="`find / -type d -perm -002 -printf '%p %m\n' | grep -v '^/tmp ' | grep -v '^/tmp/' | grep -v '^/var/tmp ' | grep -v '^/var/tmp/' | grep -v '^/dev/'`"
+F1="`find / -type f -perm -002 -printf '%p %m\n' | grep -v '^/proc/' | grep -v '^/tmp/' | grep -v '^/var/tmp/'`"
+F2="`find / -type d -perm -002 -printf '%p %m\n' | grep -v '^/proc/' | grep -v '^/tmp ' | grep -v '^/tmp/' | grep -v '^/var/tmp ' | grep -v '^/var/tmp/' | grep -v '^/dev/'`"
 if [ "$F1" -o "$F2" ] ; then
 	echo "Error - invalid world write access for files or dirs:
 $F1
@@ -701,7 +701,7 @@ if [ ! "`stat --format=%a /etc/xinetd.conf | grep 440`" ] ; then
 fi
 
 # GEN003865
-if [ "`find / -name tcpdump`" ] ; then
+if [ "`find / -name tcpdump | grep -v '^/proc/' `" ] ; then
 	echo "Error - tcpdump is installed"
 fi
 
