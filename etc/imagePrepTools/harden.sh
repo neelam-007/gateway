@@ -1,7 +1,16 @@
 #!/bin/bash
 
-ISVM="`dmesg | grep VMware`"
-ISHARDWARE="`uname -a | grep x86_64`"
+HAZ_ISVM="`dmesg | grep -i vmware`"
+HAZ_ISHARDWARE="`uname -a | grep x86_64`"
+if [ ! -z "$HAZ_ISHARDWARE" ] ; then
+	ISHARDWARE=1
+	ISVM=
+	if [ ! -z "$HAZ_ISVM" ] ; then
+		ISHARDWARE=
+		ISVM=1
+	fi
+fi
+
 # set this manually as there's no way to tell by script the difference between normal hardware and NCES
 ISNCES=""
 
