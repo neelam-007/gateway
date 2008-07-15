@@ -26,7 +26,7 @@
   <warmupTime>30</warmupTime>
   <warmupsPerDriver>0</warmupsPerDriver>
   <layer7.name xmlns="">4.4_final</layer7.name>
-  <layer7.notes xmlns="">4.4 final (tag rel4_4_rc1)</layer7.notes>
+  <layer7.notes xmlns="">4.4 final (tag rel4_4rc1)</layer7.notes>
   <layer7.version xmlns="">v4.4</layer7.version>
   <driver name="JUnitDriver">
     <driverClass>com.l7tech.test.performance.JUnitDriver</driverClass>
