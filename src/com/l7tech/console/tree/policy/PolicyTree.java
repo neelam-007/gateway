@@ -9,10 +9,7 @@ import com.l7tech.common.security.rbac.AttemptedUpdate;
 import com.l7tech.common.security.rbac.EntityType;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.policy.Policy;
-import com.l7tech.console.action.ActionManager;
-import com.l7tech.console.action.DeleteAssertionAction;
-import com.l7tech.console.action.EditPolicyAction;
-import com.l7tech.console.action.SecureAction;
+import com.l7tech.console.action.*;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.policy.PolicyTransferable;
@@ -31,6 +28,7 @@ import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.border.Border;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
@@ -45,9 +43,8 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -338,7 +335,14 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 }
 
                 if (node != null) {
-                    Action[] actions = (node.isNestedInAnIncludedPolicy())? new Action[]{} : node.getActions();
+                    Action[] actions = node.getActions();
+                    // If the node is nested in a policy include, all editor actions (such as AddAllAssertionAction,
+                    // AddOneOrMoreAssertionAction, DeleteAssertionAction, AssertionMoveDownAction, AssertionMoveUpAction,
+                    // Disable Assertion, and Enable Assertion) will not be displayed in the context menu.
+                    if (node.isDescendantOfInclude(false)) {
+                        verifyActionsInPolicyInclude(actions);
+                    }
+
                     if (policyEditorPanel != null) {
                         policyEditorPanel.updateActions(actions);
                     }
@@ -349,6 +353,32 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
                 }
             }
+        }
+
+        /**
+         * A helper method checks if each actions is an editing-assertion actions.  If so, remove it from the action list.
+         *
+         * @param actions the actions need verifying.
+         */
+        private void verifyActionsInPolicyInclude(Action[] actions) {
+            List<Action> actionList = Arrays.asList(actions);
+            // Check if each actions is an editing-assertion actions.
+            for (Action action: actions) {
+                if (action instanceof SecureAction) {
+                    SecureAction sa = (SecureAction)action;
+                    if (sa instanceof AddAllAssertionAction ||
+                        sa instanceof AddOneOrMoreAssertionAction ||
+                        sa instanceof DeleteAssertionAction ||
+                        sa instanceof AssertionMoveDownAction ||
+                        sa instanceof AssertionMoveUpAction ||
+                        sa instanceof DisableAssertionAction ||
+                        sa instanceof EnableAssertionAction) {
+                        actionList.remove(sa);
+                    }
+                }
+            }
+            // update the original action array
+            actions = actionList.toArray(new Action[]{});
         }
 
         /**

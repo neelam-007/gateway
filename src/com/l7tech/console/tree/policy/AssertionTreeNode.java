@@ -341,28 +341,6 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
         return list.toArray(new Action[list.size()]);
     }
 
-    /**
-     * Check if the assertion node is nested in an included policy or not.
-     * @return true if the node is nested in an included policy.
-     */
-    public boolean isNestedInAnIncludedPolicy() {
-        TreeNode gradparentNode;
-        TreeNode parentNode = this;
-        TreeNode currentNode;
-        do {
-            currentNode = parentNode;
-            parentNode = currentNode.getParent();
-            gradparentNode = parentNode.getParent();
-        } while (!(currentNode instanceof IncludeAssertionPolicyNode) && (gradparentNode != null));
-
-        if (currentNode instanceof IncludeAssertionPolicyNode) {
-            if (currentNode == this && gradparentNode == null) return false;
-            return true;
-        }
-
-        return false;
-    }
-
     @Override
     public boolean canDelete() {
         return !isDescendantOfInclude(false);
