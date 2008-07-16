@@ -25,11 +25,11 @@ public final class AuthCache {
     private final Cache failureCache;
     private final boolean successCacheDisabled;
     private final boolean failureCacheDisabled;
-    private final static int SUCCESS_CACHE_TUNER_INTERVAL = 59;
+    private static int SUCCESS_CACHE_TUNER_INTERVAL = 59;
     /*
     * prime so cleanup won't ever collide with success tunerInterval of 59, also prime
     * */
-    private final static int FAILURE_CACHE_TUNER_INTERVAL = 61;
+    private static int FAILURE_CACHE_TUNER_INTERVAL = 61;
 
     public final static int SUCCESS_CACHE_SIZE = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_SUCCESS_CACHE_SIZE, 200);
     public final static int FAILURE_CACHE_SIZE = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_FAILURE_CACHE_SIZE, 100); 

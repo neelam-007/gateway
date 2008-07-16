@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 import com.l7tech.identity.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.ServerConfig;
+import com.whirlycott.cache.CacheDecorator;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -21,7 +22,7 @@ public class AuthCacheTest extends TestCase {
     private static final String USER_NAME = "admin";
     private static final String PASSWORD = "password";
     private static final int IDENTITY_LOOKUP_DELAY = 1000;//milliseconds
-    private static final int MAX_AGE = 10000;
+    private static final int MAX_AGE = 120000;
     /*AuthCache is static variable so need to know in teardown to reset any changes*/
     private boolean needToReset = false;
 
@@ -51,9 +52,12 @@ public class AuthCacheTest extends TestCase {
     }
 
     /*
-    * Test the success cache works
+    * Test the success cache basic functionality
     * Tests that the Cache hits when it should, missed when it's entries are too old yet still exist, and that the
     * Cache is cleaned up internally removing old entries
+    * The max_age used for all cache retrievals is set so that no items should have expired
+    * When we want to test the expiry code on an object still in the cache this is set to 5 milliseconds below
+    * After the cache has been pruned the number of elements in the cache should be equal to the size of the cache
     * */
     public void testSuccessCache() throws Exception{
         LoginCredentials lc = LoginCredentials.makePasswordCredentials(USER_NAME, PASSWORD.toCharArray(), this.getClass());
@@ -63,6 +67,25 @@ public class AuthCacheTest extends TestCase {
         ub.setCleartextPassword(PASSWORD);
         TestIdentityProvider.addUser(ub, USER_NAME, PASSWORD.toCharArray());
 
+        Class c = Class.forName("com.l7tech.server.identity.AuthCache");
+
+        Field successSizeField = c.getDeclaredField("SUCCESS_CACHE_SIZE");
+        successSizeField.setAccessible(true);
+        Field modifierField = Field.class.getDeclaredField("modifiers");
+        modifierField.setAccessible(true);
+        int modifier = modifierField.getInt(successSizeField);
+        // blank out the final bit in the modifiers int
+        modifier &= ~Modifier.FINAL;
+        modifierField.setInt(successSizeField, modifier);
+        successSizeField.setInt(c,5);//5 max cache size
+        
+        successSizeField = c.getDeclaredField("SUCCESS_CACHE_TUNER_INTERVAL");
+        successSizeField.setAccessible(true);
+        successSizeField.setInt(c,12);//5 max cache size
+
+        needToReset = true;
+
+        recreateAuthCache();        
         AuthCache aC = AuthCache.getInstance();
 
         //First authenticate causes the idp to be contacted
@@ -77,6 +100,7 @@ public class AuthCacheTest extends TestCase {
         assertTrue("Cache should have hit",(endTime - startTime) < IDENTITY_LOOKUP_DELAY);
 
         //Sleep off the IDENTITY_LOOKUP_DELAY seconds, so the max age below finds expired hits
+        //this can be any value greater than 5 milliseconds
         Thread.sleep(IDENTITY_LOOKUP_DELAY);
         //Third authenticate should be a miss due to max ages
         startTime = System.currentTimeMillis();
@@ -84,39 +108,58 @@ public class AuthCacheTest extends TestCase {
         assertNotNull(aC.getCachedAuthResult(lc, tIP, 5, 5));
         endTime = System.currentTimeMillis();
         System.out.println("End time: " + endTime);
-
         //The entire authenticate time should be > 5 secs as authenticate above should have been called
         assertTrue("Cache should have missed",(endTime - startTime) >= IDENTITY_LOOKUP_DELAY);
 
-        //Sleep off the 59 seconds used for cleaning up the success cache. After this all previous hits should
-        //be gone
-        Thread.sleep(60000);
+        //Fill up the cache
+        addSomeUsers(10, tIP, aC);
 
-        //Fourth authenticate should be a cache miss as the cache has completely expired
-        startTime = System.currentTimeMillis();
-        System.out.println("Start time: " + startTime);
-        assertNotNull(aC.getCachedAuthResult(lc, tIP, MAX_AGE, MAX_AGE));
-        endTime = System.currentTimeMillis();
-        System.out.println("End time: " + endTime);
+        Field successCacheField = c.getDeclaredField("successCache");
+        successCacheField.setAccessible(true);
+        CacheDecorator successCache = (CacheDecorator)successCacheField.get(aC);
 
-        //The entire authenticate time should be > IDENTITY_LOOKUP_DELAY secs as authenticate above should have been called
-        assertTrue("Cache should have missed",(endTime - startTime) >= IDENTITY_LOOKUP_DELAY);
+        int cachedSize = successCache.size();
+        //Sleep off the tuner interval seconds used for cleaning up the success cache. After this all previous hits over
+        //the size of the cache should be gone
+        Thread.sleep(12000);
 
+        //After sleeping the maintenance thread should have cleaned up the cache
+        //check that the current size has decreased
+        assertTrue(successCache.size() < cachedSize);
     }
 
     /*
-    * Test the failure cache works
+    * Test the failure cache basic functionality
     * Tests that the Cache hits when it should, missed when it's entries are too old yet still exist, and that the
     * Cache is cleaned up internally removing old entries
+    * The max_age used for all cache retrievals is set so that no items should have expired
+    * When we want to test the expiry code on an object still in the cache this is set to 5 milliseconds below
+    * After the cache has been pruned the number of elements in the cache should be equal to the size of the cache
     * */
     public void testFailureCache() throws Exception{
         LoginCredentials lc = LoginCredentials.makePasswordCredentials(USER_NAME+"miss", PASSWORD.toCharArray(), this.getClass());
         TestIdentityProvider tIP = new AuthCacheTestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
         assertNotNull(tIP);
-        UserBean ub = new UserBean(tIP.getConfig().getOid(), USER_NAME);
-        ub.setCleartextPassword(PASSWORD);
-        TestIdentityProvider.addUser(ub, USER_NAME, PASSWORD.toCharArray());
 
+        Class c = Class.forName("com.l7tech.server.identity.AuthCache");
+
+        Field successSizeField = c.getDeclaredField("FAILURE_CACHE_SIZE");
+        successSizeField.setAccessible(true);
+        Field modifierField = Field.class.getDeclaredField("modifiers");
+        modifierField.setAccessible(true);
+        int modifier = modifierField.getInt(successSizeField);
+        // blank out the final bit in the modifiers int
+        modifier &= ~Modifier.FINAL;
+        modifierField.setInt(successSizeField, modifier);
+        successSizeField.setInt(c,5);//5 max cache size
+
+        successSizeField = c.getDeclaredField("FAILURE_CACHE_TUNER_INTERVAL");
+        successSizeField.setAccessible(true);
+        successSizeField.setInt(c,12);//5 max cache size
+
+        needToReset = true;
+
+        recreateAuthCache();
         AuthCache aC = AuthCache.getInstance();
 
         //First authenticate causes the idp to be contacted
@@ -138,24 +181,26 @@ public class AuthCacheTest extends TestCase {
         assertNull(aC.getCachedAuthResult(lc, tIP, 5, 5));
         endTime = System.currentTimeMillis();
         System.out.println("End time: " + endTime);
-
         //The entire authenticate time should be > 5 secs as authenticate above should have been called
         assertTrue("Cache should have missed",(endTime - startTime) >= IDENTITY_LOOKUP_DELAY);
 
-        //Sleep off the 61 seconds used for cleaning up the failure cache. After this all previous hits should
-        //be gone
-        Thread.sleep(62000);
+        //Fill up the cache
+        for(int i = 0; i < 10; i++){
+            LoginCredentials lc1 = LoginCredentials.makePasswordCredentials(USER_NAME+"miss"+i, PASSWORD.toCharArray(), this.getClass());
+            assertNull(aC.getCachedAuthResult(lc1, tIP, MAX_AGE, MAX_AGE));
+        }
+        Field failureCacheField = c.getDeclaredField("failureCache");
+        failureCacheField.setAccessible(true);
+        CacheDecorator failureCache = (CacheDecorator)failureCacheField.get(aC);
+        
+        int cachedSize = failureCache.size();
+        //Sleep off the tuner interval seconds used for cleaning up the success cache. After this all previous hits over
+        //the size of the cache should be gone
+        Thread.sleep(12000);
 
-        //Fourth authenticate should be a cache miss as the cache has completely expired
-        startTime = System.currentTimeMillis();
-        System.out.println("Start time: " + startTime);
-        assertNull(aC.getCachedAuthResult(lc, tIP, MAX_AGE, MAX_AGE));
-        endTime = System.currentTimeMillis();
-        System.out.println("End time: " + endTime);
-
-        //The entire authenticate time should be > IDENTITY_LOOKUP_DELAY secs as authenticate above should have been called
-        System.out.println("Time: " + (endTime - startTime));
-        assertTrue("Cache should have missed",(endTime - startTime) >= IDENTITY_LOOKUP_DELAY);
+        //After sleeping the maintenance thread should have cleaned up the cache
+        //check that the current size has decreased
+        assertTrue(failureCache.size() < cachedSize);
     }
 
     /*
@@ -204,7 +249,7 @@ public class AuthCacheTest extends TestCase {
     * Test that the failure cache works correctly when the success cache is disabled
     * */
     public void testFailureCacheIndependent() throws Exception{
-        //Set failure cache == 0, which should disable it
+        //Set success cache == 0, which should disable it
         Class c = Class.forName("com.l7tech.server.identity.AuthCache");
         Field successSizeField = c.getDeclaredField("SUCCESS_CACHE_SIZE");
         successSizeField.setAccessible(true);
