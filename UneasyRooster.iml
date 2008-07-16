@@ -345,7 +345,11 @@
           <root url="jar://$MODULE_DIR$/lib/org.mortbay.jetty.https.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../../src/jetty-6.1.10/modules/jetty/src/main/java" />
+          <root url="file://$MODULE_DIR$/../../src/jetty-6.1.10/modules/annotations/src/main/java" />
+          <root url="file://$MODULE_DIR$/../../src/jetty-6.1.10/modules/util/src/main/java" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
