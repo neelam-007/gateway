@@ -6,7 +6,7 @@
 
 package com.l7tech.common.util;
 
-import javax.swing.*;
+import javax.swing.filechooser.FileSystemView;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
@@ -28,6 +28,7 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class FileUtils {
     private static final Logger logger = Logger.getLogger(FileUtils.class.getName());
+    private static String defaultDir;
 
     /**
      * Interface implemented by those who wish to call saveFileSafely().
@@ -480,7 +481,6 @@ public class FileUtils {
         }
     }
 
-
     /**
      * Find the default directory, which is the same as the home directory in Linux/Unix, but different from the home
      * directory in Windows.  For example, the default directory in Windows is "C:\...\Usernmae\My Document" and the
@@ -489,8 +489,11 @@ public class FileUtils {
      * @return the default directory.
      */
     public static String getDefaultDirectory() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setCurrentDirectory(null);
-        return fileChooser.getCurrentDirectory().getAbsolutePath();
+        String result = defaultDir;
+        if (result == null) {
+            result = FileSystemView.getFileSystemView().getDefaultDirectory().getAbsolutePath();
+            defaultDir = result;
+        }
+        return result;
     }
 }
