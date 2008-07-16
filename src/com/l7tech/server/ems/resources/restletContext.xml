@@ -30,12 +30,12 @@
 
     <bean name="servletContainer" class="com.l7tech.server.ems.EmsServletContainer">
         <constructor-arg index="0" value="${com.l7tech.ems.httpPort}"/>
-        <constructor-arg index="1" ref="emsRestServlet"/>
-    </bean>
-
-    <bean name="emsRestServlet" class="com.l7tech.server.ems.EmsRestServlet">
-        <constructor-arg index="0" ref="restComponent"/>
-        <constructor-arg index="1" ref="restApplication"/>
+        <constructor-arg index="1">
+            <bean class="com.l7tech.server.ems.EmsRestServlet">
+                <constructor-arg index="0" ref="restComponent"/>
+                <constructor-arg index="1" ref="restApplication"/>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <!-- Restlet context of top level Application.  Not to be confused with the Spring ApplicationContext. -->
@@ -201,7 +201,6 @@
     <bean name="restLicenseResource" class="com.l7tech.server.ems.LicenseResource" scope="prototype">
         <constructor-arg ref="licenseManager"/>
     </bean>
-
 
     <!-- The root level URI router for the EMS application. -->
     <bean name="restRouter" class="org.restlet.ext.spring.SpringRouter">

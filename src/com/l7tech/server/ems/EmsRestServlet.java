@@ -21,9 +21,9 @@ public class EmsRestServlet extends ServerServlet {
 
     @Override
     public void init() throws ServletException {
-        // Wire up WarClient
-        ApplicationContext applicationContext = (ApplicationContext)getApplication().getContext();
-        applicationContext.setWarClient(createWarClient(applicationContext, getServletConfig()));
+        // Wire up WarClient.  Beware that this not the Spring ApplicationContext.
+        ApplicationContext restAppContext = (ApplicationContext)getApplication().getContext();
+        restAppContext.setWarClient(createWarClient(restAppContext, getServletConfig()));
 
         super.init();
     }
