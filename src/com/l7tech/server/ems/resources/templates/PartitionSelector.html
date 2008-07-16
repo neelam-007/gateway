@@ -10,7 +10,12 @@
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>Partition Selector [SecureSpan Enterprise Manager]</title>
     <link rel="stylesheet" href="../css/site.css" media="all" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../yui/menu/assets/skins/sam/menu.css">
     <script type="text/javascript" src="../js/site.js"></script>
+    <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
+    <script type="text/javascript" src="../yui/container/container_core-min.js"></script>
+    <script type="text/javascript" src="../yui/menu/menu-min.js"></script>
+    <script type="text/javascript" src="../js/enterpriseTable.js"></script>
     <script type="text/javascript" src="../js/treeTable.js"></script>
     <script type="text/javascript">
         /**
@@ -28,11 +33,6 @@
          */
         var partitionContentIFrameType = null;
 
-        function init() {
-            // Blanks out the partition content IFRAME because no partition has been selected on load.
-            parent.document.getElementById(partitionContentIFrameName).src = '';
-        }
-
         /**
          * Show a partition whose radio button has been clicked.
          *
@@ -49,45 +49,59 @@
                 parent.document.getElementById(partitionContentIFrameName).src =  getParent(parent.document.URL) + partitionContentIFrameType + '/' + partitionId;
             }
         }
+
+        function init() {
+            l7_treeTable_init();
+            l7_enterpriseTable_init('../images');
+        }
     </script>
 </head>
-<body class="dataIFrame" onload="l7_treeTable_init();">
-<table id="partitionSelector" class="dataTree treeTable_table" width="100%">
-    <tr id="3d7fa710-334c-11dd-bd11-0800200c9a66" class="enterpriseGroup">
-        <td class="name"><img class="treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/group.png" alt="" />Springfield Nuclear Power Plant</td>
-        <td class="type hidden">group</td>
-        <td class="parentId">-1</td>
-    </tr>
-    <tr id="40f62d36-4146-4f4b-bdd6-14489526b1a6" class="enterpriseGroup">
-        <td class="name"><img src="../images/spacer16.png" alt="" /><img class="treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/group.png" alt="" />Electricity</td>
-        <td class="type hidden">group</td>
-        <td class="parentId">3d7fa710-334c-11dd-bd11-0800200c9a66</td>
-    </tr>
-    <tr id="d15ce378-df33-44f3-a632-89458f421c24" class="enterprisePartition">
-        <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><input id="radio:d15ce378-df33-44f3-a632-89458f421c24" type="radio" name="partition" onclick="showPartition(this);" /><label for="radio:d15ce378-df33-44f3-a632-89458f421c24"><img src="../images/partition.png" alt="" />Dev</label></td>
-        <td class="type hidden">partition</td>
-        <td class="parentId">40f62d36-4146-4f4b-bdd6-14489526b1a6</td>
-    </tr>
-    <tr id="c32bb1a9-1538-4792-baa1-566bfd418020" class="enterprisePartition">
-        <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><input id="radio:c32bb1a9-1538-4792-baa1-566bfd418020" type="radio" name="partition" onclick="showPartition(this);" /><label for="radio:c32bb1a9-1538-4792-baa1-566bfd418020"><img src="../images/partition.png" alt="" />Production</label></td>
-        <td class="type hidden">partition</td>
-        <td class="parentId">40f62d36-4146-4f4b-bdd6-14489526b1a6</td>
-    </tr>
-    <tr id="b614e196-44ea-457b-b38d-567c3541fabd" class="enterpriseGroup">
-        <td class="name"><img src="../images/spacer16.png" alt="" /><img class="treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/group.png" alt="" />Uranium</td>
-        <td class="type hidden">group</td>
-        <td class="parentId">3d7fa710-334c-11dd-bd11-0800200c9a66</td>
-    </tr>
-    <tr id="1c9d5a50-6a58-48a5-b7d4-b0cb356820f2" class="enterprisePartition">
-        <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><input id="radio:1c9d5a50-6a58-48a5-b7d4-b0cb356820f2" type="radio" name="partition" onclick="showPartition(this);" /><label for="radio:1c9d5a50-6a58-48a5-b7d4-b0cb356820f2"><img src="../images/partition.png" alt="" />Dev</label></td>
-        <td class="type hidden">partition</td>
-        <td class="parentId">b614e196-44ea-457b-b38d-567c3541fabd</td>
-    </tr>
-    <tr id="a14df4d4-0c62-4d8e-ac3a-82cd8a442a26" class="enterprisePartition">
-        <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><input id="radio:a14df4d4-0c62-4d8e-ac3a-82cd8a442a26" type="radio" name="partition" onclick="showPartition(this);" /><label for="radio:a14df4d4-0c62-4d8e-ac3a-82cd8a442a26"><img src="../images/partition.png" alt="" />Production</label></td>
-        <td class="type hidden">partition</td>
-        <td class="parentId">b614e196-44ea-457b-b38d-567c3541fabd</td>
-    </tr>
+<body class="dataIFrame yui-skin-sam" onload="init();">
+<table id="partitionSelector" class="dataTable l7_treeTable l7_enterpriseTable" width="100%">
+    <thead>
+        <tr>
+            <th class="name">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
+            <th width="100%"><img src="../images/accessAccount.png" title="Access Account" alt="" /></th>
+            <th class="parentId"><!-- hidden column --></th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr id="3d7fa710-334c-11dd-bd11-0800200c9a66" class="enterpriseGroup l7_enterpriseTable_cannotDelete">
+            <td class="name"><img class="l7_treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/group.png" alt="" />Springfield Nuclear Power Plant</td>
+            <td></td>
+            <td class="parentId">-1</td>
+        </tr>
+        <tr id="40f62d36-4146-4f4b-bdd6-14489526b1a6" class="enterpriseGroup">
+            <td class="name"><img src="../images/spacer16.png" alt="" /><img class="l7_treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/group.png" alt="" />Electricity</td>
+            <td></td>
+            <td class="parentId">3d7fa710-334c-11dd-bd11-0800200c9a66</td>
+        </tr>
+        <tr id="d15ce378-df33-44f3-a632-89458f421c24" class="enterprisePartition">
+            <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><input id="radio:d15ce378-df33-44f3-a632-89458f421c24" type="radio" name="partition" onclick="showPartition(this);" /><label for="radio:d15ce378-df33-44f3-a632-89458f421c24"><img src="../images/partition.png" alt="" />Dev</label></td>
+            <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+            <td class="parentId">40f62d36-4146-4f4b-bdd6-14489526b1a6</td>
+        </tr>
+        <tr id="c32bb1a9-1538-4792-baa1-566bfd418020" class="enterprisePartition">
+            <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><input id="radio:c32bb1a9-1538-4792-baa1-566bfd418020" type="radio" name="partition" onclick="showPartition(this);" /><label for="radio:c32bb1a9-1538-4792-baa1-566bfd418020"><img src="../images/partition.png" alt="" />Production</label></td>
+            <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+            <td class="parentId">40f62d36-4146-4f4b-bdd6-14489526b1a6</td>
+        </tr>
+        <tr id="b614e196-44ea-457b-b38d-567c3541fabd" class="enterpriseGroup">
+            <td class="name"><img src="../images/spacer16.png" alt="" /><img class="l7_treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/group.png" alt="" />Uranium</td>
+            <td></td>
+            <td class="parentId">3d7fa710-334c-11dd-bd11-0800200c9a66</td>
+        </tr>
+        <tr id="1c9d5a50-6a58-48a5-b7d4-b0cb356820f2" class="enterprisePartition">
+            <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><input id="radio:1c9d5a50-6a58-48a5-b7d4-b0cb356820f2" type="radio" name="partition" onclick="showPartition(this);" /><label for="radio:1c9d5a50-6a58-48a5-b7d4-b0cb356820f2"><img src="../images/partition.png" alt="" />Dev</label></td>
+            <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+            <td class="parentId">b614e196-44ea-457b-b38d-567c3541fabd</td>
+        </tr>
+        <tr id="a14df4d4-0c62-4d8e-ac3a-82cd8a442a26" class="enterprisePartition">
+            <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><input id="radio:a14df4d4-0c62-4d8e-ac3a-82cd8a442a26" type="radio" name="partition" onclick="showPartition(this);" /><label for="radio:a14df4d4-0c62-4d8e-ac3a-82cd8a442a26"><img src="../images/partition.png" alt="" />Production</label></td>
+            <td><img src="../images/noAccessAccount.png" title="Enter access account" alt="" /></td>
+            <td class="parentId">b614e196-44ea-457b-b38d-567c3541fabd</td>
+        </tr>
+    </tbody>
 </table>
 </body>
 </html>

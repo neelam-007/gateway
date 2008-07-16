@@ -8,7 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <!-- PROTOTYPE ONLY END -->
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-    <title>Reports [SecureSpan Enterprise Manager]</title>
+    <title>Standard Reports [SecureSpan Enterprise Manager]</title>
     <link rel="stylesheet" href="../css/site.css" media="all" type="text/css" />
     <script type="text/javascript" src="../js/site.js"></script>
 </head>
@@ -72,7 +72,7 @@
                         <td id="tabCMTools" class="tabCM"><a href="Notifications.html">Tools</a></td>
                         <td id="tabRMTools" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMSettings" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMSettings" class="tabCM"><a href="SystemSettings.html">Settings</a></td>
+                        <td id="tabCMSettings" class="tabCM"><a href="UserSettings.html">Settings</a></td>
                         <td id="tabRMSettings" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td class="tabLM"><img src="../images/spacer.png" alt="" /></td>
                         <td class="tabCM" width="100%"><img src="../images/spacer.png" alt="" /></td>
@@ -104,13 +104,17 @@
                 </table>
             </div>
             <script language="JavaScript" type="text/javascript">
-                initTab('Gateways', 'Gateways.html');
-                initTab('Policies', 'PolicyMigration.html');
-                initTab('Backup', 'Backup.html');
-                initTab('Tools', 'Notifications.html');
-                initTab('Settings', 'SystemSettings.html');
+                initTab('Gateways');
+                initTab('Policies');
+                initTab('Backup');
+                initTab('Tools');
+                initTab('Settings');
             </script>
-            <div class="tabBarBottom"><img src="../images/spacer.png" alt="" /><!-- no subtab --></div>
+            <div class="subtabBar">
+                <span class="subtabOn">Standard Reports</span>
+                |
+                <span class="subtabOff"><a href="ExternalReports.html">External Reports</a></span>
+            </div>
             <div class="content">
                 <span style="font-size: 1in;">X</span>
             </div>

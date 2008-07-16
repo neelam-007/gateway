@@ -1,0 +1,5 @@
+/* This stylesheet customizes YUI SAM skin. Include this after all original YUI SAM stylesheets. */
+
+.yui-skin-sam .yui-button button,.yui-skin-sam .yui-button a {
+    padding: 0 3px;
+}

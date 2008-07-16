@@ -9,22 +9,22 @@
  * checkbox that cascades down and bubbles up.
  *
  * To use this class,
- * 1. Include the class 'treeTable_table' in the TABLE element.
+ * 1. Include the class 'l7_treeTable' in the TABLE element.
  * 2. Each TR element belonging to the tree must have an ID.
- * 3. Each parent TR element should have a IMG element with the class 'treeTable_toggler'.
+ * 3. Each parent TR element should have a IMG element with the class 'l7_treeTable_toggler'.
  * 4. Each child TR element must have a TD element with the class 'parentId' whose inner HTML is the parent row ID.
- * 5. Each TR can have a checkbox INPUT element with the class 'treeTable_checkbox'.
+ * 5. Each TR can have a checkbox INPUT element with the class 'l7_treeTable_checkbox'.
  * 6. Invoke l7_treeTable_init() upon the onload event of the document.
- *    It will initialize all TABLE element with the class 'treeTable_table' and add
+ *    It will initialize all TABLE element with the class 'l7_treeTable' and add
  *    the property 'l7_treeTable' to the table object.
- * 7. When the table changes, invoke <table object>.l7_treeTable.init().
+ * 7. When the table changes, invoke <my table object>.l7_treeTable.init().
  *
  * @param table     the HTML TABLE element to construct from
  */
 function l7_treeTable(table) {
 
     /** The assoicated TABLE element. */
-    this.table = null;
+    this.table = table;
 
     /** Array-based hash map where map key is row ID and map value is row index. */
     this.rowIndices = new Array();
@@ -258,12 +258,8 @@ function l7_treeTable(table) {
 
     /**
      * (Re)initializes this object.
-     *
-     * @param table     the associated TABLE element
      */
-    this.init = function(table) {
-        this.table = table;
-
+    this.init = function() {
         // Rebuild arrays for fast lookup.
 
         this.rowIndices.splice(0, this.rowIndices.length);
@@ -288,7 +284,7 @@ function l7_treeTable(table) {
 
             // Looks for toggler IMG elements and register event handler.
             var toggler = null;
-            var imgs = getElementsByClassName('treeTable_toggler', row, 'img');
+            var imgs = getElementsByClassName('l7_treeTable_toggler', row, 'img');
             if (imgs.length == 1) {
                 toggler = imgs[0];
                 toggler.l7_treeTable = this;
@@ -299,7 +295,7 @@ function l7_treeTable(table) {
 
             // Looks for checkbox INPUT elements and register event handler.
             var checkbox = null;
-            var chks = getElementsByClassName('treeTable_checkbox', row, 'input');
+            var chks = getElementsByClassName('l7_treeTable_checkbox', row, 'input');
             if (chks.length == 1) {
                 checkbox = chks[0];
                 checkbox.l7_treeTable = this;
@@ -319,15 +315,15 @@ function l7_treeTable(table) {
         }
     }
 
-    this.init(table);
+    this.init();
 }
 
 /**
  * Call this in body.onload. It will initializes all HTML TABLE element with the
- * class 'treeTable_table'.
+ * class 'l7_treeTable'.
  */
 function l7_treeTable_init() {
-    var tables = getElementsByClassName('treeTable_table', null, 'table');
+    var tables = getElementsByClassName('l7_treeTable', null, 'table');
     for (var i = 0; i < tables.length; ++i) {
         var table = tables[i];
         table.l7_treeTable = new l7_treeTable(table);

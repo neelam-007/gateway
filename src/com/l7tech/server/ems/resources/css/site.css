@@ -52,7 +52,7 @@ input, select {
     border: 1px #433e29 solid;
 }
 
-input[type='button'], input[type='submit'] {
+button, input[type='button'], input[type='submit'] {
     background-color: #665d3c;
     border: 1px #ffffff solid;
     color: #ffffff;
@@ -63,12 +63,16 @@ input[type='button'], input[type='submit'] {
     padding: 1px 3px 1px 3px;
 }
 
-input[type='button']:hover, input[type='submit']:hover {
+button:hover, input[type='button']:hover, input[type='submit']:hover {
     background-color: #be9422;
 }
 
-input[type='button']:focus, input[type='submit']:focus {
+button:focus, input[type='button']:focus, input[type='submit']:focus {
     outline: 1px black solid;
+}
+
+button * {
+    vertical-align: middle;
 }
 
 input[type='text'], input[type='password'] {
@@ -139,12 +143,14 @@ table.center {
 }
 
 .clickable {
-    cursor: wait;
+    cursor: pointer;
 }
 
+/*
 .hasTooltip {
     cursor: url('../images/tooltip.cur'), help;
 }
+*/
 
 .hasTooltip:hover {
     background-color: #c1e8ff;
@@ -154,15 +160,20 @@ table.center {
     cursor: default !important;
 }
 
+button[disabled] img {
+    opacity: 0.5;
+    *filter: alpha(opacity=50);
+}
+
 .unselected {
     opacity: 0.2;
-    filter: alpha(opacity=20);
+    *filter: alpha(opacity=20);
 }
 
 /** Used by treeTable.js. */
 .mixedStateCheckbox {
     opacity: 0.4;
-    filter: alpha(opacity=40);
+    *filter: alpha(opacity=40);
 }
 
 .page {
@@ -335,6 +346,14 @@ div.header {
     padding: 2px 10px 2px 10px;
 }
 
+.panelToolbar {
+    border-bottom: 1px solid #b2b2b2;
+    border-top: 1px solid #f0f0f0;
+    background-color: #d6d6d6;
+    padding: 4px 10px 3px 24px;
+    vertical-align: middle;
+}
+
 .panelContent {
     background-color: #ffffff;
     padding: 8px;
@@ -370,13 +389,27 @@ img.tippy {
     border-bottom: 1px #cccccc solid;
 }
 
-.dataTable th {
+.dataTable thead tr {
     background-color: #dbd3b0;
+}
+
+.dataTable tbody tr {
+    background-color: #eeeeee;
+}
+
+.dataTable tbody tr:hover {
+    background-color: #f5f9d4;
+}
+
+.dataTable tbody tr.selected {
+    background-color: #ffddee;
+}
+
+.dataTable th {
     border: 1px #bfb173 solid;
 }
 
 .dataTable td {
-    background-color: #eeeeee;
     border: 1px #cccccc solid;
 }
 
@@ -401,16 +434,6 @@ img.tippy {
     padding-left: 2px;
     padding-right: 2px;
     vertical-align: middle;
-}
-
-.dataTable td.edit img {
-    cursor: pointer;
-}
-
-.edit {
-    padding-left: 2px;
-    padding-right: 2px;
-    text-align: right;
 }
 
 .dashboardsPanelContent {

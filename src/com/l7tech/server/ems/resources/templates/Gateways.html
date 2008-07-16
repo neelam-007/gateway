@@ -9,8 +9,17 @@
     <!-- PROTOTYPE ONLY END -->
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>Manage Gateways [SecureSpan Enterprise Manager]</title>
-    <link rel="stylesheet" href="../css/site.css" media="all" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../css/site.css" />
+    <link rel="stylesheet" type="text/css" href="../yui/button/assets/skins/sam/button.css">
+    <link rel="stylesheet" type="text/css" href="../yui/menu/assets/skins/sam/menu.css">
+    <link rel="stylesheet" type="text/css" href="../css/yui-skin.css">
+    <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
+    <script type="text/javascript" src="../yui/container/container_core-min.js"></script>
+    <script type="text/javascript" src="../yui/element/element-beta-min.js"></script>
+    <script type="text/javascript" src="../yui/button/button-min.js"></script>
+    <script type="text/javascript" src="../yui/menu/menu-min.js"></script>
     <script type="text/javascript" src="../js/site.js"></script>
+    <script type="text/javascript" src="../js/enterpriseTable.js"></script>
     <script type="text/javascript" src="../js/treeTable.js"></script>
     <script type="text/javascript">
         var numDashboardsPerRow = null;
@@ -80,9 +89,55 @@
                 showDashboards();
             }
         }
+
+        function init() {
+            var addGroupButton = new YAHOO.widget.Button('addGroupButton');
+            var addPartitionButton = new YAHOO.widget.Button('addPartitionButton');
+            var addClusterNodeButton = new YAHOO.widget.Button('addClusterNodeButton');
+            var moveButton = new YAHOO.widget.Button('moveButton');
+            var deleteButton = new YAHOO.widget.Button('deleteButton');
+            var destroyButton = new YAHOO.widget.Button('destroyButton');
+            var ssmButton = new YAHOO.widget.Button('ssmButton');
+            // TODO assign URLs
+
+            l7_treeTable_init();
+            l7_enterpriseTable_init('../images');
+            var enterpriseTable = document.getElementById('enterpriseTreeTable').l7_enterpriseTable;
+            enterpriseTable.onRowSelectionChange = function(oldRow, newRow) {
+                addGroupButton.set('disabled', true);
+                addPartitionButton.set('disabled', true);
+                addClusterNodeButton.set('disabled', true);
+                moveButton.set('disabled', true);
+                deleteButton.set('disabled', true);
+                destroyButton.set('disabled', true);
+                ssmButton.set('disabled', true);
+                if (newRow != null) {
+                    if (hasClass(newRow, 'enterpriseGroup')) {
+                        addGroupButton.set('disabled', false);
+                        addPartitionButton.set('disabled', false);
+                        moveButton.set('disabled', false);
+                        deleteButton.set('disabled', hasClass(newRow, 'l7_enterpriseTable_cannotDelete'));
+                    } else if (hasClass(newRow, 'enterprisePartition')) {
+                        addClusterNodeButton.set('disabled', false);
+                        moveButton.set('disabled', false);
+                        deleteButton.set('disabled', false);
+                        ssmButton.set('disabled', false);
+                    } else if (hasClass(newRow, 'enterpriseClusterNode')) {
+                        destroyButton.set('disabled', false);
+                    } else if (hasClass(newRow, 'enterpriseFolder')) {
+                        addGroupButton.set('disabled', false);
+                        moveButton.set('disabled', false);
+                        deleteButton.set('disabled', false);
+                    }
+                }
+            }
+            enterpriseTable.onRowSelectionChange(null, enterpriseTable.getSelectedRow());
+
+            setNumDashboardsPerRow(1);
+        }
     </script>
 </head>
-<body onload="l7_treeTable_init(); setNumDashboardsPerRow(1);">
+<body class="yui-skin-sam" onload="init();">
 <table width="100%">
     <tr>
         <td>
@@ -133,7 +188,7 @@
                         <td id="tabCMPolicies" class="tabCM"><a href="PolicyMigration.html">Manage Policies</a></td>
                         <td id="tabRMPolicies" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMReports" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMReports" class="tabCM"><a href="Reports.html">Reports</a></td>
+                        <td id="tabCMReports" class="tabCM"><a href="StandardReports.html">Reports</a></td>
                         <td id="tabRMReports" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMBackup" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabCMBackup" class="tabCM"><a href="Backup.html">Backup &amp; Restore</a></td>
@@ -142,7 +197,7 @@
                         <td id="tabCMTools" class="tabCM"><a href="Notifications.html">Tools</a></td>
                         <td id="tabRMTools" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMSettings" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMSettings" class="tabCM"><a href="SystemSettings.html">Settings</a></td>
+                        <td id="tabCMSettings" class="tabCM"><a href="UserSettings.html">Settings</a></td>
                         <td id="tabRMSettings" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td class="tabLM"><img src="../images/spacer.png" alt="" /></td>
                         <td class="tabCM" width="100%"><img src="../images/spacer.png" alt="" /></td>
@@ -174,155 +229,190 @@
                 </table>
             </div>
             <script language="JavaScript" type="text/javascript">
-                initTab('Policies', 'PolicyMigration.html');
-                initTab('Reports', 'Reports.html');
-                initTab('Backup', 'Backup.html');
-                initTab('Tools', 'Notifications.html');
-                initTab('Settings', 'SystemSettings.html');
+                initTab('Policies');
+                initTab('Reports');
+                initTab('Backup');
+                initTab('Tools');
+                initTab('Settings');
             </script>
             <div class="tabBarBottom"><img src="../images/spacer.png" alt="" /><!-- no subtab --></div>
             <div class="content">
                 <div class="panel">
                     <div class="panelTitle tippy"><img class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'enterpriseTree')" />Enterprise Tree</div>
-                    <div id="enterpriseTree" class="panelContent">
-                        <table class="dataTable treeTable_table" width="100%">
-                            <thead>
-                                <tr>
-                                    <th class="name">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
-                                    <th class="edit"></th>
-                                    <th><img src="../images/dashboard.png" title="Dashboard" alt="" /></th>
-                                    <th>Type</th>
-                                    <th width="100%">Details <img src="../images/tooltip.png" title="Mouse over for more details" alt="" /></th>
-                                    <th class="parentId"><!-- hidden column --></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr id="3d7fa710-334c-11dd-bd11-0800200c9a66" class="enterpriseGroup">
-                                    <td class="name"><img class="treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/group.png" alt="" />Springfield Nuclear Power Plant </td>
-                                    <td class="edit"><img src="../images/addGroup.png" alt="" title="Add a new subgroup to this group" /><img src="../images/addPartition.png" alt="" title="Add an existing partition to this group" /><img class="noCursor" src="../images/spacer16.png" alt="" /><img src="../images/remove.png" alt="" title="Remove this group" /><img class="noCursor" src="../images/spacer16.png" alt="" /></td>
-                                    <td class="dashboard"></td>
-                                    <td>group</td>
-                                    <td class="details"></td>
-                                    <td class="parentId">-1</td>
-                                </tr>
-                                <tr id="40f62d36-4146-4f4b-bdd6-14489526b1a6" class="enterpriseGroup">
-                                    <td class="name"><img src="../images/spacer16.png" alt="" /><img class="treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/group.png" alt="" />Electricity</td>
-                                    <td class="edit"><img src="../images/addGroup.png" alt="" title="Add a new subgroup to this group" /><img src="../images/addPartition.png" alt="" title="Add an existing partition to this group" /><img src="../images/move.png" alt="" title="Move this group" /><img src="../images/remove.png" alt="" title="Remove this group" /><img class="noCursor" src="../images/spacer16.png" alt="" /></td>
-                                    <td class="dashboard"></td>
-                                    <td>group</td>
-                                    <td class="details"></td>
-                                    <td class="parentId">3d7fa710-334c-11dd-bd11-0800200c9a66</td>
-                                </tr>
-                                <tr id="d15ce378-df33-44f3-a632-89458f421c24" class="enterprisePartition">
-                                    <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img class="treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/partition.png" alt="" />Dev</td>
-                                    <td class="edit"><img src="../images/addClusterNode.png" alt="" title="Create a new cluster node to run this partition" /><img src="../images/move.png" alt="" title="Move this partition" /><img src="../images/remove.png" alt="" title="Remove this partition" /><img src="../images/ssm.png" alt="" title="Launch SecureSpan Manager for this partition" /></td>
-                                    <td class="dashboard"><input class="dashboardCheckbox" type="checkbox" value="Springfield Nuclear Power Plant / Electricity / Dev" title="Show/Hide dashboard for this partition" onclick="showDashboards();" /></td>
-                                    <td>partition</td>
-                                    <td class="details"><span class="hasTooltip" title="host name and port number">dev.electricity.springfield.com:8443</span></td>
-                                    <td class="parentId">40f62d36-4146-4f4b-bdd6-14489526b1a6</td>
-                                </tr>
-                                <tr id="67f0a6f8-12c5-48af-b1fb-0058d8b1ca64" class="enterpriseClusterNode">
-                                    <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG1</td>
-                                    <td class="edit"><img src="../images/delete.png" alt="" title="Destroy this cluster node" /><img class="noCursor" src="../images/spacer16.png" alt="" /></td>
-                                    <td class="dashboard"></td>
-                                    <td>cluster node</td>
-                                    <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.1:8443</span> (<span class="hasTooltip" title="self host name">host-1</span>)</td>
-                                    <td class="parentId">d15ce378-df33-44f3-a632-89458f421c24</td>
-                                </tr>
-                                <tr id="899afe70-2490-471f-997b-a52815322b27" class="enterpriseClusterNode">
-                                    <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG2</td>
-                                    <td class="edit"><img src="../images/delete.png" alt="" title="Destroy this cluster node" /><img class="noCursor" src="../images/spacer16.png" alt="" /></td>
-                                    <td class="dashboard"></td>
-                                    <td>cluster node</td>
-                                    <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.2:8443</span> (<span class="hasTooltip" title="self host name">host-2</span>)</td>
-                                    <td class="parentId">d15ce378-df33-44f3-a632-89458f421c24</td>
-                                </tr>
-                                <tr id="e0a71bdd-317c-498c-8b00-9815af2594f0" class="enterpriseClusterNode">
-                                    <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG3</td>
-                                    <td class="edit"><img src="../images/delete.png" alt="" title="Destroy this cluster node" /><img class="noCursor" src="../images/spacer16.png" alt="" /></td>
-                                    <td class="dashboard"></td>
-                                    <td>cluster node</td>
-                                    <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.3:8443</span> (<span class="hasTooltip" title="self host name">host-3</span>)</td>
-                                    <td class="parentId">d15ce378-df33-44f3-a632-89458f421c24</td>
-                                </tr>
-                                <tr id="c32bb1a9-1538-4792-baa1-566bfd418020" class="enterprisePartition">
-                                    <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img class="treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/partition.png" alt="" />Production</td>
-                                    <td class="edit"><img src="../images/addClusterNode.png" alt="" title="Create a new cluster node to run this partition" /><img src="../images/move.png" alt="" title="Move this partition" /><img src="../images/remove.png" alt="" title="Remove this partition" /><img src="../images/ssm.png" alt="" title="Launch SecureSpan Manager for this partition" /></td>
-                                    <td class="dashboard"><input class="dashboardCheckbox" type="checkbox" value="Springfield Nuclear Power Plant / Electricity / Production" title="Show/Hide dashboard for this partition" onclick="showDashboards();" /></td>
-                                    <td>partition</td>
-                                    <td class="details"><span class="hasTooltip" title="host name and port number">production.electricity.springfield.com:8444</span></td>
-                                    <td class="parentId">40f62d36-4146-4f4b-bdd6-14489526b1a6</td>
-                                </tr>
-                                <tr id="f90cf133-0e3b-4b04-b489-7afd5cbff609" class="enterpriseClusterNode">
-                                    <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG1</td>
-                                    <td class="edit"><img src="../images/delete.png" alt="" title="Destroy this cluster node" /><img class="noCursor" src="../images/spacer16.png" alt="" /></td>
-                                    <td class="dashboard"></td>
-                                    <td>cluster node</td>
-                                    <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.2:8444</span> (<span class="hasTooltip" title="self host name">host-2</span>)</td>
-                                    <td class="parentId">c32bb1a9-1538-4792-baa1-566bfd418020</td>
-                                </tr>
-                                <tr id="29b2aaf3-bec3-4771-ab0e-8c40e9a2005c" class="enterpriseClusterNode">
-                                    <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG2</td>
-                                    <td class="edit"><img src="../images/delete.png" alt="" title="Destroy this cluster node" /><img class="noCursor" src="../images/spacer16.png" alt="" /></td>
-                                    <td class="dashboard"></td>
-                                    <td>cluster node</td>
-                                    <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.3:8444</span> (<span class="hasTooltip" title="self host name">host-3</span>)</td>
-                                    <td class="parentId">c32bb1a9-1538-4792-baa1-566bfd418020</td>
-                                </tr>
-                                <tr id="b614e196-44ea-457b-b38d-567c3541fabd" class="enterpriseGroup">
-                                    <td class="name"><img src="../images/spacer16.png" alt="" /><img class="treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/group.png" alt="" />Uranium</td>
-                                    <td class="edit"><img src="../images/addGroup.png" alt="" title="Add a new subgroup to this group" /><img src="../images/addPartition.png" alt="" title="Add an existing partition to this group" /><img src="../images/move.png" alt="" title="Move this group" /><img src="../images/remove.png" alt="" title="Remove this group" /><img class="noCursor" src="../images/spacer16.png" alt="" /></td>
-                                    <td class="dashboard"></td>
-                                    <td>group</td>
-                                    <td class="details"></td>
-                                    <td class="parentId">3d7fa710-334c-11dd-bd11-0800200c9a66</td>
-                                </tr>
-                                <tr id="1c9d5a50-6a58-48a5-b7d4-b0cb356820f2" class="enterprisePartition">
-                                    <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img class="treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/partition.png" alt="" />Dev</td>
-                                    <td class="edit"><img src="../images/addClusterNode.png" alt="" title="Create a new cluster node to run this partition" /><img src="../images/move.png" alt="" title="Move this partition" /><img src="../images/remove.png" alt="" title="Remove this partition" /><img src="../images/ssm.png" alt="" title="Launch SecureSpan Manager for this partition" /></td>
-                                    <td class="dashboard"><input class="dashboardCheckbox" type="checkbox" value="Springfield Nuclear Power Plant / Uranium / Dev" title="Show/Hide dashboard for this partition" onclick="showDashboards();" /></td>
-                                    <td>partition</td>
-                                    <td class="details"><span class="hasTooltip" title="host name and port number">uranium.springfield.com:8443</span></td>
-                                    <td class="parentId">b614e196-44ea-457b-b38d-567c3541fabd</td>
-                                </tr>
-                                <tr id="81b5136c-e2a9-42f4-b96a-c6208edb4e58" class="enterpriseClusterNode">
-                                    <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG1</td>
-                                    <td class="edit"><img src="../images/delete.png" alt="" title="Destroy this cluster node" /><img class="noCursor" src="../images/spacer16.png" alt="" /></td>
-                                    <td class="dashboard"></td>
-                                    <td>cluster node</td>
-                                    <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.4:8443</span> (<span class="hasTooltip" title="self host name">host-4</span>)</td>
-                                    <td class="parentId">1c9d5a50-6a58-48a5-b7d4-b0cb356820f2</td>
-                                </tr>
-                                <tr id="a14df4d4-0c62-4d8e-ac3a-82cd8a442a26" class="enterprisePartition">
-                                    <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img class="treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/partition.png" alt="" />Production</td>
-                                    <td class="edit"><img src="../images/addClusterNode.png" alt="" title="Create a new cluster node to run this partition" /><img src="../images/move.png" alt="" title="Move this partition" /><img src="../images/remove.png" alt="" title="Remove this partition" /><img src="../images/ssm.png" alt="" title="Launch SecureSpan Manager for this partition" /></td>
-                                    <td class="dashboard"><input class="dashboardCheckbox" type="checkbox" value="Springfield Nuclear Power Plant / Uranium / Production" title="Show/Hide dashboard for this partition" onclick="showDashboards();" /></td>
-                                    <td>partition</td>
-                                    <td class="details"><span class="hasTooltip" title="host name and port number">uranium.springfield.com:8444</span></td>
-                                    <td class="parentId">b614e196-44ea-457b-b38d-567c3541fabd</td>
-                                </tr>
-                                <tr id="f57307d1-9967-448b-874b-9da8e374a09b" class="enterpriseClusterNode">
-                                    <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG1</td>
-                                    <td class="edit"><img src="../images/delete.png" alt="" title="Destroy this cluster node" /><img class="noCursor" src="../images/spacer16.png" alt="" /></td>
-                                    <td class="dashboard"></td>
-                                    <td>cluster node</td>
-                                    <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.4:8444</span> (<span class="hasTooltip" title="self host name">host-4</span>)</td>
-                                    <td class="parentId">a14df4d4-0c62-4d8e-ac3a-82cd8a442a26</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div id="enterpriseTree">
+                        <div class="panelToolbar">
+                            <button id="addGroupButton" type="submit" name="addGroupButton" value="addGroup"><img src="../images/addGroup.png" alt="" /> New group</button>
+                            <button id="addPartitionButton" type="submit" name="addPartitionButton" value="addPartition"><img src="../images/addPartition.png" alt="" /> Add Partition</button>
+                            <button id="addClusterNodeButton" type="submit" name="addClusterNodeButton" value="addClusterNode"><img src="../images/addClusterNode.png" alt="" /> Create Cluster Node</button>
+                            <button id="moveButton" type="submit" name="moveButton" value="move"><img src="../images/move.png" alt="" /> Move</button>
+                            <button id="deleteButton" type="submit" name="deleteButton" value="delete"><img src="../images/delete.png" alt="" /> Delete</button>
+                            <button id="destroyButton" type="submit" name="destroyButton" value="destroy"><img src="../images/destroy.png" alt="" /> Destroy</button>
+                            <button id="ssmButton" type="submit" name="ssmButton" value="ssm"><img src="../images/ssm.png" alt="" /> Launch SSM</button>
+                        </div>
+                        <div class="panelContent">
+                            <table id="enterpriseTreeTable" class="dataTable l7_treeTable l7_enterpriseTable" width="100%">
+                                <thead>
+                                    <tr>
+                                        <th class="name">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
+                                        <th><img src="../images/status.png" title="Status" alt="" /></th>
+                                        <th><img src="../images/accessAccount.png" title="Access Account" alt="" /></th>
+                                        <th><img src="../images/dashboard.png" title="Dashboard" alt="" /></th>
+                                        <th>Type</th>
+                                        <th width="100%">Details <img src="../images/tooltip.png" title="More details available when mouse over" alt="" /></th>
+                                        <th class="parentId"><!-- hidden column --></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr id="3d7fa710-334c-11dd-bd11-0800200c9a66" class="enterpriseGroup l7_enterpriseTable_cannotDelete">
+                                        <td class="name"><img class="l7_treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/group.png" alt="" />Springfield Nuclear Power Plant </td>
+                                        <td></td>
+                                        <td></td>
+                                        <td class="dashboard"></td>
+                                        <td>group</td>
+                                        <td class="details"></td>
+                                        <td class="parentId">-1</td>
+                                    </tr>
+                                    <tr id="40f62d36-4146-4f4b-bdd6-14489526b1a6" class="enterpriseGroup">
+                                        <td class="name"><img src="../images/spacer16.png" alt="" /><img class="l7_treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/group.png" alt="" />Electricity</td>
+                                        <td></td>
+                                        <td></td>
+                                        <td class="dashboard"></td>
+                                        <td>group</td>
+                                        <td class="details"></td>
+                                        <td class="parentId">3d7fa710-334c-11dd-bd11-0800200c9a66</td>
+                                    </tr>
+                                    <tr id="d15ce378-df33-44f3-a632-89458f421c24" class="enterprisePartition">
+                                        <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img class="l7_treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/partition.png" alt="" />Dev</td>
+                                        <td></td>
+                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td class="dashboard"><input class="dashboardCheckbox" type="checkbox" value="Springfield Nuclear Power Plant / Electricity / Dev" title="Show/Hide dashboard for this partition" onclick="showDashboards();" /></td>
+                                        <td>partition</td>
+                                        <td class="details"><span class="hasTooltip" title="host name and port number">dev.electricity.springfield.com:8443</span></td>
+                                        <td class="parentId">40f62d36-4146-4f4b-bdd6-14489526b1a6</td>
+                                    </tr>
+                                    <tr id="67f0a6f8-12c5-48af-b1fb-0058d8b1ca64" class="enterpriseClusterNode">
+                                        <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG1</td>
+                                        <td><img src="../images/up.png" title="Up" alt=""></td>
+                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td class="dashboard"></td>
+                                        <td>cluster node</td>
+                                        <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.1:8443</span> (<span class="hasTooltip" title="self host name">host-1</span>)</td>
+                                        <td class="parentId">d15ce378-df33-44f3-a632-89458f421c24</td>
+                                    </tr>
+                                    <tr id="899afe70-2490-471f-997b-a52815322b27" class="enterpriseClusterNode">
+                                        <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG2</td>
+                                        <td><img src="../images/offline.png" title="Offline" alt=""></td>
+                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td class="dashboard"></td>
+                                        <td>cluster node</td>
+                                        <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.2:8443</span> (<span class="hasTooltip" title="self host name">host-2</span>)</td>
+                                        <td class="parentId">d15ce378-df33-44f3-a632-89458f421c24</td>
+                                    </tr>
+                                    <tr id="e0a71bdd-317c-498c-8b00-9815af2594f0" class="enterpriseClusterNode">
+                                        <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG3</td>
+                                        <td><img src="../images/down.png" title="Down" alt=""></td>
+                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td class="dashboard"></td>
+                                        <td>cluster node</td>
+                                        <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.3:8443</span> (<span class="hasTooltip" title="self host name">host-3</span>)</td>
+                                        <td class="parentId">d15ce378-df33-44f3-a632-89458f421c24</td>
+                                    </tr>
+                                    <tr id="c32bb1a9-1538-4792-baa1-566bfd418020" class="enterprisePartition">
+                                        <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img class="l7_treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/partition.png" alt="" />Production</td>
+                                        <td></td>
+                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td class="dashboard"><input class="dashboardCheckbox" type="checkbox" value="Springfield Nuclear Power Plant / Electricity / Production" title="Show/Hide dashboard for this partition" onclick="showDashboards();" /></td>
+                                        <td>partition</td>
+                                        <td class="details"><span class="hasTooltip" title="host name and port number">production.electricity.springfield.com:8444</span></td>
+                                        <td class="parentId">40f62d36-4146-4f4b-bdd6-14489526b1a6</td>
+                                    </tr>
+                                    <tr id="f90cf133-0e3b-4b04-b489-7afd5cbff609" class="enterpriseClusterNode">
+                                        <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG1</td>
+                                        <td><img src="../images/off.png" title="Off" alt=""></td>
+                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td class="dashboard"></td>
+                                        <td>cluster node</td>
+                                        <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.2:8444</span> (<span class="hasTooltip" title="self host name">host-2</span>)</td>
+                                        <td class="parentId">c32bb1a9-1538-4792-baa1-566bfd418020</td>
+                                    </tr>
+                                    <tr id="29b2aaf3-bec3-4771-ab0e-8c40e9a2005c" class="enterpriseClusterNode">
+                                        <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG2</td>
+                                        <td><img src="../images/up.png" title="Up" alt=""></td>
+                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td class="dashboard"></td>
+                                        <td>cluster node</td>
+                                        <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.3:8444</span> (<span class="hasTooltip" title="self host name">host-3</span>)</td>
+                                        <td class="parentId">c32bb1a9-1538-4792-baa1-566bfd418020</td>
+                                    </tr>
+                                    <tr id="b614e196-44ea-457b-b38d-567c3541fabd" class="enterpriseGroup">
+                                        <td class="name"><img src="../images/spacer16.png" alt="" /><img class="l7_treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/group.png" alt="" />Uranium</td>
+                                        <td></td>
+                                        <td></td>
+                                        <td class="dashboard"></td>
+                                        <td>group</td>
+                                        <td class="details"></td>
+                                        <td class="parentId">3d7fa710-334c-11dd-bd11-0800200c9a66</td>
+                                    </tr>
+                                    <tr id="1c9d5a50-6a58-48a5-b7d4-b0cb356820f2" class="enterprisePartition">
+                                        <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img class="l7_treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/partition.png" alt="" />Dev</td>
+                                        <td></td>
+                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td class="dashboard"><input class="dashboardCheckbox" type="checkbox" value="Springfield Nuclear Power Plant / Uranium / Dev" title="Show/Hide dashboard for this partition" onclick="showDashboards();" /></td>
+                                        <td>partition</td>
+                                        <td class="details"><span class="hasTooltip" title="host name and port number">uranium.springfield.com:8443</span></td>
+                                        <td class="parentId">b614e196-44ea-457b-b38d-567c3541fabd</td>
+                                    </tr>
+                                    <tr id="81b5136c-e2a9-42f4-b96a-c6208edb4e58" class="enterpriseClusterNode">
+                                        <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG1</td>
+                                        <td><img src="../images/up.png" title="Up" alt=""></td>
+                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td class="dashboard"></td>
+                                        <td>cluster node</td>
+                                        <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.4:8443</span> (<span class="hasTooltip" title="self host name">host-4</span>)</td>
+                                        <td class="parentId">1c9d5a50-6a58-48a5-b7d4-b0cb356820f2</td>
+                                    </tr>
+                                    <tr id="a14df4d4-0c62-4d8e-ac3a-82cd8a442a26" class="enterprisePartition">
+                                        <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img class="l7_treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/partition.png" alt="" />Production</td>
+                                        <td></td>
+                                        <td><img src="../images/noAccessAccount.png" title="Enter access account" alt="" /></td>
+                                        <td class="dashboard"><input class="dashboardCheckbox" type="checkbox" value="Springfield Nuclear Power Plant / Uranium / Production" title="Show/Hide dashboard for this partition" onclick="showDashboards();" /></td>
+                                        <td>partition</td>
+                                        <td class="details"><span class="hasTooltip" title="host name and port number">uranium.springfield.com:8444</span></td>
+                                        <td class="parentId">b614e196-44ea-457b-b38d-567c3541fabd</td>
+                                    </tr>
+                                    <tr id="f57307d1-9967-448b-874b-9da8e374a09b" class="enterpriseClusterNode">
+                                        <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG1</td>
+                                        <td><img src="../images/up.png" title="Up" alt=""></td>
+                                        <td><img src="../images/noAccessAccount.png" title="Enter access account" alt="" /></td>
+                                        <td class="dashboard"></td>
+                                        <td>cluster node</td>
+                                        <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.4:8444</span> (<span class="hasTooltip" title="self host name">host-4</span>)</td>
+                                        <td class="parentId">a14df4d4-0c62-4d8e-ac3a-82cd8a442a26</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
                 <div class="panel">
                     <div class="panelTitle tippy"><img class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'dashboards')" />Dashboards (monitoring <span id="numDashboards">3</span> partitions)</div>
-                    <div id="dashboards" class="dashboardsPanelContent">
-                        <div class="indent">
-                            <input type="button" value="Expand All" onclick="expandTippies('dashboard-tippy-.+');" />
-                            <input type="button" value="Collapse All" onclick="collapseTippies('dashboard-tippy-.+')" />
-                            <span class="nowrap middle"><img id="columns1" src="../images/columns1.png" title="One column"  alt="" onclick="setNumDashboardsPerRow(1);" /><img id="columns2" src="../images/columns2.png" title="Two columns"  alt="" onclick="setNumDashboardsPerRow(2);" /><img id="columns3" src="../images/columns3.png" title="Three columns"  alt="" onclick="setNumDashboardsPerRow(3);" /><img id="columns4" src="../images/columns4.png" title="Four columns"  alt="" onclick="setNumDashboardsPerRow(4);" /></span>
+                    <div id="dashboards">
+                        <div class="panelToolbar">
+                            <button id="expandAllButton" type="button">Expand All</button>
+                            <button id="collapseAllButton" type="button">Collapse All</button>
+                            &nbsp;&nbsp;&nbsp;
+                            <span class="nowrap"><img id="columns1" class="clickable" src="../images/columns1.png" title="One column"  alt="" onclick="setNumDashboardsPerRow(1);" /><img id="columns2" class="clickable" src="../images/columns2.png" title="Two columns"  alt="" onclick="setNumDashboardsPerRow(2);" /><img id="columns3" class="clickable" src="../images/columns3.png" title="Three columns"  alt="" onclick="setNumDashboardsPerRow(3);" /><img id="columns4" class="clickable" src="../images/columns4.png" title="Four columns"  alt="" onclick="setNumDashboardsPerRow(4);" /></span>
+                            <script type="text/javascript">
+                                var expandAllButton = new YAHOO.widget.Button("expandAllButton");
+                                expandAllButton.addListener("click", function(){expandTippies('dashboard-tippy-.+');});
+                                var collapseAllButton = new YAHOO.widget.Button("collapseAllButton");
+                                collapseAllButton.addListener("click", function(){collapseTippies('dashboard-tippy-.+');});
+                            </script>
                         </div>
-                        <table id="dashboardsTable">
-                        </table>
+                        <div class="dashboardsPanelContent">
+                            <table id="dashboardsTable">
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

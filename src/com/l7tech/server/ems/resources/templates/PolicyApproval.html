@@ -10,8 +10,15 @@
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>Policy Approval [SecureSpan Enterprise Manager]</title>
     <link rel="stylesheet" href="../css/site.css" media="all" type="text/css" />
+    <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
+    <script type="text/javascript" src="../yui/animation/animation-min.js"></script>
     <script type="text/javascript" src="../js/site.js"></script>
     <script type="text/javascript">
+        var MIN_FRAME_HEIGHT = 150;
+        var MAX_FRAME_HEIGHT = 500;
+        var INCR_FRAME_HEIGHT = 50;
+        var DECR_FRAME_HEIGHT = - INCR_FRAME_HEIGHT;
+
         function initSubmissionSelector(self) {
             self.contentWindow.messageIFrameName = 'submissionMessage';
         }
@@ -79,7 +86,7 @@
                         <td id="tabCMPolicies" class="tabCMon">Manage Policies</td>
                         <td id="tabRMPolicies" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMReports" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMReports" class="tabCM"><a href="Reports.html">Reports</a></td>
+                        <td id="tabCMReports" class="tabCM"><a href="StandardReports.html">Reports</a></td>
                         <td id="tabRMReports" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMBackup" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabCMBackup" class="tabCM"><a href="Backup.html">Backup &amp; Restore</a></td>
@@ -88,7 +95,7 @@
                         <td id="tabCMTools" class="tabCM"><a href="Notifications.html">Tools</a></td>
                         <td id="tabRMTools" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMSettings" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMSettings" class="tabCM"><a href="SystemSettings.html">Settings</a></td>
+                        <td id="tabCMSettings" class="tabCM"><a href="UserSettings.html">Settings</a></td>
                         <td id="tabRMSettings" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td class="tabLM"><img src="../images/spacer.png" alt="" /></td>
                         <td class="tabCM" width="100%"><img src="../images/spacer.png" alt="" /></td>
@@ -120,11 +127,11 @@
                 </table>
             </div>
             <script language="JavaScript" type="text/javascript">
-                initTab('Gateways', 'Gateways.html');
-                initTab('Reports', 'Reports.html');
-                initTab('Backup', 'Backup.html');
-                initTab('Tools', 'Notifications.html');
-                initTab('Settings', 'SystemSettings.html');
+                initTab('Gateways');
+                initTab('Reports');
+                initTab('Backup');
+                initTab('Tools');
+                initTab('Settings');
             </script>
             <div class="subtabBar">
                 <span class="subtabOff"><a href="PolicyMigration.html">Migration</a></span>
@@ -161,34 +168,94 @@
                             </table></td>
                         </tr>
                         <tr>
-                            <td class="srcDestTop">Select a pending submission:</td>
+                            <td class="srcDestTop">
+                                <table width="100%">
+                                    <tr>
+                                        <td class="nowrap">Select a pending submission:</td>
+                                        <td class="right" width="100%">
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['submissionSelector', 'destPartitionSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['submissionSelector', 'destPartitionSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
                             <td class="srcDestCenter"></td>
-                            <td class="srcDestTop">Select a destination partition:</td>
+                            <td class="srcDestTop">
+                                <table width="100%">
+                                    <tr>
+                                        <td class="nowrap">Select a destination partition:</td>
+                                        <td class="right" width="100%">
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['submissionSelector', 'destPartitionSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['submissionSelector', 'destPartitionSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
                         </tr>
                         <tr>
-                            <td class="srcDest"><iframe id="submissionSelector" src="SubmissionReceived.html" frameborder="0" scrolling="yes" width="100%" onload="initSubmissionSelector(this);"></iframe></td>
+                            <td class="srcDest"><iframe id="submissionSelector" src="SubmissionReceived.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSubmissionSelector(this);"></iframe></td>
                             <td class="srcDestCenter"></td>
-                            <td class="srcDest"><iframe id="destPartitionSelector" src="PartitionSelector.html" frameborder="0" scrolling="yes" width="100%" onload="initDestPartitionSelector(this);"></iframe></td>
+                            <td class="srcDest"><iframe id="destPartitionSelector" src="PartitionSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initDestPartitionSelector(this);"></iframe></td>
                         </tr>
                         <tr>
-                            <td class="srcDest">Message:</td>
+                            <td class="srcDest">
+                                <table width="100%">
+                                    <tr>
+                                        <td class="nowrap">Message:</td>
+                                        <td class="right" width="100%">
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['submissionMessage', 'destPartitionContent'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['submissionMessage', 'destPartitionContent'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
                             <td class="srcDestCenter"></td>
-                            <td class="srcDest">Select a destination folder (<input id="checkbox:enable" type="checkbox" /><label for="checkbox:enable">enable upon save</label>):</td>
+                            <td class="srcDest">
+                                <table width="100%">
+                                    <tr>
+                                        <td class="nowrap">Select a destination folder (<input id="checkbox:enable" type="checkbox" /><label for="checkbox:enable"> enable service policies upon save</label>):</td>
+                                        <td class="right" width="100%">
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['submissionMessage', 'destPartitionContent'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['submissionMessage', 'destPartitionContent'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
                         </tr>
                         <tr>
-                            <td class="srcDest"><iframe id="submissionMessage" frameborder="0" scrolling="yes" width="100%"></iframe></td>
+                            <td class="srcDest"><iframe id="submissionMessage" frameborder="0" scrolling="yes" height="150" width="100%"></iframe></td>
                             <td class="srcDestCenter nowrap">Approve<br /><img src="../images/copy.png" alt="" /><br /><img src="../images/spacer.png" height="20px" alt="" /><br />Reject<br /><img src="../images/reject.png" alt="" /></td>
-                            <td class="srcDest"><iframe id="destPartitionContent" frameborder="0" scrolling="yes" width="100%" onload="initDestPartitionContent(this);"></iframe></td>
+                            <td class="srcDest"><iframe id="destPartitionContent" frameborder="0" scrolling="yes" height="150" width="100%" onload="initDestPartitionContent(this);"></iframe></td>
                         </tr>
                         <tr>
-                            <td class="srcDest">Content:</td>
+                            <td class="srcDest">
+                                <table width="100%">
+                                    <tr>
+                                        <td class="nowrap">Content:</td>
+                                        <td class="right" width="100%">
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['submissionContent', 'destItemDetails'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['submissionContent', 'destItemDetails'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
                             <td class="srcDestCenter"></td>
-                            <td class="srcDest"><img src="../images/zoom.png" alt="" /> Item Details:</td>
+                            <td class="srcDest">
+                                <table width="100%">
+                                    <tr>
+                                        <td class="nowrap"><img src="../images/zoom.png" alt="" /> Item Details:</td>
+                                        <td class="right" width="100%">
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['submissionContent', 'destItemDetails'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['submissionContent', 'destItemDetails'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
                         </tr>
                         <tr>
-                            <td class="srcDestBottom"><iframe id="" frameborder="0" scrolling="yes" width="100%"></iframe></td>
+                            <td class="srcDestBottom"><iframe id="submissionContent" frameborder="0" scrolling="yes" height="150" width="100%"></iframe></td>
                             <td class="srcDestCenter"></td>
-                            <td class="srcDestBottom"><iframe id="destItemDetails" frameborder="0" scrolling="yes" width="100%"></iframe></td>
+                            <td class="srcDestBottom"><iframe id="destItemDetails" frameborder="0" scrolling="yes" height="150" width="100%"></iframe></td>
                         </tr>
                     </table>
                 </div>

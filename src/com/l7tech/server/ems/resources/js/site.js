@@ -143,14 +143,10 @@ function addClass(element, className) {
  * @return boolean
  */
 function removeClass(element, className) {
-    var pattern = new RegExp('(^|\\s)' + className + '(\\s|$)');
-    var classNames = element.className;
-    var start = classNames.search(pattern);
-    if (start != -1) {
-        var end = start + className.length;
-        if (classNames.substr(end, 1) == ' ') ++end;
-        classNames = classNames.substring(0, start) + classNames.substring(end);
-        element.className = classNames;
+    var pattern = new RegExp('(^|\\s+)' + className + '(\\s+|$)', 'g');
+    var classes = element.className;
+    if (pattern.test(classes)) {
+        element.className = classes.replace(pattern, ' ').replace(/^\s+/, '').replace(/\s+$/, '');
         return true;
     } else {
         return false;
@@ -241,9 +237,6 @@ var tabLBcell = new Array();
 var tabCBcell = new Array();
 var tabRBcell = new Array();
 
-/** Hash map for link address of each tab. */
-var tabUrl = new Array();
-
 /**
  * Handles mouseover on an "off" tab.
  */
@@ -282,7 +275,7 @@ function tabOut() {
  * @param tabName   the predefined tab name
  * @param url       link address
  */
-function initTab(tabName, url) {
+function initTab(tabName) {
     var id = 'tabCM' + tabName;
     var td = document.getElementById(id);
     td.onmouseover = tabOver;
@@ -298,8 +291,6 @@ function initTab(tabName, url) {
     tabLBcell[tabName] = document.getElementById('tabLB' + tabName);
     tabCBcell[tabName] = document.getElementById('tabCB' + tabName);
     tabRBcell[tabName] = document.getElementById('tabRB' + tabName);
-
-    tabUrl[tabName] = url;
 }
 
 // -----------------------------------------------------------------------------
@@ -345,5 +336,27 @@ function collapseTippies(idPattern) {
         if (getFileName(tippies[i].src) == EXPANDED_TIPPY_IMG_NAME) {
             tippies[i].onclick();
         }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Resize
+// -----------------------------------------------------------------------------
+
+/**
+ * Changes the height of elements.
+ *
+ * @param ids       array of element IDs
+ * @param delta     height increment in pixels (positive to make taller, negative to make shorter)
+ * @param min       minimum element height
+ * @param max       maximum element height
+ */
+function changeHeight(ids, delta, min, max) {
+    for (var i in ids) {
+        var element = document.getElementById(ids[i]);
+        var h = element.offsetHeight + delta;
+        if (h < min) h = min;
+        if (h > max) h = max;
+        new YAHOO.util.Anim(ids[i], {height: {to: h, unit: 'px'}}, 0.1, YAHOO.util.Easing.easeOut).animate();
     }
 }

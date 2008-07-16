@@ -8,7 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <!-- PROTOTYPE ONLY END -->
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-    <title>Audits [SecureSpan Enterprise Manager]</title>
+    <title>Custom Reports [SecureSpan Enterprise Manager]</title>
     <link rel="stylesheet" href="../css/site.css" media="all" type="text/css" />
     <script type="text/javascript" src="../js/site.js"></script>
 </head>
@@ -63,13 +63,13 @@
                         <td id="tabCMPolicies" class="tabCM"><a href="PolicyMigration.html">Manage Policies</a></td>
                         <td id="tabRMPolicies" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMReports" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMReports" class="tabCM"><a href="StandardReports.html">Reports</a></td>
+                        <td id="tabCMReports" class="tabCMon">Reports</td>
                         <td id="tabRMReports" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMBackup" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabCMBackup" class="tabCM"><a href="Backup.html">Backup &amp; Restore</a></td>
                         <td id="tabRMBackup" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMTools" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMTools" class="tabCMon">Tools</td>
+                        <td id="tabCMTools" class="tabCM"><a href="Notifications.html">Tools</a></td>
                         <td id="tabRMTools" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMSettings" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabCMSettings" class="tabCM"><a href="UserSettings.html">Settings</a></td>
@@ -85,15 +85,15 @@
                         <td id="tabLBPolicies"><img src="../images/tabLBoff.png" alt="" /></td>
                         <td id="tabCBPolicies" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabRBPolicies"><img src="../images/tabRBoff.png" alt="" /></td>
-                        <td id="tabLBReports"><img src="../images/tabLBoff.png" alt="" /></td>
-                        <td id="tabCBReports" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRBReports"><img src="../images/tabRBoff.png" alt="" /></td>
+                        <td id="tabLBReports"><img src="../images/tabLBon.png" alt="" /></td>
+                        <td id="tabCBReports" class="tabCBon"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRBReports"><img src="../images/tabRBon.png" alt="" /></td>
                         <td id="tabLBBackup"><img src="../images/tabLBoff.png" alt="" /></td>
                         <td id="tabCBBackup" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabRBBackup"><img src="../images/tabRBoff.png" alt="" /></td>
-                        <td id="tabLBTools"><img src="../images/tabLBon.png" alt="" /></td>
-                        <td id="tabCBTools" class="tabCBon"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRBTools"><img src="../images/tabRBon.png" alt="" /></td>
+                        <td id="tabLBTools"><img src="../images/tabLBoff.png" alt="" /></td>
+                        <td id="tabCBTools" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRBTools"><img src="../images/tabRBoff.png" alt="" /></td>
                         <td id="tabLBSettings"><img src="../images/tabLBoff.png" alt="" /></td>
                         <td id="tabCBSettings" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabRBSettings"><img src="../images/tabRBoff.png" alt="" /></td>
@@ -106,18 +106,14 @@
             <script language="JavaScript" type="text/javascript">
                 initTab('Gateways');
                 initTab('Policies');
-                initTab('Reports');
                 initTab('Backup');
+                initTab('Tools');
                 initTab('Settings');
             </script>
             <div class="subtabBar">
-                <span class="subtabOff"><a href="Audits.html">Notifications</a></span>
+                <span class="subtabOff"><a href="StandardReports.html">Standard Reports</a></span>
                 |
-                <span class="subtabOn">Audits</span>
-                |
-                <span class="subtabOff"><a href="Logs.html">Logs</a></span>
-                |
-                <span class="subtabOff"><a href="TestWebService.html">Test Web Service</a></span>
+                <span class="subtabOn">External Reports</span>
             </div>
             <div class="content">
                 <span style="font-size: 1in;">X</span>

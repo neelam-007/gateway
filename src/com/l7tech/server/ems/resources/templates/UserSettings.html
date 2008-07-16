@@ -63,7 +63,7 @@
                         <td id="tabCMPolicies" class="tabCM"><a href="PolicyMigration.html">Manage Policies</a></td>
                         <td id="tabRMPolicies" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMReports" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMReports" class="tabCM"><a href="Reports.html">Reports</a></td>
+                        <td id="tabCMReports" class="tabCM"><a href="StandardReports.html">Reports</a></td>
                         <td id="tabRMReports" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMBackup" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabCMBackup" class="tabCM"><a href="Backup.html">Backup &amp; Restore</a></td>
@@ -104,16 +104,16 @@
                 </table>
             </div>
             <script language="JavaScript" type="text/javascript">
-                initTab('Gateways', 'Gateways.html');
-                initTab('Policies', 'PolicyMigration.html');
-                initTab('Reports', 'Reports.html');
-                initTab('Backup', 'Backup.html');
-                initTab('Tools', 'Notifications.html');
+                initTab('Gateways');
+                initTab('Policies');
+                initTab('Reports');
+                initTab('Backup');
+                initTab('Tools');
             </script>
             <div class="subtabBar">
-                <span class="subtabOff"><a href="SystemSettings.html">System Settings</a></span>
-                |
                 <span class="subtabOn">User Settings</span>
+                |
+                <span class="subtabOff"><a href="SystemSettings.html">System Settings</a></span>
             </div>
             <div class="content">
                 <h4>User Settings for "admin"</h4>
@@ -865,12 +865,30 @@
                             <tr>
                                 <th>Start Up View:</th>
                                 <td><select id="startupView">
-                                    <option value="Gateways">Manage Gateways</option>
-                                    <option value="Policies">Manage Policies</option>
-                                    <option value="Reports">Reports</option>
-                                    <option value="Backup">Backup &amp; Restore</option>
-                                    <option value="Tools">Tools</option>
-                                    <option value="Settings">Settings</option>
+                                    <option value="ManageGateways">Manage Gateways</option>
+                                    <optgroup label="Manage Policies">
+                                        <option value="PolicyMigration">Migration</option>
+                                        <option value="PolicySubmission">Submission</option>
+                                        <option value="PolicyApproval">Approval</option>
+                                    </optgroup>
+                                    <optgroup label="Reports">
+                                        <option value="StandardReports">Standard Reports</option>
+                                        <option value="ExternalReports">External Reports</option>
+                                    </optgroup>
+                                    <optgroup label="Backup & Restore">
+                                        <option value="Backup">Backup</option>
+                                        <option value="Restore">Restore</option>
+                                    </optgroup>
+                                    <optgroup label="Tools">
+                                        <option value="Notifications">Notifications</option>
+                                        <option value="Audits">Audits</option>
+                                        <option value="Logs">Logs</option>
+                                        <option value="TestWebService">Test Web Service</option>
+                                    </optgroup>
+                                    <optgroup label="Settings">
+                                        <option value="UserSettings">User Settings</option>
+                                        <option value="SystemSettings">System Settings</option>
+                                    </optgroup>
                                     <option value="lastView" selected="selected">[Last Visited View]</option>
                                 </select></td>
                             </tr>

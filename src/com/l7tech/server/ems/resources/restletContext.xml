@@ -98,11 +98,31 @@
         </constructor-arg>
     </bean>
 
+    <!-- Exposes the resources/yui classpath subdirectory as a Restlet Directory.  Ignores query vars when resolving files. -->
+    <bean name="restYuiDirectory" class="com.l7tech.server.ems.StripQueryFilter">
+        <constructor-arg index="0" ref="restApplication.context"/>
+        <constructor-arg index="1">
+            <bean class="org.restlet.Directory">
+                <constructor-arg index="0" type="org.restlet.Context" ref="restApplication.context"/>
+                <constructor-arg index="1" type="org.restlet.data.Reference">
+                    <bean class="org.restlet.data.LocalReference">
+                        <constructor-arg type="java.lang.String"
+                                         value="clap://thread/com/l7tech/server/ems/resources/yui"/>
+                    </bean>
+                </constructor-arg>
+
+                <!-- content negotation won't work with classpath directories since they aren't listable -->
+                <property name="negotiateContent" value="false"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
     <bean name="restTemplatesList" class="java.util.ArrayList">
         <constructor-arg>
             <list>
                 <value>Audits.html</value>
                 <value>Backup.html</value>
+                <value>ExternalReports.html</value>
                 <value>Gateways.html</value>
                 <value>Help.html</value>
                 <value>Login.html</value>
@@ -113,9 +133,9 @@
                 <value>PolicyMapping.html</value>
                 <value>PolicyMigration.html</value>
                 <value>PolicySubmission.html</value>
-                <value>Reports.html</value>
                 <value>Restore.html</value>
                 <value>Setup.html</value>
+                <value>StandardReports.html</value>
                 <value>SubmissionReceived.html</value>
                 <value>SystemSettings.html</value>
                 <value>TestWebService.html</value>
@@ -192,6 +212,7 @@
                 <entry key="/images/" value-ref="restImagesDirectory"/>
                 <entry key="/css/" value-ref="restCssDirectory"/>
                 <entry key="/js/" value-ref="restJsDirectory"/>
+                <entry key="/yui/" value-ref="restYuiDirectory"/>
                 <entry key="/ems/{templateName}" value-ref="restTemplatesDirectory"/>
 
                 <!-- TODO These are just temporary simulation for REST GET. Remove them when RESTlet is in place. -->
