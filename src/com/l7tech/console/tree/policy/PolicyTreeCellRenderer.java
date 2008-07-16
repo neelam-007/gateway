@@ -69,12 +69,10 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
         Boolean included = includedCache.get(node);
         if (included == null) {
             included = false;
-            if (!(node instanceof IncludeAssertionPolicyNode)) {
-                for (TreeNode treeNode : node.getPath()) {
-                    if (treeNode instanceof IncludeAssertionPolicyNode) {
-                        included = true;
-                        break;
-                    }
+            for (TreeNode treeNode : node.getPath()) {
+                if (treeNode instanceof IncludeAssertionPolicyNode && treeNode != node) {
+                    included = true;
+                    break;
                 }
             }
             includedCache.put(node, included);
