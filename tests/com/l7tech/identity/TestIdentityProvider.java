@@ -25,6 +25,10 @@ public class TestIdentityProvider implements IdentityProvider {
     public static IdentityProviderConfig TEST_IDENTITY_PROVIDER_CONFIG =
       new IdentityProviderConfig(new IdentityProviderType(9898, "TestIdentityProvider", TestIdentityProvider.class.getName()));
 
+    public static void clearAllUsers(){
+        usernameMap.clear();    
+    }
+
     static {
         TEST_IDENTITY_PROVIDER_CONFIG.setOid(PROVIDER_ID);
         TEST_IDENTITY_PROVIDER_CONFIG.setName("TestIdentityProvider");

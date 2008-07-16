@@ -21,16 +21,38 @@ import java.util.logging.Logger;
 public final class AuthCache {
     private static final Logger logger = Logger.getLogger(AuthCache.class.getName());
 
-    private final Cache cache;
+    private final Cache successCache;
+    private final Cache failureCache;
+    private final boolean successCacheDisabled;
+    private final boolean failureCacheDisabled;
+    private final static int SUCCESS_CACHE_TUNER_INTERVAL = 59;
+    /*
+    * prime so cleanup won't ever collide with success tunerInterval of 59, also prime
+    * */
+    private final static int FAILURE_CACHE_TUNER_INTERVAL = 61;
+
+    public final static int SUCCESS_CACHE_SIZE = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_SUCCESS_CACHE_SIZE, 200);
+    public final static int FAILURE_CACHE_SIZE = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_FAILURE_CACHE_SIZE, 100); 
 
     private AuthCache() {
         String name = "AuthCache_unified";
-        int succSize = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_SUCCESS_CACHE_SIZE, 200);
-        int failSize = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_FAILURE_CACHE_SIZE, 100);
-        int size = succSize + failSize;
-        int tunerInterval = 59;
-        cache = size < 1 ? null :
-                WhirlycacheFactory.createCache(name, size, tunerInterval, WhirlycacheFactory.POLICY_LFU);
+
+        successCache = SUCCESS_CACHE_SIZE < 1 ? null :
+                WhirlycacheFactory.createCache(name, SUCCESS_CACHE_SIZE, SUCCESS_CACHE_TUNER_INTERVAL, WhirlycacheFactory.POLICY_LFU);
+        successCacheDisabled = (successCache != null) ? false : true;
+        if(successCacheDisabled){
+            if (logger.isLoggable(Level.WARNING))
+                logger.log(Level.WARNING,"Successfull authentication caching has been disabled via configuration");
+        }
+
+        failureCache = FAILURE_CACHE_SIZE < 1 ? null :
+                WhirlycacheFactory.createCache(name, FAILURE_CACHE_SIZE, FAILURE_CACHE_TUNER_INTERVAL, WhirlycacheFactory.POLICY_LFU); 
+
+        failureCacheDisabled = (failureCache != null) ? false : true;
+        if(failureCacheDisabled){
+            if (logger.isLoggable(Level.WARNING))
+                logger.log(Level.WARNING,"Failed authentication caching has been disabled via configuration");
+        }
     }
 
     private static class CacheKey {
@@ -100,18 +122,18 @@ public final class AuthCache {
             return null;
         }
 
-        // There was a cache miss before, so someone has to authenticate it.
+        // There was a successCache miss before, so someone has to authenticate it.
 
         // We'll allow multiple simultaneous authentications for the same credentials only for internal password auth
         boolean concurrentOk = idp instanceof InternalIdentityProvider &&
                 creds.getFormat() == CredentialFormat.CLEARTEXT;
 
-        if (cache != null && concurrentOk) {
+        if (!successCacheDisabled && concurrentOk) {
             // Let's make sure only one thread does so on this SSG.
             // Lock username so we only auth it on one thread at a time
             String credsMutex = (Long.toString(providerOid) + credString).intern();
             synchronized (credsMutex) {
-                // Recheck cache now that we have the username lock
+                // Recheck successCache now that we have the username lock
                 cached = getCacheEntry(ckey, credString, idp, maxSuccessAge, maxFailAge);
                 if (cached instanceof AuthenticationResult) {
                     // Someone else got there first with a success
@@ -140,18 +162,19 @@ public final class AuthCache {
         } catch (AuthenticationException e) {
             thrown = e;
         }
-        String which;
+        String which = null;
 
-        // Skip if cache is disabled
-        if (cache != null) {
-            if (result == null) {
-                which = "failed";
-                cache.store(ckey, new Long(System.currentTimeMillis()));
-            } else {
-                which = "successful";
-                cache.store(ckey, result);
-            }
+        // Skip if successCache is disabled
 
+        if (!failureCacheDisabled && result == null) {
+            which = "failed";
+            failureCache.store(ckey, new Long(System.currentTimeMillis()));
+        }else if(!successCacheDisabled){
+            which = "successful";
+            successCache.store(ckey, result);
+        }
+
+        if(which != null){
             if (logger.isLoggable(Level.FINE))
                 logger.log(Level.FINE,
                            "Caching {0} authentication for {1} on IdP \"{2}\"",
@@ -167,18 +190,43 @@ public final class AuthCache {
 
     /**
      * Gets a cache entry
+     * Fails fast by returning null when both the successCache and the failureCache are disabled.
+     * In the case when one is disabled, it will proceed with the lookup and then return null when not found
+     * , null will always be found for the cache entry which is disabled
+     * @return Object either an AuthenticationResult on a success hit, or a Long on a failure hit, null when both caches
+     * miss OR there was a hit but the cache values have expired and have not yet been cleaned from the cache
      */
     private Object getCacheEntry(CacheKey ckey, String credString, IdentityProvider idp, int maxSuccessAge, int maxFailAge) {
-        if (cache == null) return null; // fail fast if cache is disabled
+
+        if (successCacheDisabled && failureCacheDisabled) return null; // fail fast if successCache and failureCache is disabled        
+
         Long cachedFailureTime = null;
         AuthenticationResult cachedAuthResult = null;
-        Object cachedObj = cache.retrieve(ckey);
-        if (cachedObj instanceof Long) {
-            cachedFailureTime = (Long)cachedObj;
-        } else if (cachedObj instanceof AuthenticationResult) {
-            cachedAuthResult = (AuthenticationResult)cachedObj;
+
+        //Determine if the success cache has this key
+        if(!successCacheDisabled){
+            Object cachedObj = successCache.retrieve(ckey);
+            if(cachedObj != null && cachedObj instanceof AuthenticationResult){
+                cachedAuthResult = (AuthenticationResult)cachedObj;
+            }
         }
-        if (cachedAuthResult == null && cachedFailureTime == null) return null;
+        //it doesn't have it or it's disabled
+        if(cachedAuthResult == null){
+            //If no success cache and failure cache is enabled, check it
+            if(!failureCacheDisabled){
+                //check if it's a fail for these creds
+                Object cachedObj = failureCache.retrieve(ckey);
+                if(cachedObj != null && cachedObj instanceof Long){
+                    cachedFailureTime = (Long)cachedObj;
+                }else{
+                    //as miss in failureCache also, return null
+                    return null;
+                }
+            }else{
+                //failure cache not enabled and success cache missed / disabled
+                return null;
+            }
+        }
 
         String log;
         Object returnValue;
