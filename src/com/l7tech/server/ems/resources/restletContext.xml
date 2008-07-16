@@ -30,6 +30,12 @@
 
     <bean name="servletContainer" class="com.l7tech.server.ems.EmsServletContainer">
         <constructor-arg index="0" value="${com.l7tech.ems.httpPort}"/>
+        <constructor-arg index="1" ref="emsRestServlet"/>
+    </bean>
+
+    <bean name="emsRestServlet" class="com.l7tech.server.ems.EmsRestServlet">
+        <constructor-arg index="0" ref="restComponent"/>
+        <constructor-arg index="1" ref="restApplication"/>
     </bean>
 
     <!-- Restlet context of top level Application.  Not to be confused with the Spring ApplicationContext. -->

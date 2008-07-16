@@ -9,6 +9,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import javax.servlet.Servlet;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.Map;
@@ -28,16 +29,18 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
 
     private final long instanceId;
     private final int httpPort;
+    private final Servlet emsRestServlet;
     private ApplicationContext applicationContext;
     private Server server;
 
-    public EmsServletContainer(int httpPort) {
-        this.httpPort = httpPort;
+    public EmsServletContainer(int httpPort, Servlet emsRestServlet) {
         this.instanceId = nextInstanceId.getAndIncrement();
         //noinspection ThisEscapedInObjectConstruction
         instancesById.put(instanceId, new WeakReference<EmsServletContainer>(this));
-    }
 
+        this.httpPort = httpPort;
+        this.emsRestServlet = emsRestServlet;
+    }
 
     private void initializeServletEngine() throws Exception {
         server = new Server(httpPort);
@@ -50,7 +53,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         initParams.put(INIT_PARAM_INSTANCE_ID, Long.toString(instanceId));
         
         root.addEventListener(new EmsContextLoaderListener());
-        root.addServlet(new ServletHolder(new EmsRestServlet()), "/*");
+        root.addServlet(new ServletHolder(emsRestServlet), "/*");
         server.start();
     }
 
