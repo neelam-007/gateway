@@ -337,8 +337,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 if (node != null) {
                     Action[] actions = node.getActions();
                     // If the node is nested in a policy include, all editor actions (such as AddAllAssertionAction,
-                    // AddOneOrMoreAssertionAction, DeleteAssertionAction, AssertionMoveDownAction, AssertionMoveUpAction,
-                    // Disable Assertion, and Enable Assertion) will not be displayed in the context menu.
+                    // AddOneOrMoreAssertionAction, DeleteAssertionAction, AssertionMoveDownAction, and AssertionMoveUpAction)
+                    // will not be displayed in the context menu.
                     if (node.isDescendantOfInclude(false)) {
                         verifyActionsInPolicyInclude(actions);
                     }
@@ -370,9 +370,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         sa instanceof AddOneOrMoreAssertionAction ||
                         sa instanceof DeleteAssertionAction ||
                         sa instanceof AssertionMoveDownAction ||
-                        sa instanceof AssertionMoveUpAction ||
-                        sa instanceof DisableAssertionAction ||
-                        sa instanceof EnableAssertionAction) {
+                        sa instanceof AssertionMoveUpAction) {
                         actionList.remove(sa);
                     }
                 }
