@@ -301,6 +301,9 @@ var EXPANDED_TIPPY_IMG_NAME = 'tippyExpanded.png';
 var COLLAPSED_TIPPY_IMG_NAME = 'tippyCollapsed.png';
 
 function toggleTippy(tippy, targetId) {
+    if (typeof tippy == 'string') {
+        tippy = document.getElementById(tippy);
+    }
     var target = document.getElementById(targetId);
     if (getFileName(tippy.src) == EXPANDED_TIPPY_IMG_NAME) {
         target.style.display = 'none';

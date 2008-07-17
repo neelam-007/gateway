@@ -20,7 +20,7 @@
                 <table width="100%">
                     <tr class="header">
                         <td class="logoLeft"><img src="../images/logoLeft.png" alt="" /></td>
-                        <td class="logo"><a href="http://www.layer7tech.com" target="_blank"><img src="../images/l7Logo.png" alt="Layer 7 Technologies Inc." /></a><img src="../images/emLogo.png" alt="" /></td>
+                        <td class="logo"><a href="Gateways.html"><img src="../images/l7Logo.png" alt="Layer 7 Technologies Inc." /><img src="../images/emLogo.png" alt="" /></a></td>
                         <td class="logoRight"><img src="../images/logoRight.png" alt="" /></td>
                         <td width="100%"><img src="../images/spacer.png" alt="" /></td>
                         <td class="middle nowrap">Logged in as "admin"<br />since May 5, 2008 05:57:54 PM</td>
@@ -117,104 +117,130 @@
             </div>
             <div class="content">
                 <div class="panel">
-                    <div class="panelTitle">Product Information</div>
-                    <div class="panelContent">
-                        <table class="indent spaced">
-                            <tr>
-                                <th>Version:</th>
-                                <td>1.0</td>
-                            </tr>
-                            <tr>
-                                <th>Build Number:</th>
-                                <td>1001</td>
-                            </tr>
-                            <tr>
-                                <th class="top">Copyright Notice:</th>
-                                <td class="top wrap">Copyright (c) 2008 by Layer 7 Technologies, Inc. All rights reserved. multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline</td>
-                            </tr>
-                        </table>
+                    <div class="panelTitle tippy"><img id="productInformationTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'productInformation')" /><span class="clickable" onclick="toggleTippy('productInformationTippy', 'productInformation')">Product Information</span></div>
+                    <div id="productInformation">
+                        <div class="panelContent">
+                            <table class="indent spaced">
+                                <tr>
+                                    <th>Version:</th>
+                                    <td>1.0</td>
+                                </tr>
+                                <tr>
+                                    <th>Build Number:</th>
+                                    <td>1001</td>
+                                </tr>
+                                <tr>
+                                    <th class="top">Copyright Notice:</th>
+                                    <td class="top wrap">Copyright (c) 2008 by Layer 7 Technologies, Inc. All rights reserved. multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline multiline</td>
+                                </tr>
+                            </table>
+                        </div>
                     </div>
                 </div>
                 <div class="panel">
-                    <div class="panelTitle">System Information</div>
-                    <div class="panelContent">
-                        <table class="indent spaced">
-                            <tr>
-                                <th>Host Name:</th>
-                                <td>em.springfield.com</td>
-                            </tr>
-                            <tr>
-                                <th>Host IP:</th>
-                                <td>192.168.1.83</td>
-                            </tr>
-                            <tr>
-                                <th>Operating System:</th>
-                                <td>Linux amd64 2.6.9-55.EL</td>
-                            </tr>
-                            <tr>
-                                <th>JVM:</th>
-                                <td>Sun Microsystems Inc. Java HotSpot(TM) 64-Bit Server VM 10.0-b22</td>
-                            </tr>
-                            <tr>
-                                <th class="top">JVM Memory Usage:</th>
-                                <td class="top">
-                                    <table>
-                                        <tr>
-                                            <td>total:</td>
-                                            <td class="right">93196288 bytes</td>
-                                        </tr>
-                                        <tr>
-                                            <td>free:</td>
-                                            <td class="right">37579368 bytes</td>
-                                        </tr>
-                                        <tr>
-                                            <td>maximum:</td>
-                                            <td class="right">506855424 bytes</td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>Started:</th>
-                                <td>2008-05-11 9:23:13 AM</td>
-                            </tr>
-                        </table>
+                    <div class="panelTitle tippy"><img id="systemInformationTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'systemInformation')" /><span class="clickable" onclick="toggleTippy('systemInformationTippy', 'systemInformation')">System Information</span></div>
+                    <div id="systemInformation">
+                        <div class="panelContent">
+                            <table class="indent spaced">
+                                <tr>
+                                    <th>Host Name:</th>
+                                    <td>em.springfield.com</td>
+                                </tr>
+                                <tr>
+                                    <th>Host IP:</th>
+                                    <td>192.168.1.83</td>
+                                </tr>
+                                <tr>
+                                    <th>Operating System:</th>
+                                    <td>Linux amd64 2.6.9-55.EL</td>
+                                </tr>
+                                <tr>
+                                    <th>JVM:</th>
+                                    <td>Sun Microsystems Inc. Java HotSpot(TM) 64-Bit Server VM 10.0-b22</td>
+                                </tr>
+                                <tr>
+                                    <th class="top">JVM Memory Usage:</th>
+                                    <td class="top">
+                                        <table>
+                                            <tr>
+                                                <td>total:</td>
+                                                <td class="right">93196288 bytes</td>
+                                            </tr>
+                                            <tr>
+                                                <td>free:</td>
+                                                <td class="right">37579368 bytes</td>
+                                            </tr>
+                                            <tr>
+                                                <td>maximum:</td>
+                                                <td class="right">506855424 bytes</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Started:</th>
+                                    <td>2008-05-11 9:23:13 AM</td>
+                                </tr>
+                            </table>
+                        </div>
                     </div>
                 </div>
                 <div class="panel">
-                    <div class="panelTitle">License</div>
-                    <div class="panelContent">
-                        <h3>Current License</h3>
-                        <table class="indent spaced">
-                            <tr>
-                                <th>License Status:</th>
-                                <td>Valid</td>
-                            </tr>
-                            <tr>
-                                <th>License ID:</th>
-                                <td>4234874358435734587345</td>
-                            </tr>
-                            <tr>
-                                <th>Description:</th>
-                                <td></td>
-                            </tr>
-                            <tr>
-                                <th>Valid From:</th>
-                                <td>2008-05-01 12:00:01 AM</td>
-                            </tr>
-                            <tr>
-                                <th>Expires:</th>
-                                <td>2010-12-31 11:59:59 PM</td>
-                            </tr>
-                        </table>
-                        <h3>Change License</h3>
-                        <table class="indent spaced">
-                            <tr>
-                                <th class="middle">New License File:</th>
-                                <td class="middle"><input name="licenseFile" type="file" size="40" /></td>
-                                <td class="middle"><input type="submit" value="Apply" /></td>
-                            </tr>
-                        </table>
+                    <div class="panelTitle tippy"><img id="licenseTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'license')" /><span class="clickable" onclick="toggleTippy('licenseTippy', 'license')">License</span></div>
+                    <div id="license">
+                        <div class="panelContent">
+                            <h4>Current License</h4>
+                            <table class="indent spaced">
+                                <tr>
+                                    <th>License Status:</th>
+                                    <td>Valid</td>
+                                </tr>
+                                <tr>
+                                    <th>License ID:</th>
+                                    <td>4234874358435734587345</td>
+                                </tr>
+                                <tr>
+                                    <th>Description:</th>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <th>Attributes:</th>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <th>Issuer:</th>
+                                    <td>CN=License Officer, O=Layer 7 Technologies</td>
+                                </tr>
+                                <tr>
+                                    <th>Licensee:</th>
+                                    <td>Springfield Nuclear Power Plant</td>
+                                </tr>
+                                <tr>
+                                    <th>Licensee Contact Email:</th>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <th>Valid From:</th>
+                                    <td>2008-05-01 12:00:01 AM</td>
+                                </tr>
+                                <tr>
+                                    <th>Expires:</th>
+                                    <td>2010-12-31 11:59:59 PM</td>
+                                </tr>
+                                <tr>
+                                    <th class="top">Grants:</th>
+                                    <td><textarea rows="3" cols="80">User of Layer 7 SecureSpan Enterprise Manager major version 1</textarea></td>
+                                </tr>
+                            </table>
+                            <h4>Change License</h4>
+                            <table class="indent spaced">
+                                <tr>
+                                    <th class="middle">New License File:</th>
+                                    <td class="middle"><input name="licenseFile" type="file" size="40" /></td>
+                                    <td class="middle"><input type="submit" value="Apply" /></td>
+                                </tr>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

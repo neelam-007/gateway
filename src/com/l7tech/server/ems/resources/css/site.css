@@ -75,6 +75,11 @@ button * {
     vertical-align: middle;
 }
 
+button[disabled] img {
+    opacity: 0.5;
+    *filter: alpha(opacity=50);
+}
+
 input[type='text'], input[type='password'] {
     font-size: 1em;
     padding-left: 4px;
@@ -87,6 +92,7 @@ input[type='checkbox'], input[type='radio'] {
 }
 
 textarea {
+    border: 1px #433e29 solid;
     font-size: 1em;
     padding: 2px 4px 2px 4px;
 }
@@ -146,6 +152,16 @@ table.center {
     cursor: pointer;
 }
 
+.clickableImg {
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.clickableImg:hover {
+    border: 1px solid #7d98b8;
+    background-color: #e6f1ff;
+}
+
 /*
 .hasTooltip {
     cursor: url('../images/tooltip.cur'), help;
@@ -158,11 +174,6 @@ table.center {
 
 .noCursor {
     cursor: default !important;
-}
-
-button[disabled] img {
-    opacity: 0.5;
-    *filter: alpha(opacity=50);
 }
 
 .unselected {
@@ -522,7 +533,6 @@ img.tippy {
 }
 
 .submissionMessageEntry textarea {
-    border: 1px #433e29 solid;
     height: 280px;
     width: 96%;
 }
@@ -532,12 +542,8 @@ td.submissionMessageDisplay {
 }
 
 td.submissionMessageDisplay textarea {
-    border: 1px #433e29 solid;
-    width: 96%;
-}
-
-td.submissionMessageDisplay textarea {
     height: 150px;
+    width: 96%;
 }
 
 .userSelector {

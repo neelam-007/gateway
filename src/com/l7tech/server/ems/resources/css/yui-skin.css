@@ -1,5 +1,14 @@
-/* This stylesheet customizes YUI SAM skin. Include this after all original YUI SAM stylesheets. */
+/*
+This stylesheet overrides specific YUI SAM skin elements.
+Include this stylesheet after original YUI SAM skin stylesheets.
+*/
 
 .yui-skin-sam .yui-button button,.yui-skin-sam .yui-button a {
     padding: 0 3px;
 }
+
+.yui-skin-sam .yuimenuitemlabel-disabled img {
+    opacity: 0.5;
+    *filter: alpha(opacity=50);
+}
+

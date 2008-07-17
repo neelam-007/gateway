@@ -11,8 +11,11 @@
  *    <script type="text/javascript" src="../yui/container/container_core-min.js"></script>
  *    <script type="text/javascript" src="../yui/menu/menu-min.js"></script>
  *    <script type="text/javascript" src="../js/enterpriseTable.js"></script>
- * 2. And include the class name "yui-skin-sam" in the BODY element.
- * 3. Include one of the following classes in TR elements for enterprise entities:
+ * 2. Include the class name "yui-skin-sam" in the BODY element.
+ * 3. Include the class name "l7_enterpriseTable" in TABLE elements to be applied.
+ * 4. Include the class name "l7_enterpriseTable_rowSelectable" in the TABLE element if rows
+ *    should be selectable (i.e., highlighted when left-clicked), e.g., to work with a toolbar.
+ * 5. Include one of the following classes in TR elements for enterprise entities:
  *    enterpriseGroup                 - group
  *    enterprisePartition             - partition
  *    enterpriseClusterNode           - cluster node
@@ -21,15 +24,16 @@
  *    enterprisePolicyFragment        - policy fragment
  *    enterprisePublishedServiceAlias - published service alias
  *    enterprisePolicyFragmentAlias   - policy fragment alias
- * 4. Additional TR classes:
+ * 6. Additional TR classes:
  *    l7_enterpriseTable_disabled         - do not show context menu
  *    l7_enterpriseTable_cannotDelete     - to disable any menu item for delete
- * 5. Invoke l7_enterpriseTable_init() upon the onload event of the document.
+ * 7. Invoke l7_enterpriseTable_init() upon the onload event of the document.
  *    It will initialize all TABLE element with the class 'l7_enterpriseTable' and add
  *    the property 'l7_enterpriseTable' to the table object.
- * 6. When the table changes, invoke <my table object>.l7_enterpriseTable.init().
+ * 8. When the table changes, invoke <my table object>.l7_enterpriseTable.init().
  *
- * @param table     the HTML TABLE element to construct from
+ * @param table         the HTML TABLE element to construct from
+ * @param imgFolder     folder location of enterprise entity icons
  */
 function l7_enterpriseTable(table, imgFolder) {
 
@@ -40,27 +44,6 @@ function l7_enterpriseTable(table, imgFolder) {
     var selectedTR = null;
 
     var Dom = YAHOO.util.Dom;
-
-    table.onclick = function(event) {
-        var target;
-        if (!event) {
-            event = window.event;
-        }
-        if (event.target) {
-            target = event.target;
-        } else if (event.srcElement) {
-            target = event.srcElement;
-        }
-        if (target.nodeType == 3) { // defeat Safari bug
-            target = target.parentNode;
-        }
-
-        // Proceed only if click target is a TD element, i.e.,
-        // not a checkbox, radio button, plus/minus sign, etc.
-        if (target.nodeName.toUpperCase() != "TD") return;
-
-        selectRow(Dom.getAncestorByTagName(target, "TR"));
-    }
 
     function selectRow(row) {
         var oldRow = selectedTR;
@@ -115,13 +98,17 @@ function l7_enterpriseTable(table, imgFolder) {
                     {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;"> Move'},
                     {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;"> Delete', disabled: hasClass(selectedTR, 'l7_enterpriseTable_cannotDelete')}];
             } else if (hasClass(selectedTR, 'enterprisePublishedService')) {
-                // TODO
+                menuItems = [
+                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;"> Launch SecureSpan Manager'}];
             } else if (hasClass(selectedTR, 'enterprisePolicyFragment')) {
-                // TODO
+                menuItems = [
+                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;"> Launch SecureSpan Manager'}];
             } else if (hasClass(selectedTR, 'enterprisePublishedServiceAlias')) {
-                // TODO
+                menuItems = [
+                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;"> Launch SecureSpan Manager'}];
             } else if (hasClass(selectedTR, 'enterprisePolicyFragmentAlias')) {
-                // TODO
+                menuItems = [
+                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;"> Launch SecureSpan Manager'}];
             }
 
             // Remove the existing content from the ContentMenu instance
@@ -153,6 +140,33 @@ function l7_enterpriseTable(table, imgFolder) {
         return selectedTR;
     }
 
+    this.setRowSelectable = function(b) {
+        if (b) {
+            table.onclick = function(event) {
+                var target;
+                if (!event) {
+                    event = window.event;
+                }
+                if (event.target) {
+                    target = event.target;
+                } else if (event.srcElement) {
+                    target = event.srcElement;
+                }
+                if (target.nodeType == 3) { // defeat Safari bug
+                    target = target.parentNode;
+                }
+
+                // Proceed only if click target is a TD element, i.e.,
+                // not a checkbox, radio button, plus/minus sign, etc.
+                if (target.nodeName.toUpperCase() != "TD") return;
+
+                selectRow(Dom.getAncestorByTagName(target, "TR"));
+            }
+        } else {
+            table.onclick = null;
+        }
+    }
+
     /**
      * (Re)initializes this object.
      *
@@ -170,6 +184,8 @@ function l7_enterpriseTable(table, imgFolder) {
         // Subscribe to the ContextMenu instance's "beforeshow" and "hide" events.
         oContextMenu.subscribe("beforeShow", onContextMenuBeforeShow);
         oContextMenu.subscribe("hide", onContextMenuHide);
+
+        this.setRowSelectable(hasClass(table, 'l7_enterpriseTable_rowSelectable'));
     }
 
     this.init();

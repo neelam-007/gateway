@@ -57,7 +57,7 @@
                     var dashboardId = 'dashboard-' + partitionId;
                     cell.innerHTML = '<div class="dashboardPanel">'
                                    + '    <div class="panelTitle">'
-                                   + '        <img id="' + tippyId + '" class="tippy dashboardTippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, \'' + dashboardId + '\'); onDashboardTippyChanged(this, \'' + partitionId + '\')" />' + escapeAsText(checkbox.value)
+                                   + '        <img id="' + tippyId + '" class="tippy dashboardTippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, \'' + dashboardId + '\'); onDashboardTippyChanged(this, \'' + partitionId + '\')" /><span class="clickable" onclick="toggleTippy(\'' + tippyId + '\', \'' + dashboardId + '\')">' + escapeAsText(checkbox.value) + '</span>'
                                    + '    </div>'
                                    + '    <div class="dashboardPanelContent" id="' + dashboardId + '">'
                                    + '        <img src="../images/FAKE_DASHBOARD_' + (numDashboard % 2) + '.png" alt="" />'
@@ -145,7 +145,7 @@
                 <table width="100%">
                     <tr class="header">
                         <td class="logoLeft"><img src="../images/logoLeft.png" alt="" /></td>
-                        <td class="logo"><a href="http://www.layer7tech.com" target="_blank"><img src="../images/l7Logo.png" alt="Layer 7 Technologies Inc." /></a><img src="../images/emLogo.png" alt="" /></td>
+                        <td class="logo"><a href="Gateways.html"><img src="../images/l7Logo.png" alt="Layer 7 Technologies Inc." /><img src="../images/emLogo.png" alt="" /></a></td>
                         <td class="logoRight"><img src="../images/logoRight.png" alt="" /></td>
                         <td width="100%"><img src="../images/spacer.png" alt="" /></td>
                         <td class="middle nowrap">Logged in as "admin"<br />since May 5, 2008 05:57:54 PM</td>
@@ -238,7 +238,7 @@
             <div class="tabBarBottom"><img src="../images/spacer.png" alt="" /><!-- no subtab --></div>
             <div class="content">
                 <div class="panel">
-                    <div class="panelTitle tippy"><img class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'enterpriseTree')" />Enterprise Tree</div>
+                    <div class="panelTitle tippy"><img id="enterpriseTreeTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'enterpriseTree')" /><span class="clickable" onclick="toggleTippy('enterpriseTreeTippy', 'enterpriseTree')">Enterprise Tree</span></div>
                     <div id="enterpriseTree">
                         <div class="panelToolbar">
                             <button id="addGroupButton" type="submit" name="addGroupButton" value="addGroup"><img src="../images/addGroup.png" alt="" /> New group</button>
@@ -250,7 +250,7 @@
                             <button id="ssmButton" type="submit" name="ssmButton" value="ssm"><img src="../images/ssm.png" alt="" /> Launch SSM</button>
                         </div>
                         <div class="panelContent">
-                            <table id="enterpriseTreeTable" class="dataTable l7_treeTable l7_enterpriseTable" width="100%">
+                            <table id="enterpriseTreeTable" class="dataTable l7_treeTable l7_enterpriseTable l7_enterpriseTable_rowSelectable" width="100%">
                                 <thead>
                                     <tr>
                                         <th class="name">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
@@ -258,7 +258,7 @@
                                         <th><img src="../images/accessAccount.png" title="Access Account" alt="" /></th>
                                         <th><img src="../images/dashboard.png" title="Dashboard" alt="" /></th>
                                         <th>Type</th>
-                                        <th width="100%">Details <img src="../images/tooltip.png" title="More details available when mouse over" alt="" /></th>
+                                        <th width="100%">Details</th>
                                         <th class="parentId"><!-- hidden column --></th>
                                     </tr>
                                 </thead>
@@ -284,7 +284,7 @@
                                     <tr id="d15ce378-df33-44f3-a632-89458f421c24" class="enterprisePartition">
                                         <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img class="l7_treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/partition.png" alt="" />Dev</td>
                                         <td></td>
-                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td><img class="clickableImg" src="../images/accessAccount.png" title="Change access account" alt="" /></td>
                                         <td class="dashboard"><input class="dashboardCheckbox" type="checkbox" value="Springfield Nuclear Power Plant / Electricity / Dev" title="Show/Hide dashboard for this partition" onclick="showDashboards();" /></td>
                                         <td>partition</td>
                                         <td class="details"><span class="hasTooltip" title="host name and port number">dev.electricity.springfield.com:8443</span></td>
@@ -293,7 +293,7 @@
                                     <tr id="67f0a6f8-12c5-48af-b1fb-0058d8b1ca64" class="enterpriseClusterNode">
                                         <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG1</td>
                                         <td><img src="../images/up.png" title="Up" alt=""></td>
-                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td><img class="clickableImg" src="../images/accessAccount.png" title="Change access account" alt="" /></td>
                                         <td class="dashboard"></td>
                                         <td>cluster node</td>
                                         <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.1:8443</span> (<span class="hasTooltip" title="self host name">host-1</span>)</td>
@@ -302,7 +302,7 @@
                                     <tr id="899afe70-2490-471f-997b-a52815322b27" class="enterpriseClusterNode">
                                         <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG2</td>
                                         <td><img src="../images/offline.png" title="Offline" alt=""></td>
-                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td><img class="clickableImg" src="../images/accessAccount.png" title="Change access account" alt="" /></td>
                                         <td class="dashboard"></td>
                                         <td>cluster node</td>
                                         <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.2:8443</span> (<span class="hasTooltip" title="self host name">host-2</span>)</td>
@@ -311,7 +311,7 @@
                                     <tr id="e0a71bdd-317c-498c-8b00-9815af2594f0" class="enterpriseClusterNode">
                                         <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG3</td>
                                         <td><img src="../images/down.png" title="Down" alt=""></td>
-                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td><img class="clickableImg" src="../images/accessAccount.png" title="Change access account" alt="" /></td>
                                         <td class="dashboard"></td>
                                         <td>cluster node</td>
                                         <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.3:8443</span> (<span class="hasTooltip" title="self host name">host-3</span>)</td>
@@ -320,7 +320,7 @@
                                     <tr id="c32bb1a9-1538-4792-baa1-566bfd418020" class="enterprisePartition">
                                         <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img class="l7_treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/partition.png" alt="" />Production</td>
                                         <td></td>
-                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td><img class="clickableImg" src="../images/accessAccount.png" title="Change access account" alt="" /></td>
                                         <td class="dashboard"><input class="dashboardCheckbox" type="checkbox" value="Springfield Nuclear Power Plant / Electricity / Production" title="Show/Hide dashboard for this partition" onclick="showDashboards();" /></td>
                                         <td>partition</td>
                                         <td class="details"><span class="hasTooltip" title="host name and port number">production.electricity.springfield.com:8444</span></td>
@@ -329,7 +329,7 @@
                                     <tr id="f90cf133-0e3b-4b04-b489-7afd5cbff609" class="enterpriseClusterNode">
                                         <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG1</td>
                                         <td><img src="../images/off.png" title="Off" alt=""></td>
-                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td><img class="clickableImg" src="../images/accessAccount.png" title="Change access account" alt="" /></td>
                                         <td class="dashboard"></td>
                                         <td>cluster node</td>
                                         <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.2:8444</span> (<span class="hasTooltip" title="self host name">host-2</span>)</td>
@@ -338,7 +338,7 @@
                                     <tr id="29b2aaf3-bec3-4771-ab0e-8c40e9a2005c" class="enterpriseClusterNode">
                                         <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG2</td>
                                         <td><img src="../images/up.png" title="Up" alt=""></td>
-                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td><img class="clickableImg" src="../images/accessAccount.png" title="Change access account" alt="" /></td>
                                         <td class="dashboard"></td>
                                         <td>cluster node</td>
                                         <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.3:8444</span> (<span class="hasTooltip" title="self host name">host-3</span>)</td>
@@ -356,7 +356,7 @@
                                     <tr id="1c9d5a50-6a58-48a5-b7d4-b0cb356820f2" class="enterprisePartition">
                                         <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img class="l7_treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/partition.png" alt="" />Dev</td>
                                         <td></td>
-                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td><img class="clickableImg" src="../images/accessAccount.png" title="Change access account" alt="" /></td>
                                         <td class="dashboard"><input class="dashboardCheckbox" type="checkbox" value="Springfield Nuclear Power Plant / Uranium / Dev" title="Show/Hide dashboard for this partition" onclick="showDashboards();" /></td>
                                         <td>partition</td>
                                         <td class="details"><span class="hasTooltip" title="host name and port number">uranium.springfield.com:8443</span></td>
@@ -365,7 +365,7 @@
                                     <tr id="81b5136c-e2a9-42f4-b96a-c6208edb4e58" class="enterpriseClusterNode">
                                         <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG1</td>
                                         <td><img src="../images/up.png" title="Up" alt=""></td>
-                                        <td><img src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+                                        <td><img class="clickableImg" src="../images/accessAccount.png" title="Change access account" alt="" /></td>
                                         <td class="dashboard"></td>
                                         <td>cluster node</td>
                                         <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.4:8443</span> (<span class="hasTooltip" title="self host name">host-4</span>)</td>
@@ -374,7 +374,7 @@
                                     <tr id="a14df4d4-0c62-4d8e-ac3a-82cd8a442a26" class="enterprisePartition">
                                         <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img class="l7_treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/partition.png" alt="" />Production</td>
                                         <td></td>
-                                        <td><img src="../images/noAccessAccount.png" title="Enter access account" alt="" /></td>
+                                        <td><img class="clickableImg" src="../images/noAccessAccount.png" title="Enter access account" alt="" /></td>
                                         <td class="dashboard"><input class="dashboardCheckbox" type="checkbox" value="Springfield Nuclear Power Plant / Uranium / Production" title="Show/Hide dashboard for this partition" onclick="showDashboards();" /></td>
                                         <td>partition</td>
                                         <td class="details"><span class="hasTooltip" title="host name and port number">uranium.springfield.com:8444</span></td>
@@ -383,7 +383,7 @@
                                     <tr id="f57307d1-9967-448b-874b-9da8e374a09b" class="enterpriseClusterNode">
                                         <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><img src="../images/clusterNode.png" alt="" />SSG1</td>
                                         <td><img src="../images/up.png" title="Up" alt=""></td>
-                                        <td><img src="../images/noAccessAccount.png" title="Enter access account" alt="" /></td>
+                                        <td><img class="clickableImg" src="../images/noAccessAccount.png" title="Enter access account" alt="" /></td>
                                         <td class="dashboard"></td>
                                         <td>cluster node</td>
                                         <td class="details"><span class="hasTooltip" title="IP address and port number">192.168.1.4:8444</span> (<span class="hasTooltip" title="self host name">host-4</span>)</td>
@@ -395,7 +395,7 @@
                     </div>
                 </div>
                 <div class="panel">
-                    <div class="panelTitle tippy"><img class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'dashboards')" />Dashboards (monitoring <span id="numDashboards">3</span> partitions)</div>
+                    <div class="panelTitle tippy"><img id="dashboardsTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'dashboards')" /><span class="clickable" onclick="toggleTippy('dashboardsTippy', 'dashboards')">Dashboards (monitoring <span id="numDashboards">3</span> partitions)</span></div>
                     <div id="dashboards">
                         <div class="panelToolbar">
                             <button id="expandAllButton" type="button">Expand All</button>

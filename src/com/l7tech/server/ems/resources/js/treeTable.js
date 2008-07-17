@@ -12,6 +12,7 @@
  * 1. Include the class 'l7_treeTable' in the TABLE element.
  * 2. Each TR element belonging to the tree must have an ID.
  * 3. Each parent TR element should have a IMG element with the class 'l7_treeTable_toggler'.
+ *    The CSS class 'clickable' will be added to it if not already.
  * 4. Each child TR element must have a TD element with the class 'parentId' whose inner HTML is the parent row ID.
  * 5. Each TR can have a checkbox INPUT element with the class 'l7_treeTable_checkbox'.
  * 6. Invoke l7_treeTable_init() upon the onload event of the document.
@@ -290,6 +291,7 @@ function l7_treeTable(table) {
                 toggler.l7_treeTable = this;
                 toggler.l7_rowIndex = i;
                 toggler.onclick = toggle;
+                addClass(toggler, 'clickable');
             }
             this.togglers[i] = toggler;
 
