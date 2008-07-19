@@ -122,12 +122,13 @@
             <list>
                 <value>Audits.html</value>
                 <value>Backup.html</value>
+                <value>EnterpriseGateways.html</value>
+                <value>EnterpriseUsers.html</value>
                 <value>ExternalReports.html</value>
-                <value>Gateways.html</value>
                 <value>Help.html</value>
                 <value>Login.html</value>
                 <value>Logs.html</value>
-                <value>Notifications.html</value>
+                <value>Messages.html</value>
                 <value>PartitionSelector.html</value>
                 <value>PolicyApproval.html</value>
                 <value>PolicyMapping.html</value>

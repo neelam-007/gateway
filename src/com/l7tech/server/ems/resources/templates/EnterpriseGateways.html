@@ -98,7 +98,7 @@
             var deleteButton = new YAHOO.widget.Button('deleteButton');
             var destroyButton = new YAHOO.widget.Button('destroyButton');
             var ssmButton = new YAHOO.widget.Button('ssmButton');
-            // TODO assign URLs
+            // TODO assign URLs or use YAHOO.util.Event.addListener('addUserButton', 'click', function() {...})
 
             l7_treeTable_init();
             l7_enterpriseTable_init('../images');
@@ -145,7 +145,7 @@
                 <table width="100%">
                     <tr class="header">
                         <td class="logoLeft"><img src="../images/logoLeft.png" alt="" /></td>
-                        <td class="logo"><a href="Gateways.html"><img src="../images/l7Logo.png" alt="Layer 7 Technologies Inc." /><img src="../images/emLogo.png" alt="" /></a></td>
+                        <td class="logo"><a href="EnterpriseGateways.html"><img src="../images/l7Logo.png" alt="Layer 7 Technologies Inc." /><img src="../images/emLogo.png" alt="" /></a></td>
                         <td class="logoRight"><img src="../images/logoRight.png" alt="" /></td>
                         <td width="100%"><img src="../images/spacer.png" alt="" /></td>
                         <td class="middle nowrap">Logged in as "admin"<br />since May 5, 2008 05:57:54 PM</td>
@@ -158,9 +158,9 @@
             <div>
                 <table>
                     <tr>
-                        <td id="tabLTGateways"><img src="../images/tabLT.png" alt="" /></td>
-                        <td id="tabCTGateways" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRTGateways"><img src="../images/tabRT.png" alt="" /></td>
+                        <td id="tabLTEnterprise"><img src="../images/tabLT.png" alt="" /></td>
+                        <td id="tabCTEnterprise" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRTEnterprise"><img src="../images/tabRT.png" alt="" /></td>
                         <td id="tabLTPolicies"><img src="../images/tabLT.png" alt="" /></td>
                         <td id="tabCTPolicies" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabRTPolicies"><img src="../images/tabRT.png" alt="" /></td>
@@ -181,9 +181,9 @@
                         <td><img src="../images/tabRT.png" alt="" /></td>
                     </tr>
                     <tr>
-                        <td id="tabLMGateways" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMGateways" class="tabCMon">Manage Gateways</td>
-                        <td id="tabRMGateways" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabLMEnterprise" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabCMEnterprise" class="tabCMon">Manage Enterprise</td>
+                        <td id="tabRMEnterprise" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMPolicies" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabCMPolicies" class="tabCM"><a href="PolicyMigration.html">Manage Policies</a></td>
                         <td id="tabRMPolicies" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
@@ -194,7 +194,7 @@
                         <td id="tabCMBackup" class="tabCM"><a href="Backup.html">Backup &amp; Restore</a></td>
                         <td id="tabRMBackup" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMTools" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMTools" class="tabCM"><a href="Notifications.html">Tools</a></td>
+                        <td id="tabCMTools" class="tabCM"><a href="Messages.html">Tools</a></td>
                         <td id="tabRMTools" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMSettings" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabCMSettings" class="tabCM"><a href="UserSettings.html">Settings</a></td>
@@ -204,9 +204,9 @@
                         <td class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                     </tr>
                     <tr>
-                        <td id="tabLBGateways"><img src="../images/tabLBon.png" alt="" /></td>
-                        <td id="tabCBGateways" class="tabCBon"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRBGateways"><img src="../images/tabRBon.png" alt="" /></td>
+                        <td id="tabLBEnterprise"><img src="../images/tabLBon.png" alt="" /></td>
+                        <td id="tabCBEnterprise" class="tabCBon"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRBEnterprise"><img src="../images/tabRBon.png" alt="" /></td>
                         <td id="tabLBPolicies"><img src="../images/tabLBoff.png" alt="" /></td>
                         <td id="tabCBPolicies" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabRBPolicies"><img src="../images/tabRBoff.png" alt="" /></td>
@@ -235,13 +235,17 @@
                 initTab('Tools');
                 initTab('Settings');
             </script>
-            <div class="tabBarBottom"><img src="../images/spacer.png" alt="" /><!-- no subtab --></div>
+            <div class="subtabBar">
+                <span class="subtabOn">Gateways</span>
+                |
+                <span class="subtabOff"><a href="EnterpriseUsers.html">User Accounts</a></span>
+            </div>
             <div class="content">
                 <div class="panel">
-                    <div class="panelTitle tippy"><img id="enterpriseTreeTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'enterpriseTree')" /><span class="clickable" onclick="toggleTippy('enterpriseTreeTippy', 'enterpriseTree')">Enterprise Tree</span></div>
+                    <div class="panelTitle tippy"><img id="enterpriseTreeTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'enterpriseTree')" /><span class="clickable" onclick="toggleTippy('enterpriseTreeTippy', 'enterpriseTree')">Enterprise Gateways</span></div>
                     <div id="enterpriseTree">
                         <div class="panelToolbar">
-                            <button id="addGroupButton" type="submit" name="addGroupButton" value="addGroup"><img src="../images/addGroup.png" alt="" /> New group</button>
+                            <button id="addGroupButton" type="submit" name="addGroupButton" value="addGroup"><img src="../images/addGroup.png" alt="" /> New Group</button>
                             <button id="addPartitionButton" type="submit" name="addPartitionButton" value="addPartition"><img src="../images/addPartition.png" alt="" /> Add Partition</button>
                             <button id="addClusterNodeButton" type="submit" name="addClusterNodeButton" value="addClusterNode"><img src="../images/addClusterNode.png" alt="" /> Create Cluster Node</button>
                             <button id="moveButton" type="submit" name="moveButton" value="move"><img src="../images/move.png" alt="" /> Move</button>
