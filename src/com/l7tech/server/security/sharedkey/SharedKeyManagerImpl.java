@@ -8,8 +8,10 @@ import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DataAccessException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -78,7 +80,7 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
         // try to get record from the database
         final String query = " from shared_keys in class " + SharedKeyRecord.class.getName() +
                              " where shared_keys.encodingID = ?";
-        Collection res = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+        final Collection res = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
             public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Query q = session.createQuery(query);
                 q.setString(0, currentSSLPubID);
@@ -96,7 +98,7 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
             }
         } else {
             logger.info("Shared key does not yet exist, attempting to create one");
-            SharedKeyRecord sharedKeyToSave = new SharedKeyRecord();
+            final SharedKeyRecord sharedKeyToSave = new SharedKeyRecord();
             byte[] theKey = initializeKeyFirstTime();
 
             try {
@@ -107,9 +109,17 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
                 throw new FindException("could not encrypt new shared key", e);
             }
             logger.info("new shared created, saving it");
-            getSession().save(sharedKeyToSave);
-
-            getSession().flush();
+            try {
+                getHibernateTemplate().execute(new HibernateCallback() {
+                    public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                        session.save(sharedKeyToSave);
+                        session.flush();
+                        return null;
+                    }
+                });
+            } catch (DataAccessException e) {
+                throw new FindException("Unable to save new key", e);
+            }
             logger.info("new shared key saved, returning it");
             return theKey;
         }
