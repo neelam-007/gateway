@@ -8,7 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <!-- PROTOTYPE ONLY END -->
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-    <title>Manage Users [SecureSpan Enterprise Manager]</title>
+    <title>User Accounts [SecureSpan Enterprise Manager]</title>
     <link rel="stylesheet" type="text/css" href="../css/site.css" />
     <link rel="stylesheet" type="text/css" href="../yui/button/assets/skins/sam/button.css">
     <link rel="stylesheet" type="text/css" href="../yui/menu/assets/skins/sam/menu.css">
@@ -27,6 +27,50 @@
     <script type="text/javascript" src="../js/treeTable.js"></script>
     <script type="text/javascript">
         function init() {
+            var addUserButton = new YAHOO.widget.Button('addUserButton');
+            var removeUserButton = new YAHOO.widget.Button('removeUserButton');
+            var editUserButton = new YAHOO.widget.Button('editUserButton');
+            removeUserButton.set('disabled', true);
+            editUserButton.set('disabled', true);
+            // TODO assign URLs or use YAHOO.util.Event.addListener('addUserButton', 'click', function() {...})
+
+            var accounts = [
+                    {guid:'2a34df91-d78e-45a8-9bb9-e30c9beda337', userId:'bart', type:'User', surname:'Simpson', givenName:'Bart'},
+                    {guid:'d978bb7a-7cfd-4d89-8420-28d43f93081c', userId:'homer', type:'User', surname:'Simpson', givenName:'Homer'},
+                    {guid:'8fa8f98c-9ba8-4d65-8a19-2b604cbbda7a', userId:'lisa', type:'Administrator', surname:'Simpson', givenName:'Lisa'},
+                    {guid:'a9ea99f3-7bbc-45c0-9668-3b0db3b57b4f', userId:'marge', type:'Administrator', surname:'Simpson', givenName:'Marge'}
+                ];
+
+            var columnDefs = [
+                {key:'userId', label:'User ID', sortable:true, resizeable:true},
+                {key:'type', label:'Account Type', sortable:true, resizeable:true},
+                {key:'surname', label:'Surname', sortable:true, resizeable:true},
+                {key:'givenName', label:'Given Name', sortable:true, resizeable:true}
+            ];
+
+            var dataSource = new YAHOO.util.DataSource(accounts);
+            dataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
+            dataSource.responseSchema = {
+                fields: ['guid','userId','type','surname','givenName']
+            };
+
+            var dataTable = new YAHOO.widget.DataTable('userAccounts',
+                columnDefs, dataSource, {draggableColumns: true, selectionMode: 'single'});
+
+            // Subscribes to events for row selection.
+            dataTable.subscribe("rowMouseoverEvent", dataTable.onEventHighlightRow);
+            dataTable.subscribe("rowMouseoutEvent", dataTable.onEventUnhighlightRow);
+            dataTable.subscribe("rowClickEvent", dataTable.onEventSelectRow);
+
+            // Subscribes to row select changes for enabling/disabling toolbar buttons.
+            function enableOrDisableToolbarButtons(event, target) {
+                var selectedRows = this.getSelectedTrEls();
+                var hasSelectedRows = (selectedRows != null) && (selectedRows.length != 0);
+                removeUserButton.set('disabled', !hasSelectedRows);
+                editUserButton.set('disabled', !hasSelectedRows);
+            }
+            dataTable.subscribe("rowSelectEvent", enableOrDisableToolbarButtons);
+            dataTable.subscribe("rowUnSelectEvent", enableOrDisableToolbarButtons);
         }
     </script>
 </head>
@@ -141,56 +185,6 @@
                         <button id="editUserButton" type="submit" name="editUserButton" value="editUser"><img src="../images/editUser.png" alt="" /> Edit</button>
                     </div>
                     <div id="userAccounts" class="panelContent"></div>
-                    <script type="text/javascript">
-                        var addUserButton = new YAHOO.widget.Button('addUserButton');
-                        var removeUserButton = new YAHOO.widget.Button('removeUserButton');
-                        var editUserButton = new YAHOO.widget.Button('editUserButton');
-                        removeUserButton.set('disabled', true);
-                        editUserButton.set('disabled', true);
-                        // TODO assign URLs or use YAHOO.util.Event.addListener('addUserButton', 'click', function() {...})
-
-                        var userAccounts = [
-                                {guid:'2a34df91-d78e-45a8-9bb9-e30c9beda337', userId:'bart', type:'User', surname:'Simpson', givenName:'Bart'},
-                                {guid:'d978bb7a-7cfd-4d89-8420-28d43f93081c', userId:'homer', type:'User', surname:'Simpson', givenName:'Homer'},
-                                {guid:'8fa8f98c-9ba8-4d65-8a19-2b604cbbda7a', userId:'lisa', type:'Administrator', surname:'Simpson', givenName:'Lisa'},
-                                {guid:'a9ea99f3-7bbc-45c0-9668-3b0db3b57b4f', userId:'marge', type:'Administrator', surname:'Simpson', givenName:'Marge'}
-                            ];
-
-                        YAHOO.util.Event.addListener(window, 'load', function() {
-                            new function() {
-                                var myColumnDefs = [
-                                    {key:'userId', label:'User ID', sortable:true, resizeable:true},
-                                    {key:'type', label:'Account Type', sortable:true, resizeable:true},
-                                    {key:'surname', label:'Surname', sortable:true, resizeable:true},
-                                    {key:'givenName', label:'Given Name', sortable:true, resizeable:true}
-                                ];
-
-                                this.myDataSource = new YAHOO.util.DataSource(userAccounts);
-                                this.myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
-                                this.myDataSource.responseSchema = {
-                                    fields: ['guid','userId','type','surname','givenName']
-                                };
-
-                                this.myDataTable = new YAHOO.widget.DataTable('userAccounts',
-                                        myColumnDefs, this.myDataSource, {draggableColumns: true, selectionMode: 'single'});
-
-                                // Subscribes to events for row selection.
-                                this.myDataTable.subscribe("rowMouseoverEvent", this.myDataTable.onEventHighlightRow);
-                                this.myDataTable.subscribe("rowMouseoutEvent", this.myDataTable.onEventUnhighlightRow);
-                                this.myDataTable.subscribe("rowClickEvent", this.myDataTable.onEventSelectRow);
-
-                                // Subscribes to row select changes for enabling/disabling toolbar buttons.
-                                function enableOrDisableToolbarButtons(event, target) {
-                                    var selectedRows = this.getSelectedTrEls();
-                                    var hasSelectedRows = (selectedRows != null) && (selectedRows.length != 0);
-                                    removeUserButton.set('disabled', !hasSelectedRows);
-                                    editUserButton.set('disabled', !hasSelectedRows);
-                                }
-                                this.myDataTable.subscribe("rowSelectEvent", enableOrDisableToolbarButtons);
-                                this.myDataTable.subscribe("rowUnSelectEvent", enableOrDisableToolbarButtons);
-                            };
-                        });
-                    </script>
                 </div>
             </div>
             <div class="statusBar">
