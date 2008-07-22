@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0" xmlns:m="http://ant.apache.org/ivy/maven">
+	<info organisation="org.apache.xbean"
+		module="xbean-spring"
+		revision="2.5"
+		status="integration"
+		publication="20060728083619"
+	>
+		<m:dependency.management__org.apache.xbean__xbean-spring>2.5</m:dependency.management__org.apache.xbean__xbean-spring>
+		<m:dependency.management__lingo__sca-api>SNAPSHOT</m:dependency.management__lingo__sca-api>
+		<m:dependency.management__org.snmp4j__snmp4j>1.7.1</m:dependency.management__org.snmp4j__snmp4j>
+		<m:dependency.management__stax__stax-api>1.0</m:dependency.management__stax__stax-api>
+		<m:dependency.management__org.apache.xbean__xbean-spring-common>2.5</m:dependency.management__org.apache.xbean__xbean-spring-common>
+		<m:dependency.management__org.apache.xbean__xbean-kernel>2.5</m:dependency.management__org.apache.xbean__xbean-kernel>
+		<m:dependency.management__org.springframework__spring>1.2.4</m:dependency.management__org.springframework__spring>
+		<m:dependency.management__qdox__qdox>1.5</m:dependency.management__qdox__qdox>
+		<m:dependency.management__commons-logging__commons-logging>1.0.3</m:dependency.management__commons-logging__commons-logging>
+		<m:dependency.management__ant__ant>1.6.2</m:dependency.management__ant__ant>
+		<m:properties__site.repo>scp://minotaur.apache.org/www/geronimo.apache.org/xbean/dist/xbean-2.5/site</m:properties__site.repo>
+		<m:dependency.management__org.apache.xbean__xbean-spring-v2>2.5</m:dependency.management__org.apache.xbean__xbean-spring-v2>
+		<m:properties__m1.repo>scp://minotaur.apache.org/www/people.apache.org/repository</m:properties__m1.repo>
+		<m:dependency.management__commons-beanutils__commons-beanutils>1.7.0</m:dependency.management__commons-beanutils__commons-beanutils>
+		<m:dependency.management__org.apache.xbean__xbean-spring-v1>2.5</m:dependency.management__org.apache.xbean__xbean-spring-v1>
+		<m:dependency.management__backport-util-concurrent__backport-util-concurrent>2.1</m:dependency.management__backport-util-concurrent__backport-util-concurrent>
+		<m:dependency.management__org.livetribe__livetribe-jmx>1.0-SNAPSHOT</m:dependency.management__org.livetribe__livetribe-jmx>
+		<m:dependency.management__cglib__cglib-nodep>2.1_2</m:dependency.management__cglib__cglib-nodep>
+		<m:dependency.management__groovy__groovy>1.0-jsr-03</m:dependency.management__groovy__groovy>
+		<m:dependency.management__org.eclipse.equinox__osgi>3.1.1</m:dependency.management__org.eclipse.equinox__osgi>
+		<m:properties__m2.repo>scp://minotaur.apache.org/www/people.apache.org/maven-snapshot-repository</m:properties__m2.repo>
+		<m:dependency.management__mx4j__mx4j>3.0.1</m:dependency.management__mx4j__mx4j>
+	</info>
+	<configurations>
+		<conf name="default" visibility="public" description="runtime dependencies and master artifact can be used with this conf" extends="runtime,master"/>
+		<conf name="master" visibility="public" description="contains only the artifact published by this module itself, with no transitive dependencies"/>
+		<conf name="compile" visibility="public" description="this is the default scope, used if none is specified. Compile dependencies are available in all classpaths."/>
+		<conf name="provided" visibility="public" description="this is much like compile, but indicates you expect the JDK or a container to provide it. It is only available on the compilation classpath, and is not transitive."/>
+		<conf name="runtime" visibility="public" description="this scope indicates that the dependency is not required for compilation, but is for execution. It is in the runtime and test classpaths, but not the compile classpath." extends="compile"/>
+		<conf name="test" visibility="private" description="this scope indicates that the dependency is not required for normal use of the application, and is only available for the test compilation and execution phases." extends="runtime"/>
+		<conf name="system" visibility="public" description="this scope is similar to provided except that you have to provide the JAR which contains it explicitly. The artifact is always available and is not looked up in a repository."/>
+		<conf name="optional" visibility="public" description="contains all optional dependencies"/>
+	</configurations>
+	<publications>
+		<artifact name="xbean-spring" type="jar" ext="jar" conf="master"/>
+	</publications>
+	<dependencies>
+		<dependency org="commons-logging" name="commons-logging" rev="1.0.3" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="org.apache.xbean" name="xbean-spring-v1" rev="2.5" force="true" conf="optional->compile(*),master(*)"/>
+		<dependency org="org.springframework" name="spring" rev="1.2.4" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="org.apache.xbean" name="xbean-spring-v2" rev="2.5" force="true" conf="optional->compile(*),master(*)"/>
+		<dependency org="junit" name="junit" rev="3.8.1" force="true" conf="test->runtime(*),master(*)"/>
+	</dependencies>
+</ivy-module>

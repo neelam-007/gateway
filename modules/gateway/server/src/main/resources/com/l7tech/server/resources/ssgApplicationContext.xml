@@ -1,0 +1,879 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<!--
+    The Application Context contains the definitions that describe the SSG server side components.
+    Things such as identitiy managers, trust components, policy services token services etc. are defined
+    here.
+    Admin Services are defined in adminContext.xml.
+    Data Access (Hibernate, Transactions) is defined in dataAccessContext.xml.
+-->
+<!--suppress SpringModelInspection -->
+<beans>
+
+    <bean id="rmiConfigCheck" class="com.l7tech.gateway.common.spring.remoting.rmi.RmiConfigCheck"/>
+
+    <bean id="systemProperties" class="com.l7tech.server.SystemProperties">
+        <!-- Don't fully initialize serverconfig (no cluster propertes / db access) -->
+        <constructor-arg><bean class="com.l7tech.server.ServerConfig" factory-method="getInstance"/></constructor-arg>
+    </bean>
+
+    <!-- SSG boot process -->
+    <bean id="ssgBoot" class="com.l7tech.server.BootProcess" depends-on="systemAuditListener systemProperties serviceWsdlImportChecker sinkManager">
+        <property name="serverConfig" ref="serverConfig"/>
+    </bean>
+
+    <!-- JMS boot process  -->
+    <bean id="jmsBootProcess" class="com.l7tech.server.transport.jms2.JmsBootProcess">
+        <constructor-arg type="com.l7tech.server.ServerConfig" ref="serverConfig"/>
+        <constructor-arg type="com.l7tech.gateway.common.LicenseManager" ref="licenseManager"/>
+        <constructor-arg type="com.l7tech.server.transport.jms.JmsConnectionManager" ref="jmsConnectionManager"/>
+        <constructor-arg type="com.l7tech.server.transport.jms.JmsEndpointManager" ref="jmsEndpointManager"/>
+        <constructor-arg type="com.l7tech.server.transport.jms.JmsPropertyMapper" ref="jmsPropertyMapper"/>
+        <constructor-arg type="java.util.Timer"><null/></constructor-arg>
+        <property name="jmsEndpointListenerFactory">
+            <bean class="com.l7tech.server.transport.jms2.asynch.PooledJmsEndpointListenerFactory"/>
+        </property>
+    </bean>
+
+    <!-- Abstract "parent" of any bean that needs access to sessionFactory and transactionManager -->
+    <bean id="hibernateBean" abstract="true">
+        <property name="sessionFactory" ref="sessionFactory"/>
+        <property name="transactionManager" ref="transactionManager"/>
+    </bean>
+
+    <!--
+    * singleton using the factory method. This is transitional, as it is referencef from
+    * too many places.
+    -->
+    <bean id="serverConfig" class="com.l7tech.server.ServerConfig" factory-method="getInstance" depends-on="configureBackgroundTimer">
+        <property name="propertyChangeListener">
+            <bean class="com.l7tech.server.util.LazyPropertyChangeDispatcher">
+                <constructor-arg>
+                    <map>
+                        <entry key="serviceMetricsManager"><list><value>serviceMetricsEnabled</value></list></entry>
+                        <entry key="certValidationProcessor"><list><value>pkixTrust.useDefaultAnchors</value></list></entry>
+                        <entry key="jmsBootProcess">
+                            <list>
+                                <value>ioJmsErrorSleep</value>
+                                <value>ioJmsMessageMaxBytes</value>
+                            </list>
+                        </entry>
+                        <entry key="trustedCertManager"><list><value>trustedCert.expiryCheckPeriod</value></list></entry>
+                        <entry key="httpTransportModule"><list><value>ioHttpPoolMaxConcurrency</value></list></entry>
+                        <entry key="trafficLogger">
+                            <list>
+                                <value>trafficLoggerDetail</value>
+                                <value>trafficLoggerRecordReq</value>
+                                <value>trafficLoggerRecordRes</value>
+                            </list>
+                        </entry>
+                        <entry key="sinkManager"><list><value>logLevels</value></list></entry>
+                        <entry key="auditLogListenerTarget"><list><value>auditBatchExternal</value></list></entry>
+                        <entry key="schemaManager">
+                            <list>
+                                <value>schemaMaxCacheEntries</value>
+                                <value>schemaMaxCacheAge</value>
+                                <value>schemaRecompileLatency</value>
+                                <value>schemaRecompileMinAge</value>
+                                <value>schemaRecompileMaxAge</value>
+                                <value>schemaCacheMaxSchemaSize</value>
+                                <value>schemaSoftwareFallback</value>
+                            </list>
+                        </entry>
+                        <entry key="auditDetailFilter"><list><value>auditAssociatedLogsThreshold</value></list></entry>
+                    </map>
+                </constructor-arg>
+            </bean>
+        </property>
+        <property name="clusterPropertyCache" ref="clusterPropertyCache"/> 
+    </bean>
+
+    <bean id="masterPasswordManager" class="com.l7tech.server.security.MasterPasswordManager" factory-method="getInstance" depends-on="systemProperties"/>
+
+    <bean id="propertiesDecryptor" class="com.l7tech.server.util.PropertiesDecryptor">
+        <constructor-arg ref="masterPasswordManager"/>
+        <property name="passwordProperties">
+            <list>
+                <value>sslkspasswd</value>
+                <value>rootcakspasswd</value>
+                <value>hibernate.connection.password</value>
+                <value>database.password</value>
+            </list>
+        </property>
+    </bean>
+
+    <!-- server side identity provider factory -->
+    <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">
+        <constructor-arg ref="identityProviderConfigManager"/>
+    </bean>
+
+    <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean"/>
+
+    <!-- server side identity configuration manager -->
+    <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.IdProvConfManagerServer" parent="hibernateBean">
+        <property name="roleManager" ref="roleManager"/>
+    </bean>
+
+    <!--
+        Internal Identity Provider, UserManager and GroupManager
+
+        The factory method with support with construction arguments. The bean must be instantiated
+        programatically with the required runtime construction arguments (IdentityProviderConfig)
+        See IdentityProviderFactory implementation.
+    -->
+    <bean id="internalIdentityProviderFactory" class="com.l7tech.server.identity.GenericIdentityProviderFactorySpi">
+        <constructor-arg value="com.l7tech.server.identity.internal.InternalIdentityProviderImpl"/>
+        <constructor-arg value="internalIdentityProvider"/>
+    </bean>
+    <bean id="internalIdentityProvider" class="com.l7tech.server.identity.internal.InternalIdentityProviderImpl" singleton="false">
+        <property name="clientCertManager" ref="clientCertManager"/>
+        <property name="keystore" ref='keystore'/>
+        <property name="certificateAuthenticator" ref="certificateAuthenticator"/>
+        <property name="userManager" ref="internalUserManager"/>
+        <property name="groupManager" ref="internalGroupManager"/>
+    </bean>
+    <bean name="internalUserManager" class="com.l7tech.server.identity.internal.InternalUserManagerImpl" singleton="false" parent="hibernateBean">
+        <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="clientCertManager"/>
+    </bean>
+    <bean name="internalGroupManager" class="com.l7tech.server.identity.internal.InternalGroupManagerImpl" singleton="false" parent="hibernateBean"/>
+
+    <!-- Federated Identity Provider, UserManager and GroupManager factories -->
+    <bean id="federatedIdentityProviderFactory" class="com.l7tech.server.identity.GenericIdentityProviderFactorySpi">
+        <constructor-arg value="com.l7tech.server.identity.fed.FederatedIdentityProviderImpl"/>
+        <constructor-arg value="federatedIdentityProvider"/>
+    </bean>
+    <bean id="federatedIdentityProvider" class="com.l7tech.server.identity.fed.FederatedIdentityProviderImpl" singleton="false">
+        <property name="clientCertManager" ref="clientCertManager"/>
+        <property name="trustedCertManager">
+             <!--Caching wrapper for trustedCertManager -->
+            <bean class="com.l7tech.server.util.EntityCachingFactoryBean">
+                 <constructor-arg value="com.l7tech.security.cert.TrustedCertManager"/>
+                 <constructor-arg ref="trustedCertManager"/>
+            </bean>
+        </property>
+        <property name="keystore" ref='keystore'/>
+        <property name="certValidationProcessor" ref="certValidationProcessor"/>
+        <property name="userManager" ref="federatedUserManager"/>
+        <property name="groupManager" ref="federatedGroupManager"/>
+    </bean>
+    <bean name="federatedUserManager" class="com.l7tech.server.identity.fed.FederatedUserManagerImpl" singleton="false" parent="hibernateBean">
+        <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="clientCertManager"/>
+    </bean>
+    <bean name="federatedGroupManager" class="com.l7tech.server.identity.fed.FederatedGroupManagerImpl" singleton="false" parent="hibernateBean"/>
+
+    <!-- LDAP IdentityProvider, UserManager and GroupManager factories -->
+    <bean id="ldapIdentityProviderFactory" class="com.l7tech.server.identity.GenericIdentityProviderFactorySpi">
+        <constructor-arg value="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl"/>
+        <constructor-arg value="ldapIdentityProvider"/>
+    </bean>
+    <bean id="ldapIdentityProvider" class="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl" singleton="false">
+        <!--roleManager-->
+        <property name="clientCertManager" ref="clientCertManager"/>
+        <property name="serverConfig" ref="serverConfig"/>
+        <property name="certificateAuthenticator" ref ="certificateAuthenticator"/>
+        <property name="userManager">
+            <bean class="com.l7tech.server.identity.ldap.LdapUserManagerImpl" singleton="false"/>
+        </property>
+        <property name="groupManager">
+            <bean class="com.l7tech.server.identity.ldap.LdapGroupManagerImpl" singleton="false"/>
+        </property>
+    </bean>
+
+    <!-- server side Cluster Info manager -->
+    <bean id="clusterInfoManager" class="com.l7tech.server.cluster.ClusterInfoManagerImpl" depends-on="clusterPropertyCache">
+        <property name="sessionFactory" ref="sessionFactory"/>
+        <property name="serverConfig" ref="serverConfig"/>
+        <property name="keystore" ref="keystore"/>
+    </bean>
+    <!-- server side Service Usage  manager -->
+    <bean id="serviceUsageManager" class="com.l7tech.server.cluster.ServiceUsageManagerImpl">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+    <!-- server side DistributedMessageIdManager -->
+    <bean id="distributedMessageIdManager" class="com.l7tech.server.cluster.DistributedMessageIdManager">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <bean id="counterManager" class="com.l7tech.server.sla.DBCounterManager">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <!-- server side policy factory -->
+    <bean id="policyFactory" class="com.l7tech.server.policy.ServerPolicyFactory">
+        <constructor-arg ref="licenseManager"/>
+    </bean>
+    <!-- server side service cache -->
+    <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache">
+        <constructor-arg ref="policyCache"/>
+        <constructor-arg ref="transactionManager"/>
+        <constructor-arg ref="serviceManager"/>
+        <constructor-arg ref="serviceUsageManager"/>
+        <constructor-arg ref="clusterInfoManager"/>
+        <constructor-arg>
+            <list>
+                <bean class="com.l7tech.server.service.SafeWsdlPublishedServiceDecorator">
+                    <constructor-arg ref="serviceDocumentManager"/>
+                </bean>
+            </list>
+        </constructor-arg>
+        <constructor-arg>
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="Service cache refresh"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <bean id="wsmfService" class="com.l7tech.server.hpsoam.WSMFService">
+        <constructor-arg ref="serviceManager"/>
+        <constructor-arg ref="messageProcessor"/>
+    </bean>
+
+    <!-- general server side HTTP client trust manager -->
+    <!--suppress SpringBeanConstructorArgInspection -->
+    <bean id="trustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
+        <constructor-arg ref="trustedCertManager"/>
+        <constructor-arg ref="certValidationProcessor"/>
+        <constructor-arg>
+            <!--suppress SpringBeanConstructorArgInspection -->
+            <bean class="com.l7tech.server.security.cert.CertValidationProcessor$Facility" factory-method="valueOf">
+                <constructor-arg value="OTHER"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <!-- server side HTTP routing client trust manager -->
+    <!--suppress SpringBeanConstructorArgInspection -->
+    <bean id="routingTrustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
+        <constructor-arg ref="trustedCertManager"/>
+        <constructor-arg ref="certValidationProcessor"/>
+        <constructor-arg>
+            <!--suppress SpringBeanConstructorArgInspection -->
+            <bean class="com.l7tech.server.security.cert.CertValidationProcessor$Facility" factory-method="valueOf">
+                <constructor-arg value="ROUTING"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+
+    <!-- Initialize the client-side SSLSocketFactory with the trust manager -->
+    <bean id="clientSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.transport.http.SslClientSocketFactory"/>
+        <property name="targetMethod" value="setTrustManager"/>
+        <property name="arguments">
+            <list>
+                <ref bean="trustManager"/>
+            </list>
+        </property>
+    </bean>
+    <bean id="clientSocketFactoryKeyManagerInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.transport.http.SslClientSocketFactory"/>
+        <property name="targetMethod" value="setDefaultKeyManagers"/>
+        <property name="arguments">
+            <list>
+                <ref bean="sslKeyManagers"/>
+            </list>
+        </property>
+    </bean>
+    <bean id="clientSocketFactorySsgKeystoreManagerInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.transport.http.SslClientSocketFactory"/>
+        <property name="targetMethod" value="setSsgKeyStoreManager"/>
+        <property name="arguments">
+            <list>
+                <ref bean="ssgKeyStoreManager"/>
+            </list>
+        </property>
+    </bean>
+
+     <!-- server side HTTP routing hostname verifier -->
+    <bean id="hostnameVerifier" class="com.l7tech.server.transport.http.SslClientHostnameVerifier">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="trustedCertManager"/>
+    </bean>
+    
+    <!-- server side HTTP routing HTTP client factory -->
+    <bean id="httpRoutingHttpClientFactory"
+          class="com.l7tech.server.util.IdentityBindingHttpClientFactory"
+          singleton="false">
+        <property name="connectionManagerParameters">
+            <map>
+                <entry key="http.connection.stalecheck">
+                    <value type="java.lang.Boolean">false</value>
+                </entry>
+            </map>
+        </property>
+    </bean>
+
+    <!-- SSL hostname verifier for internode communication -->
+    <bean id="internodeHostnameVerifier" class="com.l7tech.server.transport.http.InternodeSslClientHostnameVerifier">
+        <constructor-arg ref="keystore"/>
+    </bean>
+
+    <!-- HTTP client factory for internode communication -->
+    <bean id="internodeHttpClientFactory" class="com.l7tech.server.util.HttpClientFactory">
+        <constructor-arg ref="keystore"/>
+        <constructor-arg ref="trustManager"/>
+        <constructor-arg ref="internodeHostnameVerifier"/>
+    </bean>
+
+    <!-- server side service manager -->
+    <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp" parent="hibernateBean">
+        <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="resolutionManager"/>
+    </bean>
+
+    <!-- server side resolution manager -->
+    <bean id="resolutionManager" class="com.l7tech.server.service.resolution.ReolutionManagerImpl">
+        <constructor-arg>
+            <list>
+                <bean class="com.l7tech.server.service.SafeWsdlPublishedServiceDecorator">
+                    <constructor-arg ref="serviceDocumentManager"/>
+                </bean>
+            </list>
+        </constructor-arg>
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <!-- server side trusted cert manager -->
+    <bean id="trustedCertManager" class="com.l7tech.server.identity.cert.TrustedCertManagerImp"
+          parent="hibernateBean" depends-on="clusterPropertyCache">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="Trusted Certificate Expiry Checker"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg ref="clusterInfoManager"/>
+    </bean>
+    <!-- server side revocation check policy manager -->
+    <bean id="revocationCheckPolicyManager" class="com.l7tech.server.identity.cert.RevocationCheckPolicyManagerImpl" parent="hibernateBean"/>
+
+    <!-- server side SampleMessage manager -->
+    <bean id="sampleMessageManager" class="com.l7tech.server.service.SampleMessageManagerImp" parent="hibernateBean"/>
+    <!-- server side ServiceDocumentManager manager -->
+    <bean id="serviceDocumentManager" class="com.l7tech.server.service.ServiceDocumentManagerImpl" parent="hibernateBean"/>
+    <!-- server side custom assertions registrar -->
+    <bean id="customAssertionRegistrar" class="com.l7tech.server.policy.custom.CustomAssertionsRegistrarImpl">
+        <constructor-arg ref="assertionRegistry"/>
+        <property name="serverConfig" ref="serverConfig"/>
+    </bean>
+    <!-- jms connection manager -->
+    <bean id="jmsConnectionManager" class="com.l7tech.server.transport.jms.JmsConnectionManagerImpl" parent="hibernateBean">
+        <property name="jmsEndpointManager" ref="jmsEndpointManager"/>
+    </bean>
+    <!-- jms endpoint manager -->
+    <bean id="jmsEndpointManager" class="com.l7tech.server.transport.jms.JmsEndpointManagerImpl" parent="hibernateBean">
+    </bean>
+    <!-- jms property mapper -->
+    <bean id="jmsPropertyMapper" class="com.l7tech.server.transport.jms.JmsPropertyMapper">
+        <constructor-arg ref="trustedCertManager"/>
+        <constructor-arg ref="ssgKeyStoreManager"/>
+        <constructor-arg ref="keystore"/>
+    </bean>
+
+    <!-- server side policy validator -->
+    <bean id="serverPolicyValidator" class="com.l7tech.server.policy.validator.ServerPolicyValidator">
+        <constructor-arg ref="policyManager"/>
+        <constructor-arg ref="policyPathBuilderFactory"/>
+        <property name="jmsEndpointManager" ref="jmsEndpointManager"/>
+        <property name="identityProviderFactory" ref='identityProviderFactory'/>
+        <property name="schemaEntryManager" ref='schemaEntryManager'/>
+        <property name="clientCertManager" ref='clientCertManager'/>
+        <property name="entityFinder" ref="entityFinder"/>
+        <property name="ssgKeyStoreManager" ref="ssgKeyStoreManager"/>
+    </bean>
+
+    <!-- server side policy filter manager  -->
+    <bean id="policyFilterManager" class="com.l7tech.server.policy.filter.FilterManager">
+        <constructor-arg ref="identityProviderFactory"/>
+        <constructor-arg>
+            <list>
+                <value>com.l7tech.server.policy.filter.IdentityRule</value>
+                <value>com.l7tech.server.policy.filter.HideUnsupportedClientAssertions</value>
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <!-- server side policy filter manager for WS-SecurityPolicies -->
+    <bean id="wsspolicyFilterManager" class="com.l7tech.server.policy.filter.FilterManager">
+        <constructor-arg ref="identityProviderFactory"/>
+        <constructor-arg>
+            <list>
+                <value>com.l7tech.server.policy.filter.HideUnsupportedClientAssertions</value>
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <!-- server side client cert manager -->
+    <bean id="clientCertManager" class="com.l7tech.server.identity.cert.ClientCertManagerImp">
+        <property name="sessionFactory" ref="sessionFactory"/>
+        <property name="rootCertificate" ref="rootCertificate"/>
+    </bean>
+
+    <!-- server side log ring buffer -->
+    <bean id="logRecordRingBuffer" class="com.l7tech.server.log.LogRecordRingBuffer" init-method="init">
+        <property name="loggerName" value="com.l7tech"/>
+        <property name="bufferSize" value="500"/> <!-- NOTE that the max retrieval block size is 600, this should be less than that -->
+    </bean>
+
+    <!-- server side log manager -->
+    <bean id="logRecordManager" class="com.l7tech.server.audit.LogRecordManager">
+        <constructor-arg ref="clusterInfoManager"/>
+        <constructor-arg ref="logRecordRingBuffer"/>
+    </bean>
+
+    <!-- server side audit record manager -->
+    <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerImpl" parent="hibernateBean">
+        <property name="serverConfig" ref="serverConfig"/>
+    </bean>
+    <!-- server side audit exporter -->
+    <bean id="auditExporter" class="com.l7tech.server.audit.AuditExporterImpl" singleton="false">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+    <!-- server side audit message factory -->
+    <bean id="messageSummaryAuditFactory" class="com.l7tech.server.audit.MessageSummaryAuditFactory">
+        <constructor-arg ref="clusterNodeId"/>
+    </bean>
+
+    <!-- keystore root cert and ssl config  -->
+    <bean id="keystore" class="com.l7tech.server.KeystoreUtils">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="masterPasswordManager"/>
+    </bean>
+
+    <bean id="sslKeystoreCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject" ref='keystore'/>
+        <property name="targetMethod" value="getSslCert"/>
+    </bean>
+
+    <bean id="sslKeystorePrivateKey" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject" ref='keystore'/>
+        <property name="targetMethod" value="getSSLPrivateKey"/>
+    </bean>
+
+    <bean id="sslKeyManagers" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject" ref='keystore'/>
+        <property name="targetMethod" value="getSSLKeyManagers"/>
+    </bean>
+
+    <bean id="rootCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject" ref='keystore'/>
+        <property name="targetMethod" value="getRootCert"/>
+    </bean>
+
+    <!--
+      Allow use of keystore.properties keys in bean values (e.g "${sslkstorename}")
+    -->
+    <bean id="ssgPropertyPlaceholderConfigurer" class="com.l7tech.server.util.PasswordDecryptingPropertyPlaceholderConfigurer" depends-on="systemProperties">
+        <constructor-arg ref="propertiesDecryptor"/>
+        <property name="locations">
+            <list>
+                <value>file:${com.l7tech.server.configDirectory}${file.separator}keystore.properties</value>
+            </list>
+        </property>
+    </bean>
+
+    <!--
+    set the KeyManagers for use within a cluster
+    -->
+    <bean id="setKeyManagersForNodeToNodeRMI"
+          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod"
+                  value="com.l7tech.gateway.common.spring.remoting.rmi.ssl.SslRMIClientSocketFactory.setKeyManagers"/>
+        <property name="arguments">
+            <list>
+                <ref local="sslKeyManagers"/>
+            </list>
+        </property>
+    </bean>
+
+
+    <!-- server Wss Decorator -->
+    <bean id="wssDecorator" class="com.l7tech.security.xml.decorator.WssDecoratorImpl"/>
+    <!-- server Message Processor -->
+    <bean id="messageProcessor" class="com.l7tech.server.MessageProcessor">
+        <constructor-arg ref="serviceCache"/>
+        <constructor-arg ref="policyCache"/>
+        <constructor-arg ref="wssDecorator"/>
+        <constructor-arg ref="securityTokenResolver"/>
+        <constructor-arg ref="licenseManager"/>
+        <constructor-arg ref="serviceMetricsManager"/>
+        <constructor-arg ref="auditContext"/>
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="trafficLogger"/>
+     </bean>
+    <!-- server side policy service -->
+    <bean id="policyService" class="com.l7tech.server.policy.PolicyService">
+        <constructor-arg ref="sslKeystorePrivateKey"/>
+        <constructor-arg ref="sslKeystoreCertificate"/>
+        <constructor-arg ref="policyFactory"/>
+        <constructor-arg ref="policyFilterManager"/>
+        <constructor-arg ref="securityTokenResolver"/>
+        <constructor-arg ref="policyPathBuilderFactory"/>
+    </bean>
+    <!-- server side token service -->
+    <bean id="tokenService" class="com.l7tech.server.TokenServiceImpl">
+        <constructor-arg ref="sslKeystorePrivateKey"/>
+        <constructor-arg ref="sslKeystoreCertificate"/>
+        <constructor-arg ref="policyFactory"/>
+        <constructor-arg ref="securityTokenResolver"/>
+    </bean>
+
+    <bean id="auditContext" class="com.l7tech.server.audit.ThreadLocalAuditContext">
+        <property name="targetId" value="auditContextImpl"/>
+    </bean>
+
+    <bean id="auditContextImpl" class="com.l7tech.server.audit.AuditContextImpl" singleton="false">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="auditRecordManager"/>
+        <property name="keystore" ref="keystore"/>
+        <property name="auditLogListener" ref="auditLogListener"/>
+    </bean>
+
+    <!-- server side Status Update Manager -->
+    <bean id="statusUpdateManager" class="com.l7tech.server.cluster.StatusUpdateManagerImpl">
+        <constructor-arg ref="clusterInfoManager"/>
+        <constructor-arg ref="serviceCache"/>
+        <constructor-arg ref="serviceUsageManager"/>
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <!-- Status Update Manager Task Scheduler -->
+    <bean id="statusUpdateManagerSchedulerTask" class="org.springframework.scheduling.timer.ScheduledTimerTask">
+        <!-- wait 10 seconds before starting repeated execution -->
+        <property name="delay" value="8000"/> <!-- 8 seconds -->
+        <property name="period" value="4000"/> <!-- repeat every 4 seconds -->
+        <property name="timerTask">
+            <!-- server side Status Update Manager Scheduled Task -->
+            <bean class="org.springframework.scheduling.timer.MethodInvokingTimerTaskFactoryBean">
+                <property name="targetObject" ref="statusUpdateManager"/>
+                <property name="targetMethod" value="update"/>
+            </bean>
+        </property>
+    </bean>
+    <!-- server side Task Scheduler -->
+    <bean class="org.springframework.scheduling.timer.TimerFactoryBean">
+        <property name="scheduledTimerTasks">
+            <list>
+                <ref local="statusUpdateManagerSchedulerTask"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="messageProcessingAuditListener" class="com.l7tech.server.audit.MessageProcessingAuditListener">
+        <constructor-arg ref="messageSummaryAuditFactory"/>
+        <constructor-arg ref="auditContext"/>
+    </bean>
+
+    <bean id="adminAuditListener" class="com.l7tech.server.audit.AdminAuditListener">
+        <constructor-arg ref="clusterNodeId"/>
+        <constructor-arg ref="auditContext"/>
+    </bean>
+
+    <bean id="systemAuditListener" class="com.l7tech.server.audit.SystemAuditListener">
+        <constructor-arg ref="clusterNodeId"/>
+        <constructor-arg ref="auditContext"/>
+    </bean>
+
+    <bean id="counterIDManager" class="com.l7tech.server.sla.CounterIDManagerImpl">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <bean id="schemaManager" class="com.l7tech.server.communityschemas.SchemaManagerImpl" depends-on="clusterPropertyManager">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="httpClientFactory"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="Schema cache maintenance"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <bean id="schemaEntryManager" class="com.l7tech.server.communityschemas.SchemaEntryManagerImpl" parent="hibernateBean">
+        <constructor-arg ref="applicationEventProxy"/>
+        <property name="schemaManager" ref="schemaManager"/>
+    </bean>
+
+    <bean id="registryPublicationManager" class="com.l7tech.server.uddi.RegistryPublicationManager">
+        <property name="serverConfig" ref="serverConfig"/>
+        <property name="keystore" ref="keystore"/>
+    </bean>
+
+    <bean id="clusterPropertyManager" class="com.l7tech.server.cluster.ClusterPropertyManagerImpl" parent="hibernateBean">
+    </bean>
+
+    <bean id="clusterPropertyCache" class="com.l7tech.server.cluster.ClusterPropertyCache">
+        <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
+        <property name="clusterPropertyListener" ref="serverConfig"/>
+    </bean>
+
+    <bean id="gatewaySanityChecker" class="com.l7tech.server.util.GatewaySanityChecker">
+        <constructor-arg ref="transactionManager"/>
+        <constructor-arg ref="clusterPropertyManager"/>
+        <property name="earlyTasks">
+            <list>
+                <bean class="com.l7tech.server.security.keystore.DefaultKeystoreFilePopulator">
+                    <property name="sessionFactory" ref="sessionFactory"/>
+                </bean>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="securityTokenResolver" class="com.l7tech.server.TrustedAndUserCertificateResolver">
+        <constructor-arg ref="clientCertManager"/>
+        <constructor-arg ref="trustedCertManager"/>
+        <constructor-arg ref="sslKeystoreCertificate"/>
+        <constructor-arg ref="rootCertificate"/>
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="ssgKeyStoreManager"/>
+    </bean>
+
+    <bean id="licenseManager" class="com.l7tech.server.GatewayLicenseManager" depends-on="systemAuditListener">
+        <constructor-arg ref="clusterPropertyManager"/>
+    </bean>
+
+    <bean id="certificateAuthenticator" class="com.l7tech.server.identity.cert.CertificateAuthenticator">
+        <constructor-arg ref="clientCertManager"/>
+        <constructor-arg ref="certValidationProcessor"/>
+    </bean>
+
+    <!-- Identity mapping stuff -->
+    <bean id="identityMappingManager" class="com.l7tech.server.identity.mapping.IdentityMappingManagerImpl" parent="hibernateBean"/>
+    <bean id="attributeConfigManager" class="com.l7tech.server.identity.mapping.AttributeConfigManagerImpl" parent="hibernateBean"/>
+    <bean id="securityTokenMappingManager" class="com.l7tech.server.identity.mapping.SecurityTokenMappingManagerImpl" parent="hibernateBean"/>
+
+    <!--
+    The MAC of this cluster node, so that we don't need to throw the whole
+    ClusterInfoManager around
+    -->
+    <bean id="clusterNodeId" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject" ref='clusterInfoManager'/>
+        <property name="targetMethod" value="thisNodeId"/>
+    </bean>
+
+    <!-- Dependency ensures system.properties file is processed first -->
+    <bean id="serviceMetricsManager"
+          class="com.l7tech.server.service.ServiceMetricsManager"
+          singleton="true"
+          depends-on="ssgBoot"
+          parent="hibernateBean">
+        <constructor-arg ref="clusterNodeId"/>
+        <constructor-arg ref="managedBackgroundTimer"/>
+
+        <property name="serviceManager" ref ="serviceManager"/>
+        <property name="roleManager" ref="roleManager"/>
+    </bean>
+
+    <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker" depends-on="ssgBoot">
+        <property name="applicationEventProxy" ref="applicationEventProxy"/>
+        <property name="entityManagers">
+            <list>
+                <ref bean="schemaEntryManager"/>
+                <ref bean="roleManager"/>
+                <ref bean="clusterPropertyManager"/>
+                <ref bean="identityProviderConfigManager"/>
+                <ref bean="jmsConnectionManager"/>
+                <ref bean="jmsEndpointManager"/>
+                <ref bean="trustedCertManager"/>
+                <ref bean="revocationCheckPolicyManager"/>
+                <ref bean="ssgConnectorManager"/>
+                <ref bean="sinkManager"/>
+                <ref bean="policyManager"/>
+                <ref bean="keystoreFileManager"/>
+            </list>
+        </property>
+        <property name="timer">
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="EntityVersionChecker"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="soapFaultManager" class="com.l7tech.server.util.SoapFaultManager" depends-on="clusterPropertyManager">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="Soap fault manager refresh"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <bean id="uddiAgentFactory" class="com.l7tech.server.service.uddi.UddiAgentFactory">
+        <property name="serverConfig" ref="serverConfig"/>
+    </bean>
+
+    <bean id="httpClientFactory" class="com.l7tech.server.util.HttpClientFactory">
+        <constructor-arg ref="keystore"/>    
+        <constructor-arg ref="trustManager"/>
+        <constructor-arg ref="hostnameVerifier"/>
+    </bean>
+
+    <bean id="trafficLogger" class="com.l7tech.server.log.TrafficLogger">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="soapFaultManager"/>
+    </bean>
+
+    <bean id="entityFinder" class="com.l7tech.server.EntityFinderImpl">
+        <constructor-arg ref="identityProviderFactory"/>
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy">
+
+    </bean>
+
+    <bean id="managedBackgroundTimer" class="com.l7tech.server.util.ManagedTimer">
+        <constructor-arg value="Background timer"/>
+    </bean>
+
+    <!-- Use managed timer for all background tasks -->
+    <bean id="configureBackgroundTimer"
+          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod" value="com.l7tech.util.Background.installTimer"/>
+        <property name="arguments">
+            <list>
+                <ref local="managedBackgroundTimer"/>
+            </list>
+        </property>
+    </bean>
+
+
+    <bean id="whirlyLife" class="com.l7tech.server.WhirlyLifecycle"/>
+
+    <bean id="timerLife" class="com.l7tech.server.ManagedTimerLifecycle"/>
+
+    <bean id="exceptionLogger" class="com.l7tech.server.util.UncaughtExceptionLogger" factory-method="createAndInstall"/>
+
+    <bean id="stashManagerFactory" class="com.l7tech.server.DefaultStashManagerFactory" factory-method="getInstance"/>
+
+    <bean id="assertionRegistry" class="com.l7tech.server.policy.ServerAssertionRegistry" depends-on="ssgBoot">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="licenseManager"/>
+    </bean>
+
+    <bean id="wspReader" class="com.l7tech.policy.wsp.WspReader">
+        <constructor-arg ref="assertionRegistry"/>
+    </bean>
+
+    <bean id="serviceWsdlImportChecker" class="com.l7tech.server.service.ServiceWsdlImportChecker" depends-on="systemAuditListener systemProperties">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="transactionManager"/>
+        <constructor-arg ref="serviceManager"/>
+        <constructor-arg ref="serviceDocumentManager"/>
+    </bean>
+
+    <bean id="keystoreFileManager" class="com.l7tech.server.security.keystore.KeystoreFileManagerImpl" parent="hibernateBean"/>
+
+    <bean id="ssgConnectorManager" class="com.l7tech.server.transport.SsgConnectorManagerImpl" parent="hibernateBean">
+        <constructor-arg ref="serverConfig"/>            
+        <constructor-arg ref="applicationEventProxy"/>
+    </bean>
+
+    <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerImpl" depends-on="gatewaySanityChecker">
+        <constructor-arg ref="sharedKeyManager"/>
+        <constructor-arg ref="keystoreFileManager"/>
+        <constructor-arg ref="keystore"/>
+        <constructor-arg ref="serverConfig"/>
+    </bean>
+
+    <bean id="ftpServerManager" class="com.l7tech.server.transport.ftp.FtpServerManager">
+        <constructor-arg ref="auditContext"/>
+        <constructor-arg ref="clusterPropertyManager"/>
+        <constructor-arg ref="messageProcessor"/>
+        <constructor-arg ref="soapFaultManager"/>
+        <constructor-arg ref="stashManagerFactory"/>
+        <constructor-arg ref="licenseManager"/>
+        <constructor-arg ref="ssgKeyStoreManager"/>
+        <constructor-arg ref="keystore"/>
+        <constructor-arg ref="ssgConnectorManager"/>
+        <constructor-arg ref="managedBackgroundTimer"/>
+    </bean>
+
+    <bean id="sharedKeyManager" class="com.l7tech.server.security.sharedkey.SharedKeyManagerImpl">
+        <property name="sessionFactory" ref="sessionFactory"/>
+        <property name="keystore" ref='keystore'/>
+    </bean>
+
+    <bean id="crlCache" class="com.l7tech.server.security.cert.CrlCacheImpl">
+        <constructor-arg ref="httpClientFactory"/>
+        <constructor-arg ref="serverConfig"/>
+    </bean>
+
+    <bean id="ocspCache" class="com.l7tech.server.security.cert.OCSPCache">
+        <constructor-arg ref="httpClientFactory"/>
+        <constructor-arg ref="serverConfig"/>
+    </bean>
+
+    <bean id="certValidationProcessor" class="com.l7tech.server.security.cert.CertValidationProcessorImpl">
+        <constructor-arg ref="trustedCertManager"/>
+        <constructor-arg ref="revocationCheckPolicyManager"/>
+        <constructor-arg ref="rootCertificate"/>
+        <constructor-arg ref="serverConfig"/>
+        <!-- These make use of the certificate validation processor so cannot be constructor args -->
+        <property name="crlCache" ref="crlCache"/>
+        <property name="ocspCache" ref="ocspCache"/>
+    </bean>
+
+    <bean id="httpTransportModule" class="com.l7tech.server.transport.http.HttpTransportModule" depends-on="systemAuditListener">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="masterPasswordManager"/>
+        <constructor-arg ref="keystore"/>
+        <constructor-arg ref="ssgKeyStoreManager"/>
+        <constructor-arg ref="licenseManager"/>
+        <constructor-arg ref="ssgConnectorManager"/>
+    </bean>
+
+    <bean id="policyCache" class="com.l7tech.server.policy.PolicyCacheImpl">
+        <constructor-arg ref="transactionManager"/>
+        <constructor-arg ref="policyFactory"/>
+        <property name="policyManager" ref="policyManager"/>
+    </bean>
+
+    <bean id="policyManager" class="com.l7tech.server.policy.PolicyManagerImpl" parent="hibernateBean">
+        <constructor-arg ref="roleManager"/>
+        <property name="policyCache" ref="policyCache"/>
+    </bean>
+
+    <bean id="policyPathBuilderFactory" class="com.l7tech.policy.PolicyPathBuilderFactory">
+        <constructor-arg ref="policyManager"/>
+    </bean>
+
+    <bean id="policyVersionManager" class="com.l7tech.server.policy.PolicyVersionManagerImpl" parent="hibernateBean">
+        <constructor-arg ref="serverConfig"/>
+    </bean>
+
+    <bean id="syslogManager" class="com.l7tech.server.log.syslog.SyslogManager"/>
+
+    <bean id="sinkManager" class="com.l7tech.server.log.SinkManagerImpl" parent="hibernateBean" depends-on="systemAuditListener">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="syslogManager"/>
+        <constructor-arg ref="trafficLogger"/>
+        <constructor-arg ref="applicationEventProxy"/>
+    </bean>
+
+    <bean id="auditLogListenerTarget" class="com.l7tech.server.log.FilteringAuditLogListener">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg>
+            <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+                <property name="targetObject" ref="sinkManager"/>
+                <property name="targetMethod" value="getPublishingSink"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <bean id="auditLogListener" class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+        <constructor-arg value="auditLogListenerTarget"/>
+        <constructor-arg value="com.l7tech.server.audit.AuditLogListener"/>
+    </bean>
+
+
+    <bean id="auditDetailFilter" class="com.l7tech.server.audit.GatewayAuditDetailFilter">
+        <constructor-arg ref="serverConfig"/>
+    </bean>
+
+    <bean id="serviceTemplateManager" class="com.l7tech.server.service.ServiceTemplateManagerImpl"/>
+
+    <bean id="esmSubscriptionManager" class="com.l7tech.server.wsdm.subscription.SubscriptionManagerImpl" parent="hibernateBean"/>
+
+</beans>

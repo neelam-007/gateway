@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+    <!-- Bean definitions for the ServerRateLimitAssertionTest -->
+
+
+<beans>
+<!--
+     * singleton using the factory method. This is transitional, as it is referencef from
+     * too many places.
+     -->
+    <bean id="serverConfig" class="com.l7tech.server.ServerConfigStub">
+        <property name="clusterPropertyCache">
+            <ref bean="clusterPropertyCache"/>
+        </property>
+    </bean>
+
+   <bean id="clusterPropertyCache" class="com.l7tech.server.cluster.ClusterPropertyCache">
+        <property name="clusterPropertyManager">
+            <ref bean="clusterPropertyManager"/>
+        </property>
+    </bean>
+
+    <bean id="auditContext" class="org.springframework.aop.framework.ProxyFactoryBean">
+        <property name="proxyInterfaces"><value>com.l7tech.server.audit.AuditContextStubInt</value></property>
+        <property name="targetSource">
+            <ref local="auditContextTargetSource"/>
+        </property>
+    </bean>
+
+    <bean id="auditContextTarget" class="com.l7tech.server.audit.AuditContextStub" singleton="false">
+    </bean>
+
+    <bean id="auditContextTargetSource" class="org.springframework.aop.target.ThreadLocalTargetSource">
+        <property name="targetBeanName">
+            <value>auditContextTarget</value>
+        </property>
+    </bean>
+
+    <bean id="clusterPropertyManager" class="com.l7tech.server.MockClusterPropertyManager"/>
+
+    <bean id="clusterInfoManager" class="com.l7tech.server.ClusterInfoManagerStub"/>
+
+    <bean id="auditLogListener" class="com.l7tech.server.log.FilteringAuditLogListener">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.log.LoggingMessageSink"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="auditDetailFilter" class="com.l7tech.server.audit.GatewayAuditDetailFilter">
+        <constructor-arg ref="serverConfig"/>
+    </bean>       
+</beans>

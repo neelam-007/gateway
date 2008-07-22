@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <!--
+    This is the common module build file. It is included into each
+    modules build.xml.
+
+    Do not invoke it directly.
+  -->
+    <import file="../../../etc/build/build-common.xml"/>
+
+    <property name="moduleName" value="${ant.project.name}"/>
+    <property name="moduleFileExtension" value="aar"/>
+
+    <target name="package.custom" depends="-aar, -clientJar"/>
+
+    <!-- Find the assertions for this module if not declared -->
+    <target name="-detect" unless="moduleAssertionList" depends="compile">
+        <pathconvert property="moduleAssertionList" pathsep=" " setonempty="false">
+            <path>
+                <fileset dir="build/classes">
+                    <include name="**/*Assertion.class"/>
+                    <exclude name="**/console/**/*"/>
+                    <exclude name="**/client/**/*"/>
+                    <exclude name="**/server/**/*"/>
+                </fileset>
+            </path>
+            <chainedmapper>
+                <mapper type="regexp" from=".*[/\\]build[/\\]classes[/\\](.*)" to="\1"/>
+                <packagemapper from="*.class" to="*"/>
+            </chainedmapper>            
+        </pathconvert>
+        <fail unless="moduleAssertionList">Unable to detect any assertion classes, please declare assertions using the moduleAssertionList property.</fail>
+        <echo level="info">Detected assertions: ${moduleAssertionList}</echo>
+    </target>
+    <target name="-detect-client" unless="clientAssertionList" depends="compile">
+        <pathconvert property="clientAssertionList" pathsep=" " setonempty="false">
+            <path>
+                <fileset dir="build/classes">
+                    <include name="**/client/Client*Assertion.class"/>
+                </fileset>
+            </path>
+            <chainedmapper>
+                <mapper type="regexp" from=".*[/\\]build[/\\]classes[/\\](.*)" to="\1"/>
+                <packagemapper from="*.class" to="*"/>
+            </chainedmapper>
+        </pathconvert>
+        <echo level="info">Detected client assertions: ${clientAssertionList}</echo>
+    </target>
+
+    <!-- Create AAR file -->
+    <target name="-aar" depends="compile, -detect">
+        <property name="privateLibraries" value=""/>
+        <jar destfile="build/${moduleName}.${moduleFileExtension}" duplicate="fail">
+            <manifest>
+                <attribute name="Specification-Title" value="ModularAssertion"/>
+                <attribute name="Specification-Version" value="3.7.0"/>
+                <attribute name="Specification-Vendor" value="${build.vendor}"/>
+                <attribute name="Specification-Vendor-Id" value="${build.vendor.id}"/>
+                <attribute name="Implementation-Title" value="${moduleName}"/>
+                <attribute name="Implementation-Version" value="${build.version}"/>
+                <attribute name="Implementation-Vendor" value="${build.vendor}"/>
+                <attribute name="Implementation-Vendor-Id" value="${build.vendor.id}"/>
+                <attribute name="Built-By" value="${build.user}"/>
+                <attribute name="Build-Jdk" value="${java.version}"/>
+                <attribute name="Build-Timestamp" value="${build.timestamp}" />
+                <attribute name="ModularAssertion-List" value="${moduleAssertionList}"/>
+
+                <!-- space-separated list of filename patterns, with simple * and ? support, ie:  "foov?-L7*.jar blatch*.jar" -->
+                <attribute name="ModularAssertion-Private-Libraries" value="${privateLibraries}"/>
+            </manifest>
+            
+            <fileset dir="build/classes"/>
+            <zipfileset prefix="AAR-INF/lib" dir="build/dependency"/>
+        </jar>
+    </target>
+
+    <!-- Create client JAR file -->
+    <target name="-clientJar" if="clientAssertionList" depends="compile, -detect, -detect-client">
+        <echo>Building client jar</echo>
+        <jar destfile="build/${moduleName}-client.${moduleFileExtension}" duplicate="fail">
+            <manifest>
+                <attribute name="Specification-Title" value="ModularAssertion"/>
+                <attribute name="Specification-Version" value="3.7.0"/>
+                <attribute name="Specification-Vendor" value="${build.vendor}"/>
+                <attribute name="Specification-Vendor-Id" value="${build.vendor.id}"/>
+                <attribute name="Implementation-Title" value="${moduleName}"/>
+                <attribute name="Implementation-Version" value="${build.version} ${build.timestamp}"/>
+                <attribute name="Implementation-Vendor" value="${build.vendor}"/>
+                <attribute name="Implementation-Vendor-Id" value="${build.vendor.id}"/>
+                <attribute name="Built-By" value="${build.user}"/>
+                <attribute name="Build-Jdk" value="${java.version}"/>
+                <attribute name="Build-Timestamp" value="${build.timestamp}" />
+                <attribute name="ModularAssertion-List" value="${moduleAssertionList}"/>
+            </manifest>
+
+            <fileset dir="build/classes">
+                <include name="**/*"/>
+                <exclude name="**/console"/>
+                <exclude name="**/console/**/*"/>
+                <exclude name="**/server"/>
+                <exclude name="**/server/**/*"/>
+            </fileset>
+        </jar>
+    </target>
+
+</project>

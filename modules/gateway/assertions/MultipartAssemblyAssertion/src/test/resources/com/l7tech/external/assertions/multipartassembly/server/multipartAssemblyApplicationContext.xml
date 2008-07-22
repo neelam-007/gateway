@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+    <bean id="auditContext" class="org.springframework.aop.framework.ProxyFactoryBean">
+        <property name="proxyInterfaces" value="com.l7tech.server.audit.AuditContextStubInt"/>
+        <property name="targetSource">
+            <ref local="auditContextTargetSource"/>
+        </property>
+    </bean>
+
+    <bean id="auditContextTarget" class="com.l7tech.server.audit.AuditContextStub" singleton="false">
+    </bean>
+
+    <bean id="auditContextTargetSource" class="org.springframework.aop.target.ThreadLocalTargetSource">
+        <property name="targetBeanName" value="auditContextTarget"/>
+    </bean>
+
+    <bean id="stashManagerFactory" class="com.l7tech.server.TestStashManagerFactory"/>
+
+    <bean id="serverConfig" class="com.l7tech.server.ServerConfigStub">
+        <property name="clusterPropertyCache" ref="clusterPropertyCache"/>
+    </bean>
+
+    <bean id="clusterPropertyCache" class="com.l7tech.server.cluster.ClusterPropertyCache">
+         <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
+     </bean>
+
+    <bean id="clusterPropertyManager" class="com.l7tech.server.MockClusterPropertyManager"/>
+
+    <bean id="auditLogListener" class="com.l7tech.server.log.FilteringAuditLogListener">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.log.LoggingMessageSink"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="auditDetailFilter" class="com.l7tech.server.audit.GatewayAuditDetailFilter">
+        <constructor-arg ref="serverConfig"/>
+    </bean>
+</beans>

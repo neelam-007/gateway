@@ -1,17 +1,19 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.common.ApplicationContexts;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.service.PublishedService;
+import com.l7tech.server.ApplicationContexts;
+import com.l7tech.wsdl.Wsdl;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.TestDocuments;
+
 import junit.framework.TestCase;
+
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;

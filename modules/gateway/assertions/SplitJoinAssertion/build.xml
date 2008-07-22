@@ -1,0 +1,3 @@
+<project name="SplitJoinAssertion" default="compile">
+    <import file="../assertion-build.xml"/>
+</project>

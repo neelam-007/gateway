@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="com.ca.wsdm"
+		module="ca_wsdm_core"
+		revision="3.50"
+		status="release"
+		publication="20080707125735"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="ca_wsdm_core" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

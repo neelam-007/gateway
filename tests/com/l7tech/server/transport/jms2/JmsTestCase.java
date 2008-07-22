@@ -1,14 +1,14 @@
 package com.l7tech.server.transport.jms2;
 
-import com.l7tech.common.ApplicationContexts;
-import com.l7tech.common.LicenseManager;
-import com.l7tech.common.transport.jms.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsPropertyMapper;
 import com.l7tech.server.transport.jms.JmsUtil;
+import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.transport.jms.*;
 import junit.framework.TestCase;
 import org.springframework.context.ApplicationContext;
 
@@ -140,12 +140,11 @@ public class JmsTestCase extends TestCase {
 
     protected void populateQueues(JmsEndpointConfig[] cfgs, int numData) {
 
-        boolean fail = false;
         for (JmsEndpointConfig c : cfgs) {
 
             JmsBag bag = null;
-            QueueSession session = null;
-            Queue queue = null;
+            QueueSession session;
+            Queue queue;
             QueueSender qSender = null;
             try {
                 bag = JmsUtil.connect(c, c.isTransactional(), Session.CLIENT_ACKNOWLEDGE);
@@ -153,7 +152,7 @@ public class JmsTestCase extends TestCase {
                 queue = (Queue) bag.getJndiContext().lookup( c.getEndpoint().getDestinationName() );
                 qSender = session.createSender(queue);
 
-                String msgPayload = null;
+                String msgPayload;
                 for (int i=0; i<numData; i++) {
 
                     msgPayload = "<test><id>"+c.getDisplayName()+i+"</id><payload>MyPayload</payload></test>";
@@ -191,7 +190,7 @@ public class JmsTestCase extends TestCase {
 
     protected void spawnMessageProducers(JmsEndpointConfig[] cfgs, int behaviour) {
 
-        TestMessageProducer prod = null;
+        TestMessageProducer prod;
         for (JmsEndpointConfig c : cfgs) {
             prod = new TestMessageProducer(c, 0);
             testProducers.add(prod);

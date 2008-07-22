@@ -1,9 +1,9 @@
 package com.l7tech.server.transport.jms2;
 
-import com.l7tech.common.Component;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.transport.jms2.synch.LegacyJmsEndpointListenerFactory;
+import com.l7tech.gateway.common.Component;
 
 /**
  * @author: vchan

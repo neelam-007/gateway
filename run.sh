@@ -78,6 +78,13 @@ shift
 
 export JAVA_OPTS="-Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl $JAVA_OPTS"
 
+# determine locations for SSG and for installer builds
+SSG_HOME="$(test -f ~/build.properties && grep "^deploy.dir" ~/build.properties | awk -F'=' '{print $NF}' | sed 's/ //g')"
+if [ -z "${SSG_HOME}" ] ; then SSG_HOME="$(dirname $0)/build"; fi
+INSTALLER_HOME="$(test -f ~/build.properties && grep "^build.installer" ~/build.properties | awk -F'=' '{print $NF}' | sed 's/ //g')"
+if [ -z "${INSTALLER_HOME}" ] ; then INSTALLER_HOME="$(dirname $0)/build/installer"; fi
+
+
 case "$foo" in 
 	-?)
 		echo "Usage: run.sh (ssg|console|proxy|textproxy|<Main class>)"
@@ -88,16 +95,12 @@ case "$foo" in
 		exec $TOMCAT_HOME/bin/startup.sh start -security $* 
 		;;
 	console)
-		exec installer/Manager-*/Manager.sh $*
-		#target="com.l7tech.console.Main";
-		#exec $JAVA_HOME/bin/java $JAVA_OPTS ${target} $* 
+		exec ${INSTALLER_HOME}/Manager-*/Manager.sh $*
 		;;
 	manager)
-		exec installer/Manager-*/Manager.sh $*
+		exec ${INSTALLER_HOME}/Manager-*/Manager.sh $*
 		;;
 	gateway)
-		SSG_HOME="$(test -f ~/build.properties && grep deploy.dir ~/build.properties | awk -F'=' '{print $NF}' | sed 's/ //g')"
-		if [ -z "${SSG_HOME}" ] ; then SSG_HOME="$(dirname $0)/build"; fi
 		cd ${SSG_HOME}
 		exec $JAVA_HOME/bin/java $JAVA_OPTS \
 			-Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl \
@@ -109,9 +112,7 @@ case "$foo" in
 		exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
 		;;
 	(bridge | client)
-		exec installer/Client-*/Client.sh $*
-		#target="com.l7tech.proxy.gui.Main";
-		#exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
+		exec ${INSTALLER_HOME}/Client-*/Client.sh $*
 		;;
 	testagent)
 		target="com.l7tech.proxy.AgentPerfClient";

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="com.noelios.restlet"
+		module="com.noelios.restlet"
+		revision="1.1-M4"
+		status="release"
+		publication="20080714185816"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="com.noelios.restlet" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

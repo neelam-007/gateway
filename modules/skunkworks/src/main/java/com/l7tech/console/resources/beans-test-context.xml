@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+    <bean id="ssmApplication" class="com.l7tech.console.SsmApplicationHeavy">
+    </bean>
+
+    <bean id="securityProvider" class="com.l7tech.console.security.SecurityProviderImpl">
+    </bean>
+
+    <bean id="registry" class="com.l7tech.console.util.registry.RegistryStub">
+    </bean>
+
+    <bean id="identityAdmin" class="com.l7tech.identity.IdentityAdminStub">
+    </bean>
+
+    <bean id="clusterStatusAdmin" class="com.l7tech.gateway.common.cluster.ClusterStatusAdminStub">
+    </bean>
+
+    <bean id="serviceAdmin" class="com.l7tech.gateway.common.service.ServiceAdminStub">
+    </bean>
+
+    <bean id="jmsAdmin" class="com.l7tech.gateway.common.service.JmsAdminStub">
+    </bean>
+
+    <bean id="customAssertionsAdmin" class="com.l7tech.server.policy.custom.CustomAssertionsRegistrarStub">
+    </bean>
+
+    <bean id="auditAdmin" class="com.l7tech.gateway.common.audit.AuditAdminStub">
+    </bean>
+
+</beans>

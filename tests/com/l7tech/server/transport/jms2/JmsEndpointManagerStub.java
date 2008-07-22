@@ -3,13 +3,13 @@
  */
 package com.l7tech.server.transport.jms2;
 
-import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.common.transport.jms.JmsOutboundMessageType;
-import com.l7tech.common.transport.jms.JmsReplyType;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManagerStub;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
+import com.l7tech.server.EntityManagerStub;
+import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.gateway.common.transport.jms.JmsReplyType;
+import com.l7tech.gateway.common.transport.jms.JmsOutboundMessageType;
 
 import java.util.Collection;
 

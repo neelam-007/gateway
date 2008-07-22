@@ -1,0 +1,370 @@
+<!--
+  Common build file for all modules
+-->
+<project name="common"
+         xmlns:ivy="antlib:org.apache.ivy.ant">
+
+    <!-- Get any user properties -->
+    <property file="${user.home}/build.properties"/>
+
+    <!--
+      Set global properties
+    -->
+    <property name="build.dir" value="${basedir}/build"/>
+    <property name="build.etc.dir" value="${build.dir}/etc"/>
+    <property name="classes.main.dir" value="${build.dir}/classes"/>
+    <property name="classes.test.dir" value="${build.dir}/test-classes"/>
+    <property name="deps.dir" value="${build.dir}/dependency"/>
+    <property name="src.main.java.dir" value="${basedir}/src/main/java"/>
+    <property name="src.main.res.dir" value="${basedir}/src/main/resources"/>
+    <property name="src.test.java.dir" value="${basedir}/src/test/java"/>
+    <property name="src.test.res.dir" value="${basedir}/src/test/resources"/>
+    <property name="report.dir" value="${build.dir}/reports"/>
+    <property name="report.test.dir" value="${build.dir}/reports/tests"/>
+
+    <property name="ivy.file" value="${basedir}/ivy.xml"/>
+
+    <property name="jar.file" value="${build.dir}/${ant.project.name}.jar"/>
+    <property name="jar.file.test" value="${build.dir}/${ant.project.name}-test.jar"/>
+    <property name="main.class.name" value="${ant.project.name}.Main"/>
+
+    <property name="module.version.target" value="1.0"/>
+    <property name="module.classpath.prefix" value="lib/"/>
+    <property name="module.compile.source" value="1.5"/>
+    <property name="module.compile.target" value="1.5"/>
+
+    <property name="ivy.jar.dir" value="${user.home}/.ivy2/jars"/>
+    <property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar"/>
+
+    <!--
+      Classpath for Idea form compiler
+    -->
+    <path id="uidesigner.classpath">
+        <fileset dir="${src.root}/lib/tools">
+            <include name="jdom.jar"/>
+            <include name="asm.jar"/>
+            <include name="asm-commons.jar"/>
+            <include name="javac2.jar"/>
+        </fileset>
+    </path>
+
+    <!--
+      Task definition defaults for ivy resolve
+    -->
+    <presetdef name="ivy-resolve">
+        <ivy:resolve file="${ivy.file}"
+                     showprogress="false"
+                     log="quiet"/>
+    </presetdef>
+
+    <!--
+      Task definition for Idea form compiler
+    -->
+    <taskdef name="javac2t"
+             classname="com.intellij.ant.Javac2"
+             classpathref="uidesigner.classpath"/>
+
+    <presetdef name="module-javac">
+        <javac debug="on"
+               optimize="off"
+               deprecation="on"
+               verbose="no"
+               source="${module.compile.source}"
+               target="${module.compile.target}"
+                >
+            <compilerarg value="-Xlint" compiler="modern"/>
+            <compilerarg value="-Xlint:-serial" compiler="modern"/>
+            <compilerarg value="-Xlint:-path" compiler="modern"/>
+            <compilerarg value="-Xlint:-unchecked" compiler="modern"/>
+            <compilerarg value="-Xlint:-dep-ann" compiler="modern"/>
+            <classpath refid="lib.path.id"/>
+        </javac>
+    </presetdef>
+
+    <presetdef name="module-javac2">
+        <javac2t
+                debug="on"
+                source="1.5"
+                target="1.5"
+                optimize="on"
+                >
+            <include name="**/*.form"/>
+        </javac2t>
+    </presetdef>
+
+    <!--
+      Show build info for the module
+    -->
+    <target name="info">
+        <echo>
+            ===============================================================
+            Processing module ${ant.project.name}
+            ===============================================================
+        </echo>
+    </target>
+
+    <!--
+      Common initialization
+    -->
+    <target name="init">
+        <ivy:settings file="${src.root}/etc/build/ivysettings.xml"/>
+
+        <!-- Determine available sources -->
+        <available file="${src.main.java.dir}" type="dir" property="module.source.available"/>
+        <available file="${src.main.res.dir}" type="dir" property="module.resources.available"/>
+        <available file="${src.test.java.dir}" type="dir" property="module.tests.available"/>
+        <available file="${src.test.res.dir}" type="dir" property="module.testresources.available"/>
+    </target>
+
+    <!--
+      Generate report
+    -->
+    <target name="report" description="Generate a report of dependencies" depends="init">
+        <ivy-resolve conf="runtime"/>
+        <ivy:report todir="${report.dir}" graph="false"/>
+    </target>
+
+    <!--
+      Compile
+    -->
+    <target name="compile-main-init" if="module.source.available" depends="init">
+        <mkdir dir="${classes.main.dir}"/>
+        <ivy-resolve conf="compile"/>
+        <ivy:cachepath pathid="lib.path.id" conf="compile"/>
+        <pathconvert property="lib.path.text" targetos="unix" pathsep="${line.separator}" refid="lib.path.id"/>
+        <echo level="debug">Resolved compilation path:${line.separator}${lib.path.text}</echo>
+    </target>
+    <target name="compile-main-java" if="module.source.available" depends="compile-main-init">
+        <module-javac srcdir="${src.main.java.dir}" destdir="${classes.main.dir}"/>
+    </target>
+    <target name="compile-main-forms" if="module.source.available" depends="compile-main-init, compile-main-java">
+        <module-javac2 srcdir="${src.main.java.dir}" destdir="${classes.main.dir}" classpathref="lib.path.id"/>
+    </target>
+    <target name="compile-main-resources" if="module.resources.available" depends="compile-main-init">
+        <copy todir="${classes.main.dir}" preservelastmodified="true">
+            <fileset dir="${src.main.res.dir}" includes="**/*.properties"/>
+            <filterset begintoken="@@@" endtoken="@@@">
+                <filtersfile file="${src.root}/build/etc/filter.properties"/>
+            </filterset>
+        </copy>
+        <copy todir="${classes.main.dir}" preservelastmodified="true">
+            <fileset dir="${src.main.res.dir}" excludes="**/*.properties"/>
+        </copy>
+    </target>
+    <target name="compile" description="Compile" if="module.source.available"
+            depends="compile-main-java, compile-main-forms, compile-main-resources">
+    </target>
+
+    <!--
+      Test
+    -->
+    <target name="compile-test-init" if="module.tests.available" depends="init">
+        <mkdir dir="${classes.test.dir}"/>
+        <ivy-resolve conf="test"/>
+        <ivy:cachepath pathid="lib.test.path.id" conf="test"/>
+        <pathconvert property="lib.test.path.text" targetos="unix" pathsep="${line.separator}"
+                     refid="lib.test.path.id"/>
+        <echo level="debug">Resolved test path:${line.separator}${lib.test.path.text}</echo>
+        <path id="full.test.path.id">
+            <pathelement location="${classes.main.dir}"/>
+            <path refid="lib.test.path.id"/>
+        </path>
+    </target>
+    <target name="compile-test-java" if="module.tests.available" depends="compile-test-init,compile">
+        <module-javac srcdir="${src.test.java.dir}" destdir="${classes.test.dir}">
+            <classpath refid="full.test.path.id"/>
+        </module-javac>
+    </target>
+    <target name="compile-test-forms" if="module.tests.available" depends="compile-test-init, compile-test-java">
+        <module-javac2 srcdir="${src.test.java.dir}" destdir="${classes.test.dir}" classpathref="full.test.path.id"/>
+    </target>
+    <target name="compile-test-resources" if="module.testresources.available" depends="compile-test-init">
+        <copy todir="${classes.test.dir}" preservelastmodified="true">
+            <fileset dir="${src.test.res.dir}" includes="**/*.properties"/>
+            <filterset begintoken="@@@" endtoken="@@@">
+                <filtersfile file="${src.root}/build/etc/filter.properties"/>
+            </filterset>
+        </copy>
+        <copy todir="${classes.test.dir}" preservelastmodified="true">
+            <fileset dir="${src.test.res.dir}" excludes="**/*.properties"/>
+        </copy>
+    </target>
+    <target name="compile-test-all" depends="compile-test-java, compile-test-forms, compile-test-resources"/>
+    <target name="test" description="Run unit tests" if="module.tests.available" unless="module.skip.tests"
+            depends="compile-test-all">
+        <mkdir dir="${report.test.dir}"/>
+
+        <junit printsummary="yes" haltonfailure="yes" fork="on" forkmode="once" errorproperty="test.error"
+               failureproperty="test.failure">
+            <classpath>
+                <pathelement location="${classes.test.dir}"/>
+                <path refid="full.test.path.id"/>
+            </classpath>
+
+            <formatter type="plain" unless="build.junit.xmlformat"/>
+            <formatter type="xml" if="build.junit.xmlformat"/>
+
+            <sysproperty key="src.root" value="${src.root}"/>
+
+            <batchtest haltonfailure="no" todir="${report.test.dir}">
+                <fileset dir="${classes.test.dir}">
+                    <include name="**/*Test.class"/>
+                </fileset>
+            </batchtest>
+        </junit>
+
+        <!-- Fail on error or failure -->
+        <fail if="test.failure">One or more JUnit tests failed.</fail>
+        <fail if="test.error">One or more JUnit tests exited due to error.</fail>
+    </target>
+
+    <!--
+    -->
+    <target name="ivy-new-version" unless="ivy.new.revision" depends="init">
+        <property name="module.version.prefix" value="${module.version.target}-dev-b"/>
+
+        <ivy:info file="${ivy.file}"/>
+        <ivy:buildnumber
+                organisation="${ivy.organisation}" module="${ivy.module}"
+                revision="${module.version.prefix}" defaultBuildNumber="1" revSep=""/>
+    </target>
+
+    <!--
+    -->
+    <target name="local-version">
+        <tstamp>
+            <format property="now" pattern="yyyyMMddHHmmss"/>
+        </tstamp>
+        <property name="ivy.new.revision" value="${module.version.target}-local-${now}"/>
+    </target>
+
+    <!--
+    -->
+    <target name="version" depends="ivy-new-version">
+        <property name="version" value="${ivy.new.revision}"/>
+    </target>
+
+    <!--
+    -->
+    <target name="package.dependencies" depends="init">
+        <mkdir dir="${deps.dir}"/>
+
+        <ivy-resolve conf="runtime"/>
+        <ivy:retrieve pattern="${deps.dir}/[artifact]-[revision].[ext]"/>
+    </target>
+    <target name="package.classpath" if="module.main">
+        <ivy:cachepath pathid="module.classpath" conf="runtime"/>
+        <pathconvert property="module.classpath.text" pathsep=" " refid="module.classpath">
+            <mapper type="regexp" from=".*[/\\](.*)\.jar" to="${module.classpath.prefix}\1.jar"/>
+        </pathconvert>
+
+        <mkdir dir="${build.etc.dir}"/>
+        <manifest file="${build.etc.dir}/MANIFEST.MF">
+            <attribute name="Main-Class" value="${module.main}"/>
+            <attribute name="Class-Path" value="${module.classpath.text}"/>
+        </manifest>
+    </target>
+    <!-- Overridden by modules with custom packaging requirements -->
+    <target name="package.custom">
+        <available property="module.package.jar.required" file="${classes.main.dir}"/>
+    </target>
+    <target name="package.work" if="module.package.jar.required"
+            depends="compile, package.dependencies, package.classpath, package.custom">
+        <property name="ivy.extra.title" value="ivy.module"/>
+        <mkdir dir="${build.etc.dir}"/>
+        <touch file="${build.etc.dir}/MANIFEST.MF"/>
+        <jar destfile="${jar.file}" manifest="${build.etc.dir}/MANIFEST.MF">
+            <fileset dir="${classes.main.dir}"/>
+            <manifest>
+                <attribute name="Implementation-Title" value="${ivy.extra.title}"/>
+                <attribute name="Implementation-Version" value="${build.version}"/>
+                <attribute name="Implementation-Vendor" value="${build.vendor}"/>
+                <attribute name="Implementation-Vendor-Id" value="${build.vendor.id}"/>
+                <attribute name="Built-By" value="${build.user}"/>
+                <attribute name="Build-Jdk" value="${java.version}"/>
+                <attribute name="Build-Timestamp" value="${build.timestamp}"/>
+            </manifest>
+        </jar>
+    </target>
+    <target name="package" depends="version, compile, package.work" description="Package this project">
+    </target>
+
+    <!--
+    -->
+    <target name="packagetests" if="module.tests.available" depends="version, test" description="Package this project">
+        <jar destfile="${jar.file.test}">
+            <fileset dir="${classes.test.dir}"/>
+            <manifest>
+                <attribute name="Built-By" value="${user.name}"/>
+                <attribute name="Build-Version" value="${version}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <!--
+    -->
+    <target name="idea" depends="info, init" description="Generate Intellij IDEA module">
+        <mkdir dir="${build.etc.dir}"/>
+
+        <ivy-resolve conf="test"/>
+        <ivy:report todir="${build.etc.dir}" outputpattern="dependency.xml" conf="test" graph="false" xsl="false"
+                    xml="true"/>
+        <xslt in="${build.etc.dir}/dependency.xml" out="${ivy.module}.iml"
+              style="${src.root}/etc/build/idea_module.xsl">
+            <param name="source" expression="${module.source.available}"/>
+            <param name="tests" expression="${module.tests.available}"/>
+            <param name="source.resources" expression="${module.resources.available}"/>
+            <param name="test.resources" expression="${module.testresources.available}"/>
+            <param name="runtime" expression="true" if="module.main"/>
+        </xslt>
+    </target>
+
+    <!--
+    -->
+    <target name="publish" depends="info, clean, package" description="Publish this project in the Ivy repository">
+        <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
+                     conf="default, master, compile, runtime, optional, core, client"
+                     resolver="shared"
+                     pubrevision="${version}"
+                     status="release"
+                     overwrite="true"
+                />
+        <echo message="project ${ant.project.name} released with version ${version}"/>
+    </target>
+
+    <!--
+    -->
+    <target name="publish-all" depends="info, clean, package, packagetests"
+            description="Publish all artifacts for this project in the Ivy repository">
+        <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
+                     resolver="shared"
+                     pubrevision="${version}"
+                     status="release"
+                     overwrite="true"
+                />
+        <echo message="project ${ant.project.name} released with version ${version}"/>
+    </target>
+
+    <target name="skiptests">
+        <property name="module.skip.tests" value="true"/>
+    </target>
+
+    <!--
+    -->
+    <target name="publish-all-quick" depends="info, clean, skiptests, package, packagetests"
+            description="Publish all artifacts for this project in the Ivy repository (Skip tests)">
+        <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
+                     resolver="shared"
+                     pubrevision="${version}"
+                     status="release"
+                     overwrite="true"
+                />
+        <echo message="project ${ant.project.name} released with version ${version}"/>
+    </target>
+
+    <!--
+    -->
+    <target name="clean" description="Clean the project">
+        <delete includeemptydirs="true" dir="${build.dir}"/>
+    </target>
+</project>

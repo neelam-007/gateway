@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="com.ibm.mq"
+		module="connector"
+		revision="6.0.2.2"
+		status="release"
+		publication="20080707125812"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="connector" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

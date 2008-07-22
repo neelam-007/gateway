@@ -1,0 +1,4 @@
+<project name="layer7-gateway-console" default="compile">
+    <property name="module.main" value="com.l7tech.console.Main"/>
+    <import file="../../../etc/build/build-common.xml"/>
+</project>

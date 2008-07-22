@@ -1,0 +1,6 @@
+<project name="layer7-api" default="compile">
+    <property name="module.compile.source" value="1.3"/>
+    <property name="module.compile.target" value="1.3"/>
+
+    <import file="../../../etc/build/build-common.xml"/>
+</project>

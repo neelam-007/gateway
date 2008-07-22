@@ -1,6 +1,6 @@
 package com.l7tech.server.transport.jms2;
 
-import com.l7tech.common.ApplicationContexts;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.transport.jms2.asynch.JmsThreadPool;
 import junit.framework.TestCase;
 import org.springframework.context.ApplicationContext;

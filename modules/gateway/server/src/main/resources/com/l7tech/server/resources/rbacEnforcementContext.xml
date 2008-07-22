@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+    <bean id="rbacPointcut" class="com.l7tech.server.security.rbac.SecuredPointcut"/>
+
+    <bean id="rbacAdvice" class="com.l7tech.server.security.rbac.SecuredMethodInterceptor">
+        <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="entityFinder"/>
+        <constructor-arg ref="policyManager"/>
+    </bean>
+
+    <bean id="rbacAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
+        <property name="pointcut" ref="rbacPointcut"/>
+        <property name="advice" ref="rbacAdvice"/>
+    </bean>
+
+    <!-- Exception advices for server side error handling -->
+    <bean id="unsupportedExceptionInterceptor" class="com.l7tech.server.util.UnsupportedExceptionsThrowsAdvice"/>
+
+    <bean id="mysqlFailureThrowsAdvice" class="com.l7tech.server.util.MySqlFailureThrowsAdvice"/>
+
+    <bean id="constraintViolationThrowsAdvice" class="com.l7tech.server.util.ConstraintViolationThrowsAdvice"/>
+
+    <bean id="adminConnectionPoolSelector" class="com.l7tech.server.util.UserSwitchedRoutingDataSourceSelector">
+        <constructor-arg value="admin"/>
+    </bean>
+
+    <!-- Transaction and RBAC interception -->
+    <bean id="rbacIntercepted" abstract="true" class="org.springframework.aop.framework.ProxyFactoryBean">
+        <property name="interceptorNames">
+            <list>
+                <idref bean="unsupportedExceptionInterceptor"/>
+                <idref bean="mysqlFailureThrowsAdvice"/>
+                <idref bean="constraintViolationThrowsAdvice"/>
+                <idref bean="adminConnectionPoolSelector"/>
+                <idref bean="annotationTransactionInterceptor"/>
+                <idref bean="rbacAdvisor"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="serviceAdmin" parent="rbacIntercepted">
+        <property name="target" ref="serviceAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.gateway.common.service.ServiceAdmin"/>
+    </bean>
+
+    <bean id="auditAdmin" parent="rbacIntercepted">
+        <property name="target" ref="auditAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.gateway.common.audit.AuditAdmin"/>
+    </bean>
+
+    <bean id="identityAdmin" parent="rbacIntercepted">
+        <property name="target" ref="identityAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.gateway.common.admin.IdentityAdmin"/>
+    </bean>
+
+    <bean id="jmsAdmin" parent="rbacIntercepted">
+        <property name="target" ref="jmsAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.gateway.common.transport.jms.JmsAdmin"/>
+    </bean>
+
+    <bean id="ftpAdmin" parent="rbacIntercepted">
+        <property name="target" ref="ftpAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.gateway.common.transport.ftp.FtpAdmin"/>
+    </bean>
+
+    <bean id="rbacAdmin" parent="rbacIntercepted">
+        <property name="target" ref="rbacAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.gateway.common.security.rbac.RbacAdmin"/>
+    </bean>
+
+    <bean id="schemaAdmin" parent="rbacIntercepted">
+        <property name="target" ref="schemaAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.gateway.common.schema.SchemaAdmin"/>
+    </bean>
+
+    <bean id="trustedCertAdmin" parent="rbacIntercepted">
+        <property name="target" ref="trustedCertAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.gateway.common.security.TrustedCertAdmin"/>
+    </bean>
+
+    <bean id="clusterStatusAdmin" parent="rbacIntercepted">
+        <property name="target" ref="clusterStatusAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.gateway.common.cluster.ClusterStatusAdmin"/>
+    </bean>
+
+    <bean id="transportAdmin" parent="rbacIntercepted">
+        <property name="target" ref="transportAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.gateway.common.transport.TransportAdmin"/>
+    </bean>
+
+    <bean id="policyAdmin" parent="rbacIntercepted">
+        <property name="target" ref="policyAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.gateway.common.admin.PolicyAdmin"/>
+    </bean>
+
+    <bean id="logSinkAdmin" parent="rbacIntercepted">
+        <property name="target" ref="logSinkAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.gateway.common.log.LogSinkAdmin"/>
+    </bean>
+
+    <bean id="kerberosAdmin" parent="rbacIntercepted">
+        <property name="target" ref="kerberosAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.gateway.common.admin.KerberosAdmin"/>
+    </bean>
+</beans>

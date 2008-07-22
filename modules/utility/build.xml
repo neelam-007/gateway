@@ -1,0 +1,5 @@
+<project name="layer7-utility" default="compile">
+    <property name="module.main" value="com.l7tech.util.BuildInfo"/>
+    <import file="../../etc/build/build-common.xml"/>
+</project>
+

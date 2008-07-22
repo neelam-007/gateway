@@ -3,12 +3,12 @@
  */
 package com.l7tech.server.transport.jms2;
 
-import com.l7tech.common.transport.jms.JmsConnection;
-import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManagerStub;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
+import com.l7tech.server.EntityManagerStub;
+import com.l7tech.gateway.common.transport.jms.JmsConnection;
+import com.l7tech.gateway.common.transport.jms.JmsProvider;
 
 import java.util.ArrayList;
 import java.util.Collection;

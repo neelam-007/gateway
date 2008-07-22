@@ -1,0 +1,4 @@
+<project name="layer7-kerberos" default="compile">
+    <import file="../../etc/build/build-common.xml"/>
+</project>
+

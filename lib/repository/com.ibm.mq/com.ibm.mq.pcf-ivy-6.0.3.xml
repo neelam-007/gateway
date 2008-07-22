@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="com.ibm.mq"
+		module="com.ibm.mq.pcf"
+		revision="6.0.3"
+		status="release"
+		publication="20080707125813"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="com.ibm.mq.pcf" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

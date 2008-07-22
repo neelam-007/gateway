@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+    <info organisation="com.l7tech"
+          module="layer7-policy"
+          status="integration"
+            >
+    </info>
+    <configurations
+            defaultconfmapping="compile->default; core->default; runtime->default; test->default; optional->default">
+        <conf name="core" description="Core dependencies for all configurations" visibility="private"/>
+        <conf name="default" description="Runtime dependencies and master artifact can be used with this conf"
+              extends="runtime,master"/>
+        <conf name="master"
+              description="Contains only the artifact published by this module itself, with no transitive dependencies"/>
+        <conf name="compile" description="The dependency is required at compile time." extends="core,optional"/>
+        <conf name="runtime" description="The dependency is required at runtime." extends="core"/>
+        <conf name="test" description="The dependency required for building/running tests only."
+              extends="runtime,compile"/>
+        <conf name="optional" description="Contains all optional dependencies"/>
+    </configurations>
+    <publications>
+        <artifact name="layer7-policy" type="jar" ext="jar" conf="master"/>
+        <artifact name="layer7-policy-test" type="jar" ext="jar" conf="test"/>
+    </publications>
+    <dependencies>
+        <dependency name="layer7-api" rev="latest.integration" force="true" conf="core"/>
+        <dependency name="layer7-common" rev="latest.integration" force="true" conf="core; test->default,test"/>
+        <dependency name="layer7-kerberos" rev="latest.integration" force="true" conf="core"/>
+        <dependency name="layer7-wsdl" rev="latest.integration" force="true" conf="core"/>
+        <dependency org="antlr" name="antlr" rev="2.7.7-l7p1" conf="optional"/>
+        <!-- Needed when tarari is used -->
+        <dependency org="bouncycastle" name="bcprov-jdk15" rev="135" force="true" conf="core"/>
+        <dependency org="jaxen" name="jaxen" rev="1.1-beta-10" force="true" conf="core"/>
+        <dependency org="nekohtml" name="nekohtml" rev="0.9.5" force="true" conf="core"/>
+        <dependency org="org.apache.ws.commons.policy" name="policy" rev="1.0" force="true" conf="core"/>
+        <dependency org="javax.activation" name="activation" rev="1.1" force="true" conf="core"/>
+        <dependency org="javax.xml.bind" name="jaxb-api" rev="2.0" force="true" conf="compile"/>
+        <!-- For JAX-B annotations -->
+        <dependency org="javax.xml.soap" name="saaj-api" rev="1.3" force="true" conf="core"/>
+        <dependency org="com.sun.xml.messaging.saaj" name="saaj-impl" rev="1.3" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-beans" rev="2.5.4" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-context" rev="2.5.4" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-core" rev="2.5.4" force="true" conf="core"/>
+        <dependency org="com.tarari" name="tarari-raxj" rev="4.4.2.21" force="true" conf="optional"/>
+        <!-- Tarari is optional -->
+        <dependency org="xmlbeans" name="xbean" rev="2.2.0" force="true" conf="core"/>
+        <dependency org="javax.persistence" name="persistence-api" rev="3.0" force="true" conf="core"/>
+        <dependency org="javax.xml" name="jsr173" rev="1.0" force="true" conf="core"/>
+        <dependency org="com.l7tech.lib" name="xbean-saml-1.1" rev="1.0" force="true" conf="core"/>
+        <dependency org="com.l7tech.lib" name="xbean-saml-2.0" rev="1.0" force="true" conf="core"/>
+        <dependency org="com.l7tech.lib" name="xbean-xenc-xmldsig" rev="1.0" force="true" conf="core"/>
+        <dependency org="com.ibm" name="xss4j.00.patch" rev="1.0" force="true" conf="core"/>
+        <dependency org="com.ibm" name="xss4j" rev="1.0" force="true" conf="core"/>
+        <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
+        <dependency org="com.chrysalisits.cryptox" name="luna-libs" rev="1" force="true" conf="optional"/>
+        <!-- Optional security provider -->
+        <dependency org="com.ncipher" name="ncipher-libs" rev="1" force="true" conf="optional"/>
+        <!-- Optional security provider -->
+        <dependency org="com.rsa" name="rsa-libs" rev="1" force="true" conf="optional"/>
+        <!-- Optional security provider -->
+    </dependencies>
+</ivy-module>

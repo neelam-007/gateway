@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Ant build file for all modules. -->
+<project name="Assertion Tools" default="new">
+
+    <description>
+        ANT build file for modular assertion creation.
+    </description>
+
+    <target name="new" description="Create a new (empty) assertion module (-Dass.camel=NameHere, -Dass.lower=namehere).">
+        <fail unless="ass.camel">You must set an assertion name (-Dass.camel=NameHere, -Dass.lower=namehere)</fail>
+        <fail unless="ass.lower">You must set an assertion name (-Dass.camel=NameHere, -Dass.lower=namehere)</fail>
+
+        <property name="assertion.name" value="${ass.camel}"/>
+        <property name="assertion.name.lower" value="${ass.lower}"/>
+
+        <available file="${assertion.name}Assertion" property="assertion.module.exists"/>
+        <fail if="assertion.module.exists">The assertion "${assertion.name}" already exists.</fail>
+
+        <mkdir dir="${assertion.name}Assertion/src/main/resources/com/l7tech/external/assertions/${assertion.name.lower}/console/resources"/>
+        <mkdir dir="${assertion.name}Assertion/src/main/java/com/l7tech/external/assertions/${assertion.name.lower}/console"/>
+        <mkdir dir="${assertion.name}Assertion/src/main/java/com/l7tech/external/assertions/${assertion.name.lower}/server"/>
+        <mkdir dir="${assertion.name}Assertion/src/test/java/com/l7tech/external/assertions/${assertion.name.lower}/server"/>
+
+        <filterset id="assertion.module.filterset">
+            <filter token="assertion" value="${assertion.name.lower}"/>
+            <filter token="ASSERTION" value="${assertion.name}"/>
+        </filterset>
+
+        <copy file="templates/TEMPLATE_build.xml" tofile="${assertion.name}Assertion/build.xml">
+            <filterset refid="assertion.module.filterset"/>
+        </copy>
+
+        <copy file="templates/TEMPLATE_ivy.xml" tofile="${assertion.name}Assertion/ivy.xml">
+            <filterset refid="assertion.module.filterset"/>
+        </copy>
+
+        <copy file="templates/TEMPLATE_Assertion.txt" tofile="${assertion.name}Assertion/src/main/java/com/l7tech/external/assertions/${assertion.name.lower}/${assertion.name}Assertion.java">
+            <filterset refid="assertion.module.filterset"/>
+        </copy>
+
+        <copy file="templates/TEMPLATE_ServerAssertion.txt" tofile="${assertion.name}Assertion/src/main/java/com/l7tech/external/assertions/${assertion.name.lower}/server/Server${assertion.name}Assertion.java">
+            <filterset refid="assertion.module.filterset"/>
+        </copy>
+
+        <copy file="templates/TEMPLATE_ServerAssertionTest.txt" tofile="${assertion.name}Assertion/src/test/java/com/l7tech/external/assertions/${assertion.name.lower}/server/Server${assertion.name}AssertionTest.java">
+            <filterset refid="assertion.module.filterset"/>
+        </copy>
+
+    </target>
+
+</project>

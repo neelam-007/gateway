@@ -1,0 +1,207 @@
+package com.l7tech.server.log;
+
+import java.util.logging.LogRecord;
+import java.util.logging.Level;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
+
+import com.l7tech.server.audit.AuditLogListener;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.AuditRecord;
+import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
+import com.l7tech.gateway.common.audit.AdminAuditRecord;
+import com.l7tech.util.JdkLoggerConfigurator;
+
+/**
+ * AuditLogListener that passes audit information to a MessageSink.
+ *
+ * <p>This listener will filter out details that are passed at either creation
+ * or flush time (depending on configuration)</p>
+ *
+ * @author Steve Jones
+ */
+public class FilteringAuditLogListener implements AuditLogListener, PropertyChangeListener {
+
+    //- PUBLIC
+
+    /**
+     * Create a listener with the given sink.
+     *
+     * @param sink The sink for audit data
+     */
+    public FilteringAuditLogListener(final ServerConfig serverConfig,
+                                     final MessageSink sink) {
+        this.sink = sink;
+        this.auditOnCreate.set(!serverConfig.getBooleanPropertyCached(PROP_BATCH, PROP_BATCH_DEFAULT, 30000L));
+    }
+
+    /**
+     * Handle notification of an audit detail creation.
+     *
+     * @param source the source of the audit
+     * @param message The audit detail message
+     * @param params The detail parameters (may be null)
+     * @param thrown The detail throwable (may be null)
+     */
+    public void notifyDetailCreated(final String source,
+                                    final AuditDetailMessage message,
+                                    final String[] params,
+                                    final Throwable thrown) {
+        if ( auditOnCreate.get() ) {
+            LogRecord record = generateMessage(source, message, params, thrown);
+            processMessage(record);
+        }
+    }
+
+    /**
+     * Handle notification of an audit detail flush.
+     *
+     * @param source the source of the audit
+     * @param message The audit detail message
+     * @param params The detail parameters (may be null)
+     * @param thrown The detail throwable (may be null)
+     */
+    public void notifyDetailFlushed(final String source,
+                                    final AuditDetailMessage message,
+                                    final String[] params,
+                                    final Throwable thrown) {
+        if ( !auditOnCreate.get() ) {
+            LogRecord record = generateMessage(source, message, params, thrown);
+            processMessage(record);
+        }
+    }
+
+    /**
+     * Handle notification of an audit record flush.
+     *
+     * @param audit The audit record
+     * @param header True if is header
+     */
+    public void notifyRecordFlushed(final AuditRecord audit, final boolean header) {
+        LogRecord record = generateMessage(audit, header);
+        if ( record != null )
+            processMessage(record);
+    }
+
+    /**
+     * Handle update to audit batching server property.
+     *
+     * @param evt The property update event
+     */
+    public void propertyChange(final PropertyChangeEvent evt) {
+        if ( PROP_BATCH.equals( evt.getPropertyName() ) ) {
+            auditOnCreate.set(!Boolean.parseBoolean((String)evt.getNewValue()));
+        }
+    }
+
+    //- PRIVATE
+
+    private static final boolean PROP_BATCH_DEFAULT = true;
+    private static final String PROP_BATCH = "auditBatchExternal";
+
+    private final MessageSink sink;
+    private final AtomicBoolean auditOnCreate = new AtomicBoolean(PROP_BATCH_DEFAULT);
+
+    /**
+     * Generate a LogRecord
+     */
+    private LogRecord generateMessage(final String source,
+                                      final AuditDetailMessage message,
+                                      final String[] params,
+                                      final Throwable thrown) {
+        AuditLogRecord record = new AuditLogRecord(message.getLevel(), message.getId() + ": " + message.getMessage());
+
+        record.setLoggerName(source);
+        if (thrown != null)
+            record.setThrown(thrown);
+
+        if (params != null)
+            record.setParameters(params);
+
+        if (JdkLoggerConfigurator.serviceNameAppenderState()) {
+            String serviceName = getServiceName();
+            if (serviceName != null && serviceName.length() > 0) {
+                record.setMessage(record.getMessage() + " @ " + serviceName);
+            }
+        }
+
+        return record;
+    }
+
+    /**
+     * Get the name for the current service.
+     */
+    private String getServiceName() {
+        PolicyEnforcementContext pec = PolicyEnforcementContext.getCurrent();
+
+        if ( pec != null && pec.getService() != null ) {
+            return pec.getService().getName() + " [" + pec.getService().getOid() + "]";
+        }
+
+        return null;
+    }
+
+    /**
+     * Generate a LogRecord
+     */
+    private LogRecord generateMessage(final AuditRecord audit, final boolean header) {
+        AuditLogRecord record = null;
+
+        if ( header ) {
+            if ( audit instanceof MessageSummaryAuditRecord) {
+                PolicyEnforcementContext pec = PolicyEnforcementContext.getCurrent();
+
+                if ( pec != null && pec.getService() != null ) {
+                    String serviceDesc = pec.getService().getName();
+                    if ( pec.getService().getRoutingUri() != null ) {
+                        serviceDesc += " [" + pec.getService().getRoutingUri() + "]";
+                    }
+                    record = new AuditLogRecord(Level.INFO, "Processing request for service: " + serviceDesc);
+                }
+            }
+        } else {
+            record = new AuditLogRecord(audit.getLevel(), audit.getMessage());
+        }
+
+        if ( record != null ) {
+            // TODO move this to the AuditRecord subclasses
+            if ( audit instanceof MessageSummaryAuditRecord) {
+                record.setLoggerName("com.l7tech.server.message");
+            } else if ( audit instanceof AdminAuditRecord ) {
+                record.setLoggerName("com.l7tech.server.admin");
+            } else {
+                record.setLoggerName("com.l7tech.server");
+            }
+        }
+
+        return record;
+    }
+
+    /**
+     * Pass the given record to the sink as an audit message
+     */
+    private void processMessage(final LogRecord record) {
+        sink.message(MessageCategory.AUDIT, record);        
+    }
+
+    /**
+     * Audit subclass for LogRecord to prevent stacktrace generation.
+     */
+    private static final class AuditLogRecord extends LogRecord {
+
+        public AuditLogRecord(Level level, String msg) {
+            super(level, msg);
+        }
+
+        public String getSourceClassName() {
+            return getLoggerName(); // Use logger name to avoid infer caller expense (Bug #2862)
+        }
+
+        public String getSourceMethodName() {
+            return null;
+        }
+    }
+}

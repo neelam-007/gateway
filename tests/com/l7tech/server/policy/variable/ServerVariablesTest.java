@@ -1,12 +1,12 @@
 package com.l7tech.server.policy.variable;
 
-import com.l7tech.common.message.Message;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
-import com.l7tech.service.PublishedService;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.message.Message;
+import com.l7tech.common.io.XmlUtil;
 import junit.framework.TestCase;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.context.ApplicationContext;

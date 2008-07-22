@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0" xmlns:m="http://ant.apache.org/ivy/maven">
+	<info organisation="org.springframework"
+		module="spring-hibernate"
+		revision="1.2.8"
+		status="integration"
+		publication="20060824153756"
+	>
+		<m:dependency.management__commons-lang__commons-lang>2.1</m:dependency.management__commons-lang__commons-lang>
+		<m:dependency.management__javax.xml__jaxrpc-api>1.1</m:dependency.management__javax.xml__jaxrpc-api>
+		<m:dependency.management__poi__poi>2.5.1-final-20040804</m:dependency.management__poi__poi>
+		<m:dependency.management__javax.transaction__jta>1.0.1B</m:dependency.management__javax.transaction__jta>
+		<m:dependency.management__com.oracle.toplink__toplink>10.1.3</m:dependency.management__com.oracle.toplink__toplink>
+		<m:dependency.management__javax.servlet__jstl>1.0</m:dependency.management__javax.servlet__jstl>
+		<m:dependency.management__jotm__jotm>2.0.10</m:dependency.management__jotm__jotm>
+		<m:dependency.management__javax.jms__jms>1.1</m:dependency.management__javax.jms__jms>
+		<m:dependency.management__commons-collections__commons-collections>3.1</m:dependency.management__commons-collections__commons-collections>
+		<m:dependency.management__org.hibernate__hibernate-annotations>3.0beta2</m:dependency.management__org.hibernate__hibernate-annotations>
+		<m:dependency.management__struts__struts>1.2.8</m:dependency.management__struts__struts>
+		<m:dependency.management__com.servlets__cos>05Nov2002</m:dependency.management__com.servlets__cos>
+		<m:dependency.management__javax.ejb__ejb>2.0</m:dependency.management__javax.ejb__ejb>
+		<m:dependency.management__commons-attributes__commons-attributes-compiler>2.1</m:dependency.management__commons-attributes__commons-attributes-compiler>
+		<m:dependency.management__org.hibernate__hibernate>3.0.5</m:dependency.management__org.hibernate__hibernate>
+		<m:dependency.management__com.ibatis__ibatis-sqlmap>1.3.1</m:dependency.management__com.ibatis__ibatis-sqlmap>
+		<m:dependency.management__c3p0__c3p0>0.9.0.4</m:dependency.management__c3p0__c3p0>
+		<m:dependency.management__oro__oro>2.0.8</m:dependency.management__oro__oro>
+		<m:dependency.management__commons-httpclient__commons-httpclient>3.0</m:dependency.management__commons-httpclient__commons-httpclient>
+		<m:dependency.management__aopalliance__aopalliance>1.0</m:dependency.management__aopalliance__aopalliance>
+		<m:dependency.management__ojb__db-ojb>1.0.4</m:dependency.management__ojb__db-ojb>
+		<m:dependency.management__javax.faces__jsf-api>1.1</m:dependency.management__javax.faces__jsf-api>
+		<m:dependency.management__itext__itext>1.3</m:dependency.management__itext__itext>
+		<m:dependency.management__cglib__cglib>2.1_3</m:dependency.management__cglib__cglib>
+		<m:dependency.management__easymock__easymock>1.2_Java1.3</m:dependency.management__easymock__easymock>
+		<m:dependency.management__javax.servlet__jsp-api>2.0</m:dependency.management__javax.servlet__jsp-api>
+		<m:dependency.management__javax.servlet__servlet-api>2.4</m:dependency.management__javax.servlet__servlet-api>
+		<m:dependency.management__commons-pool__commons-pool>1.2</m:dependency.management__commons-pool__commons-pool>
+		<m:dependency.management__net.sf.hibernate__hibernate>2.1.8</m:dependency.management__net.sf.hibernate__hibernate>
+		<m:dependency.management__com.ibatis__ibatis2-sqlmap>2.1.7.597</m:dependency.management__com.ibatis__ibatis2-sqlmap>
+		<m:dependency.management__com.caucho__burlap>2.1.12</m:dependency.management__com.caucho__burlap>
+		<m:dependency.management__com.jamonapi__jamon>1.0</m:dependency.management__com.jamonapi__jamon>
+		<m:dependency.management__com.experlog__xapool>1.5.0</m:dependency.management__com.experlog__xapool>
+		<m:dependency.management__javax.resource__connector>1.0</m:dependency.management__javax.resource__connector>
+		<m:dependency.management__taglibs__standard>1.0.6</m:dependency.management__taglibs__standard>
+		<m:dependency.management__commons-dbcp__commons-dbcp>1.2.1</m:dependency.management__commons-dbcp__commons-dbcp>
+		<m:dependency.management__jasperreports__jasperreports>1.0.3</m:dependency.management__jasperreports__jasperreports>
+		<m:dependency.management__javax.mail__mail>1.3.2</m:dependency.management__javax.mail__mail>
+		<m:dependency.management__velocity-tools__velocity-tools-view>1.2</m:dependency.management__velocity-tools__velocity-tools-view>
+		<m:dependency.management__com.caucho__hessian>2.1.12</m:dependency.management__com.caucho__hessian>
+		<m:dependency.management__freemarker__freemarker>2.3.4</m:dependency.management__freemarker__freemarker>
+		<m:dependency.management__log4j__log4j>1.2.13</m:dependency.management__log4j__log4j>
+		<m:dependency.management__velocity__velocity>1.4</m:dependency.management__velocity__velocity>
+		<m:dependency.management__javax.jdo__jdo>2.0-20050809.1515</m:dependency.management__javax.jdo__jdo>
+		<m:dependency.management__xdoclet__xjavadoc>1.1</m:dependency.management__xdoclet__xjavadoc>
+		<m:dependency.management__commons-logging__commons-logging>1.0.4</m:dependency.management__commons-logging__commons-logging>
+		<m:dependency.management__velocity-tools__velocity-tools-generic>1.2</m:dependency.management__velocity-tools__velocity-tools-generic>
+		<m:dependency.management__net.sourceforge.jexcelapi__jxl>2.5.7</m:dependency.management__net.sourceforge.jexcelapi__jxl>
+		<m:dependency.management__xml-apis__xml-apis>1.0.b2</m:dependency.management__xml-apis__xml-apis>
+		<m:dependency.management__ehcache__ehcache>1.1</m:dependency.management__ehcache__ehcache>
+		<m:dependency.management__quartz__quartz>1.5.2</m:dependency.management__quartz__quartz>
+	</info>
+	<configurations>
+		<conf name="default" visibility="public" description="runtime dependencies and master artifact can be used with this conf" extends="runtime,master"/>
+		<conf name="master" visibility="public" description="contains only the artifact published by this module itself, with no transitive dependencies"/>
+		<conf name="compile" visibility="public" description="this is the default scope, used if none is specified. Compile dependencies are available in all classpaths."/>
+		<conf name="provided" visibility="public" description="this is much like compile, but indicates you expect the JDK or a container to provide it. It is only available on the compilation classpath, and is not transitive."/>
+		<conf name="runtime" visibility="public" description="this scope indicates that the dependency is not required for compilation, but is for execution. It is in the runtime and test classpaths, but not the compile classpath." extends="compile"/>
+		<conf name="test" visibility="private" description="this scope indicates that the dependency is not required for normal use of the application, and is only available for the test compilation and execution phases." extends="runtime"/>
+		<conf name="system" visibility="public" description="this scope is similar to provided except that you have to provide the JAR which contains it explicitly. The artifact is always available and is not looked up in a repository."/>
+		<conf name="optional" visibility="public" description="contains all optional dependencies"/>
+	</configurations>
+	<publications>
+		<artifact name="spring-hibernate" type="jar" ext="jar" conf="master"/>
+	</publications>
+	<dependencies>
+		<dependency org="org.springframework" name="spring-orm" rev="1.2.8" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="org.hibernate" name="hibernate-annotations" rev="3.0beta2" force="true" conf="optional->compile(*),master(*)"/>
+		<dependency org="net.sf.hibernate" name="hibernate" rev="2.1.8" force="true" conf="optional->compile(*),master(*)"/>
+		<dependency org="javax.servlet" name="servlet-api" rev="2.4" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="junit" name="junit" rev="3.8.1" force="true" conf="test->runtime(*),master(*)"/>
+	</dependencies>
+</ivy-module>

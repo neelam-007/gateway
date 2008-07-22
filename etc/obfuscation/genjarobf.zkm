@@ -4,11 +4,13 @@
 // Layer 7 Technologies, Feb 2007
 //
 
-classpath "@@CP@@";
+classpath
+"@CP@";
 
 // this is the jar file to process
 // this could also be a directory containing .class files
-open        "@@JAR@@";
+open
+"@JAR@";
 
 // we dont want to let zelix determine which classes/methods are unused
 // therefore we are excluding everything from trimming otherwise some
@@ -45,7 +47,7 @@ exclude     public *.^* and
 existingSerializedClasses *.* implements java.io.Serializable;
 
 obfuscate   changeLogFileIn=""
-            changeLogFileOut="build/obfuscation/ConfigWizardchange.log"
+            changeLogFileOut="@CHANGELOG@"
             keepInnerClassInfo=ifNameNotObfuscated
             obfuscateFlow=none
             encryptStringLiterals=normal

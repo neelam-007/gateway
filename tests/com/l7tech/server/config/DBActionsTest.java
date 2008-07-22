@@ -1,6 +1,6 @@
 package com.l7tech.server.config;
 
-import com.l7tech.common.BuildInfo;
+import com.l7tech.util.BuildInfo;
 import com.l7tech.server.config.db.*;
 import com.l7tech.server.config.exceptions.UnsupportedOsException;
 import junit.framework.Test;

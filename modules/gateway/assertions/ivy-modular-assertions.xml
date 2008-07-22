@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Ivy module for production modular assertions dependencies.
+-->
+<ivy-module version="1.0">
+    <info organisation="com.l7tech"
+          module="layer7-gateway-server-assertions"
+          status="integration"
+            >
+    </info>
+    <configurations>
+        <conf name="default" description="Configuration for main assertion modules."/>
+        <conf name="client" description="Configuration for client assertion modules."/>
+    </configurations>
+    <publications/>
+    <dependencies>
+        <dependency name="RateLimitAssertion" rev="latest.integration"/>
+        <dependency name="ComparisonAssertion" rev="latest.integration"/>
+        <dependency name="SnmpTrapAssertion" rev="latest.integration"/>
+        <dependency name="EchoRoutingAssertion" rev="latest.integration"/>
+        <dependency name="FtpRoutingAssertion" rev="latest.integration"/>
+        <dependency name="FtpCredentialAssertion" rev="latest.integration"/>
+        <dependency name="IdentityAttributesAssertion" rev="latest.integration"/>
+        <dependency name="WsAddressingAssertion" rev="latest.integration"/>
+        <dependency name="NcesDecoratorAssertion" rev="latest.integration"/>
+        <dependency name="NcesValidatorAssertion" rev="latest.integration"/>
+        <dependency name="LDAPQueryAssertion" rev="latest.integration"/>
+        <dependency name="EsmAssertion" rev="latest.integration"/>
+    </dependencies>
+</ivy-module>

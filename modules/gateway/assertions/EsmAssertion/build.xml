@@ -1,0 +1,3 @@
+<project name="EsmAssertion" default="compile">
+    <import file="../assertion-build.xml"/>
+</project>

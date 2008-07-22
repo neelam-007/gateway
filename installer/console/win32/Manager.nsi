@@ -23,13 +23,37 @@
   !define BUILD_DIR "..\..\..\build" ;UneasyRooster\build dir, root of jar files and things
 !endif
 
+!ifndef PACKAGE_REL
+  !define PACKAGE_REL "..\installer\Client-${MUI_VERSION}"
+!endif
+
+!ifndef PACKAGE_DIR
+  !define PACKAGE_DIR "${BUILD_DIR}\${PACKAGE_REL}"
+!endif
+
+!ifndef OUTPUT_DIR
+  !define OUTPUT_DIR "."
+!endif
+
+!ifndef PACKAGE_REL
+  !define PACKAGE_REL "..\installer\Client-${MUI_VERSION}"
+!endif
+
+!ifndef PACKAGE_DIR
+  !define PACKAGE_DIR "${BUILD_DIR}\${PACKAGE_REL}"
+!endif
+
+!ifndef OUTPUT_DIR
+  !define OUTPUT_DIR "."
+!endif
+
 !include "MUI.nsh"
 
 ;--------------------------------
 ;Configuration
 
   ;General
-  OutFile "${MUI_PRODUCT} ${MUI_VERSION} Installer.exe"
+  OutFile "${OUTPUT_DIR}\${MUI_PRODUCT} ${MUI_VERSION} Installer.exe"
 
   ;Folder selection page
   InstallDir "$PROGRAMFILES\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
@@ -135,14 +159,11 @@ Section "Policy Editor" SecCopyUI
   File "${BUILD_DIR}\Manager.jar"
   File /r "${J2RE_PATH}"
   Rename "$INSTDIR\${J2RE}" "$INSTDIR\jre"
-  File "${BUILD_DIR}\..\src\com\l7tech\console\resources\logging.properties"
-  File /r "${BUILD_DIR}\..\installer\Manager-${MUI_VERSION}\help"
+  File "${PACKAGE_DIR}\logging.properties"
+  File /r "${PACKAGE_DIR}\help"
 
-  SetOutPath "$INSTDIR/lib"
-  ; DO NOT DELETE OR EDIT THIS LINE - %%%JARFILE_FILE_LINES%%%
-  ; DO NOT DELETE OR EDIT THIS LINE - %%%INCLUDE_FILE_LINES%%%
-  SetOutPath "$INSTDIR"
-
+  RMDir /r "$INSTDIR/lib"
+  File /r "${PACKAGE_DIR}\lib"
   
   ;Store install folder
   WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" "" $INSTDIR
@@ -199,9 +220,7 @@ Section "Uninstall"
   Delete "$INSTDIR\${MUI_PRODUCT}.exe"
   Delete "$INSTDIR\${MUI_PRODUCT}.ini"
   Delete "$INSTDIR\Manager.jar"
-  ; DO NOT DELETE OR EDIT THIS LINE -- %%%JARFILE_DELETE_LINES%%%
-  ; DO NOT DELETE OR EDIT THIS LINE -- %%%INCLUDE_DELETE_LINES%%%
-  RMDir "$INSTDIR\lib"
+  RMDir /r "$INSTDIR\lib"
   RMDir /r "$INSTDIR\jre"
   RMDir /r "$INSTDIR\help"
   Delete "$INSTDIR\Uninstall.exe"
