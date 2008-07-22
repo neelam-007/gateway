@@ -1,0 +1,203 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <!-- PROTOTYPE ONLY BEGIN -->
+    <meta http-equiv="Expires" content="-1" />
+    <meta http-equiv="Cache-Control" content="no-cache" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <!-- PROTOTYPE ONLY END -->
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <title>User Accounts [SecureSpan Enterprise Manager]</title>
+    <link rel="stylesheet" type="text/css" href="../css/site.css" />
+    <link rel="stylesheet" type="text/css" href="../yui/button/assets/skins/sam/button.css">
+    <link rel="stylesheet" type="text/css" href="../yui/menu/assets/skins/sam/menu.css">
+    <link type="text/css" rel="stylesheet" href="../yui/datatable/assets/skins/sam/datatable.css">
+    <link rel="stylesheet" type="text/css" href="../css/yui-skin.css">
+    <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
+    <script type="text/javascript" src="../yui/container/container_core-min.js"></script>
+    <script type="text/javascript" src="../yui/element/element-beta-min.js"></script>
+    <script type="text/javascript" src="../yui/button/button-min.js"></script>
+    <script type="text/javascript" src="../yui/menu/menu-min.js"></script>
+    <script type="text/javascript" src="../yui/datasource/datasource-beta-min.js"></script>
+    <script type="text/javascript" src="../yui/dragdrop/dragdrop-min.js"></script>
+    <script type="text/javascript" src="../yui/datatable/datatable-beta-min.js"></script>
+    <script type="text/javascript" src="../js/site.js"></script>
+    <script type="text/javascript" src="../js/enterpriseTable.js"></script>
+    <script type="text/javascript" src="../js/treeTable.js"></script>
+    <script type="text/javascript">
+        function init() {
+            var addUserButton = new YAHOO.widget.Button('addUserButton');
+            var removeUserButton = new YAHOO.widget.Button('removeUserButton');
+            var editUserButton = new YAHOO.widget.Button('editUserButton');
+            removeUserButton.set('disabled', true);
+            editUserButton.set('disabled', true);
+            // TODO assign URLs or use YAHOO.util.Event.addListener('addUserButton', 'click', function() {...})
+
+            var accounts = [
+                    {guid:'2a34df91-d78e-45a8-9bb9-e30c9beda337', userId:'bart', type:'User', surname:'Simpson', givenName:'Bart'},
+                    {guid:'d978bb7a-7cfd-4d89-8420-28d43f93081c', userId:'homer', type:'User', surname:'Simpson', givenName:'Homer'},
+                    {guid:'8fa8f98c-9ba8-4d65-8a19-2b604cbbda7a', userId:'lisa', type:'Administrator', surname:'Simpson', givenName:'Lisa'},
+                    {guid:'a9ea99f3-7bbc-45c0-9668-3b0db3b57b4f', userId:'marge', type:'Administrator', surname:'Simpson', givenName:'Marge'}
+                ];
+
+            var columnDefs = [
+                {key:'userId', label:'User ID', sortable:true, resizeable:true},
+                {key:'type', label:'Account Type', sortable:true, resizeable:true},
+                {key:'surname', label:'Surname', sortable:true, resizeable:true},
+                {key:'givenName', label:'Given Name', sortable:true, resizeable:true}
+            ];
+
+            var dataSource = new YAHOO.util.DataSource(accounts);
+            dataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
+            dataSource.responseSchema = {
+                fields: ['guid','userId','type','surname','givenName']
+            };
+
+            var dataTable = new YAHOO.widget.DataTable('userAccounts',
+                columnDefs, dataSource, {draggableColumns: true, selectionMode: 'single'});
+
+            // Subscribes to events for row selection.
+            dataTable.subscribe("rowMouseoverEvent", dataTable.onEventHighlightRow);
+            dataTable.subscribe("rowMouseoutEvent", dataTable.onEventUnhighlightRow);
+            dataTable.subscribe("rowClickEvent", dataTable.onEventSelectRow);
+
+            // Subscribes to row select changes for enabling/disabling toolbar buttons.
+            function enableOrDisableToolbarButtons(event, target) {
+                var selectedRows = this.getSelectedTrEls();
+                var hasSelectedRows = (selectedRows != null) && (selectedRows.length != 0);
+                removeUserButton.set('disabled', !hasSelectedRows);
+                editUserButton.set('disabled', !hasSelectedRows);
+            }
+            dataTable.subscribe("rowSelectEvent", enableOrDisableToolbarButtons);
+            dataTable.subscribe("rowUnSelectEvent", enableOrDisableToolbarButtons);
+        }
+    </script>
+</head>
+<body class="yui-skin-sam" onload="init();">
+<table width="100%">
+    <tr>
+        <td>
+            <div class="header">
+                <table width="100%">
+                    <tr class="header">
+                        <td class="logoLeft"><img src="../images/logoLeft.png" alt="" /></td>
+                        <td class="logo"><a href="EnterpriseGateways.html"><img src="../images/l7Logo.png" alt="Layer 7 Technologies Inc." /><img src="../images/emLogo.png" alt="" /></a></td>
+                        <td class="logoRight"><img src="../images/logoRight.png" alt="" /></td>
+                        <td width="100%"><img src="../images/spacer.png" alt="" /></td>
+                        <td class="middle nowrap">Logged in as "admin"<br />since May 5, 2008 05:57:54 PM</td>
+                        <td class="middle"><form method="get" action="Login.html"><input type="submit" value="Log Out" /></form></td>
+                        <td class="middle help"><a href="Help.html" target="_blank" title="Open help page in a new window">Help</a></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="divider"><img src="../images/spacer.png" alt="" /></div>
+            <div>
+                <table>
+                    <tr>
+                        <td id="tabLTEnterprise"><img src="../images/tabLT.png" alt="" /></td>
+                        <td id="tabCTEnterprise" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRTEnterprise"><img src="../images/tabRT.png" alt="" /></td>
+                        <td id="tabLTPolicies"><img src="../images/tabLT.png" alt="" /></td>
+                        <td id="tabCTPolicies" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRTPolicies"><img src="../images/tabRT.png" alt="" /></td>
+                        <td id="tabLTReports"><img src="../images/tabLT.png" alt="" /></td>
+                        <td id="tabCTReports" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRTReports"><img src="../images/tabRT.png" alt="" /></td>
+                        <td id="tabLTBackup"><img src="../images/tabLT.png" alt="" /></td>
+                        <td id="tabCTBackup" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRTBackup"><img src="../images/tabRT.png" alt="" /></td>
+                        <td id="tabLTTools"><img src="../images/tabLT.png" alt="" /></td>
+                        <td id="tabCTTools" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRTTools"><img src="../images/tabRT.png" alt="" /></td>
+                        <td id="tabLTSettings"><img src="../images/tabLT.png" alt="" /></td>
+                        <td id="tabCTSettings" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRTSettings"><img src="../images/tabRT.png" alt="" /></td>
+                        <td><img src="../images/tabLT.png" alt="" /></td>
+                        <td class="tabCT"><img src="../images/spacer.png" alt="" /></td>
+                        <td><img src="../images/tabRT.png" alt="" /></td>
+                    </tr>
+                    <tr>
+                        <td id="tabLMEnterprise" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabCMEnterprise" class="tabCMon">Manage Enterprise</td>
+                        <td id="tabRMEnterprise" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabLMPolicies" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabCMPolicies" class="tabCM"><a href="PolicyMigration.html">Manage Policies</a></td>
+                        <td id="tabRMPolicies" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabLMReports" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabCMReports" class="tabCM"><a href="StandardReports.html">Reports</a></td>
+                        <td id="tabRMReports" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabLMBackup" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabCMBackup" class="tabCM"><a href="Backup.html">Backup &amp; Restore</a></td>
+                        <td id="tabRMBackup" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabLMTools" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabCMTools" class="tabCM"><a href="Messages.html">Tools</a></td>
+                        <td id="tabRMTools" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabLMSettings" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabCMSettings" class="tabCM"><a href="UserSettings.html">Settings</a></td>
+                        <td id="tabRMSettings" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
+                        <td class="tabLM"><img src="../images/spacer.png" alt="" /></td>
+                        <td class="tabCM" width="100%"><img src="../images/spacer.png" alt="" /></td>
+                        <td class="tabRM"><img src="../images/spacer.png" alt="" /></td>
+                    </tr>
+                    <tr>
+                        <td id="tabLBEnterprise"><img src="../images/tabLBon.png" alt="" /></td>
+                        <td id="tabCBEnterprise" class="tabCBon"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRBEnterprise"><img src="../images/tabRBon.png" alt="" /></td>
+                        <td id="tabLBPolicies"><img src="../images/tabLBoff.png" alt="" /></td>
+                        <td id="tabCBPolicies" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRBPolicies"><img src="../images/tabRBoff.png" alt="" /></td>
+                        <td id="tabLBReports"><img src="../images/tabLBoff.png" alt="" /></td>
+                        <td id="tabCBReports" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRBReports"><img src="../images/tabRBoff.png" alt="" /></td>
+                        <td id="tabLBBackup"><img src="../images/tabLBoff.png" alt="" /></td>
+                        <td id="tabCBBackup" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRBBackup"><img src="../images/tabRBoff.png" alt="" /></td>
+                        <td id="tabLBTools"><img src="../images/tabLBoff.png" alt="" /></td>
+                        <td id="tabCBTools" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRBTools"><img src="../images/tabRBoff.png" alt="" /></td>
+                        <td id="tabLBSettings"><img src="../images/tabLBoff.png" alt="" /></td>
+                        <td id="tabCBSettings" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRBSettings"><img src="../images/tabRBoff.png" alt="" /></td>
+                        <td><img src="../images/tabLBoff.png" alt="" /></td>
+                        <td class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
+                        <td><img src="../images/tabRBoff.png" alt="" /></td>
+                    </tr>
+                </table>
+            </div>
+            <script language="JavaScript" type="text/javascript">
+                initTab('Policies');
+                initTab('Reports');
+                initTab('Backup');
+                initTab('Tools');
+                initTab('Settings');
+            </script>
+            <div class="subtabBar">
+                <span class="subtabOff"><a href="EnterpriseGateways.html">Gateways</a></span>
+                |
+                <span class="subtabOn">User Accounts</span>
+            </div>
+            <div class="content">
+                <div class="panel">
+                    <div class="panelToolbar">
+                        <button id="addUserButton" type="submit" name="addUserButton" value="addUser"><img src="../images/addUser.png" alt="" /> New</button>
+                        <button id="removeUserButton" type="submit" name="removeUserButton" value="removeUser"><img src="../images/deleteUser.png" alt="" /> Delete</button>
+                        <button id="editUserButton" type="submit" name="editUserButton" value="editUser"><img src="../images/editUser.png" alt="" /> Edit</button>
+                    </div>
+                    <div id="userAccounts" class="panelContent"></div>
+                </div>
+            </div>
+            <div class="statusBar">
+                <table>
+                    <tr>
+                        <td width="100%">Time Zone: Canada/Pacific (GMT-08:00/<b>-07:00</b>)</td>
+                        <td><a class="nowrap" href="http://www.layer7tech.com" target="_blank">Layer 7 Technologies Inc.</a></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="divider"><img src="../images/spacer.png" alt="" /></div>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

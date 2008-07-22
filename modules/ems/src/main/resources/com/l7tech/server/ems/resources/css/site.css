@@ -1,0 +1,569 @@
+@charset
+'utf-8'
+;
+/* Universal Selectors */
+
+* {
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
+/* Element Selectors */
+
+body, td, p, input, option, select, textarea, pre {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    background-color: #808080;
+    font-size: 75%; /* that's 12px */
+}
+
+a:link, a:active, a:visited {
+    color: #1144BB;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+h1 {
+    font-size: 1.5em;
+    margin: 0.5em 0;
+}
+
+h2 {
+    font-size: 1.33em;
+    margin: 0.5em 0;
+}
+
+h3 {
+    font-size: 1.17em;
+    margin: 0.5em 0;
+}
+
+h4 {
+    font-size: 1em;
+}
+
+input, select {
+    border: 1px #433e29 solid;
+}
+
+button, input[type='button'], input[type='submit'] {
+    background-color: #665d3c;
+    border: 1px #ffffff solid;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    margin: 3px 8px 3px 8px;
+    padding: 1px 3px 1px 3px;
+}
+
+button:hover, input[type='button']:hover, input[type='submit']:hover {
+    background-color: #be9422;
+}
+
+button:focus, input[type='button']:focus, input[type='submit']:focus {
+    outline: 1px black solid;
+}
+
+button * {
+    vertical-align: middle;
+}
+
+button[disabled] img {
+    opacity: 0.5;
+    *filter: alpha(opacity=50);
+}
+
+input[type='text'], input[type='password'] {
+    font-size: 1em;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+input[type='checkbox'], input[type='radio'] {
+    border: none;
+    vertical-align: middle;
+}
+
+textarea {
+    border: 1px #433e29 solid;
+    font-size: 1em;
+    padding: 2px 4px 2px 4px;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+/* Class, Attribute, and Pseudo Selectors */
+
+.top {
+    vertical-align: top !important;
+}
+
+.middle {
+    vertical-align: middle !important;
+}
+
+.bottom {
+    vertical-align: bottom !important;
+}
+
+.left {
+    text-align: left !important;
+}
+
+.center {
+    text-align: center !important;
+}
+
+table.center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.right {
+    text-align: right !important;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.indent {
+    margin-left: 10px;
+}
+
+.wrap {
+    white-space: normal !important;
+}
+
+.nowrap {
+    white-space: nowrap !important;
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+.clickableImg {
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.clickableImg:hover {
+    border: 1px solid #7d98b8;
+    background-color: #e6f1ff;
+}
+
+/*
+.hasTooltip {
+    cursor: url('../images/tooltip.cur'), help;
+}
+*/
+
+.hasTooltip:hover {
+    background-color: #c1e8ff;
+}
+
+.noCursor {
+    cursor: default !important;
+}
+
+.unselected {
+    opacity: 0.2;
+    *filter: alpha(opacity=20);
+}
+
+/** Used by treeTable.js. */
+.mixedStateCheckbox {
+    opacity: 0.4;
+    *filter: alpha(opacity=40);
+}
+
+.page {
+    width: 100%;
+}
+
+div.header {
+    background-color: #d6d6d6;
+    background-image: url('../images/header.png' );
+    background-repeat: repeat-x;
+    padding: 0 10px 0 10px;
+}
+
+.titleBar {
+    background-color: #d6d6d6;
+    color: #433e29;
+    font-weight: bold;
+    padding: 4px 10px 4px 10px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.logo {
+    background-image: url('../images/logoBack.png');
+    background-repeat: repeat-x;
+    vertical-align: top;
+    white-space: nowrap;
+}
+
+.logo img {
+    vertical-align: top;
+}
+
+.logoLeft {
+    vertical-align: top;
+}
+
+.logoRight {
+    padding: 0 10px 0 0;
+    vertical-align: top;
+}
+
+.divider {
+    background-image: url('../images/divider.png');
+    background-repeat: repeat-x;
+    height: 6px;
+    width: 100%;
+}
+
+.help {
+    font-weight: bold;
+}
+
+.tabCT {
+    background-image: url('../images/tabCT.png');
+    background-repeat: repeat-x;
+}
+
+.tabCTover {
+    background-image: url('../images/tabCTover.png');
+    background-repeat: repeat-x;
+}
+
+.tabLM {
+    background-image: url('../images/tabLM.png');
+    background-repeat: repeat-y;
+}
+
+.tabLMover {
+    background-image: url('../images/tabLMover.png');
+    background-repeat: repeat-y;
+}
+
+.tabCM, .tabCMon, .tabCMover {
+    font-weight: bold;
+    padding: 3px 5px 2px 5px;
+    white-space: nowrap;
+}
+
+.tabCM {
+    background-color: #565d37;
+    color: #ffffff;
+}
+
+.tabCM a:link, .tabCM a:active, .tabCM a:visited, .tabCM a:hover,
+.tabCMover a:link, .tabCMover a:active, .tabCMover a:visited, .tabCMover a:hover {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.tabCMon {
+    background-color: #565d37;
+    color: #ffff21;
+}
+
+.tabCMover {
+    background-color: #2e321d;
+    color: #ffffff;
+}
+
+.tabRM {
+    background-image: url('../images/tabRM.png');
+    background-repeat: repeat-y;
+}
+
+.tabRMover {
+    background-image: url('../images/tabRMover.png');
+    background-repeat: repeat-y;
+}
+
+.tabCBon {
+    background-image: url('../images/tabCBon.png');
+    background-repeat: repeat-x;
+}
+
+.tabCBoff {
+    background-image: url('../images/tabCBoff.png');
+    background-repeat: repeat-x;
+}
+
+.tabCBover {
+    background-image: url('../images/tabCBover.png');
+    background-repeat: repeat-x;
+}
+
+.tabBarBottom {
+    background-color: #d6d6d6;
+    height: 5px;
+}
+
+.subtabBar {
+    background-color: #d6d6d6;
+    color: #433e29;
+    padding: 2px 10px 2px 10px;
+}
+
+.subtabOn, .subtabOff {
+    margin: 2px 10px 2px 10px;
+}
+
+.subtabOn {
+    font-size: 1.17em;
+    font-weight: bold;
+}
+
+.subtabOff a:link, .subtabOff a:active, .subtabOff a:visited  {
+    color: #433e29;
+    text-decoration: none;
+}
+
+.subtabOff a:hover {
+    color: #be9422;
+    text-decoration: none;
+}
+
+.content {
+    background-color: #f4f7ed;
+    padding: 8px 10px 8px 10px;
+}
+
+.panel {
+    border: 1px black solid;
+    margin: 8px 0 8px 0;
+}
+
+.panelTitle {
+    background-color: #e8edb4;
+    color: #433e29;
+    font-weight: bold;
+    padding: 2px 10px 2px 10px;
+}
+
+.panelToolbar {
+    border-bottom: 1px solid #b2b2b2;
+    border-top: 1px solid #f0f0f0;
+    background-color: #d6d6d6;
+    padding: 3px 6px 3px 6px;
+    vertical-align: middle;
+}
+
+.panelContent {
+    background-color: #ffffff;
+    padding: 8px;
+}
+
+table.spaced th, table.spaced td {
+    padding: 1px 5px 1px 5px;
+    text-align: left;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+div.tippy {
+    font-weight: bold;
+}
+
+img.tippy {
+    cursor: pointer;
+    padding-right: 6px;
+}
+
+.dataIFrame {
+    background-color: #eeeeee;
+}
+
+.dataTree td {
+    background-color: #eeeeee;
+    padding: 2px 7px 2px 7px;
+    white-space: nowrap;
+}
+
+.dataTable {
+    border-bottom: 1px #cccccc solid;
+}
+
+.dataTable thead tr {
+    background-color: #dbd3b0;
+}
+
+.dataTable tbody tr {
+    background-color: #eeeeee;
+}
+
+.dataTable tbody tr:hover {
+    background-color: #f5f9d4;
+}
+
+.dataTable tbody tr.selected {
+    background-color: #ffddee;
+}
+
+.dataTable th {
+    border: 1px #bfb173 solid;
+}
+
+.dataTable td {
+    border: 1px #cccccc solid;
+}
+
+.dataTable th, .dataTable td {
+    padding: 2px 7px 2px 7px;
+    white-space: nowrap;
+}
+
+.dataTable td.dashboard {
+    text-align: center;
+}
+
+.dataTable td.details {
+    white-space: normal;
+}
+
+.dataTable th.parentId, .dataTable td.parentId, .dataTree th.parentId, .dataTree td.parentId {
+    display: none;
+}
+
+.dataTable td img {
+    padding-left: 2px;
+    padding-right: 2px;
+    vertical-align: middle;
+}
+
+.dashboardsPanelContent {
+    background-color: #ffffff;
+    padding: 4px;
+}
+
+.dashboardPanel {
+    border: 1px black solid;
+    margin: 4px;
+}
+
+.dashboardPanelContent {
+    background-color: #f8f8f8;
+}
+
+.sideBySide {
+    padding: 4px 0 4px 0;
+}
+
+.sideBySide iframe {
+    background-color: #eeeeee;
+    border: 1px #433e29 solid;
+}
+
+.srcDestTitleLeft, .srcDestTitleRight {
+    background-color: #000000;
+    vertical-align: top;
+}
+
+.srcDestTitleLeft img {
+    background-image: url('../images/topLeftCorner.png');
+    background-position: top;
+}
+
+.srcDestTitleRight img {
+    background-image: url('../images/topRightCorner.png');
+    background-position: top;
+}
+
+.srcDestTitleCenter {
+    background-color: #000000;
+    color: #ffffff;
+    font-weight: bold;
+    padding: 4px 10px 4px 10px;
+    text-align: center;
+}
+
+.srcDest, .srcDestTop, .srcDestBottom {
+    background-color: #d1d8c5;
+}
+
+.srcDestTop {
+    padding: 4px 10px 2px 8px;
+}
+
+.srcDest {
+    padding: 2px 10px 2px 8px;
+}
+
+.srcDestBottom {
+    padding: 2px 10px 8px 8px;
+}
+
+.srcDestCenter {
+    background-color: #f4f7ed;
+    font-weight: bold;
+    padding-left: 6px;
+    padding-right: 6px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.srcDestCenter img {
+    cursor: pointer;
+    margin-top: 4px;
+}
+
+.submissionMessageEntry div {
+    padding: 2px 0 2px 0;
+}
+
+.submissionMessageEntry input[type='text'] {
+    border: 1px #433e29 solid;
+    width: 98%;
+}
+
+.submissionMessageEntry textarea {
+    height: 280px;
+    width: 96%;
+}
+
+td.submissionMessageDisplay {
+    vertical-align: top;
+}
+
+td.submissionMessageDisplay textarea {
+    height: 150px;
+    width: 96%;
+}
+
+.userSelector {
+    background-color: #eeeeee;
+    padding: 2px 8px 2px 8px;
+}
+
+.statusBar {
+    background-color: #d6d6d6;
+    padding: 4px 10px 4px 10px;
+}
+
+/* ID Selectors */
+
+#licenseAgreement {
+    border: 1px #000000 solid;
+    width: 100%;
+    height: 400px;
+}
+
+#dashboardsTable td {
+    vertical-align: top;
+}

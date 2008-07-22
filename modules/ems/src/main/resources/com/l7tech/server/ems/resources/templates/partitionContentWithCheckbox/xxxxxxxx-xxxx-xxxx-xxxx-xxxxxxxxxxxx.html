@@ -1,0 +1,184 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <!-- PROTOTYPE ONLY BEGIN -->
+    <meta http-equiv="Expires" content="-1" />
+    <meta http-equiv="Cache-Control" content="no-cache" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <!-- PROTOTYPE ONLY END -->
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <title>Partition Items Selector [SecureSpan Enterprise Manager]</title>
+    <link rel="stylesheet" href="../../css/site.css" media="all" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../yui/menu/assets/skins/sam/menu.css">
+    <link rel="stylesheet" type="text/css" href="../../css/yui-skin.css">
+    <script type="text/javascript" src="../../js/site.js"></script>
+    <script type="text/javascript" src="../../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
+    <script type="text/javascript" src="../../yui/container/container_core-min.js"></script>
+    <script type="text/javascript" src="../../yui/menu/menu-min.js"></script>
+    <script type="text/javascript" src="../../js/enterpriseTable.js"></script>
+    <script type="text/javascript" src="../../js/treeTable.js"></script>
+    <script type="text/javascript">
+        /**
+         * Name of the IFRAME in the parent document that is used for showing item details.
+         * When an item in here is highlighted, that IFRAME will be populated accordingly.
+         */
+        var detailsIFrameName = null;
+
+        var highlightedRow = null;
+        var highlightedRowPreviousBackgroundColor = new Array();
+
+        /**
+         * Parent document should call this onload.
+         *
+         * @param name
+         */
+        function setDetailsIFrameName(name) {
+            detailsIFrameName = name;
+            showDetails(null, null);
+        }
+
+        /**
+         * Show details of the item clicked.
+         *
+         * @param img   the zoom img object being clicked on;
+         *              null will just cause currently highlighted row and detailsIFrame to be cleared
+         * @param type  "publishedService" or "policyFragment"; can be null if img is null
+         */
+        function showDetails(img, type) {
+            var cells, i;
+
+            if (highlightedRow != null) {
+                // Unhighlights old row and restores preivous background colors.
+                cells = highlightedRow.cells;
+                for (i in cells) {
+                    if (cells[i].style) {
+                        cells[i].style.backgroundColor = highlightedRowPreviousBackgroundColor[i];
+                    }
+                }
+            }
+
+            var itemId = null;
+            if (img != null) {
+                var cell = img.parentNode;
+                var row = cell.parentNode;
+                itemId = row.id;
+
+                // Highlights new row and saves original background colors.
+                cells = row.cells;
+                for (i in cells) {
+                    if (cells[i].style) {
+                        highlightedRowPreviousBackgroundColor[i] = cells[i].style.backgroundColor;
+                        cells[i].style.backgroundColor = '#dbdbdb';
+                    }
+                }
+                highlightedRow = row;
+            }
+
+            if (detailsIFrameName != null) {
+                var url = '';
+                if (itemId != null) {
+                    url =  getParent(parent.document.URL) + type + '/' + partitionId + '/' + itemId;
+                    // PROTOTYPE ONLY BEGIN
+                    url += '.xml';
+                    // PROTOTYPE ONLY END
+                }
+                parent.document.getElementById(detailsIFrameName).src = url;
+            }
+        }
+
+        function init() {
+            l7_treeTable_init();
+            l7_enterpriseTable_init('../../images');
+        }
+    </script>
+</head>
+<body class="dataIFrame yui-skin-sam" onload="init();">
+<table id="partitionItemsSelector" class="dataTable l7_treeTable l7_enterpriseTable" width="100%">
+    <thead>
+        <tr>
+            <th class="name">Name<br /><img src="../../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
+            <th class="edit"><img src="../../images/spacer.png" alt="" height="0" width="16" /><!-- minimum width --></th>
+            <th title="Version">Ver.</th>
+            <th width="100%">Type</th>
+            <th class="parentId"><!-- hidden column --></th>
+        </tr>
+    </thead>
+    <tbody>
+        <script type="text/javascript">
+            var partitionId = 'c32bb1a9-1538-4792-baa1-566bfd418020';
+        </script>
+        <tr id="0" class="enterpriseFolder l7_enterpriseTable_cannotDelete">
+            <td class="name"><img class="l7_treeTable_toggler" src="../../images/minus.png" alt="" /><input id="checkbox:0" class="l7_treeTable_checkbox" type="checkbox" /><label for="checkbox:0"><img src="../../images/group.png" alt="" />/</label></td>
+            <td class="edit"><!-- nothing for group --></td>
+            <td class="right"></td>
+            <td class="type">folder</td>
+            <td class="parentId">-1</td>
+        </tr>
+        <tr id="d4f82f00-072e-4dc4-aac4-0a244b6d6cd5" class="enterpriseFolder">
+            <td class="name"><img src="../../images/spacer16.png" alt="" /><img class="l7_treeTable_toggler" src="../../images/minus.png" alt="" /><input id="checkbox:d4f82f00-072e-4dc4-aac4-0a244b6d6cd5" class="l7_treeTable_checkbox" type="checkbox" /><label for="checkbox:d4f82f00-072e-4dc4-aac4-0a244b6d6cd5"><img src="../../images/group.png" alt="" />Standby for Uranium</label></td>
+            <td class="edit"><!-- nothing for group --></td>
+            <td class="right"></td>
+            <td class="type">folder</td>
+            <td class="parentId">0</td>
+        </tr>
+        <tr id="1635d2f8-5571-4d84-8a17-f2087cad25a8" class="enterprisePublishedService">
+            <td class="name"><img src="../../images/spacer16.png" alt="" /><img src="../../images/spacer16.png" alt="" /><img src="../../images/dot.png" alt="" /><input id="checkbox:1635d2f8-5571-4d84-8a17-f2087cad25a8" class="l7_treeTable_checkbox" type="checkbox" /><label for="checkbox:1635d2f8-5571-4d84-8a17-f2087cad25a8"><img src="../../images/publishedService.png" alt="" />bidding</label></td>
+            <td class="edit"><img class="clickable" src="../../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'publishedService');" /></td>
+            <td class="right">34</td>
+            <td class="type">published service</td>
+            <td class="parentId">d4f82f00-072e-4dc4-aac4-0a244b6d6cd5</td>
+        </tr>
+        <tr id="8181deba-f1cc-41a4-9622-d0ba052c4433" class="enterprisePublishedService">
+            <td class="name"><img src="../../images/spacer16.png" alt="" /><img src="../../images/spacer16.png" alt="" /><img src="../../images/dot.png" alt="" /><input id="checkbox:8181deba-f1cc-41a4-9622-d0ba052c4433" class="l7_treeTable_checkbox" type="checkbox" /><label for="checkbox:8181deba-f1cc-41a4-9622-d0ba052c4433"><img src="../../images/publishedService.png" alt="" />stockpile</label></td>
+            <td class="edit"><img class="clickable" src="../../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'publishedService');" /></td>
+            <td class="right">21</td>
+            <td class="type">published service</td>
+            <td class="parentId">d4f82f00-072e-4dc4-aac4-0a244b6d6cd5</td>
+        </tr>
+        <tr id="b4fce666-d83f-4533-af06-6ea086271fcf" class="enterprisePolicyFragment">
+            <td class="name"><img src="../../images/spacer16.png" alt="" /><img src="../../images/spacer16.png" alt="" /><img src="../../images/dot.png" alt="" /><input id="checkbox:b4fce666-d83f-4533-af06-6ea086271fcf" class="l7_treeTable_checkbox" type="checkbox" /><label for="checkbox:b4fce666-d83f-4533-af06-6ea086271fcf"><img src="../../images/policyFragment.png" alt="" />Policy Fragment 1</label></td>
+            <td class="edit"><img class="clickable" src="../../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'policyFragment');" /></td>
+            <td class="right">5</td>
+            <td class="type">policy fragment</td>
+            <td class="parentId">d4f82f00-072e-4dc4-aac4-0a244b6d6cd5</td>
+        </tr>
+        <tr id="08cf51f2-36d0-43bf-8e0c-db9b0ac0d54f" class="enterprisePolicyFragment">
+            <td class="name"><img src="../../images/spacer16.png" alt="" /><img src="../../images/spacer16.png" alt="" /><img src="../../images/dot.png" alt="" /><input id="checkbox:08cf51f2-36d0-43bf-8e0c-db9b0ac0d54f" class="l7_treeTable_checkbox" type="checkbox" /><label for="checkbox:08cf51f2-36d0-43bf-8e0c-db9b0ac0d54f"><img src="../../images/policyFragment.png" alt="" />Policy Fragment 2</label></td>
+            <td class="edit"><img class="clickable" src="../../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'policyFragment');" /></td>
+            <td class="right">17</td>
+            <td class="type">policy fragment</td>
+            <td class="parentId">d4f82f00-072e-4dc4-aac4-0a244b6d6cd5</td>
+        </tr>
+        <tr id="ecbc66ba-98d8-4ea4-ad0d-56d241aa2e85" class="enterprisePublishedService">
+            <td class="name"><img src="../../images/spacer16.png" alt="" /><img src="../../images/dot.png" alt="" /><input id="checkbox:ecbc66ba-98d8-4ea4-ad0d-56d241aa2e85" class="l7_treeTable_checkbox" type="checkbox" /><label for="checkbox:ecbc66ba-98d8-4ea4-ad0d-56d241aa2e85"><img src="../../images/publishedService.png" alt="" />accounting [/acc]</label></td>
+            <td class="edit"><img class="clickable" src="../../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'publishedService');" /></td>
+            <td class="right">11</td>
+            <td class="type">published service</td>
+            <td class="parentId">0</td>
+        </tr>
+        <tr id="d169a3bf-996b-4206-9fcb-026fb2272887" class="enterprisePublishedService">
+            <td class="name"><img src="../../images/spacer16.png" alt="" /><img src="../../images/dot.png" alt="" /><input id="checkbox:d169a3bf-996b-4206-9fcb-026fb2272887" class="l7_treeTable_checkbox" type="checkbox" /><label for="checkbox:d169a3bf-996b-4206-9fcb-026fb2272887"><img src="../../images/publishedService.png" alt="" />sales</label></td>
+            <td class="edit"><img class="clickable" src="../../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'publishedService');" /></td>
+            <td class="right">9</td>
+            <td class="type">published service</td>
+            <td class="parentId">0</td>
+        </tr>
+        <tr id="68e36d9f-d80c-429a-aca4-f8d34fe0d2f0" class="enterprisePolicyFragment">
+            <td class="name"><img src="../../images/spacer16.png" alt="" /><img src="../../images/dot.png" alt="" /><input id="checkbox:68e36d9f-d80c-429a-aca4-f8d34fe0d2f0" class="l7_treeTable_checkbox" type="checkbox" /><label for="checkbox:68e36d9f-d80c-429a-aca4-f8d34fe0d2f0"><img src="../../images/policyFragment.png" alt="" />Policy Fragment 1</label></td>
+            <td class="edit"><img class="clickable" src="../../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'policyFragment');" /></td>
+            <td class="right">10</td>
+            <td class="type">policy fragment</td>
+            <td class="parentId">0</td>
+        </tr>
+        <tr id="aad2d451-aaa5-43f0-8c6a-4171c10d03eb" class="enterprisePolicyFragment">
+            <td class="name"><img src="../../images/spacer16.png" alt="" /><img src="../../images/dot.png" alt="" /><input id="checkbox:aad2d451-aaa5-43f0-8c6a-4171c10d03eb" class="l7_treeTable_checkbox" type="checkbox" /><label for="checkbox:aad2d451-aaa5-43f0-8c6a-4171c10d03eb"><img src="../../images/policyFragment.png" alt="" />Policy Fragment 2</label></td>
+            <td class="edit"><img class="clickable" src="../../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'policyFragment');" /></td>
+            <td class="right">5</td>
+            <td class="type">policy fragment</td>
+            <td class="parentId">0</td>
+        </tr>
+    </tbody>
+</table>
+</body>
+</html>
