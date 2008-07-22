@@ -39,6 +39,8 @@
             <exclude org="commons-digester" module="commons-digester" name="*" type="*" ext="*" conf=""
                      matcher="exact"/>
             <exclude org="commons-jxpath" module="commons-jxpath" name="*" type="*" ext="*" conf="" matcher="exact"/>
+            <exclude org="commons-logging" module="commons-logging-api" name="*" type="*" ext="*" conf=""
+                     matcher="exact"/>
             <exclude org="commons-beanutils" module="commons-beanutils-core" name="*" type="*" ext="*" conf=""
                      matcher="exact"/>
         </dependency>
@@ -80,6 +82,8 @@
             <exclude org="org.codehaus.xfire" module="xfire-annotations" name="*" type="*" ext="*" conf=""
                      matcher="exact"/>
             <exclude org="org.springframework" module="spring" name="*" type="*" ext="*" conf="" matcher="exact"/>
+            <exclude org="easymock" module="easymock" name="*" type="*" ext="*" conf="" matcher="exact"/>
+            <exclude org="junit" module="junit" name="*" type="*" ext="*" conf="" matcher="exact"/>
         </dependency>
         <dependency org="trove" name="trove" rev="1.0.2" force="true" conf="core"/>
         <dependency org="org.apache.ftpserver" name="ftpserver-parent" rev="1.0-543677-20070601" force="true"

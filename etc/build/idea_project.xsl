@@ -38,6 +38,9 @@
                         <xsl:when test="starts-with(@file, 'modules/gateway/assertions/')">
                             <module group="Modular Assertions" filepath="$PROJECT_DIR$/{@file}"/>
                         </xsl:when>
+                        <xsl:when test="starts-with(@file, 'modules\gateway\assertions\')">
+                            <module group="Modular Assertions" filepath="$PROJECT_DIR$/{@file}"/>
+                        </xsl:when>
                         <xsl:otherwise>
                             <module group="Main" filepath="$PROJECT_DIR$/{@file}"/>
                         </xsl:otherwise>
