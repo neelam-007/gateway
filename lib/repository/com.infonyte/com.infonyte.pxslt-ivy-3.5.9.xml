@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="com.infonyte"
+		module="com.infonyte.pxslt"
+		revision="3.5.9"
+		status="release"
+		publication="20080721172250"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="com.infonyte.pxslt" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>
