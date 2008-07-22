@@ -22,7 +22,7 @@
         <property name="dataSource" ref="dataSource"/>
         <property name="annotatedClasses">
             <list>
-                <value>com.l7tech.cluster.ClusterProperty</value>
+                <value>com.l7tech.gateway.common.cluster.ClusterProperty</value>
                 <value>com.l7tech.identity.internal.InternalUser</value>
             </list>
         </property>
@@ -40,7 +40,7 @@
         <property name="transactionManager" ref="transactionManager"/>
     </bean>
 
-    <bean id="clusterPropertyManager" class="com.l7tech.cluster.ClusterPropertyManagerImpl" parent="hibernateBean"/>
+    <bean id="clusterPropertyManager" class="com.l7tech.server.cluster.ClusterPropertyManagerImpl" parent="hibernateBean"/>
 
     <bean id="licenseManager" class="com.l7tech.server.GatewayLicenseManager">
         <constructor-arg ref="clusterPropertyManager"/>
