@@ -33,9 +33,6 @@
     <property name="module.compile.source" value="1.5"/>
     <property name="module.compile.target" value="1.5"/>
 
-    <property name="ivy.jar.dir" value="${user.home}/.ivy2/jars"/>
-    <property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar"/>
-
     <!--
       Classpath for Idea form compiler
     -->
@@ -90,6 +87,10 @@
                 >
             <include name="**/*.form"/>
         </javac2t>
+    </presetdef>
+
+    <presetdef name="sign-jar">
+        <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer2" storepass="password" jar="${jar.file}"/>
     </presetdef>
 
     <!--
@@ -286,7 +287,10 @@
             </manifest>
         </jar>
     </target>
-    <target name="package" depends="version, compile, package.work" description="Package this project">
+    <target name="package.sign" if="module.sign">
+        <sign-jar/>
+    </target>
+    <target name="package" depends="version, compile, package.work, package.sign" description="Package this project">
     </target>
 
     <!--

@@ -755,6 +755,7 @@
 
             <propertyset dynamic="false">
                 <propertyref name="build.junit.xmlformat"/>
+                <propertyref name="module.sign"/>
                 <propertyref name="src.root"/>
                 <propertyref prefix="build.version"/>
                 <propertyref name="build.timestamp"/>
@@ -1613,16 +1614,25 @@
         <echo level="info">Copying web files</echo>
         <copy file="${src.root}/web/index.html" todir="${deploy.dir}/etc/inf/ssg" preservelastmodified="true"/>
         <copy file="${build.dir}/Manager.jar" todir="${deploy.dir}/etc/inf/ssg/webadmin/applet/" preservelastmodified="true"/>
+        <delete>
+            <fileset dir="${deploy.dir}/etc/inf/ssg/webadmin/applet/lib" includes="layer7-*"/>
+        </delete>
         <copy todir="${deploy.dir}/etc/inf/ssg/webadmin/applet/lib" preservelastmodified="true">
            <fileset dir="${build.dir}/managerlibs"/>
         </copy>
 
         <echo level="info">Copying modules</echo>
+        <delete>
+            <fileset dir="${deploy.dir}/modules/assertions"/>
+        </delete>
         <copy todir="${deploy.dir}/modules/assertions" preservelastmodified="true">
             <fileset dir="${build.dir}/modules" includes="*.aar" excludes="*-client*.aar"/>
         </copy>
 
         <echo level="info">Copying libraries</echo>
+        <delete>
+            <fileset dir="${deploy.dir}/lib" includes="layer7-*"/>
+        </delete>
         <copy todir="${deploy.dir}/lib" preservelastmodified="true">
            <fileset dir="${build.dir}/gatewaylibs"/>
         </copy>
@@ -1684,7 +1694,7 @@
     </macrodef>
 
     <target name="pack.manager.compress" depends="package.manager" if="pack200">
-        <pack-mac jarfile="${build.dir}/Manager.jar"/>
+        <!--<pack-mac jarfile="${build.dir}/Manager.jar"/>-->
 
         <!--
           TODO [steve] add new pack200 jars (listed below)
@@ -1726,15 +1736,15 @@
         <pack-mac jarfile="${build.dir}/managerlibs/jsr173_api-1.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/jsr181-1.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/kunststoff-2.0.2.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/layer7-api-${build.version}.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/layer7-common-${build.version}.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/layer7-gateway-common-${build.version}.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/layer7-gui-${build.version}.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/layer7-kerberos-${build.version}.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/layer7-policy-${build.version}.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/layer7-uddi-${build.version}.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/layer7-utility-${build.version}.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/layer7-wsdl-${build.version}.jar"/>
+        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-api-${build.version}.jar"/>-->
+        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-common-${build.version}.jar"/>-->
+        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-gateway-common-${build.version}.jar"/>-->
+        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-gui-${build.version}.jar"/>-->
+        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-kerberos-${build.version}.jar"/>-->
+        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-policy-${build.version}.jar"/>-->
+        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-uddi-${build.version}.jar"/>-->
+        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-utility-${build.version}.jar"/>-->
+        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-wsdl-${build.version}.jar"/>-->
         <pack-mac jarfile="${build.dir}/managerlibs/log4j-1.2.14.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/looks-1.1.3.jar"/>
         <pack-mac jarfile="${build.dir}/managerlibs/nachocalendar-0.23.jar"/>
@@ -1771,7 +1781,7 @@
     -->
     <target name="package.gateway.checkrequired">
         <uptodate property="package.gateway.notrequired">
-            <srcfiles dir="." includes="modules/*/src/main/java/**/*, etc/**/*, modules/gateway/*/src/main/java/**/*, modules/gateway/assertions/*/src/main/java/**/*, **/pom.xml"/>
+            <srcfiles dir="." includes="modules/*/src/main/java/**/*, etc/**/*, modules/gateway/*/src/main/java/**/*, modules/gateway/assertions/*/src/main/java/**/*, modules/**/ivy.xml, modules/**/build.xml"/>
             <mapper type="merge" to="${build.dir}/Gateway.jar"/>
         </uptodate>
         <condition property="compile.forms.notrequired">
@@ -1791,7 +1801,7 @@
     <!--
       Package the SSG if it looks like something changed
     -->
-    <target name="package.gateway.ifrequired" depends="package.gateway.checkrequired, package.gateway, package.readversion, pack.manager">
+    <target name="package.gateway.ifrequired" depends="package.gateway.checkrequired, package.gateway, package.readversion, pack.manager, package.modules">
     </target>
 
     <!--
@@ -1800,6 +1810,9 @@
     <target name="package.gateway" depends="package.jars" unless="package.gateway.notrequired">
         <!-- packaging gateway libs -->
         <mkdir dir="${build.dir}/gatewaylibs"/>
+        <delete>
+            <fileset dir="${build.dir}/gatewaylibs" includes="layer7-*"/>
+        </delete>
         <copy todir="${build.dir}/gatewaylibs">
             <fileset dir="modules/gateway/server/build/dependency">
                 <include name="*.jar"/>
@@ -1849,6 +1862,9 @@
     <target name="package.client" unless="ssg.only" depends="package.client.jar, obfuscate.client"/>
     <target name="package.client.jar" unless="ssg.only" depends="package.jars">
         <mkdir dir="${build.dir}/clientlibs"/>
+        <delete>
+            <fileset dir="${build.dir}/clientlibs" includes="layer7-*"/>            
+        </delete>
         <copy todir="${build.dir}/clientlibs">
             <fileset dir="modules/xmlvpnclient/build/dependency">
                 <include name="*.jar"/>
@@ -1862,6 +1878,9 @@
     -->
     <target name="package.manager.jar" depends="package.jars" unless="manager.notrequired">
         <mkdir dir="${build.dir}/managerlibs"/>
+        <delete>
+            <fileset dir="${build.dir}/managerlibs" includes="layer7-*"/>            
+        </delete>
         <copy todir="${build.dir}/managerlibs">
             <fileset dir="modules/gateway/console/build/dependency">
                 <include name="*.jar"/>
@@ -1883,11 +1902,6 @@
     </target>
 
     <target name="package.manager" depends="package.manager.jar, obfuscate.manager, package.manager.jar.pack200" unless="manager.notrequired">
-
-        <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer2" storepass="password">
-            <fileset dir="${build.dir}" includes="Manager.jar"/>
-        </signjar>
-
     </target>
 
     <!--
@@ -2656,10 +2670,6 @@
         -->
         <copy file="modules/gateway/api/build/layer7-api.jar" tofile="${build.dir}/layer7-api.jar"/>
 
-        <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer2" storepass="password">
-            <fileset dir="${build.dir}" includes="layer7-api.jar"/>
-        </signjar>
-
         <mkdir dir="${build.dir}/docs"/>
 
         <!--
@@ -2961,6 +2971,7 @@
     -->
     <target name="init-dist">
         <property name="no.dev.build" value="true"/>
+        <property name="module.sign" value="true"/>
     </target>
 
     <!--
