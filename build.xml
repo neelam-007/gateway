@@ -2971,7 +2971,6 @@
     -->
     <target name="init-dist">
         <property name="no.dev.build" value="true"/>
-        <property name="module.sign" value="true"/>
     </target>
 
     <!--
