@@ -847,6 +847,8 @@
             <param name="idea.teamcity.password" expression="${idea.teamcity.password}" if="idea.teamcity.password"/>
             <param name="idea.teamcity.remember" expression="${idea.teamcity.remember}" if="idea.teamcity.remember"/>
             <param name="idea.gateway.vmOptions" expression="-Dcom.l7tech.server.home=&quot;${deploy.dir}&quot; -Dcom.l7tech.util.buildVersion=${build.version}"/>
+            <param name="idea.client.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.version}"/>
+            <param name="idea.manager.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.version}"/>
         </xslt>
         <move file="UneasyRooster.iws.tmp" tofile="UneasyRooster.iws" overwrite="true"/>
         <echo level="info">Generation complete.</echo>
@@ -2971,6 +2973,7 @@
     -->
     <target name="init-dist">
         <property name="no.dev.build" value="true"/>
+        <property name="module.sign" value="true"/>
     </target>
 
     <!--

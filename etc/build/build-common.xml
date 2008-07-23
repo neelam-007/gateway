@@ -93,6 +93,33 @@
         <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer2" storepass="password" jar="${jar.file}"/>
     </presetdef>
 
+    <macrodef name="jar-include">
+        <attribute name="name"/>
+        <attribute name="conf" default="master"/>
+        <attribute name="organisation" default="com.l7tech"/>
+        <sequential>
+            <ivy:cachepath
+                    pathid="jar.include.@{name}.classpath"
+                    inline="true"
+                    organisation="@{organisation}"
+                    module="@{name}"
+                    conf="@{conf}"
+                    transitive="false"
+                    log="quiet"/>
+
+            <pathconvert property="jar.include.@{name}.text" targetos="unix" pathsep=":" refid="jar.include.@{name}.classpath"/>
+            <echo level="info">Including JAR: ${jar.include.@{name}.text}</echo>
+
+            <unjar src="${jar.include.@{name}.text}" dest="${classes.main.dir}">
+                <patternset>
+                    <exclude name="META-INF/**/*"/>
+                    <exclude name="META-INF"/>
+                </patternset>
+            </unjar>
+        </sequential>
+    </macrodef>
+
+
     <!--
       Show build info for the module
     -->
@@ -265,12 +292,14 @@
             <attribute name="Class-Path" value="${module.classpath.text}"/>
         </manifest>
     </target>
-    <!-- Overridden by modules with custom packaging requirements -->
-    <target name="package.custom">
+    <target name="package.init">
         <available property="module.package.jar.required" file="${classes.main.dir}"/>
     </target>
+    <!-- Overridden by modules with custom packaging requirements -->
+    <target name="package.custom">
+    </target>
     <target name="package.work" if="module.package.jar.required"
-            depends="compile, package.dependencies, package.classpath, package.custom">
+            depends="compile, package.dependencies, package.init, package.classpath, package.custom">
         <property name="ivy.extra.title" value="ivy.module"/>
         <mkdir dir="${build.etc.dir}"/>
         <touch file="${build.etc.dir}/MANIFEST.MF"/>

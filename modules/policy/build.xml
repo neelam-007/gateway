@@ -1,3 +1,8 @@
 <project name="layer7-policy" default="compile">
     <import file="../../etc/build/build-common.xml"/>
+
+    <!-- Custom packaging step to include an artifact into this module -->
+    <target name="package.custom">
+        <jar-include name="layer7-api"/>
+    </target>
 </project>

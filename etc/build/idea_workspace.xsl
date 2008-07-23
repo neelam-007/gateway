@@ -8,7 +8,9 @@
     <xsl:param name="idea.teamcity.user"></xsl:param>
     <xsl:param name="idea.teamcity.password"></xsl:param>
     <xsl:param name="idea.teamcity.remember">true</xsl:param>
-    <xsl:param name="idea.gateway.vmOptions">-Dcom.l7tech.server.home=/ssg -Dcom.l7tech.util.buildVersion=5</xsl:param>
+    <xsl:param name="idea.client.vmOptions">-Dcom.l7tech.util.buildVersion=5</xsl:param>
+    <xsl:param name="idea.gateway.vmOptions">-Dcom.l7tech.util.buildVersion=5</xsl:param>
+    <xsl:param name="idea.manager.vmOptions">-Dcom.l7tech.server.home=/ssg -Dcom.l7tech.util.buildVersion=5</xsl:param>
 
     <!-- Global options -->
     <xsl:output method="xml" encoding="utf-8" indent="yes"/>
@@ -71,7 +73,7 @@
                 <configuration default="false" name="Manager" type="Application" factoryName="Application"
                                enabled="false" merge="false">
                     <option name="MAIN_CLASS_NAME" value="com.l7tech.console.Main"/>
-                    <option name="VM_PARAMETERS" value=""/>
+                    <option name="VM_PARAMETERS" value="{$idea.manager.vmOptions}"/>
                     <option name="PROGRAM_PARAMETERS" value=""/>
                     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$"/>
                     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false"/>
@@ -90,7 +92,7 @@
                 <configuration default="false" name="XML VPN Client" type="Application" factoryName="Application"
                                enabled="false" merge="false">
                     <option name="MAIN_CLASS_NAME" value="com.l7tech.client.gui.Main"/>
-                    <option name="VM_PARAMETERS" value=""/>
+                    <option name="VM_PARAMETERS" value="{$idea.client.vmOptions}"/>
                     <option name="PROGRAM_PARAMETERS" value=""/>
                     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$"/>
                     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false"/>
@@ -109,7 +111,7 @@
                 <configuration default="false" name="XML VPN Client (Config)" type="Application"
                                factoryName="Application" enabled="false" merge="false">
                     <option name="MAIN_CLASS_NAME" value="com.l7tech.proxy.cli.Main"/>
-                    <option name="VM_PARAMETERS" value=""/>
+                    <option name="VM_PARAMETERS" value="{$idea.client.vmOptions}"/>
                     <option name="PROGRAM_PARAMETERS" value=""/>
                     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$"/>
                     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false"/>
