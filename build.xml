@@ -769,6 +769,11 @@
         </subant>
     </presetdef>
 
+    <target name="retrieve" depends="prepare.base, build-module-list">
+        <!--<modules target="publish-all-quick"/>-->
+        <modules target="retrieve"/>
+    </target>
+
     <target name="publish-main-modules" depends="prepare.base, build-module-list">
         <modules target="publish"/>
     </target>

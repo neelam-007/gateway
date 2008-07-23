@@ -110,6 +110,7 @@
             <pathconvert property="jar.include.@{name}.text" targetos="unix" pathsep=":" refid="jar.include.@{name}.classpath"/>
             <echo level="info">Including JAR: ${jar.include.@{name}.text}</echo>
 
+            <mkdir dir="${classes.main.dir}"/>
             <unjar src="${jar.include.@{name}.text}" dest="${classes.main.dir}">
                 <patternset>
                     <exclude name="META-INF/**/*"/>
@@ -129,6 +130,16 @@
             Processing module ${ant.project.name}
             ===============================================================
         </echo>
+    </target>
+
+    <!--
+      Repository retrieval
+    -->
+    <target name="retrieve" depends="init">
+        <ivy-resolve conf="*"/>
+        <ivy:retrieve
+                pattern="${build.dir}/repository/[organisation]/[artifact]-[revision].[ext]"
+                ivypattern="${build.dir}/repository/[organisation]/[module]-ivy-[revision].xml"/>        
     </target>
 
     <!--
