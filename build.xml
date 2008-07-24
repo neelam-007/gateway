@@ -35,70 +35,18 @@
 
     <!-- project classpath -->
     <path id="project.classpath">
-        <fileset dir="lib">
+        <fileset dir="lib/repository">
             <!--
               include bc provider before tarari_jce_provider since that
               contains old copies of the bc classes.
             -->
-            <include name="crypto/bc/**/*.jar"/>
+            <include name="**/bcprov-*.jar"/>
         </fileset>
-        <fileset dir="lib">
-            <include name="**/*.jar"/>
-            <include name="**/*.zip"/>
-
-            <!--
-               Issue with multiple parsers.
-               JDK 1.4 ships it's own parses and contributes to the
-               overall parser mess. java.beans.XmlEncoder and other
-               classes  do not like xerces so excluded it from project
-               classpath.
-               fla note: xercesImpl.jar is required by xss4j for xml-enc features.
-            <exclude name="*xerces*"/>
-            -->
-            <!--
-              Exclude since this is not necessary to compile and it includes old
-              versions of some of the xml api classes
-            -->
-            <exclude name="xml4j.jar"/>
-
-            <!-- Exclude build related classes -->
-            <exclude name="**/ant.jar"/>
-            <exclude name="**/ant-*.jar"/>
-        </fileset>
+        <fileset dir="lib/repository"/>
     </path>
 
     <path id="project.classpath.fortest">
-        <fileset dir="lib">
-            <!--
-              include bc provider before tarari_jce_provider since that
-              contains old copies of the bc classes.
-            -->
-            <include name="crypto/bc/**/*.jar"/>
-        </fileset>
-
-        <fileset dir="lib">
-            <include name="**/*.jar"/>
-            <!--
-               Issue with multiple parsers.
-               JDK 1.4 ships it's own parses and contributes to the
-               overall parser mess. java.beans.XmlEncoder and other
-               classes  do not like xerces so excluded it from project
-               classpath.
-               fla note: xercesImpl.jar is required by xss4j for xml-enc features.
-            <exclude name="*xerces*"/>
-            -->
-            <!--
-              Exclude since this is not necessary to compile and it includes old
-              versions of some of the xml api classes
-            -->
-            <exclude name="xml4j.jar"/>
-
-            <!-- Exclude build related classes -->
-            <exclude name="**/ant.jar"/>
-            <exclude name="**/ant-*.jar"/>
-
-            <exclude name="**/jaxrpc.jar"/>
-        </fileset>
+        <path refid="project.classpath"/>
     </path>
 
     <!--
@@ -209,27 +157,6 @@
     </taskdef>
 
     <!--
-      Patternset used for Layer 7 API compilation/javadoc
-    -->
-    <!--<patternset id="layer7api.sources">-->
-        <!--<include name="com/l7tech/policy/assertion/UsesVariables.java"/>-->
-        <!--<include name="com/l7tech/policy/assertion/SetsVariables.java"/>-->
-        <!--<include name="com/l7tech/policy/assertion/ext/AssertionEditor.java"/>-->
-        <!--<include name="com/l7tech/policy/assertion/ext/AssertionEditorSupport.java"/>-->
-        <!--<include name="com/l7tech/policy/assertion/ext/Category.java"/>-->
-        <!--<include name="com/l7tech/policy/assertion/ext/CustomAssertion.java"/>-->
-        <!--<include name="com/l7tech/policy/assertion/ext/CustomAssertionUI.java"/>-->
-        <!--<include name="com/l7tech/policy/assertion/ext/CustomAssertionPrincipal.java"/>-->
-        <!--<include name="com/l7tech/policy/assertion/ext/CustomAuditor.class"/>-->
-        <!--<include name="com/l7tech/policy/assertion/ext/EditListener.java"/>-->
-        <!--<include name="com/l7tech/policy/assertion/ext/SecurityContext.java"/>-->
-        <!--<include name="com/l7tech/policy/assertion/ext/ServiceRequest.java"/>-->
-        <!--<include name="com/l7tech/policy/assertion/ext/ServiceResponse.java"/>-->
-        <!--<include name="com/l7tech/policy/assertion/ext/ServiceInvocation.java"/>-->
-        <!--<include name="com/l7tech/policy/variable/VariableMetadata.java"/>-->
-    <!--</patternset>-->
-
-    <!--
       Patternset used for Bridge API javadoc
     -->
     <patternset id="bridgeapi.sources">
@@ -240,16 +167,9 @@
 
     <!--
       Patternset used for Manager API javadoc
+      TODO [steve fix patternset]
     -->
     <patternset id="managerapi.sources">
-        <include name="com/l7tech/admin/AdminContext*.java"/>
-        <include name="com/l7tech/admin/AdminLogin*.java"/>
-        <include name="com/l7tech/cluster/ClusterNodeInfo.java"/>
-        <include name="com/l7tech/cluster/ClusterProperty.java"/>
-        <include name="com/l7tech/cluster/ClusterStatusAdmin*.java"/>
-        <include name="com/l7tech/cluster/GatewayStatus.java"/>
-        <include name="com/l7tech/cluster/LogRequest.java"/>
-        <include name="com/l7tech/cluster/ServiceUsage.java"/>
         <include name="com/l7tech/common/VersionException.java"/>
         <include name="com/l7tech/common/alert/AdminAlertEvent.java"/>
         <include name="com/l7tech/common/alert/AlertAdmin.java"/>
@@ -272,6 +192,22 @@
         <include name="com/l7tech/console/security/InvalidHostCertificateException.java"/>
         <include name="com/l7tech/console/security/InvalidHostNameException.java"/>
         <include name="com/l7tech/console/security/LogonListener.java"/>
+        <include name="com/l7tech/objectmodel/Entity.java"/>
+        <include name="com/l7tech/objectmodel/EntityHeader.java"/>
+        <include name="com/l7tech/objectmodel/EntityHeaderComparator.java"/>
+        <include name="com/l7tech/objectmodel/EntityManager.java"/>
+        <include name="com/l7tech/objectmodel/EntityType.java"/>
+        <include name="com/l7tech/objectmodel/FindException.java"/>
+        <include name="com/l7tech/objectmodel/IdentityHeader.java"/>
+        <include name="com/l7tech/objectmodel/NamedEntity.java"/>
+        <include name="com/l7tech/objectmodel/ObjectModelException.java"/>
+        <include name="com/l7tech/objectmodel/ObjectNotFoundException.java"/>
+        <include name="com/l7tech/objectmodel/PersistentEntity.java"/>
+        <include name="com/l7tech/objectmodel/SaveException.java"/>
+        <include name="com/l7tech/objectmodel/StaleUpdateException.java"/>
+        <include name="com/l7tech/objectmodel/TransactionException.java"/>
+        <include name="com/l7tech/objectmodel/UpdateException.java"/>
+        <include name="com/l7tech/objectmodel/VersionException.java"/>
         <include name="com/l7tech/identity/Group.java"/>
         <include name="com/l7tech/identity/GroupBean.java"/>
         <include name="com/l7tech/identity/GroupManager.java"/>
@@ -315,34 +251,26 @@
         <include name="com/l7tech/identity/mapping/NameFormat.java"/>
         <include name="com/l7tech/identity/mapping/SecurityTokenMapping.java"/>
         <include name="com/l7tech/identity/mapping/X509SecurityTokenMapping.java"/>
-        <include name="com/l7tech/logging/GenericLogAdmin.java"/>
-        <include name="com/l7tech/logging/LogMessage.java"/>
-        <include name="com/l7tech/logging/SSGLogRecord.java"/>
-        <include name="com/l7tech/logging/StatisticsRecord.java"/>
-        <include name="com/l7tech/objectmodel/Entity.java"/>
-        <include name="com/l7tech/objectmodel/EntityHeader.java"/>
-        <include name="com/l7tech/objectmodel/EntityHeaderComparator.java"/>
-        <include name="com/l7tech/objectmodel/EntityManager.java"/>
-        <include name="com/l7tech/objectmodel/EntityType.java"/>
-        <include name="com/l7tech/objectmodel/FindException.java"/>
-        <include name="com/l7tech/objectmodel/IdentityHeader.java"/>
-        <include name="com/l7tech/objectmodel/NamedEntity.java"/>
-        <include name="com/l7tech/objectmodel/ObjectModelException.java"/>
-        <include name="com/l7tech/objectmodel/ObjectNotFoundException.java"/>
-        <include name="com/l7tech/objectmodel/PersistentEntity.java"/>
-        <include name="com/l7tech/objectmodel/SaveException.java"/>
-        <include name="com/l7tech/objectmodel/StaleUpdateException.java"/>
-        <include name="com/l7tech/objectmodel/TransactionException.java"/>
-        <include name="com/l7tech/objectmodel/UpdateException.java"/>
-        <include name="com/l7tech/objectmodel/VersionException.java"/>
-        <include name="com/l7tech/service/MetricsBin*.java"/>
-        <include name="com/l7tech/service/MetricsSummaryBin*.java"/>
-        <include name="com/l7tech/service/PublishedService*.java"/>
-        <include name="com/l7tech/service/SampleMessage.java"/>
-        <include name="com/l7tech/service/ServiceAdmin.java"/>
-        <include name="com/l7tech/service/ServiceAdminPublic.java"/>
-        <include name="com/l7tech/service/ServiceDocument.java"/>
-        <include name="com/l7tech/service/ServiceStatistics.java"/>
+        <include name="com/l7tech/gateway/common/admin/AdminContext*.java"/>
+        <include name="com/l7tech/gateway/common/admin/AdminLogin*.java"/>
+        <include name="com/l7tech/gateway/common/cluster/ClusterNodeInfo.java"/>
+        <include name="com/l7tech/gateway/common/cluster/ClusterProperty.java"/>
+        <include name="com/l7tech/gateway/common/cluster/ClusterStatusAdmin*.java"/>
+        <include name="com/l7tech/gateway/common/cluster/GatewayStatus.java"/>
+        <include name="com/l7tech/gateway/common/cluster/LogRequest.java"/>
+        <include name="com/l7tech/gateway/common/cluster/ServiceUsage.java"/>
+        <include name="com/l7tech/gateway/common/logging/GenericLogAdmin.java"/>
+        <include name="com/l7tech/gateway/common/logging/LogMessage.java"/>
+        <include name="com/l7tech/gateway/common/logging/SSGLogRecord.java"/>
+        <include name="com/l7tech/gateway/common/logging/StatisticsRecord.java"/>
+        <include name="com/l7tech/gateway/common/service/MetricsBin*.java"/>
+        <include name="com/l7tech/gateway/common/service/MetricsSummaryBin*.java"/>
+        <include name="com/l7tech/gateway/common/service/PublishedService*.java"/>
+        <include name="com/l7tech/gateway/common/service/SampleMessage.java"/>
+        <include name="com/l7tech/gateway/common/service/ServiceAdmin.java"/>
+        <include name="com/l7tech/gateway/common/service/ServiceAdminPublic.java"/>
+        <include name="com/l7tech/gateway/common/service/ServiceDocument.java"/>
+        <include name="com/l7tech/gateway/common/service/ServiceStatistics.java"/>
     </patternset>
 
     <!--
@@ -755,7 +683,9 @@
 
             <propertyset dynamic="false">
                 <propertyref name="build.junit.xmlformat"/>
+                <propertyref name="module.obfuscate"/>
                 <propertyref name="module.sign"/>
+                <propertyref name="module.pack200"/>
                 <propertyref name="src.root"/>
                 <propertyref prefix="build.version"/>
                 <propertyref name="build.timestamp"/>
@@ -770,7 +700,6 @@
     </presetdef>
 
     <target name="retrieve" depends="prepare.base, build-module-list">
-        <!--<modules target="publish-all-quick"/>-->
         <modules target="retrieve"/>
     </target>
 
@@ -1485,7 +1414,7 @@
             depends="package.gateway.all, package.manager, package.client, package.installclients, package.installgateway.work"/>
 
 
-    <target name="package.gateway.all" depends="package.configwiz.all, package.ssgflasher, package.gateway, package.modules, pack.manager, package.api, obfuscate.gateway, obfuscate.modules"/>
+    <target name="package.gateway.all" depends="package.configwiz.all, package.ssgflasher, package.gateway, package.modules, pack.manager, package.api"/>
 
     <!--
       Build the windows installers without any dependencies.
@@ -1620,12 +1549,12 @@
         <echo level="info">Copying gateway files</echo>
         <echo level="info">Copying web files</echo>
         <copy file="${src.root}/web/index.html" todir="${deploy.dir}/etc/inf/ssg" preservelastmodified="true"/>
-        <copy file="${build.dir}/Manager.jar" todir="${deploy.dir}/etc/inf/ssg/webadmin/applet/" preservelastmodified="true"/>
+        <copy file="${build.dir}/ManagerApplet.jar" todir="${deploy.dir}/etc/inf/ssg/webadmin/applet/" preservelastmodified="true"/>
         <delete>
             <fileset dir="${deploy.dir}/etc/inf/ssg/webadmin/applet/lib" includes="layer7-*"/>
         </delete>
         <copy todir="${deploy.dir}/etc/inf/ssg/webadmin/applet/lib" preservelastmodified="true">
-           <fileset dir="${build.dir}/managerlibs"/>
+           <fileset dir="${build.dir}/managerappletlibs"/>
         </copy>
 
         <echo level="info">Copying modules</echo>
@@ -1680,18 +1609,6 @@
 
     <target name="pack.manager" depends="pack.manager.compress"/>
 
-    <!--<target name="pack.manager.copy">-->
-        <!--<mkdir dir="${build.dir}/managerlibs"/>-->
-        <!--<copy todir="${build.dir}/managerlibs" preservelastmodified="true">-->
-            <!--<fileset dir="${build.dir}/lib">-->
-                <!--<patternset>-->
-                    <!--<exclude name="**/systinet-*"/>-->
-                <!--</patternset>-->
-                <!--<patternset refid="manager.libs"/>-->
-            <!--</fileset>-->
-        <!--</copy>-->
-    <!--</target>-->
-
     <macrodef name="pack-mac">
         <attribute name="jarfile"/>
         <attribute name="packfile" default="@{jarfile}.pack.gz"/>
@@ -1701,86 +1618,79 @@
     </macrodef>
 
     <target name="pack.manager.compress" depends="package.manager" if="pack200">
-        <!--<pack-mac jarfile="${build.dir}/Manager.jar"/>-->
+        <pack-mac jarfile="${build.dir}/ManagerApplet.jar"/>
 
         <!--
-          TODO [steve] add new pack200 jars (listed below)
+          TODO [steve] Update pack200 after verifying JARs are correct
           Note that the build does not fail if any of these are missing, but a
           warning is logged.
         -->
 
-        <!--antlr-2.7.7-l7p1.jar-->
-        <!--apache-harmony-asn1-0.1.jar-->
-        <!--asm-1.5.3.jar-->
-        <!--asm-attrs-1.5.3.jar-->
-        <!--bcprov-jdk15-135.jar        -->
-        <!--cglib-2.1_3.jar-->
-        <!--ehcache-1.2.3.jar-->
-        <!--jsr173-1.0.jar-->
-        <!--jta-1.0.1B.jar-->
-
-        <pack-mac jarfile="${build.dir}/managerlibs/activation-1.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/antlr-2.7.7-l7p1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/browser-launcher-1.0rc4.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/commons-codec-1.2.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/commons-collections-3.2.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/commons-httpclient-3.0.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/commons-lang-2.3.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/commons-logging-1.1.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/concurrent-1.3.4.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/dom4j-1.6.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/forms_rt-7.0.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/guddi-1.0.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/hibernate-3.2.6.ga.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/jaxb-api-2.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/jaxb-impl-2.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/jaxen-1.1-beta-10.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/jaxws-api-2.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/jaxws-rt-2.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/jcalendar-1.3.2.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/jcommon-1.0.5.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/jfreechart-1.0.2.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/jsr173_api-1.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/jsr181-1.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/kunststoff-2.0.2.jar"/>
-        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-api-${build.version}.jar"/>-->
-        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-common-${build.version}.jar"/>-->
-        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-gateway-common-${build.version}.jar"/>-->
-        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-gui-${build.version}.jar"/>-->
-        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-kerberos-${build.version}.jar"/>-->
-        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-policy-${build.version}.jar"/>-->
-        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-uddi-${build.version}.jar"/>-->
-        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-utility-${build.version}.jar"/>-->
-        <!--<pack-mac jarfile="${build.dir}/managerlibs/layer7-wsdl-${build.version}.jar"/>-->
-        <pack-mac jarfile="${build.dir}/managerlibs/log4j-1.2.14.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/looks-1.1.3.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/nachocalendar-0.23.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/nekohtml-0.9.5.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/policy-1.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/resolver-1.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/saaj-api-1.3.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/saaj-impl-1.3.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/sjsxp-1.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/spring-aop-2.5.4.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/spring-beans-2.5.4.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/spring-context-2.5.4.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/spring-core-2.5.4.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/spring-orm-2.5.4.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/spring-web-2.5.4.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/whirlycache-1.0.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/wsdl4j-1.6.2.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/xalan-2.7.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/xalan-serializer-2.7.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/xbean-2.2.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/xbean-saml-1.1-1.0.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/xbean-saml-2.0-1.0.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/xbean-xenc-xmldsig-1.0.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/xercesImpl-2.9.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/xmlpad-3.7.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/xmlpad-res-3.7.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/xss4j.00.patch-1.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerlibs/xss4j-1.0.jar"/>
-        <!-- label: PACMANAGERJARSHERE [can delete if no longer referenced in this file] -->
+        <pack-mac jarfile="${build.dir}/managerappletlibs/activation-1.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/antlr-2.7.7-l7p1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/aopalliance-1.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/apache-harmony-asn1-0.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/asm-1.5.3.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/asm-attrs-1.5.3.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/browser-launcher-1.0rc4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/commons-codec-1.2.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/cglib-2.1_3.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/commons-collections-3.2.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/commons-httpclient-3.0.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/commons-lang-2.3.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/commons-logging-1.1.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/concurrent-1.3.4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/dom4j-1.6.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/ehcache-1.2.3.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/forms_rt-7.0.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/guddi-1.0.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/hibernate-3.2.6.ga.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/jaxb-api-2.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/jaxb-impl-2.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/jaxen-1.1-beta-10.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/jaxws-api-2.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/jaxws-rt-2.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/jcalendar-1.3.2.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/jcommon-1.0.5.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/jfreechart-1.0.2.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/jsr173-1.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/jsr173_api-1.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/jsr181-1.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/jta-1.0.1B.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/kunststoff-2.0.2.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/layer7-uddi-lib-1.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/log4j-1.2.14.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/looks-1.1.3.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/mail-1.4.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/nachocalendar-0.23.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/nekohtml-0.9.5.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/persistence-api-3.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/policy-1.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/resolver-1.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/saaj-api-1.3.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/saaj-impl-1.3.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/servlet-api-2.5.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/sjsxp-1.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-aop-2.5.4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-beans-2.5.4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-context-2.5.4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-core-2.5.4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-orm-2.5.4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-tx-2.5.4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/spring-web-2.5.4.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/whirlycache-1.0.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/wsdl4j-1.6.2.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/xalan-2.7.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/xalan-serializer-2.7.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/xbean-2.2.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/xbean-saml-1.1-1.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/xbean-saml-2.0-1.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/xbean-xenc-xmldsig-1.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/xercesImpl-2.9.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/xmlpad-3.7.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/xmlpad-res-3.7.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/xss4j.00.patch-1.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerappletlibs/xss4j-1.0.jar"/>
     </target>
 
     <!--
@@ -1866,7 +1776,7 @@
     <!--
       Package the SSB (JAR)
     -->
-    <target name="package.client" unless="ssg.only" depends="package.client.jar, obfuscate.client"/>
+    <target name="package.client" unless="ssg.only" depends="package.client.jar"/>
     <target name="package.client.jar" unless="ssg.only" depends="package.jars">
         <mkdir dir="${build.dir}/clientlibs"/>
         <delete>
@@ -1893,22 +1803,17 @@
                 <include name="*.jar"/>
             </fileset>
         </copy>
+        <mkdir dir="${build.dir}/managerappletlibs"/>
+        <copy todir="${build.dir}/managerappletlibs">
+            <fileset dir="modules/gateway/console-applet/build/dependency">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
         <copy file="modules/gateway/console/build/layer7-gateway-console.jar" tofile="${build.dir}/Manager.jar"/>
+        <copy file="modules/gateway/console-applet/build/layer7-gateway-console-applet.jar" tofile="${build.dir}/ManagerApplet.jar"/>
     </target>
 
-    <target name="package.manager.jar.pack200" depends="package.manager.jar" if="pack200" unless="ssg.only">
-
-        <move file="${build.dir}/Manager.jar" tofile="${build.dir}/Manager.nopack.jar"/>
-
-        <pack200 src="${build.dir}/Manager.nopack.jar"
-                 destfile="${build.dir}/Manager.jar"
-                 segmentlimit="-1"
-                 repack="true"/>
-
-        <delete file="${build.dir}/Manager.nopack.jar"/>
-    </target>
-
-    <target name="package.manager" depends="package.manager.jar, obfuscate.manager, package.manager.jar.pack200" unless="manager.notrequired">
+    <target name="package.manager" depends="package.manager.jar" unless="manager.notrequired">
     </target>
 
     <!--
@@ -2543,17 +2448,6 @@
         <echo level="info">RPM build completed.</echo>
     </target>
 
-    <!--
-      Build the Luna provider (JAR)
-    -->
-    <!--<target name="package.bcluna-jce" depends="compile">-->
-        <!--<jar jarfile="${build.dir}/bcluna-jce.jar" manifest="${src.root}/etc/bcluna-jce.mf">-->
-            <!--<fileset dir="${build.classes}">-->
-                <!--<include name="com/l7tech/common/security/prov/luna/BouncyCastleToLunaProvider.class"/>-->
-            <!--</fileset>-->
-        <!--</jar>-->
-    <!--</target>-->
-
     <!-- Package the ssg flasher utility -->
     <target name="package.ssgflasher" unless="ssg.only" depends="package.jars">
         <mkdir dir="${build.dir}/migration"/>
@@ -2723,11 +2617,11 @@
                 bottom="&lt;font size=-1&gt;Copyright (c) 2007, Layer 7 Technologies&lt;/font&gt;"
                  >
 
-            <fileset dir="${src.root}/src/" defaultexcludes="yes">
+            <fileset dir="${src.root}/modules/proxy/src/main/java" defaultexcludes="yes">
                 <patternset refid="bridgeapi.sources"/>
             </fileset>
 
-            <classpath refid="project.classpath"/>
+            <!--<classpath refid="project.classpath"/>-->
         </javadoc>
     </target>
 
@@ -2743,7 +2637,7 @@
                 windowtitle="Layer 7 Manager API"
                 maxmemory="1024m">
 
-            <fileset dir="${src.root}/src/" defaultexcludes="yes">
+            <fileset dir="${src.root}/modules/gateway/console/src/main/java" defaultexcludes="yes">
                 <patternset refid="managerapi.sources"/>
             </fileset>
 
@@ -2884,7 +2778,7 @@
       update version tokens
     -->
     <target name="prepare"
-            depends="prepare.base">  <!-- , keystore.properties -->
+            depends="prepare.base">
     </target>
 
     <!--
@@ -2946,18 +2840,6 @@
             database.user     = '${database.user}'
             database.pingstmt = '${database.pingstmt}'
         </echo>
-
-        <!-- TODO [steve] developer hibernate properties -->
-        <!--<replace file="${build.classes}/hibernate.properties"-->
-                 <!--token="DB_DRIVER" value="${database.driver}"/>-->
-        <!--<replace file="${build.classes}/hibernate.properties"-->
-                 <!--token="DB_URL" value="${database.url}"/>-->
-        <!--<replace file="${build.classes}/hibernate.properties"-->
-                 <!--token="DB_USER" value="${database.user}"/>-->
-        <!--<replace file="${build.classes}/hibernate.properties"-->
-                 <!--token="DB_PASSWORD" value="${database.password}"/>-->
-        <!--<replace file="${build.classes}/hibernate.properties"-->
-                 <!--token="DB_PINGSTMT" value="${database.pingstmt}"/>-->
     </target>
 
     <!--
@@ -3054,9 +2936,16 @@
         <property name="pack200" value="true"/>
     </target>
 
+    <target name="obfuscate" description="Enable obfuscated build (when packaging)">
+        <echo level="info">Enabling obfuscation for build.</echo>
+        <property name="obfuscate" value="true"/>
+        <property name="module.obfuscate" value="true"/>
+    </target>
 
-    <target name="pack200">
+    <target name="pack200" description="Enable pack200 compression (when packaging)">
+        <echo level="info">Enabling pack200 for build.</echo>
         <property name="pack200" value="true"/>
+        <property name="module.pack200" value="true"/>
     </target>
 
     <!--
@@ -3065,7 +2954,6 @@
     <target name="INTERNAL-ssg-install-init" depends="package.readversion, INTERNAL-ssg-install-init-pre, package.gateway.all, init" if="ssg.install.enabled">
         <fail unless="install.build.number"
               message="Set the install.build.number property before running this target!"/>
-        <!--<property file="etc/install.properties"/>-->
 
         <fail unless="install.jdk.tar.gz" message="Set the install.jdk.tar.gz property or create install.properties!"/>
 
@@ -3313,13 +3201,13 @@
         </copy>
 
         <copy todir="${install.src.inf}/ssg/webadmin/applet">
-            <fileset dir="${build.dir}" includes="Manager.jar*"/>
+            <fileset dir="${build.dir}" includes="ManagerApplet.jar*"/>
         </copy>
 
         <unzip src="${src.root}/webhelp/ssm/help.zip" dest="${install.src.inf}/ssg/webadmin"/>
 
         <copy todir="${install.src.inf}/ssg/webadmin/applet/lib">
-            <fileset dir="${build.dir}/managerlibs" includes="*" />
+            <fileset dir="${build.dir}/managerappletlibs"/>
         </copy>
 
         <!-- Create software only tarball -->
@@ -3441,157 +3329,12 @@
     </target>
 
     <!--
-      SecureSpan XML VPN Client obfuscation target
-    -->
-    <target name="obfuscate.client" if="obfuscate" unless="ssg.only">
-        <process-zkm name="client" upperName="Client"/>       
-    </target>
-
-    <!--
-      SecureSpan Manager obfuscation target
-    -->
-    <target name="obfuscate.manager" if="obfuscate" unless="manager.notrequired">
-        <!-- TODO [steve] create index for Manager.jar, we probably need a "Shade" for the manager built from all our Jars -->
-        <!--<echo>Backing up Manager.jar META-INF/INDEX.LIST</echo>-->
-         <!--<unjar src="${build.dir}/Manager.jar" dest="${build.dir}/etc">-->
-            <!--<patternset>-->
-                <!--<include name="META-INF/INDEX.LIST"/>-->
-            <!--</patternset>-->
-        <!--</unjar>-->
-        <process-zkm name="manager" upperName="Manager"/>
-        <!--<echo>Restoring Manager.jar META-INF/INDEX.LIST</echo>-->
-        <!--<jar jarfile="${build.dir}/Manager.jar" update="true">-->
-           <!--<zipfileset dir="${build.dir}/etc/META-INF" includes="INDEX.LIST" prefix="META-INF"/>-->
-       <!--</jar>-->
-    </target>
-
-    <!--
-      SecureSpan Gateway obfuscation target
-    -->
-    <target name="obfuscate.gateway" if="obfuscate" depends="init">
-        <process-zkm name="gateway" upperName="Gateway"/>
-    </target>
-
-    <target name="obfuscate.modules" if="obfuscate" depends="init">
-        <mkdir dir="${build.dir}/modules-as-jars"/>
-
-        <echo>Generating script for Modular Assertion obfuscation.</echo>
-
-        <path id="obfuscate.modules.libs">
-            <pathelement path="${build.dir}/Gateway.jar"/>
-            <pathelement path="${build.dir}/Manager.jar"/>
-            <fileset dir="${build.dir}/gatewaylibs">
-                <include name="*.jar"/>
-                <exclude name="*saaj*.jar"/>
-            </fileset>
-            <fileset dir="${build.dir}/managerlibs">
-                <include name="*.jar"/>
-                <exclude name="*saaj*.jar"/>
-            </fileset>
-            <fileset dir="${src.root}/modules/gateway/assertions">
-                <include name="*/build/dependency/*.jar"/>
-            </fileset>
-            <pathelement path="${src.root}/lib/repository/com.tarari/tarari-raxj-*.jar"/>
-            <!-- 
-              SFTP used by the FtpRoutingAssertion assertion references 
-              org.apache.tools.ant.Task from com.jscape.ftcl.FileTransferAgentTask 
-            -->
-            <pathelement path="${src.root}/lib/ant.jar"/>
-        </path>
-
-        <copy todir="${build.dir}/modules-as-jars">
-            <fileset dir="${build.dir}">
-                <include name="modules/*.aar"/>
-            </fileset>
-            <chainedmapper>
-                <flattenmapper/>                
-                <globmapper from="*.aar" to="*-AAR.jar"/>
-            </chainedmapper>
-        </copy>
-        <path id="obfuscate.modules.jars">
-            <fileset dir="${build.dir}/modules-as-jars">
-                <include name="*.jar"/>
-            </fileset>
-        </path>
-
-        <build-zkm name="modules"
-                   jarFileset="obfuscate.modules.jars"
-                   libFileset="obfuscate.modules.libs"/>
-
-        <echo>Obfuscating Modular Assertions.</echo>
-
-        <Zelix scriptFileName="${build.dir}/etc/modules.zkm"
-               logFileName="${build.dir}/obfuscation/modules.log"
-               trimLogFileName="${build.dir}/obfuscation/modules.log"
-               isParseOnly="false"
-               isVerbose="true"/>
-
-        <echo>Replacing Modular Assertion Jar/AARs with obfuscated version.</echo>
-
-        <move todir="${build.dir}/modules" overwrite="true">
-            <fileset dir="${build.dir}/obfuscation">
-                <include name="*-AAR.jar"/>
-            </fileset>
-            <globmapper from="*-AAR.jar" to="*.aar"/>
-        </move>
-
-        <echo>Modular Assertion obfuscation completed.</echo>
-    </target>
-
-    <!--
-      Task to run a ZKM with convention for subdirs, library names, etc
-    -->
-    <macrodef name="process-zkm">
-        <attribute name="name"/>
-        <attribute name="upperName"/>
-        <sequential>
-            <echo>Generating script for @{upperName} obfuscation.</echo>
-            <path id="obfuscate.@{name}.libs">
-                <fileset dir="${build.dir}/@{name}libs">
-                    <include name="*.jar"/>
-                    <exclude name="layer7-*.jar"/>
-                </fileset>
-                <pathelement path="${src.root}/lib/repository/com.tarari/tarari-raxj-*.jar"/>
-                <pathelement path="${src.root}/lib/repository/antlr/antlr-2.7.7-l7p1.jar"/>
-                <pathelement path="${src.root}/lib/repository/log4j/log4j-1.2.14.jar"/>
-            </path>
-            <path id="obfuscate.@{name}.jars">
-                <fileset dir="${build.dir}">
-                    <include name="@{upperName}.jar"/>
-                </fileset>
-                <fileset dir="${build.dir}/@{name}libs">
-                    <include name="layer7-*.jar"/>
-                </fileset>
-            </path>
-            <build-zkm name="@{name}"
-                       jarFileset="obfuscate.@{name}.jars"
-                       libFileset="obfuscate.@{name}.libs"/>
-
-            <echo>Obfuscating @{upperName}.</echo>
-            <Zelix scriptFileName="${build.dir}/etc/@{name}.zkm"
-                   logFileName="${build.dir}/obfuscation/@{name}.log"
-                   trimLogFileName="${build.dir}/obfuscation/@{name}.log"
-                   isParseOnly="false"
-                   isVerbose="true"/>
-
-            <echo>Replacing JARs for @{upperName} with obfuscated version.</echo>
-            <move file="${build.dir}/obfuscation/@{upperName}.jar" tofile="${build.dir}/@{upperName}.jar" overwrite="true"/>
-            <move todir="${build.dir}/@{name}libs" overwrite="true">
-                <fileset dir="${build.dir}/obfuscation">
-                    <include name="layer7-*.jar"/>
-                </fileset>
-            </move>
-
-            <echo>@{upperName} obfuscation completed.</echo>
-        </sequential>
-    </macrodef>
-
-    <!--
       Task to update ZKM files with classpaths, jars, etc.
     -->
     <macrodef name="build-zkm">
         <attribute name="name"/>
         <attribute name="zkmFilePath" default="${src.root}/etc/obfuscation/genjarobf.zkm"/>
+        <attribute name="out" default="./build/obfuscation"/>        
         <attribute name="jarFileset"/>
         <attribute name="libFileset"/>
         <sequential>
@@ -3602,15 +3345,11 @@
                     <filter token="CP" value="${obfuscate.@{name}.zkm.libs.path}"/>
                     <filter token="JAR" value="${obfuscate.@{name}.zkm.jars.path}"/>
                     <filter token="CHANGELOG" value="${build.dir}/obfuscation/@{name}_change.log"/>
+                    <filter token="OUT" value="@{out}"/>
                 </filterset>
             </copy>
         </sequential>
     </macrodef>
-
-    <target name="obfuscate" description="Enable obfuscated build (when packaging)">
-        <echo level="info">Enabling obfuscation for build.</echo>
-        <property name="obfuscate" value="true"/>
-    </target>
 
     <!--
        Enable installer build but don't require dependencies to be built
@@ -3628,22 +3367,6 @@
         <echo level="info">Enabling RPM installers for build.</echo>
         <property name="makerpm" value="true"/>
         <property name="ssg.install.enabled" value="true"/>
-    </target>
-
-    <!--
-      Meant to be used as part of official build this will create an obfuscated version
-      of the following files:
-
-      . build/Client.jar
-      . build/Manager.jar
-      . build/Gateway.jar
-      . build/*lib/layer7-.....jar
-      . build/modules/*.aar
-    -->
-    <target name="obfuscate.work"
-            if="obfuscate"
-            depends="package.client, package.manager, package.gateway, obfuscate.client, obfuscate.manager, obfuscate.gateway, obfuscate.modules">
-        <echo level="info">Obfuscating version ${build.version}</echo>
     </target>
 
     <target name="generate-xbean-jars">

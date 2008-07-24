@@ -6,15 +6,20 @@
 
     Do not invoke it directly.
   -->
-    <import file="../../../etc/build/build-common.xml"/>
-
     <property name="moduleName" value="${ant.project.name}"/>
     <property name="moduleFileExtension" value="aar"/>
+    <property name="module.package.jar.disabled" value="true"/>
+    <property name="jar.sign.pattern" value="*.${moduleFileExtension}"/>
 
-    <target name="package.custom" depends="-aar, -clientJar"/>
+    <import file="../../../etc/build/build-common.xml"/>
 
+    <target name="package.custom.post" depends="-aar, -clientJar"/>
+
+    <target name="-init">
+        <property name="package.classes.dir" value="${classes.main.dir}"/>
+    </target>
     <!-- Find the assertions for this module if not declared -->
-    <target name="-detect" unless="moduleAssertionList" depends="compile">
+    <target name="-detect" unless="moduleAssertionList" depends="compile,-init">
         <pathconvert property="moduleAssertionList" pathsep=" " setonempty="false">
             <path>
                 <fileset dir="build/classes">
@@ -32,7 +37,7 @@
         <fail unless="moduleAssertionList">Unable to detect any assertion classes, please declare assertions using the moduleAssertionList property.</fail>
         <echo level="info">Detected assertions: ${moduleAssertionList}</echo>
     </target>
-    <target name="-detect-client" unless="clientAssertionList" depends="compile">
+    <target name="-detect-client" unless="clientAssertionList" depends="compile,-init">
         <pathconvert property="clientAssertionList" pathsep=" " setonempty="false">
             <path>
                 <fileset dir="build/classes">
@@ -69,7 +74,7 @@
                 <attribute name="ModularAssertion-Private-Libraries" value="${privateLibraries}"/>
             </manifest>
             
-            <fileset dir="build/classes"/>
+            <fileset dir="${package.classes.dir}"/>
             <zipfileset prefix="AAR-INF/lib" dir="build/dependency"/>
         </jar>
     </target>
@@ -93,7 +98,7 @@
                 <attribute name="ModularAssertion-List" value="${moduleAssertionList}"/>
             </manifest>
 
-            <fileset dir="build/classes">
+            <fileset dir="${package.classes.dir}">
                 <include name="**/*"/>
                 <exclude name="**/console"/>
                 <exclude name="**/console/**/*"/>

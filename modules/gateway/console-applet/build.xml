@@ -1,0 +1,36 @@
+<project name="layer7-gateway-console-applet" default="compile">
+    <property name="module.main" value="com.l7tech.console.AppletMain"/>
+    <property name="module.sign" value="true"/>
+    <property name="module.package.jar.required" value="true"/>
+    <property name="module.obfuscate.disabled" value="true"/>
+    <property name="module.jar.index" value="true"/>
+
+    <import file="../../../etc/build/build-common.xml"/>
+
+    <!-- Custom packaging step to include an artifact into this module -->
+    <target name="package.custom">
+        <jar-include name="layer7-gateway-console"/>
+        <jar-include name="layer7-gateway-common"/>
+        <jar-include name="layer7-kerberos"/>
+        <jar-include name="layer7-policy"/>
+        <jar-include name="layer7-identity"/>
+        <jar-include name="layer7-common"/>
+        <jar-include name="layer7-gui"/>
+        <jar-include name="layer7-uddi"/>
+        <jar-include name="layer7-utility"/>
+        <jar-include name="layer7-wsdl"/>
+    </target>
+
+    <target name="package.custom.post" if="module.pack200">
+        <property name="jar.file.nopack" value="${jar.file}.nopack.jar"/>
+        <move file="${jar.file}" tofile="${jar.file.nopack}"/>
+
+        <pack200 src="${jar.file.nopack}"
+                 destfile="${jar.file}"
+                 segmentlimit="-1"
+                 repack="true"/>
+
+        <delete file="${jar.file.nopack}"/>
+    </target>
+
+</project>

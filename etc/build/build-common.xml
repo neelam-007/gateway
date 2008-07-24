@@ -14,6 +14,7 @@
     <property name="build.etc.dir" value="${build.dir}/etc"/>
     <property name="classes.main.dir" value="${build.dir}/classes"/>
     <property name="classes.test.dir" value="${build.dir}/test-classes"/>
+    <property name="classes.obf.dir" value="${build.dir}/obf-classes"/>
     <property name="deps.dir" value="${build.dir}/dependency"/>
     <property name="src.main.java.dir" value="${basedir}/src/main/java"/>
     <property name="src.main.res.dir" value="${basedir}/src/main/resources"/>
@@ -24,6 +25,7 @@
 
     <property name="ivy.file" value="${basedir}/ivy.xml"/>
 
+    <property name="jar.sign.pattern" value="*.jar"/>
     <property name="jar.file" value="${build.dir}/${ant.project.name}.jar"/>
     <property name="jar.file.test" value="${build.dir}/${ant.project.name}-test.jar"/>
     <property name="main.class.name" value="${ant.project.name}.Main"/>
@@ -32,6 +34,7 @@
     <property name="module.classpath.prefix" value="lib/"/>
     <property name="module.compile.source" value="1.5"/>
     <property name="module.compile.target" value="1.5"/>
+    <property name="module.jar.index" value="false"/>
 
     <!--
       Classpath for Idea form compiler
@@ -89,8 +92,47 @@
         </javac2t>
     </presetdef>
 
+    <!--
+      Task to run a ZKM with convention for subdirs, library names, etc
+    -->
+    <macrodef name="obfuscate-classes">
+        <attribute name="zkmFilePath" default="${src.root}/etc/obfuscation/genjarobf.zkm"/>
+        <sequential>
+            <echo>Generating script for ${ant.project.name} obfuscation.</echo>
+            <ivy-resolve conf="optional,runtime,compile"/>
+            <ivy:cachepath pathid="lib.obfuscate.path.id" conf="compile"/>
+            <pathconvert property="lib.obfuscate.path.text" targetos="unix" pathsep="&quot;${line.separator}&quot;" refid="lib.obfuscate.path.id"/>
+            <copy file="@{zkmFilePath}" tofile="${build.dir}/etc/obfuscation.zkm" overwrite="true">
+                <filterset>
+                    <filter token="CP" value="${lib.obfuscate.path.text}"/>
+                    <filter token="JAR" value="${classes.main.dir}/*"/>
+                    <filter token="CHANGELOG" value="${build.dir}/obfuscation/change.log"/>
+                    <filter token="OUT" value="${classes.obf.dir}"/>
+                </filterset>
+            </copy>
+
+            <echo>Obfuscating ${ant.project.name}.</echo>
+            <Zelix scriptFileName="${build.dir}/etc/obfuscation.zkm"
+                   logFileName="${build.dir}/obfuscation/obfuscation.log"
+                   trimLogFileName="${build.dir}/obfuscation/obfuscation_trim.log"
+                   isParseOnly="false"
+                   isVerbose="true"/>
+
+            <echo>Copying resources for obfuscated classes.</echo>
+            <copy todir="${classes.obf.dir}">
+                <fileset dir="${classes.main.dir}" excludes="**/*.class"/>
+            </copy>
+
+            <echo>Obfuscation completed for ${ant.project.name}.</echo>
+        </sequential>
+    </macrodef>    
+
     <presetdef name="sign-jar">
-        <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer2" storepass="password" jar="${jar.file}"/>
+        <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer2" storepass="password" jar="${jar.file}">
+            <path>
+                <fileset dir="${build.dir}" includes="${jar.sign.pattern}" />
+            </path>
+        </signjar>
     </presetdef>
 
     <macrodef name="jar-include">
@@ -305,17 +347,37 @@
     </target>
     <target name="package.init">
         <available property="module.package.jar.required" file="${classes.main.dir}"/>
+        <condition property="module.obfuscate.enabled">
+            <and>
+                <isset property="module.obfuscate"/>
+                <isset property="module.package.jar.required"/>
+                <not>
+                    <isset property="module.obfuscate.disabled"/>
+                </not>
+            </and>
+        </condition>
     </target>
     <!-- Overridden by modules with custom packaging requirements -->
     <target name="package.custom">
     </target>
-    <target name="package.work" if="module.package.jar.required"
-            depends="compile, package.dependencies, package.init, package.classpath, package.custom">
+    <target name="package.custom.post">
+    </target>
+    <target name="package.obfuscate" if="module.obfuscate.enabled">
+        <obfuscate-classes/>
+        <property name="package.classes.dir" value="${classes.obf.dir}"/>
+    </target>
+    <target name="package.work" if="module.package.jar.required" unless="module.package.jar.disabled"
+            depends="compile, package.dependencies, package.init, package.classpath, package.custom, package.obfuscate">
+        <property name="package.classes.dir" value="${classes.main.dir}"/>
         <property name="ivy.extra.title" value="ivy.module"/>
         <mkdir dir="${build.etc.dir}"/>
         <touch file="${build.etc.dir}/MANIFEST.MF"/>
-        <jar destfile="${jar.file}" manifest="${build.etc.dir}/MANIFEST.MF">
-            <fileset dir="${classes.main.dir}"/>
+        <jar destfile="${jar.file}" manifest="${build.etc.dir}/MANIFEST.MF" index="${module.jar.index}">
+            <fileset dir="${package.classes.dir}"/>
+            <!-- Index element is ignored unless index is true for the jar task -->
+            <indexjars>
+                <path refid="module.classpath"/>
+            </indexjars>
             <manifest>
                 <attribute name="Implementation-Title" value="${ivy.extra.title}"/>
                 <attribute name="Implementation-Version" value="${build.version}"/>
@@ -330,7 +392,7 @@
     <target name="package.sign" if="module.sign">
         <sign-jar/>
     </target>
-    <target name="package" depends="version, compile, package.work, package.sign" description="Package this project">
+    <target name="package" depends="version, compile, package.work, package.custom.post, package.sign" description="Package this project">
     </target>
 
     <!--

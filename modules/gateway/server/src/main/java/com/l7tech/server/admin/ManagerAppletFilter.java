@@ -451,7 +451,7 @@ public class ManagerAppletFilter implements Filter {
             if (dirIndex > 0) {
                 Set resources = context.getResourcePaths(resourceName.substring(0, dirIndex+1));
                 String pack200Resource = resourceName + ".pack.gz";
-                if (resources.contains(pack200Resource)) {
+                if ( resources != null && resources.contains(pack200Resource) ) {
                     RequestDispatcher dispatcher = context.getRequestDispatcher(pack200Resource);
                     if (dispatcher != null) {
                         handled = true;
@@ -468,10 +468,7 @@ public class ManagerAppletFilter implements Filter {
     private boolean isClasspathResourceRequest(final HttpServletRequest hreq) {
         String filePath = hreq.getRequestURI();
         String contextPath = hreq.getContextPath();
-        if (filePath != null && filePath.startsWith(contextPath) && filePath.contains(codebasePrefix)) {
-            return true;
-        }
-        return false;
+        return filePath != null && filePath.startsWith(contextPath) && filePath.contains(codebasePrefix);
     }
 
     private static final Pattern STRIPCLASS = Pattern.compile("\\/[^/]+$");
