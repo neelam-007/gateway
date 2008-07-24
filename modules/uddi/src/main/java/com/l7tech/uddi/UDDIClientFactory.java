@@ -105,9 +105,9 @@ public class UDDIClientFactory {
 
     //- PRIVATE
 
-    private static final String SYSPROP_DEFAULT_VERSION = "com.l7tech.common.uddi.defaultVersion";
-    private static final String SYSPROP_UDDICLIENT = "com.l7tech.common.uddi.client";
-    private static final String DEFAULT_UDDICLIENT = "com.l7tech.common.uddi.GenericUDDIClient";
+    private static final String SYSPROP_DEFAULT_VERSION = "com.l7tech.uddi.defaultVersion";
+    private static final String SYSPROP_UDDICLIENT = "com.l7tech.uddi.client";
+    private static final String DEFAULT_UDDICLIENT = "com.l7tech.uddi.GenericUDDIClient";
     private static final Logger logger = Logger.getLogger(UDDIClientFactory.class.getName());
     private static final UDDIClientFactory instance = new UDDIClientFactory();
 
