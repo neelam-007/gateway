@@ -7,25 +7,41 @@ package com.l7tech.gateway.common.admin;
  */
 public class GatewayRuntimeException extends RuntimeAdminException {
 
-    //- PUBLIC
+    /**
+     * Standard error message
+     */
+    public static final String MESSAGE_DEFAULT = "A SecureSpan Gateway error occurred, please contact your administrator.";
 
+    /**
+     * Error message for transient issues
+     */
+    public static final String MESSAGE_TRANSIENT = "A SecureSpan Gateway error occurred, please try again.";
+
+    /**
+     * Create a runtime exception with the default error message.
+     */
     public GatewayRuntimeException() {
-        this(MESSAGE);
+        this(MESSAGE_DEFAULT);
     }
 
+    /**
+     *
+     */
     public GatewayRuntimeException(final String message) {
         super(message);
     }
 
+    /**
+     * Create a runtime exception with the default error message.
+     */
     public GatewayRuntimeException(final Throwable cause) {
-        this(MESSAGE, cause);
+        this(MESSAGE_DEFAULT, cause);
     }
 
+    /**
+     *
+     */
     public GatewayRuntimeException(final String message, final Throwable cause) {
         super(message, cause);
     }
-
-    //- PRIVATE
-
-    private static final String MESSAGE = "The SecureSpan Gateway error (eg, DB failure, etc.) occurred, please contact your gateway administrator.";
 }

@@ -150,7 +150,6 @@ public class GatewayBoot {
                 "com/l7tech/server/resources/dataAccessContext.xml",
                 "com/l7tech/server/resources/ssgApplicationContext.xml",
                 "com/l7tech/server/resources/adminContext.xml",
-                "com/l7tech/server/resources/rbacEnforcementContext.xml",
                 "org/codehaus/xfire/spring/xfire.xml",
         });
         serverConfig = (ServerConfig)applicationContext.getBean("serverConfig", ServerConfig.class);

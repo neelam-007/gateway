@@ -8,6 +8,7 @@ import com.l7tech.gui.util.SwingWorker;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.security.AuthenticationProvider;
 import com.l7tech.console.security.InvalidHostCertificateException;
 import com.l7tech.console.security.InvalidHostNameException;
@@ -806,9 +807,7 @@ public class LogonDialog extends JDialog {
             JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
         else {
-            log.log(Level.WARNING, "logon()", e);
-            String msg = MessageFormat.format(resources.getString("logon.connect.error"), host);
-            JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
+            ErrorManager.getDefault().notify(Level.WARNING, e, resources.getString("logon.connect.error"));
         }
     }
 

@@ -6,6 +6,7 @@
 package com.l7tech.gateway.common.admin;
 
 import com.l7tech.identity.AuthenticationException;
+import com.l7tech.gateway.common.security.rbac.Secured;
 
 import javax.security.auth.login.LoginException;
 import java.security.AccessControlException;
@@ -22,6 +23,7 @@ import java.security.AccessControlException;
  * @author emil
  * @version Dec 2, 2004
  */
+@Secured
 public interface AdminLogin {
     /**
      * Method that returns the SHA-1 hash over admin certificate and the admin

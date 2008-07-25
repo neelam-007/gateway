@@ -83,6 +83,7 @@ public class MySqlFailureThrowsAdvice extends ThrowsAdviceSupport {
             detail = ExceptionUtils.textReplace(throwable, true);
         }
 
-        throw new GatewayRuntimeException(detail);        
+        // Even though a DB failure is not really transient we want to tell the user to "try again"
+        throw new GatewayRuntimeException( GatewayRuntimeException.MESSAGE_TRANSIENT, detail);        
     }
 }

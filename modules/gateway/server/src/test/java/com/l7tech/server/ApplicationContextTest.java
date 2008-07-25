@@ -31,7 +31,6 @@ public class ApplicationContextTest  extends TestCase {
     private static final String[] CONTEXTS = {
         "com/l7tech/server/resources/adminContext.xml",
         "com/l7tech/server/resources/dataAccessContext.xml",
-        "com/l7tech/server/resources/rbacEnforcementContext.xml",
         "com/l7tech/server/resources/ssgApplicationContext.xml"
     };
 

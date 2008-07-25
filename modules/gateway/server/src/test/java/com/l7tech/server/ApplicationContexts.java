@@ -52,7 +52,6 @@ public class ApplicationContexts {
     public static final String[] PRODUCTION_BEAN_DEFINITIONS = {
             "com/l7tech/server/resources/dataAccessContext.xml",
             "com/l7tech/server/resources/ssgApplicationContext.xml",
-            "com/l7tech/server/resources/rbacEnforcementContext.xml",
             "com/l7tech/server/resources/adminContext.xml"
     };
 }
