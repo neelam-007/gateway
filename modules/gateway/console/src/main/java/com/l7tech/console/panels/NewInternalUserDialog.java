@@ -296,7 +296,7 @@ public class NewInternalUserDialog extends JDialog {
                                         return true;
                                     }
                                 }));
-        idTextField.getDocument().putProperty("name", "userId");
+        idTextField.getDocument().putProperty("name", "identityId");
         idTextField.getDocument().addDocumentListener(documentListener);
 
         return idTextField;
@@ -593,7 +593,7 @@ public class NewInternalUserDialog extends JDialog {
 
     public void updateCreateButtonState(DocumentEvent e) {
         Document field = e.getDocument();
-        if (field.getProperty("name").equals("userId")) {
+        if (field.getProperty("name").equals("identityId")) {
             if (field.getLength() > 0) {
                 UserIdFieldFilled = true;
                 validateIdTextField();

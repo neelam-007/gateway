@@ -91,7 +91,7 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     public User findUserByID(long idProvCfgId, String userId) throws FindException {
-        return null;//StubDataStore.defaultStore().getUsers().get(userId);
+        return null;//StubDataStore.defaultStore().getUsers().get(identityId);
     }
 
     public User findUserByLogin(long idProvCfgId, String login) throws FindException {

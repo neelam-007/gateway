@@ -1,0 +1,181 @@
+package com.l7tech.server.admin;
+
+import com.l7tech.identity.*;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.common.io.WhirlycacheFactory;
+import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.whirlycott.cache.Cache;
+
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: darmstrong
+ * Date: Jul 17, 2008
+ * Time: 3:32:34 PM
+ * Provide the cache implementation required by the {@link com.l7tech.server.admin.AdminLoginImpl}
+ * implementation of the {@link SessionValidator} interface
+ */
+public class GroupPrincipalCache {
+
+    private static final Logger logger = Logger.getLogger(GroupPrincipalCache.class.getName());
+    
+    private static int CACHE_SIZE = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_SIZE, 100);
+    private static int CACHE_MAX_GROUPS = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_PRINCIPAL_GROUPS, 50);
+
+    private final Cache principalCache;
+    
+    private GroupPrincipalCache(){
+        String name = "PrincipalCache_unified";
+        principalCache = CACHE_SIZE < 1 ? null :
+                WhirlycacheFactory.createCache(name, CACHE_SIZE, 293, WhirlycacheFactory.POLICY_LFU);
+
+    }
+
+
+    /*
+    * validate will look up the user in the cache and return it's Set<Principal>
+    * @param u the User we want the set of Set<Principal> for
+    * @param ip the IdentityProvider the user belongs to. This can be used to validate the user if required
+    * */
+    public GroupPrincipal getCachedValidatedPrincipals(User u, IdentityProvider ip,
+                                                       int maxAge)
+            throws ValidationException {
+
+        final long providerOid = ip.getConfig().getOid();
+        final CacheKey ckey = new CacheKey(providerOid, u.getId());
+        Object cached = getCacheEntry(ckey, u.getLogin(), ip, maxAge);
+
+        if (cached instanceof GroupPrincipal) {
+            return (GroupPrincipal)cached;
+        } else if (cached != null) {
+            return null;
+        }        
+
+        return getAndCacheNewResult(u, ckey, ip);
+    }
+
+    private static class InstanceHolder {
+        private static final GroupPrincipalCache INSTANCE = new GroupPrincipalCache();
+    }
+
+    public static GroupPrincipalCache getInstance() {
+        return InstanceHolder.INSTANCE;
+    }
+
+    private Object getCacheEntry(CacheKey ckey, String login, IdentityProvider idp, int maxAge) {
+
+        if (principalCache == null) return null; // fail fast if cache is disabled
+
+        Long cachedFailureTime = null;
+        GroupPrincipal groupPrincipal = null;
+
+        Object cachedObj = principalCache.retrieve(ckey);
+        if(cachedObj != null && cachedObj instanceof GroupPrincipal){
+            groupPrincipal = (GroupPrincipal)cachedObj;
+        }
+
+        if(cachedObj != null && cachedObj instanceof Long){
+            cachedFailureTime = (Long)cachedObj;
+        }
+
+        if(cachedObj == null){
+            return null;
+        }
+
+        String log;
+        Object returnValue;
+        long cacheAddedTime;
+        if (cachedFailureTime != null) {
+            cacheAddedTime = cachedFailureTime.longValue();
+            log = "failure";
+            returnValue = cachedFailureTime;
+        } else {
+            cacheAddedTime = groupPrincipal.getTimestamp();
+            log = "success";
+            returnValue = groupPrincipal;
+        }
+
+        if (cacheAddedTime + maxAge > System.currentTimeMillis()) {
+            if (logger.isLoggable(Level.FINE))
+                logger.log(Level.FINE, "Cache {0} for user {1} from IdP \"{2}\"", new String[] {log, login, idp.getConfig().getName()});
+            return returnValue;
+        } else {
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Cache {0} for user {1} is stale on IdP \"{2}\"; will revalidate", new String[] {log, login, idp.getConfig().getName()});
+            }
+            return null;
+        }
+    }
+
+
+    // If caller wants only one thread at a time to authenticate any given username,
+    // caller is responsible for ensuring that only one thread at a time calls this per username,
+    private GroupPrincipal getAndCacheNewResult(User u, CacheKey ckey, IdentityProvider idp)
+            throws ValidationException
+    {
+        idp.validate(u);
+        //download group info and any other info to be added as a gP as and when required here..
+
+        GroupManager gM = idp.getGroupManager();
+        Set<IdentityHeader> gHeaders = null;
+        try{
+            gHeaders = gM.getGroupHeaders(u);
+        }catch(FindException fe){
+            String msg = "Cannot find users groups";
+            logger.log(Level.FINE, msg, fe);
+            throw new ValidationException(msg);
+        }
+
+        if(gHeaders != null){
+            GroupPrincipal gP = new GroupPrincipal(u.getLogin());            
+            gP.setGroupHeaders(gHeaders);
+            this.principalCache.store(ckey, gP);
+            if (logger.isLoggable(Level.FINE))
+                logger.log(Level.FINE,
+                           "Cached group membership principals for user {n0} on IdP \"{1}\"",
+                           new String[]{u.getLogin(), idp.getConfig().getName()});
+
+            return gP;
+        }else{
+            return null;
+        }
+    }
+    
+    private static class CacheKey {
+        private int cachedHashcode = -1;
+        private final long providerOid;
+        private final String userId;
+
+        public CacheKey(long providerOid, String userId) {
+            this.providerOid = providerOid;
+            this.userId = userId;
+        }
+
+        /** @noinspection RedundantIfStatement*/
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            final CacheKey cacheKey = (CacheKey)o;
+
+            if (providerOid != cacheKey.providerOid) return false;
+            if (userId != null ? !userId.equals(cacheKey.userId) : cacheKey.userId != null) return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            if (cachedHashcode == -1) {
+                int result;
+                result = (int)(providerOid ^ (providerOid >>> 32));
+                result = 31 * result + (userId != null ? userId.hashCode() : 0);
+                cachedHashcode = result;
+            }
+            return cachedHashcode;
+        }
+    }    
+}

@@ -15,6 +15,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
+import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -244,17 +245,17 @@ public class EditRoleDialog extends JDialog {
     }
 
     private class AssignmentListModel extends AbstractListModel {
-        private final List<UserRoleAssignment> assignments = new ArrayList<UserRoleAssignment>();
-        private final List<UserHolder> holders = new ArrayList<UserHolder>();
+        private final List<RoleAssignment> assignments = new ArrayList<RoleAssignment>();
+        private final List<IdentityHolder> holders = new ArrayList<IdentityHolder>();
 
         public AssignmentListModel() throws FindException {
-            for (UserRoleAssignment assignment : role.getUserAssignments()) {
+            for (RoleAssignment assignment : role.getRoleAssignments()) {
                 try {
-                    UserHolder uh = new UserHolder(assignment);
+                    IdentityHolder uh = new IdentityHolder(assignment);
                     holders.add(uh);
                     assignments.add(assignment);
-                } catch (UserHolder.NoSuchUserException e) {
-                    logger.info("Removing deleted user #" + assignment.getUserId());
+                } catch (IdentityHolder.NoSuchUserException e) {
+                    logger.info("Removing deleted user #" + assignment.getIdentityId());
                 }
             }
         }
@@ -263,24 +264,24 @@ public class EditRoleDialog extends JDialog {
             return assignments.size();
         }
 
-        public synchronized void remove(UserHolder holder) {
+        public synchronized void remove(IdentityHolder holder) {
             holders.remove(holder);
             assignments.remove(holder.getUserRoleAssignment());
             fireContentsChanged(userAssignmentList, 0, assignments.size());
         }
 
-        public synchronized void add(UserRoleAssignment ura) throws FindException, DuplicateObjectException {
+        public synchronized void add(RoleAssignment ra) throws FindException, DuplicateObjectException {
             try {
-                UserHolder holder = null;
+                IdentityHolder holder = null;
                 try {
-                    holder = new UserHolder(ura);
-                } catch (UserHolder.NoSuchUserException e) {
+                    holder = new IdentityHolder(ra);
+                } catch (IdentityHolder.NoSuchUserException e) {
                     throw new FindException("Can't assign deleted user", e);
                 }
-                if (assignments.contains(ura) || holders.contains(holder)) {
-                    throw new DuplicateObjectException("The user \"" + holder.getUser().getName() + "\" is already assigned to this role");
+                if (assignments.contains(ra) || holders.contains(holder)) {
+                    throw new DuplicateObjectException("The user \"" + holder.getIdentity().getName() + "\" is already assigned to this role");
                 }
-                assignments.add(ura);
+                assignments.add(ra);
                 holders.add(holder);
             } finally {
                 fireContentsChanged(userAssignmentList, 0, assignments.size());
@@ -359,7 +360,7 @@ public class EditRoleDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 Options opts = new Options();
                 opts.setInitialProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
-                opts.setSearchType(SearchType.USER);
+                opts.setSearchType(SearchType.ALL);
                 opts.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
                 opts.setDisposeOnSelect(true);
                 opts.setDisableOpenProperties(true);
@@ -373,8 +374,15 @@ public class EditRoleDialog extends JDialog {
                 long providerId = result.providerConfigOid;
                 for (EntityHeader header : result.entityHeaders) {
                     try {
-                        User user = identityAdmin.findUserByID(providerId, header.getStrId());
-                        assignmentListModel.add(new UserRoleAssignment(role, user.getProviderId(), user.getId()));
+                        if(header.getType() == com.l7tech.objectmodel.EntityType.USER){
+                            User user = identityAdmin.findUserByID(providerId, header.getStrId());
+                            assignmentListModel.add(new RoleAssignment(role, user.getProviderId(), user.getId(), EntityType.USER));
+                        }else if(header.getType() == com.l7tech.objectmodel.EntityType.GROUP){
+                            Group group = identityAdmin.findGroupByID(providerId, header.getStrId());
+                            assignmentListModel.add(new RoleAssignment(role, group.getProviderId(), group.getId(), EntityType.GROUP));
+                        }else{
+                            throw new RuntimeException("Identity of type " + header.getType()+" is not supported");
+                        }
                     } catch (DuplicateObjectException dup) {
                         JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), dup.getMessage(), "Could not add assignment", JOptionPane.ERROR_MESSAGE);
                     } catch (Exception e1) {
@@ -392,7 +400,7 @@ public class EditRoleDialog extends JDialog {
                     public void run() {
                         Object[] selected = userAssignmentList.getSelectedValues();
                         for (Object o : selected) {
-                            UserHolder u = (UserHolder)o;
+                            IdentityHolder u = (IdentityHolder)o;
                             assignmentListModel.remove(u);
                         }
                         updateButtonStates();
@@ -453,9 +461,9 @@ public class EditRoleDialog extends JDialog {
                 perms.add(perm);
             }
 
-            role.getUserAssignments().clear();
-            for (UserRoleAssignment assignment : assignmentListModel.assignments) {
-                role.getUserAssignments().add(assignment);
+            role.getRoleAssignments().clear();
+            for (RoleAssignment assignment : assignmentListModel.assignments) {
+                role.getRoleAssignments().add(assignment);
             }
 
             try {

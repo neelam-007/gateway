@@ -114,6 +114,10 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider {
     public void setGroupManager(GroupManager groupManager) {
     }
 
+    public void validate(User u) throws ValidationException {
+
+    }
+    
     private class TestGroupManager implements GroupManager<User, Group> {
         public Group findByPrimaryKey(String identifier) throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");

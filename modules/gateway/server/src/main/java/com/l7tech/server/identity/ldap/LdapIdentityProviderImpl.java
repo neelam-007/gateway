@@ -8,10 +8,7 @@ import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.identity.BadCredentialsException;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.InvalidIdProviderCfgException;
+import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.ldap.GroupMappingConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
@@ -39,6 +36,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import javax.naming.*;
+import com.l7tech.identity.AuthenticationException;
 import javax.naming.directory.*;
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
@@ -948,6 +946,24 @@ public class LdapIdentityProviderImpl
         this.auditor = new Auditor(this, applicationContext, logger);
     }
 
+    /*
+    * ValidationException exceptions do not state that the user belongs to an ldap or in which
+    * ldap the user was not found
+    * */
+    public void validate(User u) throws ValidationException {
+        User validatedUser = null;
+        try{
+            validatedUser = userManager.findByLogin(u.getLogin());
+        }
+        catch (FindException e){
+            throw new ValidationException("User " + u.getLogin()+" did not validate", e);
+        }
+
+        if(validatedUser == null){
+            throw new ValidationException("IdentityProvider User " + u.getLogin()+" not found");
+        }
+    }
+    
     private static final Logger logger = Logger.getLogger(LdapIdentityProviderImpl.class.getName());
 
     private ServerConfig serverConfig;

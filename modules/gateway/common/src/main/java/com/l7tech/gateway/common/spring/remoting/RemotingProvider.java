@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.spring.remoting;
 
+import javax.security.auth.Subject;
 import java.security.Principal;
 
 /**
@@ -48,4 +49,15 @@ public interface RemotingProvider {
      * @return The associated Principal or null.
      */
     Principal getPrincipalForCookie( String cookie );
+
+    /**
+     * Call getPrincipalForCookie when you just want the User associated with
+     * the session. Use setPrincipalsForSubject when you want to retrieve the User Principal
+     * and all other principals that we want to associate with the supplied Subject.
+     *
+     * @param cookie The cookie
+     * @param subject The subject to associate all Principals with. The minimum is the User Prinipal
+     *
+    * */
+    void setPrincipalsForSubject( String cookie, Subject subject);
 }

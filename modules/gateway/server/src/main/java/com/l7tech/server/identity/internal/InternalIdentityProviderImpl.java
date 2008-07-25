@@ -173,4 +173,22 @@ public class InternalIdentityProviderImpl
         this.springContext = applicationContext;
         this.auditor = new Auditor(this, applicationContext, logger);
     }
+
+    /*
+    * ValidationException exceptions do not state that the user belongs to an ldap or in which
+    * ldap the user was not found
+    * */
+    public void validate(User u) throws ValidationException {
+        User validatedUser = null;
+        try{
+            validatedUser = userManager.findByLogin(u.getLogin());
+        }
+        catch (FindException e){
+            throw new ValidationException("User " + u.getLogin()+" did not validate", e);
+        }
+
+        if(validatedUser == null){
+            throw new ValidationException("IdentityProvider User " + u.getLogin()+" not found");
+        }
+    }   
 }

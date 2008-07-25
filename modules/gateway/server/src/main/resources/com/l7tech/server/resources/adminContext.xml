@@ -145,8 +145,11 @@
     </bean>
 
     <!-- admin session tracker -->
-    <bean id="adminSessionManager" class="com.l7tech.server.admin.AdminSessionManager" singleton="true"/>
+    <bean id="adminSessionManager" class="com.l7tech.server.admin.AdminSessionManager" singleton="true">
+        <property name="sessionValidator" ref="adminLogin"/>
+    </bean>
 
+    <bean id="groupPrincipalCache" class="com.l7tech.server.admin.GroupPrincipalCache" singleton="true" factory-method="getInstance" />
     <!--==============================================================-
     Administration bean servants
     -===============================================================-->
@@ -158,6 +161,7 @@
         <property name="serverCertificate" ref ="sslKeystoreCertificate"/>
         <property name="adminSessionManager" ref="adminSessionManager"/>
         <property name="roleManager" ref="roleManager"/>
+        <property name="groupPrincipalCache" ref="groupPrincipalCache"/>
     </bean>
 
     <!-- identity admin servant -->

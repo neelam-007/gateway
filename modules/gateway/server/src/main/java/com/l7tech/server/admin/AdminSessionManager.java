@@ -3,7 +3,9 @@ package com.l7tech.server.admin;
 import org.apache.commons.collections.LRUMap;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Background;
+import com.l7tech.identity.ValidationException;
 
+import javax.security.auth.Subject;
 import java.security.SecureRandom;
 import java.security.Principal;
 import java.util.*;
@@ -57,6 +59,16 @@ public class AdminSessionManager {
         }
     }
 
+    public SessionValidator getSessionValidator() {
+        return sessionValidator;
+    }
+
+    public void setSessionValidator(SessionValidator sessionValidator) {
+        this.sessionValidator = sessionValidator;
+    }
+
+    private SessionValidator sessionValidator;
+    
     // TODO expire old sessions rather than wait for them to fall out of the LRU map.
     private final LRUMap sessionMap = new LRUMap(1000);
     private final SecureRandom random = new SecureRandom();
@@ -130,6 +142,27 @@ public class AdminSessionManager {
         return holder.getPrincipal();
     }
 
+    public synchronized void resumeSession(String session, Subject subject){
+        if (session == null) throw new NullPointerException();
+        SessionHolder holder = (SessionHolder)sessionMap.get(session);
+        if (holder == null) return;
+        holder.onUsed();
+        Principal p = holder.getPrincipal();
+        if(p == null){
+            return;
+        }
+        //Add the auth user to the session
+        subject.getPrincipals().add(p);
+        try{
+            //this set does not include the user principal
+            Set<Principal> principals = sessionValidator.validate(p);
+            for(Principal p1: principals){
+                subject.getPrincipals().add(p1);
+            }
+        }catch(ValidationException ve){
+            logger.log(Level.FINE, "Validation failed for Principal " + p.getName(), ve);
+        }
+    }    
     /**
      * Attempt to destroy a session for a previously-authenticated user.  Silently takes no action if the
      * specified session does not exist.

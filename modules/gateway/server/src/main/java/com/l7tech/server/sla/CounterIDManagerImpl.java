@@ -98,7 +98,7 @@ public class CounterIDManagerImpl extends HibernateDaoSupport implements Counter
             }
             query = "from " + TABLE_NAME + " in class " + CounterIDRecord.class.getName() +
                     " where " + TABLE_NAME + "." + "counterName" + " = ?" +
-                    " and " + TABLE_NAME + "." + "userId" + " = ? and " + TABLE_NAME + "." + "providerId" + " = ?";
+                    " and " + TABLE_NAME + "." + "identityId" + " = ? and " + TABLE_NAME + "." + "providerId" + " = ?";
             res = getHibernateTemplate().find(query, new Object[] {data.getCounterName(),
                                                                    data.getUserId(),
                                                                    new Long(data.getProviderId())});

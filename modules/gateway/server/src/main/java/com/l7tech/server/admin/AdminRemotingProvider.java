@@ -14,6 +14,7 @@ import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.objectmodel.FindException;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.security.auth.Subject;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Collection;
@@ -100,6 +101,15 @@ public class AdminRemotingProvider implements RemotingProvider {
         catch( FindException fe ) {
             throw (AccessControlException) new AccessControlException("Cluster invocation denied, unable to check ip.").initCause(fe);
         }
+    }
+
+    /*
+    * client uses this method instead of getPrincipalforCookie when the only purpose
+    * of calling getPrincipalForCookie is to add the returned Principal to a Subject
+    * setPrincipalsForSubject will add the user Principal aswell as any other Principals defined
+    * */
+    public void setPrincipalsForSubject(String cookie, Subject subject) {
+        adminSessionManager.resumeSession(cookie, subject);
     }
 
     public Principal getPrincipalForCookie( String cookie ) {

@@ -81,10 +81,7 @@ public class SecureHttpFilter implements Filter {
             cookie = servletRequest.getParameter( SESSION_ID_PARAM );
         }
         if (cookie != null && remotingProvider != null) {
-            Principal authUser = remotingProvider.getPrincipalForCookie( cookie );
-            if ( authUser != null ) {
-                subject.getPrincipals().add(authUser);
-            }
+            remotingProvider.setPrincipalsForSubject(cookie, subject);
         }
 
         // Pass on down the chain with the auth'd user and remote host set(if any)

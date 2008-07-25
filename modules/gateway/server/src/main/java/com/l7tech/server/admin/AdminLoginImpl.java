@@ -21,7 +21,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.server.admin.AdminSessionManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.FailedAdminLoginEvent;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -29,6 +28,7 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
@@ -37,6 +37,7 @@ import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
+import javax.security.auth.Subject;
 import java.rmi.server.ServerNotActiveException;
 import java.security.AccessControlException;
 import java.security.NoSuchAlgorithmException;
@@ -49,10 +50,11 @@ import java.util.logging.Logger;
 
 public class AdminLoginImpl
         extends ApplicationObjectSupport
-        implements AdminLogin, InitializingBean, ApplicationListener
+        implements AdminLogin, InitializingBean, ApplicationListener, SessionValidator
 {
     private static final Logger logger = Logger.getLogger(AdminLoginImpl.class.getName());
-
+    private static int CACHE_MAX_TIME = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME, 300000);
+    
     private AdminSessionManager sessionManager;
 
     private IdentityProviderConfigManager identityProviderConfigManager;
@@ -62,6 +64,16 @@ public class AdminLoginImpl
     private RoleManager roleManager;
     private X509Certificate serverCertificate;
 
+    public GroupPrincipalCache getGroupPrincipalCache() {
+        return groupPrincipalCache;
+    }
+
+    public void setGroupPrincipalCache(GroupPrincipalCache groupPrincipalCache) {
+        this.groupPrincipalCache = groupPrincipalCache;
+    }
+
+    private GroupPrincipalCache groupPrincipalCache;
+    
     public AdminLoginResult login(String username, String password)
             throws AccessControlException, LoginException
     {
@@ -85,6 +97,12 @@ public class AdminLoginImpl
                     AuthenticationResult authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds);
                     User authdUser = authResult == null ? null : authResult.getUser();
                     if (authdUser != null) {
+                        //Validate the user , now authenticated so that we know all of their group roles
+                        Set<Principal> p = this.validate(authdUser);
+                        Subject s = JaasUtils.getCurrentSubject();
+                        for(Principal pr: p){
+                            s.getPrincipals().add(pr);
+                        }
                         checkPerms(authdUser);
                         logger.info("Authenticated on " + provider.getConfig().getName());
                         user = authdUser;
@@ -92,6 +110,8 @@ public class AdminLoginImpl
                     }
                 } catch (AuthenticationException e) {
                     logger.info("Authentication failed on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
+                } catch (ValidationException e) {
+                    logger.info("Validation failed on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
                 }
             }
 
@@ -361,6 +381,36 @@ public class AdminLoginImpl
                 }
             }
         }
+    }
+
+    /*
+    * validate looks up our internal cache for the supplied Principal.
+    * If our cache is old the principal is revalidated and so is all of it's associated
+    * principals.
+    * */
+    public Set<Principal> validate(Principal p) throws ValidationException {
+
+        //find the User
+        if(!(p instanceof User)){
+            throw new ValidationException("Principal must represent a User");
+        }
+
+        User u = (User)p;
+        Long pId = u.getProviderId();
+        //find the identity provider
+        Set<Principal> pSet = new HashSet<Principal>();
+        for(IdentityProvider iP: adminProviders){
+            if(iP.getConfig().getOid() == pId){
+                //Get the group memberhsip from the group cache.
+                Principal groupP = this.groupPrincipalCache.getCachedValidatedPrincipals(u,iP,CACHE_MAX_TIME);
+                pSet.add(groupP);
+                //any other cache's we have for Principals we want to associate with a users subject
+                //add them here...
+                return pSet;
+            }
+        }
+
+        throw new ValidationException("Users identity provider ( "+pId+" )not found");
     }
 
     /**

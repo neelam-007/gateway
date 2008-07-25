@@ -65,7 +65,7 @@ public class RoleManagementDialog extends JDialog {
         enableRoleManagmentButtons(RbacUtilities.isEnableRoleEditing());
 
         // reset cached identity provider names
-        UserHolder.reset();
+        IdentityHolder.reset();
 
         populateList();
         setupButtonListeners();
@@ -200,18 +200,18 @@ public class RoleManagementDialog extends JDialog {
         Set<String> sorted = new TreeSet<String>();
 
         if (role != null) {
-            Set<UserRoleAssignment> users = role.getUserAssignments();
+            Set<RoleAssignment> users = role.getRoleAssignments();
             if (users == null || users.isEmpty()) {
                 sorted.add("   NONE\n");
             } else {
-                for (UserRoleAssignment ura : users) {
+                for (RoleAssignment ura : users) {
                     try {
-                        UserHolder holder = new UserHolder(ura);
+                        IdentityHolder holder = new IdentityHolder(ura);
                         sorted.add("   " + holder);
                     } catch (FindException e) {
-                        logger.warning("Could not find a user with id=" + ura.getUserId());
-                    } catch (UserHolder.NoSuchUserException e) {
-                        logger.info("Removing deleted user #" + ura.getUserId());
+                        logger.warning("Could not find a user with id=" + ura.getIdentityId());
+                    } catch (IdentityHolder.NoSuchUserException e) {
+                        logger.info("Removing deleted user #" + ura.getIdentityId());
                     }
                 }
             }

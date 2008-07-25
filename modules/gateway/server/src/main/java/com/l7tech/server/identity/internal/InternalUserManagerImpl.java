@@ -1,7 +1,7 @@
 package com.l7tech.server.identity.internal;
 
 import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.gateway.common.security.rbac.UserRoleAssignment;
+import com.l7tech.gateway.common.security.rbac.RoleAssignment;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -120,12 +120,12 @@ public class InternalUserManagerImpl
             for (Role role : roles) {
                 if (role.getOid() == Role.ADMIN_ROLE_OID) {
                     boolean anybodyElse = false;
-                    for (UserRoleAssignment assignment : role.getUserAssignments()) {
+                    for (RoleAssignment assignment : role.getRoleAssignments()) {
                         long assignedProvider = assignment.getProviderId();
                         if (assignedProvider == identityProvider.getConfig().getOid()) {
-                            User existingUser = findByPrimaryKey(assignment.getUserId());
+                            User existingUser = findByPrimaryKey(assignment.getIdentityId());
                             if (existingUser == null) continue;
-                            if ((!user.getId().equals(assignment.getUserId()) || user.getProviderId() != assignment.getProviderId())) {
+                            if ((!user.getId().equals(assignment.getIdentityId()) || user.getProviderId() != assignment.getProviderId())) {
                                 anybodyElse = true;
                             }
                         }

@@ -342,7 +342,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
                     CertEntryRow row = (CertEntryRow)q.uniqueResult();
                     if (row != null) return row;
                     if (user.getLogin() != null && user.getLogin().length() > 0) {
-                        // Try searching by login if userId fails
+                        // Try searching by login if identityId fails
                         q = session.createQuery(FIND_BY_LOGIN);
                         q.setLong(0, user.getProviderId());
                         q.setString(1, user.getLogin());
@@ -361,7 +361,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
 
     private static final String TABLE_NAME = "client_cert";
     private static final String PROVIDER_COLUMN = "provider";
-    private static final String USER_ID = "userId";
+    private static final String USER_ID = "identityId";
     private static final String USER_LOGIN = "login";
 
     private static final String HQL_FINDALL_QUERY = "from " + CertEntryRow.class.getName();

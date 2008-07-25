@@ -11,11 +11,13 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.HibernateEntityManager;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.criterion.Criterion;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,16 +56,36 @@ public class RoleManagerImpl
         //noinspection unchecked
         return (Collection<Role>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
             public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                //Get the User's directly assigned Role's
                 Set<Role> roles = new HashSet<Role>();
-                Criteria userAssignmentQuery = session.createCriteria(UserRoleAssignment.class);
-                userAssignmentQuery.add(Restrictions.eq("userId", user.getId()));
+                Criteria userAssignmentQuery = session.createCriteria(RoleAssignment.class);
+                userAssignmentQuery.add(Restrictions.eq("identityId", user.getId()));
                 userAssignmentQuery.add(Restrictions.eq("providerId", user.getProviderId()));
                 List uras = userAssignmentQuery.list();
                 //(hibernate results aren't generic)
                 //noinspection ForLoopReplaceableByForEach
                 for (Iterator i = uras.iterator(); i.hasNext();) {
-                    UserRoleAssignment ura = (UserRoleAssignment) i.next();
-                    roles.add(ura.getRole());
+                    RoleAssignment ra = (RoleAssignment) i.next();
+                    roles.add(ra.getRole());
+                }
+
+                //Now get the Roles is can access via it's group membership
+                Set<IdentityHeader> iHeaders = JaasUtils.getCurrentUserGroupInfo();
+                if(iHeaders == null) return roles;
+                List<String> groupNames = new ArrayList();
+                for(IdentityHeader iH: iHeaders){
+                    groupNames.add(iH.getStrId());                
+                }
+                if(groupNames.size() == 0) return roles;
+                
+                Criterion groupNameIn = Restrictions.in("identityId", groupNames);
+                Criteria groupQuery = session.createCriteria(RoleAssignment.class);
+                groupQuery.add(groupNameIn);
+                List gList = groupQuery.list();
+
+                for (Iterator i = gList.iterator(); i.hasNext();) {
+                    RoleAssignment ra = (RoleAssignment) i.next();
+                    roles.add(ra.getRole());
                 }
 
                 return roles;
@@ -127,13 +149,13 @@ public class RoleManagerImpl
     // TODO check whether any of the assigned users is internal?
     @Override
     public void update(Role role) throws UpdateException {
-        if (role.getOid() == Role.ADMIN_ROLE_OID && role.getUserAssignments().isEmpty())
+        if (role.getOid() == Role.ADMIN_ROLE_OID && role.getRoleAssignments().isEmpty())
             throw new UpdateException(RoleManager.ADMIN_REQUIRED);
 
         // Merge in OIDs for any known user assignments (See bug 4176)
         boolean needsOidMerge = false;
-        for ( UserRoleAssignment ura : role.getUserAssignments() ) {
-            if ( ura.getOid() == UserRoleAssignment.DEFAULT_OID ) {
+        for ( RoleAssignment ura : role.getRoleAssignments() ) {
+            if ( ura.getOid() == RoleAssignment.DEFAULT_OID ) {
                 needsOidMerge = true;
                 break;
             }
@@ -142,10 +164,10 @@ public class RoleManagerImpl
         if ( needsOidMerge ) {
             try {
                 Role persistedRole = findByPrimaryKey(role.getOid());
-                Set previousAssignments = persistedRole.getUserAssignments();
+                Set previousAssignments = persistedRole.getRoleAssignments();
 
-                for ( UserRoleAssignment ura : role.getUserAssignments() ) {
-                    if ( ura.getOid() == UserRoleAssignment.DEFAULT_OID ) {
+                for ( RoleAssignment ura : role.getRoleAssignments() ) {
+                    if ( ura.getOid() == RoleAssignment.DEFAULT_OID ) {
                         ura.setOid(getOidForAssignment(previousAssignments, ura));
                     }
                 }
@@ -243,12 +265,12 @@ public class RoleManagerImpl
         }
     }
 
-    private long getOidForAssignment(Set<UserRoleAssignment> userRoleAssignments, UserRoleAssignment assignment) {
-        long oid = UserRoleAssignment.DEFAULT_OID;
+    private long getOidForAssignment(Set<RoleAssignment> roleAssignments, RoleAssignment assignment) {
+        long oid = RoleAssignment.DEFAULT_OID;
 
-        for ( UserRoleAssignment ura : userRoleAssignments ) {
+        for ( RoleAssignment ura : roleAssignments) {
             if ( ura.getProviderId()==assignment.getProviderId() &&
-                 ura.getUserId().equals(assignment.getUserId())  ) {
+                 ura.getIdentityId().equals(assignment.getIdentityId())  ) {
                 oid = ura.getOid();
                 break;
             }
