@@ -7,24 +7,21 @@ import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
 import com.l7tech.common.io.XmlUtil;
-import junit.framework.TestCase;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.context.ApplicationContext;
+import org.junit.Test;
+import org.junit.Assert;
 
 /**
- * Created by IntelliJ IDEA.
- * User: darmstrong
- * Date: Jul 8, 2008
- * Time: 8:58:52 AM
- * To change this template use File | Settings | File Templates.
+ *
  */
-public class ServerVariablesTest extends TestCase {
+public class ServerVariablesTest {
 
     /*
     * testServiceNameContextVariable creates a PolicyEncofcementContext and gives it a
     * PublishedService. The static ServerVariabes(String, PolicyEncorcementContext) is used
     * to retrieve the value of service.name which should equal the name of the service created.
     * */
+    @Test
     public void testServiceNameContextVariable() throws Exception{
         PolicyEnforcementContext pec = getPolicyEncorcementContext();
         PublishedService ps = new PublishedService();
@@ -34,7 +31,7 @@ public class ServerVariablesTest extends TestCase {
         //Now the pec has a service so the variable service.name should be available
         String variableName = "service.name";
         String variableValue = ServerVariables.get(variableName, pec).toString();
-        assertEquals("ServerVariable should equal service name",serviceName,variableValue);
+        Assert.assertEquals("ServerVariable should equal service name",serviceName,variableValue);
         
     }
 
@@ -43,10 +40,11 @@ public class ServerVariablesTest extends TestCase {
     * PublishedService. The static ServerVariabes(String, PolicyEncorcementContext) is used
     * to retrieve the value of service.oid which should equal the oid of the service created.
     * */
+    @Test
     public void testServiceOidContextVariable() throws Exception{
         PolicyEnforcementContext pec = getPolicyEncorcementContext();
         PublishedService ps = new PublishedService();
-        Long l = new Long(123456L);
+        Long l = 123456L;
         ps.setOid(l);
         String serviceName = "testServiceOidContextVariable";
         ps.setName(serviceName);
@@ -54,7 +52,7 @@ public class ServerVariablesTest extends TestCase {
         //Now the pec has a service so the variable service.oid should be available
         String variableName = "service.oid";
         String variableValue = ServerVariables.get(variableName, pec).toString();
-        assertEquals("ServerVariable should equal service oid",l.toString(),variableValue);
+        Assert.assertEquals("ServerVariable should equal service oid",l.toString(),variableValue);
 
     }    
 
@@ -62,6 +60,7 @@ public class ServerVariablesTest extends TestCase {
     * Test the service.url context variable and associated suffixes
     * : host, protocol, path, file, query
     * */
+    @Test
     public void testServiceUrlContextVariables() throws Exception{
         ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
         Message request = new Message();
@@ -87,33 +86,33 @@ public class ServerVariablesTest extends TestCase {
         
         String variableName = "service.url";
         String variableValue = ServerVariables.get(variableName, pec).toString();
-        assertEquals("ServerVariable should equal service url",url,variableValue);
+        Assert.assertEquals("ServerVariable should equal service url",url,variableValue);
 
         variableName = "service.url.host";
         variableValue = ServerVariables.get(variableName, pec).toString();
-        assertEquals("ServerVariable should equal service url",host,variableValue);
+        Assert.assertEquals("ServerVariable should equal service url",host,variableValue);
 
         variableName = "service.url.protocol";
         variableValue = ServerVariables.get(variableName, pec).toString();
-        assertEquals("ServerVariable should equal service url",protocol,variableValue);
+        Assert.assertEquals("ServerVariable should equal service url",protocol,variableValue);
 
         variableName = "service.url.port";
         variableValue = ServerVariables.get(variableName, pec).toString();
-        assertEquals("ServerVariable should equal service url",port,variableValue);
+        Assert.assertEquals("ServerVariable should equal service url",port,variableValue);
 
         //file expects the query string
         variableName = "service.url.file";
         variableValue = ServerVariables.get(variableName, pec).toString();
-        assertEquals("ServerVariable should equal service url",filePath+query,variableValue);
+        Assert.assertEquals("ServerVariable should equal service url",filePath+query,variableValue);
 
         //path doesn't expect the query string
         variableName = "service.url.path";
         variableValue = ServerVariables.get(variableName, pec).toString();
-        assertEquals("ServerVariable should equal service url",filePath,variableValue);
+        Assert.assertEquals("ServerVariable should equal service url",filePath,variableValue);
 
         variableName = "service.url.query";
         variableValue = ServerVariables.get(variableName, pec).toString();
-        assertEquals("ServerVariable should equal service url",query,variableValue);
+        Assert.assertEquals("ServerVariable should equal service url",query,variableValue);
     }
 
     private PolicyEnforcementContext getPolicyEncorcementContext(){
@@ -121,8 +120,7 @@ public class ServerVariablesTest extends TestCase {
         request.initialize(XmlUtil.stringAsDocument("<myrequest/>"));
         Message response = new Message();
         response.initialize(XmlUtil.stringAsDocument("<myresponse/>"));
-        PolicyEnforcementContext pec = new PolicyEnforcementContext(request, response);
-        return pec;
+        return new PolicyEnforcementContext(request, response);
     }
 
 }

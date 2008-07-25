@@ -9,8 +9,9 @@ import com.l7tech.server.transport.jms.JmsPropertyMapper;
 import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.transport.jms.*;
-import junit.framework.TestCase;
+
 import org.springframework.context.ApplicationContext;
+import org.junit.Assert;
 
 import javax.jms.*;
 import javax.jms.Queue;
@@ -20,7 +21,7 @@ import java.util.*;
 /**
  * User: vchan
  */
-public class JmsTestCase extends TestCase {
+public class JmsTestCase {
 
     // Spring initialized objects
     protected ApplicationContext appCtx;
@@ -43,7 +44,6 @@ public class JmsTestCase extends TestCase {
 
     // Random number generator used for tasks
     protected final Random rand = new Random(System.currentTimeMillis());
-
 
     protected void setUp() throws Exception {
 
@@ -200,13 +200,13 @@ public class JmsTestCase extends TestCase {
 
     protected void compareTestData(HashMap<String, String> target, HashMap<String, String> results) {
 
-        assertEquals(target.size(), results.size());
+        Assert.assertEquals(target.size(), results.size());
 
         Iterator<String> it = target.keySet().iterator();
         while (it.hasNext()) {
             String key = it.next();
-            assertTrue(results.containsKey(key));
-            assertEquals(target.get(key), results.get(key));
+            Assert.assertTrue(results.containsKey(key));
+            Assert.assertEquals(target.get(key), results.get(key));
         }
     }
 

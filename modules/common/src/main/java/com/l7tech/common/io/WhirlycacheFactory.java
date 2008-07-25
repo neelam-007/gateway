@@ -6,7 +6,6 @@
 package com.l7tech.common.io;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -84,8 +83,11 @@ public class WhirlycacheFactory {
         Cache cache = null;
         synchronized(cacheMap) {
             if (!shutdown) {
-                cache = new CacheDecorator(managedCache, cc, new CacheMaintenancePolicy[] { maintenancePolicy });
-                cacheMap.put(name, cache);
+                if ( cacheMap.containsKey(name) ) throw new IllegalArgumentException("Duplicate cache! : " + name);
+
+                CacheDecorator cacheDecorator = new CacheDecorator(managedCache, cc, new CacheMaintenancePolicy[] { maintenancePolicy });
+                cache = cacheDecorator;
+                cacheMap.put(name, cacheDecorator);
             }
         }
 
@@ -103,15 +105,45 @@ public class WhirlycacheFactory {
     }
 
     /**
+     * Shutdown the given cache instance an remove from the cache map.
+     *
+     * @param cache the cache to shutdown
+     * @retrurn true if the cache was shutdown
+     */
+    public static boolean shutdown( final Cache cache ) {
+        boolean shutdownCache = false;
+
+        synchronized(cacheMap) {
+            if (!shutdown) {
+                for (Map.Entry<String,CacheDecorator> entry : cacheMap.entrySet()) {
+                    String name = entry.getKey();
+                    CacheDecorator cacheDecorator = entry.getValue();
+
+                    if ( cacheDecorator == cache ) {
+                        if (logger.isLoggable(Level.INFO))
+                            logger.log(Level.INFO, "Shutting down cache ''{0}''.", name);
+
+                        shutdownCache = true;
+                        cacheMap.remove(name);
+                        cacheDecorator.shutdown();
+                        break;
+                    }
+                }
+            }
+        }
+
+        return shutdownCache;
+    }
+
+    /**
      * Shutdown cache tuning thread.
      */
     public static void shutdown() {
         synchronized(cacheMap) {
             shutdown = true;
-            for (Iterator cacheIter = cacheMap.entrySet().iterator(); cacheIter.hasNext(); ) {
-                Map.Entry entry = (Map.Entry) cacheIter.next();
-                String name = (String) entry.getKey();
-                CacheDecorator cacheDecorator = (CacheDecorator) entry.getValue();
+            for (Map.Entry<String,CacheDecorator> entry : cacheMap.entrySet()) {
+                String name = entry.getKey();
+                CacheDecorator cacheDecorator = entry.getValue();
                 if (logger.isLoggable(Level.INFO))
                     logger.log(Level.INFO, "Shutting down cache ''{0}''.", name);
                 cacheDecorator.shutdown();
@@ -136,6 +168,6 @@ public class WhirlycacheFactory {
         public void store(Object key, Object value, long expireTime) {}
     };
 
-    private static final Map cacheMap = Collections.synchronizedMap(new HashMap());
+    private static final Map<String,CacheDecorator> cacheMap = Collections.synchronizedMap(new HashMap<String,CacheDecorator>());
     private static boolean shutdown = false;
 }

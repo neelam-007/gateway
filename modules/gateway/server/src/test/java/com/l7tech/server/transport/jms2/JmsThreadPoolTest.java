@@ -2,37 +2,39 @@ package com.l7tech.server.transport.jms2;
 
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.transport.jms2.asynch.JmsThreadPool;
-import junit.framework.TestCase;
+
 import org.springframework.context.ApplicationContext;
+import org.junit.Test;
+import org.junit.Ignore;
+import org.junit.Before;
+import org.junit.Assert;
 
 /**
  * User: vchan
  */
-public class JmsThreadPoolTest extends TestCase {
+public class JmsThreadPoolTest {
 
     private ApplicationContext ctx;
 
-    protected void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
 
         if (ctx == null) {
             ctx = ApplicationContexts.getTestApplicationContext();
         }
     }
 
-    protected void tearDown() throws Exception {
-        super.tearDown();
-    }
-
-
+    @Ignore("This test creates a thread pool without stopping it")
+    @Test
     public void testThreadPoolInit() {
 
         try {
 
             JmsThreadPool pool = JmsThreadPool.getInstance();
-            assertNotNull(pool);
+            Assert.assertNotNull(pool);
             
         } catch (Exception ex) {
-            fail("Unexpected exception occurred: " + ex);
+            Assert.fail("Unexpected exception occurred: " + ex);
         }
     }
 

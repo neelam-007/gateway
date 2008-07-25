@@ -10,7 +10,8 @@ import java.util.Arrays;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
 
 import com.l7tech.common.io.WhirlycacheFactory;
-import com.l7tech.common.urlcache.Cachable;
+import com.l7tech.util.Cachable;
+import com.l7tech.util.TimeSource;
 
 import com.whirlycott.cache.Cache;
 
@@ -19,7 +20,7 @@ import com.whirlycott.cache.Cache;
  *
  * <p>Interface methods should be annotated to allow caching.</p>
  *  
- * @see Cachable
+ * @see com.l7tech.util.Cachable
  * @author Steve Jones
  */
 public class EntityCachingFactoryBean extends AbstractFactoryBean {
@@ -34,9 +35,28 @@ public class EntityCachingFactoryBean extends AbstractFactoryBean {
      */
     public EntityCachingFactoryBean(final Class serviceInterface,
                                     final Object serviceInstance) {
+        this( new TimeSource(),
+              null,
+              serviceInterface,
+              serviceInstance );
+    }
+
+    /**
+     * Create an EntityCachingFactoryBean for the given interface/instance.
+     *
+     * @param timeSource The TimeSource to use for the current time.
+     * @param serviceInterface The interface to be proxied (should be annotated, must not be null).
+     * @param serviceInstance The instance to be proxied (must not be null).
+     */
+    public EntityCachingFactoryBean(final TimeSource timeSource,
+                                    final String name,
+                                    final Class serviceInterface,
+                                    final Object serviceInstance) {
         if (serviceInterface == null) throw new IllegalArgumentException("serviceInterface is required");
         if (serviceInstance == null) throw new IllegalArgumentException("serviceInstance is required");
-        
+
+        this.timeSource = timeSource == null ? new TimeSource() : timeSource;
+        this.name = name == null ? "EMCache" : name;
         this.serviceInterface = serviceInterface;
         this.serviceInstance = serviceInstance;
     }
@@ -60,21 +80,21 @@ public class EntityCachingFactoryBean extends AbstractFactoryBean {
      */
     protected Object createInstance() throws Exception {
         if (cache == null) {
-            cache = WhirlycacheFactory.createCache("EMCache-" + serviceInterface.getName(), 1000, 63, WhirlycacheFactory.POLICY_LRU);
+            cache = WhirlycacheFactory.createCache(name + "-" + serviceInterface.getName(), 1000, 63, WhirlycacheFactory.POLICY_LRU);
         }
 
-        Object instance = Proxy.newProxyInstance(
+        return Proxy.newProxyInstance(
                 EntityCachingFactoryBean.class.getClassLoader(),
                 new Class[]{ serviceInterface },
                 getInvocationHandler());
-
-        return instance;
     }
 
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(EntityCachingFactoryBean.class.getName());
 
+    private final TimeSource timeSource;
+    private final String name;
     private final Class serviceInterface;
     private final Object serviceInstance;
     private Cache cache;
@@ -82,7 +102,7 @@ public class EntityCachingFactoryBean extends AbstractFactoryBean {
     private InvocationHandler getInvocationHandler() {
         return new InvocationHandler(){
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                Object result = null;
+                Object result;
 
                 // Get the cache configuration for the method.
                 Cachable cacheConfig = method.getAnnotation(Cachable.class);
@@ -123,7 +143,7 @@ public class EntityCachingFactoryBean extends AbstractFactoryBean {
                                     new Object[]{method.getName(), args[cacheConfig.relevantArg()]});
 
                         long expiryPeriod = cacheConfig.maxAge();
-                        cache.store(mak, new CachedValue(result, System.currentTimeMillis() + expiryPeriod), expiryPeriod);
+                        cache.store(mak, new CachedValue(timeSource, result, timeSource.currentTimeMillis() + expiryPeriod), expiryPeriod);
                     }
                 } else {
                     // Use value from cache
@@ -164,6 +184,7 @@ public class EntityCachingFactoryBean extends AbstractFactoryBean {
             this.methodArguments = methodArguments;
         }
 
+        @SuppressWarnings({"RedundantIfStatement"})
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -188,10 +209,12 @@ public class EntityCachingFactoryBean extends AbstractFactoryBean {
      * Value is just an Object with a timestamp (of the actual expiry)
      */
     private static final class CachedValue {
+        private final TimeSource timeSource;
         private final Object result;
         private final long expiry;
 
-        private CachedValue(Object result, long expiry) {
+        private CachedValue(TimeSource timeSource, Object result, long expiry) {
+            this.timeSource = timeSource;
             this.result = result;
             this.expiry = expiry;
         }
@@ -199,7 +222,7 @@ public class EntityCachingFactoryBean extends AbstractFactoryBean {
         private boolean isExpired() {
             boolean expired = true;
 
-            if (expiry > System.currentTimeMillis()) {
+            if (expiry > timeSource.currentTimeMillis()) {
                 expired = false;
             }
 

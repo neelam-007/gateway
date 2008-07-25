@@ -7,8 +7,7 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.common.io.CertificateExpiry;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.common.urlcache.Cachable;
+import com.l7tech.util.Cachable;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;

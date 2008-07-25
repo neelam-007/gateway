@@ -71,7 +71,7 @@ public class CertificateDownloader {
         if (ssgUrl == null)
             throw new IllegalStateException("No Gateway url is set");
         certBytes = null;
-        nonce = String.valueOf(Math.abs(new SecureRandom().nextLong()));
+        nonce = getNonce();
         String uri = SecureSpanConstants.CERT_PATH + "?" + "getcert=1&nonce=" + nonce;
         if (username != null)
             uri += "&username=" + URLEncoder.encode(username, "UTF-8");
@@ -142,5 +142,12 @@ public class CertificateDownloader {
         if (certBytes == null) throw new IllegalStateException();
 
         return sawNoPass || password == null || checks.size() < 1;
+    }
+
+    /**
+     * Get the next nonce value.
+     */
+    protected String getNonce() {        
+        return String.valueOf(Math.abs(new SecureRandom().nextLong()));
     }
 }

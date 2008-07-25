@@ -5,9 +5,13 @@ import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.transport.jms2.synch.LegacyJmsEndpointListenerFactory;
 import com.l7tech.gateway.common.Component;
 
+import org.junit.Ignore;
+import org.junit.Assert;
+
 /**
  * @author: vchan
  */
+@Ignore("This test requires a JMS queue")
 public class JmsBootProcessTest extends JmsTestCase {
 
     JmsBootProcess bootProcess;
@@ -33,7 +37,7 @@ public class JmsBootProcessTest extends JmsTestCase {
 
         try {
             bootProcess = (JmsBootProcess) appCtx.getBean("jmsBootprocess", JmsBootProcess.class);
-            assertNotNull("Could not obtain jmsBootProcess bean from applicationContext", bootProcess);
+            Assert.assertNotNull("Could not obtain jmsBootProcess bean from applicationContext", bootProcess);
             startBootProcess();
 
             // wait for process to do it's thang
@@ -41,11 +45,11 @@ public class JmsBootProcessTest extends JmsTestCase {
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            fail("Unexpected exception: " + ex);
+            Assert.fail("Unexpected exception: " + ex);
 
         } catch (Throwable ex) {
             ex.printStackTrace();
-            fail("Unexpected un-caught exception: " + ex);
+            Assert.fail("Unexpected un-caught exception: " + ex);
         }
     }
 
@@ -78,11 +82,11 @@ public class JmsBootProcessTest extends JmsTestCase {
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            fail("Unexpected exception: " + ex);
+            Assert.fail("Unexpected exception: " + ex);
 
         } catch (Throwable ex) {
             ex.printStackTrace();
-            fail("Unexpected un-caught exception: " + ex);
+            Assert.fail("Unexpected un-caught exception: " + ex);
         }
     }
 

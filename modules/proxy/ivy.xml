@@ -25,7 +25,7 @@
     <dependencies>
         <dependency name="layer7-common" rev="latest.integration" force="true" conf="core; test->default,test"/>
         <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-policy" rev="latest.integration" force="true" conf="core"/>
+        <dependency name="layer7-policy" rev="latest.integration" force="true" conf="core; test->default,test"/>
         <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
     </dependencies>
 </ivy-module>

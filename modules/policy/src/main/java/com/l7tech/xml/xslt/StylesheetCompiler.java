@@ -23,7 +23,6 @@ import java.io.StringReader;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -79,7 +78,7 @@ public class StylesheetCompiler {
             Document document = db.parse(new InputSource(new StringReader(thing)));
 
             // remove any output elements that use xalan extensions from the stylesheet doc before compiling
-            removeOutputWithXalanExtension(document);
+            removeOutputXalanExtensions(document);
 
             // create the XSL transform template
             Templates result = transfactory.newTemplates(new DOMSource(document));
@@ -122,39 +121,36 @@ public class StylesheetCompiler {
         return varsUsed;
     }
 
-    private static void removeOutputWithXalanExtension(Document document) {
+    private static void removeOutputXalanExtensions(final Document document) {
 
-        Map nsMap = XmlUtil.getNamespaceMap(document.getDocumentElement());
-        if (nsMap.containsValue(XALAN_EXTENSION_NS1) || nsMap.containsValue(XALAN_EXTENSION_NS2)){
-
-            // mark nodes for deletion
-            List<Node> tobeDeleted = new ArrayList<Node>();
-
-            // find the output elements that use xalan extensions
-            NodeList nodes = document.getElementsByTagNameNS(NAMESPACE_XSLT, "output");
-            for (int i=0; i<nodes.getLength(); i++) {
+        // find the output elements that use xalan extensions
+        NodeList nodes = document.getDocumentElement().getChildNodes();
+        for (int i=0; i<nodes.getLength(); i++) {
+            Node node = nodes.item(i);
+            if ( node.getNodeType() == Node.ELEMENT_NODE &&
+                 NAMESPACE_XSLT.equals(node.getNamespaceURI()) &&
+                 "output".equals(node.getLocalName())) {
 
                 // check the element
-                NamedNodeMap map = nodes.item(i).getAttributes();
+                NamedNodeMap map = node.getAttributes();
+                List<Node> toRemove = null;
                 for (int j=0; j<map.getLength(); j++) {
 
                     if (XALAN_EXTENSION_NS1.equals(map.item(j).getNamespaceURI()) ||
                         XALAN_EXTENSION_NS2.equals(map.item(j).getNamespaceURI()))
                     {
+                        if ( toRemove == null ) toRemove = new ArrayList<Node>();
                         // mark node for removal
-                        tobeDeleted.add(nodes.item(i));
+                        toRemove.add(map.item(j));
+                    }
+                }
+
+                if ( toRemove != null ) {
+                    for ( Node attrNode : toRemove ) {
+                        map.removeNamedItemNS( attrNode.getNamespaceURI(), attrNode.getLocalName() );
                     }
                 }
             }
-
-            // delete the output nodes from the document
-            for (Node n : tobeDeleted) {
-                n.getParentNode().removeChild(n);
-            }
-            // should we log?
-//            try {
-//                System.out.println("trimmed xsl:" + new String(XmlUtil.toByteArray(document.getDocumentElement())));
-//            } catch (java.io.IOException ioe) {}
         }
     }
 }

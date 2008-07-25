@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
+import com.l7tech.util.TimeSource;
 import com.whirlycott.cache.Cache;
 
 import java.util.logging.Level;
@@ -21,38 +22,58 @@ import java.util.logging.Logger;
 public final class AuthCache {
     private static final Logger logger = Logger.getLogger(AuthCache.class.getName());
 
+    private final TimeSource timeSource;
     private final Cache successCache;
     private final Cache failureCache;
     private final boolean successCacheDisabled;
     private final boolean failureCacheDisabled;
-    private static int SUCCESS_CACHE_TUNER_INTERVAL = 59;
+    private static final int SUCCESS_CACHE_TUNER_INTERVAL = 59;
     /*
     * prime so cleanup won't ever collide with success tunerInterval of 59, also prime
     * */
-    private static int FAILURE_CACHE_TUNER_INTERVAL = 61;
+    private static final int FAILURE_CACHE_TUNER_INTERVAL = 61;
 
     public final static int SUCCESS_CACHE_SIZE = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_SUCCESS_CACHE_SIZE, 200);
     public final static int FAILURE_CACHE_SIZE = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_FAILURE_CACHE_SIZE, 100); 
 
-    private AuthCache() {
-        String name = "AuthCache_unified";
+    AuthCache() {
+        this(   "AuthCache",
+                new TimeSource(),
+                SUCCESS_CACHE_SIZE,
+                SUCCESS_CACHE_TUNER_INTERVAL,
+                FAILURE_CACHE_SIZE,
+                FAILURE_CACHE_TUNER_INTERVAL);
+    }
 
-        successCache = SUCCESS_CACHE_SIZE < 1 ? null :
-                WhirlycacheFactory.createCache(name, SUCCESS_CACHE_SIZE, SUCCESS_CACHE_TUNER_INTERVAL, WhirlycacheFactory.POLICY_LFU);
-        successCacheDisabled = (successCache != null) ? false : true;
+    AuthCache(final String name,
+              final TimeSource source,
+              final int successCacheSize,
+              final int successTunerInterval,
+              final int failureCacheSize,
+              final int failureTunerInterval) {
+        timeSource = source;
+
+        successCache = successCacheSize < 1 ? null :
+                WhirlycacheFactory.createCache(name + ".success", successCacheSize, successTunerInterval, WhirlycacheFactory.POLICY_LFU);
+        successCacheDisabled = (successCache == null);
         if(successCacheDisabled){
             if (logger.isLoggable(Level.WARNING))
-                logger.log(Level.WARNING,"Successfull authentication caching has been disabled via configuration");
+                logger.log(Level.WARNING,"Successful authentication caching has been disabled via configuration");
         }
 
-        failureCache = FAILURE_CACHE_SIZE < 1 ? null :
-                WhirlycacheFactory.createCache(name, FAILURE_CACHE_SIZE, FAILURE_CACHE_TUNER_INTERVAL, WhirlycacheFactory.POLICY_LFU); 
+        failureCache = failureCacheSize < 1 ? null :
+                WhirlycacheFactory.createCache(name + ".failure", failureCacheSize, failureTunerInterval, WhirlycacheFactory.POLICY_LFU); 
 
-        failureCacheDisabled = (failureCache != null) ? false : true;
+        failureCacheDisabled = (failureCache == null);
         if(failureCacheDisabled){
             if (logger.isLoggable(Level.WARNING))
                 logger.log(Level.WARNING,"Failed authentication caching has been disabled via configuration");
         }
+    }
+
+    void dispose() {
+        WhirlycacheFactory.shutdown(successCache);
+        WhirlycacheFactory.shutdown(failureCache);    
     }
 
     private static class CacheKey {
@@ -168,7 +189,7 @@ public final class AuthCache {
 
         if (!failureCacheDisabled && result == null) {
             which = "failed";
-            failureCache.store(ckey, new Long(System.currentTimeMillis()));
+            failureCache.store(ckey, currentTimeMillis());
         }else if(!successCacheDisabled){
             which = "successful";
             successCache.store(ckey, result);
@@ -233,7 +254,7 @@ public final class AuthCache {
         long cacheAddedTime;
         long maxAge;
         if (cachedFailureTime != null) {
-            cacheAddedTime = cachedFailureTime.longValue();
+            cacheAddedTime = cachedFailureTime;
             log = "failure";
             maxAge = maxFailAge;
             returnValue = cachedFailureTime;
@@ -244,7 +265,7 @@ public final class AuthCache {
             returnValue = cachedAuthResult;
         }
 
-        if (cacheAddedTime + maxAge > System.currentTimeMillis()) {
+        if (cacheAddedTime + maxAge > currentTimeMillis()) {
             if (logger.isLoggable(Level.FINE))
                 logger.log(Level.FINE, "Using cached {0} for {1} on IdP \"{2}\"", new String[] {log, credString, idp.getConfig().getName()});
             return returnValue;
@@ -254,5 +275,12 @@ public final class AuthCache {
             }
             return null;
         }
+    }
+
+    /**
+     * Get the current time in millis.
+     */
+    private long currentTimeMillis() {
+        return timeSource.currentTimeMillis();
     }
 }
