@@ -64,6 +64,8 @@ harden() {
   touch /var/log/btmp
 
   # GEN000460
+  sed -i -e '/pam_tally\.so/d' /etc/pam.d/system-auth
+
   if ! grep -Eq 'auth +required +.*/pam_tally2.so deny=[0-9].*no_magic_root unlock_time=1200' /etc/pam.d/system-auth; then
 	 # delete any auth required pam_tally2 lines to be sure
 	 sed -i -e '/auth\s*required\s*.*\/pam_tally2.so/d' /etc/pam.d/system-auth
@@ -583,8 +585,8 @@ if [ "`stat --format=%a /home/ssgconfig/.bash_logout /home/ssgconfig/.bash_profi
 fi
 
 # GEN002480
-F1="`find / -type f -perm -002 -printf '%p %m\n' 2>&1 | grep -v '^/proc/' | grep -v '^/tmp/' | grep -v '^/var/tmp/'`"
-F2="`find / -type d -perm -002 -printf '%p %m\n' 2>&1 | grep -v '^/proc/' | grep -v '^/tmp ' | grep -v '^/tmp/' | grep -v '^/var/tmp ' | grep -v '^/var/tmp/' | grep -v '^/dev/'`"
+F1="`find / -xdev -type f -perm -002 -printf '%p %m\n' 2>&1 | grep -v '^/proc/' | grep -v '^/tmp/' | grep -v '^/var/tmp/'`"
+F2="`find / -xdev -type d -perm -002 -printf '%p %m\n' 2>&1 | grep -v '^/proc/' | grep -v '^/tmp ' | grep -v '^/tmp/' | grep -v '^/var/tmp ' | grep -v '^/var/tmp/' | grep -v '^/dev/'`"
 if [ "$F1" -o "$F2" ] ; then
 	echo "Error - invalid world write access for files or dirs:
 $F1
@@ -701,7 +703,7 @@ if [ ! "`stat --format=%a /etc/xinetd.conf | grep 440`" ] ; then
 fi
 
 # GEN003865
-if [ "`find / -name tcpdump 2>&1 | grep -v '^/proc/' `" ] ; then
+if [ "`find / -xdev -name tcpdump 2>&1 | grep -v '^/proc/' `" ] ; then
 	echo "Error - tcpdump is installed"
 fi
 
