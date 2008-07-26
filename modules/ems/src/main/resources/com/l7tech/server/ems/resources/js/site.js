@@ -217,7 +217,6 @@ if (document.images) {
     new Image().src = '../images/tabCTover.png';
     new Image().src = '../images/tabRTover.png';
     new Image().src = '../images/tabLMover.png';
-    new Image().src = '../images/tabCMover.png';
     new Image().src = '../images/tabRMover.png';
     new Image().src = '../images/tabLBover.png';
     new Image().src = '../images/tabCBover.png';

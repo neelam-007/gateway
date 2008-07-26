@@ -1,3 +1,15 @@
+// Default values of internationalized strings.
+// To localize, overrides them on your web page after referencing this file.
+var NEW_GROUP = 'New Group';
+var NEW_FOLDER = 'New Folder';
+var ADD_PARTITION = 'Add Partition';
+var CREATE_CLUSTER_NODE = 'Create Cluster Node';
+var RENAME = 'Rename';
+var MOVE = 'Move';
+var DELETE = 'Delete';
+var DESTROY = 'Destroy';
+var LAUNCH_SSM = 'Launch SecureSpan Manager';
+
 /**
  * Constructor for a table with SecureSpan enterprise entities.
  *
@@ -79,36 +91,37 @@ function l7_enterpriseTable(table, imgFolder) {
                 menuItems = null;
             } else if (hasClass(selectedTR, 'enterpriseGroup')) {
                 menuItems = [
-                    {text: '<img src="' + imgFolder + '/addGroup.png" style="position:absolute; left:4px;"> Create subgroup'},
-                    {text: '<img src="' + imgFolder + '/addPartition.png" style="position:absolute; left:4px;"> Add partition'},
-                    {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;"> Move'},
-                    {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;"> Delete', disabled: hasClass(selectedTR, 'l7_enterpriseTable_cannotDelete')}];
+                    {text: '<img src="' + imgFolder + '/addGroup.png" style="position:absolute; left:4px;">&nbsp;' + NEW_GROUP},
+                    {text: '<img src="' + imgFolder + '/addPartition.png" style="position:absolute; left:4px;">&nbsp;' + ADD_PARTITION},
+                    {text: '<img src="' + imgFolder + '/rename.png" style="position:absolute; left:4px;">&nbsp;' + RENAME},
+                    {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;">&nbsp;' + MOVE},
+                    {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;">&nbsp;' + DELETE, disabled: hasClass(selectedTR, 'l7_enterpriseTable_cannotDelete')}];
             } else if (hasClass(selectedTR, 'enterprisePartition')) {
                 menuItems = [
-                    {text: '<img src="' + imgFolder + '/addClusterNode.png" style="position:absolute; left:4px;"> Create cluster node'},
-                    {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;"> Move'},
-                    {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;"> Delete'},
-                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;"> Launch SecureSpan Manager'}];
+                    {text: '<img src="' + imgFolder + '/addClusterNode.png" style="position:absolute; left:4px;">&nbsp;' + CREATE_CLUSTER_NODE},
+                    {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;">&nbsp;' + MOVE},
+                    {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;">&nbsp;' + DELETE},
+                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + LAUNCH_SSM}];
             } else if (hasClass(selectedTR, 'enterpriseClusterNode')) {
                 menuItems = [
-                    {text: '<img src="' + imgFolder + '/destroy.png" style="position:absolute; left:4px;"> Destroy'}];
+                    {text: '<img src="' + imgFolder + '/destroy.png" style="position:absolute; left:4px;">&nbsp;' + DESTROY}];
             } else if (hasClass(selectedTR, 'enterpriseFolder')) {
                 menuItems = [
-                    {text: '<img src="' + imgFolder + '/addGroup.png" style="position:absolute; left:4px;"> Create subfolder'},
-                    {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;"> Move'},
-                    {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;"> Delete', disabled: hasClass(selectedTR, 'l7_enterpriseTable_cannotDelete')}];
+                    {text: '<img src="' + imgFolder + '/addGroup.png" style="position:absolute; left:4px;">&nbsp;' + NEW_FOLDER},
+                    {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;">&nbsp;' + MOVE},
+                    {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;">&nbsp;' + DELETE, disabled: hasClass(selectedTR, 'l7_enterpriseTable_cannotDelete')}];
             } else if (hasClass(selectedTR, 'enterprisePublishedService')) {
                 menuItems = [
-                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;"> Launch SecureSpan Manager'}];
+                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + LAUNCH_SSM}];
             } else if (hasClass(selectedTR, 'enterprisePolicyFragment')) {
                 menuItems = [
-                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;"> Launch SecureSpan Manager'}];
+                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + LAUNCH_SSM}];
             } else if (hasClass(selectedTR, 'enterprisePublishedServiceAlias')) {
                 menuItems = [
-                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;"> Launch SecureSpan Manager'}];
+                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + LAUNCH_SSM}];
             } else if (hasClass(selectedTR, 'enterprisePolicyFragmentAlias')) {
                 menuItems = [
-                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;"> Launch SecureSpan Manager'}];
+                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + LAUNCH_SSM}];
             }
 
             // Remove the existing content from the ContentMenu instance

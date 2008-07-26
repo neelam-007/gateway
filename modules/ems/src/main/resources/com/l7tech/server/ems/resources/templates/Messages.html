@@ -9,10 +9,133 @@
     <!-- PROTOTYPE ONLY END -->
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>Tools [SecureSpan Enterprise Manager]</title>
-    <link rel="stylesheet" href="../css/site.css" media="all" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../css/site.css" />
+    <link rel="stylesheet" type="text/css" href="../yui/assets/skins/sam/resize.css" />
+    <link rel="stylesheet" type="text/css" href="../yui/datatable/assets/skins/sam/datatable.css">
+    <link rel="stylesheet" type="text/css" href="../css/yui-skin.css">
+    <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
+    <script type="text/javascript" src="../yui/connection/connection-min.js"></script>
+    <script type="text/javascript" src="../yui/element/element-beta-min.js"></script>
+    <script type="text/javascript" src="../yui/datasource/datasource-beta-min.js"></script>
+    <script type="text/javascript" src="../yui/dragdrop/dragdrop-min.js"></script>
+    <script type="text/javascript" src="../yui/datatable/datatable-beta-min.js"></script>
+    <script type="text/javascript" src="../yui/resize/resize-beta-min.js"></script>
     <script type="text/javascript" src="../js/site.js"></script>
+    <script type="text/javascript">
+        function init() {
+            var columnDefs = [
+                {key:'formattedTime', label:'Time', resizeable:true, className:['nowrap', 'tdRight']},
+                {key:'source', label:'Source/Sender', resizeable:true, className:['nowrap']},
+                {key:'text', label:'Message', resizeable:true}
+            ];
+
+            function buildQueryString(state, dataTable) {
+                return state.pagination.recordOffset + '/' + state.pagination.rowsPerPage + '.js';
+            };
+
+            //
+            // System Messages
+            //
+
+            var sysMsgPaginator = new YAHOO.widget.Paginator({
+                    containers         : ['sysMsgPagination'],
+                    pageLinks          : 5,
+                    rowsPerPage        : 10,
+                    rowsPerPageOptions : [10, 20],
+                    template           : 'Oldest {FirstPageLink} {PreviousPageLink} {NextPageLink} {LastPageLink} Newest<img src="../images/spacer.png" height="1" width="30" alt="" />Show {RowsPerPageDropdown} per page'
+                });
+            sysMsgPaginator.setAttributeConfig('firstPageLinkLabel', {value:'<img src="../images/gotoFirst.png" alt="" />', validator:YAHOO.lang.isString});
+            sysMsgPaginator.setAttributeConfig('previousPageLinkLabel', {value:'<img src="../images/gotoPrevious.png" alt="" />', validator:YAHOO.lang.isString});
+            sysMsgPaginator.setAttributeConfig('nextPageLinkLabel', {value:'<img src="../images/gotoNext.png" alt="" />', validator:YAHOO.lang.isString});
+            sysMsgPaginator.setAttributeConfig('lastPageLinkLabel', {value:'<img src="../images/gotoLast.png" alt="" />', validator:YAHOO.lang.isString});
+
+            var sysMsgDataSource = new YAHOO.util.DataSource('systemMessages/', {
+                    connXhrMode     : 'cancelStaleRequests',
+                    responseType    : YAHOO.util.DataSource.TYPE_JSON,
+                    responseSchema  : {
+                        resultsList : 'records',
+                        fields      : ['index', 'guid', 'millis', 'formattedTime', 'source', 'text'],
+                        metaFields  : {totalRecords:'totalRecords'}
+                    }
+                });
+
+            var sysMsgDataTable = new YAHOO.widget.DataTable('sysMsgDataTable', columnDefs, sysMsgDataSource, {
+                    draggableColumns       : true,
+                    height                 : '150px',
+                    initialRequest         : '0/10.js',
+                    generateRequest        : buildQueryString,
+                    paginator              : sysMsgPaginator,
+                    paginationEventHandler : YAHOO.widget.DataTable.handleDataSourcePagination,
+                    scrollable             : true,
+                    sortedBy               : {key:'millis', dir:YAHOO.widget.DataTable.CLASS_DESC}
+                });
+
+            var SYS_MSG_DELTA_H;    // Pre-computed difference in height between resizable panel and data table.
+            sysMsgDataTable.on('initEvent', function(event) {
+                SYS_MSG_DELTA_H = document.getElementById('sysMsgResize').offsetHeight - parseInt(sysMsgDataTable.get('height'), 10);
+            });
+            var sysMsgResize = new YAHOO.util.Resize('sysMsgResize', {handles:['b'], minHeight:120});
+            sysMsgResize.on('resize', function(event) {
+                sysMsgDataTable.set('height', document.getElementById('sysMsgResize').offsetHeight - SYS_MSG_DELTA_H + 'px');
+                document.getElementById('sysMsgResize').style.width = '';   // workaround for unwanted widening
+            });
+            sysMsgResize.on('endResize', function(event) {
+                document.getElementById('sysMsgResize').style.width = '';   // workaround for unwanted widening
+            });
+
+            //
+            // User Messages
+            //
+
+            var usrMsgPaginator = new YAHOO.widget.Paginator({
+                    containers         : ['usrMsgPagination'],
+                    pageLinks          : 5,
+                    rowsPerPage        : 10,
+                    rowsPerPageOptions : [10, 20],
+                    template           : 'Oldest {FirstPageLink} {PreviousPageLink} {NextPageLink} {LastPageLink} Newest<img src="../images/spacer.png" height="1" width="30" alt="" />Show {RowsPerPageDropdown} per page'
+                });
+            usrMsgPaginator.setAttributeConfig('firstPageLinkLabel', {value:'<img src="../images/gotoFirst.png" alt="" />', validator:YAHOO.lang.isString});
+            usrMsgPaginator.setAttributeConfig('previousPageLinkLabel', {value:'<img src="../images/gotoPrevious.png" alt="" />', validator:YAHOO.lang.isString});
+            usrMsgPaginator.setAttributeConfig('nextPageLinkLabel', {value:'<img src="../images/gotoNext.png" alt="" />', validator:YAHOO.lang.isString});
+            usrMsgPaginator.setAttributeConfig('lastPageLinkLabel', {value:'<img src="../images/gotoLast.png" alt="" />', validator:YAHOO.lang.isString});
+
+            var usrMsgDataSource = new YAHOO.util.DataSource('userMessages/', {
+                    connXhrMode     : 'cancelStaleRequests',
+                    responseType    : YAHOO.util.DataSource.TYPE_JSON,
+                    responseSchema  : {
+                        resultsList : 'records',
+                        fields      : ['index', 'guid', 'millis', 'formattedTime', 'source', 'text'],
+                        metaFields  : {totalRecords:'totalRecords'}
+                    }
+                });
+
+            var usrMsgDataTable = new YAHOO.widget.DataTable('usrMsgDataTable', columnDefs, usrMsgDataSource, {
+                    draggableColumns       : true,
+                    height                 : '150px',
+                    initialRequest         : '0/10.js',
+                    generateRequest        : buildQueryString,
+                    paginator              : usrMsgPaginator,
+                    paginationEventHandler : YAHOO.widget.DataTable.handleDataSourcePagination,
+                    scrollable             : true,
+                    sortedBy               : {key:'millis', dir:YAHOO.widget.DataTable.CLASS_ASC}
+                });
+
+            var USR_MSG_DELTA_H;    // Pre-computed difference in height between resizable panel and data table.
+            usrMsgDataTable.on('initEvent', function(event) {
+                USR_MSG_DELTA_H = document.getElementById('usrMsgResize').offsetHeight - parseInt(usrMsgDataTable.get('height'), 10);
+            });
+            var usrMsgResize = new YAHOO.util.Resize('usrMsgResize', {handles:['b'], minHeight:120});
+            usrMsgResize.on('resize', function(event) {
+                usrMsgDataTable.set('height', document.getElementById('usrMsgResize').offsetHeight - USR_MSG_DELTA_H + 'px');
+                document.getElementById('usrMsgResize').style.width = '';   // workaround for unwanted widening
+            });
+            usrMsgResize.on('endResize', function(event) {
+                document.getElementById('usrMsgResize').style.width = '';   // workaround for unwanted widening
+            });
+        }
+    </script>
 </head>
-<body>
+<body class="yui-skin-sam" onload="init();">
 <table width="100%">
     <tr>
         <td>
@@ -120,16 +243,22 @@
                 <span class="subtabOff"><a href="TestWebService.html">Test Web Service</a></span>
             </div>
             <div class="content">
-                <div class="panel">
-                    <div class="panelTitle">System Messages</div>
-                    <div class="panelContent">
-                        <span style="font-size: 1in;">X</span>
+                <div id="sysMsgPanel" class="panel">
+                    <div class="panelTitle tippy"><img id="sysMsgTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'sysMsgContent')" /><span class="clickable" title="System-wide messages" onclick="toggleTippy('sysMsgTippy', 'sysMsgContent')">System Messages</span></div>
+                    <div id="sysMsgContent">
+                        <div id="sysMsgPagination" class="panelToolbar"></div>
+                        <div id="sysMsgResize" class="panelContent">
+                            <div id="sysMsgDataTable"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="panel">
-                    <div class="panelTitle">User Messages</div>
-                    <div class="panelContent">
-                        <span style="font-size: 1in;">X</span>
+                <div id="usrMsgPanel" class="panel">
+                    <div class="panelTitle tippy"><img id="usrMsgTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'usrMsgContent')" /><span class="clickable" title="User-specific messages" onclick="toggleTippy('usrMsgTippy', 'usrMsgContent')">User Messages</span></div>
+                    <div id="usrMsgContent">
+                        <div id="usrMsgPagination" class="panelToolbar"></div>
+                        <div id="usrMsgResize" class="panelContent">
+                            <div id="usrMsgDataTable"></div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -132,6 +132,10 @@ table.center {
     text-align: right !important;
 }
 
+td > .tdRight {
+    text-align: right !important;
+}
+
 .hidden {
     display: none !important;
 }

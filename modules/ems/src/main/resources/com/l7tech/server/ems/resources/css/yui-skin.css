@@ -27,6 +27,7 @@ Include this stylesheet after original YUI SAM skin stylesheets.
 
 .yui-skin-sam .yui-dt td {
     border: 1px #cccccc solid;
+    vertical-align: top;
 }
 
 .yui-skin-sam .yui-dt-liner {
@@ -60,4 +61,27 @@ Include this stylesheet after original YUI SAM skin stylesheets.
 .yui-skin-sam tr.yui-dt-selected td, .yui-skin-sam tr.yui-dt-selected td.yui-dt-asc, .yui-skin-sam tr.yui-dt-selected td.yui-dt-desc {
     background-color: #ffddee;
     color: #000000;
+}
+
+.yui-skin-sam .yui-pg-container, .yui-skin-sam .yui-dt-paginator {
+    margin: 0;
+    text-align: center;
+}
+
+.yui-skin-sam .yui-pg-container *, .yui-skin-sam .yui-dt-paginator * {
+    vertical-align: middle;
+}
+
+.yui-skin-sam .yui-pg-container img, .yui-skin-sam .yui-dt-paginator img {
+    border: 1px solid transparent;
+}
+
+.yui-skin-sam .yui-pg-container a img:hover, .yui-skin-sam .yui-dt-paginator a img:hover {
+    border: 1px solid #7d98b8;
+    background-color: #e6f1ff;
+}
+
+.yui-skin-sam .yui-pg-current, .yui-skin-sam .yui-pg-rpp-options {
+    margin-right: 0.3em;
+    margin-left: 0.3em;
 }

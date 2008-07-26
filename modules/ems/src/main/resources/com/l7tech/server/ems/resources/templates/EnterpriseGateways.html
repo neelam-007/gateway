@@ -10,9 +10,9 @@
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>Gateways [SecureSpan Enterprise Manager]</title>
     <link rel="stylesheet" type="text/css" href="../css/site.css" />
-    <link rel="stylesheet" type="text/css" href="../yui/button/assets/skins/sam/button.css">
-    <link rel="stylesheet" type="text/css" href="../yui/menu/assets/skins/sam/menu.css">
-    <link rel="stylesheet" type="text/css" href="../css/yui-skin.css">
+    <link rel="stylesheet" type="text/css" href="../yui/button/assets/skins/sam/button.css" />
+    <link rel="stylesheet" type="text/css" href="../yui/menu/assets/skins/sam/menu.css" />
+    <link rel="stylesheet" type="text/css" href="../css/yui-skin.css" />
     <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
     <script type="text/javascript" src="../yui/container/container_core-min.js"></script>
     <script type="text/javascript" src="../yui/element/element-beta-min.js"></script>
@@ -22,6 +22,17 @@
     <script type="text/javascript" src="../js/enterpriseTable.js"></script>
     <script type="text/javascript" src="../js/treeTable.js"></script>
     <script type="text/javascript">
+        // Overriding default strings in enterpriseTable.js for localization.
+        var NEW_GROUP = 'New Group';
+        var NEW_FOLDER = 'New Folder';
+        var ADD_PARTITION = 'Add Partition';
+        var CREATE_CLUSTER_NODE = 'Create Cluster Node';
+        var RENAME = 'Rename';
+        var MOVE = 'Move';
+        var DELETE = 'Delete';
+        var DESTROY = 'Destroy';
+        var LAUNCH_SSM = 'Launch SecureSpan Manager';
+
         var numDashboardsPerRow = null;
         var collapsedDashboardIds = new Array();
 
@@ -94,6 +105,7 @@
             var addGroupButton = new YAHOO.widget.Button('addGroupButton');
             var addPartitionButton = new YAHOO.widget.Button('addPartitionButton');
             var addClusterNodeButton = new YAHOO.widget.Button('addClusterNodeButton');
+            var renameButton = new YAHOO.widget.Button('renameButton');
             var moveButton = new YAHOO.widget.Button('moveButton');
             var deleteButton = new YAHOO.widget.Button('deleteButton');
             var destroyButton = new YAHOO.widget.Button('destroyButton');
@@ -107,6 +119,7 @@
                 addGroupButton.set('disabled', true);
                 addPartitionButton.set('disabled', true);
                 addClusterNodeButton.set('disabled', true);
+                renameButton.set('disabled', true);
                 moveButton.set('disabled', true);
                 deleteButton.set('disabled', true);
                 destroyButton.set('disabled', true);
@@ -115,6 +128,7 @@
                     if (hasClass(newRow, 'enterpriseGroup')) {
                         addGroupButton.set('disabled', false);
                         addPartitionButton.set('disabled', false);
+                        renameButton.set('disabled', false);
                         moveButton.set('disabled', false);
                         deleteButton.set('disabled', hasClass(newRow, 'l7_enterpriseTable_cannotDelete'));
                     } else if (hasClass(newRow, 'enterprisePartition')) {
@@ -248,6 +262,7 @@
                             <button id="addGroupButton" type="submit" name="addGroupButton" value="addGroup"><img src="../images/addGroup.png" alt="" /> New Group</button>
                             <button id="addPartitionButton" type="submit" name="addPartitionButton" value="addPartition"><img src="../images/addPartition.png" alt="" /> Add Partition</button>
                             <button id="addClusterNodeButton" type="submit" name="addClusterNodeButton" value="addClusterNode"><img src="../images/addClusterNode.png" alt="" /> Create Cluster Node</button>
+                            <button id="renameButton" type="submit" name="renameButton" value="move"><img src="../images/rename.png" alt="" /> Rename</button>
                             <button id="moveButton" type="submit" name="moveButton" value="move"><img src="../images/move.png" alt="" /> Move</button>
                             <button id="deleteButton" type="submit" name="deleteButton" value="delete"><img src="../images/delete.png" alt="" /> Delete</button>
                             <button id="destroyButton" type="submit" name="destroyButton" value="destroy"><img src="../images/destroy.png" alt="" /> Destroy</button>

@@ -117,6 +117,44 @@
         </constructor-arg>
     </bean>
 
+    <!-- TODO This is just temporary simulation for REST GET. Remove it when RESTlet is in place. -->
+    <bean name="restSystemMessagesDirectory" class="com.l7tech.server.ems.StripQueryFilter">
+        <constructor-arg index="0" ref="restApplication.context"/>
+        <constructor-arg index="1">
+            <bean class="org.restlet.Directory">
+                <constructor-arg index="0" type="org.restlet.Context" ref="restApplication.context"/>
+                <constructor-arg index="1" type="org.restlet.data.Reference">
+                    <bean class="org.restlet.data.LocalReference">
+                        <constructor-arg type="java.lang.String"
+                                         value="clap://thread/com/l7tech/server/ems/resources/templates/systemMessages"/>
+                    </bean>
+                </constructor-arg>
+
+                <!-- content negotation won't work with classpath directories since they aren't listable -->
+                <property name="negotiateContent" value="false"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <!-- TODO This is just temporary simulation for REST GET. Remove it when RESTlet is in place. -->
+    <bean name="restUserMessagesDirectory" class="com.l7tech.server.ems.StripQueryFilter">
+        <constructor-arg index="0" ref="restApplication.context"/>
+        <constructor-arg index="1">
+            <bean class="org.restlet.Directory">
+                <constructor-arg index="0" type="org.restlet.Context" ref="restApplication.context"/>
+                <constructor-arg index="1" type="org.restlet.data.Reference">
+                    <bean class="org.restlet.data.LocalReference">
+                        <constructor-arg type="java.lang.String"
+                                         value="clap://thread/com/l7tech/server/ems/resources/templates/userMessages"/>
+                    </bean>
+                </constructor-arg>
+
+                <!-- content negotation won't work with classpath directories since they aren't listable -->
+                <property name="negotiateContent" value="false"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
     <bean name="restTemplatesList" class="java.util.ArrayList">
         <constructor-arg>
             <list>
@@ -154,7 +192,7 @@
         <constructor-arg index="3" ref="restTemplatesList"/>
     </bean>
 
-    <!-- TODO This is just temporary simulation for REST GET. Remove them when RESTlet is in place. -->
+    <!-- TODO This is just temporary simulation for REST GET. Remove it when RESTlet is in place. -->
     <bean name="restPartitionContentWithCheckboxDirectory" class="com.l7tech.server.ems.TemplateFinder">
         <constructor-arg index="0" ref="restApplication.context"/>
         <constructor-arg index="1" ref="templateDataModel" />
@@ -166,7 +204,7 @@
         </constructor-arg>
     </bean>
 
-    <!-- TODO This is just temporary simulation for REST GET. Remove them when RESTlet is in place. -->
+    <!-- TODO This is just temporary simulation for REST GET. Remove it when RESTlet is in place. -->
     <bean name="restPartitionContentWithFolderRadioDirectory" class="com.l7tech.server.ems.TemplateFinder">
         <constructor-arg index="0" ref="restApplication.context"/>
         <constructor-arg index="1" ref="templateDataModel" />
@@ -218,6 +256,8 @@
                 <!-- TODO These are just temporary simulation for REST GET. Remove them when RESTlet is in place. -->
                 <entry key="/ems/partitionContentWithCheckbox/{templateName}" value-ref="restPartitionContentWithCheckboxDirectory"/>
                 <entry key="/ems/partitionContentWithFolderRadio/{templateName}" value-ref="restPartitionContentWithFolderRadioDirectory"/>
+                <entry key="/ems/systemMessages/" value-ref="restSystemMessagesDirectory"/>
+                <entry key="/ems/userMessages/" value-ref="restUserMessagesDirectory"/>
 
             </map>
         </property>
