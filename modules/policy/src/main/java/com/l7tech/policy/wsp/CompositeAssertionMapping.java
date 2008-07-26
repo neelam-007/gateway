@@ -79,7 +79,7 @@ class CompositeAssertionMapping implements TypeMapping {
 
             // Add an assertion-disable attribute into the composite-assertion element.
             boolean enabled = ((Assertion)object.target).isEnabled();
-            element.setAttributeNS(WspConstants.WSP_POLICY_NS, WspConstants.WSP_ATTRIBUTE_ENABLED, "" + enabled);
+            if (!enabled) element.setAttributeNS(WspConstants.WSP_POLICY_NS, WspConstants.WSP_ATTRIBUTE_ENABLED, "" + enabled);
         }
         populateElement(wspWriter, element, object);
         return element;
