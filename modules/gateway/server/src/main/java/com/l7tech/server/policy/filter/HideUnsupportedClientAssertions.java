@@ -31,7 +31,13 @@ public class HideUnsupportedClientAssertions implements Filter {
             Iterator i = root.getChildren().iterator();
             while (i.hasNext()) {
                 Assertion kid = (Assertion)i.next();
-                applyRules(kid, i);
+                if (kid.isEnabled()) {
+                    applyRules(kid, i);
+                }
+                else {
+                    // If it is disabled, then ignore it.
+                    i.remove();
+                }
             }
             // if all children of this composite were removed, we have to remove it from it's parent
             if (root.getChildren().isEmpty() && parentIterator != null) {
@@ -39,6 +45,9 @@ public class HideUnsupportedClientAssertions implements Filter {
                 return true;
             }
         } else {
+            if (!arg.isEnabled() && parentIterator != null) {
+                parentIterator.remove();
+            }
             if (Boolean.TRUE.equals(arg.meta().get(AssertionMetadata.USED_BY_CLIENT)))
                 return false;
 

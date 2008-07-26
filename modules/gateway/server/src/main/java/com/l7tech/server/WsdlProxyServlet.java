@@ -484,7 +484,10 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             if (System.getProperty(PROPERTY_WSSP_ATTACH)==null ||
                 Boolean.getBoolean(PROPERTY_WSSP_ATTACH)) {
                 Assertion rootassertion = wspReader.parsePermissively(svc.getPolicy().getXml());
-                if (Assertion.contains(rootassertion, WsspAssertion.class)) {
+                // Set the parameter considerDisable to be true, since WsspAssertion is a key to determine if a security
+                // policy content will be added into the wsdl.  If the WsspAssertion is disabled, even thought rootassertion
+                // contains WsspAssertion, the program won't go further to add the security policy content in the wsdl.
+                if (Assertion.contains(rootassertion, WsspAssertion.class, true)) {
                     // remove any existing policy
                     XmlUtil.stripNamespace(wsdl.getDocumentElement(), SoapConstants.WSP_NAMESPACE2);
                     Assertion effectivePolicy = wsspFilterManager.applyAllFilters(null, rootassertion);

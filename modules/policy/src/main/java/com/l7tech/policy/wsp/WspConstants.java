@@ -53,6 +53,7 @@ public class WspConstants {
     public static final String WSP_POLICY_NS = SoapConstants.WSP_NAMESPACE;
     public static final String L7_POLICY_NS = "http://www.layer7tech.com/ws/policy";
     public static final String POLICY_ELNAME = "Policy";
+    public static final String WSP_ATTRIBUTE_ENABLED = "L7p:Enabled";
 
     // Valid namespaces for a root <Policy> element.
     public static final String[] POLICY_NAMESPACES = {

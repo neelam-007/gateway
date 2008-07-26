@@ -1,9 +1,6 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.console.action.AddAssertionAction;
-import com.l7tech.console.action.AssertionMoveDownAction;
-import com.l7tech.console.action.AssertionMoveUpAction;
-import com.l7tech.console.action.DeleteAssertionAction;
+import com.l7tech.console.action.*;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.AbstractTreeNode;
@@ -45,6 +42,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
     private AssertionMoveDownAction assertionMoveDownAction;
     private AddAssertionAction addAssertionAction;
     private DeleteAssertionAction deleteAssertionAction;
+    private DisableOrEnableAssertionAction enableOrDisableAction;
 
     private AbstractTreeNode lastPaletteNode;
     private AssertionTreeNode[] lastAssertionNodes;
@@ -53,6 +51,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
     private TreePath[] paths;
     private JTree assertionPalette;
     private JTree assertionTree;
+    private JButton enableOrDisableButton;
 
     public PolicyToolBar() {
         initialize();
@@ -117,6 +116,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         getAssertionMoveDownAction().setEnabled(false);
         getAssertionMoveUpAction().setEnabled(false);
         getAddAssertionAction().setEnabled(false);
+        enableOrDisableButton.setEnabled(false);
     }
 
     /**
@@ -153,6 +153,11 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         b = add(getDeleteAssertionAction());
         b.setFocusable(false);
         b.setMargin(new Insets(0, 0, 0, 0));
+        addSeparator(d);
+
+        enableOrDisableButton = add(getEnableOrDisableAssertionAction());
+        enableOrDisableButton.setFocusable(false);
+        enableOrDisableButton.setMargin(new Insets(0, 0, 0, 0));
         addSeparator(d);
         setFloatable(false);
     }
@@ -246,6 +251,41 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         return deleteAssertionAction;
     }
 
+    /**
+     * The returned action is dependent on whether the selected assertion is disabled or enabled.
+     */
+    private DisableOrEnableAssertionAction getEnableOrDisableAssertionAction() {
+        if ((lastAssertionNode == null) ||
+            (lastAssertionNode.isDescendantOfInclude(false)) ||
+            (assertionTree != null && assertionTree.getSelectionCount() == 0)) {
+            return null;
+        }
+
+        enableOrDisableAction = (lastAssertionNode.asAssertion().isEnabled())?
+            new DisableAssertionAction(lastAssertionNode) {
+                public void performAction() {
+                    super.performAction();
+                    updateActions();
+                }
+                public String getName() {
+                    return null;
+                }
+            }
+            :
+            new EnableAssertionAction(lastAssertionNode) {
+                public void performAction() {
+                    super.performAction();
+                    updateActions();
+                }
+
+                public String getName() {
+                    return null;
+                }
+            };
+
+        return enableOrDisableAction;
+    }
+
     private void updateActions() {
         boolean validPNode = validPaletteNode();
         boolean validPolicyAssertionNode = validPolicyAssertionNode();
@@ -270,10 +310,13 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
             throw new RuntimeException("Couldn't get current service or policy", e);
         }
 
+        enableOrDisableButton.setAction(getEnableOrDisableAssertionAction());
+
         if (validPolicyAssertionNode) {
             getDeleteAssertionAction().setEnabled(canUpdate && canDelete(lastAssertionNode, lastAssertionNodes));
             getAssertionMoveDownAction().setEnabled(canUpdate && canMoveDown(lastAssertionNode, lastAssertionNodes));
             getAssertionMoveUpAction().setEnabled(canUpdate && canMoveUp(lastAssertionNode, lastAssertionNodes));
+            enableOrDisableButton.setEnabled(canUpdate);
         }
         if (validPNode) {
             validPNode = lastAssertionNode == null || lastAssertionNode.accept(lastPaletteNode);
@@ -289,7 +332,6 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         return lastPaletteNode != null &&
           !lastPaletteNode.getAllowsChildren();
     }
-
 
     private TreeSelectionListener
       assertionPaletteListener = new TreeSelectionListener() {
@@ -345,9 +387,11 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
     private TreeModelListener
       policyTreeModelListener = new TreeModelListener() {
           public void treeNodesChanged(TreeModelEvent e) {
+              updateActions();
           }
 
           public void treeNodesInserted(TreeModelEvent e) {
+              updateActions();
           }
 
           public void treeNodesRemoved(TreeModelEvent e) {

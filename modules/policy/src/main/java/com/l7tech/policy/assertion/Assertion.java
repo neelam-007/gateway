@@ -39,6 +39,7 @@ public abstract class Assertion implements Cloneable, Serializable {
     protected transient CompositeAssertion parent;
     private transient int ordinal;
     private transient Long ownerPolicyOid = null;
+    private transient boolean enabled = true;
 
     // 2.1 CustomAssertion compatibility
     private static final long serialVersionUID = -2639281346815614287L;
@@ -58,6 +59,25 @@ public abstract class Assertion implements Cloneable, Serializable {
      */
     protected void setParent(CompositeAssertion parent) {
         this.parent = parent;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    /**
+     * Enable all parents if the current assertion gets enabled.
+     */
+    public void enableAncestor() {
+        CompositeAssertion parent = getParent();
+        while (parent != null) {
+            parent.setEnabled(true);
+            parent = parent.getParent();
+        }
     }
 
     /**
@@ -466,17 +486,31 @@ public abstract class Assertion implements Cloneable, Serializable {
      * @return true if the given assertion or one of its children is the correct type
      */
     public static boolean contains(Assertion in, Class assertionClass) {
+        return contains(in, assertionClass, false);
+    }
+
+    /**
+     * Check if the given assertion has a child of the given type.
+     *
+     * @param in: the assertion to check
+     * @param assertionClass: the type to find
+     * @param considerAssertionDisable: a flag indicates if it is needed to consider the checked assertion is disabled or not.
+     * @return true if the given assertion or one of its children is the correct type and also is enabled if consierDisable
+     *         is set to ture.
+     */
+    public static boolean contains(Assertion in, Class assertionClass, boolean considerAssertionDisable) {
         boolean found = false;
 
         if (assertionClass.isInstance(in)) {
-            found = true;
+            if (! considerAssertionDisable || in.isEnabled())
+                found = true;
         }
         else  if (in instanceof CompositeAssertion) {
             CompositeAssertion comp = (CompositeAssertion) in;
             List kids = comp.getChildren();
             for (Iterator iterator = kids.iterator(); iterator.hasNext();) {
                 Assertion assertion = (Assertion) iterator.next();
-                if (contains(assertion, assertionClass)) {
+                if (contains(assertion, assertionClass, considerAssertionDisable)) {
                     found = true;
                     break;
                 }

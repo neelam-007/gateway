@@ -50,7 +50,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
     public PolicyValidatorResult validate(Assertion assertion, PolicyType policyType, Wsdl wsdl, boolean soap, AssertionLicense assertionLicense) throws InterruptedException {
         PolicyValidatorResult r = super.validate(assertion, policyType, wsdl, soap, assertionLicense);
 
-        if (soap && Assertion.contains(assertion, XpathBasedAssertion.class) && WsdlUtil.isRPCWithNoSchema(wsdl)) {
+        if (soap && Assertion.contains(assertion, XpathBasedAssertion.class, true) && WsdlUtil.isRPCWithNoSchema(wsdl)) {
             Assertion lastAssertion = assertion;
             if (assertion instanceof CompositeAssertion) {
                 List children = ((CompositeAssertion) assertion).getChildren();
@@ -101,7 +101,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
 
         PathValidator pv = new PathValidator(ap, r, wsdl, soap, assertionLicense);
         for (Assertion assertion : path) {
-            if (assertion instanceof CommentAssertion) continue;
+            if (assertion instanceof CommentAssertion || !assertion.isEnabled()) continue;
             pv.validate(assertion);
         }
 
@@ -116,11 +116,11 @@ public class DefaultPolicyValidator extends PolicyValidator {
             return;
         }
 
-        // last assertion should be last non-comment assertion
+        // last assertion should be last non-comment and enabled assertion
         Assertion lastAssertion = ap.lastAssertion();
         for (int i = path.length-1; i >= 0; i--) {
             Assertion ass = path[i];
-            if (!(ass instanceof CommentAssertion)) {
+            if (!(ass instanceof CommentAssertion) && ass.isEnabled()) {
                 lastAssertion = ass;
                 break;
             }

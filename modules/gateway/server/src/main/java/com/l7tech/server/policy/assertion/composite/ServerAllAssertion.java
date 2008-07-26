@@ -32,6 +32,10 @@ public class ServerAllAssertion extends ServerCompositeAssertion implements Serv
         ServerAssertion child;
         AssertionStatus result = AssertionStatus.FALSIFIED;
         for (ServerAssertion kid : kids) {
+            // If the assertion is disabled, then ignore it and continue to check the next assertion.
+            if (! kid.getAssertion().isEnabled()) {
+                continue;
+            }
             child = kid;
             result = child.checkRequest(context);
             context.assertionFinished(child, result);

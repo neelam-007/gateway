@@ -95,6 +95,13 @@ class PathValidator {
         if (assertionLicense == null) throw new NullPointerException();
     }
 
+    /**
+     * Validate the specific assertion.
+     * Precondition: the assertion "a" must have been pre-checked to be enabled.
+     * @see {@link com.l7tech.policy.validator.DefaultPolicyValidator#validatePath} for the prechecking.
+     * @param a: the assertion to be validated.
+     * @throws InterruptedException
+     */
     public void validate(Assertion a) throws InterruptedException {
         if (Thread.interrupted())
             throw new InterruptedException();
@@ -630,7 +637,8 @@ class PathValidator {
         //noinspection unchecked
         List<Assertion> children = a.getChildren();
         for (Assertion kid : children) {
-            if (!(kid instanceof CommentAssertion)) {
+            // If a composite assertion just contains comment assertions and/or disabled assertions, then treat it as empty.
+            if (!(kid instanceof CommentAssertion) && kid.isEnabled()) {
                 return;
             }
         }

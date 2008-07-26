@@ -238,6 +238,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
      * Overriden to support the policy will change lsteners.
      */
     public void insertNodeInto(MutableTreeNode newChild, MutableTreeNode parent, int index) {
+        updateAssertionTreeNodeDisableStatus(newChild, parent);
         checkArgumentIsAssertionTreeNode(newChild);
         checkArgumentIsAssertionTreeNode(parent);
         Assertion p = ((AssertionTreeNode)parent).asAssertion();
@@ -268,10 +269,38 @@ public class PolicyTreeModel extends DefaultTreeModel {
     }
 
     /**
+     * Keep consistency on the assertion-disable status with the parent node when inerting/moving a new child in.
+     *
+     * @param newChild the new node
+     * @param parent the parent node
+     */
+    private void updateAssertionTreeNodeDisableStatus(MutableTreeNode newChild, MutableTreeNode parent) {
+        // Precheck if child and parent are valid.
+        if (newChild == null || parent == null ||
+            !(newChild instanceof AssertionTreeNode) ||
+            !(parent instanceof CompositeAssertionTreeNode)) {
+            return;
+        }
+
+        boolean isParentEnabled = ((CompositeAssertionTreeNode)parent).asAssertion().isEnabled();
+        if (! isParentEnabled) {
+            ((AssertionTreeNode)newChild).asAssertion().setEnabled(false);
+            // If the new child is a composite assertion, then disable all descendant.
+            if (newChild instanceof CompositeAssertionTreeNode) {
+                for (int i = 0; i < newChild.getChildCount(); i++) {
+                    MutableTreeNode grandchild =(MutableTreeNode) ((CompositeAssertionTreeNode)newChild).getChildAt(i);
+                    updateAssertionTreeNodeDisableStatus(grandchild, newChild);
+                }
+            }
+        }
+    }
+
+    /**
      * Invoke this to insert newChild at location index in parents children without
      * the advice support.
      */
     public void rawInsertNodeInto(MutableTreeNode newChild, MutableTreeNode parent, int index) {
+        updateAssertionTreeNodeDisableStatus(newChild, parent);
         super.insertNodeInto(newChild, parent, index);
     }
 
@@ -280,6 +309,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
      * children without advice support. Will trigger only the validation advice
      */
     void moveNodeInto(AssertionTreeNode newChild, DefaultMutableTreeNode parent, int index) {
+        updateAssertionTreeNodeDisableStatus(newChild, parent);
         checkArgumentIsAssertionTreeNode(newChild);
         checkArgumentIsAssertionTreeNode(parent);
         Assertion p = ((AssertionTreeNode)parent).asAssertion();

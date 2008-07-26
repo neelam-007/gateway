@@ -325,6 +325,13 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
                 Action md = new AssertionMoveDownAction(this);
                 md.setEnabled(canMoveDown());
                 list.add(md);
+
+                // Add a disable assertion action or an enable assertion action.
+                if (assertion.isEnabled()) {
+                    list.add(new DisableAssertionAction(this));
+                } else {
+                    list.add(new EnableAssertionAction(this));
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException("Couldn't get current service or policy", e);

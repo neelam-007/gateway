@@ -2,12 +2,14 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.gui.util.ImageCache;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeNode;
 import java.awt.*;
-import java.util.WeakHashMap;
+import java.util.*;
+
 
 /**
  * Default <CODE>TreeCellRenderer</CODE> implementaiton that handles
@@ -23,6 +25,7 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
     private final Font italicFont;
 
     private boolean validated = true;
+    private boolean enabled = true;
     /**
      * default constructor
      */
@@ -41,6 +44,7 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
                                    boolean sel, boolean expanded,
                                    boolean leaf, int row, boolean hasFocus) {
         validated = true;
+        enabled = true;
         super.getTreeCellRendererComponent(tree, value,  sel, expanded, leaf, row, hasFocus);
 
         setFont(plainFont);
@@ -49,12 +53,13 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
         AssertionTreeNode node = ((AssertionTreeNode)value);
         setText(node.getName());
         validated = node.getValidatorMessages().isEmpty();
+        enabled = node.asAssertion().isEnabled();
         setToolTipText(node.getTooltipText());
 
         Image image =expanded ? node.getOpenedIcon() : node.getIcon();
         setIcon(image == null ? null : new ImageIcon(image));
 
-        if (isIncluded(node)) {
+        if ((!enabled) || isIncluded(node)) {
             setForeground(Color.GRAY);
             setFont(italicFont);
         } else {
@@ -63,6 +68,16 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
         }
 
         return this;
+    }
+
+    public void paint(Graphics g) {
+        super.paint(g);
+
+        // If the assertion is disabled, then draw the red cross sign.
+        if (!enabled) {
+            Image image = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/RedCrossSign16.gif")).getImage();
+            g.drawImage(image, 0, 0, null);
+        }
     }
 
     private boolean isIncluded(AssertionTreeNode node) {

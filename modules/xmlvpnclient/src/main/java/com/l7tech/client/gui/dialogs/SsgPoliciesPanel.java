@@ -16,6 +16,7 @@ import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.wssp.PolicyConversionException;
@@ -426,6 +427,9 @@ class SsgPoliciesPanel extends JPanel {
 
                         if (policyInputStream != null) {
                             Assertion rootAssertion = WspReader.getDefault().parsePermissively(XmlUtil.parse(policyInputStream).getDocumentElement());
+                            // Filter out all disabled assertions that are ignored by the SSB.  Also, after filtering,
+                            // check if a composite assertin is empty.  If so, filter out the composite assertion as well.
+                            filterAllDisabledDescendantAssertions(rootAssertion, null);
 
                             // TODO filter out assertions that aren't implemented by the SSB
                             Policy newPolicy = new Policy(rootAssertion, null);
@@ -482,6 +486,36 @@ class SsgPoliciesPanel extends JPanel {
             });
         }
         return importButton;
+    }
+
+    /**
+     * Filter out all disabled child assertions in a composite assertion.  The assertion has been upgraded after filtering.
+     * @param assertion a assertion to be processed.
+     * @param iterator an iterator associated with the assertion.
+     */
+    private void filterAllDisabledDescendantAssertions(Assertion assertion, Iterator iterator) {
+        // Apply filter on this one
+        if (assertion instanceof CompositeAssertion) {
+            // Apply filter to children
+            CompositeAssertion root = (CompositeAssertion)assertion;
+            Iterator i = root.getChildren().iterator();
+            while (i.hasNext()) {
+                Assertion kid = (Assertion)i.next();
+                if (kid.isEnabled()) filterAllDisabledDescendantAssertions(kid, i);
+                else i.remove();
+            }
+            // If all children of this composite were removed, we have to remove it from it's parent
+            if (root.getChildren().isEmpty() && iterator != null) {
+                iterator.remove();
+            }
+        } else {
+            if (!assertion.isEnabled() && iterator != null) {
+                iterator.remove();
+            }
+            if (iterator == null) {
+                throw new RuntimeException("Invalid policy, all policies must have a composite assertion at the root");
+            }
+        }
     }
 
     private JButton getExportButton() {

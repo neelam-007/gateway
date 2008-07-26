@@ -108,10 +108,19 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
         Assertion[] ass = ap.getPath();
         PathContext pathContext = new PathContext();
         for (Assertion as : ass) {
-            validateAssertion(as, pathContext, r, ap);
+            if (as.isEnabled()) validateAssertion(as, pathContext, r, ap);
         }
     }
 
+    /**
+     * Validate the specific assertion.
+     * Precondition: the assertion "a" must have been pre-checked to be enabled.
+     * @see {@link com.l7tech.server.policy.validator.ServerPolicyValidator#validatePath}
+     * @param a: the assertion to be validated.
+     * @param pathContext: the assertion path context.
+     * @param r: storing the validation result.
+     * @param ap: the assertion path containing the assertion, "a".
+     */
     @SuppressWarnings(value = "fallthrough")
     private void validateAssertion(Assertion a, PathContext pathContext, PolicyValidatorResult r, AssertionPath ap) {
         if (a instanceof IdentityAssertion) {

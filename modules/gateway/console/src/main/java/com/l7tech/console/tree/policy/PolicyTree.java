@@ -337,10 +337,10 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 if (node != null) {
                     Action[] actions = node.getActions();
                     // If the node is nested in a policy include, all editor actions (such as AddAllAssertionAction,
-                    // AddOneOrMoreAssertionAction, DeleteAssertionAction, AssertionMoveDownAction, and AssertionMoveUpAction)
-                    // will not be displayed in the context menu.
+                    // AddOneOrMoreAssertionAction, DeleteAssertionAction, AssertionMoveDownAction, AssertionMoveUpAction,
+                    // Disable Assertion, and Enable Assertion) will not be displayed in the context menu.
                     if (node.isDescendantOfInclude(false)) {
-                        verifyActionsInPolicyInclude(actions);
+                        actions = verifyActionsInPolicyInclude(actions);
                     }
 
                     if (policyEditorPanel != null) {
@@ -360,7 +360,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
          *
          * @param actions the actions need verifying.
          */
-        private void verifyActionsInPolicyInclude(Action[] actions) {
+        private Action[] verifyActionsInPolicyInclude(Action[] actions) {
             List<Action> actionList = Arrays.asList(actions);
             // Check if each actions is an editing-assertion actions.
             for (Action action: actions) {
@@ -370,13 +370,15 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         sa instanceof AddOneOrMoreAssertionAction ||
                         sa instanceof DeleteAssertionAction ||
                         sa instanceof AssertionMoveDownAction ||
-                        sa instanceof AssertionMoveUpAction) {
+                        sa instanceof AssertionMoveUpAction ||
+                        sa instanceof DisableAssertionAction ||
+                        sa instanceof EnableAssertionAction) {
                         actionList.remove(sa);
                     }
                 }
             }
-            // update the original action array
-            actions = actionList.toArray(new Action[]{});
+            // return the updated action array
+            return actionList.toArray(new Action[]{});
         }
 
         /**

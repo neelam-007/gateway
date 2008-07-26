@@ -198,7 +198,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     protected boolean isPolicyValidationOn() {
         String maybe = preferences.asProperties().getProperty(SsmPreferences.ENABLE_POLICY_VALIDATION_ID);
-        boolean output = Boolean.valueOf(maybe).booleanValue();
+        boolean output = Boolean.valueOf(maybe);
         if (maybe == null || maybe.length() < 1) {
             output = true;
         }
@@ -794,6 +794,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             ((DefaultTreeModel)policyTree.getModel()).nodeChanged(getCurrentRoot());
         }
         overWriteMessageArea("");
+        if (rootAssertion != null && containDisabledAssertion(rootAssertion.asAssertion())) {
+            appendToMessageArea("<i>Some assertion(s) disabled.</i>");
+        }
         for (PolicyValidatorResult.Error pe : r.getErrors()) {
             appendToMessageArea(MessageFormat.format("{0}</a> Error: {1}", getValidateMessageIntro(pe), pe.getMessage()));
         }
@@ -803,6 +806,23 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         if (r.getErrors().isEmpty() && r.getWarnings().isEmpty()) {
             appendToMessageArea("<i>Policy validated ok.</i>");
         }
+    }
+
+    private boolean containDisabledAssertion(Assertion assertion) {
+        if (assertion == null) {
+            return false;
+        }
+        if (! assertion.isEnabled()) {
+            return true;
+        }
+
+        if (assertion instanceof CompositeAssertion) {
+            CompositeAssertion parent = (CompositeAssertion)assertion;
+            for (Object child: parent.getChildren()) {
+                if (containDisabledAssertion((Assertion)child)) return true;
+            }
+        }
+        return false;
     }
 
     public void updateActions(Action[] actions) {

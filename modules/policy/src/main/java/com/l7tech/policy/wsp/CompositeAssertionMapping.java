@@ -76,6 +76,10 @@ class CompositeAssertionMapping implements TypeMapping {
         } else {
             element = DomUtils.createAndAppendElementNS(container, externalName, WspConstants.WSP_POLICY_NS, "wsp");
             element.setAttributeNS(WspConstants.WSP_POLICY_NS, "wsp:Usage", "Required");
+
+            // Add an assertion-disable attribute into the composite-assertion element.
+            boolean enabled = ((Assertion)object.target).isEnabled();
+            element.setAttributeNS(WspConstants.WSP_POLICY_NS, WspConstants.WSP_ATTRIBUTE_ENABLED, "" + enabled);
         }
         populateElement(wspWriter, element, object);
         return element;
@@ -83,8 +87,22 @@ class CompositeAssertionMapping implements TypeMapping {
 
     public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
         CompositeAssertion cass = makeAssertion(externalName);
+        cass.setEnabled(getDisableAttribute(source));
         populateObject(cass, source, visitor);
         return new TypedReference(clazz, cass);
+    }
+
+    private boolean getDisableAttribute(Element source) throws InvalidPolicyStreamException {
+        String attribute_enabled = source.getAttribute(WspConstants.WSP_ATTRIBUTE_ENABLED);
+
+        // attribute_enabled might be an empty string.  Here is a case:
+        // When importing a policy of a previous version in the 5.0 or later SSM, there is no such attribute, "L7p:Enabled"
+        // in the policy.  So use enable as the default to set all assertions to be enabled.  After 5.0 including 5.0, any
+        // composite assertions have the attribute, "L7p:Enabled".
+        if (attribute_enabled == null || attribute_enabled.trim().equals("")) return true;
+
+        // If it is a policy of 5.0 or post 5.0, then just depends on the attribute value.
+        return Boolean.parseBoolean(attribute_enabled);
     }
 
     public TypeMappingFinder getSubtypeFinder() {
