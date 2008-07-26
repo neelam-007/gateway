@@ -27,12 +27,19 @@ checkForSca() {
     fi
 }
 
+checkForEm() {
+    EM_PRESENT=""
+    EM_ENABLED=""
+    [ -d "/opt/SecureSpan/EnterpriseManager" ] && EM_PRESENT="true"
+}
+
 doLogout() {
     exit
 }
 
 checkForUpdater
 checkForSca
+checkForEm
 isValid="n"
 while [ "$isValid" != "y" ]
 do
@@ -53,6 +60,15 @@ do
 
         if [ "${UPDATER_PRESENT}" == "true" ] ; then
             echo "8) Upgrade the SecureSpan Appliance"
+        fi
+
+        if [ "${EM_PRESENT}" == "true" ] ; then
+            /sbin/chkconfig ssem && true # && true due to set -e
+            if [ ${?} -eq 0 ] ; then
+                echo "9) Disable Enterprise Manager server (root)"
+            else
+                echo "9) Enable Enterprise Manager server (root)"
+            fi
         fi
 
         echo -n "Please make a selection: "
@@ -127,6 +143,19 @@ do
                         (${UPDATEWIZARD})
                         echo "Press enter to continue";
                         read;
+                        clear;
+                    elif [ "$choice" == "9" ] && [ "${EM_PRESENT}" == "true" ]; then
+                        /sbin/chkconfig ssem && true # && true due to set -e
+                        if [ ${?} -eq 0 ] ; then
+                            echo "Disabing Enterprise Manager server, root password required."
+                            su - -c "chkconfig ssem off"
+                            echo "Enterprise Manager server disabled."
+                        else
+                            echo "Enabling Enterprise Manager server, root password required."
+                            su - -c "chkconfig ssem on"
+                            echo "Enterprise Manager server enabled."
+                        fi
+                        sleep 3
                         clear;
                     else
                         isValid="n";

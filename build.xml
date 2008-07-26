@@ -1416,7 +1416,7 @@
             depends="package.gateway.all, package.manager, package.client, package.installclients, package.installgateway.work"/>
 
 
-    <target name="package.gateway.all" depends="package.configwiz.all, package.ssgflasher, package.gateway, package.modules, pack.manager, package.api"/>
+    <target name="package.gateway.all" depends="package.configwiz.all, package.ssgflasher, package.gateway, package.modules, pack.manager, package.api, package.em"/>
 
     <!--
       Build the windows installers without any dependencies.
@@ -1738,6 +1738,23 @@
             </fileset>
         </copy>
         <copy file="modules/gateway/server/build/layer7-gateway-server.jar" tofile="${build.dir}/Gateway.jar"/>
+    </target>
+
+    <!--
+      Package the Enterprise Manager (JAR).
+    -->
+    <target name="package.em" depends="package.jars" unless="package.gateway.notrequired">
+        <!-- packaging gateway libs -->
+        <mkdir dir="${build.dir}/enterprisemanagerlibs"/>
+        <delete>
+            <fileset dir="${build.dir}/enterprisemanagerlibs" includes="layer7-*"/>
+        </delete>
+        <copy todir="${build.dir}/enterprisemanagerlibs">
+            <fileset dir="modules/ems/build/dependency">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
+        <copy file="modules/ems/build/layer7-ems.jar" tofile="${build.dir}/EnterpriseManager.jar"/>
     </target>
 
     <target name="package.modules" depends="package.jars" unless="package.gateway.notrequired">
@@ -2279,7 +2296,7 @@
     <!-- comment out package.installgateway.work.nsis depends item, bug 3703, as Gateway exe not supported post-3.7 -->
     <!-- target name="package.installgateway.work" depends="package.gateway, INTERNAL-ssg-install, package.installgateway.work.nsis, package.installgateway.work.rpm"/ -->
 
-    <target name="package.installgateway.work" depends="package.gateway, INTERNAL-ssg-install, package.installgateway.work.rpm"/>
+    <target name="package.installgateway.work" depends="package.gateway, INTERNAL-ssg-install, package.installgateway.work.rpm, package.em.tar, package.installem.work.rpm"/>
     <!--
       Build the SSG windows installer
       - Update NSI (with jars)
@@ -2426,6 +2443,30 @@
         <rpm specFile="ssg-security.spec" topDir="${build.rpm}" command="-bb --target noarch" failOnError="true"/>
     </target>
 
+    <!--
+      Create the Enterprise Manager RPM
+    -->
+    <target name="package.installem.work.rpm.check" if="makerpm.enabled" depends="init">
+        <available property="package.installem.work.rpm.sourceavailable" file="${emtarball}"/>
+    </target>
+    <target name="package.installem.work.rpm.core" depends="package.installem.work.rpm.check, package.readversion, package.checkrelease" if="package.installem.work.rpm.sourceavailable">
+        <!-- create directories -->
+        <mkdir dir="${build.rpm}/BUILD"/>
+        <mkdir dir="${build.rpm}/RPMS"/>
+        <mkdir dir="${build.rpm}/SOURCES"/>
+        <mkdir dir="${build.rpm}/SPECS"/>
+        <mkdir dir="${build.rpm}/SRPMS"/>
+
+        <!-- build -->
+        <property name="package.installem.work.rpmspec" value="etc/enterprisemanager/ssem.spec"/>
+        <echo level="info">Using spec file : ${package.installem.work.rpmspec}</echo>
+        <echo level="info">Using source TGZ: ${emtarball}</echo>
+        <copy file="${emtarball}" tofile="${build.rpm}/SOURCES/ssem.tar.gz"/>
+        <copy file="${package.installem.work.rpmspec}" todir="${build.rpm}/SPECS"/>
+
+        <rpm specFile="ssem.spec" topDir="${build.rpm}" command="-bb --target noarch" failOnError="true"/>
+    </target>
+
     <target name="securityrpm" depends="package.installgateway.work.rpm.stig">
         <move todir="${dist.dir}" flatten="true">
             <fileset dir="${build.rpm}/RPMS">
@@ -2448,6 +2489,13 @@
     -->
     <target name="package.installgateway.work.rpm" depends="package.installgateway.work.rpm.core, package.installgateway.work.rpm.appliance, package.installgateway.work.rpm.appliance.x86_64" if="makerpm.enabled">
         <echo level="info">RPM build completed.</echo>
+    </target>
+
+    <!--
+      Create the Enterprise Manager RPM
+    -->
+    <target name="package.installem.work.rpm" depends="package.installem.work.rpm.core" if="makerpm.enabled">
+        <echo level="info">Enterprise Manager RPM build completed.</echo>
     </target>
 
     <!-- Package the ssg flasher utility -->
@@ -2862,7 +2910,6 @@
     -->
     <target name="init-dist">
         <property name="no.dev.build" value="true"/>
-        <property name="module.sign" value="true"/>
     </target>
 
     <!--
@@ -3280,6 +3327,41 @@
             <tarfileset dir="${src.root}" username="root" group="root" mode="644">
                 <include name="etc/appliance/tarari/tarari-initd"/>
                 <include name="etc/appliance/tarari/tarariopts.sh"/>
+            </tarfileset>
+        </tar>
+    </target>
+
+    <!-- Create the TAR used when building the Enterprise Manager -->
+    <target name="package.em.tar" depends="init" if="ssg.install.enabled">
+        <echo level="info">Creating Enterprise Manager Build Tar ...</echo>
+
+        <property name="install.src.em" value="${install.src.base}/enterprisemanager"/>
+        <mkdir dir="${install.src.em}"/>
+
+        <!-- create directory structure for tar -->
+        <mkdir dir="${install.src.em}/etc/init.d"/>
+        <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager"/>
+        <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/bin"/>
+        <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/lib"/>
+        <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/logs"/>
+        <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/var"/>
+
+        <!-- copy files to install locations -->
+        <copy file="${src.root}/etc/enterprisemanager/ssem-initd" tofile="${install.src.em}/etc/init.d/ssem"/>
+        <copy file="${src.root}/etc/enterprisemanager/enterprisemanager.sh" todir="${install.src.em}/opt/SecureSpan/EnterpriseManager/bin"/>
+        <copy file="${build.dir}/EnterpriseManager.jar" todir="${install.src.em}/opt/SecureSpan/EnterpriseManager/"/>
+        <copy todir="${install.src.em}/opt/SecureSpan/EnterpriseManager/lib">
+            <fileset dir="${build.dir}/enterprisemanagerlibs"/>
+        </copy>
+
+        <!-- package -->
+        <property name="emtarball" value="${build.dir}/enterprisemanager-b${install.build.number}.tar.gz"/>
+        <tar destfile="${emtarball}" compression="gzip" longfile="gnu">
+            <tarfileset dir="${install.src.em}" username="gateway" group="gateway" mode="755">
+                <include name="**/*.sh"/>
+            </tarfileset>
+            <tarfileset dir="${install.src.em}" username="gateway" group="gateway" mode="644">
+                <exclude name="**/*.sh"/>
             </tarfileset>
         </tar>
     </target>

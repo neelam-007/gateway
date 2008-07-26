@@ -266,7 +266,7 @@ fi
 /ssg/configwizard/ssgconfig.sh -partitionMigrate &> /dev/null
 # Change issue. This may move to a layer7-release file
 
-echo "Layer 7 SecureSpan(tm) Gateway v4.3" >/etc/issue
+echo "Layer 7 SecureSpan(tm) Gateway v5.0" >/etc/issue
 echo "Kernel \r on an \m" >>/etc/issue
 #add the ssg and the configuration service to chkconfig if they are not already there
 /sbin/chkconfig --list ssg &>/dev/null

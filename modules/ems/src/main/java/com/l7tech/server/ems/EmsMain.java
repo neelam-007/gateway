@@ -1,9 +1,11 @@
 package com.l7tech.server.ems;
 
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.JdkLoggerConfigurator;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.File;
 
 /**
  * Process entry point that starts the EMS server.
@@ -12,6 +14,11 @@ public class EmsMain {
     private static final Logger logger = Logger.getLogger(EmsMain.class.getName());
 
     public static void main(String[] args) {
+        // configure logging if the logs directory is found, else leave console output
+        if ( new File("logs").exists() ) {
+            JdkLoggerConfigurator.configure("com.l7tech.server.ems", "com/l7tech/server/ems/resources/logging.properties");
+        }
+
         try {
             new Ems().start();
 

@@ -1,0 +1,64 @@
+#!/bin/bash
+#
+# Startup script for the SecureSpan Enterprise Manager
+#
+# chkconfig: - 99 01
+# description: Layer 7 SecureSpan Enterprise Manager Daemon
+# processname: ssemd
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# See how we were called.
+USER=$(whoami)
+if [ $USER != "root" ] ; then
+    echo "Need to be root to run this script";
+    exit
+fi
+
+# Config
+PID_FILE="ssemd"
+EM_SCRIPT="/opt/SecureSpan/EnterpriseManager/bin/enterprisemanager.sh"
+
+start() {
+        [ -x "${EM_SCRIPT}" ] || exit 5
+
+        echo -n $"Starting Enterprise Manager: "
+        daemon --check="${PID_FILE}" --user=gateway "${EM_SCRIPT}" 
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && touch /var/lock/subsys/ssemd
+        return $RETVAL
+}
+
+stop() {
+        echo -n $"Shutting down Enterprise Manager: "
+        killproc "${PID_FILE}"
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/ssemd
+        return $RETVAL
+}
+
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart)
+	stop
+        sleep 5
+	start
+	;;
+  status)
+        status ssemd
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+
+exit $RETVAL
