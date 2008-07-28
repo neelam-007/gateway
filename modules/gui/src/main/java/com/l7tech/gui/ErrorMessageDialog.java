@@ -1,7 +1,6 @@
 package com.l7tech.gui;
 
 import com.l7tech.gui.util.*;
-import com.l7tech.gui.widgets.WrappingLabel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -22,7 +21,7 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
     private JButton closeManagerButton;
     private JButton reportButton;
     private JLabel iconLabel;
-    private WrappingLabel messageLabel;
+    private JTextPane messagePane;
 
     private Throwable throwable;
     private SaveErrorStrategy defaultSaveStrategy = new DefaultSaveErrorStrategy();
@@ -77,7 +76,14 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
         setContentPane(mainPanel);
         setTitle(resources.getString("error.dialog.title"));
         iconLabel.setIcon(UIManager.getLookAndFeelDefaults().getIcon("OptionPane.warningIcon"));
-        messageLabel.setText(errorMessage);
+        if ( errorMessage != null ) {
+            if ( errorMessage.toLowerCase().startsWith("<html") ) {
+                messagePane.setText(errorMessage);
+            } else {
+                messagePane.setText("<html>" + errorMessage + "</html>");                
+            }
+            messagePane.setCaretPosition(0);
+        }
 
         okButton.addActionListener(this);
         reportButton.addActionListener(this);

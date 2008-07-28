@@ -807,7 +807,7 @@ public class LogonDialog extends JDialog {
             JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
         else {
-            ErrorManager.getDefault().notify(Level.WARNING, e, resources.getString("logon.connect.error"));
+            ErrorManager.getDefault().notify(Level.WARNING, e, MessageFormat.format(resources.getString("logon.connect.error"), host));
         }
     }
 

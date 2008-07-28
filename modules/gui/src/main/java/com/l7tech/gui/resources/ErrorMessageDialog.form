@@ -3,7 +3,7 @@
   <grid id="27dc6" binding="mainPanel" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="10" vgap="10">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="177" y="83" width="508" height="407"/>
+      <xy x="177" y="83" width="508" height="261"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -42,10 +42,12 @@
             <properties/>
             <border type="empty"/>
             <children>
-              <component id="3cded" class="com.l7tech.gui.widgets.WrappingLabel" binding="messageLabel">
+              <component id="7d1e4" class="javax.swing.JTextPane" binding="messagePane">
                 <constraints/>
                 <properties>
-                  <columns value="0"/>
+                  <contentType value="text/html"/>
+                  <editable value="false"/>
+                  <opaque value="false"/>
                 </properties>
               </component>
             </children>
