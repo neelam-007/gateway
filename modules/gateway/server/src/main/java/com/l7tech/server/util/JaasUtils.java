@@ -10,6 +10,7 @@ import com.l7tech.server.admin.GroupPrincipal;
 import javax.security.auth.Subject;
 import java.security.AccessController;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -37,12 +38,11 @@ public class JaasUtils {
         if (subject == null) return null;
         Set<GroupPrincipal> cPs = subject.getPrincipals(GroupPrincipal.class);
         if (cPs == null || cPs.isEmpty()) return null;
-        //A user can only have one principal representing group membership
-        if (cPs.size() > 1){
-            logger.log(Level.WARNING, "More than one GroupPrincipal found in Subject");
+        Set<IdentityHeader> returnSet = new HashSet<IdentityHeader>();
+        for(GroupPrincipal gP: cPs){
+            returnSet.add(gP.getGroupHeader());
         }
-        GroupPrincipal gP = cPs.iterator().next();
-        return gP.getGroupHeaders();
+        return returnSet;
     }
 
     public static Subject getCurrentSubject() {

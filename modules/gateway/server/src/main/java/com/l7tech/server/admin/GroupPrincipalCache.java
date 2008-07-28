@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.FindException;
 import com.whirlycott.cache.Cache;
 
 import java.util.Set;
+import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,11 +38,12 @@ public class GroupPrincipalCache {
 
 
     /*
-    * validate will look up the user in the cache and return it's Set<Principal>
+    * validate will look up the user in the cache and return it's Set<Principal> representing its
+    * entire group membership
     * @param u the User we want the set of Set<Principal> for
     * @param ip the IdentityProvider the user belongs to. This can be used to validate the user if required
     * */
-    public GroupPrincipal getCachedValidatedPrincipals(User u, IdentityProvider ip,
+    public Set<GroupPrincipal> getCachedValidatedPrincipals(User u, IdentityProvider ip,
                                                        int maxAge)
             throws ValidationException {
 
@@ -49,8 +51,8 @@ public class GroupPrincipalCache {
         final CacheKey ckey = new CacheKey(providerOid, u.getId());
         Object cached = getCacheEntry(ckey, u.getLogin(), ip, maxAge);
 
-        if (cached instanceof GroupPrincipal) {
-            return (GroupPrincipal)cached;
+        if (cached instanceof Set) {
+            return (Set<GroupPrincipal>)cached;
         } else if (cached != null) {
             return null;
         }        
@@ -66,16 +68,19 @@ public class GroupPrincipalCache {
         return InstanceHolder.INSTANCE;
     }
 
+    /*
+    * @return either Set<GroupPrincipal> or Long
+    * */
     private Object getCacheEntry(CacheKey ckey, String login, IdentityProvider idp, int maxAge) {
 
         if (principalCache == null) return null; // fail fast if cache is disabled
 
         Long cachedFailureTime = null;
-        GroupPrincipal groupPrincipal = null;
+        CacheEntry<Set<GroupPrincipal>> groupPrincipals = null;
 
         Object cachedObj = principalCache.retrieve(ckey);
-        if(cachedObj != null && cachedObj instanceof GroupPrincipal){
-            groupPrincipal = (GroupPrincipal)cachedObj;
+        if(cachedObj != null && cachedObj instanceof CacheEntry){
+            groupPrincipals = (CacheEntry<Set<GroupPrincipal>>)cachedObj;
         }
 
         if(cachedObj != null && cachedObj instanceof Long){
@@ -94,9 +99,9 @@ public class GroupPrincipalCache {
             log = "failure";
             returnValue = cachedFailureTime;
         } else {
-            cacheAddedTime = groupPrincipal.getTimestamp();
+            cacheAddedTime = groupPrincipals.getTimestamp();
             log = "success";
-            returnValue = groupPrincipal;
+            returnValue = groupPrincipals.getCachedObject();
         }
 
         if (cacheAddedTime + maxAge > System.currentTimeMillis()) {
@@ -114,7 +119,7 @@ public class GroupPrincipalCache {
 
     // If caller wants only one thread at a time to authenticate any given username,
     // caller is responsible for ensuring that only one thread at a time calls this per username,
-    private GroupPrincipal getAndCacheNewResult(User u, CacheKey ckey, IdentityProvider idp)
+    private Set<GroupPrincipal> getAndCacheNewResult(User u, CacheKey ckey, IdentityProvider idp)
             throws ValidationException
     {
         idp.validate(u);
@@ -130,16 +135,20 @@ public class GroupPrincipalCache {
             throw new ValidationException(msg);
         }
 
-        if(gHeaders != null){
-            GroupPrincipal gP = new GroupPrincipal(u.getLogin());            
-            gP.setGroupHeaders(gHeaders);
-            this.principalCache.store(ckey, gP);
+        if(gHeaders != null && gHeaders.size() > 0){
+            Set<GroupPrincipal> gPs = new HashSet<GroupPrincipal>();
+            for(IdentityHeader iH: gHeaders){
+                GroupPrincipal gP = new GroupPrincipal(u.getLogin(), iH);
+                gPs.add(gP);
+            }
+            CacheEntry<Set<GroupPrincipal>> groupPrincipals = new CacheEntry<Set<GroupPrincipal>>(gPs);
+            this.principalCache.store(ckey, groupPrincipals);
             if (logger.isLoggable(Level.FINE))
                 logger.log(Level.FINE,
                            "Cached group membership principals for user {n0} on IdP \"{1}\"",
                            new String[]{u.getLogin(), idp.getConfig().getName()});
 
-            return gP;
+            return gPs;
         }else{
             return null;
         }

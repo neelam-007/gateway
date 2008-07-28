@@ -12,25 +12,23 @@ import java.util.Set;
  * Time: 5:49:02 PM
  * To change this template use File | Settings | File Templates.
  *
- * Store group membership for a user
+ * Store an individual group membership for a user
  */
 public class GroupPrincipal implements Principal {
 
     private String name;
-
-    private Set<IdentityHeader> groupHeaders;
-
-    public Set<IdentityHeader> getGroupHeaders() {
-        return groupHeaders;
-    }
-
-    public void setGroupHeaders(Set<IdentityHeader> groupHeaders) {
-        this.groupHeaders = groupHeaders;
-    }
-
-    public GroupPrincipal(String name){
+    private IdentityHeader groupHeader;
+    private final long timestamp = System.currentTimeMillis();
+    
+    public GroupPrincipal(String name, IdentityHeader groupHeader){
         this.name = name;
+        this.groupHeader = groupHeader;
     }
+
+    public IdentityHeader getGroupHeader() {
+        return groupHeader;
+    }
+
     public String getName() {
         return name;
     }
@@ -39,6 +37,4 @@ public class GroupPrincipal implements Principal {
         return timestamp;
     }
 
-    private final long timestamp = System.currentTimeMillis();
-    
 }

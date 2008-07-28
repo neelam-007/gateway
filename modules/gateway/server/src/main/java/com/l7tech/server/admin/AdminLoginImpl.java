@@ -402,8 +402,10 @@ public class AdminLoginImpl
         for(IdentityProvider iP: adminProviders){
             if(iP.getConfig().getOid() == pId){
                 //Get the group memberhsip from the group cache.
-                Principal groupP = this.groupPrincipalCache.getCachedValidatedPrincipals(u,iP,CACHE_MAX_TIME);
-                pSet.add(groupP);
+                Set<GroupPrincipal> groupPrincipals = this.groupPrincipalCache.getCachedValidatedPrincipals(u,iP,CACHE_MAX_TIME);
+                if(groupPrincipals != null){
+                    pSet.addAll(groupPrincipals);
+                }
                 //any other cache's we have for Principals we want to associate with a users subject
                 //add them here...
                 return pSet;
