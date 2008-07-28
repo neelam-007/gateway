@@ -7,6 +7,8 @@ package com.l7tech.security.cert;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.util.Date;
 
 /**
  * An certificate that is trusted by the SSG for a variety of purposes.
@@ -228,6 +230,17 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
 
     public void setRevocationCheckPolicyOid(Long oid) {
         this.revocationCheckPolicyOid = oid;
+    }
+
+    /**
+     * Check if the trusted cert is expired or not.
+     * @return true if the cert is expired.
+     * @throws CertificateException if the cert cannot be deserialized.
+     */
+    public boolean isExpiredCert() throws CertificateException {
+        Date expiryDate = this.getCertificate().getNotAfter();
+        Date today = new Date(System.currentTimeMillis());
+        return expiryDate.before(today);
     }
 
     public boolean equals(Object o) {

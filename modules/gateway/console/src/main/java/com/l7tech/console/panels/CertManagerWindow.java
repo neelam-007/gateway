@@ -29,6 +29,7 @@ import java.util.ResourceBundle;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.cert.CertificateException;
 
 /**
  * This class is the main window of the trusted certificate manager
@@ -45,10 +46,12 @@ public class CertManagerWindow extends JDialog {
     private JButton closeButton;
     private JScrollPane certTableScrollPane;
     private JButton certificateValidationButton;
+    private JLabel expiredCertCautionLabel;
 
     private TrustedCertsTable trustedCertTable = null;
     private Collection<RevocationCheckPolicy> revocationCheckPolicies;
     private final PermissionFlags flags;
+    private boolean foundExpiredCert;
 
     /**
      * Constructor
@@ -98,6 +101,12 @@ public class CertManagerWindow extends JDialog {
                 dispose();
             }
         });
+
+        // Initialize expiredCertCautionLabel
+        expiredCertCautionLabel.setText("Caution! Some certificate(s) expired.");
+        expiredCertCautionLabel.setBackground(new Color(0xFF, 0xFF, 0xe1));
+        expiredCertCautionLabel.setOpaque(true);
+        expiredCertCautionLabel.setVisible(false);
 
         certificateValidationButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
@@ -188,9 +197,11 @@ public class CertManagerWindow extends JDialog {
             certList = getTrustedCertAdmin().findAllCerts();
 
             java.util.List<TrustedCert> certs = new ArrayList<TrustedCert>();
+            foundExpiredCert = false;
             for (Object o : certList) {
                 TrustedCert cert = (TrustedCert) o;
                 certs.add(cert);
+                foundExpiredCert = cert.isExpiredCert();
             }
 
             trustedCertTable.getTableSorter().setData(certs);
@@ -202,7 +213,14 @@ public class CertManagerWindow extends JDialog {
             JOptionPane.showMessageDialog(CertManagerWindow.this, msg,
                                           resources.getString("load.error.title"),
                                           JOptionPane.ERROR_MESSAGE);
+        } catch (CertificateException e) {
+            String msg = "the certificate cannot be deserialized";
+            logger.log(Level.WARNING, msg, e);
+            JOptionPane.showMessageDialog(CertManagerWindow.this, msg,
+                                          resources.getString("load.error.title"),
+                                          JOptionPane.ERROR_MESSAGE);
         }
+        expiredCertCautionLabel.setVisible(foundExpiredCert);
     }
 
     private Collection<RevocationCheckPolicy> getRevocationCheckPolicies() throws FindException {
