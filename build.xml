@@ -739,8 +739,28 @@
       Generate IDEA project/modules
     -->
     <target name="idea" depends="build-module-list-all" description="Generate IDEA project/modules">
+        <mkdir dir="${build.etc}"/>
         <echo level="info">Building IDEA modules.</echo>
         <modules target="idea" buildpathref="module-build-all-path"/>
+
+        <!-- Regenerate IDEA module for inspections (All modules) -->
+        <pathconvert property="module.paths.xml.text" pathsep="${line.separator}                ">
+            <mapper type="regexp" from="${src.root}[\\/](.*)" to="&lt;path file=&quot;\1&quot;/&gt;"/>
+            <path>
+                <dirset dir="modules">
+                    <include name="**/src/main/java"/>
+                    <include name="**/src/test/java"/>
+                    <exclude name="skunkworks/**"/>
+                </dirset>
+            </path>
+        </pathconvert>
+        <echo>${module.paths.xml.text}</echo>
+        <echo file="${build.etc}/module-paths.xml">&lt;module-paths&gt;
+                ${module.paths.xml.text}
+            &lt;/module-paths&gt;
+        </echo>
+        <delete file="Inspections.iml"/>
+        <xslt in="${build.etc}/module-paths.xml" out="Inspections.iml" style="etc/build/idea_module_inspections.xsl"/>
 
         <!-- Module for transitive dependencies -->
         <copy file="etc/build/idea_module_runtime.xml" tofile="UneasyRooster.iml" overwrite="false"/>
@@ -751,7 +771,6 @@
 
         <echo level="info">Building IDEA project.</echo>
         <!-- Generate XML descriptor for modules -->
-        <mkdir dir="${build.etc}"/>
         <pathconvert property="modules.xml.text" pathsep="${line.separator}                ">
             <mapper type="regexp" from=".*[/\\](modules.*.iml)" to="&lt;module file=&quot;\1&quot;/&gt;"/>
             <path>
