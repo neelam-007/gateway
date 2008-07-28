@@ -19,9 +19,19 @@ public class EmsMain {
             JdkLoggerConfigurator.configure("com.l7tech.server.ems", "com/l7tech/server/ems/resources/logging.properties");
         }
 
-        try {
-            new Ems().start();
+        // add shutdown handler
+        final Object shutdown = new Object();
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
+            public void run() {
+                synchronized(shutdown) {
+                    shutdown.notify();
+                }
+            }
+        }));
 
+        final Ems ems = new Ems();
+        try {
+            ems.start();
         } catch (Throwable t) {
             final String msg = "Unable to start EMS: " + ExceptionUtils.getMessage(t);
             logger.log(Level.SEVERE, msg, t);
@@ -31,7 +41,9 @@ public class EmsMain {
         }
 
         try {
-            waitForShutdown();
+            waitForShutdown(shutdown);
+            logger.info("Shutting down.");
+            ems.stop();
         } catch (Exception t) {
             final String msg = "Exception while waiting for EMS shutdown: " + ExceptionUtils.getMessage(t);
             logger.log(Level.SEVERE, msg, t);
@@ -41,13 +53,11 @@ public class EmsMain {
         }
     }
 
-    private static void waitForShutdown() throws Exception {
+    private static void waitForShutdown(final Object shutdown) throws Exception {
         // Wait forever until server is shut down
-        // TODO look for a SHUTDOWN.NOW file or some other lifecycle control mechanism
-        Object thing = new Object();
-        synchronized (thing) {
+        synchronized (shutdown) {
             try {
-                thing.wait();
+                shutdown.wait();
             } catch (InterruptedException e) {
                 throw new Exception("thread interrupted");
             }

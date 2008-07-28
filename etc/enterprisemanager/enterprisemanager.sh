@@ -11,13 +11,27 @@ if [ -z "${JAVA_HOME}" ] ; then
   JAVA_HOME="/ssg/jdk"
 fi
 
+PID_FILE=""
+if [ ! -z "${1}" ] ; then
+  PID_FILE="${1}"
+fi
+
+#
 function fail() {
-  echo "$1"
-  exit 1
+  echo "$2"
+  exit ${1}
 }
 
 #
 cd "${SSEM_HOME}" || fail "Directory not found: ${SSEM_HOME}" 
 
 #
-"${JAVA_HOME}/bin/java" -jar EnterpriseManager.jar || fail "Error starting Enterprise Manager." &>/dev/null <&- &
+"${JAVA_HOME}/bin/java" -jar EnterpriseManager.jar &>/dev/null <&- &
+if [ ${?} -eq 0 ] ; then
+  [ -z "${PID_FILE}" ] || echo "${!}" > "${PID_FILE}"
+else
+  [ -z "${PID_FILE}" ] || rm -f "${PID_FILE}" &>/dev/null
+  fail "${?}" "Error starting Enterprise Manager."
+fi
+
+exit 0;
