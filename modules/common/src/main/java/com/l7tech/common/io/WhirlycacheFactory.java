@@ -83,7 +83,7 @@ public class WhirlycacheFactory {
         Cache cache = null;
         synchronized(cacheMap) {
             if (!shutdown) {
-                if ( cacheMap.containsKey(name) ) throw new IllegalArgumentException("Duplicate cache! : " + name);
+                if ( cacheMap.containsKey(name) ) logger.warning("Duplicate cache name used '" + name + "'.");
 
                 CacheDecorator cacheDecorator = new CacheDecorator(managedCache, cc, new CacheMaintenancePolicy[] { maintenancePolicy });
                 cache = cacheDecorator;
