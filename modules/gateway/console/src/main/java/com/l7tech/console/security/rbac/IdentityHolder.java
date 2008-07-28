@@ -78,6 +78,11 @@ class IdentityHolder {
         this.provName = name;
     }
 
+    /*Get the name of the identity provider this Identity belongs to*/
+    public String getProvName(){
+        return this.provName;
+    }
+    
     public RoleAssignment getUserRoleAssignment() {
         return roleAssignment;
     }

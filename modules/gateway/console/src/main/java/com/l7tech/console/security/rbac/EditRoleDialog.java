@@ -27,6 +27,8 @@ import javax.swing.text.AbstractDocument;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableRowSorter;
+import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.MessageFormat;
@@ -48,11 +50,11 @@ public class EditRoleDialog extends JDialog {
     private JButton editPermission;
     private JButton removePermission;
     private JTable permissionsTable;
-    private JList userAssignmentList;
     private JButton addAssignment;
     private JButton removeAssignment;
+    private JTable roleAssigneeTable;
+    private RoleAssignmentTableModel roleAssignmentTableModel;
 
-    private AssignmentListModel assignmentListModel;
     private PermissionTableModel tableModel;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RbacGui");
@@ -97,7 +99,6 @@ public class EditRoleDialog extends JDialog {
                 idpNames.put(h.getOid(), h.getName());
             }
 
-            assignmentListModel = new AssignmentListModel();
         } catch (Exception e) {
             throw new RuntimeException("Couldn't lookup Identity Providers", e);
         }
@@ -118,6 +119,9 @@ public class EditRoleDialog extends JDialog {
             roleDescription.setText(RbacUtilities.getDescriptionString(role, false));
             roleDescription.getCaret().setDot(0);
         }
+
+        setUpAssigneeTable();        
+
         setupButtonListeners();
         setupActionListeners();
         applyFormSecurity();
@@ -125,6 +129,31 @@ public class EditRoleDialog extends JDialog {
         pack();
     }
 
+    private void setUpAssigneeTable(){
+        try{
+            roleAssignmentTableModel = new RoleAssignmentTableModel(role);
+        }catch(Exception ex){
+            throw new RuntimeException("Could not look up assignments for role", ex);
+        }
+        this.roleAssigneeTable.setModel(roleAssignmentTableModel);
+        DefaultListSelectionModel dlsm = new DefaultListSelectionModel();
+        dlsm.addListSelectionListener(new RoleAssignmentListSelectionListener(this));
+        this.roleAssigneeTable.setSelectionModel(dlsm);
+        //this.roleAssigneeTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        //this.roleAssigneeTable.setAutoCreateRowSorter(true);
+        TableRowSorter sorter = new TableRowSorter(roleAssignmentTableModel);
+        java.util.List <RowSorter.SortKey> sortKeys = new ArrayList<RowSorter.SortKey>();
+        sortKeys.add(new RowSorter.SortKey(0, SortOrder.ASCENDING));
+        sortKeys.add(new RowSorter.SortKey(1, SortOrder.DESCENDING));
+        sorter.setSortKeys(sortKeys);
+
+        RoleAssignmentTableStringConverter roleTableSringConvertor = new RoleAssignmentTableStringConverter();
+        sorter.setStringConverter(roleTableSringConvertor);
+        roleAssigneeTable.setRowSorter(sorter);
+        TableColumn tC = roleAssigneeTable.getColumn(RoleAssignmentTableModel.USER_GROUPS);
+        tC.setCellRenderer(new UserGroupTableCellRenderer(roleAssigneeTable));
+    }
+    
     /**
      * Apply form security to elements that are not dynamically enabled disabled.
      *
@@ -162,11 +191,21 @@ public class EditRoleDialog extends JDialog {
         removePermission.setEnabled(validRowSelected && hasEditPermission && shouldAllowEdits);
     }
 
+    private static class RoleAssignmentListSelectionListener implements ListSelectionListener{
+        private EditRoleDialog dialog;
+
+        RoleAssignmentListSelectionListener(EditRoleDialog dialog){
+            this.dialog = dialog;                
+        }
+        public void valueChanged(ListSelectionEvent e) {
+            dialog.enableAssignmentDeleteButton();
+        }
+    }
+
     private void enableAssignmentDeleteButton() {
-        int index = userAssignmentList.getSelectedIndex();
-        boolean validRowSelected = assignmentListModel.getSize() != 0 &&
-                index < userAssignmentList.getModel().getSize() &&
-                index > -1;
+        int index = this.roleAssigneeTable.getSelectedRow();
+        
+        boolean validRowSelected = index > -1;
 
         boolean hasEditPermission = flags.canUpdateSome();
 
@@ -244,55 +283,6 @@ public class EditRoleDialog extends JDialog {
         }
     }
 
-    private class AssignmentListModel extends AbstractListModel {
-        private final List<RoleAssignment> assignments = new ArrayList<RoleAssignment>();
-        private final List<IdentityHolder> holders = new ArrayList<IdentityHolder>();
-
-        public AssignmentListModel() throws FindException {
-            for (RoleAssignment assignment : role.getRoleAssignments()) {
-                try {
-                    IdentityHolder uh = new IdentityHolder(assignment);
-                    holders.add(uh);
-                    assignments.add(assignment);
-                } catch (IdentityHolder.NoSuchUserException e) {
-                    logger.info("Removing deleted user #" + assignment.getIdentityId());
-                }
-            }
-        }
-
-        public synchronized int getSize() {
-            return assignments.size();
-        }
-
-        public synchronized void remove(IdentityHolder holder) {
-            holders.remove(holder);
-            assignments.remove(holder.getUserRoleAssignment());
-            fireContentsChanged(userAssignmentList, 0, assignments.size());
-        }
-
-        public synchronized void add(RoleAssignment ra) throws FindException, DuplicateObjectException {
-            try {
-                IdentityHolder holder = null;
-                try {
-                    holder = new IdentityHolder(ra);
-                } catch (IdentityHolder.NoSuchUserException e) {
-                    throw new FindException("Can't assign deleted user", e);
-                }
-                if (assignments.contains(ra) || holders.contains(holder)) {
-                    throw new DuplicateObjectException("The user \"" + holder.getIdentity().getName() + "\" is already assigned to this role");
-                }
-                assignments.add(ra);
-                holders.add(holder);
-            } finally {
-                fireContentsChanged(userAssignmentList, 0, assignments.size());
-            }
-        }
-
-        public synchronized Object getElementAt(int index) {
-            return holders.get(index);
-        }
-    }
-
     private void updateButtonStates() {
         buttonOK.setEnabled(StringUtils.isNotEmpty(roleName.getText()));
         enablePermissionEditDeleteButtons();
@@ -321,9 +311,6 @@ public class EditRoleDialog extends JDialog {
             }
         });
         permissionsTable.getSelectionModel().addListSelectionListener(listListener);
-
-        userAssignmentList.setModel(assignmentListModel);
-        userAssignmentList.getSelectionModel().addListSelectionListener(listListener);
 
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
@@ -376,10 +363,10 @@ public class EditRoleDialog extends JDialog {
                     try {
                         if(header.getType() == com.l7tech.objectmodel.EntityType.USER){
                             User user = identityAdmin.findUserByID(providerId, header.getStrId());
-                            assignmentListModel.add(new RoleAssignment(role, user.getProviderId(), user.getId(), EntityType.USER));
+                             roleAssignmentTableModel.addRoleAssignment(new RoleAssignment(role, user.getProviderId(), user.getId(), EntityType.USER));
                         }else if(header.getType() == com.l7tech.objectmodel.EntityType.GROUP){
                             Group group = identityAdmin.findGroupByID(providerId, header.getStrId());
-                            assignmentListModel.add(new RoleAssignment(role, group.getProviderId(), group.getId(), EntityType.GROUP));
+                            roleAssignmentTableModel.addRoleAssignment(new RoleAssignment(role, group.getProviderId(), group.getId(), EntityType.GROUP));
                         }else{
                             throw new RuntimeException("Identity of type " + header.getType()+" is not supported");
                         }
@@ -398,10 +385,10 @@ public class EditRoleDialog extends JDialog {
                     EditRoleDialog.this,
                     resources.getString("manageRoles.removeAssignmentTitle"), resources.getString("manageRoles.removeAssignmentMessage"), new Runnable() {
                     public void run() {
-                        Object[] selected = userAssignmentList.getSelectedValues();
-                        for (Object o : selected) {
-                            IdentityHolder u = (IdentityHolder)o;
-                            assignmentListModel.remove(u);
+                        int [] selected = roleAssigneeTable.getSelectedRows();
+                        for (int o : selected) {
+                            int modelRow = roleAssigneeTable.convertRowIndexToModel(o);
+                            roleAssignmentTableModel.removeRoleAssignment(modelRow);
                         }
                         updateButtonStates();
                     }
@@ -462,7 +449,7 @@ public class EditRoleDialog extends JDialog {
             }
 
             role.getRoleAssignments().clear();
-            for (RoleAssignment assignment : assignmentListModel.assignments) {
+            for (RoleAssignment assignment : this.roleAssignmentTableModel.getRoleAssignments()) {
                 role.getRoleAssignments().add(assignment);
             }
 

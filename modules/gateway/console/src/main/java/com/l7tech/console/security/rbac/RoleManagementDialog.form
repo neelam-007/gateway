@@ -1,42 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.security.rbac.RoleManagementDialog">
-  <grid id="cbd77" binding="mainPanel" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="cbd77" binding="mainPanel" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="48" y="54" width="491" height="472"/>
-      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0"/>
+      <xy x="48" y="54" width="673" height="537"/>
     </constraints>
-    <properties/>
+    <properties>
+      <preferredSize width="600" height="500"/>
+    </properties>
     <border type="none"/>
     <children>
-      <grid id="94766" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="94766" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="10" y="435" width="471" height="27"/>
-          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3"/>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
         <border type="none"/>
         <children>
           <hspacer id="98af6">
             <constraints>
-              <xy x="0" y="8" width="311" height="11"/>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
           </hspacer>
-          <grid id="9538f" row-count="1" column-count="2" same-size-horizontally="true" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="9538f" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="true" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="311" y="0" width="160" height="27"/>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
             <border type="none"/>
             <children>
               <component id="e7465" class="javax.swing.JButton" binding="buttonOK">
                 <constraints>
-                  <xy x="0" y="0" width="75" height="27"/>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/console/resources/console" key="okButton_text"/>
@@ -44,8 +41,7 @@
               </component>
               <component id="5723f" class="javax.swing.JButton" binding="buttonCancel">
                 <constraints>
-                  <xy x="85" y="0" width="75" height="27"/>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <text resource-bundle="com/l7tech/console/resources/console" key="cancelButton_text"/>
@@ -55,140 +51,164 @@
           </grid>
         </children>
       </grid>
-      <grid id="61abb" binding="informationPane" row-count="4" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="61abb" binding="informationPane" layout-manager="GridLayoutManager" row-count="4" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="10" y="10" width="471" height="420"/>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
         <border type="none"/>
         <children>
-          <grid id="e5465" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="0" left="0" bottom="0" right="0"/>
-            <constraints>
-              <xy x="20" y="20" width="431" height="166"/>
-              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
-            </constraints>
-            <properties/>
-            <border type="etched" title-resource-bundle="com/l7tech/console/resources/RbacGui" title-key="manageRoles.roleGroupTitle"/>
-            <children>
-              <grid id="a68a1" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                <margin top="0" left="0" bottom="0" right="0"/>
-                <constraints>
-                  <xy x="342" y="22" width="83" height="138"/>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children>
-                  <component id="d59fc" class="javax.swing.JButton" binding="addRole">
-                    <constraints>
-                      <xy x="0" y="0" width="83" height="27"/>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
-                    </constraints>
-                    <properties>
-                      <text resource-bundle="com/l7tech/console/resources/RbacGui" key="manageRoles.addButton.text"/>
-                    </properties>
-                  </component>
-                  <component id="af54" class="javax.swing.JButton" binding="editRole">
-                    <constraints>
-                      <xy x="0" y="32" width="83" height="27"/>
-                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
-                    </constraints>
-                    <properties>
-                      <text resource-bundle="com/l7tech/console/resources/RbacGui" key="editButton.text"/>
-                    </properties>
-                  </component>
-                  <component id="f59a3" class="javax.swing.JButton" binding="removeRole">
-                    <constraints>
-                      <xy x="0" y="64" width="83" height="27"/>
-                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
-                    </constraints>
-                    <properties>
-                      <text resource-bundle="com/l7tech/console/resources/RbacGui" key="manageRoles.removeButton.text"/>
-                    </properties>
-                  </component>
-                  <vspacer id="9f602">
-                    <constraints>
-                      <xy x="36" y="91" width="11" height="47"/>
-                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
-                    </constraints>
-                  </vspacer>
-                </children>
-              </grid>
-              <scrollpane id="438a0">
-                <constraints>
-                  <xy x="6" y="22" width="326" height="138"/>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children>
-                  <component id="2f4eb" class="javax.swing.JList" binding="roleList">
-                    <constraints/>
-                    <properties>
-                      <selectionMode value="0"/>
-                    </properties>
-                  </component>
-                </children>
-              </scrollpane>
-            </children>
-          </grid>
           <hspacer id="6b643">
             <constraints>
-              <xy x="0" y="97" width="20" height="11"/>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
           </hspacer>
           <hspacer id="bed0d">
             <constraints>
-              <xy x="451" y="97" width="20" height="11"/>
-              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1"/>
+              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
           </hspacer>
           <vspacer id="cfcf0">
             <constraints>
-              <xy x="230" y="0" width="11" height="20"/>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
             </constraints>
           </vspacer>
-          <grid id="9990" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="0" left="0" bottom="0" right="0"/>
+          <splitpane id="6a931">
             <constraints>
-              <xy x="20" y="191" width="431" height="209"/>
-              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3">
+              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
                 <preferred-size width="200" height="200"/>
               </grid>
             </constraints>
             <properties>
-              <focusable value="false"/>
+              <orientation value="0"/>
             </properties>
-            <border type="etched" title="Properties"/>
+            <border type="none"/>
             <children>
-              <scrollpane id="da377" binding="propertyScroller">
+              <grid id="e5465" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
-                  <xy x="6" y="22" width="419" height="181"/>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3">
-                    <minimum-size width="300" height="-1"/>
+                  <splitpane position="left"/>
+                </constraints>
+                <properties/>
+                <border type="etched" title-resource-bundle="com/l7tech/console/resources/RbacGui" title-key="manageRoles.roleGroupTitle"/>
+                <children>
+                  <grid id="a68a1" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <constraints>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <component id="d59fc" class="javax.swing.JButton" binding="addRole">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text resource-bundle="com/l7tech/console/resources/RbacGui" key="manageRoles.addButton.text"/>
+                        </properties>
+                      </component>
+                      <component id="af54" class="javax.swing.JButton" binding="editRole">
+                        <constraints>
+                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text resource-bundle="com/l7tech/console/resources/RbacGui" key="editButton.text"/>
+                        </properties>
+                      </component>
+                      <component id="f59a3" class="javax.swing.JButton" binding="removeRole">
+                        <constraints>
+                          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text resource-bundle="com/l7tech/console/resources/RbacGui" key="manageRoles.removeButton.text"/>
+                        </properties>
+                      </component>
+                      <vspacer id="9f602">
+                        <constraints>
+                          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                      </vspacer>
+                    </children>
                   </grid>
+                  <scrollpane id="438a0">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <component id="2f4eb" class="javax.swing.JList" binding="roleList">
+                        <constraints/>
+                        <properties>
+                          <selectionMode value="0"/>
+                        </properties>
+                      </component>
+                    </children>
+                  </scrollpane>
+                </children>
+              </grid>
+              <grid id="9990" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="0" left="0" bottom="0" right="0"/>
+                <constraints>
+                  <splitpane position="right"/>
                 </constraints>
                 <properties>
-                  <horizontalScrollBarPolicy value="31"/>
+                  <focusable value="false"/>
                 </properties>
-                <border type="none"/>
+                <border type="etched" title="Properties"/>
                 <children>
-                  <component id="49e6d" class="javax.swing.JTextPane" binding="propertiesPane">
-                    <constraints/>
+                  <splitpane id="fbf51">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                        <preferred-size width="200" height="200"/>
+                      </grid>
+                    </constraints>
                     <properties>
-                      <contentType value="text/html"/>
-                      <editable value="false"/>
+                      <dividerLocation value="130"/>
+                      <orientation value="0"/>
                     </properties>
-                  </component>
+                    <border type="none"/>
+                    <children>
+                      <scrollpane id="9efc9">
+                        <constraints>
+                          <splitpane position="left"/>
+                        </constraints>
+                        <properties/>
+                        <border type="etched" title="Role Assignments"/>
+                        <children>
+                          <component id="b4962" class="javax.swing.JTable" binding="roleAssigneeTable">
+                            <constraints/>
+                            <properties/>
+                          </component>
+                        </children>
+                      </scrollpane>
+                      <scrollpane id="da377" binding="propertyScroller">
+                        <constraints>
+                          <splitpane position="right"/>
+                        </constraints>
+                        <properties>
+                          <horizontalScrollBarPolicy value="31"/>
+                        </properties>
+                        <border type="none"/>
+                        <children>
+                          <component id="49e6d" class="javax.swing.JTextPane" binding="propertiesPane">
+                            <constraints/>
+                            <properties>
+                              <contentType value="text/html"/>
+                              <editable value="false"/>
+                              <maximumSize width="2147483647" height="10"/>
+                            </properties>
+                          </component>
+                        </children>
+                      </scrollpane>
+                    </children>
+                  </splitpane>
                 </children>
-              </scrollpane>
+              </grid>
             </children>
-          </grid>
+          </splitpane>
         </children>
       </grid>
     </children>

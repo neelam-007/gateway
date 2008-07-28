@@ -10,7 +10,7 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
  * Statically assigns a {@link Role} to a {@link User}.
  * @author alex
  *
- * EntityType is enforced in constructor but for hibernate
+ * EntityType is enforced in constructor but for hibernate initial implementation the value is stored as a string
  */
 public class RoleAssignment extends PersistentEntityImp {
     protected long providerId;

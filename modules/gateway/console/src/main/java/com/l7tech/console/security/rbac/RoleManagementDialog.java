@@ -5,20 +5,24 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.util.Functions;
 import com.l7tech.console.panels.PermissionFlags;
+import com.l7tech.console.panels.GroupPanel;
+import com.l7tech.console.panels.UserPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.identity.Identity;
+import com.l7tech.identity.User;
+import com.l7tech.identity.Group;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
+import javax.swing.table.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
+import java.awt.List;
 import java.awt.event.*;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class RoleManagementDialog extends JDialog {
@@ -48,6 +52,8 @@ public class RoleManagementDialog extends JDialog {
         }
     };
     private JScrollPane propertyScroller;
+    private JTable roleAssigneeTable;
+    private RoleAssignmentTableModel roleAssignmentTableModel;
 
     public RoleManagementDialog(Dialog parent) throws HeadlessException {
         super(parent, resources.getString("manageRoles.title"));
@@ -72,6 +78,7 @@ public class RoleManagementDialog extends JDialog {
         setupActionListeners();
 
         roleList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
         add(mainPanel);
 
         setModal(true);
@@ -140,86 +147,81 @@ public class RoleManagementDialog extends JDialog {
                 sb.append(RbacUtilities.getDescriptionString(role, true));
                 sb.append("<br>");
             } else {
-                sb.append("<strong>Permissions:</strong><br>");
-                for (String s : getPermissionList(role)) {
-                    sb.append(MessageFormat.format("&nbsp&nbsp&nbsp{0}<br>\n", s));
+                //sb.append("<strong>Permissions:</strong><br>");
+                sb.append("Users assigned to the ");
+                sb.append(role.getName());
+                sb.append(" role have the ability to ");
+                Set<String> sorted = new TreeSet<String>();
+                for(Permission p: role.getPermissions()){
+                    StringBuilder sb1 = new StringBuilder();
+                    sb1.append(p.getOperation().toString());
+                    
+                    EntityType etype = p.getEntityType();
+                    switch(p.getScope().size()) {
+                        case 0:
+                            sb1.append("[Any");
+                            if (etype == EntityType.ANY)
+                                sb1.append(" Object");
+                            else {
+                                sb1.append(" ").append(etype.getName());
+                            }
+                            sb1.append("]");
+                            break;
+                        case 1:
+                            break;
+                        default:
+                            sb1.append("[Complex Scope]");
+                    }
+                    sorted.add(sb1.toString());
                 }
-            }
-
-            sb.append("<br>");
-
-            sb.append("<strong>Assignments:</strong><br>");
-
-            for (String u : getAssignmentList(role)) {
-                sb.append(MessageFormat.format("&nbsp&nbsp&nbsp{0}<br>\n", u));
+                String [] p = sorted.toArray(new String[]{});
+                for (int i = 0; i < p.length; i++) {
+                    //sb.append(MessageFormat.format("&nbsp&nbsp&nbsp{0}<br>\n", s));
+                    if(i == p.length - 1){
+                        sb.append(" and ");
+                    }else if (i != 0){
+                        sb.append(", ");
+                    } 
+                    sb.append(p[i]);
+                }
+                sb.append(" the ").append(role.getName());
             }
 
             sb.append("</html>");
             message = sb.toString();
+            //Update the table of identity providers and user / group info
+            if( roleAssignmentTableModel == null || roleAssignmentTableModel.getRole() == null || !roleAssignmentTableModel.getRole().equals(role)){
+                setUpRoleAssignmentTable(role);
+            }
+        }else{
+            setUpRoleAssignmentTable(null);
         }
         propertiesPane.setText(message);
         propertiesPane.getCaret().setDot(0);
     }
 
-    private Set<String> getPermissionList(Role role) {
-        Set<String> sorted = new TreeSet<String>();
-        if (role != null) {
-            Set<Permission> permissions = role.getPermissions();
-            if (permissions == null || permissions.isEmpty()) {
-                sorted.add("   NONE \n");
-            } else {
-                for (Permission permission : permissions) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("    ").append(permission.getOperation()).append(" ");
-                    EntityType etype = permission.getEntityType();
-                    switch(permission.getScope().size()) {
-                        case 0:
-                            sb.append("[Any");
-                            if (etype == EntityType.ANY)
-                                sb.append(" Object");
-                            else {
-                                sb.append(" ").append(etype.getName());
-                            }
-                            sb.append("]");
-                            break;
-                        case 1:
-                            sb.append(etype.getName()).append(" ").append(
-                                    permission.getScope().iterator().next().toString());
-                            break;
-                        default:
-                            sb.append("[Complex Scope]");
-                    }
-                    sorted.add(sb.toString());
-                }
-            }
+    private void setUpRoleAssignmentTable(Role role){
+        try{
+            roleAssignmentTableModel = new RoleAssignmentTableModel(role);
+        }catch(Exception ex){
+            throw new RuntimeException("Could not look up assignments for role", ex);
         }
-        return sorted;
+        this.roleAssigneeTable.setModel(roleAssignmentTableModel);
+        //this.roleAssigneeTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        //this.roleAssigneeTable.setAutoCreateRowSorter(true);
+        TableRowSorter sorter = new TableRowSorter(roleAssignmentTableModel);
+        java.util.List <RowSorter.SortKey> sortKeys = new ArrayList<RowSorter.SortKey>();
+        sortKeys.add(new RowSorter.SortKey(0, SortOrder.ASCENDING));
+        sortKeys.add(new RowSorter.SortKey(1, SortOrder.DESCENDING));
+        sorter.setSortKeys(sortKeys);
+
+        RoleAssignmentTableStringConverter roleTableSringConvertor = new RoleAssignmentTableStringConverter();
+        sorter.setStringConverter(roleTableSringConvertor);
+        roleAssigneeTable.setRowSorter(sorter);
+        TableColumn tC = roleAssigneeTable.getColumn(RoleAssignmentTableModel.USER_GROUPS);
+        tC.setCellRenderer(new UserGroupTableCellRenderer(roleAssigneeTable));
+
     }
-
-    private Set<String> getAssignmentList(Role role) {
-        Set<String> sorted = new TreeSet<String>();
-
-        if (role != null) {
-            Set<RoleAssignment> users = role.getRoleAssignments();
-            if (users == null || users.isEmpty()) {
-                sorted.add("   NONE\n");
-            } else {
-                for (RoleAssignment ura : users) {
-                    try {
-                        IdentityHolder holder = new IdentityHolder(ura);
-                        sorted.add("   " + holder);
-                    } catch (FindException e) {
-                        logger.warning("Could not find a user with id=" + ura.getIdentityId());
-                    } catch (IdentityHolder.NoSuchUserException e) {
-                        logger.info("Removing deleted user #" + ura.getIdentityId());
-                    }
-                }
-            }
-        }
-
-        return sorted;
-    }
-
     private void setupButtonListeners() {
         editRole.addActionListener(roleActionListener);
         addRole.addActionListener(roleActionListener);
