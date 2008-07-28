@@ -754,7 +754,6 @@
                 </dirset>
             </path>
         </pathconvert>
-        <echo>${module.paths.xml.text}</echo>
         <echo file="${build.etc}/module-paths.xml">&lt;module-paths&gt;
                 ${module.paths.xml.text}
             &lt;/module-paths&gt;
