@@ -13,8 +13,8 @@ import java.util.ResourceBundle;
  */
 public class ErrorMessageDialog extends JDialog implements ActionListener {
 
-    private final static int DIALOG_LENGTH = 500;
-    private final static int DIALOG_WIDTH = 320;
+    private final static int DIALOG_WIDTH = 500;
+    private final static int DIALOG_HEIGHT = 320;
 
     private JPanel mainPanel;
     private JButton okButton;
@@ -102,7 +102,7 @@ public class ErrorMessageDialog extends JDialog implements ActionListener {
         }
 
         setResizable(true);
-        setSize(DIALOG_LENGTH, DIALOG_WIDTH);
+        setSize(DIALOG_WIDTH, DIALOG_HEIGHT);
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
         Utilities.setEscKeyStrokeDisposes(this);
