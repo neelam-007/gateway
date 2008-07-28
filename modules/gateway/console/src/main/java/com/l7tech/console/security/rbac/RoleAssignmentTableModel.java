@@ -102,22 +102,6 @@ public class RoleAssignmentTableModel  extends AbstractTableModel {
         }else if(columnNames[columnIndex].equals(USER_GROUPS)){
             return iH.getIdentity();
         }
-        
-        /*
-        if(columnNames[columnIndex].equals(IDENTITY_PROVIDER)){
-            return iH.getProvName();
-        }else if(columnNames[columnIndex].equals(USER_GROUPS)){
-            Identity id = iH.getIdentity();
-            if(id instanceof User){
-                User u = (User)id;
-                return  u.getLogin() +" [" + u.getFirstName()+ " " + u.getLastName() + "]";
-            }else if(id instanceof Group){
-                Group g = (Group)id;
-                return g.getName();
-            }
-
-        }
-        */
 
         return null;
     }

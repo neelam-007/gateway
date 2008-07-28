@@ -704,10 +704,10 @@ CREATE TABLE rbac_assignment (
   provider_oid bigint(20) NOT NULL,
   role_oid bigint(20) NOT NULL,
   user_id varchar(255) NOT NULL,
+  entity_type varchar(50) NOT NULL,
   PRIMARY KEY  (objectid),
   UNIQUE KEY unique_assignment (provider_oid,role_oid,user_id),
   FOREIGN KEY (role_oid) REFERENCES rbac_role (objectid) ON DELETE CASCADE,
-  --TODO This update has to be added to the upgrade script
   FOREIGN KEY (provider_oid) REFERENCES identity_provider (objectid) ON DELETE CASCADE,  
   INDEX i_rbacassign_poid (provider_oid),
   INDEX i_rbacassign_uid (user_id)
