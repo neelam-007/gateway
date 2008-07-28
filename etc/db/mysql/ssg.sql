@@ -903,7 +903,7 @@ INSERT INTO rbac_permission VALUES (-803,0,-800,'UPDATE',NULL,'LOG_SINK');
 INSERT INTO rbac_permission VALUES (-804,0,-800,'DELETE',NULL,'LOG_SINK');
 
 -- Assign Administrator role to existing admin user
-INSERT INTO rbac_assignment VALUES (-105, -2, -100, '3');
+INSERT INTO rbac_assignment VALUES (-105, -2, -100, '3', 'User');
 
 DROP TABLE IF EXISTS sink_config;
 CREATE TABLE sink_config (
