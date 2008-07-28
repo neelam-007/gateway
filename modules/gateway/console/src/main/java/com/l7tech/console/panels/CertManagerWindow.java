@@ -201,7 +201,7 @@ public class CertManagerWindow extends JDialog {
             for (Object o : certList) {
                 TrustedCert cert = (TrustedCert) o;
                 certs.add(cert);
-                foundExpiredCert = cert.isExpiredCert();
+                if (!foundExpiredCert) foundExpiredCert = cert.isExpiredCert();
             }
 
             trustedCertTable.getTableSorter().setData(certs);
