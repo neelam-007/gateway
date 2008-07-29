@@ -23,11 +23,11 @@ public class TarariLoader {
     /**
      * Set this to <code>true</code>
      */
-    public static final String ENABLE_PROPERTY = "com.l7tech.common.xml.tarari.enable";
+    public static final String ENABLE_PROPERTY = "com.l7tech.xml.tarari.enable";
 
     private static final String XPATH_COMPILER_CLASSNAME = "com.tarari.xml.rax.fastxpath.XPathCompiler";
-    private static final String FACTORIES_CLASSNAME = "com.l7tech.common.xml.tarari.TarariFactories";
-    private static final String SERVERTARARICONTEXT_CLASSNAME = "com.l7tech.common.xml.tarari.GlobalTarariContextImpl";
+    private static final String FACTORIES_CLASSNAME = "com.l7tech.xml.tarari.TarariFactories";
+    private static final String SERVERTARARICONTEXT_CLASSNAME = "com.l7tech.xml.tarari.GlobalTarariContextImpl";
 
     private static Boolean tarariPresent = null;
     private static GlobalTarariContext tarariContext = null;
