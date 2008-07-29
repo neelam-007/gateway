@@ -135,9 +135,15 @@ public class GroupPrincipalCache {
 
         if(gHeaders != null && gHeaders.size() > 0){
             Set<GroupPrincipal> gPs = new HashSet<GroupPrincipal>();
+            int count = 1;
             for(IdentityHeader iH: gHeaders){
+                if(count >= CACHE_MAX_GROUPS){
+                   logger.log(Level.INFO, "Capping group membership for user at " + CACHE_MAX_GROUPS);
+                   break;
+                }
                 GroupPrincipal gP = new GroupPrincipal(u.getLogin(), iH);
                 gPs.add(gP);
+                count++;
             }
             CacheEntry<Set<GroupPrincipal>> groupPrincipals = new CacheEntry<Set<GroupPrincipal>>(gPs);
             this.principalCache.store(ckey, groupPrincipals);
