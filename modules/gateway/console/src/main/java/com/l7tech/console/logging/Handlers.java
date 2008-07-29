@@ -23,6 +23,7 @@ class Handlers {
             new RoleErrorHandler(),
             new GatewayFailureErrorHandler(),
             new LicenseErrorHandler(),
+            new ValidationErrorHandler(),
             new VersionMismatchErrorHandler(),
             new PersistenceErrorHandler(),
             new RmiErrorHandler(),

@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.objectmodel.FindException;
@@ -18,6 +19,7 @@ import javax.security.auth.Subject;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Collection;
+import java.util.Set;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.net.InetAddress;
@@ -63,6 +65,16 @@ public class AdminRemotingProvider implements RemotingProvider {
 
         if (!connector.offersEndpoint(SsgConnector.Endpoint.ADMIN_APPLET) && !connector.offersEndpoint( SsgConnector.Endpoint.ADMIN_REMOTE))
             throw new AccessControlException("Request not permitted on this port");
+
+        // populate principal information
+        Subject subject = JaasUtils.getCurrentSubject();
+        if(subject != null){
+            String cookie = subject.getPublicCredentials(String.class).iterator().next();
+            Set<Principal> principals = adminSessionManager.getPrincipalsAndResumeSession(cookie);
+            if(principals != null){
+                subject.getPrincipals().addAll(principals);
+            }
+        }
     }
 
     public void enforceClusterEnabled() {
@@ -109,7 +121,7 @@ public class AdminRemotingProvider implements RemotingProvider {
     * setPrincipalsForSubject will add the user Principal aswell as any other Principals defined
     * */
     public void setPrincipalsForSubject(String cookie, Subject subject) {
-        adminSessionManager.resumeSession(cookie, subject);
+        subject.getPublicCredentials().add(cookie);
     }
 
     public Principal getPrincipalForCookie( String cookie ) {

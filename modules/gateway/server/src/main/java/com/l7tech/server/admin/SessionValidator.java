@@ -1,7 +1,6 @@
 package com.l7tech.server.admin;
 
-import com.l7tech.identity.ValidationException;
-
+import com.l7tech.gateway.common.admin.ValidationRuntimeException;
 import java.security.Principal;
 import java.util.Set;
 
@@ -47,5 +46,5 @@ public interface SessionValidator {
      * {@link com.l7tech.server.admin.AdminSessionManager}
      *
      * */
-    public Set<Principal> validate(Principal p) throws ValidationException;
+    public Set<Principal> validate(Principal p);
 }

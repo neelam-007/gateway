@@ -55,8 +55,8 @@ public final class SecureRemoteInvocationExecutor implements RemoteInvocationExe
         if (administrator == null) {
             throw new AccessControlException("No subject passed, authentication failed.");
         }
-
-        Set principals = administrator.getPrincipals();
+        //We now have GroupPrincipals in the Subject, so specify which Principal type we want
+        Set principals = administrator.getPrincipals(User.class);
         if (principals == null || principals.isEmpty()) {
             throw new AccessControlException("No principal(s) available, authentication failed.");
         }

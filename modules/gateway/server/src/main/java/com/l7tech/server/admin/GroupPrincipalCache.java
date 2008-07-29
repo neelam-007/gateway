@@ -5,6 +5,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.gateway.common.admin.ValidationRuntimeException;
 import com.whirlycott.cache.Cache;
 
 import java.util.Set;
@@ -44,8 +45,7 @@ public class GroupPrincipalCache {
     * @param ip the IdentityProvider the user belongs to. This can be used to validate the user if required
     * */
     public Set<GroupPrincipal> getCachedValidatedPrincipals(User u, IdentityProvider ip,
-                                                       int maxAge)
-            throws ValidationException {
+                                                       int maxAge) throws ValidationException{
 
         final long providerOid = ip.getConfig().getOid();
         final CacheKey ckey = new CacheKey(providerOid, u.getId());
@@ -119,9 +119,7 @@ public class GroupPrincipalCache {
 
     // If caller wants only one thread at a time to authenticate any given username,
     // caller is responsible for ensuring that only one thread at a time calls this per username,
-    private Set<GroupPrincipal> getAndCacheNewResult(User u, CacheKey ckey, IdentityProvider idp)
-            throws ValidationException
-    {
+    private Set<GroupPrincipal> getAndCacheNewResult(User u, CacheKey ckey, IdentityProvider idp) throws ValidationException{
         idp.validate(u);
         //download group info and any other info to be added as a gP as and when required here..
 

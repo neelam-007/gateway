@@ -3,10 +3,7 @@
  */
 package com.l7tech.server.admin;
 
-import com.l7tech.gateway.common.admin.AdminContext;
-import com.l7tech.gateway.common.admin.AdminContextBean;
-import com.l7tech.gateway.common.admin.AdminLogin;
-import com.l7tech.gateway.common.admin.AdminLoginResult;
+import com.l7tech.gateway.common.admin.*;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.common.protocol.SecureSpanConstants;
@@ -110,7 +107,7 @@ public class AdminLoginImpl
                     }
                 } catch (AuthenticationException e) {
                     logger.info("Authentication failed on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
-                } catch (ValidationException e) {
+                } catch (ValidationRuntimeException e) {
                     logger.info("Validation failed on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
                 }
             }
@@ -388,31 +385,34 @@ public class AdminLoginImpl
     * If our cache is old the principal is revalidated and so is all of it's associated
     * principals.
     * */
-    public Set<Principal> validate(Principal p) throws ValidationException {
+    public Set<Principal> validate(Principal p) {
 
         //find the User
         if(!(p instanceof User)){
-            throw new ValidationException("Principal must represent a User");
+            throw new ValidationRuntimeException("Principal must represent a User");
         }
 
         User u = (User)p;
         Long pId = u.getProviderId();
         //find the identity provider
         Set<Principal> pSet = new HashSet<Principal>();
-        for(IdentityProvider iP: adminProviders){
-            if(iP.getConfig().getOid() == pId){
-                //Get the group memberhsip from the group cache.
-                Set<GroupPrincipal> groupPrincipals = this.groupPrincipalCache.getCachedValidatedPrincipals(u,iP,CACHE_MAX_TIME);
-                if(groupPrincipals != null){
-                    pSet.addAll(groupPrincipals);
+        try{
+            for(IdentityProvider iP: adminProviders){
+                if(iP.getConfig().getOid() == pId){
+                    //Get the group memberhsip from the group cache.
+                    Set<GroupPrincipal> groupPrincipals = this.groupPrincipalCache.getCachedValidatedPrincipals(u,iP,CACHE_MAX_TIME);
+                    if(groupPrincipals != null){
+                        pSet.addAll(groupPrincipals);
+                    }
+                    //any other cache's we have for Principals we want to associate with a users subject
+                    //add them here...
+                    return pSet;
                 }
-                //any other cache's we have for Principals we want to associate with a users subject
-                //add them here...
-                return pSet;
             }
+        } catch(ValidationException ve){
+            throw new ValidationRuntimeException(ve.getMessage(), ve);
         }
-
-        throw new ValidationException("Users identity provider ( "+pId+" )not found");
+        throw new ValidationRuntimeException("Users identity provider ( "+pId+" )not found");
     }
 
     /**

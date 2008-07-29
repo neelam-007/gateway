@@ -65,7 +65,6 @@ public interface IdentityProvider<UT extends User, GT extends Group, UMT extends
      * This validates that the user still exists in the Identity Provider and that the User has not been disabled
      * Does not authenticate the user
      *
-     * @throws javax.xml.bind.ValidationException If the user is no longer valid
      * */
     void validate(User u) throws ValidationException;
 }

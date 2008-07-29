@@ -3,9 +3,7 @@ package com.l7tech.server.admin;
 import org.apache.commons.collections.LRUMap;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Background;
-import com.l7tech.identity.ValidationException;
 
-import javax.security.auth.Subject;
 import java.security.SecureRandom;
 import java.security.Principal;
 import java.util.*;
@@ -102,7 +100,7 @@ public class AdminSessionManager {
      *
      * @param authenticatedUser  the principal that was successfully authenticated.  Must not be null.
      * @param sessionInfo the additional session info such as port number, etc.
-     * @return a cookie string that can be used with {@link #resumeSession} later to recover the username.  Never null or empty.
+     * @return a cookie string that can be used with {@link #getPrincipalsAndResumeSession} later to recover the username.  Never null or empty.
      *         Always contains at least 16 bytes of entropy.
      */
     public synchronized String createSession(Principal authenticatedUser, Object sessionInfo) {
@@ -142,26 +140,22 @@ public class AdminSessionManager {
         return holder.getPrincipal();
     }
 
-    public synchronized void resumeSession(String session, Subject subject){
+    public synchronized Set<Principal> getPrincipalsAndResumeSession(String session) {
         if (session == null) throw new NullPointerException();
         SessionHolder holder = (SessionHolder)sessionMap.get(session);
-        if (holder == null) return;
+        if (holder == null) return null;
         holder.onUsed();
         Principal p = holder.getPrincipal();
         if(p == null){
-            return;
+            return null;
         }
-        //Add the auth user to the session
-        subject.getPrincipals().add(p);
-        try{
-            //this set does not include the user principal
-            Set<Principal> principals = sessionValidator.validate(p);
-            for(Principal p1: principals){
-                subject.getPrincipals().add(p1);
-            }
-        }catch(ValidationException ve){
-            logger.log(Level.FINE, "Validation failed for Principal " + p.getName(), ve);
-        }
+        Set<Principal> returnSet = new HashSet<Principal>();
+        //Add the auth user to the returned set
+        returnSet.add(p);
+        //this set does not include the user principal
+        Set<Principal> principals = sessionValidator.validate(p);
+        returnSet.addAll(principals);
+        return returnSet;
     }    
     /**
      * Attempt to destroy a session for a previously-authenticated user.  Silently takes no action if the
