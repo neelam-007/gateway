@@ -703,7 +703,7 @@ CREATE TABLE rbac_assignment (
   objectid bigint(20) NOT NULL,
   provider_oid bigint(20) NOT NULL,
   role_oid bigint(20) NOT NULL,
-  user_id varchar(255) NOT NULL,
+  identity_id varchar(255) NOT NULL,
   entity_type varchar(50) NOT NULL,
   PRIMARY KEY  (objectid),
   UNIQUE KEY unique_assignment (provider_oid,role_oid,user_id),
