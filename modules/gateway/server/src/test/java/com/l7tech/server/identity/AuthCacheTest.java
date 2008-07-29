@@ -82,7 +82,7 @@ public class AuthCacheTest {
         int cachedSize = successCache.size();
         //Sleep off the tuner interval seconds used for cleaning up the success cache. After this all previous hits over
         //the size of the cache should be gone
-        Thread.sleep(3100);
+        Thread.sleep(3500);
 
         //After sleeping the maintenance thread should have cleaned up the cache
         //check that the current size has decreased
@@ -145,7 +145,7 @@ public class AuthCacheTest {
         int cachedSize = failureCache.size();
         //Sleep off the tuner interval seconds used for cleaning up the success cache. After this all previous hits over
         //the size of the cache should be gone
-        Thread.sleep(3100);
+        Thread.sleep(3500);
 
         //After sleeping the maintenance thread should have cleaned up the cache
         //check that the current size has decreased
@@ -229,29 +229,6 @@ public class AuthCacheTest {
 
         aC.dispose();
     }
-
-//    @After
-//    public void tearDown() throws Exception{
-//        if(!needToReset) return;
-//        Class c = Class.forName("com.l7tech.server.identity.AuthCache");
-//        Field successSizeField = c.getDeclaredField("SUCCESS_CACHE_SIZE");
-//        successSizeField.setAccessible(true);
-//        Field modifierField = Field.class.getDeclaredField("modifiers");
-//        modifierField.setAccessible(true);
-//        int modifier = modifierField.getInt(successSizeField);
-//        modifier &= ~Modifier.FINAL;
-//        modifierField.setInt(successSizeField, modifier);
-//        successSizeField.setInt(c, ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_SUCCESS_CACHE_SIZE, 200));
-//
-//        Field failureSizeField = c.getDeclaredField("FAILURE_CACHE_SIZE");
-//        failureSizeField.setAccessible(true);
-//        modifierField = Field.class.getDeclaredField("modifiers");
-//        modifierField.setAccessible(true);
-//        modifier = modifierField.getInt(failureSizeField);
-//        modifier &= ~Modifier.FINAL;
-//        modifierField.setInt(failureSizeField, modifier);
-//        failureSizeField.setInt(c,ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_FAILURE_CACHE_SIZE, 100));
-//    }
 
     private void addSomeUsers(int numUsers, TestIdentityProvider tIP, AuthCache aC) throws Exception{
         for(int i = 0; i < numUsers; i++){
