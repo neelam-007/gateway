@@ -43,6 +43,8 @@ public class GroupPrincipalCache {
     * entire group membership
     * @param u the User we want the set of Set<Principal> for
     * @param ip the IdentityProvider the user belongs to. This can be used to validate the user if required
+    * @return Set<GroupPrincipal> null if the user has no group membership, otherwise a GroupPrincipal for
+    * each group the user is a member of
     * */
     public Set<GroupPrincipal> getCachedValidatedPrincipals(User u, IdentityProvider ip,
                                                        int maxAge) throws ValidationException{
@@ -75,7 +77,6 @@ public class GroupPrincipalCache {
 
         if (principalCache == null) return null; // fail fast if cache is disabled
 
-        Long cachedFailureTime = null;
         CacheEntry<Set<GroupPrincipal>> groupPrincipals = null;
 
         Object cachedObj = principalCache.retrieve(ckey);
@@ -83,34 +84,22 @@ public class GroupPrincipalCache {
             groupPrincipals = (CacheEntry<Set<GroupPrincipal>>)cachedObj;
         }
 
-        if(cachedObj != null && cachedObj instanceof Long){
-            cachedFailureTime = (Long)cachedObj;
-        }
-
         if(cachedObj == null){
             return null;
         }
 
-        String log;
         Object returnValue;
         long cacheAddedTime;
-        if (cachedFailureTime != null) {
-            cacheAddedTime = cachedFailureTime.longValue();
-            log = "failure";
-            returnValue = cachedFailureTime;
-        } else {
-            cacheAddedTime = groupPrincipals.getTimestamp();
-            log = "success";
-            returnValue = groupPrincipals.getCachedObject();
-        }
+        cacheAddedTime = groupPrincipals.getTimestamp();
+        returnValue = groupPrincipals.getCachedObject();
 
         if (cacheAddedTime + maxAge > System.currentTimeMillis()) {
             if (logger.isLoggable(Level.FINE))
-                logger.log(Level.FINE, "Cache {0} for user {1} from IdP \"{2}\"", new String[] {log, login, idp.getConfig().getName()});
+                logger.log(Level.FINE, "Cache hit for user {1} from IdP \"{2}\"", new String[] {login, idp.getConfig().getName()});
             return returnValue;
         } else {
             if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "Cache {0} for user {1} is stale on IdP \"{2}\"; will revalidate", new String[] {log, login, idp.getConfig().getName()});
+                logger.log(Level.FINE, "Cache expiry for user {1} is stale on IdP \"{2}\"; will revalidate", new String[] { login, idp.getConfig().getName()});
             }
             return null;
         }
@@ -157,8 +146,13 @@ public class GroupPrincipalCache {
             return null;
         }
     }
-    
-    private static class CacheKey {
+
+    /*Only used by unit tests*/
+    void dispose() {
+        WhirlycacheFactory.shutdown(principalCache);
+    }
+
+    public static class CacheKey {
         private int cachedHashcode = -1;
         private final long providerOid;
         private final String userId;

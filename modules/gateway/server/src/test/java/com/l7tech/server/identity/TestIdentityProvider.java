@@ -38,7 +38,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider {
     }
 
     private TestUserManager userman = new TestUserManager();
-    private TestGroupManager groupman = new TestGroupManager();
+    private TestGroupManager groupman = new TestGroupManager(PROVIDER_ID);
     private IdentityProviderConfig config;
 
     public TestIdentityProvider(IdentityProviderConfig config) {
@@ -69,6 +69,10 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider {
         usernameMap.put(username, new MyUser(user, password));
     }
 
+    public static void reset(){
+        usernameMap.clear();
+    }
+    
     public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
         MyUser mu = usernameMap.get(pc.getLogin());
         if (mu == null) return null;
@@ -115,10 +119,18 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider {
     }
 
     public void validate(User u) throws ValidationException {
-
+        if(!usernameMap.containsKey(u.getLogin())){
+            throw new ValidationException("User " + u.getLogin()+ " does not exist in the TestIdentityProvider");
+        }
     }
-    
+
     private class TestGroupManager implements GroupManager<User, Group> {
+        private Map<User, Set<Group>> userToGroupMap = new HashMap<User, Set<Group>>();
+        private long providerId;
+
+        public TestGroupManager(long providerId){
+            this.providerId = providerId;    
+        }
         public Group findByPrimaryKey(String identifier) throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
@@ -184,7 +196,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider {
         }
 
         public void addUser(User user, Set<Group> groups) throws FindException, UpdateException {
-            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
+            userToGroupMap.put(user, groups);
         }
 
         public void removeUser(User user, Set<Group> groups) throws FindException, UpdateException {
@@ -200,7 +212,15 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider {
         }
 
         public Set<IdentityHeader> getGroupHeaders(User user) throws FindException {
-            return Collections.emptySet();
+            Set<Group> groups = userToGroupMap.get(user);
+            if(groups == null) return null;
+
+            Set<IdentityHeader> returnSet = new HashSet<IdentityHeader>();
+            for(Group g: groups){
+                IdentityHeader iH = new IdentityHeader(providerId,g.getId(), EntityType.GROUP, g.getName(), g.getDescription());
+                returnSet.add(iH);
+            }
+            return returnSet;
         }
 
         public Set<IdentityHeader> getGroupHeaders(String userId) throws FindException {
