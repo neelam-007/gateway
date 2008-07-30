@@ -207,8 +207,8 @@ public class RoleManagementDialog extends JDialog {
             throw new RuntimeException("Could not look up assignments for role", ex);
         }
         this.roleAssigneeTable.setModel(roleAssignmentTableModel);
-        //this.roleAssigneeTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        //this.roleAssigneeTable.setAutoCreateRowSorter(true);
+        //don't allow the user to be able to reorder columns in the table
+        this.roleAssigneeTable.getTableHeader().setReorderingAllowed(false);
         TableRowSorter sorter = new TableRowSorter(roleAssignmentTableModel);
         java.util.List <RowSorter.SortKey> sortKeys = new ArrayList<RowSorter.SortKey>();
         sortKeys.add(new RowSorter.SortKey(0, SortOrder.ASCENDING));

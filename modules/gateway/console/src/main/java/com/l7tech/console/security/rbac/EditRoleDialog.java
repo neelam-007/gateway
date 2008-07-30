@@ -139,8 +139,8 @@ public class EditRoleDialog extends JDialog {
         DefaultListSelectionModel dlsm = new DefaultListSelectionModel();
         dlsm.addListSelectionListener(new RoleAssignmentListSelectionListener(this));
         this.roleAssigneeTable.setSelectionModel(dlsm);
-        //this.roleAssigneeTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        //this.roleAssigneeTable.setAutoCreateRowSorter(true);
+        //don't allow the user to be able to reorder columns in the table
+        this.roleAssigneeTable.getTableHeader().setReorderingAllowed(false);
         TableRowSorter sorter = new TableRowSorter(roleAssignmentTableModel);
         java.util.List <RowSorter.SortKey> sortKeys = new ArrayList<RowSorter.SortKey>();
         sortKeys.add(new RowSorter.SortKey(0, SortOrder.ASCENDING));

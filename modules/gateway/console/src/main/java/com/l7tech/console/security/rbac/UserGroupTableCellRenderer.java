@@ -45,7 +45,28 @@ public class UserGroupTableCellRenderer implements TableCellRenderer {
             if(id instanceof User){
                 User u = (User)id;
                 icon = userIcon;
-                labelValue =  u.getLogin() +" [" + u.getFirstName()+ " " + u.getLastName() + "]";
+                boolean firstNameOk = true;
+                boolean lastNameOk = true;
+                if(u.getFirstName() == null || u.getFirstName().equalsIgnoreCase("null") || u.getFirstName().equals("")){
+                    firstNameOk = false;
+                }
+                if(u.getLastName() == null || u.getLastName().equalsIgnoreCase("null") || u.getLastName().equals("")){
+                    lastNameOk = false;                    
+                }
+
+                labelValue =  u.getLogin();//default info
+                
+                if (firstNameOk || lastNameOk){
+                    labelValue =  u.getLogin() +" [";
+                    if(firstNameOk){
+                        labelValue += u.getFirstName();
+                    }
+                    if(lastNameOk){
+                        if(firstNameOk) labelValue += " ";//put space between names
+                        labelValue += u.getLastName();
+                    }
+                    labelValue += "]";
+                }
             }else if(id instanceof Group){
                 Group g = (Group)id;
                 icon = groupIcon;
