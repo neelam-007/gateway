@@ -105,12 +105,10 @@
 	<dependencies>
 		<dependency org="junit" name="junit" rev="4.4" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="org.easymock" name="easymockclassextension" rev="2.2.2" force="true" conf="test->runtime(*),master(*)"/>
-		<dependency org="org.apache.geronimo.specs" name="geronimo-activation_1.1_spec" rev="1.0.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.cxf" name="cxf-common-utilities" rev="2.1.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.ws.commons.schema" name="XmlSchema" rev="1.4.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="com.sun.xml.bind" name="jaxb-xjc" rev="2.1.6" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="com.sun.xml.bind" name="jaxb-impl" rev="2.1.6" force="true" conf="test->runtime(*),master(*)"/>
-		<dependency org="org.apache.geronimo.specs" name="geronimo-annotation_1.0_spec" rev="1.1.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.codehaus.woodstox" name="wstx-asl" rev="3.2.4" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.neethi" name="neethi" rev="2.0.4" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.cxf" name="cxf-common-schemas" rev="2.1.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>

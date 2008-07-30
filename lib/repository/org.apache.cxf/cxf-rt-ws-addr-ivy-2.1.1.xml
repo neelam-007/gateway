@@ -106,10 +106,8 @@
 		<dependency org="junit" name="junit" rev="4.4" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="org.easymock" name="easymockclassextension" rev="2.2.2" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="org.apache.cxf" name="cxf-api" rev="2.1.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="org.apache.geronimo.specs" name="geronimo-jaxws_2.1_spec" rev="1.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.cxf" name="cxf-common-utilities" rev="2.1.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.cxf" name="cxf-rt-bindings-soap" rev="2.1.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="org.apache.geronimo.specs" name="geronimo-activation_1.1_spec" rev="1.0.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.cxf" name="cxf-rt-transports-http-jetty" rev="2.1.1" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="org.apache.cxf" name="cxf-testutils" rev="2.1.1" force="true" conf="test->runtime(*),master(*)"/>
 	</dependencies>

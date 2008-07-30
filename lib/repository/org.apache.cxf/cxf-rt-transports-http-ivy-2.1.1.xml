@@ -109,6 +109,5 @@
 		<dependency org="org.apache.cxf" name="cxf-rt-core" rev="2.1.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.springframework" name="spring-web" rev="2.0.8" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.cxf" name="cxf-testutils" rev="2.1.1" force="true" conf="test->runtime(*),master(*)"/>
-		<dependency org="org.apache.geronimo.specs" name="geronimo-servlet_2.5_spec" rev="1.2" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>
 	</dependencies>
 </ivy-module>
