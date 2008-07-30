@@ -42,7 +42,6 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
     private AssertionMoveDownAction assertionMoveDownAction;
     private AddAssertionAction addAssertionAction;
     private DeleteAssertionAction deleteAssertionAction;
-    private DisableOrEnableAssertionAction enableOrDisableAction;
 
     private AbstractTreeNode lastPaletteNode;
     private AssertionTreeNode[] lastAssertionNodes;
@@ -155,9 +154,12 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         b.setMargin(new Insets(0, 0, 0, 0));
         addSeparator(d);
 
-        enableOrDisableButton = add(getEnableOrDisableAssertionAction());
+        enableOrDisableButton = add(getDisableOrEnableAssertionAction());
         enableOrDisableButton.setFocusable(false);
         enableOrDisableButton.setMargin(new Insets(0, 0, 0, 0));
+        // The reason of enableOrDisableButton.setHideActionText(true) is:
+        // Initially getDisableOrEnableAssertionAction() returns null, then the returned button won't be set to hide action text.
+        enableOrDisableButton.setHideActionText(true);
         addSeparator(d);
         setFloatable(false);
     }
@@ -254,21 +256,21 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
     /**
      * The returned action is dependent on whether the selected assertion is disabled or enabled.
      */
-    private DisableOrEnableAssertionAction getEnableOrDisableAssertionAction() {
+    private DisableOrEnableAssertionAction getDisableOrEnableAssertionAction() {
+        // Check if the action is available or not.
         if ((lastAssertionNode == null) ||
             (lastAssertionNode.isDescendantOfInclude(false)) ||
             (assertionTree != null && assertionTree.getSelectionCount() == 0)) {
             return null;
         }
 
-        enableOrDisableAction = (lastAssertionNode.asAssertion().isEnabled())?
+        // Create a new action every time, since the disable/enable status may be always changed.
+        //noinspection UnnecessaryLocalVariable
+        DisableOrEnableAssertionAction enableOrDisableAction = (lastAssertionNode.asAssertion().isEnabled())?
             new DisableAssertionAction(lastAssertionNode) {
                 public void performAction() {
                     super.performAction();
                     updateActions();
-                }
-                public String getName() {
-                    return null;
                 }
             }
             :
@@ -276,10 +278,6 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
                 public void performAction() {
                     super.performAction();
                     updateActions();
-                }
-
-                public String getName() {
-                    return null;
                 }
             };
 
@@ -310,7 +308,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
             throw new RuntimeException("Couldn't get current service or policy", e);
         }
 
-        enableOrDisableButton.setAction(getEnableOrDisableAssertionAction());
+        enableOrDisableButton.setAction(getDisableOrEnableAssertionAction());
 
         if (validPolicyAssertionNode) {
             getDeleteAssertionAction().setEnabled(canUpdate && canDelete(lastAssertionNode, lastAssertionNodes));
@@ -420,7 +418,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         if (paths != null) {
             for (int p=0; p<paths.length; p++) {
                 TreePath path = paths[p];
-                assertionTreeNodes.add((AssertionTreeNode)path.getLastPathComponent());
+                assertionTreeNodes.add(path.getLastPathComponent());
             }
         }
 
