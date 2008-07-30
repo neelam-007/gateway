@@ -72,22 +72,6 @@ public class AuthCacheTest {
         Assert.assertNotNull(aC.getCachedAuthResult(lc, tIP, 5, 5));
         Assert.assertTrue("Cache should have missed", invocationsBefore != authInvocations[0]);
 
-        //Fill up the cache
-        addSomeUsers(10, tIP, aC);
-
-        Field successCacheField = c.getDeclaredField("successCache");
-        successCacheField.setAccessible(true);
-        CacheDecorator successCache = (CacheDecorator)successCacheField.get(aC);
-
-        int cachedSize = successCache.size();
-        //Sleep off the tuner interval seconds used for cleaning up the success cache. After this all previous hits over
-        //the size of the cache should be gone
-        Thread.sleep(3500);
-
-        //After sleeping the maintenance thread should have cleaned up the cache
-        //check that the current size has decreased
-        Assert.assertTrue(successCache.size() < cachedSize);
-
         aC.dispose();
     }
 
@@ -132,24 +116,6 @@ public class AuthCacheTest {
         invocationsBefore = authInvocations[0];
         Assert.assertNull(aC.getCachedAuthResult(lc, tIP, 5, 5));
         Assert.assertTrue("Cache should have missed", invocationsBefore != authInvocations[0]);
-
-        //Fill up the cache
-        for(int i = 0; i < 10; i++){
-            LoginCredentials lc1 = LoginCredentials.makePasswordCredentials(USER_NAME+"miss"+i, PASSWORD.toCharArray(), this.getClass());
-            Assert.assertNull(aC.getCachedAuthResult(lc1, tIP, MAX_AGE, MAX_AGE));
-        }
-        Field failureCacheField = c.getDeclaredField("failureCache");
-        failureCacheField.setAccessible(true);
-        CacheDecorator failureCache = (CacheDecorator)failureCacheField.get(aC);
-        
-        int cachedSize = failureCache.size();
-        //Sleep off the tuner interval seconds used for cleaning up the success cache. After this all previous hits over
-        //the size of the cache should be gone
-        Thread.sleep(3500);
-
-        //After sleeping the maintenance thread should have cleaned up the cache
-        //check that the current size has decreased
-        Assert.assertTrue(failureCache.size() < cachedSize);
 
         aC.dispose();
     }
