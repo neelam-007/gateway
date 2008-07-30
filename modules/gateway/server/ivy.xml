@@ -69,6 +69,12 @@
         <dependency org="org.springframework" name="spring-web" rev="2.5.4" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-webmvc" rev="2.5.4" force="true" conf="core"/>
         <dependency org="com.tarari" name="tarari-raxj" rev="4.4.2.21" force="true" conf="optional"/>
+        <dependency org="org.codehaus.xfire" name="xfire-core" rev="1.2.2" force="true" conf="core">
+            <exclude org="org.apache.ws.commons" module="XmlSchema" name="*" type="*" ext="*" conf="" matcher="exact"/>
+            <exclude org="stax" module="stax-api" name="*" type="*" ext="*" conf="" matcher="exact"/>
+            <exclude org="stax" module="stax" name="*" type="*" ext="*" conf="" matcher="exact"/>
+            <exclude org="woodstox" module="wstx-asl" name="*" type="*" ext="*" conf="" matcher="exact"/>
+        </dependency>
         <dependency org="org.codehaus.xfire" name="xfire-aegis" rev="1.2.2" force="true" conf="core">
             <exclude org="org.apache.ws.commons" module="XmlSchema" name="*" type="*" ext="*" conf="" matcher="exact"/>
             <exclude org="stax" module="stax-api" name="*" type="*" ext="*" conf="" matcher="exact"/>
