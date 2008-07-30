@@ -163,7 +163,7 @@ public class WsdlLocationPanel extends JPanel {
      * @return the URL / path.
      */
     public String getWsdlUrl() {
-        String wsdlUrl = wsdlUrlTextField.getText();
+        String wsdlUrl = wsdlUrlTextField.getText().trim();
         return isUrlOk(wsdlUrl, null)? wsdlUrl : addDefaultDirectoryIntoPath(wsdlUrl);
     }
 
@@ -182,7 +182,7 @@ public class WsdlLocationPanel extends JPanel {
      * @return true if valid
      */
     public boolean isLocationValid() {
-        String location = wsdlUrlTextField.getText();
+        String location = wsdlUrlTextField.getText().trim();
         return isUrlOk(location, null) || isFileOk(addDefaultDirectoryIntoPath(location));
     }
 
@@ -390,7 +390,7 @@ public class WsdlLocationPanel extends JPanel {
     private Wsdl processWsdlLocation() {
         urlChanged();
 
-        final String wsdlUrl = wsdlUrlTextField.getText();
+        final String wsdlUrl = wsdlUrlTextField.getText().trim();
         WSDLLocator locator;
         if (isUrlOk(wsdlUrl, null) && !isUrlOk(wsdlUrl, "file")) { // then it is http or https so the Gateway should resolve it
             locator = gatewayHttpWSDLLocator(wsdlUrl);
