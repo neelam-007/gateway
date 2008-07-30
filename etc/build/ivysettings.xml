@@ -1,10 +1,21 @@
 <ivysettings>
 
+    <!--
+      This setting: 
+        defaultConflictManager="all"
+      can be added when you wish to resolve all versions of a dependency.
+    -->
     <settings
-            defaultResolver="libs-and-build"/>
+        defaultResolver="libs-and-build"/>
 
     <resolvers>
         <chain name="libs-and-build">
+<!--
+            <filesystem name="temp.nu" checksums="">
+                <artifact pattern="build/temp.nu/[organisation]/[artifact]-[revision].[ext]"/>
+                <ivy pattern="build/temp.nu/[organisation]/[module]-ivy-[revision].xml"/>
+            </filesystem>
+-->
             <filesystem name="localfile" checksums="">
                 <artifact pattern="lib/repository/[organisation]/[artifact]-[revision].[ext]"/>
                 <ivy pattern="lib/repository/[organisation]/[module]-ivy-[revision].xml"/>
@@ -17,6 +28,7 @@
         <chain name="libraries">
             <filesystem name="temp.m2" checksums="">
                 <artifact pattern="build/temp.m2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
+                <ivy pattern="build/temp.m2/[organisation]/[module]/[revision]/[module]-ivy-[revision].xml"/>
             </filesystem>
             <url name="jboss" m2compatible="true" checksums="md5,sha1">
                 <artifact pattern="http://repository.jboss.com/maven2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
@@ -30,5 +42,8 @@
         </chain>
     </resolvers>
     
+    <!-- 
+      Note that this can cause an NPE if used when installing dependencies
+    -->
     <caches useOrigin="true"/>
 </ivysettings>

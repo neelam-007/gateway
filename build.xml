@@ -431,7 +431,7 @@
         </sequential>
     </macrodef>
 
-    <target name="repository-install" description="" depends="prepare.base">
+    <target name="repository-install" description="Install an artifact to the build repository." depends="prepare.base">
         <fail unless="art">art is a required property (the artifact to install)</fail>
         <fail unless="org">org is a required property (organization for the new library)</fail>
         <fail unless="rev">rev is a required property (the artifact revision)</fail>
@@ -462,6 +462,7 @@
     <target name="build-ivy-repository">
 
         <!--
+        <ivy:install organisation="com.l7tech.lib" module="apache-cxf-lib" revision="2.1.1" from="libraries" to="temp.nu" transitive="true" haltonfailure="false"/>
         <ivy:install organisation="org.mortbay.jetty" module="jetty-sslengine" revision="6.1.8" from="libraries" to="localfile" transitive="false" haltonfailure="false"/>
         <ivy:install organisation="org.mortbay.jetty" module="jetty-ajp" revision="6.1.8" from="libraries" to="localfile" transitive="false" haltonfailure="false"/>
         <ivy:install organisation="org.hibernate" module="hibernate-commons-annotations" revision="3.0.0.ga" from="libraries" to="localfile" transitive="false" haltonfailure="false"/>
@@ -1135,7 +1136,7 @@
     </target>
 
     <!-- JDepend report -->
-    <target name="report.jdepend" depends="package.jars">
+    <target name="report.jdepend" depends="package.report.jars">
         <echo level="info">Generating JDepend report.</echo>
         <mkdir dir="${build.reports}/jdepend"/>
         <mkdir dir="${build.reports}/teamcity"/>
@@ -1189,7 +1190,7 @@
 
         <xslt processor="trax"
               classpath="lib/tools/ant-trax.jar"
-              style="etc/jdepend.xsl"
+              style="etc/build/jdepend.xsl"
               basedir="${build.reports}/jdepend"
               destdir="${build.reports}/jdepend"
               includes="index.xml"
@@ -1204,6 +1205,7 @@
 
     <target name="report.dependencies" depends="prepare.base">
         <mkdir dir="${build.reports}/ivy"/>
+        <mkdir dir="${build.reports}/teamcity"/>
         
         <ivy:resolve file="modules/gateway/server/ivy.xml" conf="default" showprogress="false" log="quiet"/>
         <ivy:report todir="${build.reports}/ivy" outputpattern="gateway_dependencies.html" graph="false"/>
@@ -1235,7 +1237,7 @@
     <!--
       Build FindBugs report
     -->
-    <target name="report.findbugs" depends="package.jars, report.findbugs.checkavailable" if="findbugs.isavailable">
+    <target name="report.findbugs" depends="package.report.jars, report.findbugs.checkavailable" if="findbugs.isavailable">
         <echo level="info">Generating FindBugs report.</echo>
         <mkdir dir="${build.reports}/findbugs"/>
         <mkdir dir="${build.reports}/teamcity"/>
@@ -1852,6 +1854,8 @@
 
     <target name="package.manager" depends="package.manager.jar" unless="manager.notrequired">
     </target>
+
+    <target name="package.report.jars" depends="package.client.jar,package.gateway,package.manager.jar"/>
 
     <!--
       Package the RandomXmlGenerator (Always invoked by hand)
