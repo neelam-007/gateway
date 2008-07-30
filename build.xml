@@ -934,7 +934,7 @@
     <!--
       Run all unit tests and reports
     -->
-    <target name="test.junit" description="Run all JUnit tests and reports" depends="test.work, report.test, report.jdepend, report.findbugs, javadoc">
+    <target name="test.junit" description="Run all JUnit tests and reports" depends="test.work, report.test, report.jdepend, report.findbugs, report.dependencies, javadoc">
         <checkfail/>
     </target>
 
