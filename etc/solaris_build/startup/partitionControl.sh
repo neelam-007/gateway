@@ -48,7 +48,7 @@ do_control() {
 
     if [ "${PARTITION_NAME}"  == "default_" ] ; then
         if [ -e  /usr/local/Tarari ]; then
-            ORIGINAL_JAVA_OPTS="-Dcom.l7tech.xml.tarari.enable=true $ORIGINAL_JAVA_OPTS"
+            ORIGINAL_JAVA_OPTS="-Dcom.l7tech.common.xml.tarari.enable=true $ORIGINAL_JAVA_OPTS"
         fi
     else
        if  [ -e "${SSG_HOME}/etc/conf/partitions/${PARTITION_NAME}/cluster_hostname" ]; then

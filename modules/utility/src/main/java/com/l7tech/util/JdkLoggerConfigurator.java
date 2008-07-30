@@ -288,7 +288,7 @@ public class JdkLoggerConfigurator {
      */
     private static void setupLog4j() {
         try {
-            Class configClass = Class.forName("com.l7tech.common.util.Log4jJdkLogAppender");
+            Class configClass = Class.forName("com.l7tech.util.Log4jJdkLogAppender");
             java.lang.reflect.Method configMethod = configClass.getMethod("init", new Class[0]);
             configMethod.invoke(null);
             // get logger here since we don't want this to occur on class load

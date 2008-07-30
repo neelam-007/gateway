@@ -14,8 +14,18 @@ public class LocalTcpPeerIdentifierFactory {
     private static final Logger logger = Logger.getLogger(LocalTcpPeerIdentifierFactory.class.getName());
 
     public static final String PROP_IMPL_CLASSNAME = "com.l7tech.security.localTcpPeerIdentifier";
-    static final String IMPL_CLASSNAME_WIN32 = "com.l7tech.common.security.socket.Win32LocalTcpPeerIdentifier";
-    static final String IMPL_CLASSNAME = SyspropUtil.getString(PROP_IMPL_CLASSNAME, IMPL_CLASSNAME_WIN32);
+    static final String IMPL_CLASSNAME_WIN32 = "com.l7tech.security.socket.Win32LocalTcpPeerIdentifier";
+    static final String OLD_IMPL_CLASSNAME_WIN32 = "com.l7tech.common.security.socket.Win32LocalTcpPeerIdentifier";
+    static final String IMPL_CLASSNAME;
+
+    static {
+        String className = SyspropUtil.getString( PROP_IMPL_CLASSNAME, IMPL_CLASSNAME_WIN32 );
+        if ( OLD_IMPL_CLASSNAME_WIN32.equals( className ) ) {
+            className = IMPL_CLASSNAME_WIN32;                    
+        }
+
+        IMPL_CLASSNAME = className;
+    }
 
     private static final String NOSERV = "No LocalTcpPeerIdentifier service available";
     private static final String NOSERVCOL = NOSERV + ": ";

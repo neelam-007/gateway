@@ -4,30 +4,24 @@
  * $Id$
  */
 
-package com.l7tech.security;
+package com.l7tech.security.prov;
 
 import com.l7tech.message.Message;
 import com.l7tech.security.prov.bc.BouncyCastleCertificateRequest;
-import com.l7tech.security.prov.JceProvider;
-import com.l7tech.security.prov.CertificateRequest;
-//import com.l7tech.security.xml.WrapSSTR;
-//import com.l7tech.security.xml.WssDecoratorTest;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
 import com.l7tech.security.keys.AesKey;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.IOUtils;
-//import com.l7tech.common.TestDocuments;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.FileInputStream;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,17 +43,25 @@ public class JceProviderTest {
     public static final String USAGE = "Usage: JceProviderTest (phaos|bc|rsa|ncipher|entrust|ibm) scale dir keypass storepass [storetype] [concurrency]";
     private static final boolean LOAD_CSR_FROM_DISK = false;
 
-    public static interface Testable {
-        void run() throws Throwable;
+    @Test
+    public void testJceProviderMappings() {
+        String bcmapped = JceProvider.mapEngine( "com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine" );
+        String rsmapped = JceProvider.mapEngine( "com.l7tech.common.security.prov.rsa.RsaJceProviderEngine" );
+        String ncmapped = JceProvider.mapEngine( "com.l7tech.common.security.prov.ncipher.NcipherJceProviderEngine" );
+        String sjmapped = JceProvider.mapEngine( "com.l7tech.common.security.prov.sun.SunJceProviderEngine" );
+        String ljmapped = JceProvider.mapEngine( "com.l7tech.common.security.prov.luna.LunaJceProviderEngine" );
+        String pjmapped = JceProvider.mapEngine( "com.l7tech.common.security.prov.pkcs11.Pkcs11JceProviderEngine" );
+
+        Assert.assertEquals("BC Provider mapped", JceProvider.BC_ENGINE, bcmapped);
+        Assert.assertEquals("RSA Provider mapped", JceProvider.RSA_ENGINE, rsmapped);
+        Assert.assertEquals("NCIPHER Provider mapped", JceProvider.NCIPHER_ENGINE, ncmapped);
+        Assert.assertEquals("SUN Provider mapped", JceProvider.SUN_ENGINE, sjmapped);
+        Assert.assertEquals("LUNA Provider mapped", JceProvider.LUNA_ENGINE, ljmapped);
+        Assert.assertEquals("PKCS11 Provider mapped", JceProvider.PKCS11_ENGINE, pjmapped);
     }
 
-    private static String[] enumToArray(Enumeration e) {
-        List list = new ArrayList();
-        while (e.hasMoreElements()) {
-            String s = (String) e.nextElement();
-            list.add(s);
-        }
-        return (String[]) list.toArray(new String[0]);
+    public static interface Testable {
+        void run() throws Throwable;
     }
 
     public static void main(String[] args) throws Throwable {
@@ -104,8 +106,6 @@ public class JceProviderTest {
         } else if ("ncipher".equalsIgnoreCase(prov)) {
             driver = "com.l7tech.common.security.prov.ncipher.NcipherJceProviderEngine";
         } else if ("entrust".equalsIgnoreCase(prov)) {
-            driver = JceProvider.ENTRUST_ENGINE;
-        } else if ("sun".equalsIgnoreCase(prov)) {
             driver = "com.l7tech.common.security.prov.sun.SunJceProviderEngine";
         }else
             throw new IllegalArgumentException("Unknown provider " + USAGE);
