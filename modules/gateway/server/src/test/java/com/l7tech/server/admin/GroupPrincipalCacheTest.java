@@ -11,6 +11,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
 import junit.framework.TestCase;
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
 
 /**
  * Created by IntelliJ IDEA.
@@ -25,27 +28,34 @@ public class GroupPrincipalCacheTest extends TestCase {
     private static final String USER_NAME = "admin";
     private static final String PASSWORD = "password";
     private static final int MAX_AGE = 1000;
-    
+
+    private GroupPrincipalCache cache = null;
+
+    @Before
+    protected void setUp() throws Exception{
+        cache = getGroupPrincipalCache();
+        assertNotNull(cache);
+    }
+
+    @After
+    protected void tearDown() throws Exception{
+        //stop the cache so other tests get a fresh cache
+        cache.dispose();
+        TestIdentityProvider.reset();
+    }
     /*
     * Add a user with no group membership to the test identity provider
     * Retrieve this users Set<Principal> from the group cache
     * Outcome- no exceptions thrown. The returned Set is null.
     * */
+    @Test
     public void testValidUserNoGroupMembership() throws Exception{
-        GroupPrincipalCache cache = getGroupPrincipalCache();
-        assertNotNull(cache);
-        
         TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
         UserBean ub = new UserBean(tIP.getConfig().getOid(), USER_NAME);
-        ub.setCleartextPassword(PASSWORD);
-        TestIdentityProvider.addUser(ub, USER_NAME, PASSWORD.toCharArray());                
+        TestIdentityProvider.addUser(ub, USER_NAME, PASSWORD.toCharArray());
 
         Set<GroupPrincipal> sP = cache.getCachedValidatedPrincipals(ub, tIP, MAX_AGE);
         assertNull(sP);
-
-        //stop the cache so other tests get a fresh cache
-        cache.dispose();
-        TestIdentityProvider.reset();
     }
 
     /*
@@ -54,13 +64,10 @@ public class GroupPrincipalCacheTest extends TestCase {
     * Outcome- no exceptions thrown. The returned Set contins a GroupPrincipal
     * for each group the user is a member of
     * */
+    @Test
     public void testValidUserWithGroupMembership() throws Exception{
-        GroupPrincipalCache cache = getGroupPrincipalCache();
-        assertNotNull(cache);
-
         TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
         UserBean ub = new UserBean(tIP.getConfig().getOid(), USER_NAME);
-        ub.setCleartextPassword(PASSWORD);
         TestIdentityProvider.addUser(ub, USER_NAME, PASSWORD.toCharArray());
         GroupManager gM = tIP.getGroupManager();
         Set<Group> groupSet = new HashSet<Group>();
@@ -78,22 +85,16 @@ public class GroupPrincipalCacheTest extends TestCase {
         IdentityHeader iH = gP.getGroupHeader();
         assertNotNull(iH);
         assertTrue(iH.getName().equals(iG.getName()));
-        //stop the cache so other tests get a fresh cache
-        cache.dispose();
-        TestIdentityProvider.reset();
     }
 
     /*
     * Retrieve a user from the cache which does not exist
     * Outcome - ValidationException should be thrown
     * */
+    @Test
     public void testNoValidUser() throws Exception{
-        GroupPrincipalCache cache = getGroupPrincipalCache();
-        assertNotNull(cache);
-
         TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
         UserBean ub = new UserBean(tIP.getConfig().getOid(), USER_NAME);
-        ub.setCleartextPassword(PASSWORD);
 
         boolean exceptionThrown = false;
         try{
@@ -102,8 +103,6 @@ public class GroupPrincipalCacheTest extends TestCase {
             exceptionThrown = true;            
         }
         assertTrue(exceptionThrown);
-        //stop the cache so other tests get a fresh cache
-        cache.dispose();
     }
 
 
@@ -111,10 +110,8 @@ public class GroupPrincipalCacheTest extends TestCase {
     * Add a user with group membership to the TestIdentityProvider
     * Call private getCacheEntry and ensure a hit 
     * */
+    @Test
     public void testValidCacheHit() throws Exception{
-        GroupPrincipalCache cache = getGroupPrincipalCache();
-        assertNotNull(cache);
-
         TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
         UserBean ub = new UserBean(tIP.getConfig().getOid(), USER_NAME);
         //CacheKey in GroupPrincipalCache uses User.getId, so want it to be non null
@@ -141,10 +138,6 @@ public class GroupPrincipalCacheTest extends TestCase {
         assertNotNull(o);
         assertTrue(o instanceof Set);
         Set<GroupPrincipal> gPs = (Set<GroupPrincipal>)o;
-
-        //stop the cache so other tests get a fresh cache
-        cache.dispose();
-        TestIdentityProvider.reset();
     }
     /*
     * Add a user with group membership to the TestIdentityProvider
@@ -152,10 +145,8 @@ public class GroupPrincipalCacheTest extends TestCase {
     * the cached values to be null
     * Outcome - return set is null
     * */
+    @Test
     public void testValidUserCacheExpired() throws Exception{
-        GroupPrincipalCache cache = getGroupPrincipalCache();
-        assertNotNull(cache);
-
         TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
         UserBean ub = new UserBean(tIP.getConfig().getOid(), USER_NAME);
         //CacheKey in GroupPrincipalCache uses User.getId, so want it to be non null
@@ -181,13 +172,11 @@ public class GroupPrincipalCacheTest extends TestCase {
         Method m = c.getDeclaredMethod("getCacheEntry", GroupPrincipalCache.CacheKey.class, String.class, IdentityProvider.class, Integer.TYPE);
         assertNotNull(m);
         m.setAccessible(true);
-        Thread.sleep(1);
+        //Sleep just to ensure that the expiry time of 1 second below will work
+        Thread.sleep(1000);
         GroupPrincipalCache.CacheKey cKey = new GroupPrincipalCache.CacheKey(tIP.getConfig().getOid(), ub.getLogin());
         Object o = m.invoke(cache, cKey, ub.getLogin(), tIP, 1);
         assertNull(o);
-        //stop the cache so other tests get a fresh cache
-        cache.dispose();
-        TestIdentityProvider.reset();
     }
 
     /*
