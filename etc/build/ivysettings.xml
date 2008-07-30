@@ -1,21 +1,13 @@
+<!--
+  Ivy settings file for use with the build
+-->
 <ivysettings>
 
-    <!--
-      This setting: 
-        defaultConflictManager="all"
-      can be added when you wish to resolve all versions of a dependency.
-    -->
     <settings
         defaultResolver="libs-and-build"/>
 
     <resolvers>
         <chain name="libs-and-build">
-<!--
-            <filesystem name="temp.nu" checksums="">
-                <artifact pattern="build/temp.nu/[organisation]/[artifact]-[revision].[ext]"/>
-                <ivy pattern="build/temp.nu/[organisation]/[module]-ivy-[revision].xml"/>
-            </filesystem>
--->
             <filesystem name="localfile" checksums="">
                 <artifact pattern="lib/repository/[organisation]/[artifact]-[revision].[ext]"/>
                 <ivy pattern="lib/repository/[organisation]/[module]-ivy-[revision].xml"/>
@@ -26,18 +18,6 @@
             </filesystem>
         </chain>
         <chain name="libraries">
-            <filesystem name="temp.m2" checksums="">
-                <artifact pattern="build/temp.m2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
-                <ivy pattern="build/temp.m2/[organisation]/[module]/[revision]/[module]-ivy-[revision].xml"/>
-            </filesystem>
-            <url name="jboss" m2compatible="true" checksums="md5,sha1">
-                <artifact pattern="http://repository.jboss.com/maven2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
-            </url>
-            <!--
-            <url name="restlet" m2compatible="true" checksums="md5,sha1">
-                <artifact pattern="http://maven.restlet.org/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
-            </url>
-            -->
             <ibiblio name="maven2" m2compatible="true" checksums="md5,sha1"/>
         </chain>
     </resolvers>

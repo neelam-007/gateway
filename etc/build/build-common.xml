@@ -34,6 +34,7 @@
     <property name="module.classpath.prefix" value="lib/"/>
     <property name="module.compile.source" value="1.5"/>
     <property name="module.compile.target" value="1.5"/>
+    <property name="module.compile.optimize" value="off"/>
     <property name="module.jar.index" value="false"/>
 
     <!--
@@ -66,7 +67,7 @@
 
     <presetdef name="module-javac">
         <javac debug="on"
-               optimize="off"
+               optimize="${module.compile.optimize}"
                deprecation="on"
                verbose="no"
                source="${module.compile.source}"

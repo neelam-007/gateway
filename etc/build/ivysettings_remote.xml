@@ -1,0 +1,35 @@
+<!--
+  Ivy settings file for use when installing artificts
+-->
+<ivysettings>
+
+    <settings
+        defaultConflictManager="all"
+        defaultResolver="libraries"/>
+
+    <resolvers>
+        <filesystem name="localfile" checksums="">
+            <artifact pattern="build/temp.nu/[organisation]/[artifact]-[revision].[ext]"/>
+            <ivy pattern="build/temp.nu/[organisation]/[module]-ivy-[revision].xml"/>
+        </filesystem>
+        <chain name="libraries">
+            <!-- 
+              The "temp.m2" resolver is useful when installing an "umbrella" 
+              artifact that collects a set of dependencies (e.g. tomcat components)
+            -->
+            <filesystem name="temp.m2" checksums="">
+                <artifact pattern="build/temp.m2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
+                <ivy pattern="build/temp.m2/[organisation]/[module]/[revision]/[module]-ivy-[revision].xml"/>
+            </filesystem>
+            <!-- 
+              JBoss repository 
+            <url name="jboss" m2compatible="true" checksums="md5,sha1">
+                <artifact pattern="http://repository.jboss.com/maven2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
+            </url>
+            -->
+            <ibiblio name="maven2" m2compatible="true" checksums="md5,sha1"/>
+        </chain>
+    </resolvers>
+
+    <caches defaultCacheDir="build/ivycache"/>
+</ivysettings>

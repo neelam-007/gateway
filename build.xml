@@ -459,6 +459,34 @@
         <ivy:install organisation="${org}" module="${mod}" revision="${rev}" from="libraries" to="localfile" transitive="false"/>
     </target>
 
+    <target name="repository-install-remote" description="Install an artifact to the build repository from a remote repository." depends="prepare.base">
+        <fail unless="mod">mod is a required property (the module to install)</fail>
+        <fail unless="org">org is a required property (organization for the new library)</fail>
+        <fail unless="rev">rev is a required property (the artifact revision)</fail>
+        
+        <echo level="info">Deleting installation cache.</echo>
+        <property name="build.repo" value="${build.dir}/temp.nu"/>
+        <delete dir="${build.repo}" verbose="true"/>
+        <mkdir dir="${build.repo}"/>
+
+        <echo level="info">Loading Ivy settings for remote repositories.</echo>
+        <ivy:settings id="ivy.remote" override="true" file="etc/build/ivysettings_remote.xml"/>    
+
+        <!-- install to our temp repository under "build" -->
+        <echo level="info">Downloading artifacts to cache.</echo>
+        <ivy:install settingsRef="ivy.remote" organisation="${org}" module="${mod}" revision="${rev}" from="libraries" to="localfile" transitive="true"/>
+
+        <!-- copy to main repository -->
+        <echo level="info">Moving artifacts to repository.</echo>
+        <copy todir="lib/repository" verbose="true">
+          <fileset dir="${build.repo}">
+            <include name="**/*.jar"/>            
+            <include name="**/*.xml"/>      
+            <present present="srconly" targetdir="lib/repository"/>      
+          </fileset>
+        </copy>
+    </target>
+
     <target name="build-ivy-repository">
 
         <!--

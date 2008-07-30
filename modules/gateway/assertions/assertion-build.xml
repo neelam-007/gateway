@@ -9,6 +9,7 @@
     <property name="moduleName" value="${ant.project.name}"/>
     <property name="moduleFileExtension" value="aar"/>
     <property name="module.package.jar.disabled" value="true"/>
+    <property name="module.compile.optimize" value="on"/>
     <property name="jar.sign.pattern" value="*.${moduleFileExtension}"/>
 
     <import file="../../../etc/build/build-common.xml"/>
