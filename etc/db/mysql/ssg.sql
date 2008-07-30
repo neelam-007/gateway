@@ -706,11 +706,11 @@ CREATE TABLE rbac_assignment (
   identity_id varchar(255) NOT NULL,
   entity_type varchar(50) NOT NULL,
   PRIMARY KEY  (objectid),
-  UNIQUE KEY unique_assignment (provider_oid,role_oid,user_id),
+  UNIQUE KEY unique_assignment (provider_oid,role_oid,identity_id, entity_type),
   FOREIGN KEY (role_oid) REFERENCES rbac_role (objectid) ON DELETE CASCADE,
   FOREIGN KEY (provider_oid) REFERENCES identity_provider (objectid) ON DELETE CASCADE,  
   INDEX i_rbacassign_poid (provider_oid),
-  INDEX i_rbacassign_uid (user_id)
+  INDEX i_rbacassign_uid (identity_id)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
