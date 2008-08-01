@@ -103,7 +103,7 @@ public class CertManagerWindow extends JDialog {
         });
 
         // Initialize expiredCertCautionLabel
-        expiredCertCautionLabel.setText("Caution! Some certificate(s) expired.");
+        expiredCertCautionLabel.setText("Caution! Some certificate(s) have expired.");
         expiredCertCautionLabel.setBackground(new Color(0xFF, 0xFF, 0xe1));
         expiredCertCautionLabel.setOpaque(true);
         expiredCertCautionLabel.setVisible(false);
