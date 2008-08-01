@@ -14,17 +14,18 @@ import com.l7tech.server.EntityManagerStub;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.Collection;
 
 /**
  * @author emil
  * @version Dec 15, 2004
  */
 public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,EntityHeader> implements TrustedCertManager {
-    public TrustedCert findBySubjectDn(String dn) throws FindException {
+    public Collection<TrustedCert> findBySubjectDn(String dn) throws FindException {
         throw new RuntimeException("Not implemented");
     }
 
-    public TrustedCert getCachedCertBySubjectDn(String dn, int maxAge) throws FindException, CertificateException {
+    public Collection<TrustedCert> getCachedCertsBySubjectDn(String dn) throws FindException {
         throw new RuntimeException("Not implemented");
     }
 

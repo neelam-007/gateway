@@ -4,14 +4,11 @@
 
 package com.l7tech.server;
 
-import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.ReentrantWriterPreferenceReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.Sync;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.ExceptionUtils;
 import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
@@ -28,6 +25,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.lang.ref.WeakReference;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -395,20 +396,16 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     @Transactional(propagation=SUPPORTS)
     public boolean isCacheCurrent(long objectid, int maxAge) {
-        Sync read = cacheLock.readLock();
+        Lock read = cacheLock.readLock();
         CacheInfo cacheInfo;
         try {
-            read.acquire();
+            read.lock();
             WeakReference<CacheInfo<ET>> ref = cacheInfoByOid.get(objectid);
-            read.release(); read = null;
+            read.unlock(); read = null;
             cacheInfo = ref == null ? null : ref.get();
             return cacheInfo != null && cacheInfo.timestamp + maxAge >= System.currentTimeMillis();
-        } catch (InterruptedException e) {
-            logger.log(Level.SEVERE, "Interrupted while acquiring cache lock", e);
-            Thread.currentThread().interrupt();
-            return false;
         } finally {
-            if (read != null) read.release();
+            if (read != null) read.unlock();
         }
 
     }
@@ -419,11 +416,11 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     public ET getCachedEntityByName(final String name, int maxAge) throws FindException {
         if (name == null) throw new NullPointerException();
         if (!(NamedEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not NamedEntities!");
-        Sync read = cacheLock.readLock();
+        Lock read = cacheLock.readLock();
         try {
-            read.acquire();
+            read.lock();
             WeakReference<CacheInfo<ET>> ref = cacheInfoByName.get(name);
-            read.release(); read = null;
+            read.unlock(); read = null;
             CacheInfo<ET> cinfo = ref == null ? null : ref.get();
 
             if (cinfo != null) return freshen(cinfo, maxAge);
@@ -439,17 +436,12 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     }
                 }
             });
-
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "Interrupted waiting for cache lock", e);
-            Thread.currentThread().interrupt();
-            return null;
         } catch (RuntimeException e) {
             throw new FindException(ExceptionUtils.getMessage(e), e);
         } catch (CacheVeto e) {
             throw new FindException("Couldn't cache entity", e);
         } finally {
-            if (read != null) read.release();
+            if (read != null) read.unlock();
         }
     }
 
@@ -477,6 +469,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     /**
      * Override to update the criteria used by findByUniqueName() before it's executed
+     * @param crit criteria to be mutated
      */
     protected void addFindByNameCriteria(Criteria crit) {
     }
@@ -499,12 +492,12 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     public ET getCachedEntity(final long objectid, int maxAge) throws FindException, CacheVeto {
         ET entity;
 
-        Sync read = cacheLock.readLock();
+        Lock read = cacheLock.readLock();
         CacheInfo<ET> cacheInfo;
         try {
-            read.acquire();
+            read.lock();
             WeakReference<CacheInfo<ET>> ref = cacheInfoByOid.get(objectid);
-            read.release(); read = null;
+            read.unlock(); read = null;
             cacheInfo = ref == null ? null : ref.get();
             if (cacheInfo == null) {
                 // Might be new, or might be first run
@@ -527,12 +520,8 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             } else {
                 return freshen(cacheInfo, maxAge);
             }
-        } catch (InterruptedException e) {
-            logger.log(Level.SEVERE, "Interrupted while acquiring cache lock", e);
-            Thread.currentThread().interrupt();
-            return null;
         } finally {
-            if (read != null) read.release();
+            if (read != null) read.unlock();
         }
     }
 
@@ -555,33 +544,34 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     protected void cacheRemove(PersistentEntity thing) {
-        Sync write = cacheLock.writeLock();
+        Lock write = cacheLock.writeLock();
         try {
-            write.acquire();
+            write.lock();
             cacheInfoByOid.remove(thing.getOid());
             if (thing instanceof NamedEntity) {
                 cacheInfoByName.remove(((NamedEntity)thing).getName());
             }
-            write.release();
+            removedFromCache(thing);
+            write.unlock();
             write = null;
 
-            removedFromCache(thing);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Interrupted waiting for cache lock", e);
-            Thread.currentThread().interrupt();
         } finally {
-            if (write != null) write.release();
+            if (write != null) write.unlock();
         }
     }
 
     /**
      * Override this method to be notified when an Entity has been removed from the cache.
+     * This method is called while the cache write lock is held, so it should avoid
+     * taking any lengthy action before returning.
+     *
      * @param ent the Entity that has been removed
      */
     protected void removedFromCache(Entity ent) { }
 
     /**
      * Override this method to check an Entity before it's added to the cache.
+     * The cache lock is not held when this method is invoked.
      *
      * @param ent the Entity to check for suitability
      * @throws CacheVeto to prevent the Entity from being added.
@@ -590,9 +580,47 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     /**
      * Override this method to be notified when an Entity has been added to the cache.
+     * This method is called while the cache write lock is held, so it should avoid
+     * taking any lengthy action before returning.
+     *
      * @param ent the Entity that has been added to the cache
      */
     protected void addedToCache(PersistentEntity ent) { }
+
+    /**
+     * Perform some action while holding the cache write lock.
+     * It is an error to invoke this method if the current thread already
+     * holds the cache read lock.
+     *
+     * @param stuff  a Callable to invoke with the lock held.  Required.
+     * @return the value returned by the Callable.
+     * @throws Exception if the Callable throws an exception
+     */
+    protected final <RT> RT doWithCacheWriteLock(Callable<RT> stuff) throws Exception {
+        return doWithLock(cacheLock.writeLock(), stuff);
+    }
+
+    /**
+     * Perform some action while holding the cache read lock.
+     * It is safe to invoke this method while the current thread already
+     * holds the cache write lock.
+     *
+     * @param stuff  a Callable to invoke with the lock held.  Required.
+     * @return the value returned by the Callable.
+     * @throws Exception if the Callable throws an exception
+     */
+    protected final <RT> RT doWithCacheReadLock(Callable<RT> stuff) throws Exception {
+        return doWithLock(cacheLock.readLock(), stuff);
+    }
+
+    private <RT> RT doWithLock(Lock lock, Callable<RT> stuff) throws Exception {
+        try {
+            lock.lock();
+            return stuff.call();
+        } finally {
+            lock.unlock();
+        }
+    }
 
     protected ET checkAndCache(ET thing) throws CacheVeto {
         final Long oid = thing.getOid();
@@ -601,22 +629,18 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         CacheInfo<ET> info = null;
 
         // Get existing cache info
-        Sync read = cacheLock.readLock();
+        Lock read = cacheLock.readLock();
         try {
-            read.acquire();
+            read.lock();
             WeakReference<CacheInfo<ET>> ref = cacheInfoByOid.get(oid);
             info = ref == null ? null : ref.get();
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "Interrupted waiting for cache lock", e);
-            Thread.currentThread().interrupt();
-            return null;
         } finally {
-            if (read != null) read.release();
+            if (read != null) read.unlock();
         }
 
-        Sync write = cacheLock.writeLock();
+        Lock write = cacheLock.writeLock();
         try {
-            write.acquire();
+            write.lock();
 
             // new item to cache
             if (info == null) {
@@ -633,15 +657,11 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             info.entity = thing;
             info.version = thing.getVersion();
             info.timestamp = System.currentTimeMillis();
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "Interrupted waiting for cache lock", e);
-            Thread.currentThread().interrupt();
-            return null;
-        } finally {
-            if (write != null) write.release();
-        }
+            addedToCache(thing);
 
-        addedToCache(thing);
+        } finally {
+            if (write != null) write.unlock();
+        }
 
         return thing;
     }
@@ -709,6 +729,8 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      *
      * @param oid The entity oid.
      * @return true if the entity was deleted; false otherwise
+     * @throws com.l7tech.objectmodel.FindException if there is a problem finding the entity
+     * @throws com.l7tech.objectmodel.DeleteException if there is a problem deleting the entity
      */
     protected boolean findAndDelete(final long oid) throws FindException, DeleteException {
         boolean deleted = false;
@@ -728,7 +750,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    private ReadWriteLock cacheLock = new ReentrantWriterPreferenceReadWriteLock();
+    private ReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private Map<Long, WeakReference<CacheInfo<ET>>> cacheInfoByOid = new HashMap<Long, WeakReference<CacheInfo<ET>>>();
     private Map<String, WeakReference<CacheInfo<ET>>> cacheInfoByName = new HashMap<String, WeakReference<CacheInfo<ET>>>();
 

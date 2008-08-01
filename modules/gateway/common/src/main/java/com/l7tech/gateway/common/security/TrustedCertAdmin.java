@@ -21,6 +21,7 @@ import java.security.KeyStoreException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.Collection;
 
 /**
  * Remote interface to get/save/delete certs trusted by the gateway.
@@ -48,14 +49,15 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     public TrustedCert findCertByPrimaryKey(long oid) throws FindException;
 
     /**
-     * Retrieves the {@link com.l7tech.security.cert.TrustedCert} with the specified subject DN.
-     * @param dn the Subject DN of the {@link TrustedCert} to retrieve
-     * @return the TrustedCert or null if no cert for that oid
-     * @throws FindException if there is a problem finding the cert
+     * Retrieves every {@link com.l7tech.security.cert.TrustedCert} with the specified subject DN.
+     * 
+     * @param dn the Subject DN of the {@link com.l7tech.security.cert.TrustedCert} to retrieve
+     * @return a list of matching TrustedCert instances.  May be empty but never null.
+     * @throws FindException if there is a problem finding the certs
      */
     @Transactional(readOnly=true)
     @Secured(stereotype= FIND_ENTITY_BY_ATTRIBUTE)
-    public TrustedCert findCertBySubjectDn(String dn) throws FindException;
+    public Collection<TrustedCert> findCertsBySubjectDn(String dn) throws FindException;
 
     /**
      * Saves a new or existing {@link com.l7tech.security.cert.TrustedCert} to the database.

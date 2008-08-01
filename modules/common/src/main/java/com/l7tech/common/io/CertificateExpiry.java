@@ -22,15 +22,13 @@ public class CertificateExpiry {
     }
 
     public Level getSeverity() {
-        if ( days <= INFO_DAYS ) {
-            return Level.INFO;
-        } else if ( days <= WARNING_DAYS ) {
-            return Level.WARNING;
-        } else if ( days <= SEVERE_DAYS ) {
+        if (days <= SEVERE_DAYS)
             return Level.SEVERE;
-        } else {
-            return Level.FINE;
-        }
+        if (days <= WARNING_DAYS)
+            return Level.WARNING;
+        if (days <= INFO_DAYS)
+            return Level.INFO;
+        return Level.FINE;
     }
 
     private int days;

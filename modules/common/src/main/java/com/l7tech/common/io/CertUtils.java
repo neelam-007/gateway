@@ -3,12 +3,7 @@
  */
 package com.l7tech.common.io;
 
-import com.l7tech.common.io.CertificateExpiry;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import com.whirlycott.cache.Cache;
 import org.apache.harmony.security.asn1.ASN1Integer;
 import org.apache.harmony.security.asn1.ASN1Sequence;
@@ -27,10 +22,10 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateKeySpec;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author mike
@@ -179,6 +174,25 @@ public class CertUtils {
         vc.onVerified();
     }
 
+    /**
+     * Test if the specified certificate is verifiable with the specified public key, without throwing
+     * any checked exceptions.
+     * <p/>
+     * This makes use of the CertUtils certificate verification cache.
+     *
+     * @param cert  the certificate to check.  Required.
+     * @param publicKey  the public key to verify with.  Required.
+     * @return  true iff. the specified cert verifies successfully with the specified public key
+     */
+    public static boolean isVerified(X509Certificate cert, PublicKey publicKey) {
+        try {
+            cachedVerify(cert, publicKey);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     /** Same behavior as X509Certificate.verify(publicKey, sigProvider), but memoizes the result. */
     public static void cachedVerify(X509Certificate cert, PublicKey publicKey, String sigProvider) throws NoSuchProviderException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, CertificateException {
         VerifiedCert vc = new VerifiedCert(cert, publicKey);
@@ -218,6 +232,18 @@ public class CertUtils {
         }
     }
 
+    /**
+     * Safely check if two certificates are equal, working around the fact that .equals() between
+     * different X509Certificate implementations is problematic.
+     * <p/>
+     * This method checks the implementation classes.  If both are the same, it just calls
+     * cert1.equals(cert2).  Otherwise, it gets the canonical encoded forms of both certificates
+     * and compares them for byte-by-byte equality.
+     *
+     * @param cert1  a certificate to examine.  Required.
+     * @param cert2  a certificate to examine.  If null, this method always returns false.
+     * @return true iff. both X509Certificate instances represent the same X.509 certificate.
+     */
     public static boolean certsAreEqual(X509Certificate cert1, X509Certificate cert2) {
         if (cert2 == null) return false;
         if (cert1.getClass() == cert2.getClass()) return cert1.equals(cert2);
@@ -451,6 +477,8 @@ public class CertUtils {
 
     /**
      * Checks the validity period of the specified certificate.
+     *
+     * @param certificate the certificate to check. Required.
      * @return a {@link CertificateExpiry} indicating how many days remain before the certificate will expire
      * @throws CertificateNotYetValidException if the certificate's "not-before" is after the current time
      * @throws CertificateExpiredException if the certificate's "not-after" was before the current time
@@ -459,12 +487,42 @@ public class CertUtils {
             throws CertificateNotYetValidException, CertificateExpiredException
     {
         certificate.checkValidity();
+        return getCertificateExpiry(certificate);
+    }
+
+    /**
+     * Compute the number of days until the specified cert expires and return a CertificateExpiry instance
+     * that can be used to evaluate the severity of the cert's expiry condition.
+     *
+     * @param certificate the certificate to evaluate.  Required.
+     * @return a {@link CertificateExpiry} indicating how many days remain before the certificate will expire
+     */
+    public static CertificateExpiry getCertificateExpiry(X509Certificate certificate) {
         final long now = System.currentTimeMillis();
         final long expires = certificate.getNotAfter().getTime();
         // fla, bugfix 1791 (what kind of math is this?!)
         // int days = (int)(.5f + ((expires - now) * 1000 * 86400));
         int days = (int)((expires - now) / (1000*86400));
         return new CertificateExpiry(days);
+    }
+
+    /**
+     * Check if the specified certificate is within its validity period.
+     * This method returns true iff. the current system time is within the range
+     * defined by the specified certificate's NotBefore and NotAfter fields.
+     *
+     * @param cert the certificate to check
+     * @return true iff. this certificate has become valid and has not yet expired.
+     */
+    public static boolean isValid(X509Certificate cert) {
+        try {
+            cert.checkValidity();
+            return true;
+        } catch (CertificateExpiredException e) {
+            return false;
+        } catch (CertificateNotYetValidException e) {
+            return false;
+        }
     }
 
     /**
@@ -636,7 +694,8 @@ public class CertUtils {
      *
      * @param cert      the certificate
      * @param algorithm the alghorithm (MD5 or SHA1)
-     * @param format    the format to return, either hex ("SHA1:00:22:ff:et:ce:te:ra") or b64 ("abndwlaksj==")
+     * @param format    the format to return, either hex ("SHA1:00:22:ff:et:ce:te:ra"), b64 ("abndwlaksj=="),
+     *                  or rawhex ("0022ffetcetera").
      * @return the certificate fingerprint as a String
      * @exception CertificateEncodingException
      *                      thrown whenever an error occurs while attempting to

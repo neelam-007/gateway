@@ -64,7 +64,7 @@ public class TrustedCertsTable extends JTable {
             Object[][] rows = new Object[][]{};
 
             String[] cols = new String[]{
-                "Name", "Issued By", "Expiration Date", "Usage"
+                "Name", "Issued By", "Expiration Date", "SHA-1 Thumbprint", "Usage"
             };
 
             tableSorter = new TrustedCertTableSorter(new DefaultTableModel(rows, cols) {

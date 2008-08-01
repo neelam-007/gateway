@@ -1,16 +1,20 @@
 package com.l7tech.server.transport.http;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSession;
-
-import com.l7tech.security.cert.TrustedCertManager;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.identity.cert.TrustedCertServices;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * HostnameVerifier that uses the TrustedCertManager.
@@ -21,9 +25,9 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
 
     //- PUBLIC
 
-    public SslClientHostnameVerifier(final ServerConfig serverConfig, final TrustedCertManager trustedCertManager) {
+    public SslClientHostnameVerifier(final ServerConfig serverConfig, final TrustedCertServices trustedCertServices) {
         this.serverConfig = serverConfig;
-        this.trustedCertManager = trustedCertManager;
+        this.trustedCertServices = trustedCertServices;
     }
 
     /**
@@ -33,56 +37,17 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
      * @param sslSession The SSL session
      */
     public boolean verify(String hostname, SSLSession sslSession) {
-        boolean verified = false;
 
-        if (hostname != null && sslSession != null) {
-            try {
-                Certificate[] certChain = sslSession.getPeerCertificates();
-                if (certChain.length > 0 && certChain[0] instanceof X509Certificate) {
-                    X509Certificate certificate = (X509Certificate) certChain[0];
+        if (hostname == null || sslSession == null)
+            return isSkipHostnameVerificationByDefault();
 
-                    // see if if just works ...
-                    String expectedHost = CertUtils.getCn(certificate);
-                    if (expectedHost != null && expectedHost.equalsIgnoreCase(hostname)) {
-                        verified = true;
-                    } else {
-                        // check name against trusted certs
-                        String subjectDn = certificate.getSubjectDN().getName();
-                        TrustedCert trustedCert = trustedCertManager.getCachedCertBySubjectDn(subjectDn, 30000);
-                        if (trustedCert != null &&
-                                CertUtils.certsAreEqual(trustedCert.getCertificate(), certificate) &&
-                                !trustedCert.isVerifyHostname()) {
-                            verified = true;
-                        } else {
-                            // see if this is signed by a trusted cert
-                            String issuerDn = certificate.getIssuerDN().getName();
-                            TrustedCert trustedSignerCert =
-                                trustedCertManager.getCachedCertBySubjectDn(issuerDn, 30000);
-                            if ( trustedSignerCert != null &&
-                                 !trustedSignerCert.isVerifyHostname()) {
-                                try {
-                                    CertUtils.cachedVerify( certificate, trustedSignerCert.getCertificate().getPublicKey() );
-                                    verified = true;
-                                } catch (Exception e) {
-                                    verified = !isDefaultVerifyHostname();
-                                }
-                            } else {
-                                verified = !isDefaultVerifyHostname();
-                            }
-                        }
-                    }
-                } else {
-                    verified = !isDefaultVerifyHostname();
-                }
-            }
-            catch(Exception e) {
-                logger.log(Level.WARNING, "Could not verify hostname '"+hostname+"'.", e);
-            }
-        } else {
-            verified = !isDefaultVerifyHostname();
+        try {
+            return doVerify(hostname, sslSession);
+
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Could not verify hostname '"+hostname+"'.", e);
+            return isSkipHostnameVerificationByDefault();
         }
-
-        return verified;
     }
 
     //- PRIVATE
@@ -90,17 +55,64 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
     private static final Logger logger = Logger.getLogger(SslClientHostnameVerifier.class.getName());
 
     private final ServerConfig serverConfig;
-    private final TrustedCertManager trustedCertManager;
+    private final TrustedCertServices trustedCertServices;
 
-    private boolean isDefaultVerifyHostname() {
+    private boolean doVerify(String hostname, SSLSession sslSession) throws SSLPeerUnverifiedException, FindException, CertificateException {
+        Certificate[] certChain = sslSession.getPeerCertificates();
+        if (certChain.length < 1 || !(certChain[0] instanceof X509Certificate))
+            return isSkipHostnameVerificationByDefault();
+
+        X509Certificate certificate = (X509Certificate)certChain[0];
+
+        return isHostnameMatch(hostname, certificate) ||
+               isCertDirectlyTrustedWithoutHostnameVerification(certificate) ||
+               isCertSignerTrustedWithoutHostnameVerification(certificate) ||
+               isSkipHostnameVerificationByDefault();
+    }
+
+    private boolean isSkipHostnameVerificationByDefault() {
         boolean verify = true;
-        String defaultVerifyHostnameTxt =
-                serverConfig.getPropertyCached(ServerConfig.PARAM_IO_BACK_HTTPS_HOST_CHECK, 30000);
+        String defaultVerifyHostnameTxt = serverConfig.getPropertyCached(ServerConfig.PARAM_IO_BACK_HTTPS_HOST_CHECK, 30000);
 
         if (defaultVerifyHostnameTxt != null) {
             verify = Boolean.valueOf(defaultVerifyHostnameTxt.trim());
         }
 
-        return verify;
+        return !verify;
+    }
+
+    private boolean isHostnameMatch(String hostname, X509Certificate certificate) {
+        String expectedHost = CertUtils.getCn(certificate);
+        return expectedHost != null && expectedHost.equalsIgnoreCase(hostname);
+    }
+
+    private boolean isCertSignerTrustedWithoutHostnameVerification(X509Certificate certificate) throws FindException {
+        String issuerDn = certificate.getIssuerDN().getName();
+        Collection<TrustedCert> trustedSignerCert = trustedCertServices.getCertsBySubjectDnFiltered(issuerDn, false, null, null);
+        for (TrustedCert trustedCert : trustedSignerCert) {
+            if (!trustedCert.isVerifyHostname() && isCertSignedByIssuer(certificate, trustedCert))
+                return true;
+        }
+        return false;
+    }
+
+    // Return true iff. the specified certificate verifies with the specified issuerCert's public key
+    private boolean isCertSignedByIssuer(X509Certificate certificate, TrustedCert issuerCert) {
+        try {
+            CertUtils.cachedVerify(certificate, issuerCert.getCertificate().getPublicKey());
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean isCertDirectlyTrustedWithoutHostnameVerification(X509Certificate certificate) throws FindException, CertificateException {
+        String subjectDn = certificate.getSubjectDN().getName();
+        Collection<TrustedCert> trustedCerts = trustedCertServices.getCertsBySubjectDnFiltered(subjectDn, false, null, null);
+        for (TrustedCert trustedCert : trustedCerts) {
+            if (!trustedCert.isVerifyHostname() && CertUtils.certsAreEqual(trustedCert.getCertificate(), certificate))
+                return true;
+        }
+        return false;
     }
 }

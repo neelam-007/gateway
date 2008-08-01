@@ -29,6 +29,18 @@ ALTER TABLE rbac_assignment DROP KEY unique_assignment;
 ALTER TABLE rbac_assignment ADD CONSTRAINT UNIQUE KEY unique_assignment (provider_oid,role_oid,identity_id, entity_type);
 
 --
+-- Constraint changes for trusted_cert:
+--    name is no longer unique
+--    subject_dn is no longer unique
+--    thumbprint_sha1 is now unique
+--
+drop index subject_dn on trusted_cert;
+create index i_subject_dn on trusted_cert (subject_dn);
+drop index i_thumb on trusted_cert;
+create unique index i_thumb on trusted_cert (thumbprint_sha1);
+drop index name on trusted_cert;
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;

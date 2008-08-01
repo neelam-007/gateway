@@ -275,7 +275,7 @@
         <version name="version" column="version" type="integer"/>
 
         <property name="name" type="string"/>
-        <property name="subjectDn" column="subject_dn" type="string" unique="true"/>
+        <property name="subjectDn" column="subject_dn" type="string" />
         <property name="certBase64" column="cert_base64" type="text"/>
         <property name="trustedForSsl" column="trusted_for_ssl" type="boolean"/>
         <property name="trustedForSigningClientCerts" column="trusted_for_client" type="boolean"/>
@@ -283,7 +283,7 @@
         <property name="trustedAsSamlIssuer" column="trusted_for_saml" type="boolean"/>
         <property name="trustedAsSamlAttestingEntity" column="trusted_as_saml_attesting_entity" type="boolean"/>
         <property name="verifyHostname" column="verify_hostname" type="boolean"/>
-        <property name="thumbprintSha1" column="thumbprint_sha1" type="string"/>
+        <property name="thumbprintSha1" column="thumbprint_sha1" type="string" unique="true"/>
         <property name="ski" type="string"/>
         <property name="trustAnchor" column="trust_anchor" type="boolean"/>
         <property name="revocationCheckPolicyType" column="revocation_type" type="trustedcert_revocationtype"/>

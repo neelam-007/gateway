@@ -6,11 +6,7 @@
 
 package com.l7tech.server.identity.fed;
 
-import com.l7tech.common.io.CertificateExpiry;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
@@ -19,17 +15,18 @@ import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.fed.X509Config;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.cert.TrustedCertManager;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 
 import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -39,11 +36,12 @@ import java.util.logging.Logger;
 public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
     X509AuthorizationHandler(FederatedIdentityProvider provider,
                              TrustedCertManager trustedCertManager,
+                             TrustedCertServices trustedCertServices,
                              ClientCertManager clientCertManager,
                              CertValidationProcessor certValidationProcessor,
                              Auditor auditor,
                              Set certOidSet) {
-        super(provider, trustedCertManager, clientCertManager, certValidationProcessor, auditor, certOidSet);
+        super(provider, trustedCertManager, trustedCertServices, clientCertManager, certValidationProcessor, auditor, certOidSet);
     }
 
     User authorize( LoginCredentials pc ) throws IOException, AuthenticationException, FindException {
@@ -65,52 +63,7 @@ public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
             // There could be no trusted certs--this means that specific client certs
             // are trusted no matter who signed them
 
-            try {
-                TrustedCert trustedCert = trustedCertManager.getCachedCertBySubjectDn( issuerDn, MAX_CACHE_AGE );
-
-                if ( trustedCert == null ) throw new BadCredentialsException("Signer '" + issuerDn + "' is not trusted");
-
-                final String untrusted = "The trusted certificate with DN '" + trustedCert.getSubjectDn() + "' is not trusted";
-
-                if ( !certOidSet.contains(new Long(trustedCert.getOid())) ) {
-                    String msg = untrusted + " by this identity provider";
-                    logger.fine(msg);
-                    throw new BadCredentialsException(msg);
-                }
-
-                if ( !trustedCert.isTrustedForSigningClientCerts() ) {
-                    String msg = untrusted + " for signing client certificates";
-                    logger.warning(msg);
-                    throw new BadCredentialsException(msg);
-                }
-
-                try {
-                    CertificateExpiry exp = CertUtils.checkValidity(trustedCert.getCertificate());
-                    if (exp.getDays() <= CertificateExpiry.FINE_DAYS)
-                        trustedCertManager.logWillExpire(trustedCert, exp);
-                } catch ( CertificateException e ) {
-                    final String msg = "Trusted cert for " + trustedCert.getSubjectDn() + " is invalid or corrupted: " + e.getMessage();
-                    throw new AuthenticationException(msg, e);
-                }
-
-                // Check that cert was signed by CA key
-                CertUtils.cachedVerify(requestCert, trustedCert.getCertificate().getPublicKey());
-            } catch ( CertificateException e ) {
-                logger.log( Level.WARNING, e.getMessage(), e );
-                throw new BadCredentialsException(e.getMessage(), e);
-            } catch ( NoSuchAlgorithmException e ) {
-                logger.log( Level.SEVERE, e.getMessage(), e );
-                throw new BadCredentialsException(e.getMessage(), e);
-            } catch ( InvalidKeyException e ) {
-                logger.log( Level.SEVERE, e.getMessage(), e );
-                throw new BadCredentialsException(e.getMessage(), e);
-            } catch ( NoSuchProviderException e ) {
-                logger.log( Level.SEVERE, e.getMessage(), e );
-                throw new BadCredentialsException(e.getMessage(), e);
-            } catch ( SignatureException e ) {
-                logger.log( Level.SEVERE, e.getMessage(), e );
-                throw new BadCredentialsException(e.getMessage(), e);
-            }
+            verifyAgainstCertOidSet(requestCert, issuerDn);
         }
 
         FederatedUser u = getUserManager().findBySubjectDN(subjectDn);
@@ -135,6 +88,24 @@ public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
         return u;
     }
 
+    private void verifyAgainstCertOidSet(X509Certificate requestCert, String issuerDn) throws FindException, AuthenticationException {
+        Collection<TrustedCert> trustedCerts = trustedCertServices.getCertsBySubjectDnFiltered(issuerDn, true, EnumSet.of(TrustedCert.TrustedFor.SIGNING_CLIENT_CERTS), certOidSet);
+        if (trustedCerts.isEmpty())
+            throw new BadCredentialsException("Signer '" + issuerDn + "' is not trusted");
+
+        for (TrustedCert trustedCert : trustedCerts) {
+            try {
+                final X509Certificate trustedX509 = trustedCert.getCertificate();
+                if (CertUtils.isVerified(requestCert, trustedX509.getPublicKey()))
+                    return;
+            } catch (CertificateException e) {
+                // Periodic certificate checking task will eventually notice the corrupt trustedcert and audit it.
+                // FALLTHROUGH and try the next certificate in the list, if any
+            }
+        }
+
+        throw new BadCredentialsException("Unable to authenticate certificate: no matching valid trusted certificate that is trusted for signing client certificates");
+    }
+
     private static final Logger logger = Logger.getLogger(X509AuthorizationHandler.class.getName());
-    private static final int MAX_CACHE_AGE = 5 * 1000;
 }

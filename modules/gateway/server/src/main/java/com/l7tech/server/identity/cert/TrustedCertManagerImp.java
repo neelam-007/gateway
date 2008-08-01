@@ -3,25 +3,23 @@
  */
 package com.l7tech.server.identity.cert;
 
-import com.l7tech.server.cluster.ClusterInfoManager;
-import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.Component;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.CertificateExpiry;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
+import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.TimeUnit;
-import com.l7tech.objectmodel.*;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.TimeUnit;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.springframework.beans.BeansException;
@@ -40,9 +38,6 @@ import java.beans.PropertyChangeListener;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -77,25 +72,17 @@ public class TrustedCertManagerImp
     }
 
     @Transactional(readOnly=true)
-    public TrustedCert findBySubjectDn(final String dn) throws FindException {
+    public Collection<TrustedCert> findBySubjectDn(final String dn) throws FindException {
         final StringBuffer hql = new StringBuffer("FROM ");
         hql.append(getTableName()).append(" IN CLASS ").append(getImpClass().getName());
         hql.append(" WHERE ").append(getTableName()).append(".subjectDn = ?");
         try {
-            List found = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            //noinspection unchecked
+            return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException {
                     return session.createQuery(hql.toString()).setString(0, dn).list();
                 }
             });
-
-            switch (found.size()) {
-                case 0:
-                    return null;
-                case 1:
-                    return (TrustedCert)found.get(0);
-                default:
-                    throw new FindException("Found multiple TrustedCerts with the same DN");
-            }
         } catch (DataAccessException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new FindException("Couldn't retrieve cert", e);
@@ -164,66 +151,6 @@ public class TrustedCertManagerImp
         }
     }
 
-
-    /**
-     * Checks whether the certificate at the top of the specified chain is trusted for outbound SSL connections.
-     * <p/>
-     * This will be true if either the specific certificate has the {@link com.l7tech.security.cert.TrustedCert#isTrustedForSsl()}
-     * option set, or the signing cert that comes next in the chain has the {@link com.l7tech.security.cert.TrustedCert#isTrustedForSigningServerCerts()}
-     * option set.
-     * <p/>
-     *
-     * @param serverCertChain the certificate chain
-     * @throws CertificateException
-     */
-    @Transactional(readOnly=true)
-    public void checkSslTrust(X509Certificate[] serverCertChain) throws CertificateException {
-        String subjectDn = serverCertChain[0].getSubjectDN().getName();
-        String issuerDn = serverCertChain[0].getIssuerDN().getName();
-        try {
-            // Check if this cert is trusted as-is
-            try {
-                TrustedCert selfTrust = getCachedCertBySubjectDn(subjectDn, 30000);
-                if (selfTrust != null) {
-                    if (!CertUtils.certsAreEqual(selfTrust.getCertificate(), serverCertChain[0]))
-                        throw new CertificateException("Server cert '" + subjectDn +
-                          "' found but doesn't match previously stored version");
-                    if (selfTrust.isTrustedForSsl()) {
-                        // Good enough
-                        return;
-                    } else if (!selfTrust.isTrustedForSsl())
-                        logger.fine("Server cert '" + subjectDn + "' found but not trusted for SSL. Will check issuer cert, if any");
-
-                    // FALLTHROUGH - Check if its signer is trusted
-                }
-            } catch (FindException e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
-                throw new CertificateException(e.getMessage());
-            }
-
-            // Check that signer is trusted
-            TrustedCert caTrust = getCachedCertBySubjectDn(issuerDn, 30000);
-
-            if (caTrust == null)
-                throw new UnknownCertificateException("Couldn't find CA cert with DN '" + issuerDn + "'");
-
-            if (!caTrust.isTrustedForSigningServerCerts())
-                throw new CertificateException("CA Cert with DN '" + issuerDn + "' found but not trusted for signing SSL Server Certs");
-
-            X509Certificate caTrustCert = caTrust.getCertificate();
-
-            CertUtils.cachedVerify(serverCertChain[0], caTrustCert.getPublicKey());
-        } catch (Exception e) {
-            if (e instanceof UnknownCertificateException)
-                throw (CertificateException) e;
-
-            logger.log(Level.WARNING, e.getMessage(), e);
-
-            throw new CertificateException(e.getMessage(), e);
-        }
-    }
-
-
     public Class<TrustedCert> getImpClass() {
         return TrustedCert.class;
     }
@@ -241,33 +168,8 @@ public class TrustedCertManagerImp
     }
 
     @Transactional(readOnly=true)
-    public TrustedCert getCachedCertBySubjectDn(String dn, int maxAge) throws FindException, CertificateException {
-        Lock read = cacheLock.readLock();
-        Lock write = null;
-        try {
-            read.lock();
-            final Long oid = dnToOid.get(dn);
-            read.unlock();
-            read = null;
-            if (oid == null) {
-                TrustedCert cert = findBySubjectDn(dn);
-                if (cert == null) return null;
-                write = cacheLock.writeLock(); 
-                write.lock();
-                checkAndCache(cert);
-                write.unlock();
-                write = null;
-                return cert;
-            } else {
-                return getCachedCertByOid(oid.longValue(), maxAge);
-            }
-        } catch (CacheVeto e) {
-            logger.log(Level.WARNING, e.getMessage(), e.getCause());
-            throw new CertificateException(e.getMessage());
-        } finally {
-            if (write != null) write.unlock();
-            if (read != null) read.unlock();
-        }
+    public Collection<TrustedCert> getCachedCertsBySubjectDn(final String dn) throws FindException {
+        return findBySubjectDn(dn);
     }
 
     @Transactional(readOnly=true)
@@ -278,33 +180,6 @@ public class TrustedCertManagerImp
             logger.log(Level.SEVERE, e.getMessage(), e.getCause());
             return null;
         }
-    }
-
-    protected void addedToCache(PersistentEntity ent) {
-        TrustedCert cert = (TrustedCert)ent;
-        dnToOid.put(cert.getSubjectDn(), ent.getOid());
-    }
-
-    protected void removedFromCache(Entity ent) {
-        TrustedCert cert = (TrustedCert)ent;
-        dnToOid.remove(cert.getSubjectDn());
-    }
-
-    public void checkCachable(Entity ent) throws CacheVeto {
-        TrustedCert cert = (TrustedCert)ent;
-        CertificateExpiry exp;
-        try {
-            exp = CertUtils.checkValidity(cert.getCertificate());
-        } catch (CertificateException e) {
-            throw new CacheVeto("Certificate not valid or could not be decoded", e);
-        }
-        if (exp.getDays() <= CertificateExpiry.FINE_DAYS) logWillExpire(cert, exp);
-    }
-
-    public void logWillExpire(TrustedCert cert, CertificateExpiry e) {
-        final String msg = "Trusted cert for " + cert.getSubjectDn() +
-          " will expire in approximately " + e.getDays() + " days.";
-        logger.log(e.getSeverity(), msg);
     }
 
     protected void initDao() throws Exception {
@@ -338,10 +213,13 @@ public class TrustedCertManagerImp
     }
 
     protected Map<String,Object> getUniqueAttributeMap(TrustedCert cert) {
-        Map<String,Object> map = new HashMap<String, Object>();
-        map.put("name", cert.getName());
-        map.put("subjectDn", cert.getSubjectDn());
-        return map;
+        try {
+            Map<String,Object> map = new HashMap<String, Object>();
+            map.put("thumbprintSha1", cert.getThumbprintSha1());
+            return map;
+        } catch (CertificateException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -361,9 +239,6 @@ public class TrustedCertManagerImp
             logger.log(Level.WARNING, "Couldn't cache cert: " + ExceptionUtils.getMessage(e.getCause()));
         }
     }
-
-    private Map<String, Long> dnToOid = new HashMap<String, Long>();
-    private final ReadWriteLock cacheLock = new ReentrantReadWriteLock(false);
 
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.auditor = new Auditor(this, applicationContext, logger);

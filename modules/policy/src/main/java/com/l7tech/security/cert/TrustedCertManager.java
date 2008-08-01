@@ -6,14 +6,13 @@
 
 package com.l7tech.security.cert;
 
-import com.l7tech.common.io.CertificateExpiry;
-import com.l7tech.util.Cachable;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.Cachable;
 
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -23,16 +22,16 @@ import java.util.List;
  */
 public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHeader> {
     /**
-     * Retrieves the {@link TrustedCert} with the specified DN, or null if it does not exist.
-     * <b>NOTE:</b> The corresponding field in the database must have a unique constraint!
-     * @param dn the DN of the {@link com.l7tech.security.cert.TrustedCert} to retrieve
-     * @return the retrieved {@link TrustedCert}, or null if it does not exist.
+     * Retrieves every {@link TrustedCert} with the specified DN.
+     *
+     * @param dn the DN of the {@link TrustedCert}s to retrieve
+     * @return a Collection of matching TrustedCert instances.  May be empty but never null.
      * @throws FindException if the retrieval fails for any reason other than nonexistence
      */
-    TrustedCert findBySubjectDn(String dn) throws FindException;
+    Collection<TrustedCert> findBySubjectDn(String dn) throws FindException;
 
     /**
-     * Retrieves the TrustedCert with the specified subject DN from a cache,
+     * Retrieves the TrustedCert instances with the specified subject DN from a cache,
      * if it was cached less than maxAge milliseconds ago.
      * <p>
      * If the cached version is more than the specified maximum age, the manager will check
@@ -40,12 +39,11 @@ public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHea
      * version and update the cache.
      *
      * @param dn the Subject DN to search by
-     * @param maxAge the maximum age of cache entries that will be returned without a database version check
      * @return the TrustedCert with the specified Subject DN, or null if no such cert exists.
      * @throws FindException if the TrustedCert cannot be found.
      */
-    @Cachable(relevantArg=0,maxAge=1000)
-    TrustedCert getCachedCertBySubjectDn(String dn, int maxAge) throws FindException, CertificateException;
+    @Cachable(relevantArg=0,maxAge=5000)
+    Collection<TrustedCert> getCachedCertsBySubjectDn(String dn) throws FindException;
 
     /**
      * Retrieves the TrustedCert with the specified oid from a cache,
@@ -61,23 +59,6 @@ public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHea
      * @throws FindException if the TrustedCert cannot be found.
      */
     TrustedCert getCachedCertByOid(long oid, int maxAge) throws FindException, CertificateException;
-
-    /**
-     * Logs a good warning message for a cert that will expire soon
-     */
-    void logWillExpire( TrustedCert cert, CertificateExpiry e );
-
-    /**
-     * Checks whether the certificate at the top of the specified chain is trusted for outbound SSL connections.
-     * <p>
-     * This will be true if either the specific certificate has the {@link com.l7tech.security.cert.TrustedCert#isTrustedForSsl()}
-     * option set, or the signing cert that comes next in the chain has the {@link com.l7tech.security.cert.TrustedCert#isTrustedForSigningServerCerts()}
-     * option set.
-     * <p>
-     * @param serverCertChain the certificate chain
-     * @throws CertificateException
-     */
-    void checkSslTrust(X509Certificate[] serverCertChain) throws CertificateException;
 
     /**
      * @return {@link TrustedCert}s with the matching base64'd SHA-1 thumbprint. Never null, but may be empty.

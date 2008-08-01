@@ -5,10 +5,10 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.UpdateException;
 
+import javax.security.auth.x500.X500Principal;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.List;
-import javax.security.auth.x500.X500Principal;
 
 /**
  * This is our internal CA. It manages the client_cert data.
@@ -100,8 +100,19 @@ public interface ClientCertManager {
      * Thrown by a {@link com.l7tech.identity.UserManager} if it doesn't like the cert
      */
     public static class VetoSave extends Exception {
+        public VetoSave() {
+        }
+
         public VetoSave(String message) {
             super(message);
+        }
+
+        public VetoSave(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public VetoSave(Throwable cause) {
+            super(cause);
         }
     }
 

@@ -7,17 +7,18 @@
 package com.l7tech.server.transport.http;
 
 import com.l7tech.security.cert.TrustedCertManager;
-import com.l7tech.server.security.cert.CertValidationProcessor;
-import com.l7tech.server.audit.LogOnlyAuditor;
-import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.security.types.CertificateValidationResult;
+import com.l7tech.security.types.CertificateValidationType;
+import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.identity.cert.TrustedCertServices;
+import com.l7tech.server.security.cert.CertValidationProcessor;
 
 import javax.net.ssl.X509TrustManager;
+import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.SignatureException;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -25,18 +26,18 @@ import java.util.logging.Level;
  */
 public class SslClientTrustManager implements X509TrustManager {
     private final Logger logger = Logger.getLogger(this.getClass().getName());
-    private final TrustedCertManager trustedCertManager;
+    private final TrustedCertServices trustedCertServices;
     private final CertValidationProcessor certValidationProcessor;
     private final CertValidationProcessor.Facility facility;
 
-    public SslClientTrustManager(final TrustedCertManager trustedCertManager,
+    public SslClientTrustManager(final TrustedCertServices trustedCertServices,
                                  final CertValidationProcessor certValidationProcessor,
                                  final CertValidationProcessor.Facility facility) {
-        if (trustedCertManager == null)  throw new IllegalArgumentException("Trusted Cert Manager is required");
+        if (trustedCertServices == null)  throw new IllegalArgumentException("Trusted Cert Services is required");
         if (certValidationProcessor == null)  throw new IllegalArgumentException("Cert Validation Processor is required");
         if (facility == null)  throw new IllegalArgumentException("Facility is required");
 
-        this.trustedCertManager = trustedCertManager;
+        this.trustedCertServices = trustedCertServices;
         this.certValidationProcessor = certValidationProcessor;
         this.facility = facility;
     }
@@ -52,7 +53,7 @@ public class SslClientTrustManager implements X509TrustManager {
     public void checkServerTrusted(final X509Certificate[] certs, final String authType) throws CertificateException {
         boolean isCartel = false;
         try {
-            trustedCertManager.checkSslTrust(certs);
+            trustedCertServices.checkSslTrust(certs);
         } catch (TrustedCertManager.UnknownCertificateException uce) {
             // this is ok, as long as it is a cert from a known CA
             isCartel = true;

@@ -338,10 +338,9 @@ CREATE TABLE trusted_cert (
   revocation_type varchar(128) NOT NULL DEFAULT 'USE_DEFAULT',
   revocation_policy_oid bigint(20),
   primary key(objectid),
-  unique (subject_dn),
-  unique (name),
-  INDEX i_thumb (thumbprint_sha1),
+  unique i_thumb (thumbprint_sha1),
   INDEX i_ski (ski),
+  INDEX i_subject_dn (subject_dn),
   FOREIGN KEY (revocation_policy_oid) REFERENCES revocation_check_policy (objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 

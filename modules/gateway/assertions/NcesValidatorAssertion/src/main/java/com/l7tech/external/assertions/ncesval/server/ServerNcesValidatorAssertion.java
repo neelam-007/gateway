@@ -1,32 +1,32 @@
 package com.l7tech.external.assertions.ncesval.server;
 
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.external.assertions.ncesval.NcesValidatorAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
-import com.l7tech.security.types.CertificateValidationResult;
-import com.l7tech.security.types.CertificateValidationType;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.security.token.*;
-import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.saml.SamlAssertion;
-import com.l7tech.external.assertions.ncesval.NcesValidatorAssertion;
-import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.CertificateInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.token.*;
+import com.l7tech.security.types.CertificateValidationResult;
+import com.l7tech.security.types.CertificateValidationType;
+import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.SoapConstants;
+import com.l7tech.xml.saml.SamlAssertion;
+import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Collection;
 import java.util.logging.Logger;
 
 /**
@@ -45,19 +46,17 @@ import java.util.logging.Logger;
 public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesValidatorAssertion> {
     private static final Logger logger = Logger.getLogger(ServerNcesValidatorAssertion.class.getName());
 
-    private static final int MAX_CACHE_AGE = 5 * 1000;
-
     private final Auditor auditor;
     private final CertValidationProcessor certValidationProcessor;
     private final SecurityTokenResolver securityTokenResolver;
-    private final TrustedCertManager trustedCertManager;
+    private final TrustedCertServices trustedCertServices;
 
     public ServerNcesValidatorAssertion(NcesValidatorAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
         this.auditor = new Auditor(this, context, logger);
         this.certValidationProcessor = (CertValidationProcessor)context.getBean("certValidationProcessor");
         this.securityTokenResolver = (SecurityTokenResolver)context.getBean("securityTokenResolver");
-        this.trustedCertManager = (TrustedCertManager)context.getBean("trustedCertManager");
+        this.trustedCertServices = (TrustedCertServices)context.getBean("trustedCertServices");
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -201,12 +200,12 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
             if ( isTrusted( trustedCertificates, cert ) ) {
                 isTrustedSubject = true;
             } else {
-                TrustedCert trustedCert = trustedCertManager.getCachedCertBySubjectDn( issuerDn, MAX_CACHE_AGE );
-
-                if ( trustedCert != null ) {
+                Collection<TrustedCert> trustedCerts = trustedCertServices.getCertsBySubjectDnFiltered(issuerDn, true, null, null);
+                for (TrustedCert trustedCert : trustedCerts) {
                     X509Certificate issuerCert = trustedCert.getCertificate();
                     if ( isTrusted( trustedCertificateIssuers, issuerCert ) ) {
                         trustedIssuerCert = issuerCert;
+                        break;
                     }
                 }
             }

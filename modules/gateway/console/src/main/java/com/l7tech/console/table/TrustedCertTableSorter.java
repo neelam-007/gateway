@@ -1,15 +1,15 @@
 package com.l7tech.console.table;
 
-import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.security.cert.TrustedCert;
 
 import javax.swing.table.DefaultTableModel;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -22,7 +22,8 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
     public static final int CERT_TABLE_CERT_NAME_COLUMN_INDEX = 0;
     public static final int CERT_TABLE_ISSUER_NAME_COLUMN_INDEX = 1;
     public static final int CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX = 2;
-    public static final int CERT_TABLE_CERT_USAGE_COLUMN_INDEX = 3;
+    public static final int CERT_TABLE_THUMBPRINT_COLUMN_INDEX = 3;
+    public static final int CERT_TABLE_CERT_USAGE_COLUMN_INDEX = 4;
 
     static Logger logger = Logger.getLogger(TrustedCertTableSorter.class.getName());
     private boolean ascending = true;
@@ -134,15 +135,12 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
      */
     public boolean contains(TrustedCert tc) {
 
-        X509Certificate cert2;
         try {
-            X509Certificate cert1 = tc.getCertificate();
+            String thumb1 = tc.getThumbprintSha1();
             for (TrustedCert cert : sortedData) {
-                cert2 = cert.getCertificate();
-                if (cert1.getIssuerDN().equals(cert2.getIssuerDN()) &&
-                        cert1.getSubjectDN().equals(cert2.getSubjectDN())) {
+                String thumb2 = cert.getThumbprintSha1();
+                if (thumb1.equals(thumb2))
                     return true;
-                }
             }
         } catch (CertificateException e) {
             logger.warning("Invalid certificate: " + e.getMessage());
@@ -194,32 +192,35 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
      * @return Object  The value at the specified table coordinate.
      */
     public Object getValueAt(int row, int col) {
-
-        X509Certificate cert = null;
         try {
-            cert = sortedData[row].getCertificate();
+            switch (col) {
+                case CERT_TABLE_CERT_NAME_COLUMN_INDEX:
+                    return sortedData[row].getName();
+
+                case CERT_TABLE_ISSUER_NAME_COLUMN_INDEX:
+                    return CertUtils.extractIssuerNameFromClientCertificate(sortedData[row].getCertificate());
+
+                case CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX:
+                    SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(sortedData[row].getCertificate().getNotAfter());
+                    return sdf.format(cal.getTime());
+
+                case CERT_TABLE_THUMBPRINT_COLUMN_INDEX:
+                    return CertUtils.getCertificateFingerprint(sortedData[row].getCertificate(), "SHA1", "rawhex");
+
+                case CERT_TABLE_CERT_USAGE_COLUMN_INDEX:
+                    return sortedData[row].getUsageDescription();
+
+                default:
+                    throw new IllegalArgumentException("Bad Column");
+            }
         } catch (CertificateException e) {
             logger.warning("Invalid certificate: " + e.getMessage());
-        }
-
-        switch (col) {
-            case CERT_TABLE_CERT_NAME_COLUMN_INDEX:
-                return sortedData[row].getName();
-
-            case CERT_TABLE_ISSUER_NAME_COLUMN_INDEX:
-                return CertUtils.extractIssuerNameFromClientCertificate(cert);
-
-            case CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX:
-                SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(cert.getNotAfter());
-                return sdf.format(cal.getTime());
-
-            case CERT_TABLE_CERT_USAGE_COLUMN_INDEX:
-                return sortedData[row].getUsageDescription();
-
-            default:
-                throw new IllegalArgumentException("Bad Column");
+            return null;
+        } catch (NoSuchAlgorithmException e) {
+            logger.warning("Invalid fingerprint algorithm: " + e.getMessage()); // can't happen
+            return null;
         }
     }
 
@@ -278,6 +279,14 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
                         logger.log(Level.FINER, "Unable to compare certificates: at least one of the certificates is invalid", e);
                     }
                     break;
+
+                case CERT_TABLE_THUMBPRINT_COLUMN_INDEX:
+                    try {
+                        elementA = a.getThumbprintSha1();
+                        elementB = b.getThumbprintSha1();
+                    } catch (CertificateException e) {
+                        logger.log(Level.FINER, "Unable to compare certificates: at least one of the certificates is invalid", e);
+                    }
 
                 case CERT_TABLE_CERT_USAGE_COLUMN_INDEX:
                     elementA = a.getUsageDescription();

@@ -237,6 +237,7 @@ public class TrustedCertsPanel extends JPanel {
     private static final String RES_TABLE_COLUMN_NAME = "table.column.name";
     private static final String RES_TABLE_COLUMN_ISSUEDBY = "table.column.issuedby";
     private static final String RES_TABLE_COLUMN_EXPIRES = "table.column.expires";
+    private static final String RES_TABLE_COLUMN_THUMBPRINT = "table.column.thumbprint";
     private static final String RES_ERROR_LOAD_TEXT = "error.load.text";
     private static final String RES_ERROR_LOAD_TITLE = "error.load.title";
     private static final String RES_ERROR_LOADPOL_TEXT = "error.loadpol.text";
@@ -466,9 +467,11 @@ public class TrustedCertsPanel extends JPanel {
                 if ( certificateInfos.length < 10 ) {
                     for ( CertificateInfo info : certificateInfos ) {
                         if ( info != null ) {
-                            TrustedCert cert = tca.findCertBySubjectDn( info.getSubjectDn() );
-                            if ( cert != null ) {
-                                certs.add(cert);
+                            Collection<TrustedCert> certsWithDn = tca.findCertsBySubjectDn( info.getSubjectDn() );
+                            if (certsWithDn != null) {
+                                for (TrustedCert cert : certsWithDn) {
+                                    certs.add(cert);
+                                }
                             }
                         }
                     }
@@ -562,7 +565,8 @@ public class TrustedCertsPanel extends JPanel {
         private static final String[] columnNames = new String[]{
                 resources.getString(RES_TABLE_COLUMN_NAME),
                 resources.getString(RES_TABLE_COLUMN_ISSUEDBY),
-                resources.getString(RES_TABLE_COLUMN_EXPIRES)
+                resources.getString(RES_TABLE_COLUMN_EXPIRES),
+                resources.getString(RES_TABLE_COLUMN_THUMBPRINT),
         };
         private final List<TrustedCert> trustedCertificates;
 

@@ -29,6 +29,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
@@ -98,7 +99,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         return getManager().findByPrimaryKey(oid);
     }
 
-    public TrustedCert findCertBySubjectDn(final String dn) throws FindException {
+    public Collection<TrustedCert> findCertsBySubjectDn(final String dn) throws FindException {
         return getManager().findBySubjectDn(dn);
     }
 
@@ -119,18 +120,6 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         }
 
         if (cert.getOid() == TrustedCert.DEFAULT_OID) {
-            // check that cert with same dn not already exist
-            // because the sql error thrown by hibernate makes it impossible
-            // to handle that case specifically.
-            try {
-                TrustedCert existingCert = getManager().findBySubjectDn(cert.getSubjectDn());
-                if (existingCert != null) {
-                    throw new DuplicateObjectException("Cert with dn=" + cert.getSubjectDn() +
-                      " already exists.");
-                }
-            } catch (FindException e) {
-                logger.log(Level.FINE, "error looking for similar cert", e);
-            }
             oid = getManager().save(cert);
         } else {
             getManager().update(cert);

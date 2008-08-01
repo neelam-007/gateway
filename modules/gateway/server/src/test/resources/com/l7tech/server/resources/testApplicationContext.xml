@@ -68,6 +68,10 @@
     <!-- server side trusted cert manager -->
     <bean id="trustedCertManager" class="com.l7tech.server.identity.cert.TestTrustedCertManager">
     </bean>
+
+    <bean id="trustedCertServices" class="com.l7tech.server.identity.cert.TrustedCertServicesImpl">
+        <constructor-arg ref="trustedCertManager"/>
+    </bean>
     
     <!-- server side custom assertions registrar -->
     <bean id="customAssertionRegistrar" class="com.l7tech.server.policy.custom.CustomAssertionsRegistrarStub">
@@ -83,7 +87,7 @@
 
     <!-- server side HTTP routing client trust manager -->
     <bean id="trustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
-        <constructor-arg ref="trustedCertManager"/>
+        <constructor-arg ref="trustedCertServices"/>
         <constructor-arg ref="certValidationProcessor"/>
         <constructor-arg>
             <bean class="com.l7tech.server.security.cert.CertValidationProcessor$Facility" factory-method="valueOf">
@@ -92,7 +96,7 @@
         </constructor-arg>
     </bean>
     <bean id="routingTrustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
-        <constructor-arg ref="trustedCertManager"/>
+        <constructor-arg ref="trustedCertServices"/>
         <constructor-arg ref="certValidationProcessor"/>
         <constructor-arg>
             <bean class="com.l7tech.server.security.cert.CertValidationProcessor$Facility" factory-method="valueOf">
@@ -102,12 +106,8 @@
     </bean>
     <!-- server side HTTP routing hostname verifier -->
     <bean id="hostnameVerifier" class="com.l7tech.server.transport.http.SslClientHostnameVerifier">
-        <constructor-arg>
-            <ref local="serverConfig"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref local="trustedCertManager"/>
-        </constructor-arg>
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="trustedCertServices"/>
     </bean>
 
     <!-- create test keys -->

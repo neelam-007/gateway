@@ -4,12 +4,9 @@
 
 package com.l7tech.server.identity.fed;
 
-import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.identity.fed.FederatedGroup;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedUser;
@@ -17,20 +14,22 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.cert.TrustedCertManager;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.identity.PersistentIdentityProviderImpl;
 import com.l7tech.server.identity.ConfigurableIdentityProvider;
+import com.l7tech.server.identity.PersistentIdentityProviderImpl;
+import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.security.cert.CertValidationProcessor;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -104,51 +103,50 @@ public class FederatedIdentityProviderImpl
         final String clientCertDn = clientCertChain[0].getSubjectDN().getName();
         if (!userDn.equals(clientCertDn))
             throw new ClientCertManager.VetoSave("User's X.509 Subject DN '" + userDn +
-                                                 "'doesn't match cert's Subject DN '" + clientCertDn + "'");
-        if (validTrustedCertOids.isEmpty()) {
-            X509Certificate caCert;
-            try {
-                caCert = keystore.getRootCert();
-                if (clientCertChain.length > 1) {
-                    if (CertUtils.certsAreEqual(caCert, clientCertChain[1]) || caCert.getSubjectDN().equals(clientCertChain[1].getIssuerDN())) {
-                        throw new ClientCertManager.VetoSave("User's cert was issued by the internal certificate authority");
-                    }
-                }
-            } catch ( IOException e ) {
-                throw new ClientCertManager.VetoSave("Couldn't parse CA cert");
-            } catch ( CertificateException e ) {
-                throw new ClientCertManager.VetoSave("CA cert is not valid");
+                    "'doesn't match cert's Subject DN '" + clientCertDn + "'");
+        try {
+            if (validTrustedCertOids.isEmpty()) {
+                checkSignedByDefaultCaCert(clientCertChain);
+            } else {
+                checkSignedByRecognizedTrustedCert(clientCertChain);
             }
-        } else {
-            String caDn = clientCertChain[0].getIssuerDN().getName();
-            TrustedCert caTrust;
-            X509Certificate trustedCaCert = null;
-            try {
-                caTrust = trustedCertManager.getCachedCertBySubjectDn(caDn, MAX_CACHE_AGE);
-                if (caTrust == null)
-                    throw new ClientCertManager.VetoSave("User's cert was not signed by a recognized trusted cert");
-                if (!validTrustedCertOids.contains(new Long(caTrust.getOid())))
-                    throw new ClientCertManager.VetoSave("User's cert was not signed by any of this identity provider's trusted certs");
-                if (!caTrust.isTrustedForSigningClientCerts())
-                    throw new ClientCertManager.VetoSave("User's cert was signed by an authority that is not trusted for signing client certs");
-                trustedCaCert = caTrust.getCertificate();
-            } catch ( FindException e ) {
-                final String msg = "Couldn't find issuer cert";
-                logger.log(Level.SEVERE, msg, e);
-                throw new ClientCertManager.VetoSave(msg);
-            } catch ( CertificateException e ) {
-                logger.log( Level.INFO, e.getMessage(), e );
-            }
+        } catch (IOException e) {
+            throw new ClientCertManager.VetoSave("Couldn't parse CA cert: " + ExceptionUtils.getMessage(e), e);
+        } catch (CertificateException e) {
+            throw new ClientCertManager.VetoSave("CA cert is not valid: " + ExceptionUtils.getMessage(e), e);
+        } catch (FindException e) {
+            throw new ClientCertManager.VetoSave("Unable to look up trusted certificates: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
 
-            try {
-                assert trustedCaCert != null;
-                CertUtils.cachedVerify(clientCertChain[0], trustedCaCert.getPublicKey());
-            } catch (GeneralSecurityException e ) {
-                final String msg = "Couldn't verify that client cert was signed by trusted CA";
-                logger.log( Level.WARNING, msg, e );
-                throw new ClientCertManager.VetoSave(msg);
+    private void checkSignedByDefaultCaCert(X509Certificate[] clientCertChain) throws ClientCertManager.VetoSave, IOException, CertificateException {
+        X509Certificate caCert = keystore.getRootCert();
+        if (clientCertChain.length > 1) {
+            if (CertUtils.certsAreEqual(caCert, clientCertChain[1]) || caCert.getSubjectDN().equals(clientCertChain[1].getIssuerDN())) {
+                throw new ClientCertManager.VetoSave("User's cert was issued by the internal certificate authority");
             }
         }
+    }
+
+    private void checkSignedByRecognizedTrustedCert(X509Certificate[] clientCertChain) throws FindException, ClientCertManager.VetoSave {
+        final X509Certificate clientCert = clientCertChain[0];
+        String issuerDn = clientCert.getIssuerDN().getName();
+        Collection<TrustedCert> trustedCerts = trustedCertServices.getCertsBySubjectDnFiltered(issuerDn, true, EnumSet.of(TrustedCert.TrustedFor.SIGNING_CLIENT_CERTS), null);
+        for (TrustedCert trustedCert : trustedCerts) {
+            try {
+                CertUtils.cachedVerify(clientCert, trustedCert.getCertificate().getPublicKey());
+                // Success.
+                return;
+            } catch (Exception e) {
+                String subjectDn = clientCert.getSubjectDN().toString();
+                logger.log(Level.WARNING, "Unable to verify cert with DN '" + subjectDn +
+                        "' against trusted issuer cert with DN '" + issuerDn +
+                        "': " + ExceptionUtils.getMessage(e), e);
+                // FALLTHROUGH and check next matching trusted cert
+            }
+        }
+
+        throw new ClientCertManager.VetoSave("User's cert was not signed by an issuer cert trusted by this identity provider to sign client certs");
     }
 
     public void setTrustedCertManager(TrustedCertManager trustedCertManager) {
@@ -190,8 +188,8 @@ public class FederatedIdentityProviderImpl
         }
 
         Auditor auditor = new Auditor(this, applicationContext, logger);
-        this.x509Handler = new X509AuthorizationHandler(this, trustedCertManager, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);
-        this.samlHandler = new SamlAuthorizationHandler(this, trustedCertManager, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);        
+        this.x509Handler = new X509AuthorizationHandler(this, trustedCertManager, trustedCertServices, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);
+        this.samlHandler = new SamlAuthorizationHandler(this, trustedCertManager, trustedCertServices, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);        
     }
 
     public void setUserManager(FederatedUserManager userManager) {
@@ -206,6 +204,10 @@ public class FederatedIdentityProviderImpl
         this.certValidationProcessor = certValidationProcessor;
     }
 
+    public void setTrustedCertServices(TrustedCertServices trustedCertServices) {
+        this.trustedCertServices = trustedCertServices;
+    }
+
     /**
      * Subclasses can override this for custom initialization behavior.
      * Gets called after population of this instance's bean properties.
@@ -216,6 +218,9 @@ public class FederatedIdentityProviderImpl
         super.afterPropertiesSet();
         if (trustedCertManager == null) {
             throw new IllegalArgumentException("The Trusted Certificate Manager is required");
+        }
+        if (trustedCertServices == null) {
+            throw new IllegalArgumentException("The Trusted Certificate Services are required");
         }
         if (certValidationProcessor == null) {
             throw new IllegalArgumentException("The Certificate Validation Processor is required");
@@ -233,6 +238,7 @@ public class FederatedIdentityProviderImpl
     private FederatedUserManager userManager;
     private FederatedGroupManager groupManager;
     private TrustedCertManager trustedCertManager;
+    private TrustedCertServices trustedCertServices;
     private CertValidationProcessor certValidationProcessor;
 
     private final Set<Long> validTrustedCertOids = new HashSet<Long>();

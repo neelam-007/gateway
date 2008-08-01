@@ -9,6 +9,8 @@ import java.io.Serializable;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.util.Date;
+import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * An certificate that is trusted by the SSG for a variety of purposes.
@@ -26,11 +28,8 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
         this.certBase64 = cert.certBase64;
         this.cachedCert = cert.cachedCert;
         this.subjectDn = cert.subjectDn;
-        this.trustedForSsl = cert.trustedForSsl;
-        this.trustedForSigningClientCerts = cert.trustedForSigningClientCerts;
-        this.trustedForSigningServerCerts = cert.trustedForSigningServerCerts;
-        this.trustedAsSamlIssuer = cert.trustedAsSamlIssuer;
-        this.trustedAsSamlAttestingEntity = cert.trustedAsSamlAttestingEntity;
+        this.trustedFor.clear();
+        this.trustedFor.addAll(cert.trustedFor);
         this.verifyHostname = cert.verifyHostname;
         this.thumbprintSha1 = cert.thumbprintSha1;
     }
@@ -46,24 +45,50 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
 
         /** Use the RCP specified by {@link TrustedCert#getRevocationCheckPolicyOid} for this cert */
         SPECIFIED
-    }         
+    }
+
+    /** Describes what things this cert is trusted for. */
+    public static enum TrustedFor {
+        /** Is this cert is trusted as an SSL server cert? (probably self-signed) */
+        SSL("SSL"),
+
+        /** Is this cert is trusted as a CA that signs SSL server certs? */
+        SIGNING_SERVER_CERTS("Sign Server"),
+
+        /** Is this cert is trusted as a CA that signs SSL client certs? */
+        SIGNING_CLIENT_CERTS("Sign Client"),
+
+        /** Is this cert is trusted to sign SAML tokens? */
+        SAML_ISSUER("Sign SAML"),
+
+        /** Is this cert trusted as a SAML attesting entity? This applies to sender-vouches only. */
+        SAML_ATTESTING_ENTITY("SAML Attesting Entity");
+
+        private final String usageDescription;
+
+        TrustedFor(String usageDescription) {
+            this.usageDescription = usageDescription;
+        }
+
+        public String getUsageDescription() {
+            return usageDescription;
+        }
+    }
 
     /**
      * Returns a textual description of this cert's usage. Don't parse it; use the boolean flags instead!
+     *
      * @return a textual description of this cert's usage
      */
     public String getUsageDescription() {
         StringBuffer buf = new StringBuffer();
-        if (trustedForSsl && trustedForSigningClientCerts && trustedForSigningServerCerts && trustedAsSamlIssuer) {
+        if (EnumSet.allOf(TrustedFor.class).equals(trustedFor)) {
             buf.append("All");
         } else {
-            if (trustedForSsl) add(buf, "SSL");
-            if (trustedForSigningServerCerts) add(buf, "Sign Server");
-            if (trustedForSigningClientCerts) add(buf, "Sign Client");
-            if (trustedAsSamlIssuer) add(buf, "Sign SAML");
-            if (trustedAsSamlAttestingEntity) add(buf, "SAML Attesting Entity");
-            if (buf.length() == 0) buf.append("None");
+            for (TrustedFor trust : TrustedFor.values())
+                if (trustedFor.contains(trust)) add(buf, trust.getUsageDescription());
         }
+        if (buf.length() < 1) buf.append("None");
         return buf.toString();
     }
 
@@ -91,7 +116,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * @return <code>true</code> if this cert is trusted as an SSL server cert (probably self-signed), <code>false</code> otherwise.
      */
     public boolean isTrustedForSsl() {
-        return trustedForSsl;
+        return isTrustedFor(TrustedFor.SSL);
     }
 
     /**
@@ -99,7 +124,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * @param trustedForSsl <code>true</code> if this cert is trusted as an SSL server cert (probably self-signed), <code>false</code> otherwise.
      */
     public void setTrustedForSsl( boolean trustedForSsl ) {
-        this.trustedForSsl = trustedForSsl;
+        setTrustedFor(TrustedFor.SSL, trustedForSsl);
     }
 
     /**
@@ -107,7 +132,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * @return <code>true</code> if this cert is trusted as a CA cert for signing client certs, <code>false</code> otherwise.
      */
     public boolean isTrustedForSigningClientCerts() {
-        return trustedForSigningClientCerts;
+        return isTrustedFor(TrustedFor.SIGNING_CLIENT_CERTS);
     }
 
     /**
@@ -116,7 +141,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * <code>false</code> otherwise.
      */
     public void setTrustedForSigningClientCerts( boolean trustedForSigningClientCerts ) {
-        this.trustedForSigningClientCerts = trustedForSigningClientCerts;
+        setTrustedFor(TrustedFor.SIGNING_CLIENT_CERTS, trustedForSigningClientCerts);
     }
 
     /**
@@ -125,7 +150,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * <code>false</code> otherwise.
      */
     public boolean isTrustedForSigningServerCerts() {
-        return trustedForSigningServerCerts;
+        return isTrustedFor(TrustedFor.SIGNING_SERVER_CERTS);
     }
 
     /**
@@ -134,7 +159,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * for signing server certs, <code>false</code> otherwise.
      */
     public void setTrustedForSigningServerCerts( boolean trustedForSigningServerCerts ) {
-        this.trustedForSigningServerCerts = trustedForSigningServerCerts;
+        setTrustedFor(TrustedFor.SIGNING_SERVER_CERTS, trustedForSigningServerCerts);
     }
 
     /**
@@ -142,7 +167,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * @return <code>true</code> if this cert is trusted to sign SAML tokens, <code>false</code> otherwise.
      */
     public boolean isTrustedAsSamlIssuer() {
-        return trustedAsSamlIssuer;
+        return isTrustedFor(TrustedFor.SAML_ISSUER);
     }
 
     /**
@@ -150,7 +175,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * @param trustedAsSamlIssuer <code>true</code> if this cert is trusted to sign SAML tokens, <code>false</code> otherwise.
      */
     public void setTrustedAsSamlIssuer( boolean trustedAsSamlIssuer ) {
-        this.trustedAsSamlIssuer = trustedAsSamlIssuer;
+        setTrustedFor(TrustedFor.SAML_ISSUER, trustedAsSamlIssuer);
     }
 
     /**
@@ -158,14 +183,15 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * @return <code>true</code> if this cert is trusted as SAML attesting entity, <code>false</code> otherwise.
      */
     public boolean isTrustedAsSamlAttestingEntity() {
-        return trustedAsSamlAttestingEntity;
+        return isTrustedFor(TrustedFor.SAML_ATTESTING_ENTITY);
     }
 
     /**
+     * @param trustedAsSamlAttestingEntity the new flag value
      * @see #isTrustedAsSamlAttestingEntity()
      */
     public void setTrustedAsSamlAttestingEntity(boolean trustedAsSamlAttestingEntity) {
-        this.trustedAsSamlAttestingEntity = trustedAsSamlAttestingEntity;
+        setTrustedFor(TrustedFor.SAML_ATTESTING_ENTITY, trustedAsSamlAttestingEntity);
     }
 
     /**
@@ -223,7 +249,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
     public void setRevocationCheckPolicyType(PolicyUsageType revocationCheckPolicyType) {
         this.revocationCheckPolicyType = revocationCheckPolicyType;
     }
-    
+
     public Long getRevocationCheckPolicyOid() {
         return revocationCheckPolicyOid;
     }
@@ -235,7 +261,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
     /**
      * Check if the trusted cert is expired or not.
      * @return true if the cert is expired.
-     * @throws CertificateException if the cert cannot be deserialized.
+     * @throws java.security.cert.CertificateException if the cert cannot be deserialized.
      */
     public boolean isExpiredCert() throws CertificateException {
         Date expiryDate = this.getCertificate().getNotAfter();
@@ -243,21 +269,52 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
         return expiryDate.before(today);
     }
 
+    /**
+     * Check a TrustedFor flag value.
+     *
+     * @param flag the flag to test.  Required.
+     * @return true if the specified TrustedFor flag is set for this TrustedCert.
+     */
+    public boolean isTrustedFor(TrustedFor flag) {
+        return trustedFor.contains(flag);
+    }
+
+    /**
+     * Check for more than one TrustedFor flag value.
+     *
+     * @param flags the flags to require.  Required.
+     * @return true if this TrustedCert has set all of the specified TrustedFor flags.
+     */
+    public boolean isTrustedForAll(Set<TrustedFor> flags) {
+        return trustedFor.containsAll(flags);
+    }
+
+    /**
+     * Set a TrustedFor flag value.
+     *
+     * @param flag  the flag to set.  Required.
+     * @param value  the new value to set it to.
+     */
+    public void setTrustedFor(TrustedFor flag, boolean value) {
+        if (flag == null) throw new NullPointerException();
+        if (value)
+            trustedFor.add(flag);
+        else
+            trustedFor.remove(flag);
+    }
+
+    @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof TrustedCert)) return false;
         if (!super.equals(o)) return false;
 
         TrustedCert that = (TrustedCert) o;
 
         if (trustAnchor != that.trustAnchor) return false;
-        if (trustedAsSamlAttestingEntity != that.trustedAsSamlAttestingEntity) return false;
-        if (trustedAsSamlIssuer != that.trustedAsSamlIssuer) return false;
-        if (trustedForSigningClientCerts != that.trustedForSigningClientCerts) return false;
-        if (trustedForSigningServerCerts != that.trustedForSigningServerCerts) return false;
-        if (trustedForSsl != that.trustedForSsl) return false;
         if (verifyHostname != that.verifyHostname) return false;
         if (subjectDn != null ? !subjectDn.equals(that.subjectDn) : that.subjectDn != null) return false;
+        if (trustedFor != null ? !trustedFor.equals(that.trustedFor) : that.trustedFor != null) return false;
 
         return true;
     }
@@ -265,22 +322,16 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (subjectDn != null ? subjectDn.hashCode() : 0);
-        result = 31 * result + (trustedForSsl ? 1 : 0);
-        result = 31 * result + (trustedForSigningClientCerts ? 1 : 0);
-        result = 31 * result + (trustedForSigningServerCerts ? 1 : 0);
-        result = 31 * result + (trustedAsSamlIssuer ? 1 : 0);
-        result = 31 * result + (trustedAsSamlAttestingEntity ? 1 : 0);
+        result = 31 * result + (trustedFor != null ? trustedFor.hashCode() : 0);
         result = 31 * result + (verifyHostname ? 1 : 0);
         result = 31 * result + (trustAnchor ? 1 : 0);
+        result = 31 * result + (revocationCheckPolicyType != null ? revocationCheckPolicyType.hashCode() : 0);
+        result = 31 * result + (revocationCheckPolicyOid != null ? revocationCheckPolicyOid.hashCode() : 0);
         return result;
     }
 
     private String subjectDn;
-    private boolean trustedForSsl;
-    private boolean trustedForSigningClientCerts;
-    private boolean trustedForSigningServerCerts;
-    private boolean trustedAsSamlIssuer;
-    private boolean trustedAsSamlAttestingEntity;
+    private final Set<TrustedFor> trustedFor = EnumSet.noneOf(TrustedFor.class);
     private boolean verifyHostname;
     private boolean trustAnchor;
     private PolicyUsageType revocationCheckPolicyType;

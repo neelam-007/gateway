@@ -7,21 +7,22 @@
 package com.l7tech.server.identity.fed;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.security.types.CertificateValidationResult;
-import com.l7tech.security.cert.TrustedCertManager;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.InvalidClientCertificateException;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.cert.TrustedCertManager;
+import com.l7tech.security.types.CertificateValidationResult;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
 import java.security.SignatureException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Set;
 
 /**
@@ -32,12 +33,14 @@ public class FederatedAuthorizationHandler {
     
     FederatedAuthorizationHandler(final FederatedIdentityProvider provider,
                                   final TrustedCertManager trustedCertManager,
+                                  final TrustedCertServices trustedCertServices,
                                   final ClientCertManager clientCertManager,
                                   final CertValidationProcessor certValidationProcessor,
                                   final Auditor auditor,
                                   final Set certOidSet) {
         this.provider = provider;
         this.trustedCertManager = trustedCertManager;
+        this.trustedCertServices = trustedCertServices;
         this.clientCertManager = clientCertManager;
         this.certValidationProcessor = certValidationProcessor;
         this.auditor = auditor;
@@ -97,9 +100,10 @@ public class FederatedAuthorizationHandler {
 
     protected final FederatedIdentityProvider provider;
     protected final TrustedCertManager trustedCertManager;
+    protected final TrustedCertServices trustedCertServices;
     protected final CertValidationProcessor certValidationProcessor;
     protected final Auditor auditor;
-    protected final Set certOidSet;
+    protected final Set<Long> certOidSet;
     protected final FederatedIdentityProviderConfig providerConfig;
     protected final ClientCertManager clientCertManager;
 }
