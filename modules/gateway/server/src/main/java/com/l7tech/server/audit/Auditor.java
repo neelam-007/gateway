@@ -34,8 +34,8 @@ public class Auditor implements Audit {
         this.source = source;
         this.context = context;
         this.logger = logger;
-        this.listener = (AuditLogListener) context.getBean("auditLogListener", AuditLogListener.class);
-        this.filter = (AuditDetailFilter) context.getBean("auditDetailFilter", AuditDetailFilter.class);
+        this.listener =  context.containsBean("auditLogListener") ? (AuditLogListener) context.getBean("auditLogListener", AuditLogListener.class) : null;
+        this.filter = context.containsBean("auditDetailFilter") ? (AuditDetailFilter) context.getBean("auditDetailFilter", AuditDetailFilter.class) : null;
     }
 
     public void logAndAudit(AuditDetailMessage msg, String[] params, Throwable e) {

@@ -13,6 +13,21 @@
     <!-- enable automatic proxy generation for any class or superclass annotated with @Transactional -->
     <tx:annotation-driven/>
 
+    <bean name="systemProperties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE"/>
+        <property name="properties">
+            <!-- default properties if not overridden by system properties -->
+            <map>
+                <entry key="com.l7tech.ems.httpPort" value="8182"/>
+                <entry key="com.l7tech.ems.httpsPort" value="8545"/>
+            </map>
+        </property>
+    </bean>
+
+    <bean name="servletContainer" class="com.l7tech.server.ems.EmsServletContainer">
+        <constructor-arg index="0" value="${com.l7tech.ems.httpPort}"/>
+    </bean>
+
     <bean id="dataSource" class="org.apache.derby.jdbc.EmbeddedDataSource40">
         <property name="databaseName" value="emsdb"/>
         <property name="createDatabase" value="create"/>
@@ -24,6 +39,7 @@
             <list>
                 <value>com.l7tech.gateway.common.cluster.ClusterProperty</value>
                 <value>com.l7tech.identity.internal.InternalUser</value>
+                <value>com.l7tech.identity.IdentityProviderConfig</value>
             </list>
         </property>
         <property name="hibernateProperties" value="hibernate.dialect=org.hibernate.dialect.DerbyDialect"/>
@@ -55,11 +71,11 @@
         <property name="roleManager"><null/></property>
     </bean>
 
-    <!-- Placeholders for future auditing functionality -->
-    <bean name="auditLogListener" class="com.l7tech.server.ems.EmsAuditLogListener"/>
-    <bean name="auditDetailFilter" class="com.l7tech.server.ems.EmsAuditDetailFilter"/>
-
     <!-- Internal identity provider -->
+    <bean id="internalIdentityProviderFactory" class="com.l7tech.server.identity.GenericIdentityProviderFactorySpi">
+        <constructor-arg value="com.l7tech.server.identity.internal.InternalIdentityProviderImpl"/>
+        <constructor-arg value="internalIdentityProvider"/>
+    </bean>
     <bean name="internalUserManager" class="com.l7tech.server.identity.internal.InternalUserManagerImpl" parent="hibernateBean">
         <constructor-arg index="0"><null/></constructor-arg>
         <constructor-arg index="1"><null/></constructor-arg>
@@ -70,21 +86,18 @@
         <property name="certificateAuthenticator"><null/></property>
         <property name="userManager" ref="internalUserManager"/>
         <property name="groupManager"><null/></property>
-        <property name="identityProviderConfig">
-            <bean class="com.l7tech.identity.IdentityProviderConfig">
-                <property name="typeVal" value="1"/>
-                <property name="certificateValidationType" value="CERTIFICATE_ONLY"/>
-                <property name="adminEnabled" value="true"/>
-                <property name="name" value="EMS Internal ID Provider"/>
-                <property name="oid" value="-2"/>
-            </bean>
-        </property>
     </bean>
 
     <!-- Initial setup manager -->
-    <bean name="setupManager" class="com.l7tech.server.ems.SetupManager" depends-on="internalIdentityProvider">
-        <property name="internalUserManager" ref="internalUserManager"/>
-        <property name="licenseManager" ref="licenseManager"/>
+    <bean name="setupManager" class="com.l7tech.server.ems.SetupManagerImpl" depends-on="internalIdentityProvider">
+        <constructor-arg index="0" ref="licenseManager"/>        
+        <constructor-arg index="1" ref="identityProviderFactory"/>
+        <constructor-arg index="2" ref="identityProviderConfigManager"/>
+    </bean>
+
+    <!-- Security Manager -->
+    <bean name="securityManager" class="com.l7tech.server.ems.EmsSecurityManagerImpl">
+        <constructor-arg index="0" ref="identityProviderFactory"/>        
     </bean>
 
     <!--

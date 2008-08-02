@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0" xmlns:m="http://ant.apache.org/ivy/maven">
+	<info organisation="org.apache.portals.bridges"
+		module="portals-bridges-common"
+		revision="1.0.3"
+		status="integration"
+		publication="20070711162108"
+	>
+		<m:properties__org.apache.portals.bridges.frameworks.version>1.0.3</m:properties__org.apache.portals.bridges.frameworks.version>
+		<m:dependency.management__org.springframework__spring-web>2.0.5</m:dependency.management__org.springframework__spring-web>
+		<m:dependency.management__org.apache.portals.jetspeed-2__portals-gems>2.1.2</m:dependency.management__org.apache.portals.jetspeed-2__portals-gems>
+		<m:dependency.management__javax.servlet__jstl>1.0.6</m:dependency.management__javax.servlet__jstl>
+		<m:properties__org.apache.portals.bridges.portletfilter.version>1.0.3</m:properties__org.apache.portals.bridges.portletfilter.version>
+		<m:dependency.management__org.springframework__spring-beans>2.0.5</m:dependency.management__org.springframework__spring-beans>
+		<m:dependency.management__commons-collections__commons-collections>3.2</m:dependency.management__commons-collections__commons-collections>
+		<m:properties__org.apache.portals.bridges.jpetstore.version>1.0.3</m:properties__org.apache.portals.bridges.jpetstore.version>
+		<m:properties__myfaces.version>1.1.5</m:properties__myfaces.version>
+		<m:dependency.management__struts__struts>1.2.7</m:dependency.management__struts__struts>
+		<m:dependency.management__myfaces__myfaces-impl>1.1.5</m:dependency.management__myfaces__myfaces-impl>
+		<m:properties__org.apache.portals.bridges.jsf-demo.version>1.0.3</m:properties__org.apache.portals.bridges.jsf-demo.version>
+		<m:dependency.management__myfaces__tomahawk>1.1.5</m:dependency.management__myfaces__tomahawk>
+		<m:properties__commons-digester.version>1.8</m:properties__commons-digester.version>
+		<m:dependency.management__org.springframework__spring-context>2.0.5</m:dependency.management__org.springframework__spring-context>
+		<m:dependency.management__myfaces__myfaces-api>1.1.5</m:dependency.management__myfaces__myfaces-api>
+		<m:properties__log4j.version>1.2.14</m:properties__log4j.version>
+		<m:properties__org.apache.portals.bridges.common.version>1.0.3</m:properties__org.apache.portals.bridges.common.version>
+		<m:properties__org.apache.portals.bridges.velocity.version>1.0.3</m:properties__org.apache.portals.bridges.velocity.version>
+		<m:properties__portlet-api.version>1.0</m:properties__portlet-api.version>
+		<m:properties__org.apache.maven.plugins.maven-surefire-plugin.version>2.1.3</m:properties__org.apache.maven.plugins.maven-surefire-plugin.version>
+		<m:properties__maven.test.skip>true</m:properties__maven.test.skip>
+		<m:dependency.management__org.springframework__spring-mock>2.0.5</m:dependency.management__org.springframework__spring-mock>
+		<m:dependency.management__org.springframework__spring-webmvc>2.0.5</m:dependency.management__org.springframework__spring-webmvc>
+		<m:dependency.management__itgroundwork__phpportlet>1.0</m:dependency.management__itgroundwork__phpportlet>
+		<m:properties__junit.version>3.8.1</m:properties__junit.version>
+		<m:properties__javax.servlet.version>2.3</m:properties__javax.servlet.version>
+		<m:dependency.management__org.apache.portals.jetspeed-2__jetspeed-api>2.1.2</m:dependency.management__org.apache.portals.jetspeed-2__jetspeed-api>
+		<m:dependency.management__javax.servlet__servlet-api>2.3</m:dependency.management__javax.servlet__servlet-api>
+		<m:dependency.management__commons-digester__commons-digester>1.8</m:dependency.management__commons-digester__commons-digester>
+		<m:properties__portals.bridges.struts.version>1.0.3</m:properties__portals.bridges.struts.version>
+		<m:properties__org.apache.portals.bridges.perl.version>1.0.3</m:properties__org.apache.portals.bridges.perl.version>
+		<m:properties__velocity-tools.version>1.3</m:properties__velocity-tools.version>
+		<m:properties__org.apache.portals.bridges.php.version>1.0.3</m:properties__org.apache.portals.bridges.php.version>
+		<m:properties__commons-beanutils.version>1.7.0</m:properties__commons-beanutils.version>
+		<m:dependency.management__org.springframework__spring-core>2.0.5</m:dependency.management__org.springframework__spring-core>
+		<m:dependency.management__struts__struts-el>1.2.7</m:dependency.management__struts__struts-el>
+		<m:dependency.management__org.springframework__spring-portlet>2.0.5</m:dependency.management__org.springframework__spring-portlet>
+		<m:properties__commons-logging.version>1.1</m:properties__commons-logging.version>
+		<m:properties__javax.servlet.jstl.version>1.0.6</m:properties__javax.servlet.jstl.version>
+		<m:properties__spring.version>2.0.5</m:properties__spring.version>
+		<m:properties__org.apache.portals.bridges.jsf.version>1.0.3</m:properties__org.apache.portals.bridges.jsf.version>
+		<m:properties__velocity.version>1.5</m:properties__velocity.version>
+		<m:dependency.management__taglibs__standard>1.0.6</m:dependency.management__taglibs__standard>
+		<m:dependency.management__org.apache.portals.jetspeed-2__jetspeed-rewriter>2.1.2</m:dependency.management__org.apache.portals.jetspeed-2__jetspeed-rewriter>
+		<m:dependency.management__velocity-tools__velocity-tools>1.3</m:dependency.management__velocity-tools__velocity-tools>
+		<m:properties__commons-collections.version>3.2</m:properties__commons-collections.version>
+		<m:dependency.management__groovy__groovy>${groovy.version}</m:dependency.management__groovy__groovy>
+		<m:dependency.management__portlet-api__portlet-api>1.0</m:dependency.management__portlet-api__portlet-api>
+		<m:properties__struts.version>1.2.7</m:properties__struts.version>
+		<m:properties__jetspeed.version>2.1.2</m:properties__jetspeed.version>
+		<m:properties__taglibs-standard.version>1.0.6</m:properties__taglibs-standard.version>
+		<m:properties__castor.version>0.9.4.3</m:properties__castor.version>
+		<m:dependency.management__log4j__log4j>1.2.14</m:dependency.management__log4j__log4j>
+		<m:properties__tomahawk.version>1.1.5</m:properties__tomahawk.version>
+		<m:dependency.management__velocity__velocity>1.5</m:dependency.management__velocity__velocity>
+		<m:properties__commons-validator.version>1.1.3</m:properties__commons-validator.version>
+		<m:dependency.management__junit__junit>3.8.1</m:dependency.management__junit__junit>
+		<m:dependency.management__commons-logging__commons-logging>1.1</m:dependency.management__commons-logging__commons-logging>
+		<m:dependency.management__commons-beanutils__commons-beanutils>1.7.0</m:dependency.management__commons-beanutils__commons-beanutils>
+		<m:dependency.management__commons-validator__commons-validator>1.1.3</m:dependency.management__commons-validator__commons-validator>
+		<m:properties__org.apache.portals.bridges.groovy.version>1.0.3</m:properties__org.apache.portals.bridges.groovy.version>
+	</info>
+	<configurations>
+		<conf name="default" visibility="public" description="runtime dependencies and master artifact can be used with this conf" extends="runtime,master"/>
+		<conf name="master" visibility="public" description="contains only the artifact published by this module itself, with no transitive dependencies"/>
+		<conf name="compile" visibility="public" description="this is the default scope, used if none is specified. Compile dependencies are available in all classpaths."/>
+		<conf name="provided" visibility="public" description="this is much like compile, but indicates you expect the JDK or a container to provide it. It is only available on the compilation classpath, and is not transitive."/>
+		<conf name="runtime" visibility="public" description="this scope indicates that the dependency is not required for compilation, but is for execution. It is in the runtime and test classpaths, but not the compile classpath." extends="compile"/>
+		<conf name="test" visibility="private" description="this scope indicates that the dependency is not required for normal use of the application, and is only available for the test compilation and execution phases." extends="runtime"/>
+		<conf name="system" visibility="public" description="this scope is similar to provided except that you have to provide the JAR which contains it explicitly. The artifact is always available and is not looked up in a repository."/>
+		<conf name="optional" visibility="public" description="contains all optional dependencies"/>
+	</configurations>
+	<publications>
+		<artifact name="portals-bridges-common" type="jar" ext="jar" conf="master"/>
+	</publications>
+	<dependencies>
+		<dependency org="portlet-api" name="portlet-api" rev="1.0" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>
+		<dependency org="javax.servlet" name="servlet-api" rev="2.3" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>
+		<dependency org="junit" name="junit" rev="3.8.1" force="true" conf="test->runtime(*),master(*)"/>
+	</dependencies>
+</ivy-module>

@@ -193,53 +193,56 @@
                             <table class="indent spaced">
                                 <tr>
                                     <th>License Status:</th>
-                                    <td>Valid</td>
+                                    <td><span wicket:id="licenseStatus">Valid</span></td>
                                 </tr>
                                 <tr>
                                     <th>License ID:</th>
-                                    <td>4234874358435734587345</td>
+                                    <td><span wicket:id="licenseId">4234874358435734587345</span></td>
                                 </tr>
                                 <tr>
                                     <th>Description:</th>
-                                    <td></td>
+                                    <td><span wicket:id="licenseDescription"/></td>
                                 </tr>
                                 <tr>
                                     <th>Attributes:</th>
-                                    <td></td>
+                                    <td><span wicket:id="licenseAttributes"/></td>
                                 </tr>
                                 <tr>
                                     <th>Issuer:</th>
-                                    <td>CN=License Officer, O=Layer 7 Technologies</td>
+                                    <td><span wicket:id="licenseIssuer">CN=License Officer, O=Layer 7 Technologies</span></td>
                                 </tr>
                                 <tr>
                                     <th>Licensee:</th>
-                                    <td>Springfield Nuclear Power Plant</td>
+                                    <td><span wicket:id="licensee">Springfield Nuclear Power Plant</span></td>
                                 </tr>
                                 <tr>
                                     <th>Licensee Contact Email:</th>
-                                    <td></td>
+                                    <td><span wicket:id="licenseContact"/></td>
                                 </tr>
                                 <tr>
                                     <th>Valid From:</th>
-                                    <td>2008-05-01 12:00:01 AM</td>
+                                    <td><span wicket:id="licenseStartDate">2008-05-01 12:00:01 AM</span></td>
                                 </tr>
                                 <tr>
                                     <th>Expires:</th>
-                                    <td>2010-12-31 11:59:59 PM</td>
+                                    <td><span wicket:id="licenseEndDate">2010-12-31 11:59:59 PM</span></td>
                                 </tr>
                                 <tr>
                                     <th class="top">Grants:</th>
-                                    <td><textarea rows="3" cols="80">User of Layer 7 SecureSpan Enterprise Manager major version 1</textarea></td>
+                                    <td><textarea rows="3" cols="80" wicket:id="licenseGrants" readonly="true">User of Layer 7 SecureSpan Enterprise Manager major version 1</textarea></td>
                                 </tr>
                             </table>
                             <h4>Change License</h4>
-                            <table class="indent spaced">
-                                <tr>
-                                    <th class="middle">New License File:</th>
-                                    <td class="middle"><input name="licenseFile" type="file" size="40" /></td>
-                                    <td class="middle"><input type="submit" value="Apply" /></td>
-                                </tr>
-                            </table>
+                            <div wicket:id="feedback" class="center"/>
+                            <form method="post" action="SystemSettings.html" enctype="multipart/form-data"  wicket:id="licenseForm">
+                                <table class="indent spaced">
+                                    <tr>
+                                        <th class="middle">New License File:</th>
+                                        <td class="middle"><input name="licenseFile" type="file" size="40" wicket:id="license"/></td>
+                                        <td class="middle"><input type="submit" value="Apply" /></td>
+                                    </tr>
+                                </table>
+                            </form>
                         </div>
                     </div>
                 </div>

@@ -46,7 +46,7 @@ import java.util.Set;
 /**
  * Keeps track of license permissions.
  */
-public class GatewayLicenseManager extends ApplicationObjectSupport implements InitializingBean, ApplicationListener, AssertionLicense, LicenseManager {
+public class GatewayLicenseManager extends ApplicationObjectSupport implements InitializingBean, ApplicationListener, AssertionLicense, UpdatableLicenseManager {
     private static final Logger logger = Logger.getLogger(GatewayLicenseManager.class.getName());
     private static final long CHECK_INTERVAL = (5L * 60L * 1000L) + (new SecureRandom().nextInt(60000)); // recheck every 5 min + random desync interval
     private static final int CHECK_THRESHOLD = 30; // dont recheck more often than once per this many license hook calls

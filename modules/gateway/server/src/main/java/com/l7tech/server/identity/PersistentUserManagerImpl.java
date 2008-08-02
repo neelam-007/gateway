@@ -370,11 +370,13 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     }
 
     protected void revokeCert(UT originalUser) throws ObjectNotFoundException {
-        try {
-            clientCertManager.revokeUserCert(originalUser);
-        } catch (UpdateException e) {
-            logger.log(Level.FINE, "could not revoke cert for user " + originalUser.getLogin() +
-              " perhaps this user had no existing cert", e);
+        if ( clientCertManager != null ) {
+            try {
+                clientCertManager.revokeUserCert(originalUser);
+            } catch (UpdateException e) {
+                logger.log(Level.FINE, "could not revoke cert for user " + originalUser.getLogin() +
+                  " perhaps this user had no existing cert", e);
+            }
         }
     }
 

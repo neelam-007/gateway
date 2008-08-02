@@ -29,7 +29,8 @@
             <div class="divider"><img src="../images/spacer.png" alt="" /></div>
             <div class="titleBar">Set Up</div>
             <div class="content">
-                <form method="get" action="EnterpriseGateways.html">
+                <div wicket:id="feedback" class="center"/>
+                <form method="post" action="EnterpriseGateways.html" enctype="multipart/form-data" wicket:id="setupForm">
                     <p>Welcome to SecureSpan&trade; Enterprise Manager.</p>
                     <p>Please complete the following setup information.</p>
                     <div class="panel">
@@ -38,7 +39,7 @@
                             <table class="spaced">
                                 <tr>
                                     <td>License File:</td>
-                                    <td><input name="licenseFile" type="file" size="40" /></td>
+                                    <td><input name="licenseFile" type="file" size="40" wicket:id="license"/></td>
                                 </tr>
 
                             </table>
@@ -50,20 +51,20 @@
                             <table class="spaced">
                                 <tr>
                                     <td>User Name:</td>
-                                    <td><input id="username" name="username" type="text" /></td>
+                                    <td><input id="username" name="username" type="text" wicket:id="username"/></td>
                                 </tr>
                                 <tr>
                                     <td>Password:</td>
-                                    <td><input id="password" name="password" type="password" /></td>
+                                    <td><input id="password" name="password" type="password" wicket:id="password"/></td>
                                 </tr>
                                 <tr>
                                     <td>Confirm Password:</td>
-                                    <td><input id="password2" name="password2" type="password" /></td>
+                                    <td><input id="password2" name="password2" type="password" wicket:id="passwordConfirm"/></td>
                                 </tr>
                             </table>
                         </div>
                     </div>
-                    <input type="submit" value="Apply" />
+                    <input type="submit" value="Apply"/>
                 </form>
             </div>
             <div class="statusBar">

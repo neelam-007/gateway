@@ -8,6 +8,10 @@ import com.l7tech.util.ResourceUtils;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.Transient;
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +29,8 @@ import java.util.Map;
  *
  */
 @XmlRootElement
+@Entity
+@Table(name="identity_provider")
 public class IdentityProviderConfig extends NamedEntityImp {
 
     public IdentityProviderConfig(IdentityProviderType type) {
@@ -43,10 +49,12 @@ public class IdentityProviderConfig extends NamedEntityImp {
      */
     public IdentityProviderType type() {return type;}
 
+    @Transient
     public boolean isWritable() {
         return true; // Internal is writable and there's no InternalIdentityProviderConfig
     }
 
+    @Column(name="description", nullable=false, length=4096)
     public String getDescription() {
         return description;
     }
@@ -67,6 +75,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
      * for serialization by axis and hibernate only.
      * to get the properties, call getProperty
      */
+    @Column(name="serializedProps")
     public String getSerializedProps() throws java.io.IOException {
         if (propsXml == null) {
             // if no props, return empty string
@@ -119,6 +128,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
     /**
      * for serialization by axis and hibernate only.
      */
+    @Column(name="type")
     public int getTypeVal() {
         return type.toVal();
     }

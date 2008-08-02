@@ -13,6 +13,13 @@
             <ivy pattern="build/temp.nu/[organisation]/[module]-ivy-[revision].xml"/>
         </filesystem>
         <chain name="libraries">
+            <!--
+              Local file repository should be checked first (in case already installed)
+            -->
+            <filesystem name="local.repository" checksums="">
+                <artifact pattern="lib/repository/[organisation]/[artifact]-[revision].[ext]"/>
+                <ivy pattern="lib/repository/[organisation]/[module]-ivy-[revision].xml"/>
+            </filesystem>
             <!-- 
               The "temp.m2" resolver is useful when installing an "umbrella" 
               artifact that collects a set of dependencies (e.g. tomcat components)

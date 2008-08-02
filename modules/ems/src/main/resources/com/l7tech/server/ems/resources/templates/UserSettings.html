@@ -121,21 +121,24 @@
                 <div class="panel">
                     <div class="panelTitle">Change Password</div>
                     <div class="panelContent">
+                        <div wicket:id="feedback" class="center"/>
+                        <form action="UserSettings.html" method="post" wicket:id="passwordForm">
                         <table class="indent spaced">
                             <tr>
                                 <th>Old Password:</th>
-                                <td><input id="oldPassword" name="oldPassword" type="password" /></td>
+                                <td><input id="oldPassword" name="oldPassword" type="password" wicket:id="password"/></td>
                             </tr>
                             <tr>
                                 <th>New Password:</th>
-                                <td><input id="newPassword" name="newPassword" type="password" /></td>
+                                <td><input id="newPassword" name="newPassword" type="password" wicket:id="newPassword"/></td>
                             </tr>
                             <tr>
                                 <th>Retype New Password:</th>
-                                <td><input id="newPassword2" name="newPassword2" type="password" /></td>
+                                <td><input id="newPassword2" name="newPassword2" type="password" wicket:id="newPasswordConfirm"/></td>
                             </tr>
                         </table>
-                        <input type="submit" value="Apply" />
+                        <input type="submit" value="Apply" />                            
+                        </form>
                     </div>
                 </div>
                 <div class="panel">

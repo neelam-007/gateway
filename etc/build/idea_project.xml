@@ -6,7 +6,7 @@
         <resourceExtensions>
             <entry name=".+\.(properties|xml|html|dtd|tld)"/>
             <entry name=".+\.(gif|png|jpeg|jpg)"/>
-            <entry name=".+\.(xsd|wsdl|txt|css|ico)"/>
+            <entry name=".+\.(xsd|wsdl|txt|css|js|ico)"/>
             <entry name=".+\.(cer|crt|ks|pfx)"/>
         </resourceExtensions>
         <wildcardResourcePatterns>
@@ -23,6 +23,7 @@
             <entry name="?*.wsdl"/>
             <entry name="?*.txt"/>
             <entry name="?*.css"/>
+            <entry name="?*.js"/>
             <entry name="?*.ico"/>
             <entry name="?*.cer"/>
             <entry name="?*.crt"/>

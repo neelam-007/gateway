@@ -28,7 +28,6 @@ public class Ems {
             throw new IllegalStateException("EMS already started");
         AbstractApplicationContext newAppContext = new ClassPathXmlApplicationContext(new String[] {
                 "com/l7tech/server/ems/resources/emsApplicationContext.xml",
-                "com/l7tech/server/ems/resources/restletContext.xml",
         });
         if (!appContext.compareAndSet(null, newAppContext))
             throw new IllegalStateException("EMS already started");

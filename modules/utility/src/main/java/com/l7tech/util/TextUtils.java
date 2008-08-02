@@ -412,4 +412,33 @@ public class TextUtils {
         }
         return s;
     }
+
+    /**
+     * Convert the given object to a string allowing for a null value.
+     *
+     * @param object The object to toString (may be null)
+     * @return The string representation of the object
+     * @see Object#toString
+     */
+    public static String toString( final Object object ) {
+        return toString( object, "" );
+    }
+
+    /**
+     * Convert the given object to a string allowing for a null value.
+     *
+     * @param object The object to toString (may be null)
+     * @param defaultValue The value to use in case of null 
+     * @return The string representation of the object
+     * @see Object#toString
+     */
+    public static String toString( final Object object, final String defaultValue ) {
+        String value = defaultValue;
+
+        if ( object != null ) {
+            value = object.toString();
+        }
+
+        return value;
+    }
 }

@@ -1,27 +1,50 @@
 package com.l7tech.server.ems;
 
 import org.mortbay.jetty.Server;
+import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
+import org.mortbay.jetty.servlet.FilterHolder;
+import org.mortbay.jetty.servlet.DefaultServlet;
+import org.mortbay.resource.Resource;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.apache.wicket.protocol.http.WicketFilter;
 
-import javax.servlet.Servlet;
+import javax.servlet.Filter;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.Map;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.io.File;
+import java.io.IOException;
+
+import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 
 /**
  * An embedded servlet container that the EMS uses to host itself.
+ *
+ * TODO [steve] This needs cleanup
  */
 public class EmsServletContainer implements ApplicationContextAware, InitializingBean, DisposableBean {
     public static final String RESOURCE_PREFIX = "com/l7tech/server/ems/resources/";
     public static final String INIT_PARAM_INSTANCE_ID = "httpTransportModuleInstanceId";
+
+    private static final Logger logger = Logger.getLogger(EmsServletContainer.class.getName());
 
     private static final AtomicLong nextInstanceId = new AtomicLong(1);
     private static final Map<Long, Reference<EmsServletContainer>> instancesById =
@@ -29,31 +52,85 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
 
     private final long instanceId;
     private final int httpPort;
-    private final Servlet emsRestServlet;
     private ApplicationContext applicationContext;
     private Server server;
 
-    public EmsServletContainer(int httpPort, Servlet emsRestServlet) {
+    public EmsServletContainer(int httpPort) {
         this.instanceId = nextInstanceId.getAndIncrement();
         //noinspection ThisEscapedInObjectConstruction
         instancesById.put(instanceId, new WeakReference<EmsServletContainer>(this));
 
         this.httpPort = httpPort;
-        this.emsRestServlet = emsRestServlet;
     }
 
     private void initializeServletEngine() throws Exception {
         server = new Server(httpPort);
-        Context root = new Context(server, "/", Context.SESSIONS);
+        final Context root = new Context(server, "/", Context.SESSIONS);
+        root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/ems/resources")); //TODO [steve] map root elsewhere and add other mappings for css/images/etc
         root.setDisplayName("Layer 7 Enterprise Service Manager Server");
+        root.setAttribute("javax.servlet.context.tempdir", new File("/tmp")); //TODO [steve] temp directory ?
+        root.addEventListener(new EmsContextLoaderListener());
+        root.setClassLoader(Thread.currentThread().getContextClassLoader());
 
         //noinspection unchecked
         final Map<String, String> initParams = root.getInitParams();
         initParams.put("contextConfigLocation", "classpath:com/l7tech/server/ems/resources/webApplicationContext.xml");
         initParams.put(INIT_PARAM_INSTANCE_ID, Long.toString(instanceId));
-        
-        root.addEventListener(new EmsContextLoaderListener());
-        root.addServlet(new ServletHolder(emsRestServlet), "/*");
+
+        // Add security handler
+        final Filter securityFilter = new Filter(){
+            private EmsSecurityManager securityManager;
+            private ServletContext context;
+            public void init(final FilterConfig filterConfig) throws ServletException {
+                context = filterConfig.getServletContext();
+                securityManager = (EmsSecurityManager) context.getAttribute("securityManager");
+            }
+            public void destroy() {}
+
+            public void doFilter(final ServletRequest servletRequest, final ServletResponse servletResponse, final FilterChain filterChain) throws IOException, ServletException {
+                final HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
+                final HttpServletResponse httpServletResponse = (HttpServletResponse) servletResponse;
+                final IOException[] ioeHolder = new IOException[1];
+                final ServletException[] seHolder = new ServletException[1];
+                RemoteUtils.runWithConnectionInfo(servletRequest.getRemoteAddr(), httpServletRequest, new Runnable(){
+                    public void run() {
+                        try {
+                            if ( securityManager.canAccess( httpServletRequest.getSession(true), httpServletRequest ) ) {
+                                if ( logger.isLoggable(Level.FINER) )
+                                    logger.finer("Allowing access to resource '" + httpServletRequest.getRequestURI() + "'.");
+                                filterChain.doFilter( servletRequest, servletResponse );
+                            } else {
+                                logger.info("Forbid access to resource : '" + httpServletRequest.getRequestURI() + "'." );
+                                httpServletResponse.sendRedirect("/Login.html");
+                            }
+                        } catch(IOException ioe) {
+                            ioeHolder[0] = ioe;
+                        } catch(ServletException se) {
+                            seHolder[0] = se;
+                        }
+                    }
+                });
+
+                // rethrow exceptions
+                if (ioeHolder[0] != null) throw ioeHolder[0];
+                if (seHolder[0] != null) throw seHolder[0];
+            }
+        };
+        FilterHolder fsHolder = new FilterHolder(securityFilter);
+        root.addFilter(fsHolder, "/*", Handler.REQUEST);
+
+        // Add wicket handler
+        final WicketFilter wicketFilter = new WicketFilter();
+        FilterHolder fHolder = new FilterHolder(wicketFilter);
+        fHolder.setInitParameter("applicationClassName", EmsApplication.class.getName());
+        fHolder.setName("wicketFilter");
+        root.addFilter(fHolder, "/*", Handler.REQUEST);
+
+        //Set DefaultServlet to handle all static resource requests
+        DefaultServlet defaultServlet = new DefaultServlet();         
+        ServletHolder defaultHolder = new ServletHolder(defaultServlet);
+        root.addServlet(defaultHolder, "/");
+
         server.start();
     }
 
