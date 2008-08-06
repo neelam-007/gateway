@@ -414,8 +414,11 @@
         <mkdir dir="${build.etc.dir}"/>
 
         <ivy-resolve conf="test"/>
-        <ivy:report todir="${build.etc.dir}" outputpattern="dependency.xml" conf="test" graph="false" xsl="false"
+        <ivy:report todir="${build.etc.dir}" outputpattern="dependency_gen.xml" conf="test" graph="false" xsl="false"
                     xml="true"/>
+
+        <xslt in="${build.etc.dir}/dependency_gen.xml" out="${build.etc.dir}/dependency.xml"
+              style="${src.root}/etc/build/identity.xsl"/>
         <xslt in="${build.etc.dir}/dependency.xml" out="${ivy.module}.iml"
               style="${src.root}/etc/build/idea_module.xsl">
             <param name="source" expression="${module.source.available}"/>

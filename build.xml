@@ -765,12 +765,19 @@
     </macrodef>
 
     <!--
-      Generate IDEA project/modules
+      Publish the latest dependency / artifact information to the build repository
     -->
-    <target name="idea" depends="build-module-list-all" description="Generate IDEA project/modules">
+    <target name="idea-inspections" depends="publish-all-modules-quick, build-module-list">
         <mkdir dir="${build.etc}"/>
         <echo level="info">Building IDEA modules.</echo>
-        <modules target="idea" buildpathref="module-build-all-path"/>
+        <modules target="idea"/>
+
+        <!-- Aggregate all dependencies -->
+        <concat destfile="${build.etc}/dependency.xml">
+            <string value="&lt;project-dependencies&gt;"/>
+            <fileset dir="modules" includes="**/build/etc/dependency.xml"/>
+            <string value="&lt;/project-dependencies&gt;"/>
+        </concat>
 
         <!-- Regenerate IDEA module for inspections (All modules) -->
         <pathconvert property="module.paths.xml.text" pathsep="${line.separator}                ">
@@ -788,7 +795,18 @@
             &lt;/module-paths&gt;
         </echo>
         <delete file="Inspections.iml"/>
-        <xslt in="${build.etc}/module-paths.xml" out="Inspections.iml" style="etc/build/idea_module_inspections.xsl"/>
+        <xslt in="${build.etc}/module-paths.xml" out="Inspections.iml" style="etc/build/idea_module_inspections.xsl">
+            <param name="data" expression="${build.etc}/dependency.xml"/>
+        </xslt>
+    </target>
+
+    <!--
+      Generate IDEA project/modules
+    -->
+    <target name="idea" depends="build-module-list-all" description="Generate IDEA project/modules">
+        <mkdir dir="${build.etc}"/>
+        <echo level="info">Building IDEA modules.</echo>
+        <modules target="idea" buildpathref="module-build-all-path"/>
 
         <!-- Module for transitive dependencies -->
         <copy file="etc/build/idea_module_runtime.xml" tofile="UneasyRooster.iml" overwrite="false"/>

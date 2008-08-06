@@ -17,9 +17,6 @@
                 <ivy pattern="build/repository/[module]-ivy-[revision].xml"/>
             </filesystem>
         </chain>
-        <chain name="libraries">
-            <ibiblio name="maven2" m2compatible="true" checksums="md5,sha1"/>
-        </chain>
     </resolvers>
     
     <!-- 
