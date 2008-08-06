@@ -12,6 +12,8 @@
     <property name="module.compile.optimize" value="on"/>
     <property name="jar.sign.pattern" value="*.${moduleFileExtension}"/>
 
+    <property name="src.root" value="../../../../"/>
+
     <import file="../../../etc/build/build-common.xml"/>
 
     <target name="package.custom.post" depends="-aar, -clientJar"/>
