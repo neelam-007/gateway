@@ -107,5 +107,7 @@
         <dependency org="com.ibm.mq" name="mq6" rev="6.0.2.2" force="true" conf="optional"/>
         <dependency org="com.tibco" name="jms" rev="1.5" force="true" conf="optional"/>
         <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
+
+        <dependency org="com.l7tech.lib" name="apache-cxf-lib" rev="2.1.1" force="true" conf="core"/>
     </dependencies>
 </ivy-module>

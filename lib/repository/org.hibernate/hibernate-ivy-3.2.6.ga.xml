@@ -33,7 +33,7 @@
 			<exclude org="xml-apis" module="xml-apis" name="*" type="*" ext="*" conf="" matcher="exact"/>
 		</dependency>
 		<dependency org="antlr" name="antlr" rev="2.7.6" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="cglib" name="cglib" rev="2.1_3" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="cglib" name="cglib-nodep" rev="2.1_3" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="opensymphony" name="oscache" rev="2.1" force="true" conf="optional->compile(*),master(*)"/>
 		<dependency org="asm" name="asm" rev="1.5.3" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="commons-collections" name="commons-collections" rev="2.1.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>

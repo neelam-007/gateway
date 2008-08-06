@@ -29,10 +29,5 @@
                 <property name="databasePlatform" value="org.hibernate.dialect.DerbyDialect"/>
             </bean>
         </property>
-        <property name="jpaPropertyMap">
-            <props>
-                <prop key="foo">bar</prop>
-            </props>
-        </property>
     </bean>
 </beans>    

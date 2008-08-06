@@ -28,7 +28,7 @@
 		<m:dependency.management__ojb__db-ojb>1.0.4</m:dependency.management__ojb__db-ojb>
 		<m:dependency.management__aopalliance__aopalliance>1.0</m:dependency.management__aopalliance__aopalliance>
 		<m:dependency.management__javax.faces__jsf-api>1.1</m:dependency.management__javax.faces__jsf-api>
-		<m:dependency.management__cglib__cglib>2.1_3</m:dependency.management__cglib__cglib>
+		<m:dependency.management__cglib__cglib-nodep>2.1_3</m:dependency.management__cglib__cglib-nodep>
 		<m:dependency.management__itext__itext>1.3</m:dependency.management__itext__itext>
 		<m:dependency.management__easymock__easymock>1.2_Java1.3</m:dependency.management__easymock__easymock>
 		<m:dependency.management__javax.servlet__jsp-api>2.0</m:dependency.management__javax.servlet__jsp-api>
@@ -78,7 +78,7 @@
 		<dependency org="commons-pool" name="commons-pool" rev="1.2" force="true" conf="optional->compile(*),master(*)"/>
 		<dependency org="commons-attributes" name="commons-attributes-compiler" rev="2.1" force="true" conf="optional->compile(*),master(*)"/>
 		<dependency org="com.jamonapi" name="jamon" rev="1.0" force="true" conf="optional->compile(*),master(*)"/>
-		<dependency org="cglib" name="cglib" rev="2.1_3" force="true" conf="optional->compile(*),master(*)"/>
+		<dependency org="cglib" name="cglib-nodep" rev="2.1_3" force="true" conf="optional->compile(*),master(*)"/>
 		<dependency org="xdoclet" name="xjavadoc" rev="1.1" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="javax.servlet" name="servlet-api" rev="2.4" force="true" conf="test->runtime(*),master(*)"/>
 		<dependency org="junit" name="junit" rev="3.8.1" force="true" conf="test->runtime(*),master(*)"/>
