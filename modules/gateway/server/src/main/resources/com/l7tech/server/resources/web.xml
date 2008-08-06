@@ -210,6 +210,15 @@
         <servlet-class>com.l7tech.server.FileDownloadServlet</servlet-class>
     </servlet>
 
+    <servlet>
+        <servlet-name>CXFServlet</servlet-name>
+        <display-name>CXF Servlet</display-name>
+        <servlet-class>
+            org.apache.cxf.transport.servlet.CXFServlet
+        </servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
     <!--<servlet>-->
         <!--<servlet-name>esmServlet</servlet-name>-->
         <!--<servlet-class>com.l7tech.server.wsdm.ESMServlet</servlet-class>-->
@@ -332,6 +341,11 @@
         <servlet-name>backup</servlet-name>
         <url-pattern>/ssg/backup</url-pattern>
     </servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>CXFServlet</servlet-name>
+		<url-pattern>/ssg/services/*</url-pattern>
+	</servlet-mapping>
 
     <welcome-file-list>
         <welcome-file>index.html</welcome-file>

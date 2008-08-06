@@ -74,7 +74,7 @@
 		<dependency org="org.apache.ws.commons" name="XmlSchema" rev="1.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="xalan" name="xalan" rev="2.7.0" force="true" conf="optional->compile(*),master(*)"/>
 		<dependency org="log4j" name="log4j" rev="1.2.8" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="woodstox" name="wstx-asl" rev="3.0.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+<!--		<dependency org="woodstox" name="wstx-asl" rev="3.0.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/> -->
 		<dependency org="jdom" name="jdom" rev="1.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="commons-logging" name="commons-logging" rev="1.0.4" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="net.sourceforge.pjl-comp-filter" name="pjl-comp-filter" rev="1.6" force="true" conf="test->runtime(*),master(*)"/>

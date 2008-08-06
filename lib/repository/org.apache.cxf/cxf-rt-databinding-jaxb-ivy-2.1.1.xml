@@ -108,7 +108,7 @@
 		<dependency org="org.apache.cxf" name="cxf-api" rev="2.1.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.cxf" name="cxf-rt-core" rev="2.1.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.cxf" name="cxf-testutils" rev="2.1.1" force="true" conf="test->runtime(*),master(*)"/>
-		<dependency org="org.codehaus.woodstox" name="wstx-asl" rev="3.2.4" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+<!--		<dependency org="org.codehaus.woodstox" name="wstx-asl" rev="3.2.4" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/> -->
 <!--
 		<dependency org="com.sun.xml.bind" name="jaxb-impl" rev="2.1.6" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="com.sun.xml.bind" name="jaxb-xjc" rev="2.1.6" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>

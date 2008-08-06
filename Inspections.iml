@@ -48,6 +48,10 @@
 <sourceFolder url="file://$MODULE_DIR$/modules/gateway/common/src/main/java" isTestSource="false"/>
 <sourceFolder url="file://$MODULE_DIR$/modules/gateway/common/src/test/java" isTestSource="false"/>
 <sourceFolder url="file://$MODULE_DIR$/modules/gateway/console/src/main/java" isTestSource="false"/>
+<sourceFolder url="file://$MODULE_DIR$/modules/gateway/management/src/main/java" isTestSource="false"/>
+<sourceFolder url="file://$MODULE_DIR$/modules/gateway/management/src/test/java" isTestSource="false"/>
+<sourceFolder url="file://$MODULE_DIR$/modules/gateway/processcontroller/src/main/java" isTestSource="false"/>
+<sourceFolder url="file://$MODULE_DIR$/modules/gateway/processcontroller/src/test/java" isTestSource="false"/>
 <sourceFolder url="file://$MODULE_DIR$/modules/gateway/server/src/main/java" isTestSource="false"/>
 <sourceFolder url="file://$MODULE_DIR$/modules/gateway/server/src/test/java" isTestSource="false"/>
 <sourceFolder url="file://$MODULE_DIR$/modules/gui/src/main/java" isTestSource="false"/>

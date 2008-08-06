@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+    <info organisation="com.l7tech"
+          module="layer7-gateway-management"
+          status="integration">
+    </info>
+    <configurations
+            defaultconfmapping="runtime->default(*),master(*); core->default(*),master(*); optional->default(*),master(*); test->default(*),master(*)">
+        <conf name="core" description="Core dependencies for all configurations" visibility="private"/>
+        <conf name="default" description="Runtime dependencies and master artifact can be used with this conf"
+              extends="runtime,master"/>
+        <conf name="master"
+              description="Contains only the artifact published by this module itself, with no transitive dependencies"/>
+        <conf name="compile" description="The dependency is required at compile time." extends="core,optional"/>
+        <conf name="runtime" description="The dependency is required at runtime." extends="core"/>
+        <conf name="test" description="The dependency required for building/running tests only."
+              extends="runtime,compile"/>
+        <conf name="optional" description="Contains all optional dependencies"/>
+    </configurations>
+    <publications>
+        <artifact name="layer7-gateway-management" type="jar" ext="jar" conf="master"/>
+    </publications>
+    <dependencies>
+        <dependency name="layer7-gateway-common" rev="latest.integration" force="true" conf="core"/>
+        <dependency name="layer7-common" rev="latest.integration" force="true" conf="core"/>
+        <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
+
+        <dependency org="org.hibernate" name="hibernate-annotations" rev="3.3.1.GA" force="true" conf="core"/>
+        <dependency org="javax.ejb" name="ejb-api" rev="3.0" force="true" conf="core"/>
+        <dependency org="javax.persistence" name="persistence-api" rev="3.0" force="true" conf="core"/>
+
+        <dependency org="org.springframework" name="spring-jdbc" rev="2.5.4" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-orm" rev="2.5.4" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-context-support" rev="2.5.4" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-tx" rev="2.5.4" force="true" conf="core"/>
+    </dependencies>
+</ivy-module>

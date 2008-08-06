@@ -2,24 +2,27 @@ package com.l7tech.gateway.common.transport;
 
 import com.l7tech.common.io.PortOwner;
 import com.l7tech.common.io.PortRange;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.persistence.Entity;
+import javax.persistence.Transient;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * Describes a port on which the Gateway will listen for incoming requests.
  * TODO promote port range and bind address from properties to fields (they can still be persisted as properties)
  */
+@Entity
 @XmlRootElement
 public class SsgConnector extends NamedEntityImp implements PortOwner {
     protected static final Logger logger = Logger.getLogger(SsgConnector.class.getName());
@@ -89,7 +92,10 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
          * All built-in servlets other than the first three.  This includes POLICYDISCO, STS, PASSWD etc.
          * This does NOT include the PingServlet since the PingServlet has its own access rules.
          */
-        OTHER_SERVLETS(POLICYDISCO, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY, BACKUP, HPSOAM);
+        OTHER_SERVLETS(POLICYDISCO, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY, BACKUP, HPSOAM),
+
+        /** Process Controller Service Node API*/
+        PC_NODE_API;
 
         private Endpoint[] enabledKids;
         private Set<Endpoint> enabledSet;
@@ -335,6 +341,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return a List of Strings.  May be empty, but never null.
      */
+    @Transient
     public List<String> getPropertyNames() {
         List<String> propertyNames = new ArrayList<String>();
         for (SsgConnectorProperty property : properties)
@@ -454,6 +461,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return an InetAddress instance, or null if this connector should bind to all addresses.
      */
+    @Transient
     public InetAddress getBindAddress() {
         if (inetAddressSet)
             return inetAddress;
@@ -487,6 +495,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return a Set containing the extra connector properties.  May be empty but never null.
      */
+    @Transient
     protected Set<SsgConnectorProperty> getProperties() {
         //noinspection ReturnOfCollectionOrArrayField
         return properties;
@@ -511,6 +520,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     /**
      * @return a list of all TCP port ranges claimed by this connector.
      */
+    @Transient
     public List<PortRange> getTcpPortsUsed() {
         List<PortRange> ret = new ArrayList<PortRange>();
         ret.add(new PortRange(port, port, false));
@@ -521,6 +531,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     }
 
     /** @return the configured TCP port range, or null if it is not configured. */
+    @Transient
     private PortRange getPortRange() {
         try {
             String startstr = getProperty(PROP_PORT_RANGE_START);
@@ -562,6 +573,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         return ourRange != null && range.isOverlapping(ourRange);
     }
 
+    @Transient
     public List<PortRange> getUsedPorts() {
         // Currently an SsgConnector can only use TCP ports
         return getTcpPortsUsed();
@@ -583,6 +595,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         readonly = true;
     }
 
+    @Transient
     public SsgConnector getReadOnlyCopy() {
         try {
             SsgConnector copy = new SsgConnector();

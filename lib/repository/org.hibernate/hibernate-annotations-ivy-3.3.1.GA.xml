@@ -17,7 +17,7 @@
 		<conf name="optional" visibility="public" description="contains all optional dependencies"/>
 	</configurations>
 	<publications>
-		<artifact name="hibernate-annotations" type="jar" ext="jar" conf="master"/>
+		<artifact name="hibernate-annotations" type="jar" ext="jar" conf="default"/>
 	</publications>
 	<dependencies>
 		<dependency org="org.hibernate" name="hibernate" rev="3.2.6.ga" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>

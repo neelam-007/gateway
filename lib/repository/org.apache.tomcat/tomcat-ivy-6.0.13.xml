@@ -22,7 +22,7 @@
                 tomcat-i18n-fr.jar
                 tomcat-i18n-ja.jar
         -->
-        <dependency org="org.apache.tomcat" name="annotations-api" rev="6.0.13" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+	        <dependency org="org.apache.tomcat" name="annotations-api" rev="6.0.13" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.tomcat" name="catalina" rev="6.0.13" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.tomcat" name="catalina-ha" rev="6.0.13" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.tomcat" name="coyote" rev="6.0.13" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>

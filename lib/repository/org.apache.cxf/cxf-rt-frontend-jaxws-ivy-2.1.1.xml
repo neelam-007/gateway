@@ -8,7 +8,7 @@
 	>
 		<m:dependency.management__commons-lang__commons-lang>2.4</m:dependency.management__commons-lang__commons-lang>
 		<m:properties__rhino.version>1.6R7</m:properties__rhino.version>
-		<m:dependency.management__org.apache.geronimo.specs__geronimo-javamail_1.4_spec>1.3</m:dependency.management__org.apache.geronimo.specs__geronimo-javamail_1.4_spec>
+		<m:dependency.management__org.apache.geronimo.specs__geronimo-javamail_1.4_spec>1.4</m:dependency.management__org.apache.geronimo.specs__geronimo-javamail_1.4_spec>
 		<m:dependency.management__org.apache.maven__maven-project>2.0.4</m:dependency.management__org.apache.maven__maven-project>
 		<m:dependency.management__org.springframework__spring-web>2.0.8</m:dependency.management__org.springframework__spring-web>
 		<m:dependency.management__bouncycastle__bcprov-jdk14>136</m:dependency.management__bouncycastle__bcprov-jdk14>
@@ -116,7 +116,7 @@
 		<dependency org="org.apache.cxf" name="cxf-rt-transports-local" rev="2.1.1" force="true" conf="optional->compile(*),master(*)"/>
 		<dependency org="org.apache.cxf" name="cxf-rt-ws-addr" rev="2.1.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="javax.xml.soap" name="saaj-api" rev="1.3" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="org.springframework" name="spring-web" rev="2.0.8" force="true" conf="test->runtime(*),master(*)"/>
+<!--		<dependency org="org.springframework" name="spring-web" rev="2.0.8" force="true" conf="test->runtime(*),master(*)"/> -->
 		<dependency org="com.sun.xml.messaging.saaj" name="saaj-impl" rev="1.3" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 	</dependencies>
 </ivy-module>
