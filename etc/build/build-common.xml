@@ -140,6 +140,7 @@
         <attribute name="name"/>
         <attribute name="conf" default="master"/>
         <attribute name="organisation" default="com.l7tech"/>
+        <attribute name="dir" default="${classes.main.dir}"/>
         <sequential>
             <ivy:cachepath
                     pathid="jar.include.@{name}.classpath"
@@ -154,7 +155,7 @@
             <echo level="info">Including JAR: ${jar.include.@{name}.text}</echo>
 
             <mkdir dir="${classes.main.dir}"/>
-            <unjar src="${jar.include.@{name}.text}" dest="${classes.main.dir}">
+            <unjar src="${jar.include.@{name}.text}" dest="@{dir}">
                 <patternset>
                     <exclude name="META-INF/**/*"/>
                     <exclude name="META-INF"/>

@@ -1,3 +1,125 @@
-<project name="layer7-internal" default="compile">
+<project name="layer7-internal" default="compile" xmlns:ivy="antlib:org.apache.ivy.ant">
+    <property name="src.root" value="../../"/>
     <import file="../../etc/build/build-common.xml"/>
+
+    <!-- dummy main so that the classpath is built -->
+    <property name="module.main" value="com.l7tech.skunkworks"/>
+    <property name="vendor.name" value="Layer 7 Technologies Inc."/>
+
+    <target name="package.custom.post" depends="package.licensegenerator, package.auditsignaturechecker"/>
+
+    <!--
+      Build a Jar containing all dependencies
+    -->
+    <macrodef name="one-jar">
+        <attribute name="jarfile"/>
+        <attribute name="title"/>
+        <attribute name="main"/>
+        <attribute name="libsDir"/>
+        <sequential>
+            <delete dir="${build.dir}/onejartmp"/>
+            <mkdir dir="${build.dir}/onejartmp"/>
+            <unzip src="${src.root}/lib/repository/com.simontuffs/one-jar-boot-0.96.jar" dest="${build.dir}/onejartmp">
+                <patternset>
+                    <exclude name="boot-manifest.mf"/>
+                    <exclude name="META-INF/*"/>
+                    <exclude name="**/*.java"/>
+                </patternset>
+            </unzip>
+
+            <fileset id="@{main}.jars.fileset" dir="@{libsDir}">
+                <include name="**/*.jar"/>
+            </fileset>
+            <pathconvert property="@{main}.jars.classpath" targetos="unix" pathsep=" " refid="@{main}.jars.fileset">
+                <mapper type="regexp" from=".*[/\\](.*)\.jar" to="lib/\1.jar"/>
+            </pathconvert>
+            <jar jarfile="@{jarfile}" level="9">
+                <manifest>
+                    <attribute name="Implementation-Title" value="@{title}"/>
+                    <attribute name="Implementation-Version" value="${build.version}"/>
+                    <attribute name="Implementation-Vendor" value="${build.vendor}"/>
+                    <attribute name="Implementation-Vendor-Id" value="${build.vendor.id}"/>
+                    <attribute name="Built-By" value="${build.user}"/>
+                    <attribute name="Build-Jdk" value="${java.version}"/>
+                    <attribute name="Build-Timestamp" value="${build.timestamp}"/>
+                    <attribute name="Class-Path" value="${@{main}.jars.classpath}"/>
+                    <attribute name="Main-Class" value="com.simontuffs.onejar.Boot"/>
+                    <attribute name="One-Jar-Main-Class" value="@{main}"/>
+                </manifest>
+                <fileset dir="${build.dir}/onejartmp"/>
+                <fileset id="@{main}.jars.fileset" dir="@{libsDir}">
+                    <include name="**/*.jar"/>
+                </fileset>
+            </jar>
+        </sequential>
+    </macrodef>
+
+    <!--
+      Package the LicenseGenerator
+    -->
+    <target name="package.licensegenerator">
+        <property name="package.classes.dir" value="${classes.main.dir}"/>
+        <property name="package.licenselibs.dir" value="${build.dir}/licensegenerator"/>
+        <delete dir="${package.licenselibs.dir}/lib"/>
+        <mkdir dir="${package.licenselibs.dir}/lib"/>
+
+        <ivy:resolve file="licensegenerator-ivy.xml"
+                     showprogress="false"
+                     log="quiet"/>
+        <ivy:retrieve pattern="${package.licenselibs.dir}/lib/[artifact]-[revision].[ext]"/>
+
+        <jar jarfile="${package.licenselibs.dir}/lib/LicenseGeneratorMain.jar">
+            <fileset dir="${package.classes.dir}">
+                <include name="com/l7tech/internal/license/**/*"/>
+            </fileset>
+        </jar>
+
+        <one-jar jarfile="${build.dir}/LicenseGenerator.jar"
+                 title="License Generator"
+                 main="com.l7tech.internal.license.gui.LicenseGeneratorMain"
+                 libsDir="${package.licenselibs.dir}"/>
+
+        <mkdir dir="${src.root}/build/installer"/>
+        <tar destfile="${src.root}/build/installer/LicenseGenerator-HEAD.tar.gz"
+             compression="gzip">
+            <tarfileset dir="${src.root}/etc" prefix="LicenseGenerator-HEAD" filemode="755" dirmode="755">
+                <include name="LicenseGenerator.sh"/>
+            </tarfileset>
+            <tarfileset dir="${build.dir}" prefix="LicenseGenerator-HEAD" filemode="644" dirmode="755">
+                <include name="LicenseGenerator.jar"/>
+            </tarfileset>
+        </tar>
+    </target>
+
+    <!--
+        Package the AuditSignatureChecker
+        Result is a self-contained executable JAR file with dependency JARs nested inside.
+    -->
+    <target name="package.auditsignaturechecker"
+            description="Compile and package the Audit Signature Checker."
+            depends="init">
+        <property name="package.classes.dir" value="${classes.main.dir}"/>
+        <property name="package.auditlibs.dir" value="${build.dir}/auditsignaturechecker"/>
+        <delete dir="${package.auditlibs.dir}/lib"/>
+        <mkdir dir="${package.auditlibs.dir}/lib"/>
+
+        <ivy:resolve file="auditsignaturechecker-ivy.xml"
+                     showprogress="false"
+                     log="quiet"/>
+        <ivy:retrieve pattern="${package.auditlibs.dir}/lib/[artifact]-[revision].[ext]"/>
+
+        <jar jarfile="${package.auditlibs.dir}/lib/AuditSignatureCheckerMain.jar">
+            <fileset dir="${package.classes.dir}">
+                <include name="com/l7tech/internal/audit/**/*"/>
+            </fileset>
+        </jar>
+
+        <one-jar jarfile="${build.dir}/AuditSignatureChecker.jar"
+                 title="Audit Signature Checker"
+                 main="com.l7tech.internal.audit.AuditSignatureChecker"
+                 libsDir="${package.auditlibs.dir}"/>
+
+        <mkdir dir="${src.root}/build/installer"/>
+        <copy file="${build.dir}/AuditSignatureChecker.jar" todir="${src.root}/build/installer"/>
+    </target>
 </project>

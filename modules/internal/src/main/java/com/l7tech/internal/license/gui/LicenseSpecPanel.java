@@ -58,7 +58,7 @@ public class LicenseSpecPanel extends JPanel {
     private JButton startTodayButton;
     private JTextField expiryField;
     private JButton expireNextYearButton;
-    private JTextField productField;
+    private JComboBox productComboBox;
     private JButton currentProductButton;
     private JButton anyProductButton;
     private JTextField majorVersionField;
@@ -151,7 +151,7 @@ public class LicenseSpecPanel extends JPanel {
         licenseeNameField.addFocusListener(getFocusListener());
         startField.addFocusListener(getFocusListener());
         expiryField.addFocusListener(getFocusListener());
-        productField.addFocusListener(getFocusListener());
+        productComboBox.addFocusListener(getFocusListener());
         majorVersionField.addFocusListener(getFocusListener());
         minorVersionField.addFocusListener(getFocusListener());
         hostField.addFocusListener(getFocusListener());
@@ -165,7 +165,7 @@ public class LicenseSpecPanel extends JPanel {
         licenseeNameField.getDocument().addDocumentListener(getDocumentListener());
         startField.getDocument().addDocumentListener(getDocumentListener());
         expiryField.getDocument().addDocumentListener(getDocumentListener());
-        productField.getDocument().addDocumentListener(getDocumentListener());
+        ((JTextField)productComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(getDocumentListener());
         majorVersionField.getDocument().addDocumentListener(getDocumentListener());
         minorVersionField.getDocument().addDocumentListener(getDocumentListener());
         hostField.getDocument().addDocumentListener(getDocumentListener());
@@ -246,7 +246,7 @@ public class LicenseSpecPanel extends JPanel {
         startTodayButton.addActionListener(new StartTodayAction());
         expireNextYearButton.addActionListener(new ExpireNextYearAction());
         currentProductButton.addActionListener(new CurrentProductAction());
-        anyProductButton.addActionListener(blankFieldAction(productField));
+        anyProductButton.addActionListener(blankFieldAction((JTextField)productComboBox.getEditor().getEditorComponent()));
         currentMajorVersionButton.addActionListener(new CurrentMajorVersionAction());
         anyMajorVersionButton.addActionListener(blankFieldAction(majorVersionField));
         currentMinorVersionButton.addActionListener(new CurrentMinorVersionAction());
@@ -399,7 +399,7 @@ public class LicenseSpecPanel extends JPanel {
             }
         }
 
-        setText(productField, tt(spec.getProduct()));
+        setText((JTextField)productComboBox.getEditor().getEditorComponent(), tt(spec.getProduct()));
         setText(majorVersionField, tt(spec.getVersionMajor()));
         setText(minorVersionField, tt(spec.getVersionMinor()));
 
@@ -497,7 +497,7 @@ public class LicenseSpecPanel extends JPanel {
         spec.setLicenseeContactEmail(fts(licenseeEmailField));
         spec.setStartDate(ftd(startField));
         spec.setExpiryDate(ftd(expiryField));
-        spec.setProduct(fts(productField));
+        spec.setProduct(fts(((JTextField)productComboBox.getEditor().getEditorComponent())));
         spec.setVersionMajor(fts(majorVersionField));
         spec.setVersionMinor(fts(minorVersionField));
         spec.setHostname(fts(hostField));
@@ -703,7 +703,7 @@ public class LicenseSpecPanel extends JPanel {
 
     private class CurrentProductAction implements ActionListener {
         public void actionPerformed(ActionEvent e) {
-            productField.setText(BuildInfo.getProductName());
+            ((JTextField)productComboBox.getEditor().getEditorComponent()).setText(BuildInfo.getProductName());
             fireUpdate();
         }
     }

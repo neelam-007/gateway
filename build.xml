@@ -167,110 +167,16 @@
 
     <!--
       Patternset used for Manager API javadoc
-      TODO [steve fix patternset]
     -->
     <patternset id="managerapi.sources">
-        <include name="com/l7tech/common/VersionException.java"/>
-        <include name="com/l7tech/common/alert/AdminAlertEvent.java"/>
-        <include name="com/l7tech/common/alert/AlertAdmin.java"/>
-        <include name="com/l7tech/common/audit/AuditAdmin*.java"/>
-        <include name="com/l7tech/common/audit/AuditDetail.java"/>
-        <include name="com/l7tech/common/audit/AuditDetailMessage.java"/>
-        <include name="com/l7tech/common/audit/AuditRecord.java"/>
-        <include name="com/l7tech/common/audit/LogonEvent.java"/>
-        <include name="com/l7tech/common/policy/*.java"/>
-        <include name="com/l7tech/common/security/rbac/RbacAdmin.java"/>
-        <include name="com/l7tech/common/security/TrustedCertAdmin.java"/>
-        <include name="com/l7tech/common/transport/jms/JmsAdmin*.java"/>
-        <include name="com/l7tech/common/transport/jms/JmsConnection.java"/>
-        <include name="com/l7tech/common/transport/jms/JmsEndpoint.java"/>
-        <include name="com/l7tech/common/transport/jms/JmsProvider.java"/>
-        <include name="com/l7tech/common/transport/jms/JmsReplyType.java"/>
-        <include name="com/l7tech/common/transport/jms/JmsTestException.java"/>
         <include name="com/l7tech/console/SsmApplication*.java"/>
         <include name="com/l7tech/console/security/AuthenticationProvider.java"/>
         <include name="com/l7tech/console/security/InvalidHostCertificateException.java"/>
         <include name="com/l7tech/console/security/InvalidHostNameException.java"/>
         <include name="com/l7tech/console/security/LogonListener.java"/>
-        <include name="com/l7tech/objectmodel/Entity.java"/>
-        <include name="com/l7tech/objectmodel/EntityHeader.java"/>
-        <include name="com/l7tech/objectmodel/EntityHeaderComparator.java"/>
-        <include name="com/l7tech/objectmodel/EntityManager.java"/>
-        <include name="com/l7tech/objectmodel/EntityType.java"/>
-        <include name="com/l7tech/objectmodel/FindException.java"/>
-        <include name="com/l7tech/objectmodel/IdentityHeader.java"/>
-        <include name="com/l7tech/objectmodel/NamedEntity.java"/>
-        <include name="com/l7tech/objectmodel/ObjectModelException.java"/>
-        <include name="com/l7tech/objectmodel/ObjectNotFoundException.java"/>
-        <include name="com/l7tech/objectmodel/PersistentEntity.java"/>
-        <include name="com/l7tech/objectmodel/SaveException.java"/>
-        <include name="com/l7tech/objectmodel/StaleUpdateException.java"/>
-        <include name="com/l7tech/objectmodel/TransactionException.java"/>
-        <include name="com/l7tech/objectmodel/UpdateException.java"/>
-        <include name="com/l7tech/objectmodel/VersionException.java"/>
-        <include name="com/l7tech/identity/Group.java"/>
-        <include name="com/l7tech/identity/GroupBean.java"/>
-        <include name="com/l7tech/identity/GroupManager.java"/>
-        <include name="com/l7tech/identity/GroupMembership.java"/>
-        <include name="com/l7tech/identity/Identity.java"/>
-        <include name="com/l7tech/identity/IdentityAdmin.java"/>
-        <include name="com/l7tech/identity/IdentityProvider.java"/>
-        <include name="com/l7tech/identity/IdentityProviderConfig.java"/>
-        <include name="com/l7tech/identity/IdentityProviderConfigManager.java"/>
-        <include name="com/l7tech/identity/IdentityProviderType.java"/>
-        <include name="com/l7tech/identity/PersistentGroup.java"/>
-        <include name="com/l7tech/identity/PersistentUser.java"/>
-        <include name="com/l7tech/identity/User.java"/>
-        <include name="com/l7tech/identity/UserBean.java"/>
-        <include name="com/l7tech/identity/UserManager.java"/>
-        <include name="com/l7tech/identity/cert/ClientCertManager*.java"/>
-        <include name="com/l7tech/identity/cert/TrustedCertManager.java"/>
-        <include name="com/l7tech/identity/fed/FederatedGroup.java"/>
-        <include name="com/l7tech/identity/fed/FederatedGroupMembership.java"/>
-        <include name="com/l7tech/identity/fed/FederatedIdentityProviderConfig.java"/>
-        <include name="com/l7tech/identity/fed/FederatedUser.java"/>
-        <include name="com/l7tech/identity/fed/VirtualGroup.java"/>
-        <include name="com/l7tech/identity/fed/X509Config.java"/>
-        <include name="com/l7tech/identity/internal/InternalGroup.java"/>
-        <include name="com/l7tech/identity/internal/InternalGroupMembership.java"/>
-        <include name="com/l7tech/identity/internal/InternalUser.java"/>
-        <include name="com/l7tech/identity/ldap/GroupMappingConfig.java"/>
-        <include name="com/l7tech/identity/ldap/LdapGroup.java"/>
-        <include name="com/l7tech/identity/ldap/LdapIdentity.java"/>
-        <include name="com/l7tech/identity/ldap/LdapIdentityProviderConfig.java"/>
-        <include name="com/l7tech/identity/ldap/LdapUser.java"/>
-        <include name="com/l7tech/identity/ldap/MemberStrategy.java"/>
-        <include name="com/l7tech/identity/ldap/PasswdStrategy.java"/>
-        <include name="com/l7tech/identity/ldap/UserMappingConfig.java"/>
-        <include name="com/l7tech/identity/mapping/AttributeConfig.java"/>
-        <include name="com/l7tech/identity/mapping/AttributeMapping.java"/>
-        <include name="com/l7tech/identity/mapping/IdentityMapping.java"/>
-        <include name="com/l7tech/identity/mapping/InternalIdentityMapping.java"/>
-        <include name="com/l7tech/identity/mapping/KerberosSecurityTokenMapping.java"/>
-        <include name="com/l7tech/identity/mapping/LdapAttributeMapping.java"/>
-        <include name="com/l7tech/identity/mapping/NameFormat.java"/>
-        <include name="com/l7tech/identity/mapping/SecurityTokenMapping.java"/>
-        <include name="com/l7tech/identity/mapping/X509SecurityTokenMapping.java"/>
-        <include name="com/l7tech/gateway/common/admin/AdminContext*.java"/>
-        <include name="com/l7tech/gateway/common/admin/AdminLogin*.java"/>
-        <include name="com/l7tech/gateway/common/cluster/ClusterNodeInfo.java"/>
-        <include name="com/l7tech/gateway/common/cluster/ClusterProperty.java"/>
-        <include name="com/l7tech/gateway/common/cluster/ClusterStatusAdmin*.java"/>
-        <include name="com/l7tech/gateway/common/cluster/GatewayStatus.java"/>
-        <include name="com/l7tech/gateway/common/cluster/LogRequest.java"/>
-        <include name="com/l7tech/gateway/common/cluster/ServiceUsage.java"/>
-        <include name="com/l7tech/gateway/common/logging/GenericLogAdmin.java"/>
-        <include name="com/l7tech/gateway/common/logging/LogMessage.java"/>
-        <include name="com/l7tech/gateway/common/logging/SSGLogRecord.java"/>
-        <include name="com/l7tech/gateway/common/logging/StatisticsRecord.java"/>
-        <include name="com/l7tech/gateway/common/service/MetricsBin*.java"/>
-        <include name="com/l7tech/gateway/common/service/MetricsSummaryBin*.java"/>
-        <include name="com/l7tech/gateway/common/service/PublishedService*.java"/>
-        <include name="com/l7tech/gateway/common/service/SampleMessage.java"/>
-        <include name="com/l7tech/gateway/common/service/ServiceAdmin.java"/>
-        <include name="com/l7tech/gateway/common/service/ServiceAdminPublic.java"/>
-        <include name="com/l7tech/gateway/common/service/ServiceDocument.java"/>
-        <include name="com/l7tech/gateway/common/service/ServiceStatistics.java"/>
+        <include name="com/l7tech/gateway/common/**/*.java"/>
+        <include name="com/l7tech/identity/**/*.java"/>
+        <include name="com/l7tech/objectmodel/**/*.java"/>
     </patternset>
 
     <!--
@@ -309,7 +215,7 @@
         java.runtime.version=${java.runtime.version}
         </echo>
 
-        <!--<property name="build.dir" value="${src.root}/build"/>-->
+        <property name="build.dir" value="${src.root}/build"/>
         <property name="build.etc" value="${build.dir}/etc"/>
         <property name="build.reports" value="${build.dir}/reports"/>
         <property name="build.installer" value="${build.dir}/installer"/>
@@ -455,8 +361,11 @@
         <mkdir dir="${repository.artifact.directory}"/> <!-- Create temp source directory -->
         <copy file="${art}" tofile="${repository.artifact.directory}/${mod}-${rev}.jar"/>
         
+        <echo level="info">Loading Ivy settings for remote repositories.</echo>
+        <ivy:settings id="ivy.remote" override="true" file="etc/build/ivysettings_remote.xml"/>    
+
         <!-- install to our repository -->
-        <ivy:install organisation="${org}" module="${mod}" revision="${rev}" from="libraries" to="localfile" transitive="false"/>
+        <ivy:install settingsRef="ivy.remote" organisation="${org}" module="${mod}" revision="${rev}" from="libraries" to="local.repository" transitive="false"/>
     </target>
 
     <target name="repository-install-remote" description="Install an artifact to the build repository from a remote repository." depends="prepare.base">
@@ -732,11 +641,11 @@
         <modules target="retrieve"/>
     </target>
 
-    <target name="publish-main-modules" depends="prepare.base, build-module-list">
+    <target name="publish-main-modules" depends="prepare.base, build-module-list" unless="package.jars.notrequired">
         <modules target="publish"/>
     </target>
 
-    <target name="publish-all-modules" depends="prepare.base, build-module-list">
+    <target name="publish-all-modules" depends="prepare.base, build-module-list" unless="package.jars.notrequired">
         <modules target="publish-all"/>
     </target>
 
@@ -781,7 +690,7 @@
 
         <!-- Regenerate IDEA module for inspections (All modules) -->
         <pathconvert property="module.paths.xml.text" pathsep="${line.separator}                ">
-            <mapper type="regexp" from="${src.root}[\\/](.*)" to="&lt;path file=&quot;\1&quot;/&gt;"/>
+            <mapper type="regexp" from=".*[\\/](modules[\\/].*)" to="&lt;path file=&quot;\1&quot;/&gt;"/>
             <path>
                 <dirset dir="modules">
                     <include name="**/src/main/java"/>
@@ -866,7 +775,7 @@
             <include name="modules/*/*/*/*.iml"/>
         </patternset>
         <pathconvert property="project.files.text" pathsep="${line.separator}                ">
-            <mapper type="regexp" from="${src.root}[/\\](.*\.i[mpw][lrs])" to="\1"/>
+            <mapper type="regexp" from=".*[/\\](.*\.i[mpw][lrs])" to="\1"/>
             <path>
                 <fileset dir=".">
                     <patternset refid="project.files.pattern"/>
@@ -1689,20 +1598,15 @@
         <pack-mac jarfile="${build.dir}/ManagerApplet.jar"/>
 
         <!--
-          TODO [steve] Update pack200 after verifying JARs are correct
           Note that the build does not fail if any of these are missing, but a
           warning is logged.
         -->
-
         <pack-mac jarfile="${build.dir}/managerappletlibs/activation-1.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/antlr-2.7.7-l7p1.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/aopalliance-1.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/apache-harmony-asn1-0.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerappletlibs/asm-1.5.3.jar"/>
-        <pack-mac jarfile="${build.dir}/managerappletlibs/asm-attrs-1.5.3.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/browser-launcher-1.0rc4.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/commons-codec-1.2.jar"/>
-        <pack-mac jarfile="${build.dir}/managerappletlibs/cglib-2.1_3.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/commons-collections-3.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/commons-httpclient-3.0.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/commons-lang-2.3.jar"/>
@@ -1711,7 +1615,6 @@
         <pack-mac jarfile="${build.dir}/managerappletlibs/dom4j-1.6.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/ehcache-1.2.3.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/forms_rt-7.0.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerappletlibs/guddi-1.0.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/hibernate-3.2.6.ga.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/jaxb-api-2.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/jaxb-impl-2.0.jar"/>
@@ -1722,9 +1625,7 @@
         <pack-mac jarfile="${build.dir}/managerappletlibs/jcommon-1.0.5.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/jfreechart-1.0.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/jsr173-1.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerappletlibs/jsr173_api-1.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/jsr181-1.0.jar"/>
-        <pack-mac jarfile="${build.dir}/managerappletlibs/jta-1.0.1B.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/kunststoff-2.0.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/layer7-uddi-lib-1.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/log4j-1.2.14.jar"/>
@@ -1786,7 +1687,7 @@
     <!--
       Package the SSG if it looks like something changed
     -->
-    <target name="package.gateway.ifrequired" depends="package.gateway.checkrequired, package.gateway, package.readversion, pack.manager, package.modules">
+    <target name="package.gateway.ifrequired" depends="package.gateway.checkrequired, package.gateway, package.readversion, pack.manager, package.modules" unless="package.gateway.notrequired">
     </target>
 
     <!--
@@ -1809,7 +1710,7 @@
     <!--
       Package the Enterprise Manager (JAR).
     -->
-    <target name="package.em" depends="package.jars" unless="package.gateway.notrequired">
+    <target name="package.em" depends="package.jars" unless="ssg.only">
         <!-- packaging gateway libs -->
         <mkdir dir="${build.dir}/enterprisemanagerlibs"/>
         <delete>
@@ -1823,7 +1724,7 @@
         <copy file="modules/ems/build/layer7-ems.jar" tofile="${build.dir}/EnterpriseManager.jar"/>
     </target>
 
-    <target name="package.modules" depends="package.jars" unless="package.gateway.notrequired">
+    <target name="package.modules" depends="package.jars" unless="package.jars.notrequired">
         <delete dir="${build.dir}/modules"/>
         <mkdir dir="${build.dir}/modules"/>
         <ivy:resolve file="modules/gateway/assertions/ivy-modular-assertions.xml" showprogress="false" transitive="false" conf="default,client" log="quiet"/>
@@ -1903,319 +1804,57 @@
 
     <target name="package.report.jars" depends="package.client.jar,package.gateway,package.manager.jar"/>
 
+    <target name="package.skunkworks" depends="prepare.base">
+        <ivy:buildlist reference="module-build-path-skunkworks" skipbuildwithoutivy="true" root="layer7-skunkworks">
+            <fileset dir="modules" includes="**/build.xml"/>
+        </ivy:buildlist>
+        <ivy-echo-build-plan refid="module-build-path-skunkworks" pathid="build-path.text"/>
+        <modules buildpathref="module-build-path-skunkworks" target="publish"/>
+    </target>
+
     <!--
       Package the RandomXmlGenerator (Always invoked by hand)
-      TODO [steve] packaging for random XML generator
     -->
     <target name="package.randomxmlgenerator"
             description="Compile and package the RandomXmlGenerator"
-            depends="dev">
-        <!--<jar jarfile="${build.dir}/RandomXmlGenerator.jar">-->
-            <!--<manifest>-->
-                <!--<attribute name="Implementation-Title" value="${app.name}"/>-->
-                <!--<attribute name="Implementation-Version" value="${build.version.major}.${build.version.minor}"/>-->
-                <!--<attribute name="Implementation-Vendor" value="${vendor.name}"/>-->
-                <!--<attribute name="Main-Class" value="com.l7tech.skunkworks.xml.RandomXmlGenerator"/>-->
-            <!--</manifest>-->
-            <!--<fileset dir="${build.test.classes}">-->
-                <!--<include name="com/l7tech/skunkworks/xml/**/*"/>-->
-            <!--</fileset>-->
-        <!--</jar>-->
+            depends="package.skunkworks">
     </target>
 
     <!--
       Package GClient (Always invoked by hand)
-      TODO [steve] gclient packaging
     -->
-    <!--<patternset id="gclient.libs">-->
-        <!--<include name="**/axis.jar"/>-->
-        <!--<include name="**/0500-wsdl4j_1.6.2.jar"/>-->
-        <!--<include name="**/activation.jar"/>-->
-        <!--<include name="**/are.jar"/>-->
-        <!--<include name="**/bcprov-jdk15-135.jar"/>-->
-        <!--<include name="**/commons-codec-1.2.jar"/>-->
-        <!--<include name="**/commons-collections-3.2.jar"/>-->
-        <!--<include name="**/commons-discovery.jar"/>-->
-        <!--<include name="**/commons-httpclient-3.0.1.jar"/>-->
-        <!--<include name="**/commons-lang-1.0.1.jar"/>-->
-        <!--<include name="**/commons-logging-1.0.4.jar"/>-->
-        <!--<include name="**/concurrent-1.3.4.jar"/>-->
-        <!--<include name="**/dom4j-1.6.1.jar"/>-->
-        <!--<include name="**/FastInfoset.jar"/>-->
-        <!--<include name="**/forms_rt.jar"/>-->
-        <!--<include name="**/jaxen-1.1-beta-10.jar"/>-->
-        <!--<include name="**/jaxrpc.jar"/>-->
-        <!--<include name="**/jms-1.1.jar"/>-->
-        <!--<include name="**/log4j-1.2.14.jar"/>-->
-        <!--<include name="**/mailapi-1.4.jar"/>-->
-        <!--<include name="**/policy-1.0.jar"/>-->
-        <!--<include name="**/qname.jar"/>-->
-        <!--<include name="**/saaj-api.jar"/>-->
-        <!--<include name="**/saaj-impl.jar"/>-->
-        <!--<include name="**/servlet-api.jar"/>-->
-        <!--<include name="**/spring-beans.jar"/>-->
-        <!--<include name="**/spring-context.jar"/>-->
-        <!--<include name="**/spring-core.jar"/>-->
-        <!--<include name="**/whirlycache-1.0.1.jar"/>-->
-        <!--<include name="**/xbean.jar"/>-->
-        <!--<include name="**/xbean-saml1_1.jar"/>-->
-        <!--<include name="**/xbean-saml2_0.jar"/>-->
-        <!--<include name="**/xbean-xenc-xmldsig.jar"/>-->
-        <!--<include name="**/xercesImpl.jar"/>-->
-        <!--<include name="**/xml4j.jar"/>-->
-        <!--<include name="**/xss4j*.jar"/>-->
-        <!--<include name="**/antlr*.jar"/>-->
-        <!--<include name="**/jcalendar*.jar"/>-->
-        <!--<include name="**/jcommon*.jar"/>-->
-        <!--<include name="**/jfreechart*.jar"/>-->
-        <!--<include name="**/BrowserLauncher2*.jar"/>-->
-        <!--<include name="**/systinet-*.jar"/>-->
-        <!--<include name="**/nachocalendar*.jar"/>-->
-        <!--<include name="**/spring-remoting.jar"/>-->
-        <!--<include name="**/systray4j*.jar"/>-->
-    <!--</patternset>-->
-    <!--<target name="package.gclient" depends="compile-test-forms, testpackage.init">-->
-        <!--<mkdir dir="${build.dir}/gclient"/>-->
-        <!--<mkdir dir="${build.dir}/gclient/lib"/>-->
-
-        <!--<copy todir="${build.dir}/gclient/lib">-->
-            <!--<fileset dir="${build.lib}">-->
-                <!--<patternset refid="gclient.libs"/>-->
-            <!--</fileset>-->
-            <!--<fileset dir="lib/test">-->
-                <!--<patternset refid="gclient.libs"/>-->
-            <!--</fileset>-->
-        <!--</copy>-->
-
-        <!--<copy todir="${build.classes}">-->
-            <!--<fileset dir="${build.test.classes}">-->
-                <!--<include name="com/l7tech/skunkworks/gclient/**/*"/>-->
-            <!--</fileset>-->
-        <!--</copy>-->
-
-        <!--<echo level="info">Generating manifest for GClient.jar</echo>-->
-        <!--<generate-manifest propertyPrefix="gclient" filename="GClient.mf">-->
-            <!--<section>-->
-                <!--<attribute name="Main-Class" value="com.l7tech.skunkworks.gclient.GClient"/>-->
-            <!--</section>-->
-        <!--</generate-manifest>-->
-        <!--<echo level="info">Creating GClient.jar</echo>-->
-        <!--<classfileset id="package.gclient.classfileset" dir="${build.classes}">-->
-            <!--<root classname="com.l7tech.skunkworks.gclient.GClient" />-->
-
-            <!--<root classname="com.l7tech.security.prov.bc.BouncyCastleJceProviderEngine" />-->
-            <!--<root classname="com.l7tech.util.DnParserBc" />-->
-            <!--<root classname="com.l7tech.util.ConfigurableLogFormatter" />-->
-        <!--</classfileset>-->
-        <!--<jar jarfile="${build.dir}/gclient/GClient.jar" manifest="${build.etc}/GClient.mf">-->
-            <!--<fileset refid="package.gclient.classfileset"/>-->
-            <!--<fileset dir="${build.classes}">-->
-                <!--<include name="ehcache.xml"/>-->
-                <!--<include name="**/*.xsd"/>-->
-                <!--<include name="**/*.dtd"/>-->
-                <!--<include name="com/l7tech/console/**/resources/**/*"/>-->
-                <!--<include name="com/l7tech/console/**/*.properties"/>-->
-                <!--<include name="com/l7tech/common/resources/**/*"/>-->
-                <!--<include name="com/l7tech/server/resources/**/*"/>-->
-            <!--</fileset>-->
-        <!--</jar>-->
-
-        <!--<echo level="info">Testpackaging GClient.jar</echo>-->
-        <!--<fileset id="gclient.testpackage.fileset" dir="${build.dir}/gclient/lib">-->
-            <!--<patternset refid="gclient.libs"/>-->
-        <!--</fileset>-->
-        <!--<checkdeps jarfile="build/gclient/GClient.jar"-->
-                   <!--libfilesetref="gclient.testpackage.fileset"-->
-                   <!--resultproperty="testpackage.gclient.result"-->
-                   <!--ignoreclasses="com.l7tech.security.prov.luna.BouncyCastleToLunaProvider com.l7tech.security.prov.luna.LunaJceProviderEngine com.l7tech.security.prov.pkcs11.Pkcs11JceProviderEngine"/>-->
-        <!--<property name="testpackage.gclient.result" value=""/>-->
-        <!--<condition property="testpackage.gclient.fail">-->
-            <!--<not>-->
-                <!--<equals arg1="0" arg2="${testpackage.gclient.result}"/>-->
-            <!--</not>-->
-        <!--</condition>-->
-        <!--<fail if="testpackage.gclient.fail">GClient packaging test failed.</fail>-->
-
-        <!--<echo level="info">Obfuscating GClient.jar</echo>-->
-        <!--<build-zkm propertyPrefix="gclient" libDir="build/gclient/lib"/>-->
-        <!--<Zelix scriptFileName="build/etc/gclient.zkm"-->
-               <!--logFileName="build/obfuscation/gclientobfuscation.log"-->
-               <!--trimLogFileName="build/obfuscation/gclientobfuscation.log"-->
-               <!--isParseOnly="false"-->
-               <!--isVerbose="true"/>-->
-        <!--<echo level="info">Done obfuscating GClient.jar</echo>-->
-        <!--<copy tofile="build/gclient/GClient.jar" file="build/obfuscation/GClient.jar" overwrite="true"/>-->
-    <!--</target>-->
+    <target name="package.gclient"
+            depends="package.skunkworks">
+    </target>
 
     <!--
-      Package UDDI Policy Tool (Always invoked by hand)
-      TODO [steve] uddi tool packaging
+      Package UDDI tool (Always invoked by hand)
     -->
-    <!--<patternset id="udditool.libs">-->
-        <!--<include name="**/forms_rt.jar"/>-->
-        <!--<include name="**/guddi-*.jar"/>-->
-    <!--</patternset>-->
-    <!--<target name="package.udditool" depends="compile-test-forms, testpackage.init">-->
-        <!--<mkdir dir="${build.dir}/udditool"/>-->
-        <!--<mkdir dir="${build.dir}/udditool/lib"/>-->
+    <target name="package.udditool"
+            depends="package.skunkworks">
+    </target>
 
-        <!--<copy todir="${build.dir}/udditool/lib">-->
-            <!--<fileset dir="${build.lib}">-->
-                <!--<patternset refid="udditool.libs"/>-->
-            <!--</fileset>-->
-        <!--</copy>-->
-
-        <!--<echo level="info">Generating manifest for UDDIPolicyTool.jar</echo>-->
-        <!--<generate-manifest propertyPrefix="udditool" filename="UDDITool.mf">-->
-            <!--<section>-->
-                <!--<attribute name="Main-Class" value="com.l7tech.skunkworks.uddi.UDDIPolicyTool"/>-->
-            <!--</section>-->
-        <!--</generate-manifest>-->
-        <!--<echo level="info">Creating UDDIPolicyTool.jar</echo>-->
-        <!--<classfileset id="package.udditool.classfileset" dir="${build.classes}">-->
-            <!--<root classname="com.l7tech.util.Functions" />-->
-            <!--<root classname="com.l7tech.gui.widgets.TextListCellRenderer" />-->
-        <!--</classfileset>-->
-       <!--<classfileset id="package.udditool.classfileset2" dir="${build.test.classes}">-->
-            <!--<root classname="com.l7tech.skunkworks.uddi.UDDIPolicyTool" />-->
-        <!--</classfileset>-->
-        <!--<jar jarfile="${build.dir}/udditool/UDDIPolicyTool.jar" manifest="${build.etc}/UDDITool.mf">-->
-            <!--<fileset refid="package.udditool.classfileset"/>-->
-            <!--<fileset refid="package.udditool.classfileset2"/>-->
-        <!--</jar>-->
-
-        <!--<echo level="info">Testpackaging UDDIPolicyTool.jar</echo>-->
-        <!--<fileset id="udditool.testpackage.fileset" dir="${build.dir}/udditool/lib">-->
-            <!--<patternset refid="udditool.libs"/>-->
-        <!--</fileset>-->
-        <!--<checkdeps jarfile="build/udditool/UDDIPolicyTool.jar"-->
-                   <!--libfilesetref="udditool.testpackage.fileset"-->
-                   <!--resultproperty="testpackage.udditool.result"/>-->
-        <!--<property name="testpackage.udditool.result" value=""/>-->
-        <!--<condition property="testpackage.udditool.fail">-->
-            <!--<not>-->
-                <!--<equals arg1="0" arg2="${testpackage.udditool.result}"/>-->
-            <!--</not>-->
-        <!--</condition>-->
-        <!--<fail if="testpackage.udditool.fail">UDDIPolicyTool packaging test failed.</fail>-->
-
-        <!--<echo level="info">Obfuscating UDDIPolicyTool.jar</echo>-->
-        <!--<build-zkm propertyPrefix="udditool" libDir="build/udditool/lib"/>-->
-        <!--<Zelix scriptFileName="build/etc/udditool.zkm"-->
-               <!--logFileName="build/obfuscation/udditoolobfuscation.log"-->
-               <!--trimLogFileName="build/obfuscation/udditoolobfuscation.log"-->
-               <!--isParseOnly="false"-->
-               <!--isVerbose="true"/>-->
-        <!--<echo level="info">Done obfuscating UDDIPolicyTool.jar</echo>-->
-        <!--<copy tofile="build/udditool/UDDIPolicyTool.jar" file="build/obfuscation/UDDIPolicyTool.jar" overwrite="true"/>-->
-    <!--</target>-->
+    <target name="package.internal" depends="prepare.base">
+        <ivy:buildlist reference="module-build-path-internal" skipbuildwithoutivy="true" root="layer7-internal">
+            <fileset dir="modules" includes="**/build.xml"/>
+        </ivy:buildlist>
+        <ivy-echo-build-plan refid="module-build-path-internal" pathid="build-path.text"/>
+        <modules buildpathref="module-build-path-internal" target="publish"/>
+    </target>
 
     <!--
       Package the LicenseGenerator (Aways invoked by hand)
-      TODO [steve] licence generator packaging
     -->
     <target name="package.licensegenerator"
             description="Compile and packate the License Generator (also testpackage.licensegenerator)"
-            depends="init, package.jars">
-        <property name="licensegenerator.lib.dir" value="${src.root}/installer/LicenseGenerator-HEAD/lib"/>
-        <mkdir dir="${licensegenerator.lib.dir}"/>
-
-        <copy todir="${licensegenerator.lib.dir}">
-            <fileset dir="${src.root}/lib">
-                <patternset refid="licensegenerator.libs"/>
-            </fileset>
-        </copy>
-
-        <generate-manifest propertyPrefix="licensegenerator" filename="LicenseGenerator.mf" pathPrefix=". ">
-            <section>
-                <attribute name="Main-Class" value="com.l7tech.internal.license.gui.LicenseGeneratorMain"/>
-            </section>
-        </generate-manifest>
-        <jar jarfile="${build.dir}/LicenseGenerator.jar" manifest="${build.etc}/LicenseGenerator.mf">
-            <!--<fileset dir="${build.classes}">-->
-                <!--<include name="com/l7tech/internal/**/*"/>-->
-                <!--<include name="com/l7tech/common/**/*"/>-->
-                <!--<include name="com/l7tech/policy/**/*"/>-->
-                <!--<include name="com/l7tech/server/GatewayFeatureSet*.class"/>-->
-                <!--<include name="com/l7tech/console/resources/*.txt"/>-->
-
-                <!--<exclude name="com/l7tech/common/xml/saml/**/*"/>-->
-                <!--<exclude name="com/l7tech/common/xml/*SoapMessage*"/>-->
-                <!--<exclude name="com/l7tech/common/xml/tarari/**/*"/>-->
-                <!--<exclude name="com/l7tech/common/xml/*Wsdl*"/>-->
-                <!--<exclude name="com/l7tech/common/xml/*Xpath*"/>-->
-                <!--<exclude name="com/l7tech/common/util/*CheckInfo*"/>-->
-                <!--<exclude name="com/l7tech/common/util/*SoapFaultUtil*"/>-->
-            <!--</fileset>-->
-        </jar>
-        <copy file="${build.dir}/LicenseGenerator.jar" todir="${src.root}/installer/LicenseGenerator-HEAD/"/>
-        <copy file="${src.root}/etc/LicenseGenerator.sh" todir="${src.root}/installer/LicenseGenerator-HEAD/"/>
-        <chmod file="${src.root}/installer/LicenseGenerator-HEAD/LicenseGenerator.sh" perm="755"/>
-
-        <tar destfile="${src.root}/installer/LicenseGenerator-HEAD.tar.gz"
-             basedir="${src.root}/installer/"
-             includes="LicenseGenerator-HEAD/**/*"
-             compression="gzip"/>
-    </target>
-
+            depends="package.internal"/>
 
     <!--
-        Package the AuditSignatureChecker (Aways invoked by hand).
-        Result is a self-contained executable JAR file with dependency JARs nested inside.
-        TODO [steve] audit signature checker packaging
+      Package the AuditSignatureChecker (Aways invoked by hand)
     -->
     <target name="package.auditsignaturechecker"
             description="Compile and package the Audit Signature Checker."
-            depends="init, package.jars">
-        <mkdir dir="${build.dir}/auditsignaturechecker/staging/main"/>
-        <jar jarfile="${build.dir}/auditsignaturechecker/staging/main/main.jar">
-            <manifest>
-                <attribute name="Implementation-Title" value="${app.name}"/>
-                <attribute name="Implementation-Version" value="${build.version.major}.${build.version.minor}"/>
-                <attribute name="Implementation-Vendor" value="${vendor.name}"/>
-                <attribute name="Main-Class" value="com.l7tech.internal.audit.AuditSignatureChecker"/>
-            </manifest>
-            <!--<fileset dir="${build.classes}">-->
-                <!--<include name="com/l7tech/internal/audit/**/*"/>-->
-            <!--</fileset>-->
-        </jar>
-
-        <fileset id="auditsignaturechecker.jars.fileset" dir="${build.dir}">
-            <include name="bcprov-jdk15-135.jar"/>
-            <include name="commons-codec-1.2.jar"/>
-            <include name="commons-collections-3.2.jar"/>
-            <include name="commons-logging-1.0.4.jar"/>
-            <include name="concurrent-1.3.4.jar"/>
-            <include name="whirlycache-1.0.1.jar"/>
-        </fileset>
-        <pathconvert property="auditsignaturechecker.jars.classpath" targetos="unix" pathsep=" " refid="auditsignaturechecker.jars.fileset">
-            <mapper type="regexp" from=".*[/\\](.*)\.jar" to="lib/\1.jar"/>
-        </pathconvert>
-
-        <mkdir dir="${build.dir}/auditsignaturechecker/staging/lib"/>
-        <copy todir="${build.dir}/auditsignaturechecker/staging/lib">
-            <fileset refid="auditsignaturechecker.jars.fileset"/>
-        </copy>
-
-        <unzip src="lib/one-jar-boot-0.95.jar" dest="${build.dir}/auditsignaturechecker/staging">
-            <patternset>
-                <exclude name="boot-manifest.mf"/>
-                <exclude name="META-INF/*"/>
-                <exclude name="**/*.java"/>
-            </patternset>
-        </unzip>
-
-        <jar jarfile="${build.dir}/auditsignaturechecker/AuditSignatureChecker.jar">
-            <manifest>
-                <attribute name="Class-Path" value="${auditsignaturechecker.jars.classpath}"/>
-                <attribute name="Main-Class" value="com.simontuffs.onejar.Boot"/>
-            </manifest>
-            <fileset dir="${build.dir}/auditsignaturechecker/staging">
-                <include name="**/*"/>
-            </fileset>
-        </jar>
-    </target>
-
+            depends="package.internal"/>
 
     <!--
       Build the windows installers
@@ -2634,7 +2273,7 @@
         <jar jarfile="${build.dir}/configwizard/ConfigWizard.jar">
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
-                <attribute name="Class-Path" value="lib/layer7-utility.jar"/> <!-- TODO [steve] utility jar version -->
+                <attribute name="Class-Path" value="lib/layer7-utility.jar"/>
                 <attribute name="X-Layer7-Jar" value="../Gateway.jar"/>
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.server.config.ConfigurationWizardLauncher"/>
             </manifest>
@@ -2673,7 +2312,7 @@
         <jar jarfile="${build.dir}/sysconfigwizard/SystemConfigWizard.jar">
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
-                <attribute name="Class-Path" value="lib/layer7-utility.jar"/>  <!-- TODO [steve] utility jar version -->
+                <attribute name="Class-Path" value="lib/layer7-utility.jar"/>
                 <attribute name="X-Layer7-Jar" value="../Gateway.jar"/>
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.server.config.systemconfig.SysConfigWizardLauncher"/>
             </manifest>
@@ -2840,23 +2479,6 @@
             </java>
         </sequential>
     </macrodef>
-
-    <!--
-      Test LicenseGenerator package.  Always invoked by hand.
-    -->
-    <target name="testpackage.licensegenerator" depends="package.licensegenerator">
-        <javac srcdir="tools" destdir="tools" debug="on" optimize="off"
-               deprecation="on" verbose="no"/>
-
-        <!-- TODO [steve] dependencies for license generator -->
-        <fileset id="licensegenerator.testpackage.fileset" dir="${build.dir}">
-            <patternset refid="licensegenerator.libs"/>
-        </fileset>
-
-        <checkdeps jarfile="build/LicenseGenerator.jar"
-                   libfilesetref="licensegenerator.testpackage.fileset"
-                   resultproperty="testpackage.licensegenerator.result"/>
-    </target>
 
     <!--
       Task to check if the build should be failed

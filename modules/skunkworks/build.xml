@@ -1,3 +1,114 @@
 <project name="layer7-skunkworks" default="compile">
     <import file="../../etc/build/build-common.xml"/>
+
+    <!-- dummy main so that the classpath is built -->
+    <property name="module.main" value="com.l7tech.skunkworks"/>
+    <property name="vendor.name" value="Layer 7 Technologies Inc."/>
+
+    <target name="package.custom.post" depends="package.randomxmlgenerator, package.gclient, package.udditool"/>
+
+    <!--
+      Package the RandomXmlGenerator
+    -->
+    <target name="package.randomxmlgenerator"
+            description="Compile and package the RandomXmlGenerator"
+            >
+        <property name="package.classes.dir" value="${classes.main.dir}"/>
+
+        <jar jarfile="${build.dir}/RandomXmlGenerator.jar">
+            <manifest>
+                <attribute name="Implementation-Title" value="Random XML Test Utility"/>
+                <attribute name="Implementation-Version" value="${build.version}"/>
+                <attribute name="Implementation-Vendor" value="${build.vendor}"/>
+                <attribute name="Implementation-Vendor-Id" value="${build.vendor.id}"/>
+                <attribute name="Built-By" value="${build.user}"/>
+                <attribute name="Build-Jdk" value="${java.version}"/>
+                <attribute name="Build-Timestamp" value="${build.timestamp}"/>
+                <attribute name="Main-Class" value="com.l7tech.skunkworks.xml.RandomXmlGenerator"/>
+                <attribute name="Class-Path" value="${module.classpath.text}"/>
+            </manifest>
+            <fileset dir="${package.classes.dir}">
+                <include name="com/l7tech/skunkworks/xml/**/*"/>
+            </fileset>
+        </jar>
+    </target>
+
+    <!--
+      Package GClient
+    -->
+    <target name="package.gclient">
+        <property name="package.classes.dir" value="${classes.main.dir}"/>
+        <property name="gclient.classes" value="${build.dir}/gclient/classes"/>
+        <mkdir dir="${gclient.classes}"/>
+
+        <jar-include dir="${gclient.classes}" name="layer7-proxy"/>
+        <jar-include dir="${gclient.classes}" name="layer7-policy"/>
+        <jar-include dir="${gclient.classes}" name="layer7-common"/>
+        <jar-include dir="${gclient.classes}" name="layer7-gui"/>
+        <jar-include dir="${gclient.classes}" name="layer7-utility"/>
+        <jar-include dir="${gclient.classes}" name="layer7-wsdl"/>
+
+        <echo level="info">Creating GClient.jar</echo>
+        <jar jarfile="${build.dir}/GClient.jar">
+            <fileset dir="${gclient.classes}"/>
+            <fileset dir="${package.classes.dir}">
+                <include name="com/l7tech/skunkworks/gclient/**/*"/>
+            </fileset>
+            <manifest>
+                <attribute name="Implementation-Title" value="GClient Test Utility"/>
+                <attribute name="Implementation-Version" value="${build.version}"/>
+                <attribute name="Implementation-Vendor" value="${build.vendor}"/>
+                <attribute name="Implementation-Vendor-Id" value="${build.vendor.id}"/>
+                <attribute name="Built-By" value="${build.user}"/>
+                <attribute name="Build-Jdk" value="${java.version}"/>
+                <attribute name="Build-Timestamp" value="${build.timestamp}"/>
+                <attribute name="Main-Class" value="com.l7tech.skunkworks.gclient.GClient"/>
+                <attribute name="Class-Path" value="${module.classpath.text}"/>
+            </manifest>
+        </jar>
+
+        <jar destfile="${jar.file}" manifest="${build.etc.dir}/MANIFEST.MF" index="${module.jar.index}">
+            <fileset dir="${package.classes.dir}"/>
+            <!-- Index element is ignored unless index is true for the jar task -->
+            <indexjars>
+                <path refid="module.classpath"/>
+            </indexjars>
+            <manifest>
+                <attribute name="Implementation-Title" value="${ivy.extra.title}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <!--
+      Package UDDI Policy Tool
+    -->
+    <target name="package.udditool">
+        <property name="package.classes.dir" value="${classes.main.dir}"/>
+        <property name="udditool.classes" value="${build.dir}/udditool/classes"/>
+        <mkdir dir="${udditool.classes}"/>
+
+        <jar-include dir="${udditool.classes}" name="layer7-policy"/>
+        <jar-include dir="${udditool.classes}" name="layer7-common"/>
+        <jar-include dir="${udditool.classes}" name="layer7-gui"/>
+        <jar-include dir="${udditool.classes}" name="layer7-utility"/>
+
+        <echo level="info">Creating UDDIPolicyTool.jar</echo>
+        <jar jarfile="${build.dir}/udditool/UDDIPolicyTool.jar">
+        <fileset dir="${udditool.classes}"/>
+        <fileset dir="${package.classes.dir}">
+            <include name="com/l7tech/skunkworks/uddi/**/*"/>
+        </fileset>
+        <manifest>
+            <attribute name="Implementation-Title" value="UDDI Policy Tool Utility"/>
+            <attribute name="Implementation-Version" value="${build.version}"/>
+            <attribute name="Implementation-Vendor" value="${build.vendor}"/>
+            <attribute name="Implementation-Vendor-Id" value="${build.vendor.id}"/>
+            <attribute name="Built-By" value="${build.user}"/>
+            <attribute name="Build-Jdk" value="${java.version}"/>
+            <attribute name="Build-Timestamp" value="${build.timestamp}"/>
+            <attribute name="Main-Class" value="com.l7tech.skunkworks.uddi.UDDIPolicyTool"/>
+            <attribute name="Class-Path" value="${module.classpath.text}"/>
+        </manifest>
+        </jar>
+    </target>
 </project>
