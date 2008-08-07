@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="com.tarari"
+		module="tarari-raxj"
+		revision="4.4.3.31"
+		status="release"
+		publication="20080807095105"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="tarari-raxj" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

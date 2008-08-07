@@ -41,7 +41,7 @@
         <dependency org="org.springframework" name="spring-beans" rev="2.5.4" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-context" rev="2.5.4" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-core" rev="2.5.4" force="true" conf="core"/>
-        <dependency org="com.tarari" name="tarari-raxj" rev="4.4.2.21" force="true" conf="optional,test"/>
+        <dependency org="com.tarari" name="tarari-raxj" rev="4.4.3.31" force="true" conf="optional,test"/>
         <!-- Tarari is optional -->
         <dependency org="xmlbeans" name="xbean" rev="2.2.0" force="true" conf="core"/>
         <dependency org="javax.persistence" name="persistence-api" rev="3.0" force="true" conf="core"/>
