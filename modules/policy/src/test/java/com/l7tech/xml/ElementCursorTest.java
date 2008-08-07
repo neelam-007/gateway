@@ -56,8 +56,6 @@ public class ElementCursorTest {
 
     @Test
     @SystemPropertyPrerequisite(require = TarariLoader.ENABLE_PROPERTY)
-    @Ignore("Need to work out why this fails and fix the environment on TeamCity")
-    // TODO [steve] Fix Tarari test on TeamCity
     public void testTarariCursor() throws Exception {
         testAll(new TarariElementCursorFactory());
     }
