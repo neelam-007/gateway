@@ -66,9 +66,13 @@ harden() {
   # GEN000460
   sed -i -e '/pam_tally\.so/d' /etc/pam.d/system-auth
 
+  echo "Checking pam_tally2"
   if ! grep -Eq 'auth +required +.*/pam_tally2.so deny=[0-9].*no_magic_root unlock_time=1200' /etc/pam.d/system-auth; then
+	  echo "Modifying pam_tally2"
+
 	 # delete any auth required pam_tally2 lines to be sure
 	 sed -i -e '/auth\s*required\s*.*\/pam_tally2.so/d' /etc/pam.d/system-auth
+
 	 # add in the new line before the pam_env line, use \2 as the substitution to ensure we have the same lib or lib64 line
 	 sed -i -r -e 's/^(.*(auth\s*required\s*.*)\/pam_env\.so.*)$/\2\/pam_tally2\.so deny=5 even_deny_root_account onerr=fail no_magic_root unlock_time=1200\n\1/' /etc/pam.d/system-auth
 
@@ -138,8 +142,8 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
   fi
 
   # GEN002480
-  find / -type f -perm -002 -printf '%p %m\n' 2>&1 | grep -v '^/tmp/' | grep -v '^/proc/' | grep -v '^/var/tmp/' > /root/original_permissions
-  find / -type d -perm -002 -printf '%p %m\n' 2>&1 | grep -v '^/tmp ' | grep -v '^/proc/' | grep -v '^/tmp/' | grep -v '^/var/tmp ' | grep -v '^/var/tmp/' | grep -v '^/dev/' >> /root/original_permissions
+  find / -xdev -type f -perm -002 -printf '%p %m\n' 2>&1 | grep -v '^/tmp/' | grep -v '^/proc/' | grep -v '^/var/tmp/' > /root/original_permissions
+  find / -xdev -type d -perm -002 -printf '%p %m\n' 2>&1 | grep -v '^/tmp ' | grep -v '^/proc/' | grep -v '^/tmp/' | grep -v '^/var/tmp ' | grep -v '^/var/tmp/' | grep -v '^/dev/' >> /root/original_permissions
   if [ -s /root/original_permissions ]; then
     sed -e 's/\(.*\) [0-9]\{1,\}$/"\1"/' /root/original_permissions | xargs chmod o-w
   fi
@@ -541,7 +545,7 @@ if [ ! -e /var/log/btmp ] ; then
 fi
 
 # GEN000460
-if [ ! "$(cat /etc/pam.d/system-auth | grep ^auth | head -n 1 | egrep 'auth\s*required\s*/lib(.*)/security/\$ISA/pam_tally2.so deny=5 even_deny_root_account onerr=fail no_magic_root unlock_time=1200')" ] ; then
+if [ ! "$(cat /etc/pam.d/system-auth | grep ^auth | head -n 1 | egrep 'auth(.*)required(.*)/lib(.*)/security/\$ISA/pam_tally2.so deny=5 even_deny_root_account onerr=fail no_magic_root unlock_time=1200')" ] ; then
 	echo "Error - pam_tally2 not set up properly - auth required"
 fi
 
@@ -560,12 +564,12 @@ if [ ! "`cat /etc/login.defs | grep PASS_MIN_LEN | grep 9`" ] ; then
 	echo "Error - PASS_MIN_LEN setting invalid in /etc/login.defs"
 fi
 
-if [ ! "$(cat /etc/pam.d/system-auth | grep ^password | head -n 1 | egrep 'password\s*requisite\s*/lib(.*)/security/\$ISA/pam_cracklib.so retry=3 minlen=9 ucredit=-2 lcredit=-2 dcredit=-2 ocredit=-2(\s*)$')" ] ; then 
+if [ ! "$(cat /etc/pam.d/system-auth | grep ^password | head -n 1 | egrep 'password(.*)requisite(.*)/lib(.*)/security/\$ISA/pam_cracklib.so retry=3 minlen=9 ucredit=-2 lcredit=-2 dcredit=-2 ocredit=-2(\s*)$')" ] ; then 
 	echo "Error - Invalid password complexity requirements"
 fi
 
 # GEN000800
-if [ ! "$(egrep 'password\s*sufficient\s*/lib(.*)/security/\$ISA/pam_unix.so nullok use_authtok md5 shadow remember=5' /etc/pam.d/system-auth)" ] ; then 
+if [ ! "$(egrep 'password(.*)sufficient(.*)/lib(.*)/security/\$ISA/pam_unix.so nullok use_authtok md5 shadow remember=5' /etc/pam.d/system-auth)" ] ; then 
 	echo "Error - Invalid password reuse requirements"
 fi
 
