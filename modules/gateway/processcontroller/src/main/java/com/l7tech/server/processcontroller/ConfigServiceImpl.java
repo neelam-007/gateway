@@ -4,9 +4,9 @@
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.server.management.config.gateway.GatewayConfig;
-import com.l7tech.server.management.config.gateway.IpAddressConfig;
-import com.l7tech.server.management.config.gateway.PCGatewayConfig;
+import com.l7tech.server.management.config.host.HostConfig;
+import com.l7tech.server.management.config.host.IpAddressConfig;
+import com.l7tech.server.management.config.host.PCHostConfig;
 import com.l7tech.server.management.config.node.*;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
@@ -36,50 +36,50 @@ public class ConfigServiceImpl implements ConfigService {
     @PersistenceContext(properties = {})
     private EntityManager entityManager;
 
-    private volatile GatewayConfig gateway;
+    private volatile HostConfig host;
 
-    public GatewayConfig getGateway() {
-        if (gateway == null) {
-            Query q = entityManager.createQuery("select g FROM PCGatewayConfig g");
-            List<PCGatewayConfig> gs = q.getResultList();
+    public HostConfig getGateway() {
+        if (host == null) {
+            Query q = entityManager.createQuery("select g FROM PCHostConfig g");
+            List<PCHostConfig> gs = q.getResultList();
             switch (gs.size()) {
                 case 0:
                     logger.info("Creating new Gateway for localhost");
-                    PCGatewayConfig g = new PCGatewayConfig();
+                    PCHostConfig g = new PCHostConfig();
                     g.setName("localhost");
-                    g.setOsType(PCGatewayConfig.OSType.RHEL);
+                    g.setOsType(PCHostConfig.OSType.RHEL);
                     reverseEngineerIps(g);
                     reverseEngineerNodes(g);
 
                     entityManager.persist(g);
-                    gateway = g;
+                    host = g;
                     break;
                 case 1:
                     logger.info("Found Gateway in database");
-                    gateway = gs.get(0);
+                    host = gs.get(0);
                     break;
                 default:
                     throw new IllegalStateException("Multiple Gateways found in the database");
             }
         }
 
-        return gateway;
+        return host;
     }
 
-    private void reverseEngineerNodes(PCGatewayConfig g) {
+    private void reverseEngineerNodes(PCHostConfig g) {
         final PartitionManager pmgr = PartitionManager.getInstance();
         for (String pid : pmgr.getPartitionNames()) {
             final PartitionInformation pinfo = pmgr.getPartition(pid);
-            final PCServiceNodeConfig node = new PCServiceNodeConfig();
-            node.setGateway(g);
+            final PCNodeConfig node = new PCNodeConfig();
+            node.setHost(g);
             node.setName(pid);
-            node.getDatabaseUrlTemplate().put(DatabaseType.GATEWAY_ALL, DatabaseConfig.Vendor.MYSQL.getUrlTemplate());
+            node.getDatabaseUrlTemplate().put(DatabaseType.NODE_ALL, DatabaseConfig.Vendor.MYSQL.getUrlTemplate());
             final DatabaseConfig db = new DatabaseConfig();
             db.setHost("localhost");
             db.setNode(node);
             db.setName("ssg");
             db.setUsername("gateway");
-            db.setServiceNodePassword("7layer");
+            db.setNodePassword("7layer");
             node.getDatabases().add(db);
 
             Collection<ConnectorConfig> conns = node.getConnectors();
@@ -101,11 +101,11 @@ public class ConfigServiceImpl implements ConfigService {
                     PartitionInformation.OtherEndpointHolder otherEndpointHolder = (PartitionInformation.OtherEndpointHolder)endpointHolder;
                 }
             }
-            g.getServiceNodes().add(node);
+            g.getNodes().add(node);
         }
     }
 
-    private void reverseEngineerIps(PCGatewayConfig g) {
+    private void reverseEngineerIps(PCHostConfig g) {
         final Set<IpAddressConfig> ips = g.getIpAddresses();
 
         final Enumeration<NetworkInterface> nifs;
@@ -118,7 +118,7 @@ public class ConfigServiceImpl implements ConfigService {
                 while (addrs.hasMoreElements()) {
                     final InetAddress addr = addrs.nextElement();
                     final IpAddressConfig iac = new IpAddressConfig(g);
-                    iac.setGateway(g);
+                    iac.setHost(g);
                     iac.setVersion(addr instanceof Inet4Address ? 4 : 6);
                     iac.setName(nif.getDisplayName());
                     iac.setInterfaceName(nif.getName());
@@ -131,15 +131,15 @@ public class ConfigServiceImpl implements ConfigService {
         }
     }
 
-    public void updateGateway(final PCGatewayConfig gateway) {
-        this.gateway = entityManager.merge(gateway);
+    public void updateGateway(final PCHostConfig host) {
+        this.host = entityManager.merge(host);
     }
 
-    public void addServiceNode(ServiceNodeConfig node) {
+    public void addServiceNode(NodeConfig node) {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void updateServiceNode(ServiceNodeConfig node) {
+    public void updateServiceNode(NodeConfig node) {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 

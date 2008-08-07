@@ -14,23 +14,23 @@ import javax.persistence.*;
 @Entity
 @Table(name="pc_db")
 public class DatabaseConfig extends NamedEntityImp {
-    private ServiceNodeConfig node;
-    private DatabaseType type = DatabaseType.GATEWAY_ALL;
+    private NodeConfig node;
+    private DatabaseType type = DatabaseType.NODE_ALL;
     private Vendor vendor = Vendor.MYSQL;
-    private ServiceNodeConfig.ClusterType clusterType = ServiceNodeConfig.ClusterType.STANDALONE;
+    private NodeConfig.ClusterType clusterType = NodeConfig.ClusterType.STANDALONE;
     private String host;
     private int port;
     private String username;
     private String configurationPassword;
-    private String serviceNodePassword;
+    private String nodePassword;
     private int ordinal;
 
     @ManyToOne(optional=false)
-    public ServiceNodeConfig getNode() {
+    public NodeConfig getNode() {
         return node;
     }
 
-    public void setNode(ServiceNodeConfig node) {
+    public void setNode(NodeConfig node) {
         this.node = node;
     }
 
@@ -50,12 +50,12 @@ public class DatabaseConfig extends NamedEntityImp {
         this.port = port;
     }
 
-    public String getServiceNodePassword() {
-        return serviceNodePassword;
+    public String getNodePassword() {
+        return nodePassword;
     }
 
-    public void setServiceNodePassword(String serviceNodePassword) {
-        this.serviceNodePassword = serviceNodePassword;
+    public void setNodePassword(String nodePassword) {
+        this.nodePassword = nodePassword;
     }
 
     public String getUsername() {
@@ -85,11 +85,11 @@ public class DatabaseConfig extends NamedEntityImp {
     }
 
     @Enumerated(EnumType.STRING)
-    public ServiceNodeConfig.ClusterType getClusterType() {
+    public NodeConfig.ClusterType getClusterType() {
         return clusterType;
     }
 
-    public void setClusterType(ServiceNodeConfig.ClusterType clusterType) {
+    public void setClusterType(NodeConfig.ClusterType clusterType) {
         this.clusterType = clusterType;
     }
 
@@ -142,7 +142,7 @@ public class DatabaseConfig extends NamedEntityImp {
         if (clusterType != that.clusterType) return false;
         if (host != null ? !host.equals(that.host) : that.host != null) return false;
         if (node != null ? !node.equals(that.node) : that.node != null) return false;
-        if (serviceNodePassword != null ? !serviceNodePassword.equals(that.serviceNodePassword) : that.serviceNodePassword != null) return false;
+        if (nodePassword != null ? !nodePassword.equals(that.nodePassword) : that.nodePassword != null) return false;
         if (type != that.type) return false;
         if (username != null ? !username.equals(that.username) : that.username != null) return false;
         if (vendor != that.vendor) return false;
@@ -159,7 +159,7 @@ public class DatabaseConfig extends NamedEntityImp {
         result = 31 * result + (host != null ? host.hashCode() : 0);
         result = 31 * result + port;
         result = 31 * result + (username != null ? username.hashCode() : 0);
-        result = 31 * result + (serviceNodePassword != null ? serviceNodePassword.hashCode() : 0);
+        result = 31 * result + (nodePassword != null ? nodePassword.hashCode() : 0);
         return result;
     }
 

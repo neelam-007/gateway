@@ -1,7 +1,7 @@
 /**
  * Copyright (C) 2008 Layer 7 Technologies Inc.
  */
-package com.l7tech.server.management.config.gateway;
+package com.l7tech.server.management.config.host;
 
 import com.l7tech.objectmodel.NamedEntity;
 
@@ -9,29 +9,29 @@ import javax.persistence.*;
 
 @Entity
 @Table(name="pc_ipaddr")
-public class IpAddressConfig extends GatewayFeature implements NamedEntity {
+public class IpAddressConfig extends HostFeature implements NamedEntity {
     private long oid;
     private String name;
     private int version;
-    private PCGatewayConfig gateway;
+    private PCHostConfig host;
     private String interfaceName;
     private String ipAddress;
     private String netmask;
 
-    public IpAddressConfig(PCGatewayConfig parent) {
-        super(parent, GatewayFeatureType.IP);
+    public IpAddressConfig(PCHostConfig parent) {
+        super(parent, HostFeatureType.IP);
     }
 
     protected IpAddressConfig() {
     }
 
     @ManyToOne(optional=false)
-    public PCGatewayConfig getGateway() {
-        return gateway;
+    public PCHostConfig getHost() {
+        return host;
     }
 
-    public void setGateway(PCGatewayConfig gateway) {
-        this.gateway = gateway;
+    public void setHost(PCHostConfig host) {
+        this.host = host;
     }
 
     public String getInterfaceName() {
@@ -79,7 +79,7 @@ public class IpAddressConfig extends GatewayFeature implements NamedEntity {
 
         IpAddressConfig that = (IpAddressConfig)o;
 
-        if (gateway != null ? !gateway.equals(that.gateway) : that.gateway != null) return false;
+        if (host != null ? !host.equals(that.host) : that.host != null) return false;
         if (interfaceName != null ? !interfaceName.equals(that.interfaceName) : that.interfaceName != null)
             return false;
         if (ipAddress != null ? !ipAddress.equals(that.ipAddress) : that.ipAddress != null) return false;
@@ -90,7 +90,7 @@ public class IpAddressConfig extends GatewayFeature implements NamedEntity {
 
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (gateway != null ? gateway.hashCode() : 0);
+        result = 31 * result + (host != null ? host.hashCode() : 0);
         result = 31 * result + (interfaceName != null ? interfaceName.hashCode() : 0);
         result = 31 * result + (ipAddress != null ? ipAddress.hashCode() : 0);
         result = 31 * result + (netmask != null ? netmask.hashCode() : 0);

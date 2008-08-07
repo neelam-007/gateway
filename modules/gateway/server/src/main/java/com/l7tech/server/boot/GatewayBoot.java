@@ -151,6 +151,7 @@ public class GatewayBoot {
                 "com/l7tech/server/resources/ssgApplicationContext.xml",
                 "com/l7tech/server/resources/adminContext.xml",
                 "org/codehaus/xfire/spring/xfire.xml",
+                "com/l7tech/server/resources/ssgProcessControllerSupportContext.xml",
         });
         serverConfig = (ServerConfig)applicationContext.getBean("serverConfig", ServerConfig.class);
     }

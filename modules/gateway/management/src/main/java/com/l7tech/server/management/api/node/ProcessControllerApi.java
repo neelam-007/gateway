@@ -9,7 +9,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 
 /**
- * API published by the Process Controller for use by the Service Node
+ * API published by the Process Controller for use by the Node
  *
  * @author alex
  */

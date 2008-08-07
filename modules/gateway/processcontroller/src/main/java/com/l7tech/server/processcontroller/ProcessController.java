@@ -4,8 +4,8 @@
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
-import com.l7tech.server.management.config.gateway.GatewayConfig;
-import com.l7tech.server.management.config.node.PCServiceNodeConfig;
+import com.l7tech.server.management.config.host.HostConfig;
+import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.util.ResourceUtils;
 
 import javax.annotation.PostConstruct;
@@ -31,7 +31,7 @@ public class ProcessController {
     public void start() {
         logger.info("Starting");
 
-        final GatewayConfig.OSType osType = configService.getGateway().getOsType();
+        final HostConfig.OSType osType = configService.getGateway().getOsType();
         final String[] cmds;
         switch(osType) {
             case RHEL:
@@ -49,7 +49,7 @@ public class ProcessController {
         processBuilder.environment().put("SSG_HOME", "/ssg");
     }
 
-    public void startNode(final PCServiceNodeConfig node) {
+    public void startNode(final PCNodeConfig node) {
         Thread t = new Thread("Service Node Babysitter-" + node.getName()) {
             @Override
             public void run() {

@@ -15,7 +15,7 @@ import java.util.Date;
 public class ImageHandle {
     private String name;
     private String sourceNode;
-    private String sourceGateway;
+    private String sourceHost;
 
     private long size;
     private Date imageCreated;

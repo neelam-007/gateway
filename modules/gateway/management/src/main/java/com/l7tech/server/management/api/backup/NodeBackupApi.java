@@ -84,7 +84,7 @@ public interface NodeBackupApi {
      * @param targetNodeName the name of the node that should be restored
      * @param config an indication of what component(s) of the image should be restored, or null to restore everything
      * @param restorekey a base64'd SecretKey capable of decrypting the backup image
-     * @param nodeLoginPass the login and password for an account on the target ServiceNode with permission to 
+     * @param nodeLoginPass the login and password for an account on the target Node with permission to
      *                      create/update/delete the entities in the backup set
      * @return a handle describing the status of the restore process.
      * @throws IOException if the restore cannot begin because the image is corrupt or unreadable (e.g. it may have been deleted)

@@ -5,7 +5,7 @@ package com.l7tech.server.management.config.node;
 
 /** @author alex */
 public enum NodeFeatureType {
-    /** The feature describes the version of the ServiceNode */
+    /** The feature describes the version of the Node */
     VERSION(true),
     TARARI(true),
     SCA(true),

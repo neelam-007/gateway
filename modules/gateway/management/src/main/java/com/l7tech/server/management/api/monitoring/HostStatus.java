@@ -10,11 +10,11 @@ import java.util.List;
 import java.util.Map;
 
 /** @author alex */
-public class GatewayStatus {
+public class HostStatus {
     /** Values are 1-, 5- and 15-minute averages */
     private Triple<Double, Double, Double> loadAverages;
 
-    /** Values are temperatures, in degrees celsius, of each CPU in the Gateway, or an empty list if the information is not available. */
+    /** Values are temperatures, in degrees celsius, of each CPU in the Host, or an empty list if the information is not available. */
     private List<Double> cpuTemperatures;
 
     /** Percentage of CPU time spent in "user" state in the last five seconds */

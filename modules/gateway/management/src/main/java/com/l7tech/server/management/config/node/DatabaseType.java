@@ -4,10 +4,10 @@
 package com.l7tech.server.management.config.node;
 
 /**
-     * The purpose for which this database will be used
+ * The purpose for which this database will be used
  */
 public enum DatabaseType {
-    GATEWAY_ALL,
-    GATEWAY_CONFIG,
-    GATEWAY_MONITORING
+    NODE_ALL,
+    NODE_CONFIG,
+    NODE_MONITORING
 }

@@ -4,10 +4,10 @@
 package com.l7tech.server.management.config.node;
 
 /** @author alex */
-public class RmiPortFeature extends ServiceNodeFeature {
+public class RmiPortFeature extends NodeFeature {
     private final int rmiPort;
 
-    public RmiPortFeature(PCServiceNodeConfig parent, int rmiPort) {
+    public RmiPortFeature(PCNodeConfig parent, int rmiPort) {
         super(parent, NodeFeatureType.RMI_PORT);
         this.rmiPort = rmiPort;
     }

@@ -17,14 +17,14 @@ import java.util.Set;
 @Entity
 @Table(name="pc_connector")
 public class ConnectorConfig extends SsgConnector {
-    private ServiceNodeConfig node;
+    private NodeConfig node;
 
     @ManyToOne(optional=false, cascade=CascadeType.ALL)
-    public ServiceNodeConfig getNode() {
+    public NodeConfig getNode() {
         return node;
     }
 
-    public void setNode(ServiceNodeConfig node) {
+    public void setNode(NodeConfig node) {
         this.node = node;
     }
 

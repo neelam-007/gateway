@@ -1,10 +1,11 @@
 /**
  * Copyright (C) 2008 Layer 7 Technologies Inc.
  */
-package com.l7tech.server.management.config.gateway;
+package com.l7tech.server.management.config.host;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.server.management.config.node.ServiceNodeConfig;
+import com.l7tech.server.management.config.node.NodeConfig;
+import com.l7tech.server.management.config.HasFeatures;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -15,21 +16,21 @@ import java.util.Set;
 
 /** @author alex */
 @Entity
-public abstract class GatewayConfig extends NamedEntityImp implements HasFeatures<GatewayFeature> {
+public abstract class HostConfig extends NamedEntityImp implements HasFeatures<HostFeature> {
     private String localHostname;
-    private GatewayType gatewayType;
+    private HostType hostType;
     private OSType osType;
     /**
-     * The set of {@link ServiceNodeConfig}s hosted on this Gateway.
+     * The set of {@link com.l7tech.server.management.config.node.NodeConfig}s hosted on this Host.
      */
-    protected Set<ServiceNodeConfig> serviceNodes = new HashSet<ServiceNodeConfig>();
+    protected Set<NodeConfig> nodes = new HashSet<NodeConfig>();
 
-    public GatewayType getGatewayType() {
-        return gatewayType;
+    public HostType getHostType() {
+        return hostType;
     }
 
-    public void setGatewayType(GatewayType gatewayType) {
-        this.gatewayType = gatewayType;
+    public void setHostType(HostType hostType) {
+        this.hostType = hostType;
     }
 
     public OSType getOsType() {
@@ -40,13 +41,13 @@ public abstract class GatewayConfig extends NamedEntityImp implements HasFeature
         this.osType = osType;
     }
 
-    @OneToMany(mappedBy="gateway", cascade= CascadeType.ALL, fetch= FetchType.EAGER)
-    public Set<ServiceNodeConfig> getServiceNodes() {
-        return serviceNodes;
+    @OneToMany(mappedBy="host", cascade= CascadeType.ALL, fetch= FetchType.EAGER)
+    public Set<NodeConfig> getNodes() {
+        return nodes;
     }
 
-    public void setServiceNodes(Set<ServiceNodeConfig> serviceNodes) {
-        this.serviceNodes = serviceNodes;
+    public void setNodes(Set<NodeConfig> nodes) {
+        this.nodes = nodes;
     }
 
     public String getLocalHostname() {
@@ -62,22 +63,22 @@ public abstract class GatewayConfig extends NamedEntityImp implements HasFeature
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
 
-        GatewayConfig gateway = (GatewayConfig)o;
+        HostConfig host = (HostConfig)o;
 
-        if (gatewayType != gateway.gatewayType) return false;
-        if (osType != gateway.osType) return false;
+        if (hostType != host.hostType) return false;
+        if (osType != host.osType) return false;
 
         return true;
     }
 
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (gatewayType != null ? gatewayType.hashCode() : 0);
+        result = 31 * result + (hostType != null ? hostType.hashCode() : 0);
         result = 31 * result + (osType != null ? osType.hashCode() : 0);
         return result;
     }
 
-    public enum GatewayType {
+    public enum HostType {
         APPLIANCE,
         SOFTWARE,
     }

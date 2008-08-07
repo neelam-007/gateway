@@ -9,7 +9,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
-import com.l7tech.server.management.config.node.ServiceNodeConfig;
+import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.util.Triple;
 
 import javax.activation.DataHandler;
@@ -24,14 +24,14 @@ import java.util.Set;
  */
 public interface NodeManagementApi {
     /**
-     * Creates a new {@link ServiceNodeConfig} with reasonable default parameters for the current gateway.
+     * Creates a new {@link com.l7tech.server.management.config.node.NodeConfig} with reasonable default parameters for the current host.
      *
      * TODO should this method save the node, or just return a transient instance?  I guess it depends on whether the defaults are sufficient to specify a fully functional node.
      *
      * TODO consider adding enough parameters to this method such that the resulting node is minimally specified
      *
-     * @param newNodeName the name of the new node; must be unique within this gateway
-     * @param version the software version that the ServiceNode should be initialized for
+     * @param newNodeName the name of the new node; must be unique within this host
+     * @param version the software version that the Node should be initialized for
      * @param databaseConfigMap the database configuration to use for the new node.  If null is passed, the PC will
      *                          attempt to create new, standalone database(s) with the default {@link DatabaseType type(s)}
      *                          and {@link DatabaseConfig.Vendor vendor(s)}
@@ -39,28 +39,28 @@ public interface NodeManagementApi {
      *                          password(s).  If the PC is unable to create the databases (e.g. because it doesn't have
      *                          sufficient credentials to do so) a {@link SaveException} will be thrown.
      *
-     * @return the newly created ServiceNodeConfig
+     * @return the newly created NodeConfig
      * @throws SaveException if the new node cannot be created
      */
-    ServiceNodeConfig createNode(String newNodeName, String version, Map<DatabaseType, DatabaseConfig> databaseConfigMap) throws SaveException;
+    NodeConfig createNode(String newNodeName, String version, Map<DatabaseType, DatabaseConfig> databaseConfigMap) throws SaveException;
 
     /**
-     * Retrieves the {@link ServiceNodeConfig} with the provided name, or null if no such node exists on this gateway.
+     * Retrieves the {@link com.l7tech.server.management.config.node.NodeConfig} with the provided name, or null if no such node exists on this host.
      *
      * @param nodeName the name of the node to retrieve
-     * @return the ServiceNodeConfig for the node with the specified name
+     * @return the NodeConfig for the node with the specified name
      * @throws FindException if for some reason the PC is unable to determine the (non-)existence of a node with the
      *                       specified name (e.g. the PC's configuration is corrupted or temporarily unavailable)
      */
-    ServiceNodeConfig getNode(String nodeName) throws FindException;
+    NodeConfig getNode(String nodeName) throws FindException;
 
     /**
-     * Lists the names and versions of the Service Nodes on this gateway.  The resulting Set may be empty, indicating
+     * Lists the names and versions of the Nodes on this host.  The resulting Set may be empty, indicating
      * that no nodes have been configured yet.
      *
-     * @return a Set of Triples, each consisting of the name, version and enablement status of a Service Node on this
-     *         gateway.
-     * @throws FindException if the list of Service Nodes cannot be retrieved
+     * @return a Set of Triples, each consisting of the name, version and enablement status of a Node on this
+     *         host.
+     * @throws FindException if the list of Nodes cannot be retrieved
      */
     Set<Triple<String, String, Boolean>> listNodes() throws FindException;
 
@@ -73,15 +73,15 @@ public interface NodeManagementApi {
      * @throws UpdateException if the new node configuration is incorrect or incompatible with the node's current state
      * @throws RestartRequiredException if the node is running, but the new configuration requires a restart
      */
-    void updateNode(ServiceNodeConfig node) throws UpdateException, RestartRequiredException;
+    void updateNode(NodeConfig node) throws UpdateException, RestartRequiredException;
 
     /**
-     * Deletes the Service Node with the specified name.  If the specified node is currently running, the PC will signal
+     * Deletes the Node with the specified name.  If the specified node is currently running, the PC will signal
      * the node to shutdown and wait up to <code>shutdownTimeout</code> milliseconds for the shutdown to conclude.  If,
      * after the timeout has elapsed, the node has still not stopped, the PC will forcibly kill the node's process and
      * continue with the deletion.
      *
-     * @param nodeName the name of the Service Node to delete.
+     * @param nodeName the name of the Node to delete.
      * @param shutdownTimeout the period, in milliseconds, to wait for a clean shutdown to complete before killing the node process. Values <= 0 indicate that the PC should wait indefinitely.
      * @throws DeleteException if the node cannot be deleted
      * @throws ForcedShutdownException if the node's process could not be shutdown cleanly and needed to be killed
@@ -89,23 +89,23 @@ public interface NodeManagementApi {
     void deleteNode(String nodeName, int shutdownTimeout) throws DeleteException, ForcedShutdownException;
 
     /**
-     * Uploads a new ServiceNode software bundle.  Note that uploading software bundles does not affect any existing
-     * Service Nodes on the Gateway; {@link #upgradeNode} must be called separately as needed to upgrade each node to
+     * Uploads a new Node software bundle.  Note that uploading software bundles does not affect any existing
+     * Nodes on the host; {@link #upgradeNode} must be called separately as needed to upgrade each node to
      * use the new software as desired.
      * 
      * @param softwareData a MIME blob containing the software bundle
-     * @return the version of the Service Node software
+     * @return the version of the Node software
      * @throws IOException if the software bundle could not be received or saved
-     * @throws UpdateException if the software bundle is incompatible with this PC or Gateway
+     * @throws UpdateException if the software bundle is incompatible with this PC or Host
      */
-    String uploadServiceNodeSoftware(DataHandler softwareData) throws IOException, UpdateException;
+    String uploadNodeSoftware(DataHandler softwareData) throws IOException, UpdateException;
 
     /**
-     * Attempts to upgrade the node with the specified name to the specified version.  A Service Node software bundle
-     * corresponding to the specified version must already have been uploaded to the gateway via
-     * {@link #uploadServiceNodeSoftware}.  If the specified node is still running, a {@link RestartRequiredException}
+     * Attempts to upgrade the node with the specified name to the specified version.  A Node software bundle
+     * corresponding to the specified version must already have been uploaded to the host via
+     * {@link #uploadNodeSoftware}.  If the specified node is still running, a {@link RestartRequiredException}
      * is thrown, indicating that the node must first be stopped using {@link #stopNode} before the upgrade can be
-     * retried.  In the event of an upgrade failure, the PC will make a best-effort attempt to restore the service
+     * retried.  In the event of an upgrade failure, the PC will make a best-effort attempt to restore the
      * node's operational capability, but no guarantee is offered.
      *
      * @param nodeName the name of the node to be upgraded
@@ -134,7 +134,7 @@ public interface NodeManagementApi {
     void stopNode(String nodeName, int timeout) throws FindException, ForcedShutdownException;
 
     /**
-     * Thrown if a desired service node action cannot be taken while the node is running
+     * Thrown if a desired node action cannot be taken while the node is running
      */
     public class RestartRequiredException extends Exception {
         public RestartRequiredException(String nodeName) {
@@ -143,7 +143,7 @@ public interface NodeManagementApi {
     }
 
     /**
-     * Thrown if a service node is unable to start
+     * Thrown if a node is unable to start
      */
     public class StartupException extends Exception {
         public StartupException(String node, String reason, Throwable cause) {
@@ -152,7 +152,7 @@ public interface NodeManagementApi {
     }
 
     /**
-     * Thrown if a service node was unable to shutdown cleanly within the provided timeout period
+     * Thrown if a node was unable to shutdown cleanly within the provided timeout period
      */
     public class ForcedShutdownException extends Exception {
         public ForcedShutdownException(String nodeName, int timeout) {

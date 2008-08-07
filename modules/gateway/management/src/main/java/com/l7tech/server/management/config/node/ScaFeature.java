@@ -4,10 +4,10 @@
 package com.l7tech.server.management.config.node;
 
 /** @author alex */
-public class ScaFeature extends ServiceNodeFeature {
+public class ScaFeature extends NodeFeature {
     private final boolean scaOwner;
 
-    ScaFeature(PCServiceNodeConfig parent, boolean scaOwner) {
+    ScaFeature(PCNodeConfig parent, boolean scaOwner) {
         super(parent, NodeFeatureType.SCA);
         this.scaOwner = scaOwner;
     }

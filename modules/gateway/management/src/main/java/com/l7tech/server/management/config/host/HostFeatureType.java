@@ -1,15 +1,15 @@
 /**
  * Copyright (C) 2008 Layer 7 Technologies Inc.
  */
-package com.l7tech.server.management.config.gateway;
+package com.l7tech.server.management.config.host;
 
 /** @author alex */
-public enum GatewayFeatureType {
+public enum HostFeatureType {
     IP(false);
 
     private final boolean unique;
 
-    GatewayFeatureType(boolean unique) {
+    HostFeatureType(boolean unique) {
         this.unique = unique;
     }
 

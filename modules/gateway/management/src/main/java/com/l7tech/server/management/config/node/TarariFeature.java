@@ -4,10 +4,10 @@
 package com.l7tech.server.management.config.node;
 
 /** @author alex */
-public class TarariFeature extends ServiceNodeFeature {
+public class TarariFeature extends NodeFeature {
     private final boolean tarariOwner;
 
-    TarariFeature(PCServiceNodeConfig parent, boolean tarariOwner) {
+    TarariFeature(PCNodeConfig parent, boolean tarariOwner) {
         super(parent, NodeFeatureType.TARARI);
         this.tarariOwner = tarariOwner;
     }

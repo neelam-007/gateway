@@ -30,8 +30,8 @@
         <exclude org="avalon-framework" module="avalon-framework" artifact="*" type="source" ext="jar" matcher="exact" /> 
         <exclude org="com.ibm.icu" module="icu4j" artifact="*" type="source" ext="jar" matcher="exact" /> 
         <exclude org="com.sun.xml.bind" module="jaxb-xjc" artifact="*" type="source" ext="jar" matcher="exact" /> 
-        <exclude org="com.sun.xml.bind" module="jaxb-impl" artifact="*" type="source" ext="jar" matcher="exact" /> 
-        <exclude org="com.sun.xml.fastinfoset" module="FastInfoset" artifact="*" type="source" ext="jar" matcher="exact" /> 
+        <!-- <exclude org="com.sun.xml.bind" module="jaxb-impl" artifact="*" type="source" ext="jar" matcher="exact" />  -->
+        <!-- <exclude org="com.sun.xml.fastinfoset" module="FastInfoset" artifact="*" type="source" ext="jar" matcher="exact" />  -->
         <exclude org="javax.xml.stream" module="stax-api" artifact="*" type="source" ext="jar" matcher="exact" /> 
         <exclude org="log4j" module="log4j" artifact="*" type="source" ext="jar" matcher="exact" /> 
         <exclude org="logkit" module="logkit" artifact="*" type="source" ext="jar" matcher="exact" /> 

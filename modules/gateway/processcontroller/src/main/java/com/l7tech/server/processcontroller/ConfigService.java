@@ -3,17 +3,17 @@
  */
 package com.l7tech.server.processcontroller;
 
-import com.l7tech.server.management.config.gateway.GatewayConfig;
-import com.l7tech.server.management.config.gateway.PCGatewayConfig;
-import com.l7tech.server.management.config.node.ServiceNodeConfig;
+import com.l7tech.server.management.config.host.HostConfig;
+import com.l7tech.server.management.config.host.PCHostConfig;
+import com.l7tech.server.management.config.node.NodeConfig;
 
 /** @author alex */
 public interface ConfigService {
-    GatewayConfig getGateway();
+    HostConfig getGateway();
 
-    void updateGateway(PCGatewayConfig gateway);
+    void updateGateway(PCHostConfig host);
 
-    void addServiceNode(ServiceNodeConfig node);
+    void addServiceNode(NodeConfig node);
 
-    void updateServiceNode(ServiceNodeConfig node);
+    void updateServiceNode(NodeConfig node);
 }

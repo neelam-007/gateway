@@ -29,8 +29,6 @@
 
         <dependency org="com.l7tech.lib" name="apache-cxf-lib" rev="2.1.1" force="true" conf="core"/>
 
-        <dependency org="org.tanukisoftware" name="wrapper" rev="3.3.0" force="true" conf="core"/>
-
         <dependency org="org.hibernate" name="hibernate" rev="3.2.6.ga" force="true" conf="core"/>
         <dependency org="org.hibernate" name="hibernate-annotations" rev="3.3.1.GA" force="true" conf="core"/>
     	<dependency org="org.hibernate" name="hibernate-commons-annotations" rev="3.0.0.ga" force="true" conf="core"/>
@@ -45,15 +43,5 @@
         <dependency org="org.springframework" name="spring-orm" rev="2.5.4" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-context-support" rev="2.5.4" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-tx" rev="2.5.4" force="true" conf="core"/>
-        
-        <!--
-        <dependency org="com.sun.org.apache.xml.internal" name="resolver" rev="1.0" force="true" conf="core"/>
-        <dependency org="javax.jws" name="jsr181" rev="1.0" force="true" conf="core"/>
-        <dependency org="javax.xml.bind" name="jaxb-api" rev="2.0" force="true" conf="core"/>
-        <dependency org="javax.xml.ws" name="jaxws-api" rev="2.0" force="true" conf="core"/>
-        --> 
-<!--	<dependency org="org.springframework" name="spring-web" rev="2.5.4" force="true" conf="core"/> 
-        <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
--->
     </dependencies>
 </ivy-module>

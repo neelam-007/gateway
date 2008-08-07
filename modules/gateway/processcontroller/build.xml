@@ -2,27 +2,4 @@
     <property name="module.main" value="com.l7tech.server.processcontroller.ProcessControllerMain"/>
 
     <import file="../../../etc/build/build-common.xml"/>
-
-    <property name="api-jar.file" value="${build.dir}/${ant.project.name}-api.jar"/>
-
-    <target name="package.custom">
-        <property name="package.classes.dir" value="${classes.main.dir}"/>
-
-        <jar destfile="${api-jar.file}">
-            <fileset dir="${package.classes.dir}">
-                <include name="com/l7tech/server/processcontroller/api/**/*.class"/>
-                <include name="com/l7tech/server/processcontroller/config/**/*.class"/>
-            </fileset>
-
-            <manifest>
-                <attribute name="Implementation-Title" value="${ivy.extra.title}"/>
-                <attribute name="Implementation-Version" value="${build.version}"/>
-                <attribute name="Implementation-Vendor" value="${build.vendor}"/>
-                <attribute name="Implementation-Vendor-Id" value="${build.vendor.id}"/>
-                <attribute name="Built-By" value="${build.user}"/>
-                <attribute name="Build-Jdk" value="${java.version}"/>
-                <attribute name="Build-Timestamp" value="${build.timestamp}"/>
-            </manifest>
-        </jar>
-    </target>
 </project>

@@ -9,8 +9,8 @@ package com.l7tech.server.management.config.monitoring;
  * @author alex
  */
 public enum ComponentType {
-    SERVICE_NODE,
-    GATEWAY,
+    NODE,
+    HOST,
     CLUSTER,
     ENTERPRISE_MANAGER
 }
