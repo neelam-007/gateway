@@ -1,3 +1,5 @@
 <project name="layer7-test" default="compile">
+    <property name="module.obfuscate.disabled" value="true"/>
+
     <import file="../../etc/build/build-common.xml"/>
 </project>

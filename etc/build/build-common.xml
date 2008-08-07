@@ -65,6 +65,9 @@
              classname="com.intellij.ant.Javac2"
              classpathref="uidesigner.classpath"/>
 
+    <!--
+      Modules JAVAC definition with some presets
+    -->
     <presetdef name="module-javac">
         <javac debug="on"
                optimize="${module.compile.optimize}"
@@ -82,6 +85,9 @@
         </javac>
     </presetdef>
 
+    <!--
+      Modules IDEA form compiler definition with some presets
+    -->
     <presetdef name="module-javac2">
         <javac2t
                 debug="on"
@@ -128,6 +134,9 @@
         </sequential>
     </macrodef>    
 
+    <!--
+      Modules JAR signing task with presets
+    -->
     <presetdef name="sign-jar">
         <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer2" storepass="password" jar="${jar.file}">
             <path>
@@ -136,6 +145,9 @@
         </signjar>
     </presetdef>
 
+    <!--
+      Module task to unpack an artifact into this modules classes directory (useful to combine JARs for Applets, etc)
+    -->
     <macrodef name="jar-include">
         <attribute name="name"/>
         <attribute name="conf" default="master"/>
@@ -163,7 +175,6 @@
             </unjar>
         </sequential>
     </macrodef>
-
 
     <!--
       Show build info for the module
