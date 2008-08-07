@@ -832,7 +832,6 @@
 
     <!--
       Configure and invoke unit tests
-      TODO [steve] Test tarari, profile? [see test.tarari.work]
     -->
     <target name="test" description="Run JUnit tests" depends="test.work, report.test">
         <checkfail/>
@@ -842,41 +841,6 @@
       Run tests
     -->
     <target name="test.work" depends="publish-all-modules">
-    </target>
-
-    <!--
-      TODO [steve] Add tarari tests
-    -->
-    <target name="test.tarari.work" depends="clean.test, dev">
-        <available file="/usr/local/Tarari/lib" type="dir" property="tarariraxj.present"/>
-
-        <if>
-            <isset property="tarariraxj.present"/>
-            <then>
-                <echo>Running Tarari tests</echo>
-                <junit printsummary="yes" haltonfailure="yes" fork="off" errorproperty="test.error" failureproperty="test.failure">
-                    <classpath>
-                        <path refid="project.test.classpath"/>
-                        <!--<pathelement location="${build.test.classes}"/>-->
-                    </classpath>
-
-                    <formatter type="plain" unless="build.junit.xmlformat"/>
-                    <formatter type="xml" if="build.junit.xmlformat"/>
-                    <sysproperty key="src.root" value="${src.root}"/>
-                    <sysproperty key="com.l7tech.xml.tarari.enable" value="true"/>
-
-                    <!--
-                      Tests.  All these tests must run with fork="yes"
-                    -->
-                    <test name="com.l7tech.xml.tarari.TarariXpathTest" haltonfailure="no" fork="yes"/>
-                    <test name="com.l7tech.server.PolicyProcessingTest" haltonfailure="no" fork="yes"/>
-                    <test name="com.l7tech.message.KnobblyMessageTest" haltonfailure="no" fork="yes"/>
-                </junit>
-            </then>
-            <else>
-                <echo>Skipping Tarari tests - no Tarari detected</echo>
-            </else>
-        </if>
     </target>
 
     <!--

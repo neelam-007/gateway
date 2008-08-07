@@ -288,6 +288,9 @@
             <formatter type="xml" if="build.junit.xmlformat"/>
 
             <sysproperty key="src.root" value="${src.root}"/>
+            <syspropertyset>
+              <propertyref prefix="com.l7tech"/>
+            </syspropertyset>
 
             <batchtest haltonfailure="no" todir="${report.test.dir}">
                 <fileset dir="${classes.test.dir}">

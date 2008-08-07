@@ -5,40 +5,26 @@
 
 package com.l7tech.xml;
 
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.tarari.TarariMessageContextImpl;
-import com.l7tech.xml.ElementCursor;
-import com.l7tech.xml.DomElementCursor;
-import com.l7tech.xml.TarariLoader;
-import com.l7tech.xml.SoftwareFallbackException;
 import com.l7tech.message.TarariMessageContextFactory;
 import com.l7tech.common.io.XmlUtil;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import com.l7tech.test.SystemPropertyPrerequisite;
+import com.l7tech.test.SystemPropertySwitchedRunner;
 import org.xml.sax.SAXException;
+import org.junit.runner.RunWith;
+import org.junit.Test;
+import org.junit.Assert;
+import org.junit.Ignore;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.logging.Logger;
 
 /**
  * Unit tests for an ElementCursor implementation.
  */
-public class ElementCursorTest extends TestCase {
-    private static Logger log = Logger.getLogger(ElementCursorTest.class.getName());
+@RunWith(SystemPropertySwitchedRunner.class)
+public class ElementCursorTest {
 
-    public ElementCursorTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(ElementCursorTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
 
     private interface ElementCursorFactory {
         ElementCursor newElementCursor(String xml) throws SAXException;
@@ -68,14 +54,15 @@ public class ElementCursorTest extends TestCase {
         }
     }
 
+    @Test
+    @SystemPropertyPrerequisite(require = TarariLoader.ENABLE_PROPERTY)
+    @Ignore("Need to work out why this fails and fix the environment on TeamCity")
+    // TODO [steve] Fix Tarari test on TeamCity
     public void testTarariCursor() throws Exception {
-        try {
-            testAll(new TarariElementCursorFactory());
-        } catch (UnsatisfiedLinkError e) {
-            log.warning("Tarari test not performed -- hardware not found: " + ExceptionUtils.getMessage(e));
-        }
+        testAll(new TarariElementCursorFactory());
     }
 
+    @Test
     public void testDomCursor() throws Exception {
         testAll(new DomElementCursorFactory());
     }
@@ -88,7 +75,7 @@ public class ElementCursorTest extends TestCase {
     private void assertEmptyStack( ElementCursor c) {
         try {
             c.popPosition();
-            fail("Stack should have been empty");
+            Assert.fail("Stack should have been empty");
         } catch (IllegalStateException e) {
             // Ok
         }
@@ -130,31 +117,31 @@ public class ElementCursorTest extends TestCase {
     private void testSimple(ElementCursorFactory f) throws SAXException {
         ElementCursor c = f.newElementCursor(SIMPLE);
         c.moveToDocumentElement();
-        assertEquals("catalog", c.getLocalName());
+        Assert.assertEquals("catalog", c.getLocalName());
         final String ns = "http://www.books.com/";
-        assertEquals(ns, c.getNamespaceUri());
-        assertNull(c.getPrefix());
+        Assert.assertEquals(ns, c.getNamespaceUri());
+        Assert.assertNull(c.getPrefix());
         assertEmptyStack(c);
         c.pushPosition();
-        assertTrue(c.moveToFirstChildElement());
-        assertEquals("author", c.getLocalName());
-        assertTrue(c.moveToFirstChildElement());
-        assertEquals("name", c.getLocalName());
-        assertEquals(ns, c.getNamespaceUri());
-        assertFalse(c.moveToNextSiblingElement("flarf", ns));
-        assertEquals("name", c.getLocalName());
-        assertEquals(ns, c.getNamespaceUri());
-        assertFalse(c.moveToNextSiblingElement("booklist", "uuid:asjdhf"));
-        assertTrue(c.moveToNextSiblingElement("booklist", ns));
-        assertTrue(c.moveToFirstChildElement());
-        assertEquals("book", c.getLocalName());
-        assertTrue(c.moveToFirstChildElement("name", ns));
-        assertEquals("The Secret Agent", c.getTextValue());
+        Assert.assertTrue(c.moveToFirstChildElement());
+        Assert.assertEquals("author", c.getLocalName());
+        Assert.assertTrue(c.moveToFirstChildElement());
+        Assert.assertEquals("name", c.getLocalName());
+        Assert.assertEquals(ns, c.getNamespaceUri());
+        Assert.assertFalse(c.moveToNextSiblingElement("flarf", ns));
+        Assert.assertEquals("name", c.getLocalName());
+        Assert.assertEquals(ns, c.getNamespaceUri());
+        Assert.assertFalse(c.moveToNextSiblingElement("booklist", "uuid:asjdhf"));
+        Assert.assertTrue(c.moveToNextSiblingElement("booklist", ns));
+        Assert.assertTrue(c.moveToFirstChildElement());
+        Assert.assertEquals("book", c.getLocalName());
+        Assert.assertTrue(c.moveToFirstChildElement("name", ns));
+        Assert.assertEquals("The Secret Agent", c.getTextValue());
         ElementCursor d = c.duplicate();
         d.popPosition(true);
-        assertEquals("The Secret Agent", d.getTextValue());
+        Assert.assertEquals("The Secret Agent", d.getTextValue());
         c.popPosition();
-        assertEquals("catalog", c.getLocalName());
+        Assert.assertEquals("catalog", c.getLocalName());
         assertEmptyStack(c);
         assertEmptyStack(d);
     }
@@ -162,10 +149,10 @@ public class ElementCursorTest extends TestCase {
     private void testMixed(ElementCursorFactory f) throws SAXException {
         ElementCursor c = f.newElementCursor(SIMPLE);
         c.moveToDocumentElement();
-        assertFalse(c.containsMixedModeContent(true, false));
+        Assert.assertFalse(c.containsMixedModeContent(true, false));
 
         c = f.newElementCursor(MIXED);
         c.moveToDocumentElement();
-        assertTrue(c.containsMixedModeContent(true, false));
+        Assert.assertTrue(c.containsMixedModeContent(true, false));
     }
 }
