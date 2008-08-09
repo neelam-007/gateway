@@ -67,7 +67,7 @@ public class DeletePolicyAction extends PolicyNodeAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        Actions.deletePolicy(policyNode, new Functions.UnaryVoid<Boolean>() {
+        Actions.deletePolicy((PolicyEntityNode)policyNode, new Functions.UnaryVoid<Boolean>() {
             public void call(Boolean confirmed) {
                 if (!confirmed) return;
 

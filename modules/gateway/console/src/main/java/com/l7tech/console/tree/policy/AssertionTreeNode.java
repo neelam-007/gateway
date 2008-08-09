@@ -9,10 +9,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.console.action.*;
 import com.l7tech.console.policy.exporter.PolicyImporter;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.PolicyTemplateNode;
-import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.PolicyEntityNode;
+import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -438,7 +435,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
      * todo: find a better place for this
      */
     private void assignPolicyTemplate(PolicyTemplateNode templateNode) {
-        PolicyEntityNode policyNode = getPolicyNodeCookie();
+        EntityWithPolicyNode policyNode = getPolicyNodeCookie();
         if (policyNode == null)
             throw new IllegalArgumentException("No edited policy specified");
         try {
@@ -468,7 +465,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     /**
      * @return the published service cookie or null if not found
      */
-    protected PolicyEntityNode getPolicyNodeCookie() {
+    protected EntityWithPolicyNode getPolicyNodeCookie() {
         return getPolicyNode(this);
     }
 
@@ -479,7 +476,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     }
 
     public Policy getPolicy() throws FindException {
-        PolicyEntityNode pn = getPolicyNodeCookie();
+        EntityWithPolicyNode pn = getPolicyNodeCookie();
         if (pn == null) return null;
         return pn.getPolicy();
     }
@@ -504,10 +501,10 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
      * @param node the assertion tree node
      * @return the published service or null if not found
      */
-    public static PolicyEntityNode getPolicyNode(AssertionTreeNode node) {
+    public static EntityWithPolicyNode getPolicyNode(AssertionTreeNode node) {
         for (Iterator i = ((AbstractTreeNode)node.getRoot()).cookies(); i.hasNext();) {
             Object value = ((Cookie)i.next()).getValue();
-            if (value instanceof PolicyEntityNode) return (PolicyEntityNode)value;
+            if (value instanceof EntityWithPolicyNode) return (EntityWithPolicyNode)value;
         }
         return null;
     }

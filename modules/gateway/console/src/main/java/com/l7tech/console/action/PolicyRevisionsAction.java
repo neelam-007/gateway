@@ -1,12 +1,12 @@
 package com.l7tech.console.action;
 
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.policy.Policy;
 import com.l7tech.console.panels.PolicyRevisionsDialog;
-import com.l7tech.console.tree.PolicyEntityNode;
+import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.Policy;
 
 /**
  * Views revision history for a policy (or published service).
@@ -14,7 +14,7 @@ import com.l7tech.objectmodel.FindException;
 public class PolicyRevisionsAction extends NodeAction {
     private final boolean service;
 
-    public PolicyRevisionsAction(PolicyEntityNode node) {
+    public PolicyRevisionsAction(EntityWithPolicyNode node) {
         super(node);
         service = node instanceof ServiceNode;
     }
@@ -32,7 +32,7 @@ public class PolicyRevisionsAction extends NodeAction {
     }
 
     protected void performAction() {
-        final PolicyEntityNode policyNode = (PolicyEntityNode)node;
+        final EntityWithPolicyNode policyNode = (EntityWithPolicyNode)node;
         try {
             Policy policy = policyNode.getPolicy();
             PolicyRevisionsDialog dlg = new PolicyRevisionsDialog(TopComponents.getInstance().getTopParent(), policyNode, policy.getOid());

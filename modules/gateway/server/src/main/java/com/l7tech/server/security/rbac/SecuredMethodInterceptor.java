@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.policy.PolicyHeader;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.collections.iterators.ArrayIterator;
@@ -58,8 +59,12 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                 if (header.getType() == com.l7tech.objectmodel.EntityType.MAXED_OUT_SEARCH_RESULT) {
                     // This one can get by without a permission check
                     testEntity = null;
-                } else if(header.getType() == com.l7tech.objectmodel.EntityType.POLICY) {
-                    testEntity = policyManager.findByGuid(header.getStrId());
+                } else if (header.getType() == com.l7tech.objectmodel.EntityType.POLICY) {
+                    if (header instanceof PolicyHeader) {
+                        testEntity = policyManager.findByGuid(((PolicyHeader)header).getGuid());
+                    } else {
+                        testEntity = policyManager.findByPrimaryKey(header.getOid());
+                    }
                 } else {
                     testEntity = entityFinder.find(header);
                 }

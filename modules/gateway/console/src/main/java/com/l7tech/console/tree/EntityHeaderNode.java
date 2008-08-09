@@ -18,7 +18,7 @@ import java.util.Comparator;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
-public abstract class EntityHeaderNode extends AbstractTreeNode {
+public abstract class EntityHeaderNode<HT extends EntityHeader> extends AbstractTreeNode {
     private IdentityProviderConfig config;
 
     /**
@@ -57,7 +57,7 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
      *
      * @param e the e represented by this <CODE>EntityHeaderNode</CODE>
      */
-    public EntityHeaderNode(EntityHeader e) {
+    public EntityHeaderNode(HT e) {
         super(e);
         setAllowsChildren(false);
     }
@@ -100,8 +100,8 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
      *
      * @return the <code>EntityHeader</code>
      */
-    public EntityHeader getEntityHeader() {
-        return (EntityHeader)getUserObject();
+    public HT getEntityHeader() {
+        return (HT)getUserObject();
     }
 
     /**

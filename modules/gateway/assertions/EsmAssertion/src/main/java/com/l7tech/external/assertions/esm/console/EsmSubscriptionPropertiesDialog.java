@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.wsdm.subscription.Subscription;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -16,8 +17,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collection;
-
-import org.apache.commons.lang.StringUtils;
 
 /**
  * User: megery
@@ -107,7 +106,7 @@ public class EsmSubscriptionPropertiesDialog extends AssertionPropertiesEditorSu
             if (header.getHeader() == null)
                 assertion.setNotificationPolicyGuid(null);
             else
-                assertion.setNotificationPolicyGuid(header.getHeader().getStrId());
+                assertion.setNotificationPolicyGuid(header.getHeader().getGuid());
         }
     }
 
@@ -123,7 +122,7 @@ public class EsmSubscriptionPropertiesDialog extends AssertionPropertiesEditorSu
         for (int i = 0; i < model.getSize(); i++) {
             selectedHeaderWrapper = (PolicyHeaderWrapper) model.getElementAt(i);
             PolicyHeader selectedHeader = selectedHeaderWrapper.getHeader();
-            if (selectedHeader != null && selectedHeader.getStrId().equals(polId)) {
+            if (selectedHeader != null && selectedHeader.getGuid().equals(polId)) {
                 policyList.setSelectedValue(selectedHeaderWrapper, true);
                 break;
             }

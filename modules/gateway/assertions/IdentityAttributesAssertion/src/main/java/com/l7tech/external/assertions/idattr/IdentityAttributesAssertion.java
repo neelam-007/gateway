@@ -42,7 +42,7 @@ public class IdentityAttributesAssertion extends Assertion implements UsesVariab
 
     public EntityHeader[] getEntitiesUsed() {
         if(identityProviderOid > 0) {
-            return new EntityHeader[] {new EntityHeader(Long.toString(identityProviderOid), EntityType.ID_PROVIDER_CONFIG, null, null)};
+            return new EntityHeader[] {new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, null, null)};
         } else {
             return new EntityHeader[0];
         }

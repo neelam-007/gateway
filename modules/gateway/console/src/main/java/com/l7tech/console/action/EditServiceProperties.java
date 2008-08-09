@@ -3,30 +3,30 @@
  */
 package com.l7tech.console.action;
 
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.gateway.common.security.rbac.EntityType;
-import com.l7tech.util.Functions;
 import com.l7tech.console.panels.ServicePropertiesDialog;
 import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
-import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
-import java.util.logging.Level;
 import java.util.Collection;
+import java.util.logging.Level;
 
 /**
  * Action to edit the published service properties
@@ -84,7 +84,7 @@ public class EditServiceProperties extends ServiceNodeAction {
                     }
                     PolicyEditorPanel pe = (PolicyEditorPanel)jc;
                     try {
-                        final PolicyEntityNode pn = pe.getPolicyNode();
+                        final EntityWithPolicyNode pn = pe.getPolicyNode();
                         if (pn instanceof ServiceNode) {
                             PublishedService editedSvc = ((ServiceNode) pn).getPublishedService();
                             // if currently edited service was deleted

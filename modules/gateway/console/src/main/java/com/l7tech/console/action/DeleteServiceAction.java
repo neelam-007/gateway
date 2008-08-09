@@ -1,16 +1,16 @@
 package com.l7tech.console.action;
 
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.util.Functions;
 import com.l7tech.console.panels.HomePagePanel;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.console.tree.PolicyEntityNode;
+import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -84,7 +84,7 @@ public class DeleteServiceAction extends ServiceNodeAction {
                                 return;
                             }
                             PolicyEditorPanel pe = (PolicyEditorPanel)jc;
-                            PolicyEntityNode pn = pe.getPolicyNode();
+                            EntityWithPolicyNode pn = pe.getPolicyNode();
                             if (pn instanceof ServiceNode) {
                                 PublishedService svc = ((ServiceNode) pn).getPublishedService();
                                 // if currently edited service was deleted

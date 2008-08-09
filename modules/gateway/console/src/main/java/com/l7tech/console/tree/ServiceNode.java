@@ -1,16 +1,15 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.policy.Policy;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.console.action.*;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.Policy;
+import com.l7tech.wsdl.Wsdl;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -28,7 +27,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class ServiceNode extends PolicyEntityNode implements Comparable<ServiceNode> {
+public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceHeader> implements Comparable<ServiceNode> {
     static final Logger log = Logger.getLogger(ServiceNode.class.getName());
     private PublishedService svc;
 
@@ -46,29 +45,10 @@ public class ServiceNode extends PolicyEntityNode implements Comparable<ServiceN
     }
 
     public PublishedService getPublishedService() throws FindException {
-        return svc != null ? svc : (svc = refreshPublishedService());
-    }
+        if (svc != null) return svc;
 
-    @Override
-    public Policy getPolicy() throws FindException {
-        return getPublishedService().getPolicy();
-    }
-
-    @Override
-    public Entity getEntity() throws FindException {
-        return getPublishedService();
-    }
-
-    /**
-     * Refresh info from server, including checking for deleted service.
-     * If the service has been deleted, this will prune it from the services tree before returning.
-     *
-     * @throws com.l7tech.objectmodel.FindException  if unable to find service, possibly because it was deleted
-     * @return the published service.  Never null.
-     */
-    public PublishedService refreshPublishedService() throws FindException {
-        ServiceHeader serviceHeader = getHeader();
-        svc = Registry.getDefault().getServiceManager().findServiceByID(serviceHeader.getStrId());
+        ServiceHeader serviceHeader = getEntityHeader();
+        PublishedService svc = Registry.getDefault().getServiceManager().findServiceByID(serviceHeader.getStrId());
         // throw something if null, the service may have been deleted
         if (svc == null) {
             TopComponents creg = TopComponents.getInstance();
@@ -86,10 +66,23 @@ public class ServiceNode extends PolicyEntityNode implements Comparable<ServiceN
             }
             throw new FindException("The service '"+serviceHeader.getName()+"' does not exist any more.");
         }
+
+        this.svc = svc;
+
         ServiceHeader newEh = new ServiceHeader(svc);
         setUserObject(newEh);
         firePropertyChange(this, "UserObject", serviceHeader, newEh);
         return svc;
+    }
+
+    @Override
+    public Policy getPolicy() throws FindException {
+        return getPublishedService().getPolicy();
+    }
+
+    @Override
+    public PublishedService getEntity() throws FindException {
+        return getPublishedService();
     }
 
     /**
@@ -97,7 +90,6 @@ public class ServiceNode extends PolicyEntityNode implements Comparable<ServiceN
      */
     @Override
     public void clearCachedEntities() {
-        super.clearCachedEntities();
         svc = null;
     }
 
@@ -113,21 +105,11 @@ public class ServiceNode extends PolicyEntityNode implements Comparable<ServiceN
 
         actions.add(new EditPolicyAction(this));
         actions.add(new EditServiceProperties(this));
-        if (getHeader().isSoap() && !TopComponents.getInstance().isApplet()) actions.add(new PublishPolicyToUDDIRegistry(this));
+        if (getEntityHeader().isSoap() && !TopComponents.getInstance().isApplet()) actions.add(new PublishPolicyToUDDIRegistry(this));
         actions.add(new DeleteServiceAction(this));
         actions.add(new PolicyRevisionsAction(this));
 
         return actions.toArray(new Action[actions.size()]);
-    }
-
-    /**
-     * Test if the node can be deleted. Default is <code>true</code>
-     *
-     * @return true if the node can be deleted, false otherwise
-     */
-    @Override
-    public boolean canDelete() {
-        return true;
     }
 
     /**
@@ -175,7 +157,7 @@ public class ServiceNode extends PolicyEntityNode implements Comparable<ServiceN
      */
     @Override
     public String getName() {
-        return getHeader().getDisplayName();
+        return getEntityHeader().getDisplayName();
     }
 
     @Override
@@ -197,7 +179,7 @@ public class ServiceNode extends PolicyEntityNode implements Comparable<ServiceN
      */
     @Override
     protected String iconResource(boolean open) {
-        ServiceHeader header = getHeader();
+        ServiceHeader header = getEntityHeader();
         if (header == null) {
             return "com/l7tech/console/resources/services_disabled16.png";
         }
@@ -216,7 +198,4 @@ public class ServiceNode extends PolicyEntityNode implements Comparable<ServiceN
         }
     }
 
-    private ServiceHeader getHeader() {
-        return (ServiceHeader) getEntityHeader();
-    }
 }

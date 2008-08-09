@@ -1,29 +1,9 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.PauseListener;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.widgets.SpeedIndicator;
-import com.l7tech.gui.widgets.SquigglyField;
-import com.l7tech.security.xml.KeyReference;
-import com.l7tech.security.xml.XencAlgorithm;
-import com.l7tech.util.Functions;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.xml.soap.SoapMessageGenerator;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.xml.XpathEvaluator;
-import com.l7tech.xml.tarari.util.TarariXpathConverter;
-import com.l7tech.xml.xpath.FastXpath;
-import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.policy.Policy;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.tree.wsdl.BindingOperationTreeNode;
 import com.l7tech.console.tree.wsdl.BindingTreeNode;
@@ -36,10 +16,20 @@ import com.l7tech.console.xmlviewer.Viewer;
 import com.l7tech.console.xmlviewer.ViewerToolBar;
 import com.l7tech.console.xmlviewer.properties.ConfigurationProperties;
 import com.l7tech.console.xmlviewer.util.DocumentUtilities;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.service.SampleMessage;
+import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.PauseListener;
+import com.l7tech.gui.util.TextComponentPauseListenerManager;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.SpeedIndicator;
+import com.l7tech.gui.widgets.SquigglyField;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.ResponseXpathAssertion;
 import com.l7tech.policy.assertion.SimpleXpathAssertion;
@@ -48,10 +38,23 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
-import com.l7tech.policy.variable.*;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.PolicyVariableUtils;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.WspConstants;
-import com.l7tech.gateway.common.service.SampleMessage;
-import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.security.xml.KeyReference;
+import com.l7tech.security.xml.XencAlgorithm;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.wsdl.Wsdl;
+import com.l7tech.xml.XpathEvaluator;
+import com.l7tech.xml.soap.SoapMessageGenerator;
+import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.tarari.util.TarariXpathConverter;
+import com.l7tech.xml.xpath.FastXpath;
+import com.l7tech.xml.xpath.XpathExpression;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.jaxen.JaxenException;
@@ -104,7 +107,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private XpathBasedAssertionTreeNode node;
     private XpathBasedAssertion assertion;
     private ServiceNode serviceNode;
-    private PolicyEntityNode policyNode;
+    private EntityWithPolicyNode policyNode;
     private Wsdl serviceWsdl;
     private SoapMessageGenerator.Message[] soapMessages;
     private String blankMessage = "<empty />";
@@ -523,13 +526,12 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 String xpath = xpathTextField.getText();
                 XpathFeedBack res = getFeedBackMessage(namespaces, xpathTextField);
                 if (res != null && !res.valid()) {
-                    String xpathmsg = xpath;
-                    if (xpathmsg == null || xpathmsg.equals("")) {
+                    if (xpath == null || xpath.equals("")) {
                         DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
                                 "The empty XPath is invalid. Please specify it.", null);
                         return;
                     }
-                    int rs2 = JOptionPane.showConfirmDialog(okButton, "The path " + xpathmsg + " is not valid (" +
+                    int rs2 = JOptionPane.showConfirmDialog(okButton, "The path " + xpath + " is not valid (" +
                       res.getShortMessage() + ").\nAre you sure " +
                       "you want to save?");
                     if (rs2 != JOptionPane.YES_OPTION) {

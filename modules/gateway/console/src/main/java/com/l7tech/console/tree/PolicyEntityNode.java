@@ -1,10 +1,8 @@
 /**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
+ * Copyright (C) 2008 Layer 7 Technologies Inc.
  */
 package com.l7tech.console.tree;
 
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
 import com.l7tech.console.action.DeletePolicyAction;
 import com.l7tech.console.action.EditPolicyAction;
 import com.l7tech.console.action.EditPolicyProperties;
@@ -12,9 +10,11 @@ import com.l7tech.console.action.PolicyRevisionsAction;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyHeader;
+import com.l7tech.policy.PolicyType;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -23,45 +23,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
-/**
- * This class represents Policy nodes in the lower-left policy CRUD tree
- */
-public class PolicyEntityNode extends EntityHeaderNode {
-    static final Logger log = Logger.getLogger(PolicyEntityNode.class.getName());
-    protected Policy policy;
+/** @author alex */
+public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader> {
+    protected volatile Policy policy;
 
-    /**
-     * construct the <CODE>PolicyEntityNode</CODE> instance for
-     * a given entity header.
-     *
-     * @param e the EntityHeader instance, must represent published service
-     * @throws IllegalArgumentException thrown if unexpected type
-     */
-    public PolicyEntityNode(EntityHeader e)
-      throws IllegalArgumentException {
+    public PolicyEntityNode(PolicyHeader e) {
         super(e);
     }
 
     public Policy getPolicy() throws FindException {
-        return policy != null ? policy : (policy = refreshPolicy());
-    }
+        if (policy != null) return policy;
 
-    public Entity getEntity() throws FindException {
-        return getPolicy();
-    }
-
-    /**
-     * Refresh info from server, including checking for deleted service.
-     * If the service has been deleted, this will prune it from the services tree before returning.
-     *
-     * @throws com.l7tech.objectmodel.FindException  if unable to find service, possibly because it was deleted
-     * @return the published service.  Never null.
-     */
-    public Policy refreshPolicy() throws FindException {
-        EntityHeader eh = getEntityHeader();
-        policy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(eh.getStrId());
+        PolicyHeader eh = getEntityHeader();
+        Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(eh.getGuid());
         // throw something if null, the service may have been deleted
         if (policy == null) {
             TopComponents creg = TopComponents.getInstance();
@@ -80,43 +55,37 @@ public class PolicyEntityNode extends EntityHeaderNode {
             throw new FindException("The policy for '"+eh.getName()+"' does not exist any more.");
         }
 
-        EntityHeader newEh = new EntityHeader(policy.getGuid(), eh.getType(), policy.getName(), policy.getName());
+        this.policy = policy;
+
+        EntityHeader newEh = new PolicyHeader(policy);
         setUserObject(newEh);
         firePropertyChange(this, "UserObject", eh, newEh);
+
         return policy;
     }
 
-    /**
-     * Get the set of actions associated with this node.
-     * This may be used e.g. in constructing a context menu.
-     *
-     * @return actions appropriate to the node
-     */
+    public Policy getEntity() throws FindException {
+        return getPolicy();
+    }
+
     @Override
     public Action[] getActions() {
         Collection<Action> actions = new ArrayList<Action>();
-
         actions.add(new EditPolicyAction(this));
         actions.add(new EditPolicyProperties(this));
         actions.add(new DeletePolicyAction(this));
         actions.add(new PolicyRevisionsAction(this));
-
-        return actions.toArray(new Action[actions.size()]);
+        return actions.toArray(new Action[0]);
     }
 
-    /**
-     * Test if the node can be deleted. Default is <code>true</code>
-     *
-     * @return true if the node can be deleted, false otherwise
-     */
-    @Override
-    public boolean canDelete() {
-        return true;
+    protected String getEntityName() {
+        return policy.getName();
     }
 
-    /**
-     * @return the node name that is displayed
-     */
+    public void clearCachedEntities() {
+        policy = null;
+    }
+
     @Override
     public String getName() {
         try {
@@ -131,15 +100,6 @@ public class PolicyEntityNode extends EntityHeaderNode {
         }
     }
 
-    protected String getEntityName() {
-        return policy.getName();
-    }
-
-    /**
-     * subclasses override this method specifying the resource name
-     *
-     * @param open for nodes that can be opened, can have children
-     */
     @Override
     protected String iconResource(boolean open) {
         boolean isSoap;
@@ -149,7 +109,8 @@ public class PolicyEntityNode extends EntityHeaderNode {
             isInternal = getPolicy().getType() == PolicyType.INTERNAL;
         } catch (Exception e) {
             ErrorManager.getDefault().
-              notify(Level.SEVERE, e,
+              notify(
+                  Level.SEVERE, e,
                 "Error accessing policy entity");
             return "com/l7tech/console/resources/include16.png";
         }
@@ -161,9 +122,5 @@ public class PolicyEntityNode extends EntityHeaderNode {
             if (isSoap) return "com/l7tech/console/resources/include_soap16.png";
             else return "com/l7tech/console/resources/include16.png";
         }
-    }
-
-    public void clearCachedEntities() {
-        policy = null;
     }
 }

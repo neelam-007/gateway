@@ -111,7 +111,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
          *
          * @return the policy node if the policy is attached to an entity, null otherwise
          */
-        PolicyEntityNode getPolicyNode();
+        EntityWithPolicyNode getPolicyNode();
 
         /**
          * get the root assertion of the policy to edit
@@ -192,7 +192,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      *
      * @return the noe that the panel is editing
      */
-    public PolicyEntityNode getPolicyNode() {
+    public EntityWithPolicyNode getPolicyNode() {
         return subject.getPolicyNode();
     }
 
@@ -207,7 +207,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     protected PublishedService getPublishedService() {
         PublishedService service = null;
-        PolicyEntityNode pn = subject.getPolicyNode();
+        EntityWithPolicyNode pn = subject.getPolicyNode();
         if (pn instanceof ServiceNode) {
             try {
                 service = ((ServiceNode)pn).getPublishedService();
@@ -627,7 +627,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             policyViewButton.setSelected(true);
 
             JToggleButton identityViewButton = new JToggleButton(new PolicyIdentityViewAction());
-            PolicyEntityNode pn = getPolicyNode();
+            EntityWithPolicyNode pn = getPolicyNode();
             if (pn instanceof ServiceNode) {
                 identityViewButton.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {

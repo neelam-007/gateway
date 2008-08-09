@@ -1,28 +1,28 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.SimpleTableModel;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.TableUtil;
-import static com.l7tech.gui.util.TableUtil.column;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.policy.PolicyVersion;
-import com.l7tech.util.BeanUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
 import com.l7tech.console.action.EditPolicyAction;
-import com.l7tech.console.tree.PolicyEntityNode;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.policy.LeafAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.gui.SimpleTableModel;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.TableUtil;
+import static com.l7tech.gui.util.TableUtil.column;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.policy.PolicyVersion;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.util.BeanUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -54,7 +54,7 @@ public class PolicyRevisionsDialog extends JDialog {
     private JButton clearActiveButton;
     private JButton setCommentButton;
 
-    private final PolicyEntityNode policyNode;
+    private final EntityWithPolicyNode policyNode;
     private final long policyOid;
     private final DateFormat dateFormat = DateFormat.getInstance();
 
@@ -73,14 +73,14 @@ public class PolicyRevisionsDialog extends JDialog {
     /** Index of the "Act." table column in the table model. */
     private static final int COLUMN_IDX_ACTIVE = 0;
 
-    public PolicyRevisionsDialog(Frame owner, PolicyEntityNode policyNode, long policyOid) {
+    public PolicyRevisionsDialog(Frame owner, EntityWithPolicyNode policyNode, long policyOid) {
         super(owner);
         this.policyNode = policyNode;
         this.policyOid = policyOid;
         initialize();
     }
 
-    public PolicyRevisionsDialog(Dialog owner, PolicyEntityNode policyNode, long policyOid) {
+    public PolicyRevisionsDialog(Dialog owner, EntityWithPolicyNode policyNode, long policyOid) {
         super(owner);
         this.policyNode = policyNode;
         this.policyOid = policyOid;

@@ -284,7 +284,7 @@ public class IdProviderReference extends ExternalReference {
                     if(entityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) && entityHeader.getOid() == providerId) {
                         if(localizeType == LocaliseAction.REPLACE) {
                             if(locallyMatchingProviderId != providerId) {
-                                EntityHeader newEntityHeader = new EntityHeader(Long.toString(locallyMatchingProviderId), EntityType.ID_PROVIDER_CONFIG, null, null);
+                                EntityHeader newEntityHeader = new EntityHeader(locallyMatchingProviderId, EntityType.ID_PROVIDER_CONFIG, null, null);
                                 entitiesUser.replaceEntity(entityHeader, newEntityHeader);
 
                                 logger.info("The provider id of the imported id assertion has been changed " +

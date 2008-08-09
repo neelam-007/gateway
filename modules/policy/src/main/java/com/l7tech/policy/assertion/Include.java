@@ -6,6 +6,7 @@ package com.l7tech.policy.assertion;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyHeader;
 
 import java.util.UUID;
 
@@ -86,11 +87,9 @@ public class Include extends Assertion implements UsesEntities, PolicyReference 
     }
 
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
-        if(oldEntityHeader.getType().equals(EntityType.POLICY) && oldEntityHeader.getStrId().equals(policyGuid) &&
-                newEntityHeader.getType().equals(EntityType.POLICY))
-        {
-            policyGuid = newEntityHeader.getStrId();
-        }
+        if (!(newEntityHeader instanceof PolicyHeader)) throw new IllegalArgumentException("newEntityHeader is not a PolicyHeader");
+
+        policyGuid = ((PolicyHeader)newEntityHeader).getGuid();
     }
 
     public Policy retrieveFragmentPolicy() {

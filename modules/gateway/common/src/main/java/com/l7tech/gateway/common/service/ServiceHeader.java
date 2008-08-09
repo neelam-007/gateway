@@ -1,6 +1,5 @@
 package com.l7tech.gateway.common.service;
 
-import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
@@ -17,7 +16,7 @@ public class ServiceHeader extends EntityHeader {
         this( svc.isSoap(),
               svc.isDisabled(),
               svc.displayName(),
-              svc.getId(),
+              svc.getOid(),
               svc.getName(),
               svc.getName());
     }
@@ -25,11 +24,10 @@ public class ServiceHeader extends EntityHeader {
     public ServiceHeader(final boolean isSoap,
                          final boolean isDisabled,
                          final String displayName,
-                         final String serviceId,
+                         final Long serviceOid,
                          final String name,
                          final String description) {
-        super(serviceId, EntityType.SERVICE, name, description);
-
+        super(serviceOid == null ? -1 : serviceOid, EntityType.SERVICE, name, description);
         this.isSoap = isSoap;
         this.isDisabled = isDisabled;
         this.displayName = displayName;

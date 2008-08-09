@@ -66,7 +66,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     public EntityHeader toEntityHeader() {
-        return new EntityHeader(Long.toString(getOid()), EntityType.JMS_ENDPOINT, getName(), getDestinationName());
+        return new EntityHeader(getOid(), EntityType.JMS_ENDPOINT, getName(), getDestinationName());
     }
 
     public String getUsername() {

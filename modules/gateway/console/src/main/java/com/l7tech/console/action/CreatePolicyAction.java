@@ -3,24 +3,24 @@
  */
 package com.l7tech.console.action;
 
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.widgets.OkCancelDialog;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.console.panels.PolicyPropertiesPanel;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
+import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyHeader;
+import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 
@@ -29,7 +29,6 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.logging.Level;
 
 /**
@@ -100,7 +99,7 @@ public class CreatePolicyAction extends SecureAction {
 
                     PoliciesFolderNode root = TopComponents.getInstance().getPoliciesFolderNode();
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                    final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(new EntityHeader(policy.getGuid(), com.l7tech.objectmodel.EntityType.POLICY, policy.getName(), null));
+                    final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(new PolicyHeader(policy));
                     model.insertNodeInto(sn, root, root.getInsertPosition(sn));
                     tree.setSelectionPath(new TreePath(sn.getPath()));
                     SwingUtilities.invokeLater(new Runnable() {

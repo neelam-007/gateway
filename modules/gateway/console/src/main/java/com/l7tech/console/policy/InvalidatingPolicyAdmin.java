@@ -105,7 +105,7 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
      */
     private void fireEntityDelete( long policyOid ) {
         if ( listener != null ) {
-            listener.notifyDelete( new EntityHeader( Long.toString(policyOid), EntityType.POLICY, "", "") );
+            listener.notifyDelete(new PolicyHeader(policyOid, false, "", "", ""));
         }
     }
 
@@ -114,7 +114,7 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
      */
     private void fireEntityUpdate( long policyOid ) {
         if ( listener != null ) {
-            listener.notifyUpdate( new EntityHeader( Long.toString(policyOid), EntityType.POLICY, "", "") );
+            listener.notifyUpdate(new PolicyHeader(policyOid, false, "", "", ""));
         }
     }
 }

@@ -3,6 +3,7 @@ package com.l7tech.console.tree;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.policy.PolicyHeader;
 
 import java.util.Enumeration;
 
@@ -42,7 +43,7 @@ public class TreeNodeFactory {
         } else if (EntityType.SERVICE.equals(entity.getType())) {
             return new ServiceNode((ServiceHeader)entity);
         } else if (EntityType.POLICY.equals(entity.getType())) {
-            return new PolicyEntityNode(entity);
+            return new PolicyEntityNode((PolicyHeader)entity);
         }
 
         throw new IllegalArgumentException("Unknown entity type " + entity.getType());

@@ -20,12 +20,18 @@ import java.io.Serializable;
 public class EntityHeader implements Serializable, Comparable {
 
     public EntityHeader(String id, EntityType type, String name, String description) {
-        setStrId(id);
-        setType(type);
-        setName(name);
-        setDescription(description);
+        this.strId = id;
+        this.type = type;
+        this.name = name;
+        this.description = description;
     }
 
+    public EntityHeader(long oid, EntityType type, String name, String description) {
+        this.strId = Long.toString(oid);
+        this.type = type;
+        this.name = name;
+        this.description = description;
+    }
 
     public EntityHeader() {
         type = EntityType.UNDEFINED;
@@ -33,11 +39,11 @@ public class EntityHeader implements Serializable, Comparable {
     }
 
     public String getName() {
-        return _name;
+        return name;
     }
 
     public void setName( String name ) {
-        _name = name;
+        this.name = name;
     }
 
     public void setOid( long oid ) {
@@ -72,8 +78,7 @@ public class EntityHeader implements Serializable, Comparable {
         if (!(obj instanceof EntityHeader)) return false;
         EntityHeader theotherone = (EntityHeader)obj;
         if (getStrId() == null) {
-            if (theotherone.getStrId() == null) return true;
-            return false;
+            return theotherone.getStrId() == null;
         }
         return getStrId().equals(theotherone.getStrId());
     }
@@ -84,7 +89,7 @@ public class EntityHeader implements Serializable, Comparable {
     }
 
     public String toString() {
-        return _name;
+        return name;
     }
 
 /*
@@ -125,14 +130,14 @@ public class EntityHeader implements Serializable, Comparable {
     private EntityType type;
     private String description;
     private String strId;
-    protected String _name;
+    protected String name;
     private static final long DEFAULT_OID = -1;
 
     public int compareTo(Object o) {
+        if (o == null) throw new NullPointerException();
         EntityHeader other = (EntityHeader)o;
         // bugzilla 2786: if only one of the two is a MAXED_OUT_SEARCH_RESULT, then it should be on top
-        if (!(this.type.getVal() == EntityType.MAXED_OUT_SEARCH_RESULT.getVal() &&
-              other != null && other.type.getVal() == EntityType.MAXED_OUT_SEARCH_RESULT.getVal())) {
+        if (!(this.type.getVal() == EntityType.MAXED_OUT_SEARCH_RESULT.getVal() && other.type.getVal() == EntityType.MAXED_OUT_SEARCH_RESULT.getVal())) {
             if (this.type.getVal() == EntityType.MAXED_OUT_SEARCH_RESULT.getVal()) {
                 return -1;
             } else if (other.type.getVal() == EntityType.MAXED_OUT_SEARCH_RESULT.getVal()) {
@@ -142,6 +147,6 @@ public class EntityHeader implements Serializable, Comparable {
         if (strId != null && other.strId != null) {
             if (strId.equals(other.strId)) return 0;
         }
-        return _name.compareTo(((EntityHeader)o)._name);
+        return name.compareTo(((EntityHeader)o).name);
     }
 }

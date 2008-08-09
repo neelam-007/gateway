@@ -1,10 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.EntityHeaderNode;
-import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.PolicyEntityNode;
+import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -81,10 +78,10 @@ public abstract class NodeAction extends SecureAction {
     /**
      * @return the policy cookie or null if not founds
      */
-    protected PolicyEntityNode getPolicyNodeCookie() {
+    protected EntityWithPolicyNode getPolicyNodeCookie() {
         for (Iterator i = ((AbstractTreeNode)node.getRoot()).cookies(); i.hasNext(); ) {
             Object value = ((Cookie)i.next()).getValue();
-            if (value instanceof PolicyEntityNode) return (PolicyEntityNode)value;
+            if (value instanceof EntityWithPolicyNode) return (EntityWithPolicyNode)value;
         }
         return null;
     }

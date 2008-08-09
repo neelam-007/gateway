@@ -3,21 +3,21 @@
  */
 package com.l7tech.console.action;
 
-import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.console.tree.PolicyEntityNode;
+import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.objectmodel.Entity;
 
 /**
  * @author alex
  */
 public abstract class PolicyNodeAction extends NodeAction {
-    protected final PolicyEntityNode policyNode;
+    protected final EntityWithPolicyNode policyNode;
 
-    protected PolicyNodeAction(PolicyEntityNode node) {
+    protected PolicyNodeAction(EntityWithPolicyNode node) {
         super(node);
         this.policyNode = node;
     }
@@ -27,7 +27,7 @@ public abstract class PolicyNodeAction extends NodeAction {
     @Override
     public final boolean isAuthorized() {
         if (!Registry.getDefault().isAdminContextPresent()) return false;
-        PolicyEntityNode pn = getPolicyNode();
+        EntityWithPolicyNode pn = getPolicyNode();
 
         if (pn == null) return false;
 
@@ -61,8 +61,8 @@ public abstract class PolicyNodeAction extends NodeAction {
         return canAttemptOperation(ao);
     }
 
-    protected PolicyEntityNode getPolicyNode() {
-        PolicyEntityNode pn = policyNode;
+    protected EntityWithPolicyNode getPolicyNode() {
+        EntityWithPolicyNode pn = policyNode;
         if (pn == null && node != null) pn = getPolicyNodeCookie();
         if (pn == null) {
             PolicyTree tree = (PolicyTree) TopComponents.getInstance().getPolicyTree();

@@ -1,25 +1,25 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.util.HexUtils;
-import com.l7tech.common.io.CertUtils;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.logging.Level;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
 
 public class FederatedUserCertPanel extends UserCertPanel {
     /**
@@ -48,7 +48,7 @@ public class FederatedUserCertPanel extends UserCertPanel {
                             // reset values and redisplay
                             cert = null;
                             if (parentListener != null)
-                                parentListener.entityUpdated(new EntityEvent(this, new EntityHeader(user.getId(), EntityType.USER, user.getName(), null)));
+                                parentListener.entityUpdated(new EntityEvent(this, new IdentityHeader(user.getProviderId(), user.getId(), EntityType.USER, user.getName(), null)));
 
                             loadCertificateInfo();
                             if (userPanel instanceof FederatedUserPanel) {

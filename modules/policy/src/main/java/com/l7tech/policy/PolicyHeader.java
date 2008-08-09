@@ -1,6 +1,5 @@
 package com.l7tech.policy;
 
-import com.l7tech.policy.Policy;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
@@ -12,25 +11,28 @@ import com.l7tech.objectmodel.EntityType;
 public class PolicyHeader extends EntityHeader {
 
     //- PUBLIC
-
     public PolicyHeader(final Policy policy) {
-        this( policy.isSoap(),
-              policy.getName(),
-              policy.getInternalTag(),
-              policy.getGuid());
+        this(policy.getOid(), policy.isSoap(), policy.getName(), policy.getInternalTag(), policy.getGuid());
     }
 
-    public PolicyHeader(final boolean isSoap,
+    public PolicyHeader(final long oid,
+                        final boolean isSoap,
                         final String name,
                         final String description,
-                        final String policyGuid) {
-        super(policyGuid, EntityType.POLICY, name, description);
+                        final String policyGuid)
+    {
+        super(oid, EntityType.POLICY, name, description);
 
+        this.guid = policyGuid;
         this.isSoap = isSoap;
     }
 
     public boolean isSoap() {
         return isSoap;
+    }
+
+    public String getGuid() {
+        return guid;
     }
 
     @Override
@@ -41,4 +43,5 @@ public class PolicyHeader extends EntityHeader {
     //- PRIVATE
 
     private final boolean isSoap;
+    private final String guid;
 }

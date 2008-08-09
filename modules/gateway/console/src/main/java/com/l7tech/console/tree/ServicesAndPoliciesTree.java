@@ -111,12 +111,12 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable {
                 if (!node.canDelete()) return;
                 if (node instanceof ServiceNode) {
                     new DeleteServiceAction((ServiceNode)node).actionPerformed(null);
-                } else if (node instanceof PolicyEntityNode) {
+                } else if (node instanceof EntityWithPolicyNode) {
                     new DeletePolicyAction((PolicyEntityNode)node).actionPerformed(null);
                 }
             } else if (keyCode == KeyEvent.VK_ENTER) {
-                if (node instanceof PolicyEntityNode)
-                    new EditPolicyAction((PolicyEntityNode)node).actionPerformed(null);
+                if (node instanceof EntityWithPolicyNode)
+                    new EditPolicyAction((EntityWithPolicyNode)node).actionPerformed(null);
             }
         }
     }
@@ -133,8 +133,8 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable {
             AbstractTreeNode node =
               (AbstractTreeNode)path.getLastPathComponent();
             if (node == null) return;
-            if (node instanceof PolicyEntityNode)
-                new EditPolicyAction((PolicyEntityNode)node).actionPerformed(null);
+            if (node instanceof EntityWithPolicyNode)
+                new EditPolicyAction((EntityWithPolicyNode)node).actionPerformed(null);
         }
 
         public void mousePressed(MouseEvent e) {

@@ -16,6 +16,7 @@ import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
+import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
@@ -87,7 +88,7 @@ public class EditPolicyProperties extends PolicyNodeAction {
                     }
                     PolicyEditorPanel pe = (PolicyEditorPanel)jc;
                     try {
-                        final PolicyEntityNode pn = pe.getPolicyNode();
+                        final EntityWithPolicyNode pn = pe.getPolicyNode();
                         // if currently edited policy was deleted
                         if (policyNode.getPolicy().getOid() == pn.getPolicy().getOid()) {
                             // update name on top of editor

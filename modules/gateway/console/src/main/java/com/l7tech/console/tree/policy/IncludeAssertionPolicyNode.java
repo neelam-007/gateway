@@ -26,7 +26,7 @@ import java.text.MessageFormat;
 public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
     private static final Logger logger = Logger.getLogger(IncludeAssertionPolicyNode.class.getName());
 
-    private Policy policy;
+    private volatile Policy policy;
     private boolean permissionDenied;
     private boolean circularImport;
 
@@ -92,7 +92,7 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
             } else {
                 try {
                     if(assertion instanceof Include) {
-                        policy = ((Include)assertion).retrieveFragmentPolicy();
+                        policy = assertion.retrieveFragmentPolicy();
                     }
                     if(policy == null) {
                         policy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(assertion.getPolicyGuid());
@@ -108,15 +108,15 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
         return policy;
     }
 
-    private boolean isParentPolicy( final String policyGuid, final String policyName ) {
+    private boolean isParentPolicy(final String policyGuid, final String policyName) {
         boolean found = false;
         TreeNode currentNode = getParent();
 
-        while ( currentNode != null ) {
-            if ( currentNode instanceof IncludeAssertionPolicyNode ) {
+        while (currentNode != null) {
+            if (currentNode instanceof IncludeAssertionPolicyNode) {
                 IncludeAssertionPolicyNode includeTreeNode = (IncludeAssertionPolicyNode) currentNode;
-                if ( policyGuid == null && includeTreeNode.asAssertion().getPolicyName().equals(policyName) ||
-                     policyGuid != null && includeTreeNode.asAssertion().getPolicyGuid().equals( policyGuid ) )
+                if (policyGuid == null && includeTreeNode.asAssertion().getPolicyName().equals(policyName) ||
+                    policyGuid != null && includeTreeNode.asAssertion().getPolicyGuid().equals(policyGuid))
                 {
                     found = true;
                     break;

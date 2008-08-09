@@ -1,27 +1,26 @@
 package com.l7tech.console.action;
 
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyVersion;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.gateway.common.security.rbac.EntityType;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.console.tree.PolicyEntityNode;
+import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyVersion;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.tree.TreeModel;
@@ -46,14 +45,14 @@ public class EditPolicyAction extends NodeAction {
      * @param node the service node
      * @param b    true validate the policy, false
      */
-    public EditPolicyAction(PolicyEntityNode node, boolean b) {
+    public EditPolicyAction(EntityWithPolicyNode node, boolean b) {
         super(node);
         validate = b;
         service = node instanceof ServiceNode;
         this.policyVersion = null;
     }
 
-    public EditPolicyAction(PolicyEntityNode node, boolean validate, PolicyVersion version) {
+    public EditPolicyAction(EntityWithPolicyNode node, boolean validate, PolicyVersion version) {
         super(node);
         this.validate = validate;
         service = node instanceof ServiceNode;
@@ -65,7 +64,7 @@ public class EditPolicyAction extends NodeAction {
      *
      * @param node the service node
      */
-    public EditPolicyAction(PolicyEntityNode node) {
+    public EditPolicyAction(EntityWithPolicyNode node) {
         this(node, true);
     }
 
@@ -98,7 +97,7 @@ public class EditPolicyAction extends NodeAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        final PolicyEntityNode policyNode = (PolicyEntityNode)node;
+        final EntityWithPolicyNode policyNode = (EntityWithPolicyNode)node;
         try {
             TopComponents windowManager = TopComponents.getInstance();
             WorkSpacePanel wpanel = windowManager.getCurrentWorkspace();
@@ -114,20 +113,14 @@ public class EditPolicyAction extends NodeAction {
             PolicyTree policyTree = (PolicyTree)topComponents.getPolicyTree();
 
             boolean startsDirty = false;
-            final Assertion assertion;
             try {
                 final Policy policy = policyNode.getPolicy();
-                if (policy == null) {
-                    assertion = new AllAssertion(Arrays.asList(new CommentAssertion("Can't find policy")));
-                } else if (policy.isDisabled()) {
+                if (policy != null && policy.isDisabled()) {
                     startsDirty = true;
-                    assertion = findStartingAssertion(policy);
-                    if (assertion == null) {
+                    if (findStartingAssertion(policy) == null) {
                         new HomeAction().actionPerformed(null);
                         return;
                     }
-                } else {
-                    assertion = policy.getAssertion();
                 }
                 if (policyVersion != null) {
                     policy.setVersionOrdinal(policyVersion.getOrdinal());
@@ -142,7 +135,7 @@ public class EditPolicyAction extends NodeAction {
             }
 
             PolicyEditorPanel.PolicyEditorSubject subject = new PolicyEditorPanel.PolicyEditorSubject() {
-                public PolicyEntityNode getPolicyNode() {return policyNode;}
+                public EntityWithPolicyNode getPolicyNode() {return policyNode;}
 
                 private Policy getPolicy() {
                     try {
@@ -180,7 +173,7 @@ public class EditPolicyAction extends NodeAction {
                 }
                 public boolean hasWriteAccess() {
                     try {
-                        PolicyEntityNode pn = getPolicyNode();
+                        EntityWithPolicyNode pn = getPolicyNode();
                         EntityType type;
                         Entity entity = pn.getEntity();
                         if (pn instanceof ServiceNode) {

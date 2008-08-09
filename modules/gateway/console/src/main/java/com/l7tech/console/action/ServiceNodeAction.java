@@ -3,13 +3,13 @@
  */
 package com.l7tech.console.action;
 
-import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.service.PublishedService;
 
 public abstract class ServiceNodeAction extends NodeAction {
@@ -63,7 +63,7 @@ public abstract class ServiceNodeAction extends NodeAction {
             PolicyTree tree = (PolicyTree) TopComponents.getInstance().getPolicyTree();
             PolicyEditorPanel pep = tree.getPolicyEditorPanel();
             if (pep != null) {
-                PolicyEntityNode pn = pep.getPolicyNode();
+                EntityWithPolicyNode pn = pep.getPolicyNode();
                 if (pn instanceof ServiceNode) {
                     sn = (ServiceNode) pn;
                 }

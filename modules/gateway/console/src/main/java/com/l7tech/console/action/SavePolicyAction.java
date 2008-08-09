@@ -3,24 +3,24 @@
  */
 package com.l7tech.console.action;
 
-import com.l7tech.policy.CircularPolicyException;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyCheckpointState;
-import com.l7tech.gateway.common.admin.PolicyAdmin;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.console.tree.PolicyEntityNode;
+import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.CircularPolicyException;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyCheckpointState;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.io.ByteArrayOutputStream;
@@ -116,7 +116,7 @@ public class SavePolicyAction extends PolicyNodeAction {
         }
         String name = null;
         try {
-            PolicyEntityNode policyNode = getPolicyNode();
+            EntityWithPolicyNode policyNode = getPolicyNode();
             if (policyNode == null) {
                 throw new IllegalArgumentException("No edited policy or service specified");
             }
