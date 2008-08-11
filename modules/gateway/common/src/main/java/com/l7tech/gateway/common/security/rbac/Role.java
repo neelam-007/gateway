@@ -13,9 +13,18 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.util.TextUtils;
 
+import javax.persistence.Table;
+import javax.persistence.OneToMany;
+import javax.persistence.Column;
+import javax.persistence.CascadeType;
+import javax.persistence.FetchType;
+import javax.persistence.Transient;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
+
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 /**
  * A Role groups zero or more {@link Permission}s so they can be assigned as a whole
@@ -27,6 +36,8 @@ import java.util.regex.Matcher;
  * </ul>
  * @author alex
  */
+@javax.persistence.Entity
+@Table(name="rbac_role")
 public class Role extends NamedEntityImp implements Comparable<Role> {
     public static final int ADMIN_ROLE_OID = -100;
 
@@ -38,6 +49,8 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     private Long entityOid;
     private Entity cachedSpecificEntity;
 
+    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="role")
+    @Fetch(FetchMode.SUBSELECT)
     public Set<Permission> getPermissions() {
         return permissions;
     }
@@ -46,6 +59,8 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
         this.permissions = permissions;
     }
 
+    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="role")
+    @Fetch(FetchMode.SUBSELECT)
     public Set<RoleAssignment> getRoleAssignments() {
         return roleAssignments;
     }
@@ -104,6 +119,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
         return this.getName().compareTo(that.getName());
     }
 
+    @Column(name="description", length=255)
     public String getDescription() {
         return description;
     }
@@ -116,6 +132,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
      * If this Role is scoped to a particular entity, this property will contain the type of that entity.
      * Otherwise, it will be null.
      */
+    @Transient
     public EntityType getEntityType() {
         return entityType;
     }
@@ -125,6 +142,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     }
 
     /** @deprecated only here to hide enums from Hibernate */
+    @Column(name="entity_type", length=255)
     protected String getEntityTypeName() {
         if (entityType == null) return null;
         return entityType.name();
@@ -140,6 +158,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
      * If this Role is scoped to a particular entity, this property will contain the OID of that entity.
      * Otherwise, it will be null.
      */
+    @Column(name="entity_oid")
     public Long getEntityOid() {
         return entityOid;
     }
@@ -151,6 +170,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     /**
      * If this Role is scoped to a particular entity, this property will contain a recent copy of that Entity.
      */
+    @Transient
     public Entity getCachedSpecificEntity() {
         return cachedSpecificEntity;
     }
@@ -159,6 +179,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
         this.cachedSpecificEntity = cachedSpecificEntity;
     }
 
+    @Transient
     public String getDescriptiveName() {
         StringBuilder sb = new StringBuilder();
 

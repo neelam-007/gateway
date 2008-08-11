@@ -6,12 +6,23 @@ package com.l7tech.gateway.common.security.rbac;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
+import javax.persistence.Table;
+import javax.persistence.Entity;
+import javax.persistence.Column;
+import javax.persistence.UniqueConstraint;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+
 /**
  * Statically assigns a {@link Role} to a {@link User}.
  * @author alex
  *
  * EntityType is enforced in constructor but for hibernate initial implementation the value is stored as a string
  */
+@Entity
+@Table(name="rbac_assignment",
+       uniqueConstraints=@UniqueConstraint(columnNames={"provider_oid", "role_oid", "identity_id", "entity_type"})
+)
 public class RoleAssignment extends PersistentEntityImp {
     protected long providerId;
     protected String identityId;
@@ -29,6 +40,7 @@ public class RoleAssignment extends PersistentEntityImp {
 
     protected RoleAssignment() { }
 
+    @Column(name="identity_id", nullable=false, length=255)
     public String getIdentityId() {
         return identityId;
     }
@@ -37,6 +49,7 @@ public class RoleAssignment extends PersistentEntityImp {
         this.identityId = identityId;
     }
 
+    @Column(name="provider_oid", nullable=false)
     public long getProviderId() {
         return providerId;
     }
@@ -45,6 +58,8 @@ public class RoleAssignment extends PersistentEntityImp {
         this.providerId = providerId;
     }
 
+    @ManyToOne(optional=false)
+    @JoinColumn(name="role_oid", nullable=false)
     public Role getRole() {
         return role;
     }
@@ -53,6 +68,7 @@ public class RoleAssignment extends PersistentEntityImp {
         this.role = role;
     }
 
+    @Column(name="entity_type", nullable=false, length=50)
     public String getEntityType() {
         return entityType;
     }
@@ -61,6 +77,7 @@ public class RoleAssignment extends PersistentEntityImp {
         this.entityType = type;
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

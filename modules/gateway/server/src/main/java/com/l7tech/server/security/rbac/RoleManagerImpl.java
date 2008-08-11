@@ -39,11 +39,11 @@ public class RoleManagerImpl
 {
     private static final Logger logger = Logger.getLogger(RoleManagerImpl.class.getName());
 
-    public Class getImpClass() {
+    public Class<Role> getImpClass() {
         return Role.class;
     }
 
-    public Class getInterfaceClass() {
+    public Class<Role> getInterfaceClass() {
         return Role.class;
     }
 
@@ -72,7 +72,7 @@ public class RoleManagerImpl
                 //Now get the Roles is can access via it's group membership
                 Set<IdentityHeader> iHeaders = JaasUtils.getCurrentUserGroupInfo();
                 if(iHeaders == null) return roles;
-                List<String> groupNames = new ArrayList();
+                List<String> groupNames = new ArrayList<String>();
                 for(IdentityHeader iH: iHeaders){
                     groupNames.add(iH.getStrId());                
                 }
@@ -83,8 +83,8 @@ public class RoleManagerImpl
                 groupQuery.add(groupNameIn);
                 List gList = groupQuery.list();
 
-                for (Iterator i = gList.iterator(); i.hasNext();) {
-                    RoleAssignment ra = (RoleAssignment) i.next();
+                for (Object aGList : gList) {
+                    RoleAssignment ra = (RoleAssignment) aGList;
                     roles.add(ra.getRole());
                 }
 
@@ -164,7 +164,7 @@ public class RoleManagerImpl
         if ( needsOidMerge ) {
             try {
                 Role persistedRole = findByPrimaryKey(role.getOid());
-                Set previousAssignments = persistedRole.getRoleAssignments();
+                Set<RoleAssignment> previousAssignments = persistedRole.getRoleAssignments();
 
                 for ( RoleAssignment ura : role.getRoleAssignments() ) {
                     if ( ura.getOid() == RoleAssignment.DEFAULT_OID ) {

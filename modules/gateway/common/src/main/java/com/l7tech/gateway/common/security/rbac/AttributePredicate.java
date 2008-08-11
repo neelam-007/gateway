@@ -5,6 +5,8 @@ package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.objectmodel.Entity;
 
+import javax.persistence.Table;
+import javax.persistence.Column;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.logging.Level;
@@ -17,6 +19,8 @@ import java.util.logging.Logger;
  * The values of the attribute in question <em>must</em> be of type <code>long</code>, {@link Long}
  * or {@link CharSequence}.
  */
+@javax.persistence.Entity
+@Table(name="rbac_predicate_attribute")
 public class AttributePredicate extends ScopePredicate {
     private static final Logger logger = Logger.getLogger(AttributePredicate.class.getName());
 
@@ -73,10 +77,12 @@ public class AttributePredicate extends ScopePredicate {
             throw new IllegalArgumentException("Class " + entityClass + " has no getter for attribute " + attribute);
     }
 
+    @Column(name="attribute", nullable=false, length=255)
     public String getAttribute() {
         return attribute;
     }
 
+    @Column(name="value", length=255)
     public String getValue() {
         return value;
     }
@@ -108,6 +114,7 @@ public class AttributePredicate extends ScopePredicate {
         return sb.toString(); 
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

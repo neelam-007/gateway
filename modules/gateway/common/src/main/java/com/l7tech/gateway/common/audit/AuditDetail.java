@@ -7,14 +7,28 @@ package com.l7tech.gateway.common.audit;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
+import javax.persistence.ManyToOne;
+import javax.persistence.JoinColumn;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.JoinTable;
+import javax.persistence.FetchType;
 import java.io.*;
 import java.util.Arrays;
 import java.text.MessageFormat;
 import java.text.FieldPosition;
 
+import org.hibernate.annotations.CollectionOfElements;
+import org.hibernate.annotations.IndexColumn;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+
 /**
  * An audit detail record.
  */
+@Entity
+@Table(name="audit_detail")
 public class AuditDetail extends PersistentEntityImp implements Serializable, Comparable {
     private transient AuditRecord auditRecord;
     private long auditOid;
@@ -52,6 +66,8 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
         }
     }
 
+    @ManyToOne(optional=false)
+    @JoinColumn(name="audit_oid", nullable=false)
     public AuditRecord getAuditRecord() {
         return auditRecord;
     }
@@ -60,23 +76,32 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
         this.auditRecord = auditRecord;
     }
 
+    @Column(name="time", nullable=false)
     public long getTime() {
         return time;
     }
 
+    @Column(name="message_id", nullable=false)
     public int getMessageId() {
         return messageId;
     }
 
+    @Column(name="audit_oid", nullable=false, insertable=false, updatable=false)
     public long getAuditOid() {
         return auditOid;
     }
 
+    @Column(name="ordinal")
     public int getOrdinal() {
         return ordinal;
     }
 
     /** Can be null. */
+    @CollectionOfElements(fetch=FetchType.EAGER)
+    @Fetch(FetchMode.SUBSELECT)
+    @IndexColumn(name="position")
+    @Column(name="value", length=Integer.MAX_VALUE)
+    @JoinTable(name="audit_detail_params",joinColumns=@JoinColumn(name="audit_detail_oid"))
     public String[] getParams() {
         return params;
     }
@@ -89,10 +114,12 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
         this.auditOid = oid;
     }
 
+    @Column(name="exception", length=Integer.MAX_VALUE)
     public String getException() {
         return exception;
     }
 
+    @Column(name="component_id")
     public int getComponentId() {
         return componentId;
     }
@@ -130,6 +157,7 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
         this.exception = exception;
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

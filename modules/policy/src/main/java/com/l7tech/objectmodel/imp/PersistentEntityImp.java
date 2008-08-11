@@ -8,11 +8,13 @@ import com.l7tech.objectmodel.PersistentEntity;
 import javax.persistence.*;
 import java.io.Serializable;
 
+import org.hibernate.annotations.GenericGenerator;
+
 /**
  * @author alex
  */
 @MappedSuperclass
-public class PersistentEntityImp implements PersistentEntity, Serializable {
+public abstract class PersistentEntityImp implements PersistentEntity, Serializable {
 
     public PersistentEntityImp() {
         _oid = DEFAULT_OID;
@@ -28,7 +30,8 @@ public class PersistentEntityImp implements PersistentEntity, Serializable {
 
     @Id
     @Column(name="objectid", nullable=false, updatable=false)
-    @GeneratedValue
+    @GenericGenerator( name="generator", strategy = "hilo" )
+    @GeneratedValue(strategy=GenerationType.SEQUENCE, generator = "generator")
     public long getOid() {
         return _oid;
     }
@@ -46,11 +49,10 @@ public class PersistentEntityImp implements PersistentEntity, Serializable {
     public void setOid( long oid ) {
         if ( isLocked() ) throw new IllegalStateException("Cannot update locked entity");
         _oid = oid;
-        _oidObject = new Long(oid);
+        _oidObject = oid;
     }
 
-    @Version
-    @Column(name="version")
+    @Transient
     public int getVersion() {
         return _version;
     }

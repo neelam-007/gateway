@@ -61,13 +61,33 @@
     <!--
     Default Hibernate Session Manager
     -->
-    <bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="mappingResources">
             <list>
                 <value>com/l7tech/server/resources/SSG.hbm.xml</value>
-                <value>com/l7tech/server/resources/audit.hbm.xml</value>
-                <value>com/l7tech/server/resources/rbac.hbm.xml</value>
-                <value>com/l7tech/server/resources/wsdm.hbm.xml</value>
+            </list>
+        </property>
+        <property name="annotatedClasses">
+            <list>
+                <!-- WSDM Entities -->
+                <value>com.l7tech.server.wsdm.subscription.Subscription</value>
+
+                <!-- RBAC Entities -->
+                <value>com.l7tech.gateway.common.security.rbac.Role</value>
+                <value>com.l7tech.gateway.common.security.rbac.RoleAssignment</value>
+                <value>com.l7tech.gateway.common.security.rbac.Permission</value>
+                <value>com.l7tech.gateway.common.security.rbac.ScopePredicate</value>
+                <value>com.l7tech.gateway.common.security.rbac.AttributePredicate</value>
+                <value>com.l7tech.gateway.common.security.rbac.ObjectIdentityPredicate</value>
+
+                <!-- Audit Entities -->
+                <value>com.l7tech.gateway.common.audit.AuditRecord</value>
+                <value>com.l7tech.gateway.common.audit.AdminAuditRecord</value>
+                <value>com.l7tech.gateway.common.audit.MessageSummaryAuditRecord</value>
+                <value>com.l7tech.gateway.common.audit.SystemAuditRecord</value>
+                <value>com.l7tech.gateway.common.audit.AuditDetail</value>
+                <value>com.l7tech.gateway.common.audit.MessageSummaryAuditDetail</value>
+                <value>com.l7tech.gateway.common.audit.MessageSummaryAuditDetail</value>
             </list>
         </property>
         <property name="dataSource" ref="switchedDataSource"/>

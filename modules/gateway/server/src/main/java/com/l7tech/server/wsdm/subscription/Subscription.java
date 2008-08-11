@@ -4,6 +4,11 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.server.wsdm.faults.TopicNotSupportedFaultException;
 import com.l7tech.server.wsdm.method.Subscribe;
 
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.Version;
+
 /**
  * A subscription
  * <p/>
@@ -13,6 +18,8 @@ import com.l7tech.server.wsdm.method.Subscribe;
  * User: flascell<br/>
  * Date: Nov 5, 2007<br/>
  */
+@Entity
+@Table(name="wsdm_subscription")
 public class Subscription extends PersistentEntityImp {
     public static final String POLICY_TAG_ESM_NOTIFICATION = "esm-notification";
     public static final int TOPIC_METRICS_CAPABILITY = 1;
@@ -58,26 +65,39 @@ public class Subscription extends PersistentEntityImp {
         referenceCallback = method.getCallBackAddress();
     }
 
+    @Override
+    @Version
+    @Column(name="version")
+    public int getVersion() {
+        return super.getVersion();
+    }
+
+    @Column(name="uuid", nullable=false, unique=true, length=36)
     public String getUuid() {
         return uuid;
     }
 
+    @Column(name="callback_url", nullable=false, length=255)
     public String getReferenceCallback() {
         return referenceCallback;
     }
 
+    @Column(name="termination_time", nullable=false)
     public long getTermination() {
         return termination;
     }
 
+    @Column(name="topic", nullable=false)
     public int getTopic() {
         return topic;
     }
 
+    @Column(name="published_service_oid", nullable=false)
     public long getPublishedServiceOid() {
         return publishedServiceOid;
     }
 
+    @Column(name="notification_policy_guid", length=36)
     public String getNotificationPolicyGuid() {
         return notificationPolicyGuid;
     }
@@ -113,6 +133,7 @@ public class Subscription extends PersistentEntityImp {
         this.topic = topic;
     }
 
+    @Column(name="owner_node_id", length=64)
     public String getOwnerNodeId() {
         return ownerNodeId;
     }
@@ -129,6 +150,7 @@ public class Subscription extends PersistentEntityImp {
      *
      * @return The time this subscription was processed.
      */
+    @Column(name="last_notification")
     public long getLastNotificationTime() {
         return lastNotificationTime;
     }

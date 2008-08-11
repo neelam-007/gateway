@@ -12,10 +12,15 @@ import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.TextUtils;
 
+import javax.persistence.*;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.*;
 import java.util.logging.Level;
+
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 /**
  * Abstract superclass of all of the different types of audit record.
@@ -26,6 +31,9 @@ import java.util.logging.Level;
  * @author alex
  * @version $Revision$
  */
+@Entity
+@Table(name="audit_main")
+@Inheritance(strategy=InheritanceType.JOINED)
 public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, PersistentEntity {
     private long oid;
     private int version;
@@ -40,6 +48,26 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
 
     /** @deprecated to be called only for serialization and persistence purposes! */
     protected AuditRecord() {
+    }
+
+    @Column(name="message", nullable=false, length=255)
+    public String getMessage() {
+        return super.getMessage();
+    }
+
+    @Column(name="audit_level", nullable=false, length=12)
+    public String getStrLvl() {
+        return super.getStrLvl();
+    }
+
+    @Column(name="nodeid", nullable=false, length=32)
+    public String getNodeId() {
+        return super.getNodeId();
+    }
+
+    @Column(name="time", nullable=false)
+    public long getMillis() {
+        return super.getMillis();
     }
 
     /**
@@ -62,19 +90,26 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
         this.userId = userId;
     }
 
+    @Override
     public void setMessage(String message) {
         message = TextUtils.truncStringMiddle(message, 254);
         super.setMessage(message);
     }
 
+    @Transient
     public String getId() {
         return Long.toString(oid);
     }
 
+    @Id
+    @Column(name="objectid", nullable=false, updatable=false)
+    @GeneratedValue(strategy=GenerationType.SEQUENCE, generator="generator")
+    @GenericGenerator( name="generator", strategy = "hilo" )
     public long getOid() {
         return oid;
     }
 
+    @Transient
     public int getVersion() {
         return version;
     }
@@ -83,6 +118,7 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
      * Gets the IP address of the entity that caused this AuditRecord to be created.  It could be that of a cluster node, an administrative workstation or a web service requestor.
      * @return the IP address of the entity that caused this AuditRecord to be created, or null if there isn't one.
      */
+    @Column(name="ip_address", length=32)
     public String getIpAddress() {
         return ipAddress;
     }
@@ -91,6 +127,7 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
      * Gets the name of the service or system affected by event that generated the AuditRecord
      * @return the name of the service or system affected by event that generated the AuditRecord
      */
+    @Column(name="name", length=255)
     public String getName() {
         return name;
     }
@@ -99,6 +136,8 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
      * Gets the list of {@link AuditDetail} records associated with this audit record.
      * @return the list of {@link AuditDetail} records associated with this audit record.
      */
+    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="auditRecord")
+    @Fetch(FetchMode.SUBSELECT)
     public Set<AuditDetail> getDetails() {
         return details;
     }
@@ -130,6 +169,7 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
      * Gets the OID of the {@link com.l7tech.identity.IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link com.l7tech.identity.IdentityProviderConfig#DEFAULT_OID} if the request was not authenticated.
      * @return the OID of the {@link com.l7tech.identity.IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link com.l7tech.identity.IdentityProviderConfig#DEFAULT_OID} if the request was not authenticated.
      */
+    @Column(name="provider_oid")
     public long getIdentityProviderOid() {
         return identityProviderOid;
     }
@@ -138,6 +178,7 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
      * Gets the name or login of the user who was authenticated, or null if the request was not authenticated.
      * @return the name or login of the user who was authenticated, or null if the request was not authenticated.
      */
+    @Column(name="user_name", length=255)
     public String getUserName() {
         return userName;
     }
@@ -146,6 +187,7 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
      * Gets the OID or DN of the user who was authenticated, or null if the request was not authenticated.
      * @return the OID or DN of the user who was authenticated, or null if the request was not authenticated.
      */
+    @Column(name="user_id", length=255)
     public String getUserId() {
         return userId;
     }
@@ -249,7 +291,7 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
         }
     }
 
-
+    @Column(name="signature", length=175)
     public String getSignature() {
         return signature;
     }

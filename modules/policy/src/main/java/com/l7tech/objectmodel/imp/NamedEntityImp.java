@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.NamedEntity;
 
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.Version;
 
 @MappedSuperclass
 public abstract class NamedEntityImp extends PersistentEntityImp implements NamedEntity {
@@ -15,6 +16,13 @@ public abstract class NamedEntityImp extends PersistentEntityImp implements Name
     protected NamedEntityImp(final NamedEntityImp entity) {
         super(entity);
         setName(entity.getName());
+    }
+
+    @Override
+    @Version
+    @Column(name="version")
+    public int getVersion() {
+        return super.getVersion();
     }
 
     @Column(name="name", nullable=false, length=128)

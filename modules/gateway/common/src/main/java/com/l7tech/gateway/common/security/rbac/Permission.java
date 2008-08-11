@@ -7,8 +7,20 @@ import com.l7tech.objectmodel.AnonymousEntityReference;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.OneToMany;
+import javax.persistence.CascadeType;
+import javax.persistence.FetchType;
+import javax.persistence.Transient;
+import javax.persistence.Version;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 /**
  * A permission that belongs to a {@link Role}.
@@ -16,13 +28,14 @@ import java.util.Set;
  * Changes to this class *must* maintain up-to-date {@link #equals} and {@link #hashCode}, as
  * instances are routinely added to {@link java.util.Set}s.
  */
+@javax.persistence.Entity
+@Table(name="rbac_permission")
 public class Permission extends PersistentEntityImp implements Cloneable {
     private Role role;
     private OperationType operation;
     private String otherOperationName;
     private EntityType entityType;
     private Set<ScopePredicate> scope = new HashSet<ScopePredicate>();
-    private String attribute;
 
     /**
      * Construct a new Permission attached to the given Role.
@@ -70,6 +83,15 @@ public class Permission extends PersistentEntityImp implements Cloneable {
         return true;
     }
 
+    @Override
+    @Version
+    @Column(name="version")
+    public int getVersion() {
+        return super.getVersion();
+    }
+
+    @ManyToOne(optional=false)
+    @JoinColumn(name="role_oid", nullable=false)
     public Role getRole() {
         return role;
     }
@@ -78,6 +100,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
         this.role = role;
     }
 
+    @Transient
     public OperationType getOperation() {
         return operation;
     }
@@ -87,14 +110,13 @@ public class Permission extends PersistentEntityImp implements Cloneable {
      * the entities of type {@link #entityType}.  If unspecified, this Permission applies to all entities of
      * type {@link #entityType}.
      */
+    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="permission")
+    @Fetch(FetchMode.SUBSELECT)
     public Set<ScopePredicate> getScope() {
         return scope;
     }
 
-    public String getAttribute() {
-        return attribute;
-    }
-
+    @Transient
     public EntityType getEntityType() {
         return entityType;
     }
@@ -112,10 +134,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
         this.scope = scope;
     }
 
-    public void setAttribute(String attribute) {
-        this.attribute = attribute;
-    }
-
+    @Column(name="other_operation", length=255)
     public String getOtherOperationName() {
         return otherOperationName;
     }
@@ -125,6 +144,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
     }
 
     /** @deprecated only here to hide enums from Hibernate */
+    @Column(name="entity_type", nullable=false, length=255)
     protected String getEntityTypeName() {
         if (entityType == null) return null;
         return entityType.name();
@@ -137,6 +157,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
     }
 
     /** @deprecated only here to hide enums from Hibernate */
+    @Column(name="operation_type", nullable=false, length=16)
     protected String getOperationTypeName() {
         if (operation == null) return null;
         return operation.name();
@@ -148,6 +169,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
         operation = OperationType.valueOf(name);
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -155,7 +177,6 @@ public class Permission extends PersistentEntityImp implements Cloneable {
 
         Permission that = (Permission) o;
 
-        if (attribute != null ? !attribute.equals(that.attribute) : that.attribute != null) return false;
         if (entityType != that.entityType) return false;
         if (operation != that.operation) return false;
         if (otherOperationName != null ? !otherOperationName.equals(that.otherOperationName) : that.otherOperationName != null)
@@ -171,6 +192,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
         return super.clone();
     }
 
+    @Transient
     public Permission getAnonymousClone() {
         try {
             Permission perm = (Permission) clone();
@@ -187,7 +209,6 @@ public class Permission extends PersistentEntityImp implements Cloneable {
         result = 31 * result + (operation != null ? operation.hashCode() : 0);
         result = 31 * result + (otherOperationName != null ? otherOperationName.hashCode() : 0);
         result = 31 * result + (entityType != null ? entityType.hashCode() : 0);
-        result = 31 * result + (attribute != null ? attribute.hashCode() : 0);
         return result;
     }
 

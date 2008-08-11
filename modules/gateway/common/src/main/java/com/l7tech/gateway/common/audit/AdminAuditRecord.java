@@ -6,6 +6,9 @@
 
 package com.l7tech.gateway.common.audit;
 
+import javax.persistence.Entity;
+import javax.persistence.Column;
+import javax.persistence.Table;
 import java.util.logging.Level;
 import java.io.OutputStream;
 import java.io.IOException;
@@ -13,12 +16,14 @@ import java.io.IOException;
 /**
  * An {@link AuditRecord} that describes a single administrative action.
  * <p>
- * By default, one of these will be created by {@link com.l7tech.server.audit.AdminAuditListener}
+ * By default, one of these will be created by com.l7tech.server.audit.AdminAuditListener
  * each time an administrator creates, deletes or updates a persistent {@link com.l7tech.objectmodel.Entity}.
  *
  * @author alex
  * @version $Revision$
  */
+@Entity
+@Table(name="audit_admin")
 public class AdminAuditRecord extends AuditRecord {
     public static final char ACTION_CREATED = 'C';
     public static final char ACTION_UPDATED = 'U';
@@ -68,6 +73,7 @@ public class AdminAuditRecord extends AuditRecord {
      * Gets the classname of the entity that this record concerns
      * @return the classname of the entity that this record concerns
      */
+    @Column(name="entity_class", length=255)
     public String getEntityClassname() {
         return entityClassname;
     }
@@ -76,6 +82,7 @@ public class AdminAuditRecord extends AuditRecord {
      * Gets the OID of the entity that this record concerns
      * @return the OID of the entity that this record concerns
      */
+    @Column(name="entity_id")
     public long getEntityOid() {
         return entityOid;
     }
@@ -84,6 +91,7 @@ public class AdminAuditRecord extends AuditRecord {
      * Gets a character indicating the type of event that generated this record.
      * @return a character indicating the type of event that generated this record.
      */
+    @Column(name="action")
     public char getAction() {
         return action;
     }

@@ -7,6 +7,9 @@ package com.l7tech.gateway.common.audit;
 
 import com.l7tech.gateway.common.Component;
 
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Column;
 import java.util.logging.Level;
 import java.io.OutputStream;
 import java.io.IOException;
@@ -17,6 +20,8 @@ import java.io.IOException;
  *
  * @author alex
  */
+@Entity
+@Table(name="audit_system")
 public class SystemAuditRecord extends AuditRecord {
     /** @deprecated to be called only for serialization and persistence purposes! */
     protected SystemAuditRecord() {
@@ -46,6 +51,7 @@ public class SystemAuditRecord extends AuditRecord {
      * The code for the component this audit record relates to
      * @see com.l7tech.gateway.common.Component#getId()
      */
+    @Column(name="component_id", nullable=false)
     public int getComponentId() {
         return componentId;
     }
@@ -58,6 +64,7 @@ public class SystemAuditRecord extends AuditRecord {
      * Gets a short description of the action that was happening when the event was generated
      * @return a short description of the action that was happening when the event was generated
      */
+    @Column(name="action", nullable=false, length=32)
     public String getAction() {
         return action;
     }

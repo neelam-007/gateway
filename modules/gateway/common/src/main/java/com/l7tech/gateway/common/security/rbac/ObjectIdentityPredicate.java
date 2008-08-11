@@ -6,10 +6,16 @@ package com.l7tech.gateway.common.security.rbac;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
 
+import javax.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.Transient;
+
 /**
  * Matches any {@link com.l7tech.objectmodel.Entity} that is of the expected type and whose
  * {@link com.l7tech.objectmodel.Entity#getId()} matches {@link #targetEntityId}.
  */
+@javax.persistence.Entity
+@Table(name="rbac_predicate_oid")
 public class ObjectIdentityPredicate extends ScopePredicate {
     private String targetEntityId;
     private EntityHeader header;
@@ -26,6 +32,7 @@ public class ObjectIdentityPredicate extends ScopePredicate {
 
     protected ObjectIdentityPredicate() { }
 
+    @Column(name="entity_id", nullable=false, length=255)
     public String getTargetEntityId() {
         return targetEntityId;
     }
@@ -42,6 +49,7 @@ public class ObjectIdentityPredicate extends ScopePredicate {
         return targetEntityId.equals(entity.getId());
     }
 
+    @Transient
     public EntityHeader getHeader() {
         return header;
     }
@@ -59,6 +67,7 @@ public class ObjectIdentityPredicate extends ScopePredicate {
         return sb.toString();
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
