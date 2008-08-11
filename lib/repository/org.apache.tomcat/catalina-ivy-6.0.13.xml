@@ -22,6 +22,5 @@
 	<dependencies>
 		<dependency org="org.apache.tomcat" name="servlet-api" rev="6.0.13" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.tomcat" name="juli" rev="6.0.13" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="org.apache.tomcat" name="annotations-api" rev="6.0.13" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 	</dependencies>
 </ivy-module>

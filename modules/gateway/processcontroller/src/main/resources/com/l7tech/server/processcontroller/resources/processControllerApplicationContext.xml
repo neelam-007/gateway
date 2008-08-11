@@ -15,4 +15,8 @@
     <bean id="processController" class="com.l7tech.server.processcontroller.ProcessController"/>
 
     <bean id="configService" class="com.l7tech.server.processcontroller.ConfigServiceImpl"/>
+
+    <bean id="servletContainer" class="com.l7tech.server.processcontroller.PCServletContainer">
+        <constructor-arg value="8765"/>
+    </bean>
 </beans>

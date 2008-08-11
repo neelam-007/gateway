@@ -15,22 +15,38 @@ import java.util.logging.Logger;
 public final class ProcessControllerMain {
     private static final Logger logger = Logger.getLogger(ProcessControllerMain.class.getName());
     private ClassPathXmlApplicationContext ctx;
+    private volatile boolean shutdown = false;
+    private static final int SHUTDOWN_POLL_INTERVAL = 5000;
 
     private ProcessControllerMain() { }
 
     public static void main(String[] args) {
-        ProcessControllerMain main = new ProcessControllerMain();
-        main.start();
+        new ProcessControllerMain().runUntilShutdown();
+    }
+
+    private void runUntilShutdown() {
+        start();
+        do {
+            try {
+                Thread.sleep(SHUTDOWN_POLL_INTERVAL);
+            } catch (InterruptedException e) {
+                logger.info("Thread interrupted - treating as shutdown request");
+                break;
+            }
+        } while (!shutdown);
+        stop(0);
     }
 
     public void start() {
         logger.info("Starting Process Controller...");
-        final ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("com/l7tech/server/processcontroller/processControllerApplicationContext.xml");
+        final ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("/com/l7tech/server/processcontroller/resources/processControllerApplicationContext.xml");
         ctx.registerShutdownHook();
         this.ctx = ctx;
 
         final ProcessController pc = (ProcessController)ctx.getBean("processController");
         Set<NodeConfig> nodes = pc.getConfigService().getGateway().getNodes();
+        if (nodes.isEmpty()) return;
+        
         final NodeConfig node = nodes.iterator().next();
         logger.info("Starting node " + node.getName());
         pc.startNode((PCNodeConfig)node);
