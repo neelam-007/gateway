@@ -1,9 +1,7 @@
 package com.l7tech.identity;
 
-import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 
 /**
@@ -12,8 +10,6 @@ import com.l7tech.objectmodel.SaveException;
 public interface IdentityProviderConfigManager extends EntityManager<IdentityProviderConfig, EntityHeader> {
     // since this provider config is not persisted, we need a special id to identify it for certain operations
     long INTERNALPROVIDER_SPECIAL_OID = -2;
-
-    LdapIdentityProviderConfig[] getLdapTemplates() throws FindException;
 
     /**
      * Create a new Role for the specified IdentityProviderConfig.

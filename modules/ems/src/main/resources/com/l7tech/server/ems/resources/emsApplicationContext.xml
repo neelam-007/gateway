@@ -24,10 +24,6 @@
         </property>
     </bean>
 
-    <bean name="servletContainer" class="com.l7tech.server.ems.EmsServletContainer">
-        <constructor-arg index="0" value="${com.l7tech.ems.httpPort}"/>
-    </bean>
-
     <bean id="dataSource" class="org.apache.derby.jdbc.EmbeddedDataSource40">
         <property name="databaseName" value="emsdb"/>
         <property name="createDatabase" value="create"/>
@@ -37,17 +33,132 @@
         <property name="dataSource" ref="dataSource"/>
         <property name="annotatedClasses">
             <list>
+                <!-- RBAC Entities -->
+                <value>com.l7tech.gateway.common.security.rbac.Role</value>
+                <value>com.l7tech.gateway.common.security.rbac.RoleAssignment</value>
+                <value>com.l7tech.gateway.common.security.rbac.Permission</value>
+                <value>com.l7tech.gateway.common.security.rbac.ScopePredicate</value>
+                <value>com.l7tech.gateway.common.security.rbac.AttributePredicate</value>
+                <value>com.l7tech.gateway.common.security.rbac.ObjectIdentityPredicate</value>
+
+                <!-- Audit Entities -->
+                <value>com.l7tech.gateway.common.audit.AdminAuditRecord</value>
+                <value>com.l7tech.gateway.common.audit.SystemAuditRecord</value>
+                <value>com.l7tech.gateway.common.audit.AuditDetail</value>
+
+                <!-- General -->                
                 <value>com.l7tech.gateway.common.cluster.ClusterProperty</value>
                 <value>com.l7tech.identity.internal.InternalUser</value>
                 <value>com.l7tech.identity.IdentityProviderConfig</value>
             </list>
         </property>
         <property name="hibernateProperties" value="hibernate.dialect=org.hibernate.dialect.DerbyDialect"/>
+        <property name="entityInterceptor" ref="persistenceEventInterceptor"/>
         <property name="schemaUpdate" value="true"/>
+    </bean>
+
+    <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor"/>
+
+    <bean id="managedBackgroundTimer" class="com.l7tech.server.util.ManagedTimer">
+        <constructor-arg value="Background timer"/>
+    </bean>
+
+    <!-- Use managed timer for all background tasks -->
+    <bean id="configureBackgroundTimer"
+          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod" value="com.l7tech.util.Background.installTimer"/>
+        <property name="arguments">
+            <list>
+                <ref local="managedBackgroundTimer"/>
+            </list>
+        </property>
+    </bean>
+
+
+    <bean id="whirlyLife" class="com.l7tech.server.WhirlyLifecycle"/>
+
+    <bean id="timerLife" class="com.l7tech.server.ManagedTimerLifecycle"/>
+
+    <bean id="exceptionLogger" class="com.l7tech.server.util.UncaughtExceptionLogger" factory-method="createAndInstall"/>
+
+    <!--
+    * singleton using the factory method. This is transitional, as it is referencef from
+    * too many places.
+    -->
+    <bean id="serverConfig" class="com.l7tech.server.ServerConfig" factory-method="getInstance" depends-on="configureBackgroundTimer">
+        <property name="propertyChangeListener">
+            <bean class="com.l7tech.server.util.LazyPropertyChangeDispatcher">
+                <constructor-arg>
+                    <map>
+                        <entry key="auditLogListenerTarget"><list><value>auditBatchExternal</value></list></entry>
+                        <entry key="auditDetailFilter"><list><value>auditAssociatedLogsThreshold</value></list></entry>
+                    </map>
+                </constructor-arg>
+            </bean>
+        </property>
+        <property name="clusterPropertyCache" ref="clusterPropertyCache"/>
     </bean>
 
     <bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
         <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy"/>
+    <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker">
+        <property name="applicationEventProxy" ref="applicationEventProxy"/>
+        <property name="entityManagers">
+            <list>
+                <ref bean="clusterPropertyManager"/>
+                <ref bean="identityProviderConfigManager"/>
+            </list>
+        </property>
+        <property name="timer">
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="EntityVersionChecker"/>
+            </bean>
+        </property>
+    </bean>
+
+    <!-- server side log manager -->
+    <bean id="logRecordManager" class="com.l7tech.server.audit.LogRecordManager">
+        <constructor-arg index="0"><null/></constructor-arg>
+        <constructor-arg index="1" ref="logRecordRingBuffer"/>
+    </bean>
+
+    <!-- server side log ring buffer -->
+    <bean id="logRecordRingBuffer" class="com.l7tech.server.log.LogRecordRingBuffer" init-method="init">
+        <property name="loggerName" value="com.l7tech"/>
+        <property name="bufferSize" value="500"/> <!-- NOTE that the max retrieval block size is 600, this should be less than that -->
+    </bean>
+
+    <!-- server side audit record manager -->
+    <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerImpl" parent="hibernateBean">
+        <property name="serverConfig" ref="serverConfig"/>
+    </bean>
+
+    <bean id="auditContext" class="com.l7tech.server.audit.ThreadLocalAuditContext">
+        <property name="targetId" value="auditContextImpl"/>
+    </bean>
+
+    <bean id="auditContextImpl" class="com.l7tech.server.audit.AuditContextImpl" scope="singleton">
+        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="auditRecordManager"/>
+        <!--<property name="keystore" ref="keystore"/>-->
+        <property name="auditLogListener" ref="auditLogListener"/>
+    </bean>
+
+    <bean id="auditLogListener" class="com.l7tech.server.log.LoggingAuditLogListener"/>
+
+    <bean id="adminAuditListener" class="com.l7tech.server.audit.AdminAuditListener">
+        <!-- TODO node id for ems -->
+        <constructor-arg value="EMS"/>
+        <constructor-arg ref="auditContext"/>
+    </bean>
+
+    <bean id="systemAuditListener" class="com.l7tech.server.audit.SystemAuditListener">
+        <!-- TODO node id for ems -->
+        <constructor-arg value="EMS"/>
+        <constructor-arg ref="auditContext"/>
     </bean>
 
     <!-- Abstract "parent" of any bean that needs access to sessionFactory and transactionManager -->
@@ -57,6 +168,11 @@
     </bean>
 
     <bean id="clusterPropertyManager" class="com.l7tech.server.cluster.ClusterPropertyManagerImpl" parent="hibernateBean"/>
+
+    <bean id="clusterPropertyCache" class="com.l7tech.server.cluster.ClusterPropertyCache">
+        <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
+        <property name="clusterPropertyListener" ref="serverConfig"/>
+    </bean>
 
     <bean id="licenseManager" class="com.l7tech.server.GatewayLicenseManager">
         <constructor-arg ref="clusterPropertyManager"/>
@@ -100,16 +216,8 @@
         <constructor-arg index="0" ref="identityProviderFactory"/>        
     </bean>
 
-    <!--
-      Values provided to the FreeMarker templates.  This constitutes the API the templates are "coded" against.
-      In addition to these values, the TemplateFinder adds a value "applicationContext" after initialization.
-    -->
-    <bean name="templateDataModel" class="java.util.HashMap">
-        <constructor-arg index="0">
-            <map key-type="java.lang.String" value-type="java.lang.Object">
-                <entry key="emsVersion" value="0.1"/>
-            </map>
-        </constructor-arg>
+    <bean name="servletContainer" class="com.l7tech.server.ems.EmsServletContainer">
+        <constructor-arg index="0" value="${com.l7tech.ems.httpPort}"/>
     </bean>
 
 </beans>

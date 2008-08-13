@@ -23,6 +23,7 @@ import javax.servlet.FilterChain;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.security.auth.Subject;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.Map;
@@ -32,8 +33,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.io.File;
 import java.io.IOException;
+import java.security.PrivilegedExceptionAction;
+import java.security.PrivilegedActionException;
 
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
+import com.l7tech.util.ExceptionUtils;
 
 /**
  * An embedded servlet container that the EMS uses to host itself.
@@ -98,15 +102,32 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
                             if ( securityManager.canAccess( httpServletRequest.getSession(true), httpServletRequest ) ) {
                                 if ( logger.isLoggable(Level.FINER) )
                                     logger.finer("Allowing access to resource '" + httpServletRequest.getRequestURI() + "'.");
-                                filterChain.doFilter( servletRequest, servletResponse );
+                                Subject subject = new Subject();
+                                EmsSecurityManager.LoginInfo info = securityManager.getLoginInfo(httpServletRequest.getSession(true));
+                                if ( info != null ) {
+                                    subject.getPrincipals().add( info.getUser() );
+                                }
+                                Subject.doAs(subject, new PrivilegedExceptionAction<Object>(){
+                                    public Object run() throws Exception {
+                                        filterChain.doFilter( servletRequest, servletResponse );
+                                        return null;
+                                    }
+                                });
                             } else {
                                 logger.info("Forbid access to resource : '" + httpServletRequest.getRequestURI() + "'." );
                                 httpServletResponse.sendRedirect("/Login.html");
                             }
                         } catch(IOException ioe) {
                             ioeHolder[0] = ioe;
-                        } catch(ServletException se) {
-                            seHolder[0] = se;
+                        } catch (PrivilegedActionException pae) {
+                            Throwable exception = pae.getCause();
+                            if (exception instanceof IOException) {
+                                ioeHolder[0] = (IOException) exception;
+                            } else if (exception instanceof ServletException) {
+                                seHolder[0] = (ServletException) exception;
+                            } else {
+                                throw ExceptionUtils.wrap(exception);
+                            }
                         }
                     }
                 });

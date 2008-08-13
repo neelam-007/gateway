@@ -1,7 +1,11 @@
 package com.l7tech.server.ems;
 
+import com.l7tech.identity.User;
+
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Date;
+import java.io.Serializable;
 
 /**
  * Security for web application access
@@ -43,5 +47,40 @@ public interface EmsSecurityManager {
      * @param newPassword The new password
      * @return True if the password was updated
      */
-    boolean changePassword(  HttpSession session, String password, String newPassword );
+    boolean changePassword( HttpSession session, String password, String newPassword );
+
+    /**
+     * Access login information for the current session.
+     *
+     * @param session The Session for the user
+     * @return The session information or null if not set
+     */
+    LoginInfo getLoginInfo( HttpSession session );
+
+    /**
+     * Login information
+     */
+    public final class LoginInfo implements Serializable {
+        private final String login;
+        private final Date date;
+        private final User user;
+
+        public LoginInfo( final String login, final Date date, final User user ) {
+            this.login = login;
+            this.date = date;
+            this.user = user;
+        }
+
+        public String getLogin() {
+            return login;
+        }
+
+        public Date getDate() {
+            return date;
+        }
+
+        public User getUser() {
+            return user;
+        }
+    }
 }

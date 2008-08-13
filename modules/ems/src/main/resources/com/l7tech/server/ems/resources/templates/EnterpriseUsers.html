@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" xmlns:wicket="http://wicket.apache.org/">
 <head>
     <!-- PROTOTYPE ONLY BEGIN -->
     <meta http-equiv="Expires" content="-1" />
@@ -178,14 +178,16 @@
                 <span class="subtabOn">User Accounts</span>
             </div>
             <div class="content">
-                <div class="panel">
-                    <div class="panelToolbar">
-                        <button id="addUserButton" type="submit" name="addUserButton" value="addUser"><img src="../images/addUser.png" alt="" /> New</button>
-                        <button id="removeUserButton" type="submit" name="removeUserButton" value="removeUser"><img src="../images/deleteUser.png" alt="" /> Delete</button>
-                        <button id="editUserButton" type="submit" name="editUserButton" value="editUser"><img src="../images/editUser.png" alt="" /> Edit</button>
-                    </div>
-                    <div id="userAccounts" class="panelContent"></div>
-                </div>
+                <wicket:extend>
+                    <div class="panel">
+                        <div class="panelToolbar">
+                            <button id="addUserButton" type="submit" name="addUserButton" value="addUser"><img src="../images/addUser.png" alt="" /> New</button>
+                            <button id="removeUserButton" type="submit" name="removeUserButton" value="removeUser"><img src="../images/deleteUser.png" alt="" /> Delete</button>
+                            <button id="editUserButton" type="submit" name="editUserButton" value="editUser"><img src="../images/editUser.png" alt="" /> Edit</button>
+                        </div>
+                        <div id="userAccounts" class="panelContent"></div>
+                    </div>                    
+                </wicket:extend>
             </div>
             <div class="statusBar">
                 <table>

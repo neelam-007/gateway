@@ -22,6 +22,7 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpServletRequest;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.Date;
 
 /**
  * Manages which pages are secure and performs authentication
@@ -87,6 +88,7 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
         boolean authenticated = user != null;
         if ( authenticated ) {
             session.setAttribute(ATTR_ID, user);
+            session.setAttribute(ATTR_DATE, new Date());
         }
 
         logger.info("Authenticating user '"+username+"', auth result is '"+authenticated+"'.");    
@@ -106,6 +108,7 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
         if ( session.getAttribute(ATTR_ID) != null ) {
             loggedOut = true;
             session.setAttribute(ATTR_ID, null);
+            session.setAttribute(ATTR_DATE, null);
         }
 
         return loggedOut;
@@ -174,11 +177,21 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
                 request.getRequestURI().startsWith("/yui");
     }
 
+    public LoginInfo getLoginInfo( final HttpSession session ) {
+        final User user = (User) session.getAttribute(ATTR_ID);
+        final Date date = (Date) session.getAttribute(ATTR_DATE);
+
+        return user == null ?
+                null :
+                new LoginInfo(user.getLogin(), date, user);
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( EmsSecurityManagerImpl.class.getName() );
 
     private static final String ATTR_ID = "com.l7tech.loginid";
+    private static final String ATTR_DATE = "com.l7tech.logindate";
 
     private final IdentityProviderFactory identityProviderFactory;
 }

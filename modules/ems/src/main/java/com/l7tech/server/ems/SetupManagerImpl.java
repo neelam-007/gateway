@@ -5,6 +5,8 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.UserBean;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.GatewayLicenseManager;
 import com.l7tech.server.identity.internal.InternalUserManager;
@@ -14,8 +16,10 @@ import static org.springframework.transaction.annotation.Propagation.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.InitializingBean;
 
+import javax.security.auth.Subject;
 import java.util.Collections;
 import java.util.logging.Logger;
+import java.security.AccessController;
 
 /**
  * Encapsulates behavior for initial setup of a new EMS instance.
@@ -67,26 +71,43 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
      * @throws SetupException if this EMS instance has already been set up.
      */
     @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-    public void performInitialSetup(String licenseXml, String initialAdminUsername, String initialAdminPassword) throws SetupException {
+    public void performInitialSetup(final String licenseXml,
+                                    final String initialAdminUsername,
+                                    final String initialAdminPassword) throws SetupException {
         try {
             if (isSetupPerformed())
                 throw new SetupException("This EMS instance has already been set up.");
-            licenseManager.installNewLicense(licenseXml);
 
+            InternalUserManager internalUserManager = getInternalUserManager();
+            if ( internalUserManager == null ) throw new SetupException("Unable to access user manager."); 
+
+            Subject subject = Subject.getSubject(AccessController.getContext());
+            User temp = new UserBean(initialAdminUsername);
+            if ( subject != null ) {
+                subject.getPrincipals().add(temp);
+            }
+
+            // Create user first, will rollback if license is not valid
             InternalUser user = new InternalUser();
             user.setName(initialAdminUsername);
             user.setLogin(initialAdminUsername);
             user.setCleartextPassword(initialAdminPassword);
 
-            InternalUserManager internalUserManager = getInternalUserManager();
-            if ( internalUserManager != null) internalUserManager.save(user, Collections.<IdentityHeader>emptySet());
-        } catch (InvalidLicenseException e) {
+            String id = internalUserManager.save(user, Collections.<IdentityHeader>emptySet());
+            user.setOid( Long.parseLong(id) );
+            if ( subject != null ) {
+                subject.getPrincipals().remove(temp);
+                subject.getPrincipals().add(user);
+            }
+
+            licenseManager.installNewLicense(licenseXml);
+        } catch (InvalidPasswordException e) {
             throw new SetupException(e);
         } catch (FindException e) {
             throw new SetupException(e);
-        } catch (UpdateException e) {
+        } catch (InvalidLicenseException e) {
             throw new SetupException(e);
-        } catch (InvalidPasswordException e) {
+        } catch (UpdateException e) {
             throw new SetupException(e);
         } catch (SaveException e) {
             throw new SetupException(e);

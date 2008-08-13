@@ -26,8 +26,6 @@ import com.l7tech.server.ems.SetupManager;
 import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.server.ems.SetupException;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.common.InvalidLicenseException;
-import com.l7tech.objectmodel.UpdateException;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -52,7 +50,7 @@ public class Setup extends WebPage {
      */
     public Setup() {
         add( new FeedbackPanel("feedback") );
-        add(new SetupForm("setupForm"));
+        add( new SetupForm("setupForm") );
     }
 
     /**

@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" xmlns:wicket="http://wicket.apache.org/">
 <head>
     <!-- PROTOTYPE ONLY BEGIN -->
     <meta http-equiv="Expires" content="-1" />
@@ -116,7 +116,8 @@
                 <span class="subtabOn">System Settings</span>
             </div>
             <div class="content">
-                <div class="panel">
+                <wicket:extend>
+              <div class="panel">
                     <div class="panelTitle tippy"><img id="productInformationTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'productInformation')" /><span class="clickable" onclick="toggleTippy('productInformationTippy', 'productInformation')">Product Information</span></div>
                     <div id="productInformation">
                         <div class="panelContent">
@@ -246,6 +247,7 @@
                         </div>
                     </div>
                 </div>
+                </wicket:extend>
             </div>
             <div class="statusBar">
                 <table>

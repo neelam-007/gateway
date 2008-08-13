@@ -1,6 +1,5 @@
 package com.l7tech.server.ems.pages;
 
-import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
@@ -34,7 +33,7 @@ import java.io.IOException;
 /**
  * Page for system settings
  */
-public class SystemSettings extends WebPage {
+public class SystemSettings extends EmsPage {
 
     private static final int MAX_LICENSE_FILE_UPLOAD_BYTES = SyspropUtil.getInteger("com.l7tech.ems.licenseFile.maxBytes", 1024 * 500);
     private static final Logger logger = Logger.getLogger(SystemSettings.class.getName());
@@ -65,8 +64,6 @@ public class SystemSettings extends WebPage {
 
         // text area
         add(new TextArea("licenseGrants", new PropertyModel(licenseModel, "grants")));
-
-        add(new Label("licenseMessage", new StringResourceModel("license.message.${messageType}", this, new Model(licenseModel))));
 
         add(new LicenseForm("licenseForm"));
     }
@@ -110,11 +107,13 @@ public class SystemSettings extends WebPage {
         StringBuilder licenseAttributeText = new StringBuilder();
 
         Set<String> attrList = license.getAttributes();
-        int i = 0;
-        for (String attr: attrList) {
-            licenseAttributeText.append(attr);
-            if (i++ < attrList.size() - 1) {
-                licenseAttributeText.append("\n");
+        if ( attrList != null ) {
+            int i = 0;
+            for (String attr: attrList) {
+                licenseAttributeText.append(attr);
+                if (i++ < attrList.size() - 1) {
+                    licenseAttributeText.append("\n");
+                }
             }
         }
 
@@ -146,7 +145,8 @@ public class SystemSettings extends WebPage {
         private License license;
 
         public String getId() {
-            return String.valueOf(getLicense().getId());
+            long id = getLicense().getId();
+            return id <= 0 ? "" : String.valueOf(id);
         }
 
         public String getDescription() {

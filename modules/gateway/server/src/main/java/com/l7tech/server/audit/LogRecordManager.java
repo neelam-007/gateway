@@ -38,9 +38,16 @@ public class LogRecordManager {
     //- PUBLIC
 
     /**
+     * Create a LogRecordManager with the given manager and buffer.
      *
+     * <p>If the manger is null then all requests are concidered to be for
+     * the locally held logs.</p>
+     *
+     * @param manager the ClusterInfoManager to use (may be null)
+     * @param buffer the local log buffer (required)
      */
-    public LogRecordManager(ClusterInfoManager manager, LogRecordRingBuffer buffer) {
+    public LogRecordManager(final ClusterInfoManager manager,
+                            final LogRecordRingBuffer buffer) {
         clusterInfoManager = manager;
         logRecordRingBuffer = buffer;
         nodeLogAdmins = new HashMap<String, GenericLogAdmin>();
@@ -102,21 +109,24 @@ public class LogRecordManager {
     private ClusterNodeInfo getClusterNodeInfo(final String nodeId) throws FindException {
         ClusterNodeInfo clusterNodeInfo = null;
 
-        Collection<ClusterNodeInfo> ClusterNodeInfos = clusterInfoManager.retrieveClusterStatus();
-        for (ClusterNodeInfo currentNodeInfo : ClusterNodeInfos) {
-            if (nodeId.equals(currentNodeInfo.getNodeIdentifier())) {
-                clusterNodeInfo = currentNodeInfo;
-                break;
+        if ( clusterInfoManager != null ) {
+            Collection<ClusterNodeInfo> ClusterNodeInfos = clusterInfoManager.retrieveClusterStatus();
+            for (ClusterNodeInfo currentNodeInfo : ClusterNodeInfos) {
+                if (nodeId.equals(currentNodeInfo.getNodeIdentifier())) {
+                    clusterNodeInfo = currentNodeInfo;
+                    break;
+                }
             }
         }
         return clusterNodeInfo;
     }
 
     /**
-     *
+     * If the clusterInfoManager is available then check the node id, else
+     * treat as a request for local logs.
      */
     private boolean isThisNodeMe(final String nodeId) {
-        return nodeId.equals(clusterInfoManager.thisNodeId());
+        return clusterInfoManager == null || nodeId.equals(clusterInfoManager.thisNodeId());
     }
 
     /**
@@ -158,9 +168,9 @@ public class LogRecordManager {
                                                final int size) throws FindException {
         SSGLogRecord[] ssgLrs = null;
         try {
-            ssgLrs = (SSGLogRecord[]) Subject.doAs(null, new PrivilegedExceptionAction(){
+            ssgLrs = Subject.doAs(null, new PrivilegedExceptionAction<SSGLogRecord[]>(){
                 // It saves around 10ms if we don't serialize the subject (which we don't use).
-                public Object run() throws Exception {
+                public SSGLogRecord[] run() throws Exception {
                     GenericLogAdmin gla = nodeLogAdmins.get(clusterNodeInfo.getNodeIdentifier());
                     if(gla==null) {
                         NamingURL adminServiceNamingURL = getNamingURLForNode(clusterNodeInfo);

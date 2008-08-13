@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.server.EntityManagerStub;
 
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  *
@@ -19,7 +20,7 @@ import java.util.Collection;
  */
 public class AuditRecordManagerStub extends EntityManagerStub<AuditRecord,EntityHeader> implements AuditRecordManager {
     public Collection<AuditRecord> find(AuditSearchCriteria criteria) throws FindException {
-        throw new UnsupportedOperationException();
+        return Collections.emptyList();
     }
 
     public void deleteOldAuditRecords() throws DeleteException {

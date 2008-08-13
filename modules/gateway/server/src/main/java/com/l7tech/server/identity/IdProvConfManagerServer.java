@@ -117,10 +117,6 @@ public class IdProvConfManagerServer
         return "identity_provider";
     }
 
-    public LdapIdentityProviderConfig[] getLdapTemplates() throws FindException {
-        return ldapTemplateManager.getTemplates();
-    }
-
     @Override
     public EntityType getEntityType() {
         return EntityType.ID_PROVIDER_CONFIG;
@@ -138,8 +134,6 @@ public class IdProvConfManagerServer
         out.setType(EntityType.ID_PROVIDER_CONFIG);
         return out;
     }
-
-    private final LdapConfigTemplateManager ldapTemplateManager = new LdapConfigTemplateManager();
 
     private void fixInternalConfig(IdentityProviderConfig cfg) {
         cfg.setName("Internal Identity Provider");

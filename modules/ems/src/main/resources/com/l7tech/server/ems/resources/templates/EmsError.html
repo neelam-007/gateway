@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" xmlns:wicket="http://wicket.apache.org/">
 <head>
     <!-- PROTOTYPE ONLY BEGIN -->
     <meta http-equiv="Expires" content="-1" />
@@ -116,8 +116,10 @@
                 <span class="subtabOff"><a href="Restore.html">Restore</a></span>
             </div>
             <div class="content">
-                <span style="font-size: 1in;">Error Page</span>
-                <div wicket:id="feedback" class="center"/>
+                <wicket:extend>                
+                    <span style="font-size: 1in;">Error Page</span>
+                    <div wicket:id="feedback" class="center"/>
+                </wicket:extend>
             </div>
             <div class="statusBar">
                 <table>

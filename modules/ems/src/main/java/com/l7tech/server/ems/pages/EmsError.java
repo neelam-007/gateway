@@ -6,7 +6,7 @@ import org.apache.wicket.markup.html.panel.FeedbackPanel;
 /**
  * Error page
  */
-public class EmsError extends WebPage {
+public class EmsError extends EmsPage {
 
     public EmsError() {
         add( new FeedbackPanel("feedback") );        

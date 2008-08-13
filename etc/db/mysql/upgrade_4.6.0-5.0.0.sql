@@ -13,6 +13,11 @@ BEGIN;
 ALTER TABLE rbac_assignment ADD CONSTRAINT `identity_provider_ibfk_1` FOREIGN KEY (`provider_oid`) REFERENCES `identity_provider` (`objectid`) ON DELETE CASCADE;
 COMMIT;
 
+--
+-- Rename audit detail column to avoid reserved word
+--
+
+ALTER TABLE audit_detail CHANGE exception exception_message MEDIUMTEXT;
 
 --
 -- Add description to POLICY roles

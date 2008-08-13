@@ -14,6 +14,7 @@ import javax.persistence.Table;
 import javax.persistence.Column;
 import javax.persistence.JoinTable;
 import javax.persistence.FetchType;
+import javax.persistence.Lob;
 import java.io.*;
 import java.util.Arrays;
 import java.text.MessageFormat;
@@ -100,6 +101,7 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
     @CollectionOfElements(fetch=FetchType.EAGER)
     @Fetch(FetchMode.SUBSELECT)
     @IndexColumn(name="position")
+    @Lob
     @Column(name="value", length=Integer.MAX_VALUE)
     @JoinTable(name="audit_detail_params",joinColumns=@JoinColumn(name="audit_detail_oid"))
     public String[] getParams() {
@@ -114,7 +116,8 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
         this.auditOid = oid;
     }
 
-    @Column(name="exception", length=Integer.MAX_VALUE)
+    @Lob
+    @Column(name="exception_message", length=Integer.MAX_VALUE)
     public String getException() {
         return exception;
     }

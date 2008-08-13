@@ -484,7 +484,7 @@ CREATE TABLE audit_detail (
   component_id integer,
   ordinal integer,
   message_id integer NOT NULL,
-  exception MEDIUMTEXT,
+  exception_message MEDIUMTEXT,
   PRIMARY KEY (objectid),
   KEY idx_component_id (component_id),
   KEY idx_audit_oid (audit_oid),

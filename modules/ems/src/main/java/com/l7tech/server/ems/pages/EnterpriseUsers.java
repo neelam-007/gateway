@@ -5,5 +5,5 @@ import org.apache.wicket.markup.html.WebPage;
 /**
  * Enterprise Users page
  */
-public class EnterpriseUsers extends WebPage {
+public class EnterpriseUsers extends EmsPage {
 }

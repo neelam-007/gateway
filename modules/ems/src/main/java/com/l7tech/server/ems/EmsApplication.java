@@ -5,6 +5,7 @@ import org.apache.wicket.settings.IResourceSettings;
 import org.apache.wicket.settings.IExceptionSettings;
 import org.apache.wicket.settings.IApplicationSettings;
 import org.apache.wicket.settings.ISecuritySettings;
+import org.apache.wicket.settings.IMarkupSettings;
 import org.apache.wicket.util.resource.locator.ResourceStreamLocator;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.lang.Bytes;
@@ -20,6 +21,7 @@ import com.l7tech.server.ems.pages.SystemSettings;
 import com.l7tech.server.ems.pages.EnterpriseUsers;
 import com.l7tech.server.ems.pages.UserSettings;
 import com.l7tech.server.ems.pages.Setup;
+import com.l7tech.server.ems.pages.Audits;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -70,7 +72,10 @@ public class EmsApplication extends WebApplication {
         IResourceSettings resourceSettings = getResourceSettings();
         resourceSettings.setResourceStreamLocator(new ResourceLocator());
 
-        ISecuritySettings securitySettings = this.getSecuritySettings();
+        IMarkupSettings markupSettings = getMarkupSettings();
+        markupSettings.setStripWicketTags(true);
+
+        ISecuritySettings securitySettings = getSecuritySettings();
         securitySettings.setAuthorizationStrategy( new IAuthorizationStrategy() {
             public boolean isInstantiationAuthorized(Class aClass) {
                 if (logger.isLoggable(Level.FINER))
@@ -92,7 +97,7 @@ public class EmsApplication extends WebApplication {
         });
 
         // mount pages
-        mountTemplate("/Audits.html");
+        mountBookmarkablePage("/Audits.html", Audits.class);
         mountTemplate("/Backup.html");
         mountTemplate("/EnterpriseGateways.html");
         mountBookmarkablePage("/EnterpriseUsers.html", EnterpriseUsers.class);

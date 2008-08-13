@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyListener;
 import com.l7tech.util.TimeUnit;
+import com.l7tech.util.SyspropUtil;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -151,6 +152,7 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;
 
     public static final String PROPS_PATH_PROPERTY = "com.l7tech.server.serverConfigPropertiesPath";
+    public static final String PROPS_RESOURCE_PROPERTY = "com.l7tech.server.serverConfigPropertiesResource";
     public static final String PROPS_PATH_DEFAULT = "/ssg/etc/conf/serverconfig.properties";
     public static final String PROPS_RESOURCE_PATH = "resources/serverconfig.properties";
 
@@ -726,17 +728,16 @@ public class ServerConfig implements ClusterPropertyListener {
     ServerConfig() {
         _properties = new Properties();
 
-        String configPropertiesPath = System.getProperty(PROPS_PATH_PROPERTY);
-        if (configPropertiesPath == null) configPropertiesPath = PROPS_PATH_DEFAULT;
-
         InputStream propStream = null;
         try {
-
+            String configPropertiesPath = SyspropUtil.getString(PROPS_PATH_PROPERTY, PROPS_PATH_DEFAULT);
             File file = new File(configPropertiesPath);
-            if (file.exists())
+            if (file.exists()) {
                 propStream = new FileInputStream(file);
-            else
-                propStream = ServerConfig.class.getResourceAsStream(PROPS_RESOURCE_PATH);
+            } else {
+                String configPropertiesResource = SyspropUtil.getString(PROPS_RESOURCE_PROPERTY, PROPS_RESOURCE_PATH);
+                propStream = ServerConfig.class.getResourceAsStream(configPropertiesResource);
+            }
 
             if (propStream != null) {
                 _properties.load(propStream);

@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" xmlns:wicket="http://wicket.apache.org/">
 <head>
     <!-- PROTOTYPE ONLY BEGIN -->
     <meta http-equiv="Expires" content="-1" />
@@ -116,6 +116,7 @@
                 <span class="subtabOff"><a href="SystemSettings.html">System Settings</a></span>
             </div>
             <div class="content">
+                <wicket:extend>
                 <h4>User Settings for "admin"</h4>
 
                 <div class="panel">
@@ -137,7 +138,7 @@
                                 <td><input id="newPassword2" name="newPassword2" type="password" wicket:id="newPasswordConfirm"/></td>
                             </tr>
                         </table>
-                        <input type="submit" value="Apply" />                            
+                        <input type="submit" value="Apply" />
                         </form>
                     </div>
                 </div>
@@ -906,6 +907,7 @@
                         <input type="submit" value="Apply" />
                     </div>
                 </div>
+                </wicket:extend>
             </div>
             <div class="statusBar">
                 <table>

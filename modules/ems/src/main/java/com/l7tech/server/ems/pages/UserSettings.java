@@ -1,6 +1,5 @@
 package com.l7tech.server.ems.pages;
 
-import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.PasswordTextField;
@@ -18,7 +17,7 @@ import java.io.Serializable;
 /**
  * User settings web page 
  */
-public class UserSettings extends WebPage {
+public class UserSettings extends EmsPage {
 
     @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean

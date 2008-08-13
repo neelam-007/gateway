@@ -2,13 +2,8 @@
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" xmlns:wicket="http://wicket.apache.org/">
 <head>
-    <!-- PROTOTYPE ONLY BEGIN -->
-    <meta http-equiv="Expires" content="-1" />
-    <meta http-equiv="Cache-Control" content="no-cache" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <!-- PROTOTYPE ONLY END -->
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-    <title>Log In [SecureSpan Enterprise Manager]</title>
+    <title wicket:id="titleLabel">[SecureSpan Enterprise Manager]</title>
     <link rel="stylesheet" href="../css/site.css" media="all" type="text/css" />
     <script type="text/javascript" src="../js/site.js"></script>
 </head>
@@ -20,35 +15,24 @@
                 <table width="100%">
                     <tr class="header">
                         <td class="logoLeft"><img src="../images/logoLeft.png" alt="" /></td>
-                        <td class="logo"><img src="../images/l7Logo.png" alt="Layer 7 Technologies Inc." /><img src="../images/emLogo.png" alt="" /></td>
+                        <td class="logo"><a href="EnterpriseGateways.html"><img src="../images/l7Logo.png" alt="Layer 7 Technologies Inc." /><img src="../images/emLogo.png" alt="" /></a></td>
                         <td class="logoRight"><img src="../images/logoRight.png" alt="" /></td>
                         <td width="100%"><img src="../images/spacer.png" alt="" /></td>
+                        <td class="middle nowrap"><span wicket:id="userLabel">Logged in as "admin"</span><br /><span wicket:id="sinceLabel">since May 5, 2008 05:57:54 PM</span></td>
+                        <td class="middle"><form method="get" action="Login.html"><input type="submit" value="Log Out" wicket:message="value:page.logOut"/></form></td>
+                        <td class="middle help"><a href="Help.html" target="_blank" title="Open help page in a new window" wicket:message="title:page.helpTitle"><wicket:message key="page.help">Help</wicket:message></a></td>
                     </tr>
                 </table>
             </div>
             <div class="divider"><img src="../images/spacer.png" alt="" /></div>
+            <div wicket:id="navigation"/>
             <div class="content">
-                <div wicket:id="feedback" class="center"/>                
-                <form method="post" action="EnterpriseGateways.html" wicket:id="loginForm">
-                    <table class="center spaced">
-                        <tr>
-                            <td class="right">User Name:</td>
-                            <td><input id="username" name="username" type="text" wicket:id="username" /></td>
-                        </tr>
-                        <tr>
-                            <td class="right">Password:</td>
-                            <td><input id="password" name="password" type="password" wicket:id="password" /></td>
-                        </tr>
-                    </table>
-                    <div class="center">
-                        <input type="submit" value="Log In" />
-                    </div>
-                </form>
+                <wicket:child/>                
             </div>
             <div class="statusBar">
                 <table>
                     <tr>
-                        <td width="100%"><img src="../images/spacer.png" alt="" /></td>
+                        <td width="100%"><span wicket:id="timeZoneLabel">Time Zone: Canada/Pacific (GMT-08:00/<b>-07:00</b>)</span></td>
                         <td><a class="nowrap" href="http://www.layer7tech.com" target="_blank">Layer 7 Technologies Inc.</a></td>
                     </tr>
                 </table>

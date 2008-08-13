@@ -2,6 +2,7 @@ package com.l7tech.server.ems;
 
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.JdkLoggerConfigurator;
+import com.l7tech.server.ServerConfig;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,6 +19,8 @@ public class EmsMain {
         if ( new File("logs").exists() ) {
             JdkLoggerConfigurator.configure("com.l7tech.server.ems", "com/l7tech/server/ems/resources/logging.properties");
         }
+        // initialize config location
+        System.setProperty(ServerConfig.PROPS_RESOURCE_PROPERTY, "/com/l7tech/server/ems/resources/ems_config.properties");
 
         // add shutdown handler
         final Object shutdown = new Object();

@@ -43,6 +43,7 @@ public class Component {
 
     public static final Component BRIDGE = new Component(2000000, "SecureSpan XML VPN Client", null);
     public static final Component MANAGER = new Component(3000000, "SecureSpan Manager", null);
+    public static final Component ENTERPRISE_MANAGER = new Component(4000000, "Enterprise Service Manager", null);
 
     public Component(int localNum, String name, Component parent) {
         this(localNum, name, parent, false);

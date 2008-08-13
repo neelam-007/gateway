@@ -1,6 +1,9 @@
 package com.l7tech.server.ems;
 
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.server.event.system.Started;
+import com.l7tech.server.event.system.Stopped;
+import com.l7tech.gateway.common.Component;
 
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -31,6 +34,8 @@ public class Ems {
         });
         if (!appContext.compareAndSet(null, newAppContext))
             throw new IllegalStateException("EMS already started");
+
+        newAppContext.publishEvent(new Started(this, Component.ENTERPRISE_MANAGER, "127.0.0.1")); //TODO [steve] EMS IP
     }
 
     /**
@@ -39,8 +44,10 @@ public class Ems {
     public void stop() {
         try {
             final AbstractApplicationContext ac = appContext.getAndSet(null);
-            if (ac != null)
+            if (ac != null) {
+                ac.publishEvent(new Stopped(this, Component.ENTERPRISE_MANAGER, "127.0.0.1")); //TODO [steve] EMS IP                
                 ac.destroy();
+            }
         } catch (Throwable t) {
             logger.log(Level.WARNING, "Error while stopping ApplicationContext: " + ExceptionUtils.getMessage(t), t);
         }
