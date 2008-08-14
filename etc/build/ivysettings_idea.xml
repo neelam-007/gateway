@@ -1,0 +1,17 @@
+<!--
+  Ivy settings file for use when building project files (excludes built layer7 modules)
+-->
+<ivysettings>
+
+    <settings 
+        defaultResolver="localfile"/>
+
+    <resolvers>
+        <filesystem name="localfile" checksums="">
+            <artifact pattern="lib/repository/[organisation]/[artifact]-[revision].[ext]"/>
+            <ivy pattern="lib/repository/[organisation]/[module]-ivy-[revision].xml"/>
+        </filesystem>
+    </resolvers>
+    
+    <caches useOrigin="true" defaultCacheDir="build/ivycache"/>
+</ivysettings>

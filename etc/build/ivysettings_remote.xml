@@ -20,6 +20,7 @@
                 <artifact pattern="lib/repository/[organisation]/[artifact]-[revision].[ext]"/>
                 <ivy pattern="lib/repository/[organisation]/[module]-ivy-[revision].xml"/>
             </filesystem>
+
             <!-- 
               The "temp.m2" resolver is useful when installing an "umbrella" 
               artifact that collects a set of dependencies (e.g. tomcat components)
@@ -28,7 +29,16 @@
                 <artifact pattern="build/temp.m2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
                 <ivy pattern="build/temp.m2/[organisation]/[module]/[revision]/[module]-ivy-[revision].xml"/>
             </filesystem>
-            <!-- 
+
+            <!--
+              Java.net has JAX-*, etc    "
+            <ibiblio name="java.net"
+                     root="http://download.java.net/maven/1/"
+                     pattern="[organisation]/[type]s/[artifact]-[revision].[ext]"
+                    />
+            -->
+
+            <!--
               JBoss repository 
             <url name="jboss" m2compatible="true" checksums="md5,sha1">
                 <artifact pattern="http://repository.jboss.com/maven2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>

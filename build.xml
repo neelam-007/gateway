@@ -633,6 +633,7 @@
                 <propertyref name="build.product"/>
                 <propertyref name="build.vendor"/>
                 <propertyref name="build.vendor.id"/>
+                <propertyref name="ivy.settings.filepath"/>
             </propertyset>
         </subant>
     </presetdef>
@@ -713,15 +714,39 @@
       Generate IDEA project/modules
     -->
     <target name="idea" depends="build-module-list-all" description="Generate IDEA project/modules">
+        <property name="ivy.settings.filepath" location="etc/build/ivysettings_idea.xml"/>
+        <echo level="info">Clear cache and configure repository settings. (${ivy.settings.filepath})</echo>
         <mkdir dir="${build.etc}"/>
+        <!-- Clean cache -->
+        <delete dir="${build.dir}/ivycache"/>
+        <mkdir dir="${build.dir}/ivycache"/>
+
         <echo level="info">Building IDEA modules.</echo>
         <modules target="idea" buildpathref="module-build-all-path"/>
 
         <!-- Module for transitive dependencies -->
         <copy file="etc/build/idea_module_runtime.xml" tofile="UneasyRooster.iml" overwrite="false"/>
+        <!-- TODO avoid referencing dependency.xml for each module -->
+        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/common/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
+        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/ems/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
+        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/gateway/api/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
+        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/gateway/common/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
+        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/gateway/console-applet/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
         <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/gateway/console/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
+        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/gateway/management/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
+        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/gateway/processcontroller/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
         <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/gateway/server/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
+        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/gui/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
+        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/identity/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
+        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/internal/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
+        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/kerberos/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
+        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/policy/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
+        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/proxy/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
         <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/skunkworks/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
+        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/test/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
+        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/uddi/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
+        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/utility/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
+        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/wsdl/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
         <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/xmlvpnclient/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
 
         <echo level="info">Building IDEA project.</echo>

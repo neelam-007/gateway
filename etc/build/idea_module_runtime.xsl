@@ -4,7 +4,7 @@
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
     <!-- Parameters for customizing options -->
-    <xsl:param name="data"></xsl:param> <!-- file containing ivy dependency report -->
+    <xsl:param name="data"/> <!-- file containing ivy dependency report -->
 
     <!-- Global settings -->
     <xsl:output method="xml" encoding="utf-8" indent="yes"/>

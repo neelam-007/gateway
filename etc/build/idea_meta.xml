@@ -1,0 +1,25 @@
+<layer7-project-info>
+  <!-- Spring -->
+  <library name="org.springframework.spring-agent" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
+  <library name="org.springframework.spring-aop" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
+  <library name="org.springframework.spring-beans" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
+  <library name="org.springframework.spring-context" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
+  <library name="org.springframework.spring-context-support" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
+  <library name="org.springframework.spring-core" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
+  <library name="org.springframework.spring-jdbc" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
+  <library name="org.springframework.spring-orm" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
+  <library name="org.springframework.spring-test" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
+  <library name="org.springframework.spring-tx" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
+  <library name="org.springframework.spring-web" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
+  <library name="org.springframework.spring-webmvc" javadoc-url="http://static.springframework.org/spring/docs/2.5.x/api/"/>
+
+  <!-- Hibernate -->
+  <library name="org.hibernate.hibernate" javadoc-url="http://www.hibernate.org/hib_docs/v3/api/"/>
+  <library name="org.hibernate.hibernate-annotations" javadoc-url="http://www.hibernate.org/hib_docs/annotations/api/"/>
+
+  <!-- JAVA EE -->
+  <library name="javax.mail.mail" javadoc-url="http://java.sun.com/javaee/5/docs/api/"/>
+  <library name="javax.persistence.persistence-api" javadoc-url="http://java.sun.com/javaee/5/docs/api/"/>
+  <library name="javax.servlet.servlet-api" javadoc-url="http://java.sun.com/javaee/5/docs/api/"/>
+
+</layer7-project-info>
