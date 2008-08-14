@@ -18,6 +18,7 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.AnonymousEntityReference;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.folder.Folder;
 
 /**
  * @author alex
@@ -83,6 +84,8 @@ public final class EntityHeaderUtils {
             return new AnonymousEntityReference(Role.class, header.getOid(), header.getName());
         } else if (type == EntityType.POLICY) {
             return new AnonymousEntityReference( Policy.class, header.getOid(), header.getName());
+        } else if (type == EntityType.FOLDER) {
+            return new AnonymousEntityReference(Folder.class, header.getOid(), header.getName());
         } else if (type == EntityType.MAXED_OUT_SEARCH_RESULT) {
             return null;
         } else if (type == EntityType.UNDEFINED) {

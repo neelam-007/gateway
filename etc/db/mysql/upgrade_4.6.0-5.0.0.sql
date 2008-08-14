@@ -46,6 +46,13 @@ create unique index i_thumb on trusted_cert (thumbprint_sha1);
 drop index name on trusted_cert;
 
 --
+-- Folder changes
+--
+INSERT INTO folder (objectid, name, parent_folder_oid) VALUES (-5002, 'Root Node', NULL);
+UPDATE folder SET parent_folder_oid = -5002 WHERE objectid = -5001;
+UPDATE folder SET parent_folder_oid = -5002 WHERE objectid = -5000;
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;

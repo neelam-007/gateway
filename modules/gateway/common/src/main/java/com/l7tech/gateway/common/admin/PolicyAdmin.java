@@ -23,7 +23,7 @@ import java.io.Serializable;
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types=POLICY)
-public interface PolicyAdmin {
+public interface PolicyAdmin extends FolderAdmin {
     /**
      * This is a container for a PolicyCheckpointState for the just saved policy and a map of the new policy
      * fragment names to their new OIDs.
@@ -90,7 +90,6 @@ public interface PolicyAdmin {
     @Secured(stereotype = MethodStereotype.FIND_HEADERS)
     @Administrative(licensed = false)
     Collection<PolicyHeader> findPolicyHeadersWithTypes(EnumSet<PolicyType> types);
-
 
     /**
      * Deletes the policy with the specified OID.  An impact analysis will be performed prior to deleting the policy,

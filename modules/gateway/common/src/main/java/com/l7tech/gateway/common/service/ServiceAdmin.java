@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.util.CollectionUpdate;
@@ -33,7 +34,7 @@ import java.util.Set;
  * @see ServiceHeader
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods {
+public interface ServiceAdmin extends ServiceAdminPublic, FolderAdmin, AsyncAdminMethods {
     String ROLE_NAME_TYPE_SUFFIX = "Service";
     String ROLE_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
 

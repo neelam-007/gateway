@@ -119,6 +119,16 @@
         <property name="memberProviderOid" column="provider_oid" type="long"/>
     </class>
 
+    
+
+    <!--<class name="com.l7tech.gateway.common.service.PublishedServiceAlias" table="published_service_alias" lazy="false">-->
+        <!--<id name="oid" column="objectid" type="long" unsaved-value="-1">-->
+            <!--<generator class="hilo"/>-->
+        <!--</id>-->
+        <!--<property name="name" column="name" type="string"/>-->
+        <!--<property name="entityOid" column="published_service_oid" type="long"/>-->
+        <!--<property name="folderOid" column="policy_folder_oid" type="long"/>-->
+    <!--</class>-->
 
     <class name="com.l7tech.gateway.common.service.PublishedService" table="published_service" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
@@ -138,6 +148,7 @@
         <property name="laxResolution" column="lax_resolution" type="boolean"/>
         <many-to-one class="com.l7tech.policy.Policy"
                      name="policy" lazy="false" column="policy_oid" unique="true" cascade="persist,merge,save-update,delete"/>
+        <property name="folderOid" column="folder_oid" type="long"/>
     </class>
 
     <class name="com.l7tech.policy.Policy" table="policy" lazy="false">
@@ -151,6 +162,7 @@
         <property name="xml" column="xml" type="text"/>
         <property name="soap" column="soap" type="boolean"/>
         <property name="internalTag" column="internal_tag" type="string" length="64"/>
+        <property name="folderOid" column="folder_oid" type="long"/>
     </class>
 
     <class name="com.l7tech.policy.PolicyVersion" table="policy_version" lazy="false">
@@ -166,6 +178,17 @@
         <property name="userLogin" column="user_login" type="string"/>
         <property name="xml" column="xml" type="text" lazy="true"/>
         <property name="active" column="active" type="boolean"/>
+    </class>
+
+    <class name="com.l7tech.objectmodel.folder.Folder" table="folder" lazy="false">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+        <property name="name" column="name" type="string"/>
+        <property name="parentFolderOid" column="parent_folder_oid" type="long"/>
+        <many-to-one class="com.l7tech.objectmodel.folder.Folder"
+                     name="parentFolder" lazy="false" column="parent_folder_oid" unique="true" insert="false" update="false"/>
+
     </class>
 
     <class name="com.l7tech.server.identity.cert.CertEntryRow" table="client_cert" lazy="false">

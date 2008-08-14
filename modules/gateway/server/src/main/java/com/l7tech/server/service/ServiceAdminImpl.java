@@ -7,6 +7,8 @@ import com.l7tech.gateway.common.service.*;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import static com.l7tech.gateway.common.security.rbac.EntityType.SERVICE;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -19,6 +21,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.policy.PolicyVersionManager;
@@ -65,6 +68,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * Server side implementation of the ServiceAdmin admin api.
@@ -94,6 +98,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     private final UDDITemplateManager uddiTemplateManager;
     private final PolicyVersionManager policyVersionManager;
     private final ServiceTemplateManager serviceTemplateManager;
+    private final FolderManager folderManager;
 
     private final AsyncAdminMethodsImpl asyncSupport = new AsyncAdminMethodsImpl();
     private final BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
@@ -121,7 +126,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
                             UDDITemplateManager uddiTemplateManager,
                             PolicyVersionManager policyVersionManager,
                             ServerConfig serverConfig,
-                            ServiceTemplateManager serviceTemplateManager)
+                            ServiceTemplateManager serviceTemplateManager,
+                            FolderManager folderManager)
     {
         this.licenseManager = licenseManager;
         this.registryPublicationManager = registryPublicationManager;
@@ -137,6 +143,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         this.uddiTemplateManager = uddiTemplateManager;
         this.policyVersionManager = policyVersionManager;
         this.serviceTemplateManager = serviceTemplateManager;
+        this.folderManager = folderManager;
 
         int maxConcurrency = serverConfig.getIntProperty(ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 15);
         validatorExecutor = new ThreadPoolExecutor(1, maxConcurrency, 5 * 60, TimeUnit.SECONDS, validatorQueue);
@@ -224,6 +231,11 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
                     throws FindException {
             Collection<ServiceHeader> res = serviceManager.findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
+    }
+
+    public Collection<FolderHeader> findAllPolicyFolders() throws FindException {
+        ServiceHeader [] allServices = findAllPublishedServices();
+        return folderManager.findFolderHeaders(Arrays.asList(allServices));
     }
 
     public CollectionUpdate<ServiceHeader> getPublishedServicesUpdate(final int oldVersionID) throws FindException {
@@ -613,5 +625,49 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
 
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.auditor = new Auditor(this, applicationContext, logger);
+    }
+
+    public long savePolicyFolder(Folder folder) throws UpdateException, SaveException {
+        int maxDepth = ServerConfig.getInstance().getIntProperty("policyorganization.maxFolderDepth",8);
+
+        Long parentFolderId = folder.getParentFolderOid();
+        if(parentFolderId != null){
+            try {
+                Folder parentFolder = folderManager.findByPrimaryKey(parentFolderId);
+                long folderId = folder.getOid();
+                if(parentFolderId == folderId){
+                    throw new UpdateException("Parent folder cannot be the same as folder id");
+                }
+                
+                //This will load all the folders parents
+                int levels = 0;
+                while(parentFolder != null){
+                    levels++;
+                    parentFolder = parentFolder.getParentFolder();
+                }
+                if(levels > maxDepth){
+                    String msg = "Folder hierarchy can only be {0} levels deep";
+                    logger.log(Level.INFO, msg, maxDepth);
+                    if(folder.getOid() == Folder.DEFAULT_OID) {
+                        throw new SaveException(MessageFormat.format(msg, maxDepth));
+                    }else{
+                        throw new UpdateException(MessageFormat.format(msg, maxDepth));
+                    }
+                }
+            } catch (FindException e) {
+                throw new SaveException("Could not find parent folder");
+            }
+        }
+
+        if(folder.getOid() == Folder.DEFAULT_OID) {
+            return folderManager.save(folder);
+        } else {
+            folderManager.update(folder);
+            return folder.getOid();
+        }
+    }
+
+    public void deletePolicyFolder(long folderOid) throws FindException, DeleteException {
+        folderManager.delete(folderOid);
     }
 }

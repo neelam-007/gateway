@@ -44,6 +44,23 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     private java.util.List<Cookie> cookies = new ArrayList<Cookie>();
     protected String tooltip = null;
     protected Comparator<? super TreeNode> childrenComparator = DEFAULT_COMPARATOR;
+    private boolean isCut = false;
+
+    public boolean isCut() {
+        return isCut;
+    }
+
+    public void setChildrenCut(boolean cut){
+        for(int i = 0; i < getChildCount(); i++){
+            AbstractTreeNode node = (AbstractTreeNode)getChildAt(i);
+            node.setCut(cut);
+            node.setChildrenCut(cut);
+        }
+    }
+
+    public void setCut(boolean cut) {
+        isCut = cut;
+    }
 
     /**
      * Instantiate the tree node with the user object

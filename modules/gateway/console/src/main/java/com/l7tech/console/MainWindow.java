@@ -25,6 +25,7 @@ import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.security.PermissionRefreshListener;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.*;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.tree.policy.PolicyToolBar;
@@ -188,9 +189,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     private String ssgURL;
     private SsmApplication ssmApplication;
     private IdentitiesRootNode identitiesRootNode;
-    private final DefaultMutableTreeNode SERVICE_POLICY_ROOT = new DefaultMutableTreeNode("NOT SHOWN Services and Policies");
-    private ServicesFolderNode servicesFolderNode;
-    private PoliciesFolderNode policiesFolderNode;
     private JTextPane descriptionText;
     private JSplitPane verticalSplitPane;
     private double preferredVerticalSplitLocation = 0.57;
@@ -202,6 +200,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private AuditAlertsNotificationPanel auditAlertBar;
     private AuditAlertChecker auditAlertChecker;
     private X509Certificate serverSslCert;
+    private RootNode rootNode;
 
 
     /**
@@ -994,8 +993,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                   getAssertionPaletteTree().firePropertyChange(PolicyTemplatesFolderNode.REFRESH_POLICY_TEMPLATES, 0, 1);
                   // no matter what, if service tree exists, always refresh it
                   if (servicesAndPoliciesTree != null) {
-                      servicesAndPoliciesTree.refresh(servicesFolderNode);
-                      servicesAndPoliciesTree.refresh(policiesFolderNode);
+                      servicesAndPoliciesTree.refresh(rootNode);
                       alreadyRefreshed.add(servicesAndPoliciesTree);
                   }
                   // no matter what, always refresh the policy editor panel if it is showing
@@ -1040,7 +1038,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     public void refreshPoliciesFolderNode() {
-        servicesAndPoliciesTree.refresh(policiesFolderNode);
+        servicesAndPoliciesTree.refresh(rootNode);
     }
 
     /**
@@ -1349,8 +1347,8 @@ public class MainWindow extends JFrame implements SheetHolder {
             return tree;
 
         servicesAndPoliciesTree = new ServicesAndPoliciesTree();
-        servicesAndPoliciesTree.setShowsRootHandles(false);
-        servicesAndPoliciesTree.setRootVisible(false);
+        servicesAndPoliciesTree.setShowsRootHandles(true);
+        servicesAndPoliciesTree.setRootVisible(true);
         TopComponents.getInstance().registerComponent(ServicesAndPoliciesTree.NAME, servicesAndPoliciesTree);
 		servicesAndPoliciesTree.addTreeSelectionListener(new TreeSelectionListener() {
             public void valueChanged(TreeSelectionEvent treeSelectionEvent) {
@@ -1404,17 +1402,13 @@ public class MainWindow extends JFrame implements SheetHolder {
         identitiesTree.setModel(treeModel);
 
         final String url = preferences.getString(SsmPreferences.SERVICE_URL);
-        servicesFolderNode = new ServicesFolderNode(Registry.getDefault().getServiceManager(), "Services @ " + url);
-        policiesFolderNode = new PoliciesFolderNode(Registry.getDefault().getPolicyAdmin(), "Policies @ " + url);
-        SERVICE_POLICY_ROOT.removeAllChildren();
-        SERVICE_POLICY_ROOT.insert(servicesFolderNode, 0);
-        SERVICE_POLICY_ROOT.insert(policiesFolderNode, 1);
+        rootNode = new RootNode(url);
 
         DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);
-        servicesTreeModel.setRoot(SERVICE_POLICY_ROOT);
+        servicesTreeModel.setRoot(rootNode);
         getServicesAndPoliciesTree().setModel(servicesTreeModel);
         getServicesAndPoliciesTree().setShowsRootHandles(true);
-        getServicesAndPoliciesTree().setRootVisible(false);
+        getServicesAndPoliciesTree().setRootVisible(true);
 
         // disable items that depend on serivces and policies tree selection
         getEditPolicyMenuItem().setEnabled(false);
@@ -2839,12 +2833,12 @@ public class MainWindow extends JFrame implements SheetHolder {
         TopComponents.getInstance().unregisterComponent("mainWindow");
     }
 
-    public ServicesFolderNode getServicesFolderNode() {
-        return servicesFolderNode;
+    public AbstractTreeNode getServicesFolderNode() {
+        return rootNode;
     }
 
-    public PoliciesFolderNode getPoliciesFolderNode() {
-        return policiesFolderNode;
+    public AbstractTreeNode getPoliciesFolderNode() {
+        return rootNode;
     }
 
     private void closeAllWindows() {

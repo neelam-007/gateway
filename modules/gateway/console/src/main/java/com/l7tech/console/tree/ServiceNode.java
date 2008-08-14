@@ -7,6 +7,8 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
 import com.l7tech.wsdl.Wsdl;
@@ -108,7 +110,13 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         if (getEntityHeader().isSoap() && !TopComponents.getInstance().isApplet()) actions.add(new PublishPolicyToUDDIRegistry(this));
         actions.add(new DeleteServiceAction(this));
         actions.add(new PolicyRevisionsAction(this));
-
+        actions.add(new RefreshTreeNodeAction(this));
+        Action secureCut = ServicesAndPoliciesTree.getSecuredAction(EntityType.FOLDER,
+                                                                OperationType.UPDATE,
+                                                                ServicesAndPoliciesTree.ClipboardActionType.CUT);
+        if(secureCut != null){
+            actions.add(secureCut);
+        }
         return actions.toArray(new Action[actions.size()]);
     }
 

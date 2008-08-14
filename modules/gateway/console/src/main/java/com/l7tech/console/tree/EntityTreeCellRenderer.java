@@ -17,6 +17,7 @@ public class EntityTreeCellRenderer
   extends DefaultTreeCellRenderer {
     private final Font boldFont;
     private final Font plainFont;
+    private final Font italicsFont;
 
     /**
      * default constructor
@@ -25,6 +26,7 @@ public class EntityTreeCellRenderer
         JLabel l = new JLabel();
         boldFont = l.getFont().deriveFont(Font.BOLD);
         plainFont =  l.getFont().deriveFont(Font.PLAIN);
+        italicsFont = l.getFont().deriveFont(Font.ITALIC);
     }
 
     /**
@@ -38,12 +40,17 @@ public class EntityTreeCellRenderer
         super.getTreeCellRendererComponent(tree, value,
                                            sel, expanded, leaf, row, hasFocus);
 
-        setFont(plainFont);
         this.setBackgroundNonSelectionColor(tree.getBackground());
         Icon icon = null;
         if (!(value instanceof AbstractTreeNode)) return this;
 
         AbstractTreeNode node = ((AbstractTreeNode)value);
+        if(node.isCut()){
+            setFont(italicsFont);
+        }else{
+            setFont(plainFont);
+        }
+
         setText(node.getName());
 
         setToolTipText(node.getTooltipText());

@@ -32,7 +32,7 @@ public class RefreshTreeNodeAction extends RefreshAction {
         }
     }
 
-    protected void performAction() {
+    public void performAction() {
         if (tree == null) {
             logger.warning("No tree assigned, ignoring the refresh action");
             return;

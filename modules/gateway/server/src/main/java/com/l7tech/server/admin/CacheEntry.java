@@ -11,10 +11,11 @@ package com.l7tech.server.admin;
  * It provides the getTimestamp method which a cache implementation uses to determine if this entry
  * has expired or not
  */
-public class CacheEntry <CE extends Object> {
+public final class CacheEntry <CE extends Object> {
 
     private CE cachedEntry;
-
+    private final long timestamp = System.currentTimeMillis();
+    
     public CacheEntry(CE cachedEntry){
         this.cachedEntry = cachedEntry;
     }
@@ -26,7 +27,4 @@ public class CacheEntry <CE extends Object> {
     public CE getCachedObject(){
         return this.cachedEntry;
     }
-    
-    private final long timestamp = System.currentTimeMillis();        
-
 }

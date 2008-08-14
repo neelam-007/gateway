@@ -13,6 +13,8 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.EntityFinder;
+import com.l7tech.server.policy.PolicyManager;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -38,6 +40,12 @@ public class RoleManagerImpl
         implements RoleManager
 {
     private static final Logger logger = Logger.getLogger(RoleManagerImpl.class.getName());
+
+    private PolicyManager policyManager;
+
+    public void setPolicyManager( PolicyManager policyManager){
+        this.policyManager = policyManager;
+    }
 
     public Class<Role> getImpClass() {
         return Role.class;
@@ -277,5 +285,61 @@ public class RoleManagerImpl
         }
 
         return oid;
+    }
+
+    private boolean isPermitted(Collection<Role> assignedRoles, Entity entity, OperationType operation, String otherOperationName) {
+        for (Role role : assignedRoles) {
+            for (Permission perm : role.getPermissions()) {
+                if (perm.matches(entity) && perm.getOperation() == operation) {
+                    if (operation != OperationType.OTHER && operation != OperationType.NONE) {
+                        return true;
+                    } else {
+                        if (otherOperationName.equals(perm.getOtherOperationName())) return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public <T extends EntityHeader> Iterable<T> filterPermittedHeaders(User authenticatedUser,
+                                                                       OperationType requiredOperation,
+                                                                       Iterable<T> headers,
+                                                                       EntityFinder entityFinder)
+            throws FindException
+    {
+        if (authenticatedUser == null) throw new IllegalArgumentException();
+        if (requiredOperation == null || !OperationType.ALL_CRUD.contains(requiredOperation)) throw new IllegalArgumentException();
+
+        // If we already have blanket permission for this type, just return the original collection
+        // however as the SSM now shows services and policies together, blanket only applies if the user has it on
+        // all entites which can be shown in the tree
+        if (isPermittedForAnyEntityOfType(authenticatedUser, requiredOperation, EntityType.SERVICE)
+                && isPermittedForAnyEntityOfType(authenticatedUser, requiredOperation, EntityType.POLICY)) return headers;
+
+        // Do this outside the loop so performance isn't appalling
+        final Collection<Role> userRoles = getAssignedRoles(authenticatedUser);
+        if (userRoles.isEmpty()) return Collections.emptyList();
+
+        final List<T> result = new LinkedList<T>();
+        for (final T header : headers) {
+            final Entity entity;
+            try {
+                if(header.getType() == com.l7tech.objectmodel.EntityType.POLICY) {
+                    entity = policyManager.findByGuid(header.getStrId());
+                }else{
+                    entity = entityFinder.find(header);
+                }
+                if (entity == null) continue;
+            } catch (FindException e) {
+                logger.log(Level.WARNING, MessageFormat.format("Unable to find entity for header: {0}; skipping", header), e);
+                continue;
+            }
+
+            if (isPermitted(userRoles, entity, requiredOperation, null))
+                result.add(header);
+        }
+
+        return result;
     }
 }

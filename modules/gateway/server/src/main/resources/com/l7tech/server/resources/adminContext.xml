@@ -159,7 +159,7 @@
 
     <bean id="rbacAdvice" class="com.l7tech.server.security.rbac.SecuredMethodInterceptor">
         <constructor-arg ref="roleManager"/>
-        <constructor-arg ref="entityFinder"/>
+        <constructor-arg ref="cachingEntityFinder"/>
         <constructor-arg ref="policyManager"/>
     </bean>
 
@@ -320,6 +320,7 @@
         <constructor-arg ref="policyVersionManager"/>
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="serviceTemplateManager"/>
+        <constructor-arg ref="policyFolderManager"/>
     </bean>
 
     <!-- schema admin servant -->
@@ -379,7 +380,7 @@
     <!-- RBAC admin impl -->
     <bean id="rbacAdmin_UNSECURED" class="com.l7tech.server.security.rbac.RbacAdminImpl">
         <constructor-arg ref="roleManager"/>
-        <constructor-arg ref="entityFinder"/>
+        <constructor-arg ref="cachingEntityFinder"/>
     </bean>
 
     <!-- Policy admin impl -->
@@ -388,6 +389,7 @@
         <constructor-arg ref="policyCache"/>
         <constructor-arg ref="policyVersionManager"/>
         <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="policyFolderManager"/>
     </bean>
 
     <bean id="logSinkAdmin_UNSECURED" class="com.l7tech.server.log.LogSinkAdminImpl">

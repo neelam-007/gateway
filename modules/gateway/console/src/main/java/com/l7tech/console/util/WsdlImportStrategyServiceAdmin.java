@@ -2,6 +2,8 @@ package com.l7tech.console.util;
 
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.Policy;
@@ -45,6 +47,10 @@ public class WsdlImportStrategyServiceAdmin implements ServiceAdmin {
 
     public ServiceHeader[] findAllPublishedServicesByOffset( int offset, int windowSize ) throws FindException {
         return delegate.findAllPublishedServicesByOffset( offset, windowSize );
+    }
+
+    public Collection<FolderHeader> findAllPolicyFolders() throws FindException {
+        return delegate.findAllPolicyFolders();
     }
 
     public SampleMessage findSampleMessageById( long oid ) throws FindException {
@@ -176,5 +182,13 @@ public class WsdlImportStrategyServiceAdmin implements ServiceAdmin {
         content.put( baseUri, baseContent );
 
         return content;
+    }
+
+    public long savePolicyFolder(Folder folder) throws UpdateException, SaveException {
+        return delegate.savePolicyFolder(folder);
+    }
+
+    public void deletePolicyFolder(long folderOid) throws FindException, DeleteException {
+        delegate.deletePolicyFolder(folderOid);
     }
 }

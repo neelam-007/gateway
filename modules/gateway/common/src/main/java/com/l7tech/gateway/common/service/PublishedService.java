@@ -33,7 +33,9 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings( { "NonJaxWsWebServices" } )
 @XmlRootElement
-public class PublishedService extends NamedEntityImp {
+public class PublishedService extends NamedEntityImp
+//        implements AliasCapabilty
+{
     //private static final long serialVersionUID = 8711916262379377867L;
     private static final Logger logger = Logger.getLogger(PublishedService.class.getName());
 
@@ -48,6 +50,7 @@ public class PublishedService extends NamedEntityImp {
     public PublishedService() {
         setVersion(1);
         policy = new Policy(PolicyType.PRIVATE_SERVICE, null, null, false);
+//        isAlias = false;
     }
 
     /**
@@ -67,6 +70,8 @@ public class PublishedService extends NamedEntityImp {
         setSoap(objToCopy.isSoap());
         _wsdlUrl = objToCopy._wsdlUrl;
         setWsdlXml(objToCopy.getWsdlXml());
+//        setAlias(objToCopy.isAlias());
+//        setAliases(objToCopy.getAliases());
     }
 
     /**
@@ -448,6 +453,30 @@ public class PublishedService extends NamedEntityImp {
         this.laxResolution = laxResolution;
     }
 
+    public long getFolderOid() {
+        return policyFolderOid;
+    }
+
+    public void setFolderOid(long policyFolderOid) {
+        this.policyFolderOid = policyFolderOid;
+    }
+
+//    public void setAlias(boolean isAlias) {
+//        this.isAlias = isAlias;
+//    }
+//
+//    public boolean isAlias() {
+//        return isAlias;
+//    }
+//
+//    public void setAliases(List<EntityAlias> aliases) {
+//        this.aliases = aliases;
+//    }
+//
+//    public List<EntityAlias> getAliases() {
+//        return aliases;
+//    }
+
     /**
      * 
      */
@@ -493,6 +522,7 @@ public class PublishedService extends NamedEntityImp {
     private String routingUri;
     private String httpMethodNames = METHODNAMES_SOAP; // invariants: never null, always in sync with httpMethods
     private boolean laxResolution;
+    private long policyFolderOid = -5002L;
 
     private transient WsdlStrategy wsdlStrategy;
     private transient Wsdl _parsedWsdl;
@@ -502,6 +532,9 @@ public class PublishedService extends NamedEntityImp {
     private transient Set<String> httpMethods; // invariants: never null, always in sync with httpMethodNames
     private transient Boolean multipart;
 
+//    private List<EntityAlias> aliases;
+    private boolean isAlias;
+    
     /**
      * Create a new set from the specified comma-delimited list of HTTP method names.
      *

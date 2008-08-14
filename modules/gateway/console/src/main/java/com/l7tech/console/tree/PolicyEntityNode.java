@@ -15,6 +15,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.EntityType;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -25,7 +27,7 @@ import java.util.Enumeration;
 import java.util.logging.Level;
 
 /** @author alex */
-public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader> {
+public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>{
     protected volatile Policy policy;
 
     public PolicyEntityNode(PolicyHeader e) {
@@ -75,6 +77,15 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         actions.add(new EditPolicyProperties(this));
         actions.add(new DeletePolicyAction(this));
         actions.add(new PolicyRevisionsAction(this));
+        actions.add(new RefreshTreeNodeAction(this));
+        
+        Action secureCut = ServicesAndPoliciesTree.getSecuredAction(EntityType.FOLDER,
+                                                                OperationType.UPDATE,
+                                                                ServicesAndPoliciesTree.ClipboardActionType.CUT);
+        if(secureCut != null){
+            actions.add(secureCut);
+        }
+        
         return actions.toArray(new Action[0]);
     }
 

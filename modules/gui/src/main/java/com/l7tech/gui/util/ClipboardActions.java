@@ -289,7 +289,7 @@ public class ClipboardActions {
     /**
      * @return the system Clipboard, if accessible; otherwise null.
      */
-    private static Clipboard getClipboard() {
+    public static Clipboard getClipboard() {
         if (noClipAccess) return null;
         if (checkedClipboard) return getSystemClipboard();
         checkedClipboard = true;

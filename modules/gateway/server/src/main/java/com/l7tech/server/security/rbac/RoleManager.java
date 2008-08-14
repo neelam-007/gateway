@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.server.EntityFinder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
@@ -93,4 +94,24 @@ public interface RoleManager extends EntityManager<Role, EntityHeader> {
      * @throws com.l7tech.objectmodel.UpdateException
      */
     void renameEntitySpecificRole(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException;
+
+    /**
+     * Filters a collection of {@link EntityHeader}s, returning a new {@link Iterable} (<em>not necessarily of the same
+     * type!</em>) containing only headers for entities on which the user has permission to invoke the specified
+     * operation
+     *
+     * @param authenticatedUser the User who was authenticated; must not be null
+     * @param requiredOperation the operation the user must be permitted to perform on all the entities
+     * @param headers the headers of the entities the user is asking for
+     * @param entityFinder the EntityFinder to use to look the real entities for the supplied headers
+     * @return the headers for the entities that the user is permitted to invoke the operation against; will always be
+     *         either the original iterable itself, or a List&lt;T&gt; derived from it.
+     * @throws FindException if the user's roles cannot be retrieved, but <em>not</em> if the entity headers cannot be
+     *                       resolved.
+     */
+    <T extends EntityHeader> Iterable<T> filterPermittedHeaders(User authenticatedUser,
+                                                                OperationType requiredOperation,
+                                                                Iterable<T> headers,
+                                                                EntityFinder entityFinder)
+            throws FindException;
 }

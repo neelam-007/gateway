@@ -2,17 +2,21 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.action.*;
 import com.l7tech.console.util.Refreshable;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.tree.servicesAndPolicies.ServicesAndPoliciesTreeTransferHandler;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.ClipboardActions;
+import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.objectmodel.folder.Folder;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeSelectionModel;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import javax.swing.tree.*;
+import java.awt.event.*;
 import java.util.logging.Logger;
+import java.util.EnumSet;
 
 /**
  * Class ServiceTree is the specialized <code>JTree</code> that
@@ -20,8 +24,9 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class ServicesAndPoliciesTree extends JTree implements Refreshable {
+public class ServicesAndPoliciesTree extends JTree implements Refreshable, FocusListener {
     static Logger log = Logger.getLogger(ServicesAndPoliciesTree.class.getName());
+    private boolean ignoreCurrentClipboard = false;
 
     /**
      * component name
@@ -36,7 +41,8 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable {
     public ServicesAndPoliciesTree(DefaultTreeModel newModel) {
         super(newModel);
         initialize();
-        getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+        addFocusListener(this);
+        getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
     }
 
     /**
@@ -46,6 +52,25 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable {
         this(null);
     }
 
+    public void setAllChildrenUnCut(){
+        DefaultTreeModel model = (DefaultTreeModel)this.getModel();
+        //When the user is logged out, we will get this event but the tree may be model may be gone
+        if(model == null) return;
+        Object rootObj = model.getRoot();
+        if(rootObj instanceof DefaultMutableTreeNode){
+            DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) rootObj;
+            //rootNode has two children
+            for(int i = 0; i < rootNode.getChildCount(); i++){
+                TreeNode childNode = rootNode.getChildAt(i);
+                if(childNode instanceof AbstractTreeNode){
+                    AbstractTreeNode aTreeNode = (AbstractTreeNode) childNode;
+                    aTreeNode.setCut(false);
+                    aTreeNode.setChildrenCut(false);
+                }
+            }
+            model.nodeChanged(rootNode);
+        }
+    }
     /**
      * initialize
      */
@@ -54,12 +79,21 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable {
         addMouseListener(new TreeMouseListener());
         setCellRenderer(new EntityTreeCellRenderer());
 
-        // Suppress cut/copy/paste
-        setTransferHandler(null);
+        setDragEnabled(true);
+        setDropMode(DropMode.ON);
+        setTransferHandler(new ServicesAndPoliciesTreeTransferHandler());
+
+        // disable Edit menu actions
+        putClientProperty(ClipboardActions.COPY_HINT, "false");
+        putClientProperty(ClipboardActions.CUT_HINT, "true");
+        putClientProperty(ClipboardActions.PASTE_HINT, "true");
+
+        ClipboardActions.replaceClipboardActionMap(this);
     }
 
     public void refresh() {
-        refresh(null);
+        //refresh(null);
+        refresh((AbstractTreeNode)this.getModel().getRoot());
     }
 
     public void refresh(AbstractTreeNode n) {
@@ -89,6 +123,17 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable {
      */
     public boolean canRefresh() {
         return true;
+    }
+
+    public void focusGained(FocusEvent e) {
+    }
+
+    public void focusLost(FocusEvent e) {
+        //let user see that all cut nodes have been undone
+        setAllChildrenUnCut();
+        //Set no nodes as being selected
+        this.clearSelection();
+        setIgnoreCurrentClipboard(true);
     }
 
     /**
@@ -182,5 +227,75 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable {
                 }
             }
         }
+    }
+
+    public static enum ClipboardActionType{
+        CUT("Cut"),
+        PASTE("Paste"),
+        ;
+        private final String actionName;
+
+        public static final EnumSet<ClipboardActionType> ALL_ACTIONS = EnumSet.of(CUT, PASTE);
+
+        private ClipboardActionType(String name) {
+            this.actionName = name;
+        }
+
+        public String getName() {
+            return actionName;
+        }
+
+        public String toString() {
+            return actionName;
+        }
+    }
+
+    /**
+     * Get the standard global cut action, but only if the current user has permissions to carry out
+     * the supplied operationType on the supplied entityType.
+     * Currently only supports POLICY_FOLDER and UPDATE
+     * Use this method when you need a secured Action which is not part of the SecureAction hierarchy
+     * If a client uses this method in a once off initialization for cut and paste actions there is the chance that
+     * the clipboard is not yet ready, in which case null will be returned.
+     *
+     * @param entityType The EntityType the user must have a permission for
+     * @param operationType The OperationType the user must have on the supplied EntityType
+     * @param clipboardActionType Specify whether you want to 'Cut' or 'Paste'. Currently all that is supported
+     * @return Action if the current user has the correct permissions, otherwise null
+     */
+    public static Action getSecuredAction(EntityType entityType,
+                                          OperationType operationType,
+                                          ClipboardActionType clipboardActionType
+    ) {
+
+        if(entityType.equals(EntityType.FOLDER) && operationType.equals(OperationType.UPDATE)){
+            if(!ClipboardActionType.ALL_ACTIONS.contains(clipboardActionType)) return null;
+
+            if(ClipboardActions.isSystemClipboardAvailable()) {
+                //use an AttemptedUpdate, which represents an Update attempty on a Policy_Folder to determine
+                //whether cut should be available for this node
+                final Folder folder = new Folder("TestFolder", null);
+                AttemptedUpdate attemptedUpdate = new AttemptedUpdate(EntityType.FOLDER, folder);
+                if (Registry.getDefault().isAdminContextPresent()){
+                    SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
+                    if(securityProvider.hasPermission(attemptedUpdate)){
+                        if(clipboardActionType.equals(ClipboardActionType.CUT)){
+                            return ClipboardActions.getGlobalCutAction();
+                        }else if(clipboardActionType.equals(ClipboardActionType.PASTE)){
+                            return ClipboardActions.getGlobalPasteAction();
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    public void setIgnoreCurrentClipboard(boolean set){
+        ignoreCurrentClipboard = set;
+    }
+
+    public boolean getIgnoreCurrentclipboard(){
+        return ignoreCurrentClipboard;
     }
 }

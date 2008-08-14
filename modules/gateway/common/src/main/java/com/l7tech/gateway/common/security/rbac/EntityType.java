@@ -28,6 +28,7 @@ import com.l7tech.identity.mapping.AttributeConfig;
 import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.identity.mapping.SecurityTokenMapping;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.folder.Folder;
 import static com.l7tech.objectmodel.EntityType.UNDEFINED;
 import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -56,6 +57,7 @@ public enum EntityType {
     SAMPLE_MESSAGE("Sample Message", SampleMessage.class, com.l7tech.objectmodel.EntityType.SAMPLE_MESSAGE, true),
 
     POLICY("Policy", Policy.class, com.l7tech.objectmodel.EntityType.POLICY, true),
+    FOLDER("Folder", Folder.class, com.l7tech.objectmodel.EntityType.FOLDER, true),
 
     MAP_ATTRIBUTE("Attribute Configuration", AttributeConfig.class, UNDEFINED, false),
     MAP_IDENTITY("Identity Provider Attribute Mapping", IdentityMapping.class, UNDEFINED, false),

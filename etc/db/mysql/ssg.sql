@@ -101,6 +101,24 @@ CREATE TABLE internal_user_group (
   INDEX (subgroup_id)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
+
+--
+-- Table structure for table 'folder'
+--
+
+DROP TABLE IF EXISTS folder;
+CREATE TABLE folder (
+  objectid bigint(20) NOT NULL,
+  name varchar(128) NOT NULL,
+  parent_folder_oid bigint(20),
+  PRIMARY KEY  (objectid),
+  FOREIGN KEY (parent_folder_oid) REFERENCES folder (objectid) ON DELETE SET NULL,
+  UNIQUE KEY `i_name_parent` (`name`,`parent_folder_oid`)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+
+INSERT INTO folder VALUES (-5002, 'Root Node', NULL);
+
 --
 -- Table structure for table 'published_service'
 --
@@ -120,8 +138,10 @@ CREATE TABLE published_service (
   routing_uri varchar(128),
   http_methods mediumtext,
   lax_resolution TINYINT(1) NOT NULL DEFAULT 0, 
+  folder_oid bigint(20),
   PRIMARY KEY (objectid),
-  FOREIGN KEY (policy_oid) REFERENCES policy (objectid)
+  FOREIGN KEY (policy_oid) REFERENCES policy (objectid),
+  FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE SET NULL
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -138,9 +158,11 @@ CREATE TABLE policy (
   soap TINYINT(1) NOT NULL DEFAULT 0,
   guid char(36) NOT NULL,
   internal_tag VARCHAR(64),
+  folder_oid bigint(20),
   PRIMARY KEY (objectid),
   UNIQUE KEY i_name (name),
   UNIQUE KEY i_guid (guid),
+  FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE SET NULL,
   INDEX (policy_type)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -847,6 +869,13 @@ INSERT INTO rbac_permission VALUES (-413,0,-400,'READ',NULL,'JMS_ENDPOINT');
 INSERT INTO rbac_permission VALUES (-414,0,-400,'READ',NULL,'SERVICE_TEMPLATE');
 INSERT INTO rbac_permission VALUES (-415,0,-400,'READ',NULL,'POLICY');
 INSERT INTO rbac_permission VALUES (-416,0,-400,'UPDATE',NULL,'POLICY');
+
+-- Manage Webservices users can CRUD each and every possible folder
+INSERT INTO rbac_permission VALUES (-417, 0, -400, 'CREATE', null, 'FOLDER');
+INSERT INTO rbac_permission VALUES (-418, 0, -400, 'READ',   null, 'FOLDER');
+INSERT INTO rbac_permission VALUES (-419, 0, -400, 'UPDATE', null, 'FOLDER');
+INSERT INTO rbac_permission VALUES (-420, 0, -400, 'DELETE', null, 'FOLDER');
+
 
 INSERT INTO rbac_role VALUES (-450,0,'View Audit Records and Logs', null,null, 'Users assigned to the {0} role have the ability to view audit and log details in manager.');
 INSERT INTO rbac_permission VALUES (-451,0,-450,'READ',NULL,'CLUSTER_INFO');

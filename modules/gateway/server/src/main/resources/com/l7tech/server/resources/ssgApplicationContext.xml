@@ -107,7 +107,9 @@
         <constructor-arg ref="identityProviderConfigManager"/>
     </bean>
 
-    <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean"/>
+    <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean">
+        <property name="policyManager" ref="policyManager" />
+    </bean>
 
     <!-- server side identity configuration manager -->
     <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.IdProvConfManagerServer" parent="hibernateBean">
@@ -387,7 +389,7 @@
         <property name="identityProviderFactory" ref='identityProviderFactory'/>
         <property name="schemaEntryManager" ref='schemaEntryManager'/>
         <property name="clientCertManager" ref='clientCertManager'/>
-        <property name="entityFinder" ref="entityFinder"/>
+        <property name="entityFinder" ref="cachingEntityFinder"/>
         <property name="ssgKeyStoreManager" ref="ssgKeyStoreManager"/>
     </bean>
 
@@ -722,7 +724,8 @@
     </bean>
 
     <bean id="entityFinder" class="com.l7tech.server.EntityFinderImpl">
-        <constructor-arg ref="identityProviderFactory"/>
+        <!--<constructor-arg ref="identityProviderFactory"/>-->
+        <property name="identityProviderFactory" ref="identityProviderFactory" />
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
@@ -840,6 +843,18 @@
     <bean id="policyManager" class="com.l7tech.server.policy.PolicyManagerImpl" parent="hibernateBean">
         <constructor-arg ref="roleManager"/>
         <property name="policyCache" ref="policyCache"/>
+    </bean>
+
+    <bean id="policyFolderManager" class="com.l7tech.server.folder.FolderManagerImpl" parent="hibernateBean">
+        <constructor-arg ref="roleManager" />
+        <constructor-arg ref="cachingEntityFinder"/>
+    </bean>
+
+    <bean id="cachingEntityFinder" class="com.l7tech.server.util.EntityCachingFactoryBean">
+        <constructor-arg><null/></constructor-arg>
+        <constructor-arg value="EntityFinderCache"/>
+        <constructor-arg value="com.l7tech.server.EntityFinder"/>
+        <constructor-arg ref="entityFinder"/>
     </bean>
 
     <bean id="policyPathBuilderFactory" class="com.l7tech.policy.PolicyPathBuilderFactory">

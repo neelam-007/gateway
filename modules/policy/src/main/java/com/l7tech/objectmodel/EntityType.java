@@ -32,6 +32,7 @@ public class EntityType implements Serializable {
     public static final EntityType CONNECTOR = new EntityType(17, "HTTP(S) Listen Port");
     public static final EntityType POLICY = new EntityType(18, "Policy");
     public static final EntityType POLICY_VERSION = new EntityType(19, "Policy Version");
+    public static final EntityType FOLDER = new EntityType(21, "Folder");
     public static final EntityType UNDEFINED = new EntityType(-1, "Undefined");
 
     private static final long serialVersionUID = -5485680679515491927L;
@@ -142,8 +143,10 @@ public class EntityType implements Serializable {
             case 17:
                 return "CONNECTOR";
             case 18:
- 	 	        return "POLICY";            
-			default:
+ 	 	        return "POLICY";
+            case 21:
+                return "FOLDER";
+            default:
                 return "?";
         }
     }
@@ -195,6 +198,8 @@ public class EntityType implements Serializable {
  	 	        return POLICY;
             case 19:
                 return POLICY_VERSION;
+            case 21:
+                return FOLDER;
             default:
                 return UNDEFINED;
         }

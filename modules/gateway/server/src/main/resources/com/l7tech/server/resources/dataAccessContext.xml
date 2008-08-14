@@ -154,6 +154,7 @@
                 <idref bean="policyVersionManager"/>
                 <idref bean="sinkManager"/>
                 <idref bean="esmSubscriptionManager"/>
+                <idref bean="policyFolderManager" />
             </list>
         </property>
     </bean>

@@ -97,7 +97,7 @@ public class CreatePolicyAction extends SecureAction {
                         return;
                     }
 
-                    PoliciesFolderNode root = TopComponents.getInstance().getPoliciesFolderNode();
+                    AbstractTreeNode root = TopComponents.getInstance().getPoliciesFolderNode();
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(new PolicyHeader(policy));
                     model.insertNodeInto(sn, root, root.getInsertPosition(sn));

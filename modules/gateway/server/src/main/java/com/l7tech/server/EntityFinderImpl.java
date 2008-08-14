@@ -27,10 +27,10 @@ import java.util.logging.Logger;
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinder {
     private static final Logger logger = Logger.getLogger(EntityFinderImpl.class.getName());
-    private final IdentityProviderFactory identityProviderFactory;
+    private IdentityProviderFactory identityProviderFactory;
 
-    public EntityFinderImpl(IdentityProviderFactory ipf) {
-        this.identityProviderFactory = ipf;
+    public void setIdentityProviderFactory(IdentityProviderFactory ipf) {
+        identityProviderFactory = ipf;        
     }
 
     @Transactional(readOnly=true)

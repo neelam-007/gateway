@@ -29,6 +29,7 @@ public class Policy extends NamedEntityImp {
     private PolicyType type;
     private boolean soap;
     private String internalTag;
+    private Long policyFolderOid;
 
     private long versionOrdinal;   // Not persisted -- filled in by admin layer
     private boolean versionActive; // Not persisted -- filled in by admin layer
@@ -46,6 +47,10 @@ public class Policy extends NamedEntityImp {
         this._name = name;
         this.xml = xml;
         this.soap = soap;
+
+        if(this.type == PolicyType.INCLUDE_FRAGMENT || this.type == PolicyType.INTERNAL) {
+            policyFolderOid = new Long(-5002);
+        }
     }
 
     /**
@@ -78,6 +83,7 @@ public class Policy extends NamedEntityImp {
         setVersionOrdinal(getVersionOrdinal());
         setXml(policy.getXml());
         setGuid(policy.getGuid());
+        setFolderOid(policy.getFolderOid());
         if ( lock ) lock();
     }
 
@@ -227,6 +233,14 @@ public class Policy extends NamedEntityImp {
     public void setInternalTag(String internalTag) {
         checkLocked();
         this.internalTag = internalTag;
+    }
+
+    public Long getFolderOid() {
+        return policyFolderOid;
+    }
+
+    public void setFolderOid(Long policyFolderOid) {
+        this.policyFolderOid = policyFolderOid;
     }
 
     @SuppressWarnings({ "RedundantIfStatement" })

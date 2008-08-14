@@ -8,6 +8,8 @@ import com.l7tech.util.CollectionUpdate;
 import com.l7tech.util.CollectionUpdateProducer;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.AssertionLicense;
@@ -190,6 +192,15 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     /**
+     * Retrieve all of the {@link com.l7tech.common.policy.Folder} headers.
+     *
+     * @return A <code>Collection</code> of EntityHeader objects.
+     */
+    public Collection<FolderHeader> findAllPolicyFolders() throws FindException {
+        throw new RuntimeException("Not Implemented");
+    }
+
+    /**
      * Find all URLs of the WSDLs from UDDI Registry given the service name pattern.
      *
      * @param uddiURL  The URL of the UDDI Registry
@@ -312,5 +323,13 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
 
     public <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId) throws UnknownJobException, JobStillActiveException {
         return asyncSupport.getJobResult(jobId);
+    }
+
+    public long savePolicyFolder(Folder folder) throws UpdateException, SaveException {
+        throw new RuntimeException("Not Implemented");
+    }
+
+    public void deletePolicyFolder(long folderOid) throws FindException, DeleteException {
+        throw new RuntimeException("Not Implemented");
     }
 }

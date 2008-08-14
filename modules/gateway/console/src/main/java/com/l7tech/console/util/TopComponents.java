@@ -7,10 +7,9 @@ import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.policy.ConsoleAssertionRegistry;
 import com.l7tech.console.security.PermissionRefreshListener;
-import com.l7tech.console.tree.PoliciesFolderNode;
-import com.l7tech.console.tree.ServicesFolderNode;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.tree.policy.PolicyTree;
+import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.policy.AssertionRegistry;
 import org.springframework.context.ApplicationContext;
 
@@ -71,7 +70,7 @@ public class TopComponents {
             mw.getDisconnectAction().actionPerformed(null);
     }
 
-    public PoliciesFolderNode getPoliciesFolderNode() {
+    public AbstractTreeNode getPoliciesFolderNode() {
         return getMainWindow().getPoliciesFolderNode();
     }
 
@@ -79,7 +78,7 @@ public class TopComponents {
         getMainWindow().refreshPoliciesFolderNode();
     }
 
-    public ServicesFolderNode getServicesFolderNode() {
+    public AbstractTreeNode getServicesFolderNode() {
         return getMainWindow().getServicesFolderNode();
     }
 
