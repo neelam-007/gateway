@@ -5,7 +5,6 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
   <xsl:output method="xml" encoding="utf-8" indent="yes"/>
 
-  <xsl:param name="data"/>   <!-- IVY module file used for module dependencies -->
   <xsl:param name="module"/> <!-- IDEA module file used to copy sources -->
   <xsl:param name="modulemeta"/> <!-- Javadoc URLs etc for libraries -->
   <xsl:param name="source">false</xsl:param>
@@ -14,7 +13,6 @@
   <xsl:param name="test.resources">false</xsl:param>
   <xsl:param name="runtime">false</xsl:param>
 
-  <xsl:variable name="modules" select="document($data)/ivy-module/dependencies/dependency[not(@org) or @org = 'com.l7tech']"/>    
   <xsl:variable name="modulemetadoc" select="document($modulemeta)"/>
   <xsl:variable name="idea-modules" select="document($module)/module/component[@name = 'NewModuleRootManager']"/>
 
@@ -46,15 +44,12 @@
         <orderEntry type="module" module-name="UneasyRooster"/>
         </xsl:if>
 
-       <xsl:for-each select="$modules">
-           <orderEntry type="module" module-name="{@name}"  exported=""/>
-       </xsl:for-each>
-
         <xsl:for-each select="/ivy-report/dependencies/module">
           <xsl:sort select="revision/@position"/>
             <xsl:if test="revision/caller[@name = /ivy-report/info/@module and @organisation = /ivy-report/info/@organisation]">
               <xsl:choose>
                   <xsl:when test="@organisation = 'com.l7tech'">
+                    <orderEntry type="module" module-name="{@name}"  exported=""/>
                   </xsl:when>
                   <xsl:otherwise>
                     <orderEntry type="module-library"  exported="">

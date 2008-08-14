@@ -33,9 +33,7 @@
         <dependency org="org.hibernate" name="hibernate" rev="3.2.6.ga" force="true" conf="core">
             <exclude org="net.sf.ehcache" module="ehcache" name="*" type="*" ext="*" conf="" matcher="exact"/>
             <exclude org="cglib" module="cglib" name="*" type="*" ext="*" conf="" matcher="exact"/>
-            <exclude org="asm" module="asm" name="*" type="*" ext="*" conf="" matcher="exact"/>
-            <exclude org="asm" module="asm-attrs" name="*" type="*" ext="*" conf="" matcher="exact"/>
-            <exclude org="javax.transaction" module="jta" name="*" type="*" ext="*" conf="" matcher="exact"/>               
+            <exclude org="javax.transaction" module="jta" name="*" type="*" ext="*" conf="" matcher="exact"/>
         </dependency>
         <dependency org="com.toedter" name="jcalendar" rev="1.3.2" force="true" conf="core"/>
         <dependency org="jfree" name="jfreechart" rev="1.0.2" force="true" conf="core"/>
@@ -65,5 +63,8 @@
         </dependency>
         <dependency org="org.springframework" name="spring-web" rev="2.5.4" force="true" conf="core"/>
         <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
+
+        <exclude org="asm" module="asm" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
+        <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
     </dependencies>
 </ivy-module>

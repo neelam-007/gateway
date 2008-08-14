@@ -46,5 +46,8 @@
         <dependency org="junit" name="junit" rev="4.4" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-test" rev="2.5.4" force="true" conf="core"/>
         <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
+
+        <exclude org="asm" module="asm" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
+        <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
     </dependencies>
 </ivy-module>

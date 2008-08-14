@@ -39,6 +39,7 @@
                      matcher="exact"/>
         </dependency>
         <dependency org="commons-io" name="commons-io" rev="1.4" force="true" conf="core"/>
+        <dependency org="org.hibernate" name="hibernate" rev="3.2.6.ga" force="true" conf="core"/>
         <dependency org="org.hibernate" name="hibernate-annotations" rev="3.3.1.GA" force="true" conf="core"/>
         <dependency org="org.hibernate" name="hibernate-commons-annotations" rev="3.0.0.ga" force="true" conf="core"/>
         <dependency org="org.apache.derby" name="derby" rev="10.4.1.3" force="true" conf="core"/>
@@ -46,8 +47,10 @@
         <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.8" force="true" conf="core"/>
         <dependency org="org.mortbay.jetty" name="jetty-ajp" rev="6.1.8" force="true" conf="core"/>
         <dependency org="org.mortbay.jetty" name="jetty-sslengine" rev="6.1.8" force="true" conf="core"/>
-
         <dependency org="org.springframework" name="spring-test" rev="2.5.4" force="true" conf="test"/>
         <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
+
+        <exclude org="asm" module="asm" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
+        <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
     </dependencies>
 </ivy-module>

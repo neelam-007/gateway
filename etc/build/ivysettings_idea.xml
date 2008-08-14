@@ -4,14 +4,22 @@
 <ivysettings>
 
     <settings 
-        defaultResolver="localfile"/>
+        defaultResolver="idea"/>
 
     <resolvers>
-        <filesystem name="localfile" checksums="">
-            <artifact pattern="lib/repository/[organisation]/[artifact]-[revision].[ext]"/>
-            <ivy pattern="lib/repository/[organisation]/[module]-ivy-[revision].xml"/>
-        </filesystem>
+        <chain name="idea">
+            <filesystem name="ideatemp" checksums="">
+                <artifact pattern="build/idearepo/[organisation]/[artifact]-[revision].[ext]"/>
+                <ivy pattern="build/idearepo/[organisation]/[module]-ivy-[revision].xml"/>
+            </filesystem>
+            <filesystem name="localfile" checksums="">
+                <artifact pattern="lib/repository/[organisation]/[artifact]-[revision].[ext]"/>
+                <ivy pattern="lib/repository/[organisation]/[module]-ivy-[revision].xml"/>
+            </filesystem>
+        </chain>
     </resolvers>
     
-    <caches useOrigin="true" defaultCacheDir="build/ivycache"/>
+    <caches useOrigin="true" default="default" defaultCacheDir="build/ivycache">
+        <cache name="default" basedir="build/ivycache"/>
+    </caches>
 </ivysettings>
