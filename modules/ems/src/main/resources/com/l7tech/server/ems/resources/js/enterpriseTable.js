@@ -1,9 +1,8 @@
 // Default values of internationalized strings.
 // To localize, overrides them on your web page after referencing this file.
-var NEW_GROUP = 'New Group';
 var NEW_FOLDER = 'New Folder';
-var ADD_PARTITION = 'Add Partition';
-var CREATE_CLUSTER_NODE = 'Create Cluster Node';
+var ADD_SSG_CLUSTER = 'Add SSG Cluster';
+var CREATE_SSG_NODE = 'Create SSG Node';
 var RENAME = 'Rename';
 var MOVE = 'Move';
 var DELETE = 'Delete';
@@ -28,17 +27,16 @@ var LAUNCH_SSM = 'Launch SecureSpan Manager';
  * 4. Include the class name "l7_enterpriseTable_rowSelectable" in the TABLE element if rows
  *    should be selectable (i.e., highlighted when left-clicked), e.g., to work with a toolbar.
  * 5. Include one of the following classes in TR elements for enterprise entities:
- *    enterpriseGroup                 - group
- *    enterprisePartition             - partition
- *    enterpriseClusterNode           - cluster node
- *    enterpriseFolder                - folder
- *    enterprisePublishedService      - published service
- *    enterprisePolicyFragment        - policy fragment
- *    enterprisePublishedServiceAlias - published service alias
- *    enterprisePolicyFragmentAlias   - policy fragment alias
+ *    l7_folder                - folder
+ *    l7_SSGCluster            - SSG Cluster
+ *    l7_SSGNode               - SSG Node
+ *    l7_publishedService      - published service
+ *    l7_policyFragment        - policy fragment
+ *    l7_publishedServiceAlias - published service alias
+ *    l7_policyFragmentAlias   - policy fragment alias
  * 6. Additional TR classes:
- *    l7_enterpriseTable_disabled         - do not show context menu
- *    l7_enterpriseTable_cannotDelete     - to disable any menu item for delete
+ *    l7_enterpriseTable_disabled     - do not show context menu
+ *    l7_enterpriseTable_cannotDelete - to disable any menu item for delete
  * 7. Invoke l7_enterpriseTable_init() upon the onload event of the document.
  *    It will initialize all TABLE element with the class 'l7_enterpriseTable' and add
  *    the property 'l7_enterpriseTable' to the table object.
@@ -89,37 +87,37 @@ function l7_enterpriseTable(table, imgFolder) {
             var menuItems = null;
             if (hasClass(selectedTR, 'l7_enterpriseTable_disabled')) {
                 menuItems = null;
-            } else if (hasClass(selectedTR, 'enterpriseGroup')) {
+            } else if (hasClass(selectedTR, 'l7_folder')) {
                 menuItems = [
-                    {text: '<img src="' + imgFolder + '/addGroup.png" style="position:absolute; left:4px;">&nbsp;' + NEW_GROUP},
-                    {text: '<img src="' + imgFolder + '/addPartition.png" style="position:absolute; left:4px;">&nbsp;' + ADD_PARTITION},
+                    {text: '<img src="' + imgFolder + '/addFolder.png" style="position:absolute; left:4px;">&nbsp;' + NEW_FOLDER},
+                    {text: '<img src="' + imgFolder + '/addSSGCluster.png" style="position:absolute; left:4px;">&nbsp;' + ADD_SSG_CLUSTER},
                     {text: '<img src="' + imgFolder + '/rename.png" style="position:absolute; left:4px;">&nbsp;' + RENAME},
                     {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;">&nbsp;' + MOVE},
                     {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;">&nbsp;' + DELETE, disabled: hasClass(selectedTR, 'l7_enterpriseTable_cannotDelete')}];
-            } else if (hasClass(selectedTR, 'enterprisePartition')) {
+            } else if (hasClass(selectedTR, 'l7_SSGCluster')) {
                 menuItems = [
-                    {text: '<img src="' + imgFolder + '/addClusterNode.png" style="position:absolute; left:4px;">&nbsp;' + CREATE_CLUSTER_NODE},
+                    {text: '<img src="' + imgFolder + '/addSSGNode.png" style="position:absolute; left:4px;">&nbsp;' + CREATE_SSG_NODE},
                     {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;">&nbsp;' + MOVE},
                     {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;">&nbsp;' + DELETE},
                     {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + LAUNCH_SSM}];
-            } else if (hasClass(selectedTR, 'enterpriseClusterNode')) {
+            } else if (hasClass(selectedTR, 'l7_SSGNode')) {
                 menuItems = [
                     {text: '<img src="' + imgFolder + '/destroy.png" style="position:absolute; left:4px;">&nbsp;' + DESTROY}];
-            } else if (hasClass(selectedTR, 'enterpriseFolder')) {
+            } else if (hasClass(selectedTR, 'l7_folder')) {
                 menuItems = [
-                    {text: '<img src="' + imgFolder + '/addGroup.png" style="position:absolute; left:4px;">&nbsp;' + NEW_FOLDER},
+                    {text: '<img src="' + imgFolder + '/addFolder.png" style="position:absolute; left:4px;">&nbsp;' + NEW_FOLDER},
                     {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;">&nbsp;' + MOVE},
                     {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;">&nbsp;' + DELETE, disabled: hasClass(selectedTR, 'l7_enterpriseTable_cannotDelete')}];
-            } else if (hasClass(selectedTR, 'enterprisePublishedService')) {
+            } else if (hasClass(selectedTR, 'l7_publishedService')) {
                 menuItems = [
                     {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + LAUNCH_SSM}];
-            } else if (hasClass(selectedTR, 'enterprisePolicyFragment')) {
+            } else if (hasClass(selectedTR, 'l7_policyFragment')) {
                 menuItems = [
                     {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + LAUNCH_SSM}];
-            } else if (hasClass(selectedTR, 'enterprisePublishedServiceAlias')) {
+            } else if (hasClass(selectedTR, 'l7_publishedServiceAlias')) {
                 menuItems = [
                     {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + LAUNCH_SSM}];
-            } else if (hasClass(selectedTR, 'enterprisePolicyFragmentAlias')) {
+            } else if (hasClass(selectedTR, 'l7_policyFragmentAlias')) {
                 menuItems = [
                     {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + LAUNCH_SSM}];
             }

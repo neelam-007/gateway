@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <!-- PROTOTYPE ONLY BEGIN -->
+    <meta http-equiv="Expires" content="-1" />
+    <meta http-equiv="Cache-Control" content="no-cache" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <!-- PROTOTYPE ONLY END -->
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <title>SSG Cluster Selector [SecureSpan Enterprise Manager]</title>
+    <link rel="stylesheet" href="../css/site.css" media="all" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../yui/menu/assets/skins/sam/menu.css">
+    <link rel="stylesheet" type="text/css" href="../css/yui-skin.css">
+    <script type="text/javascript" src="../js/site.js"></script>
+    <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
+    <script type="text/javascript" src="../yui/container/container_core-min.js"></script>
+    <script type="text/javascript" src="../yui/menu/menu-min.js"></script>
+    <script type="text/javascript" src="../js/enterpriseTable.js"></script>
+    <script type="text/javascript" src="../js/treeTable.js"></script>
+    <script type="text/javascript">
+        /**
+         * Name of the IFRAME in the parent document that is used for showing SSG Cluster content.
+         * When the radio button of a SSG Cluster in here is selected, that IFRAME will be
+         * populated accordingly.
+         * Parent document should set this onload.
+         */
+        var ssgClusterContentIFrameName = null;
+
+        /**
+         * Specifies which type of document the SSG Cluster content should show in ssgClusterContentIFrameName,
+         * either "ssgClusterContentWithCheckbox" or "ssgClusterContentWithFolderRadio".
+         * Parent document should set this onload.
+         */
+        var ssgClusterContentIFrameType = null;
+
+        /**
+         * Show a SSG Cluster whose radio button has been clicked.
+         *
+         * @param radio     the radio button being clicked on
+         */
+        function showSSGCluster(radio) {
+            if (ssgClusterContentIFrameName != null && ssgClusterContentIFrameType != null) {
+                var cell = radio.parentNode;
+                var row = cell.parentNode;
+                var ssgClusterId = row.id;
+                // PROTOTYPE ONLY BEGIN
+                ssgClusterId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.html';
+                // PROTOTYPE ONLY END
+                parent.document.getElementById(ssgClusterContentIFrameName).src =  getParent(parent.document.URL) + ssgClusterContentIFrameType + '/' + ssgClusterId;
+            }
+        }
+
+        function init() {
+            l7_treeTable_init();
+            l7_enterpriseTable_init('../images');
+        }
+    </script>
+</head>
+<body class="dataIFrame yui-skin-sam" onload="init();">
+<table id="ssgClusterSelector" class="dataTable l7_treeTable l7_enterpriseTable" width="100%">
+    <thead>
+        <tr>
+            <th class="name">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
+            <th width="100%"><img src="../images/accessAccount.png" title="Access Account" alt="" /></th>
+            <th class="parentId"><!-- hidden column --></th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr id="3d7fa710-334c-11dd-bd11-0800200c9a66" class="l7_folder l7_enterpriseTable_cannotDelete">
+            <td class="name"><img class="l7_treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/folder.png" alt="" />Springfield Nuclear Power Plant</td>
+            <td></td>
+            <td class="parentId">-1</td>
+        </tr>
+        <tr id="40f62d36-4146-4f4b-bdd6-14489526b1a6" class="l7_folder">
+            <td class="name"><img src="../images/spacer16.png" alt="" /><img class="l7_treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/folder.png" alt="" />Electricity</td>
+            <td></td>
+            <td class="parentId">3d7fa710-334c-11dd-bd11-0800200c9a66</td>
+        </tr>
+        <tr id="d15ce378-df33-44f3-a632-89458f421c24" class="l7_SSGCluster">
+            <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><input id="radio:d15ce378-df33-44f3-a632-89458f421c24" type="radio" name="ssgCluster" onclick="showSSGCluster(this);" /><label for="radio:d15ce378-df33-44f3-a632-89458f421c24"><img src="../images/SSGCluster.png" alt="" />Dev</label></td>
+            <td><img class="clickableImg" src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+            <td class="parentId">40f62d36-4146-4f4b-bdd6-14489526b1a6</td>
+        </tr>
+        <tr id="c32bb1a9-1538-4792-baa1-566bfd418020" class="l7_SSGCluster">
+            <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><input id="radio:c32bb1a9-1538-4792-baa1-566bfd418020" type="radio" name="ssgCluster" onclick="showSSGCluster(this);" /><label for="radio:c32bb1a9-1538-4792-baa1-566bfd418020"><img src="../images/SSGCluster.png" alt="" />Production</label></td>
+            <td><img class="clickableImg" src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+            <td class="parentId">40f62d36-4146-4f4b-bdd6-14489526b1a6</td>
+        </tr>
+        <tr id="b614e196-44ea-457b-b38d-567c3541fabd" class="l7_folder">
+            <td class="name"><img src="../images/spacer16.png" alt="" /><img class="l7_treeTable_toggler" src="../images/minus.png" alt="" /><img src="../images/folder.png" alt="" />Uranium</td>
+            <td></td>
+            <td class="parentId">3d7fa710-334c-11dd-bd11-0800200c9a66</td>
+        </tr>
+        <tr id="1c9d5a50-6a58-48a5-b7d4-b0cb356820f2" class="l7_SSGCluster">
+            <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><input id="radio:1c9d5a50-6a58-48a5-b7d4-b0cb356820f2" type="radio" name="ssgCluster" onclick="showSSGCluster(this);" /><label for="radio:1c9d5a50-6a58-48a5-b7d4-b0cb356820f2"><img src="../images/SSGCluster.png" alt="" />Dev</label></td>
+            <td><img class="clickableImg" src="../images/accessAccount.png" title="Change access account" alt="" /></td>
+            <td class="parentId">b614e196-44ea-457b-b38d-567c3541fabd</td>
+        </tr>
+        <tr id="a14df4d4-0c62-4d8e-ac3a-82cd8a442a26" class="l7_SSGCluster">
+            <td class="name"><img src="../images/spacer16.png" alt="" /><img src="../images/spacer16.png" alt="" /><img src="../images/dot.png" alt="" /><input id="radio:a14df4d4-0c62-4d8e-ac3a-82cd8a442a26" type="radio" name="ssgCluster" onclick="showSSGCluster(this);" /><label for="radio:a14df4d4-0c62-4d8e-ac3a-82cd8a442a26"><img src="../images/SSGCluster.png" alt="" />Production</label></td>
+            <td><img class="clickableImg" src="../images/noAccessAccount.png" title="Enter access account" alt="" /></td>
+            <td class="parentId">b614e196-44ea-457b-b38d-567c3541fabd</td>
+        </tr>
+    </tbody>
+</table>
+</body>
+</html>

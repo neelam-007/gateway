@@ -19,12 +19,12 @@
         var INCR_FRAME_HEIGHT = 50;
         var DECR_FRAME_HEIGHT = - INCR_FRAME_HEIGHT;
 
-        function initSrcPartitionSelector(self) {
-            self.contentWindow.partitionContentIFrameName = 'srcPartitionContent';
-            self.contentWindow.partitionContentIFrameType = 'partitionContentWithCheckbox';
+        function initSrcSSGClusterSelector(self) {
+            self.contentWindow.ssgClusterContentIFrameName = 'srcSSGClusterContent';
+            self.contentWindow.ssgClusterContentIFrameType = 'ssgClusterContentWithCheckbox';
         }
 
-        function initSrcPartitionContent(self) {
+        function initSrcSSGClusterContent(self) {
             if (self.src != '') {
                 self.contentWindow.setDetailsIFrameName('srcItemDetails');
             }
@@ -167,10 +167,10 @@
                             <td class="srcDestTop">
                                 <table width="100%">
                                     <tr>
-                                        <td class="nowrap">Select a source partition:</td>
+                                        <td class="nowrap">Select a source SSG Cluster:</td>
                                         <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcPartitionSelector', 'userSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcPartitionSelector', 'userSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcSSGClusterSelector', 'userSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcSSGClusterSelector', 'userSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                         </td>
                                     </tr>
                                 </table>
@@ -181,15 +181,15 @@
                                     <tr>
                                         <td class="nowrap">Select a recipient:</td>
                                         <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcPartitionSelector', 'userSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcPartitionSelector', 'userSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcSSGClusterSelector', 'userSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcSSGClusterSelector', 'userSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                         </td>
                                     </tr>
                                 </table>
                             </td>
                         </tr>
                         <tr>
-                            <td class="srcDest"><iframe id="srcPartitionSelector" src="PartitionSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSrcPartitionSelector(this);"></iframe></td>
+                            <td class="srcDest"><iframe id="srcSSGClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSrcSSGClusterSelector(this);"></iframe></td>
                             <td class="srcDestCenter"></td>
                             <td class="srcDest"><iframe id="userSelector" src="UserSelector.html" frameborder="0" scrolling="yes" height="150" width="100%"></iframe></td>
                         </tr>
@@ -199,8 +199,8 @@
                                     <tr>
                                         <td class="nowrap">Select items to submit for approval:</td>
                                         <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcPartitionContent'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcPartitionContent'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcSSGClusterContent'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcSSGClusterContent'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                         </td>
                                     </tr>
                                 </table>
@@ -224,7 +224,7 @@
                             </td>
                         </tr>
                         <tr>
-                            <td class="srcDest"><iframe id="srcPartitionContent" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSrcPartitionContent(this);"></iframe></td>
+                            <td class="srcDest"><iframe id="srcSSGClusterContent" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSrcSSGClusterContent(this);"></iframe></td>
                             <td class="srcDestCenter">Submit<br /><img src="../images/copy.png" alt="" /></td>
                         </tr>
                         <tr>

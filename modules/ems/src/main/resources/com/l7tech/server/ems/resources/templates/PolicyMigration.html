@@ -19,23 +19,23 @@
         var INCR_FRAME_HEIGHT = 50;
         var DECR_FRAME_HEIGHT = - INCR_FRAME_HEIGHT;
 
-        function initSrcPartitionSelector(self) {
-            self.contentWindow.partitionContentIFrameName = 'srcPartitionContent';
-            self.contentWindow.partitionContentIFrameType = 'partitionContentWithCheckbox';
+        function initSrcSSGClusterSelector(self) {
+            self.contentWindow.ssgClusterContentIFrameName = 'srcSSGClusterContent';
+            self.contentWindow.ssgClusterContentIFrameType = 'ssgClusterContentWithCheckbox';
         }
 
-        function initDestPartitionSelector(self) {
-            self.contentWindow.partitionContentIFrameName = 'destPartitionContent';
-            self.contentWindow.partitionContentIFrameType = 'partitionContentWithFolderRadio';
+        function initDestSSGClusterSelector(self) {
+            self.contentWindow.ssgClusterContentIFrameName = 'destSSGClusterContent';
+            self.contentWindow.ssgClusterContentIFrameType = 'ssgClusterContentWithFolderRadio';
         }
 
-        function initSrcPartitionContent(self) {
+        function initSrcSSGClusterContent(self) {
             if (self.src != '') {
                 self.contentWindow.setDetailsIFrameName('srcItemDetails');
             }
         }
 
-        function initDestPartitionContent(self) {
+        function initDestSSGClusterContent(self) {
             if (self.src != '') {
                 self.contentWindow.setDetailsIFrameName('destItemDetails');
             }
@@ -178,10 +178,10 @@
                             <td class="srcDestTop">
                                 <table width="100%">
                                     <tr>
-                                        <td class="nowrap">Select a source partition:</td>
+                                        <td class="nowrap">Select a source SSG Cluster:</td>
                                         <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcPartitionSelector', 'destPartitionSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcPartitionSelector', 'destPartitionSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                         </td>
                                     </tr>
                                 </table>
@@ -190,19 +190,19 @@
                             <td class="srcDestTop">
                                 <table width="100%">
                                     <tr>
-                                        <td class="nowrap">Select a destination partition:</td>
+                                        <td class="nowrap">Select a destination SSG Cluster:</td>
                                         <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcPartitionSelector', 'destPartitionSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcPartitionSelector', 'destPartitionSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                         </td>
                                     </tr>
                                 </table>
                             </td>
                         </tr>
                         <tr>
-                            <td class="srcDest"><iframe id="srcPartitionSelector" src="PartitionSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSrcPartitionSelector(this);"></iframe></td>
+                            <td class="srcDest"><iframe id="srcSSGClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSrcSSGClusterSelector(this);"></iframe></td>
                             <td class="srcDestCenter"></td>
-                            <td class="srcDest"><iframe id="destPartitionSelector" src="PartitionSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initDestPartitionSelector(this);"></iframe></td>
+                            <td class="srcDest"><iframe id="destSSGClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes" height="150" width="100%" onload="initDestSSGClusterSelector(this);"></iframe></td>
                         </tr>
                         <tr>
                             <td class="srcDest">
@@ -210,8 +210,8 @@
                                     <tr>
                                         <td class="nowrap">Select items to copy:</td>
                                         <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcPartitionContent', 'destPartitionContent'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcPartitionContent', 'destPartitionContent'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcSSGClusterContent', 'destSSGClusterContent'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcSSGClusterContent', 'destSSGClusterContent'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                         </td>
                                     </tr>
                                 </table>
@@ -222,17 +222,17 @@
                                     <tr>
                                         <td class="nowrap">Select a destination folder (<input id="checkbox:enable" type="checkbox" /><label for="checkbox:enable"> enable service policies upon save</label>):</td>
                                         <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcPartitionContent', 'destPartitionContent'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcPartitionContent', 'destPartitionContent'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcSSGClusterContent', 'destSSGClusterContent'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcSSGClusterContent', 'destSSGClusterContent'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                         </td>
                                     </tr>
                                 </table>
                             </td>
                         </tr>
                         <tr>
-                            <td class="srcDest"><iframe id="srcPartitionContent" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSrcPartitionContent(this);"></iframe></td>
+                            <td class="srcDest"><iframe id="srcSSGClusterContent" frameborder="0" scrolling="yes" height="150" width="100%" onload="initSrcSSGClusterContent(this);"></iframe></td>
                             <td class="srcDestCenter">Copy<br /><img src="../images/copy.png" alt="" /></td>
-                            <td class="srcDest"><iframe id="destPartitionContent" frameborder="0" scrolling="yes" height="150" width="100%" onload="initDestPartitionContent(this);"></iframe></td>
+                            <td class="srcDest"><iframe id="destSSGClusterContent" frameborder="0" scrolling="yes" height="150" width="100%" onload="initDestSSGClusterContent(this);"></iframe></td>
                         </tr>
                         <tr>
                             <td class="srcDest">

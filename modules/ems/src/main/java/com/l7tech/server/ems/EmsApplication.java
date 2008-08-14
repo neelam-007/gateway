@@ -1,30 +1,20 @@
 package com.l7tech.server.ems;
 
-import org.apache.wicket.protocol.http.WebApplication;
-import org.apache.wicket.settings.IResourceSettings;
-import org.apache.wicket.settings.IExceptionSettings;
-import org.apache.wicket.settings.IApplicationSettings;
-import org.apache.wicket.settings.ISecuritySettings;
-import org.apache.wicket.settings.IMarkupSettings;
-import org.apache.wicket.util.resource.locator.ResourceStreamLocator;
-import org.apache.wicket.util.resource.IResourceStream;
-import org.apache.wicket.util.lang.Bytes;
-import org.apache.wicket.spring.injection.annot.SpringComponentInjector;
-import org.apache.wicket.ResourceReference;
+import com.l7tech.server.ems.pages.*;
 import org.apache.wicket.Component;
 import org.apache.wicket.Page;
-import org.apache.wicket.authorization.IAuthorizationStrategy;
+import org.apache.wicket.ResourceReference;
 import org.apache.wicket.authorization.Action;
-import com.l7tech.server.ems.pages.EmsError;
-import com.l7tech.server.ems.pages.Login;
-import com.l7tech.server.ems.pages.SystemSettings;
-import com.l7tech.server.ems.pages.EnterpriseUsers;
-import com.l7tech.server.ems.pages.UserSettings;
-import com.l7tech.server.ems.pages.Setup;
-import com.l7tech.server.ems.pages.Audits;
+import org.apache.wicket.authorization.IAuthorizationStrategy;
+import org.apache.wicket.protocol.http.WebApplication;
+import org.apache.wicket.settings.*;
+import org.apache.wicket.spring.injection.annot.SpringComponentInjector;
+import org.apache.wicket.util.lang.Bytes;
+import org.apache.wicket.util.resource.IResourceStream;
+import org.apache.wicket.util.resource.locator.ResourceStreamLocator;
 
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Wicket WebApplication for Enterprise Manager.
@@ -106,7 +96,7 @@ public class EmsApplication extends WebApplication {
         mountBookmarkablePage("/Login.html", Login.class);
         mountTemplate("/Logs.html");
         mountTemplate("/Messages.html");
-        mountTemplate("/PartitionSelector.html");
+        mountTemplate("/SSGClusterSelector.html");
         mountTemplate("/PolicyApproval.html");
         mountTemplate("/PolicyMapping.html");
         mountTemplate("/PolicyMigration.html");
