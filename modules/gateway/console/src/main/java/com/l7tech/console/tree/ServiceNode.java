@@ -42,8 +42,17 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
      */
     public ServiceNode(ServiceHeader e)
       throws IllegalArgumentException {
-        super(e);
-        setAllowsChildren(e.isSoap());
+        this(e, null);
+    }
+
+    public ServiceNode(ServiceHeader e, Comparator c){
+        super(e, c);
+        setAllowsChildren(e.isSoap());        
+    }
+    
+    public void updateUserObject() throws FindException{
+        svc = null;
+        getPublishedService();
     }
 
     public PublishedService getPublishedService() throws FindException {

@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.policy.PolicyHeader;
 
 import java.util.Enumeration;
+import java.util.Comparator;
 
 
 /**
@@ -27,10 +28,12 @@ public class TreeNodeFactory {
     /**
      * Returns the corresponding TreeNode instance for
      * an directory <code>Entry</code>
-     *
+     * If a comparator has been specified, any subclasses supporting a comparator in their constructor
+     * is supplied
+     * @param comparator The default comparator to use for nodes of the specific EntityHeader type in a tree
      * @return the TreeNode for a given Entry
      */
-    public static AbstractTreeNode asTreeNode(EntityHeader entity) {
+    public static AbstractTreeNode asTreeNode(EntityHeader entity, Comparator comparator) {
         if (entity == null) {
             throw new NullPointerException("entity");
         }
@@ -41,9 +44,9 @@ public class TreeNodeFactory {
         } else if (EntityType.USER.equals(entity.getType())) {
             return new UserNode(entity);
         } else if (EntityType.SERVICE.equals(entity.getType())) {
-            return new ServiceNode((ServiceHeader)entity);
+            return new ServiceNode((ServiceHeader)entity, comparator);
         } else if (EntityType.POLICY.equals(entity.getType())) {
-            return new PolicyEntityNode((PolicyHeader)entity);
+            return new PolicyEntityNode((PolicyHeader)entity, comparator);
         }
 
         throw new IllegalArgumentException("Unknown entity type " + entity.getType());
@@ -112,7 +115,7 @@ public class TreeNodeFactory {
          */
         private Object getEnumerationElement(Object element) {
             if (element instanceof EntityHeader) {
-                return TreeNodeFactory.asTreeNode((EntityHeader)element);
+                return TreeNodeFactory.asTreeNode((EntityHeader)element, null);
             }
             return element;
         }

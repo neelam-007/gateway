@@ -31,12 +31,39 @@ import java.util.logging.Logger;
  * It has no subclasses
  */
 public final class RootNode extends AbstractTreeNode implements PolicyServiceTreeNodeCreator, FolderNodeBase{
-    /**
-     * default comparator for the child objects
-     */
-    public static final Comparator<TreeNode> DEFAULT_COMPARATOR = new Comparator<TreeNode>() {
+
+    private static ServicesAndPoliciesNodeComparator comparator = new ServicesAndPoliciesNodeComparator();
+    private final AlterDefaultSortAction nameSort;
+    private final AlterDefaultSortAction typeSort;
+
+    public static RootNode.ServicesAndPoliciesNodeComparator getComparator(){
+        return comparator;
+    }
+
+    public static class ServicesAndPoliciesNodeComparator implements Comparator<TreeNode>{
+        //defaults
+        private boolean nameAscending = true;
+        private boolean typeDescending = true;
+
+        public void setNameAscending(boolean ascending){
+            nameAscending = ascending;
+        }
+
+        private ServicesAndPoliciesNodeComparator(){
+            
+        }
+        /**
+         * Services are shown before policies in a folder by default
+         * As a result this method is called *descenidng* as this is the default
+         * If you want ascending you got to to supply false here 
+         * @param descending
+         */
+        public void setTypeDescending(boolean descending){
+            typeDescending = descending;            
+        }
+
         public int compare(TreeNode o1, TreeNode o2) {
-            if (o1 instanceof AbstractTreeNode && o2 instanceof AbstractTreeNode) {
+           if (o1 instanceof AbstractTreeNode && o2 instanceof AbstractTreeNode) {
             //if (o1 instanceof Comparable && o2 instanceof Comparable) {
                 if(o1 instanceof FolderNode && !(o2 instanceof FolderNode)) {
                     return -1;
@@ -45,16 +72,42 @@ public final class RootNode extends AbstractTreeNode implements PolicyServiceTre
                 } else if(o1 instanceof FolderNode && o2 instanceof FolderNode) {
                     String name1 = ((FolderNode)o1).getName();
                     String name2 = ((FolderNode)o2).getName();
-                    return name1.compareToIgnoreCase(name2);
+                    int compVal = name1.compareToIgnoreCase(name2);
+                    if(!nameAscending){
+                        compVal = compVal * -1; //reverse the sort val
+                    }
+                    return compVal;
                 } else {
-                    String name1 = ((EntityHeaderNode)o1).getEntityHeader().getName();
-                    String name2 = ((EntityHeaderNode)o2).getEntityHeader().getName();
-                    return name1.compareToIgnoreCase(name2);
+                    EntityHeader eH1 = ((EntityHeaderNode)o1).getEntityHeader();
+                    EntityHeader eH2 = ((EntityHeaderNode)o2).getEntityHeader();
+
+                    String name1 = eH1.getName();
+                    String name2 = eH2.getName();
+
+                    String eT1 = eH1.getType().toString();
+                    String eT2 = eH2.getType().toString();
+
+                    int compVal = 0;
+                    if(eT1.equals(eT2)){
+                        //entites are the same, just use the name
+                        compVal = name1.compareToIgnoreCase(name2);
+                        if(!nameAscending){
+                            compVal = compVal * -1;
+                            return compVal;
+                        }
+                    }
+
+                    compVal = eT1.compareTo(eT2);
+                    if(typeDescending){
+                        compVal = compVal * -1;
+                    }
+                    
+                    return compVal;
                 }
             }
-            return 0; // no order - assume everything equal
+            return 0; // no order - assume everything equal            
         }
-    };
+    }
 
     static Logger log = Logger.getLogger(RootNode.class.getName());
 
@@ -69,10 +122,12 @@ public final class RootNode extends AbstractTreeNode implements PolicyServiceTre
      * a given service manager with the name.
      */
     public RootNode(String name) {
-        super(null, DEFAULT_COMPARATOR);
+        super(null, RootNode.getComparator());
         serviceManager = Registry.getDefault().getServiceManager();
         policyAdmin = Registry.getDefault().getPolicyAdmin();
         title = name;
+        nameSort = new AlterDefaultSortAction(this, AlterDefaultSortAction.SortType.NAME);
+        typeSort = new AlterDefaultSortAction(this, AlterDefaultSortAction.SortType.TYPE);
     }
 
     /**
@@ -93,13 +148,20 @@ public final class RootNode extends AbstractTreeNode implements PolicyServiceTre
         return true;
     }
 
+    protected JMenu getSortMenu(){
+        JMenu returnMenu = new JMenu("Change sort");
+        returnMenu.add(nameSort);
+        returnMenu.add(typeSort);
+        return returnMenu;                
+    }
+
     private final Action[] allActions = new Action[]{
         new PublishServiceAction(),
         new CreateServiceWsdlAction(),
         new PublishNonSoapServiceAction(),
         new PublishInternalServiceAction(),
         new CreatePolicyAction(),
-        new CreatePolicyFolderAction(OID, this, this, Registry.getDefault().getServiceManager()),
+        new CreateFolderAction(OID, this, this, Registry.getDefault().getServiceManager()),
         new RefreshTreeNodeAction(this)
     };
     
@@ -160,8 +222,8 @@ public final class RootNode extends AbstractTreeNode implements PolicyServiceTre
                 if(header instanceof HasFolder){
                     HasFolder hasFolder = (HasFolder) header;
                     if(hasFolder.getFolderOid() == root.getOid()) {
-                        AbstractTreeNode child = TreeNodeFactory.asTreeNode(header);
-                        insert(child, getInsertPosition(child));
+                        AbstractTreeNode child = TreeNodeFactory.asTreeNode(header, RootNode.getComparator());
+                        insert(child, getInsertPosition(child, RootNode.getComparator()));
                         it.remove();
                     }
                 }
@@ -170,7 +232,7 @@ public final class RootNode extends AbstractTreeNode implements PolicyServiceTre
             for(FolderHeader folder : policyFolderHeaders) {
                 if(folder.getParentFolderOid() != null && root.getOid() == folder.getParentFolderOid()) {
                     FolderNode childNode = getFolderNodeFromHeaders(folder, allFolderEntities, policyFolderHeaders);
-                    insert(childNode, getInsertPosition(childNode));
+                    insert(childNode, getInsertPosition(childNode, RootNode.getComparator()));
                 }
             }
         } catch(FindException e) {

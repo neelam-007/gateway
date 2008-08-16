@@ -544,7 +544,7 @@ public class NewInternalUserDialog extends JDialog {
                                 header.setName(user.getName());
                                 header.setStrId(user.getId());
                                 GenericUserPropertiesAction ua =
-                                  new GenericUserPropertiesAction((UserNode)TreeNodeFactory.asTreeNode(header));
+                                  new GenericUserPropertiesAction((UserNode)TreeNodeFactory.asTreeNode(header, null));
                                 // only internal provider currently
                                 ua.setIdProviderConfig(Registry.getDefault().getInternalProviderConfig());
                                 ua.invoke();

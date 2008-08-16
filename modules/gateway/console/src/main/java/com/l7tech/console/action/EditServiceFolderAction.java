@@ -23,7 +23,7 @@ import java.awt.*;
  * Action to rename a service/policy folder.
  */
 public class EditServiceFolderAction extends SecureAction {
-    static Logger log = Logger.getLogger(CreatePolicyFolderAction.class.getName());
+    static Logger log = Logger.getLogger(CreateFolderAction.class.getName());
 
     private Folder folder;
     private FolderAdmin folderAdmin;

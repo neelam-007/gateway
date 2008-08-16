@@ -24,7 +24,7 @@ import java.util.EnumSet;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class ServicesAndPoliciesTree extends JTree implements Refreshable, FocusListener {
+public class ServicesAndPoliciesTree extends JTree implements Refreshable, FocusListener{
     static Logger log = Logger.getLogger(ServicesAndPoliciesTree.class.getName());
     private boolean ignoreCurrentClipboard = false;
 
@@ -54,7 +54,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
 
     public void setAllChildrenUnCut(){
         DefaultTreeModel model = (DefaultTreeModel)this.getModel();
-        //When the user is logged out, we will get this event but the tree may be model may be gone
+        //When the user is logged out, we will get this event but the tree model may be gone
         if(model == null) return;
         Object rootObj = model.getRoot();
         if(rootObj instanceof DefaultMutableTreeNode){

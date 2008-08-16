@@ -12,6 +12,7 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.gateway.common.service.ServiceAdmin;
@@ -83,8 +84,8 @@ public class PublishInternalServiceAction extends SecureAction{
                 TreePath nPath = new TreePath(nodes);
                 if (tree.hasBeenExpanded(nPath)) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                    final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh);
-                    model.insertNodeInto(sn, root, root.getInsertPosition(sn));
+                    final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh, null);
+                    model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));
 
                     tree.setSelectionPath(new TreePath(sn.getPath()));
                     SwingUtilities.invokeLater(new Runnable() {

@@ -37,6 +37,19 @@ public abstract class BaseAction extends AbstractAction {
         setActionValues();
     }
 
+    /**
+     * Does not call setActionValues
+     * Allow's subclass to call setActionValues as part of it's constructor
+     * subclass may rely on it's own constructor values before getName() can return
+     * a valid value. The default assumes that the subclass can provide this information
+     * before it's instance variables have been set
+     * //todo [Donal] refactor in a separate check in
+     * @param differentSiguature
+     */
+    public BaseAction(boolean differentSiguature){
+
+    }
+
     protected void setActionValues() {
         String name = getName();
         if (name != null) {

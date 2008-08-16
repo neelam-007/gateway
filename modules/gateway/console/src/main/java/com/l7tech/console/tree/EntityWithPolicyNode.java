@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
 
 import java.util.logging.Logger;
+import java.util.Comparator;
 
 /**
  * This class represents Policy nodes in the lower-left policy CRUD tree
@@ -25,7 +26,11 @@ public abstract class EntityWithPolicyNode<ET extends Entity, HT extends EntityH
      */
     public EntityWithPolicyNode(HT e)
       throws IllegalArgumentException {
-        super(e);
+        this(e, null);
+    }
+
+    public EntityWithPolicyNode(HT e, Comparator c){
+        super(e, c);
     }
 
     /**

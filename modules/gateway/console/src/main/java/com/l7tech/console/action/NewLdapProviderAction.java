@@ -175,7 +175,7 @@ public class NewLdapProviderAction extends NewProviderAction {
                     if (tree.hasBeenExpanded(new TreePath(node.getPath()))) {
                         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
 
-                        final AbstractTreeNode newChildNode = TreeNodeFactory.asTreeNode(eh);
+                        final AbstractTreeNode newChildNode = TreeNodeFactory.asTreeNode(eh, null);
                         model.insertNodeInto(newChildNode, node, node.getInsertPosition(newChildNode));
                         TreeNode[] nodePath = model.getPathToRoot(newChildNode);
                         if (nodePath != null) {

@@ -16,6 +16,7 @@ import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.WsdlUtils;
@@ -269,8 +270,8 @@ public class CreateServiceWsdlAction extends SecureAction {
                         TreePath nPath = new TreePath(nodes);
                         if (tree.hasBeenExpanded(nPath)) {
                             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                            AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh);
-                            model.insertNodeInto(sn, root, root.getInsertPosition(sn));
+                            AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh, null);
+                            model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));
                         }
                     } else {
                         log.log(Level.WARNING, "Service tree unreachable.");

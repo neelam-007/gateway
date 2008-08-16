@@ -62,6 +62,11 @@ public abstract class EntityHeaderNode<HT extends EntityHeader> extends Abstract
         setAllowsChildren(false);
     }
 
+    public EntityHeaderNode(HT e, Comparator c){
+        super(e, c);
+        setAllowsChildren(false);
+    }
+
     /**
      * Returns true if the receiver is a leaf.
      *

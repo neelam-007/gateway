@@ -845,7 +845,7 @@ public class FindIdentitiesDialog extends JDialog {
             EntityHeader eh = (EntityHeader)o;
             AbstractTreeNode an;
             try {
-                an = TreeNodeFactory.asTreeNode(eh);
+                an = TreeNodeFactory.asTreeNode(eh, null);
             } catch (IllegalArgumentException e) {
                 logger.log(Level.FINE, "entity does not resolve an AbstractTreeNode", e);
                 return;
@@ -919,7 +919,7 @@ public class FindIdentitiesDialog extends JDialog {
                     for (int i = 0; rows != null && i < rows.length; i++) {
                         final int row = rows[i];
                         EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
-                        EntityHeaderNode an = (EntityHeaderNode)TreeNodeFactory.asTreeNode(eh);
+                        EntityHeaderNode an = (EntityHeaderNode)TreeNodeFactory.asTreeNode(eh, null);
                         setNode(an);
                         setConfig(ip);
                         final EntityListenerAdapter listener = new EntityListenerAdapter() {

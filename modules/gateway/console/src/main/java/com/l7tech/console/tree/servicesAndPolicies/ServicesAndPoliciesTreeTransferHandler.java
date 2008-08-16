@@ -141,10 +141,9 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
 
     @Override
     public boolean importData(TransferHandler.TransferSupport support) {
-        ServicesAndPoliciesTree tree = null;
-        try {
-            if(support.getComponent() instanceof ServicesAndPoliciesTree) {
-                tree = (ServicesAndPoliciesTree)support.getComponent();
+        if(support.getComponent() instanceof ServicesAndPoliciesTree) {
+            final ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree)support.getComponent();
+            try {
                 if(tree.getIgnoreCurrentclipboard()){
                     return false;
                 }
@@ -168,6 +167,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
 
                     FolderNodeBase newParent = (FolderNodeBase)path.getLastPathComponent();
                     List<AbstractTreeNode> nodes = (List<AbstractTreeNode>)support.getTransferable().getTransferData(FolderAndNodeTransferable.ALLOWED_DATA_FLAVOR);
+                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     for(AbstractTreeNode transferNode : nodes) {
                         if(transferNode instanceof FolderNode) {
                             FolderNode child = (FolderNode) transferNode;
@@ -180,39 +180,48 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                             PublishedService service = child.getPublishedService();
                             System.out.println("New parent id: " + newParent.getOid());
                             service.setFolderOid(newParent.getOid());
-
                             Registry.getDefault().getServiceManager().savePublishedService(service);
-
+                            child.updateUserObject();
                         } else if(transferNode instanceof PolicyEntityNode) {
                             PolicyEntityNode child = (PolicyEntityNode) transferNode;
                             Policy policy = child.getPolicy();
                             policy.setFolderOid(newParent.getOid());
-
                             Registry.getDefault().getPolicyAdmin().savePolicy(policy);
+                            child.updateUserObject();
                         }
+
+                        AbstractTreeNode oldParent = (AbstractTreeNode)transferNode.getParent();
+                        int transferNodeIndex = oldParent.getIndex(transferNode);
 
                         //FolderNodeBase identitifes nodes which represent folders
                         AbstractTreeNode parentNode = (AbstractTreeNode) newParent;
-                        int insertPosition = parentNode.getInsertPosition(transferNode);
+
+                        int insertPosition = parentNode.getInsertPosition(transferNode, RootNode.getComparator());
                         parentNode.insert(transferNode, insertPosition);
+
+                        //order is important. Update the old parent first
+                        model.nodesWereRemoved(oldParent, new int[]{transferNodeIndex}, new Object[]{transferNode});
+                        model.nodesWereInserted(parentNode, new int[]{insertPosition});
+
+                        transferNode.setCut(false);
+                        transferNode.setChildrenCut(false);
                     }
                 }
-                tree.refresh();
-            }
-        } catch (SaveException e) {
-            if(tree != null){
-                JOptionPane.showMessageDialog(tree, "Cannot save folder: " + e.getMessage(), "Save Error", JOptionPane.ERROR_MESSAGE);
-            }
-            return false;
-        } catch (UpdateException e){
-            if(tree != null){
-                JOptionPane.showMessageDialog(tree, "Cannot update folder: " + e.getMessage(), "Update Error", JOptionPane.ERROR_MESSAGE);
-            }
-            return false;
-        } catch(Exception e){
-            return false;
-        }
 
+            } catch (SaveException e) {
+                if(tree != null){
+                    JOptionPane.showMessageDialog(tree, "Cannot save folder: " + e.getMessage(), "Save Error", JOptionPane.ERROR_MESSAGE);
+                }
+                return false;
+            } catch (UpdateException e){
+                if(tree != null){
+                    JOptionPane.showMessageDialog(tree, "Cannot update folder: " + e.getMessage(), "Update Error", JOptionPane.ERROR_MESSAGE);
+                }
+                return false;
+            } catch(Exception e){
+                return false;
+            }
+        }
         return true;
     }
 

@@ -24,6 +24,7 @@ import javax.swing.tree.TreeNode;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.Comparator;
 import java.util.logging.Level;
 
 /** @author alex */
@@ -31,9 +32,18 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
     protected volatile Policy policy;
 
     public PolicyEntityNode(PolicyHeader e) {
-        super(e);
+        this(e, null);
     }
 
+    public PolicyEntityNode(PolicyHeader e, Comparator c) {
+        super(e, c);
+    }
+
+    public void updateUserObject() throws FindException{
+        policy = null;
+        getPolicy();
+    }
+    
     public Policy getPolicy() throws FindException {
         if (policy != null) return policy;
 

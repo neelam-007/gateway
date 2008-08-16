@@ -25,36 +25,13 @@ import java.util.Comparator;
  * @version 1.1
  */
 public class FolderNode extends AbstractTreeNode implements FolderNodeBase{
-    /**
-     * default comparator for the child objects
-     */
-    public static final Comparator<TreeNode> DEFAULT_COMPARATOR = new Comparator<TreeNode>() {
-        public int compare(TreeNode o1, TreeNode o2) {
-            if (o1 instanceof AbstractTreeNode && o2 instanceof AbstractTreeNode) {
-            //if (o1 instanceof Comparable && o2 instanceof Comparable) {
-                if(o1 instanceof FolderNode && !(o2 instanceof FolderNode)) {
-                    return -1;
-                } else if(!(o1 instanceof FolderNode) && o2 instanceof FolderNode) {
-                    return 1;
-                } else if(o1 instanceof FolderNode && o2 instanceof FolderNode) {
-                    String name1 = ((FolderNode)o1).getName();
-                    String name2 = ((FolderNode)o2).getName();
-                    return name1.compareToIgnoreCase(name2);
-                } else {
-                    String name1 = ((EntityHeaderNode)o1).getEntityHeader().getName();
-                    String name2 = ((EntityHeaderNode)o2).getEntityHeader().getName();
-                    return name1.compareToIgnoreCase(name2);
-                }
-            }
-            return 0; // no order - assume everything equal
-        }
-    };    
+ 
     private FolderHeader folderHeader;
 
     private final List<Action> actions;
 
     public FolderNode(FolderHeader folderHeader, PolicyServiceTreeNodeCreator nodeCreator) {
-        super(null, DEFAULT_COMPARATOR);
+        super(null, RootNode.getComparator());
         this.folderHeader = folderHeader;
 
         final Folder folder = new Folder(folderHeader.getName(), folderHeader.getParentFolderOid());
@@ -63,7 +40,7 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase{
         FolderAdmin folderAdmin = Registry.getDefault().getServiceManager();
         actions = new ArrayList<Action>();
         actions.add(new EditServiceFolderAction(folder, folderHeader, this, folderAdmin));
-        actions.add(new CreatePolicyFolderAction(folderHeader.getOid(), this, nodeCreator, folderAdmin));
+        actions.add(new CreateFolderAction(folderHeader.getOid(), this, nodeCreator, folderAdmin));
         actions.add(new DeleteFolderAction(folderHeader.getOid(), this, folderAdmin));
 
         Action secureCut = ServicesAndPoliciesTree.getSecuredAction(EntityType.FOLDER,
@@ -112,12 +89,12 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase{
     }
 
     public void addChild(AbstractTreeNode child) {
-        insert(child, getInsertPosition(child));
+        insert(child, getInsertPosition(child, RootNode.getComparator()));
     }
 
     public void addEntityNode(EntityHeader entityHeader) {
-        AbstractTreeNode child = TreeNodeFactory.asTreeNode(entityHeader);
-        insert(child, getInsertPosition(child));
+        AbstractTreeNode child = TreeNodeFactory.asTreeNode(entityHeader, null);
+        insert(child, getInsertPosition(child, RootNode.getComparator()));
     }
 
     @Override

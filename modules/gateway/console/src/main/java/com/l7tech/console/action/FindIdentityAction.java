@@ -108,7 +108,7 @@ public class FindIdentityAction extends BaseAction implements LicenseListener, P
      * @param header the principal instance to edit
      */
     private void showEditDialog(long providerId, IdentityHeader header) {
-        AbstractTreeNode an = TreeNodeFactory.asTreeNode(header);
+        AbstractTreeNode an = TreeNodeFactory.asTreeNode(header, null);
         final BaseAction a = (BaseAction)an.getPreferredAction();
         if (a == null) return;
         IdentityProviderConfig config;

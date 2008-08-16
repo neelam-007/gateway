@@ -82,6 +82,8 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         super(object);
         if (c !=null) {
             childrenComparator = c;
+        }else{
+            childrenComparator = DEFAULT_COMPARATOR;
         }
     }
 
@@ -265,6 +267,9 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         return list.toArray(new Action[]{});
     }
 
+    protected JMenu getSortMenu(){
+        return null;
+    }
 
     /**
      * Make a popup menu for this node.
@@ -291,6 +296,11 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
                 pm.add(action);
             }
         }
+        JMenu sortMenu = getSortMenu();
+        if(sortMenu != null){
+            pm.add(sortMenu);
+        }
+        
         Utilities.removeToolTipsFromMenuItems(pm);
         return pm;
     }
@@ -465,6 +475,27 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         }
         int size = children.size();
         Comparator<? super TreeNode> c = getChildrenComparator();
+        int index = 0;
+
+        for (; index < size; index++) {
+            int res = c.compare(node, (TreeNode)children.get(index));
+            if (res <= 0) return index;
+        }
+        return index;
+    }
+
+    /**
+     * Allow the calling code to specify the comparator to use, without having to use the template
+     * getChildrenComparator method which would apply to all uses of the subclass
+     * @param node
+     * @param c
+     * @return
+     */
+    public int getInsertPosition(MutableTreeNode node, Comparator<? super TreeNode> c) {
+        if (children == null) {
+            return 0;
+        }
+        int size = children.size();
         int index = 0;
 
         for (; index < size; index++) {
