@@ -9,10 +9,10 @@
     <!-- PROTOTYPE ONLY END -->
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>SSG Cluster Items List [SecureSpan Enterprise Manager]</title>
-    <link rel="stylesheet" href="../../css/site.css" media="all" type="text/css" />
+    <link rel="stylesheet" href="../../css/l7.css" media="all" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../yui/menu/assets/skins/sam/menu.css">
-    <link rel="stylesheet" type="text/css" href="../../css/yui-skin.css">
-    <script type="text/javascript" src="../../js/site.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../css/l7-yui-skin.css">
+    <script type="text/javascript" src="../../js/l7.js"></script>
     <script type="text/javascript" src="../../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
     <script type="text/javascript" src="../../yui/container/container_core-min.js"></script>
     <script type="text/javascript" src="../../yui/menu/menu-min.js"></script>
@@ -78,7 +78,7 @@
             if (detailsIFrameName != null) {
                 var url = '';
                 if (itemId != null) {
-                    url = getParent(parent.document.URL) + type + '/' + ssgClusterId + '/' + itemId;
+                    url = l7.Util.getParent(parent.document.URL) + type + '/' + ssgClusterId + '/' + itemId;
                     // PROTOTYPE ONLY BEGIN
                     url += '.xml';
                     // PROTOTYPE ONLY END
@@ -89,13 +89,13 @@
         }
 
         function init() {
-            l7_treeTable_init();
-            l7_enterpriseTable_init('../../images');
+            l7.TreeTable.initAll();
+            l7.EnterpriseTable.initAll('../../images');
         }
     </script>
 </head>
 <body class="dataIFrame yui-skin-sam" onload="init();">
-<table id="ssgClusterItemsList" class="dataTable l7_treeTable l7_enterpriseTable" width="100%">
+<table id="ssgClusterItemsList" class="dataTable l7-treeTable l7-enterpriseTable" width="100%">
     <thead>
         <tr>
             <th class="name">Name<br /><img src="../../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
@@ -109,70 +109,70 @@
         <script type="text/javascript">
             var ssgClusterId = 'a14df4d4-0c62-4d8e-ac3a-82cd8a442a26';
         </script>
-        <tr id="0" class="l7_folder">
+        <tr id="0" class="l7-folder">
             <td class="name"><img class="l7_treeTable_toggler" src="../../images/minus.png" alt="" /><input id="radio:0" type="radio" name="folder" value="0" /><label for="radio:0"><img src="../../images/folder.png" alt="" />/</label></td>
             <td class="edit"></td>
             <td class="right"></td>
             <td class="type">group</td>
             <td class="parentId">-1</td>
         </tr>
-        <tr id="36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4" class="l7_folder">
+        <tr id="36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4" class="l7-folder">
             <td class="name"><img src="../../images/spacer16.png" alt="" /><img class="l7_treeTable_toggler" src="../../images/minus.png" alt="" /><input id="radio:36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4" type="radio" name="folder" value="36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4" /><label for="radio:36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4"><img src="../../images/folder.png" alt="" />Standby for Electricity</label></td>
             <td class="edit"></td>
             <td class="right"></td>
             <td class="type">group</td>
             <td class="parentId">0</td>
         </tr>
-        <tr id="02f6bdfa-b98a-41d4-823d-03f8c1592699" class="l7_publishedService">
+        <tr id="02f6bdfa-b98a-41d4-823d-03f8c1592699" class="l7-publishedService">
             <td class="name"><img src="../../images/spacer16.png" alt="" /><img src="../../images/spacer16.png" alt="" /><img src="../../images/dot.png" alt="" /><img src="../../images/noRadio.png" alt="" /><img src="../../images/publishedService.png" alt="" />accounting [/acc]</td>
             <td class="edit"><img class="clickable" src="../../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'publishedService');" /></td>
             <td class="right">2</td>
             <td class="type">published service</td>
             <td class="parentId">36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4</td>
         </tr>
-        <tr id="d2b36463-acf1-40c2-a121-942319fabb77" class="l7_publishedService">
+        <tr id="d2b36463-acf1-40c2-a121-942319fabb77" class="l7-publishedService">
             <td class="name"><img src="../../images/spacer16.png" alt="" /><img src="../../images/spacer16.png" alt="" /><img src="../../images/dot.png" alt="" /><img src="../../images/noRadio.png" alt="" /><img src="../../images/publishedService.png" alt="" />sales</td>
             <td class="edit"><img class="clickable" src="../../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'publishedService');" /></td>
             <td class="right">7</td>
             <td class="type">published service</td>
             <td class="parentId">36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4</td>
         </tr>
-        <tr id="68e36d9f-d80c-429a-aca4-f8d34fe0d2f0" class="l7_policyFragment">
+        <tr id="68e36d9f-d80c-429a-aca4-f8d34fe0d2f0" class="l7-policyFragment">
             <td class="name"><img src="../../images/spacer16.png" alt="" /><img src="../../images/spacer16.png" alt="" /><img src="../../images/dot.png" alt="" /><img src="../../images/noRadio.png" alt="" /><img src="../../images/policyFragment.png" alt="" />Policy Fragment 1</td>
             <td class="edit"><img class="clickable" src="../../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'policyFragment');" /></td>
             <td class="right">3</td>
             <td class="type">policy fragment</td>
             <td class="parentId">36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4</td>
         </tr>
-        <tr id="aad2d451-aaa5-43f0-8c6a-4171c10d03eb" class="l7_policyFragment">
+        <tr id="aad2d451-aaa5-43f0-8c6a-4171c10d03eb" class="l7-policyFragment">
             <td class="name"><img src="../../images/spacer16.png" alt="" /><img src="../../images/spacer16.png" alt="" /><img src="../../images/dot.png" alt="" /><img src="../../images/noRadio.png" alt="" /><img src="../../images/policyFragment.png" alt="" />Policy Fragment 2</td>
             <td class="edit"><img class="clickable" src="../../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'policyFragment');" /></td>
             <td class="right">14</td>
             <td class="type">policy fragment</td>
             <td class="parentId">36f9a61c-4339-4f3c-bb54-4ce3ad36a3c4</td>
         </tr>
-        <tr id="4e079592-70c3-499e-ad2e-abba3b6c987c" class="l7_publishedService">
+        <tr id="4e079592-70c3-499e-ad2e-abba3b6c987c" class="l7-publishedService">
             <td class="name"><img src="../../images/spacer16.png" alt="" /><img src="../../images/dot.png" alt="" /><img src="../../images/noRadio.png" alt="" /><img src="../../images/publishedService.png" alt="" />bidding</td>
             <td class="edit"><img class="clickable" src="../../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'publishedService');" /></td>
             <td class="right">8</td>
             <td class="type">published service</td>
             <td class="parentId">0</td>
         </tr>
-        <tr id="11a06c26-cc77-4a39-a16b-79687d575c50" class="l7_publishedService">
+        <tr id="11a06c26-cc77-4a39-a16b-79687d575c50" class="l7-publishedService">
             <td class="name"><img src="../../images/spacer16.png" alt="" /><img src="../../images/dot.png" alt="" /><img src="../../images/noRadio.png" alt="" /><img src="../../images/publishedService.png" alt="" />stockpile</td>
             <td class="edit"><img class="clickable" src="../../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'publishedService');" /></td>
             <td class="right">21</td>
             <td class="type">published service</td>
             <td class="parentId">0</td>
         </tr>
-        <tr id="aa1ccd2e-8c5e-44ef-95c8-95be8f58a0b9" class="l7_policyFragment">
+        <tr id="aa1ccd2e-8c5e-44ef-95c8-95be8f58a0b9" class="l7-policyFragment">
             <td class="name"><img src="../../images/spacer16.png" alt="" /><img src="../../images/dot.png" alt="" /><img src="../../images/noRadio.png" alt="" /><img src="../../images/policyFragment.png" alt="" />Policy Fragment 1</td>
             <td class="edit"><img class="clickable" src="../../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'policyFragment');" /></td>
             <td class="right">5</td>
             <td class="type">policy fragment</td>
             <td class="parentId">0</td>
         </tr>
-        <tr id="3e17c348-9d2c-466e-ac8d-d47adee5cc3b" class="l7_policyFragment">
+        <tr id="3e17c348-9d2c-466e-ac8d-d47adee5cc3b" class="l7-policyFragment">
             <td class="name"><img src="../../images/spacer16.png" alt="" /><img src="../../images/dot.png" alt="" /><img src="../../images/noRadio.png" alt="" /><img src="../../images/policyFragment.png" alt="" />Policy Fragment 2</td>
             <td class="edit"><img class="clickable" src="../../images/zoom.png" title="Show details" alt="" onclick="showDetails(this, 'policyFragment');" /></td>
             <td class="right">2</td>

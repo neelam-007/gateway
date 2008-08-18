@@ -1,217 +1,248 @@
-// Default values of internationalized strings.
-// To localize, overrides them on your web page after referencing this file.
-var NEW_FOLDER = 'New Folder';
-var ADD_SSG_CLUSTER = 'Add SSG Cluster';
-var CREATE_SSG_NODE = 'Create SSG Node';
-var RENAME = 'Rename';
-var MOVE = 'Move';
-var DELETE = 'Delete';
-var DESTROY = 'Destroy';
-var LAUNCH_SSM = 'Launch SecureSpan Manager';
-
 /**
- * Constructor for a table with SecureSpan enterprise entities.
- *
- * A enterprise table is a table where some of its rows are enterprise entities.
- * This class will add context menu to those rows.
- *
- * To use this class,
- * 1. This class depends on YUI. Include these in the HTML header:
- *    <link rel="stylesheet" type="text/css" href="../yui/menu/assets/skins/sam/menu.css">
- *    <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
- *    <script type="text/javascript" src="../yui/container/container_core-min.js"></script>
- *    <script type="text/javascript" src="../yui/menu/menu-min.js"></script>
- *    <script type="text/javascript" src="../js/enterpriseTable.js"></script>
- * 2. Include the class name "yui-skin-sam" in the BODY element.
- * 3. Include the class name "l7_enterpriseTable" in TABLE elements to be applied.
- * 4. Include the class name "l7_enterpriseTable_rowSelectable" in the TABLE element if rows
- *    should be selectable (i.e., highlighted when left-clicked), e.g., to work with a toolbar.
- * 5. Include one of the following classes in TR elements for enterprise entities:
- *    l7_folder                - folder
- *    l7_SSGCluster            - SSG Cluster
- *    l7_SSGNode               - SSG Node
- *    l7_publishedService      - published service
- *    l7_policyFragment        - policy fragment
- *    l7_publishedServiceAlias - published service alias
- *    l7_policyFragmentAlias   - policy fragment alias
- * 6. Additional TR classes:
- *    l7_enterpriseTable_disabled     - do not show context menu
- *    l7_enterpriseTable_cannotDelete - to disable any menu item for delete
- * 7. Invoke l7_enterpriseTable_init() upon the onload event of the document.
- *    It will initialize all TABLE element with the class 'l7_enterpriseTable' and add
- *    the property 'l7_enterpriseTable' to the table object.
- * 8. When the table changes, invoke <my table object>.l7_enterpriseTable.init().
- *
- * @param table         the HTML TABLE element to construct from
- * @param imgFolder     folder location of enterprise entity icons
+ * @module enterpriseTable
+ * @namespace l7
+ * @requires l7
  */
-function l7_enterpriseTable(table, imgFolder) {
 
-    /** The assoicated TABLE element. */
-    this.table = table;
+if (!l7.EnterpriseTable) {
+    (function() {
 
-    /** The currently selected TR. */
-    var selectedTR = null;
+        /**
+         * Constructor for a table with SecureSpan enterprise entities.
+         *
+         * A enterprise table is a table where some of its rows are enterprise entities.
+         * This class will add context menu to those rows.
+         *
+         * To use this class,
+         * 1. This class depends on YUI. Include these in the HTML header:
+         *    <link rel="stylesheet" type="text/css" href="../yui/menu/assets/skins/sam/menu.css">
+         *    <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
+         *    <script type="text/javascript" src="../yui/container/container_core-min.js"></script>
+         *    <script type="text/javascript" src="../yui/menu/menu-min.js"></script>
+         *    <script type="text/javascript" src="../js/enterpriseTable.js"></script>
+         * 2. Include the CSS class name "yui-skin-sam" in the BODY element.
+         * 3. Include the CSS class name "l7-enterpriseTable" in TABLE elements to be applied.
+         * 4. Include the CSS class name "l7-enterpriseTable-rowSelectable" in the TABLE element if rows
+         *    should be selectable (i.e., highlighted when left-clicked), e.g., to work with a toolbar.
+         * 5. Include one of the following CSS classes in TR elements for enterprise entities:
+         *    l7-folder                - folder
+         *    l7-SSGCluster            - SSG Cluster
+         *    l7-SSGNode               - SSG Node
+         *    l7-publishedService      - published service
+         *    l7-policyFragment        - policy fragment
+         *    l7-publishedServiceAlias - published service alias
+         *    l7-policyFragmentAlias   - policy fragment alias
+         * 6. Additional CSS classes for TR elements:
+         *    l7-enterpriseTable-disabled     - do not show context menu
+         *    l7-enterpriseTable-cannotDelete - to disable any menu item for delete
+         * 7. To localize, overrides these label text after referencing this file:
+         *    l7.EnterpriseTable.NEW_FOLDER
+         *    l7.EnterpriseTable.ADD_SSG_CLUSTER
+         *    l7.EnterpriseTable.CREATE_SSG_NODE
+         *    l7.EnterpriseTable.RENAME
+         *    l7.EnterpriseTable.MOVE
+         *    l7.EnterpriseTable.DELETE
+         *    l7.EnterpriseTable.DESTROY
+         *    l7.EnterpriseTable.LAUNCH_SSM
+         * 8. Invoke l7.EnterpriseTable.initAll() upon the onload event of the document.
+         *    It will initialize all TABLE element with the CSS class 'l7-enterpriseTable' and add
+         *    the property 'l7_enterpriseTable' to the table object.
+         * 9. When the table changes, invoke <my l7.EnterpriseTable object>.init().
+         *
+         * @constructor
+         * @param {object} table         the HTML TABLE element to construct from
+         * @param {string} imgFolder     folder location of enterprise entity icons
+         */
+        l7.EnterpriseTable = function(table, imgFolder) {
 
-    var Dom = YAHOO.util.Dom;
+            /** The assoicated TABLE element. */
+            this.table = table;
 
-    function selectRow(row) {
-        var oldRow = selectedTR;
+            /** The currently selected TR. */
+            var selectedTR = null;
 
-        // Clear highlighting of previous selected TR, if any.
-        if (selectedTR != null) removeClass(selectedTR, "selected");
+            var Dom = YAHOO.util.Dom;
 
-        // Highlight the new selected TR.
-        if (row != null) addClass(row, "selected");
+            function selectRow(row) {
+                var oldRow = selectedTR;
 
-        selectedTR = row;
-        table.l7_enterpriseTable.onRowSelectionChange(oldRow, row);
-    }
+                // Clear highlighting of previous selected TR, if any.
+                if (selectedTR != null) l7.Util.removeClass(selectedTR, "selected");
 
-    /**
-     * "beforeshow" event handler for the ContextMenu instance -
-     * replaces the content of the ContextMenu instance based
-     * on the CSS class name of the TR element that triggered
-     * its display.
-     */
-    function onContextMenuBeforeShow(p_sType, p_aArgs) {
-        var target = this.contextEventTarget;
-        if (this.getRoot() == this) {
-            // Get the TR element that was the target of the "contextmenu" event.
-            var row = target.nodeName.toUpperCase() == "TR" ?
-                      target : Dom.getAncestorByTagName(target, "TR");
-            selectRow(row);
+                // Highlight the new selected TR.
+                if (row != null) l7.Util.addClass(row, "selected");
 
-            // Get the array of MenuItems for the CSS class name from the "oContextMenuItems" map.
-            // TODO: assign URLs
-            var menuItems = null;
-            if (hasClass(selectedTR, 'l7_enterpriseTable_disabled')) {
-                menuItems = null;
-            } else if (hasClass(selectedTR, 'l7_folder')) {
-                menuItems = [
-                    {text: '<img src="' + imgFolder + '/addFolder.png" style="position:absolute; left:4px;">&nbsp;' + NEW_FOLDER},
-                    {text: '<img src="' + imgFolder + '/addSSGCluster.png" style="position:absolute; left:4px;">&nbsp;' + ADD_SSG_CLUSTER},
-                    {text: '<img src="' + imgFolder + '/rename.png" style="position:absolute; left:4px;">&nbsp;' + RENAME},
-                    {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;">&nbsp;' + MOVE},
-                    {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;">&nbsp;' + DELETE, disabled: hasClass(selectedTR, 'l7_enterpriseTable_cannotDelete')}];
-            } else if (hasClass(selectedTR, 'l7_SSGCluster')) {
-                menuItems = [
-                    {text: '<img src="' + imgFolder + '/addSSGNode.png" style="position:absolute; left:4px;">&nbsp;' + CREATE_SSG_NODE},
-                    {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;">&nbsp;' + MOVE},
-                    {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;">&nbsp;' + DELETE},
-                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + LAUNCH_SSM}];
-            } else if (hasClass(selectedTR, 'l7_SSGNode')) {
-                menuItems = [
-                    {text: '<img src="' + imgFolder + '/destroy.png" style="position:absolute; left:4px;">&nbsp;' + DESTROY}];
-            } else if (hasClass(selectedTR, 'l7_folder')) {
-                menuItems = [
-                    {text: '<img src="' + imgFolder + '/addFolder.png" style="position:absolute; left:4px;">&nbsp;' + NEW_FOLDER},
-                    {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;">&nbsp;' + MOVE},
-                    {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;">&nbsp;' + DELETE, disabled: hasClass(selectedTR, 'l7_enterpriseTable_cannotDelete')}];
-            } else if (hasClass(selectedTR, 'l7_publishedService')) {
-                menuItems = [
-                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + LAUNCH_SSM}];
-            } else if (hasClass(selectedTR, 'l7_policyFragment')) {
-                menuItems = [
-                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + LAUNCH_SSM}];
-            } else if (hasClass(selectedTR, 'l7_publishedServiceAlias')) {
-                menuItems = [
-                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + LAUNCH_SSM}];
-            } else if (hasClass(selectedTR, 'l7_policyFragmentAlias')) {
-                menuItems = [
-                    {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + LAUNCH_SSM}];
+                selectedTR = row;
+                table.l7_enterpriseTable.onRowSelectionChange(oldRow, row);
             }
 
-            // Remove the existing content from the ContentMenu instance
-            this.clearContent();
+            /**
+             * "beforeshow" event handler for the ContextMenu instance -
+             * replaces the content of the ContextMenu instance based
+             * on the CSS class name of the TR element that triggered
+             * its display.
+             *
+             * @param {string} p_sType  String representing the name of the event that was fired.
+             * @param {array} p_aArgs   Array of arguments sent when the event was fired.
+             */
+            function onContextMenuBeforeShow(p_sType, p_aArgs) {
+                var target = this.contextEventTarget;
+                if (this.getRoot() == this) {
+                    // Get the TR element that was the target of the "contextmenu" event.
+                    var row = target.nodeName.toUpperCase() == "TR" ?
+                              target : Dom.getAncestorByTagName(target, "TR");
+                    selectRow(row);
 
-            // Add the new set of items to the ContentMenu instance
-            this.addItems(menuItems);
+                    // Get the array of MenuItems for the CSS class name from the "oContextMenuItems" map.
+                    // TODO: assign URLs
+                    var menuItems = null;
+                    if (l7.Util.hasClass(selectedTR, 'l7-enterpriseTable-disabled')) {
+                        menuItems = null;
+                    } else if (l7.Util.hasClass(selectedTR, 'l7-folder')) {
+                        menuItems = [
+                            {text: '<img src="' + imgFolder + '/addFolder.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.NEW_FOLDER},
+                            {text: '<img src="' + imgFolder + '/addSSGCluster.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.ADD_SSG_CLUSTER},
+                            {text: '<img src="' + imgFolder + '/rename.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.RENAME},
+                            {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.MOVE},
+                            {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.DELETE, disabled: l7.Util.hasClass(selectedTR, 'l7-enterpriseTable-cannotDelete')}];
+                    } else if (l7.Util.hasClass(selectedTR, 'l7-SSGCluster')) {
+                        menuItems = [
+                            {text: '<img src="' + imgFolder + '/addSSGNode.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.CREATE_SSG_NODE},
+                            {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.MOVE},
+                            {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.DELETE},
+                            {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.LAUNCH_SSM}];
+                    } else if (l7.Util.hasClass(selectedTR, 'l7-SSGNode')) {
+                        menuItems = [
+                            {text: '<img src="' + imgFolder + '/destroy.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.DESTROY}];
+                    } else if (l7.Util.hasClass(selectedTR, 'l7-folder')) {
+                        menuItems = [
+                            {text: '<img src="' + imgFolder + '/addFolder.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.NEW_FOLDER},
+                            {text: '<img src="' + imgFolder + '/move.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.MOVE},
+                            {text: '<img src="' + imgFolder + '/delete.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.DELETE, disabled: l7.Util.hasClass(selectedTR, 'l7-enterpriseTable-cannotDelete')}];
+                    } else if (l7.Util.hasClass(selectedTR, 'l7-publishedService')) {
+                        menuItems = [
+                            {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.LAUNCH_SSM}];
+                    } else if (l7.Util.hasClass(selectedTR, 'l7-policyFragment')) {
+                        menuItems = [
+                            {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.LAUNCH_SSM}];
+                    } else if (l7.Util.hasClass(selectedTR, 'l7-publishedServiceAlias')) {
+                        menuItems = [
+                            {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.LAUNCH_SSM}];
+                    } else if (l7.Util.hasClass(selectedTR, 'l7-policyFragmentAlias')) {
+                        menuItems = [
+                            {text: '<img src="' + imgFolder + '/ssm.png" style="position:absolute; left:4px;">&nbsp;' + l7.EnterpriseTable.LAUNCH_SSM}];
+                    }
 
-            // Render the ContextMenu instance with the new content
-            this.render();
-        }
-    }
+                    // Remove the existing content from the ContentMenu instance
+                    this.clearContent();
 
-    // "hide" event handler for the ContextMenu - used to clear the selected <tr> element in the table.
-    function onContextMenuHide(p_sType, p_aArgs) {
-        selectRow(null);
-    }
+                    // Add the new set of items to the ContentMenu instance
+                    this.addItems(menuItems);
 
-    /**
-     * Event handler for row selection change.
-     * Override this to customize, e.g., to enable toolbar buttons selectively.
-     *
-     * @param oldRow    previously selected row; null if none
-     * @param newRow    newly selected row; null if none
-     */
-    this.onRowSelectionChange = function(oldRow, newRow) {}
-
-    this.getSelectedRow = function() {
-        return selectedTR;
-    }
-
-    this.setRowSelectable = function(b) {
-        if (b) {
-            table.onclick = function(event) {
-                var target;
-                if (!event) {
-                    event = window.event;
+                    // Render the ContextMenu instance with the new content
+                    this.render();
                 }
-                if (event.target) {
-                    target = event.target;
-                } else if (event.srcElement) {
-                    target = event.srcElement;
-                }
-                if (target.nodeType == 3) { // defeat Safari bug
-                    target = target.parentNode;
-                }
-
-                // Proceed only if click target is a TD element, i.e.,
-                // not a checkbox, radio button, plus/minus sign, etc.
-                if (target.nodeName.toUpperCase() != "TD") return;
-
-                selectRow(Dom.getAncestorByTagName(target, "TR"));
             }
-        } else {
-            table.onclick = null;
+
+            /**
+             * "hide" event handler for the ContextMenu - used to clear the selected <tr> element in the table.
+             *
+             * @param {string} p_sType  String representing the name of the event that was fired.
+             * @param {array} p_aArgs   Array of arguments sent when the event was fired.
+             */
+            function onContextMenuHide(p_sType, p_aArgs) {
+                selectRow(null);
+            }
+
+            /**
+             * Event handler for row selection change.
+             * Override this to customize, e.g., to enable toolbar buttons selectively.
+             *
+             * @param {object} oldRow    previously selected row; null if none
+             * @param {object} newRow    newly selected row; null if none
+             */
+            this.onRowSelectionChange = function(oldRow, newRow) {}
+
+            this.getSelectedRow = function() {
+                return selectedTR;
+            }
+
+            this.setRowSelectable = function(b) {
+                if (b) {
+                    table.onclick = function(event) {
+                        var target;
+                        if (!event) {
+                            event = window.event;
+                        }
+                        if (event.target) {
+                            target = event.target;
+                        } else if (event.srcElement) {
+                            target = event.srcElement;
+                        }
+                        if (target.nodeType == 3) { // defeat Safari bug
+                            target = target.parentNode;
+                        }
+
+                        // Proceed only if click target is a TD element, i.e.,
+                        // not a checkbox, radio button, plus/minus sign, etc.
+                        if (target.nodeName.toUpperCase() != "TD") return;
+
+                        selectRow(Dom.getAncestorByTagName(target, "TR"));
+                    }
+                } else {
+                    table.onclick = null;
+                }
+            }
+
+            /**
+             * (Re)initializes this object.
+             *
+             * @param {object} table     the associated TABLE element
+             */
+            this.init = function() {
+                // Instantiate a ContextMenu:  The first argument passed to
+                // the constructor is the id of the element to be created; the
+                // second is an object literal of configuration properties.
+                var oContextMenu = new YAHOO.widget.ContextMenu("contextmenu", {
+                    trigger: table,
+                    lazyload: true
+                });
+
+                // Subscribe to the ContextMenu instance's "beforeshow" and "hide" events.
+                oContextMenu.subscribe("beforeShow", onContextMenuBeforeShow);
+                oContextMenu.subscribe("hide", onContextMenuHide);
+
+                this.setRowSelectable(l7.Util.hasClass(table, 'l7-enterpriseTable-rowSelectable'));
+            }
+
+            this.init();
         }
-    }
 
-    /**
-     * (Re)initializes this object.
-     *
-     * @param table     the associated TABLE element
-     */
-    this.init = function() {
-        // Instantiate a ContextMenu:  The first argument passed to
-        // the constructor is the id of the element to be created; the
-        // second is an object literal of configuration properties.
-        var oContextMenu = new YAHOO.widget.ContextMenu("contextmenu", {
-            trigger: table,
-            lazyload: true
-        });
+        // Default values of internationalized strings.
+        // To localize, overrides them on your web page after referencing this file.
+        /** @static */ l7.EnterpriseTable.NEW_FOLDER = 'New Folder';
+        /** @static */ l7.EnterpriseTable.ADD_SSG_CLUSTER = 'Add SSG Cluster';
+        /** @static */ l7.EnterpriseTable.CREATE_SSG_NODE = 'Create SSG Node';
+        /** @static */ l7.EnterpriseTable.RENAME = 'Rename';
+        /** @static */ l7.EnterpriseTable.MOVE = 'Move';
+        /** @static */ l7.EnterpriseTable.DELETE = 'Delete';
+        /** @static */ l7.EnterpriseTable.DESTROY = 'Destroy';
+        /** @static */ l7.EnterpriseTable.LAUNCH_SSM = 'Launch SecureSpan Manager';
 
-        // Subscribe to the ContextMenu instance's "beforeshow" and "hide" events.
-        oContextMenu.subscribe("beforeShow", onContextMenuBeforeShow);
-        oContextMenu.subscribe("hide", onContextMenuHide);
+        /**
+         * Call this in body.onload. It will initializes all HTML TABLE element with the
+         * CSS class 'l7-treeTable'.
+         *
+         * @static
+         * @param {string} imageFolder   image folder path
+         */
+        l7.EnterpriseTable.initAll = function(imageFolder) {
+            var tables = l7.Util.getElementsByClassName('l7-enterpriseTable', null, 'table');
+            for (var i = 0; i < tables.length; ++i) {
+                var table = tables[i];
+                table.l7_enterpriseTable = new l7.EnterpriseTable(table, imageFolder);
+            }
+        }
 
-        this.setRowSelectable(hasClass(table, 'l7_enterpriseTable_rowSelectable'));
-    }
-
-    this.init();
-}
-
-/**
- * Call this in body.onload. It will initializes all HTML TABLE element with the
- * class 'l7_treeTable'.
- *
- * @param imageFolder   image folder path
- */
-function l7_enterpriseTable_init(imageFolder) {
-    var tables = getElementsByClassName('l7_enterpriseTable', null, 'table');
-    for (var i = 0; i < tables.length; ++i) {
-        var table = tables[i];
-        table.l7_enterpriseTable = new l7_enterpriseTable(table, imageFolder);
-    }
+    })();
 }

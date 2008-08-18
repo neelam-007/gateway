@@ -9,8 +9,8 @@
     <!-- PROTOTYPE ONLY END -->
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>System Settings [SecureSpan Enterprise Manager]</title>
-    <link rel="stylesheet" href="../css/site.css" media="all" type="text/css" />
-    <script type="text/javascript" src="../js/site.js"></script>
+    <link rel="stylesheet" href="../css/l7.css" media="all" type="text/css" />
+    <script type="text/javascript" src="../js/l7.js"></script>
 </head>
 <body>
 <table width="100%">
@@ -104,11 +104,11 @@
                 </table>
             </div>
             <script language="JavaScript" type="text/javascript">
-                initTab('Enterprise');
-                initTab('Policies');
-                initTab('Reports');
-                initTab('Backup');
-                initTab('Tools');
+                l7.TabBar.initTab('Enterprise');
+                l7.TabBar.initTab('Policies');
+                l7.TabBar.initTab('Reports');
+                l7.TabBar.initTab('Backup');
+                l7.TabBar.initTab('Tools');
             </script>
             <div class="subtabBar">
                 <span class="subtabOff"><a href="UserSettings.html">User Settings</a></span>
@@ -118,7 +118,7 @@
             <div class="content">
                 <wicket:extend>
               <div class="panel">
-                    <div class="panelTitle tippy"><img id="productInformationTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'productInformation')" /><span class="clickable" onclick="toggleTippy('productInformationTippy', 'productInformation')">Product Information</span></div>
+                    <div class="panelTitle tippy"><img id="productInformationTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'productInformation')" /><span class="clickable" onclick="l7.Tippy.toggleTippy('productInformationTippy', 'productInformation')">Product Information</span></div>
                     <div id="productInformation">
                         <div class="panelContent">
                             <table class="indent spaced">
@@ -139,7 +139,7 @@
                     </div>
                 </div>
                 <div class="panel">
-                    <div class="panelTitle tippy"><img id="systemInformationTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'systemInformation')" /><span class="clickable" onclick="toggleTippy('systemInformationTippy', 'systemInformation')">System Information</span></div>
+                    <div class="panelTitle tippy"><img id="systemInformationTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'systemInformation')" /><span class="clickable" onclick="l7.Tippy.toggleTippy('systemInformationTippy', 'systemInformation')">System Information</span></div>
                     <div id="systemInformation">
                         <div class="panelContent">
                             <table class="indent spaced">
@@ -187,7 +187,7 @@
                     </div>
                 </div>
                 <div class="panel">
-                    <div class="panelTitle tippy"><img id="licenseTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="toggleTippy(this, 'license')" /><span class="clickable" onclick="toggleTippy('licenseTippy', 'license')">License</span></div>
+                    <div class="panelTitle tippy"><img id="licenseTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'license')" /><span class="clickable" onclick="l7.Tippy.toggleTippy('licenseTippy', 'license')">License</span></div>
                     <div id="license">
                         <div class="panelContent">
                             <h4>Current License</h4>

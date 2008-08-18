@@ -9,11 +9,11 @@
     <!-- PROTOTYPE ONLY END -->
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>User Accounts [SecureSpan Enterprise Manager]</title>
-    <link rel="stylesheet" type="text/css" href="../css/site.css" />
+    <link rel="stylesheet" type="text/css" href="../css/l7.css" />
     <link rel="stylesheet" type="text/css" href="../yui/button/assets/skins/sam/button.css">
     <link rel="stylesheet" type="text/css" href="../yui/menu/assets/skins/sam/menu.css">
     <link type="text/css" rel="stylesheet" href="../yui/datatable/assets/skins/sam/datatable.css">
-    <link rel="stylesheet" type="text/css" href="../css/yui-skin.css">
+    <link rel="stylesheet" type="text/css" href="../css/l7-yui-skin.css">
     <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
     <script type="text/javascript" src="../yui/container/container_core-min.js"></script>
     <script type="text/javascript" src="../yui/element/element-beta-min.js"></script>
@@ -22,7 +22,7 @@
     <script type="text/javascript" src="../yui/datasource/datasource-beta-min.js"></script>
     <script type="text/javascript" src="../yui/dragdrop/dragdrop-min.js"></script>
     <script type="text/javascript" src="../yui/datatable/datatable-beta-min.js"></script>
-    <script type="text/javascript" src="../js/site.js"></script>
+    <script type="text/javascript" src="../js/l7.js"></script>
     <script type="text/javascript" src="../js/enterpriseTable.js"></script>
     <script type="text/javascript" src="../js/treeTable.js"></script>
     <script type="text/javascript">
@@ -166,11 +166,11 @@
                 </table>
             </div>
             <script language="JavaScript" type="text/javascript">
-                initTab('Policies');
-                initTab('Reports');
-                initTab('Backup');
-                initTab('Tools');
-                initTab('Settings');
+                l7.TabBar.initTab('Policies');
+                l7.TabBar.initTab('Reports');
+                l7.TabBar.initTab('Backup');
+                l7.TabBar.initTab('Tools');
+                l7.TabBar.initTab('Settings');
             </script>
             <div class="subtabBar">
                 <span class="subtabOff"><a href="EnterpriseGateways.html">Gateways</a></span>

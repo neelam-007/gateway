@@ -9,10 +9,10 @@
     <!-- PROTOTYPE ONLY END -->
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>Policy Submission [SecureSpan Enterprise Manager]</title>
-    <link rel="stylesheet" href="../css/site.css" media="all" type="text/css" />
+    <link rel="stylesheet" href="../css/l7.css" media="all" type="text/css" />
     <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
     <script type="text/javascript" src="../yui/animation/animation-min.js"></script>
-    <script type="text/javascript" src="../js/site.js"></script>
+    <script type="text/javascript" src="../js/l7.js"></script>
     <script type="text/javascript">
         var MIN_FRAME_HEIGHT = 150;
         var MAX_FRAME_HEIGHT = 500;
@@ -123,11 +123,11 @@
                 </table>
             </div>
             <script language="JavaScript" type="text/javascript">
-                initTab('Enterprise');
-                initTab('Reports');
-                initTab('Backup');
-                initTab('Tools');
-                initTab('Settings');
+                l7.TabBar.initTab('Enterprise');
+                l7.TabBar.initTab('Reports');
+                l7.TabBar.initTab('Backup');
+                l7.TabBar.initTab('Tools');
+                l7.TabBar.initTab('Settings');
             </script>
             <div class="subtabBar">
                 <span class="subtabOff"><a href="PolicyMigration.html">Migration</a></span>
@@ -169,8 +169,8 @@
                                     <tr>
                                         <td class="nowrap">Select a source SSG Cluster:</td>
                                         <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcSSGClusterSelector', 'userSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcSSGClusterSelector', 'userSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'userSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'userSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                         </td>
                                     </tr>
                                 </table>
@@ -181,8 +181,8 @@
                                     <tr>
                                         <td class="nowrap">Select a recipient:</td>
                                         <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcSSGClusterSelector', 'userSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcSSGClusterSelector', 'userSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'userSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'userSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                         </td>
                                     </tr>
                                 </table>
@@ -199,8 +199,8 @@
                                     <tr>
                                         <td class="nowrap">Select items to submit for approval:</td>
                                         <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcSSGClusterContent'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcSSGClusterContent'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContent'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcSSGClusterContent'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                         </td>
                                     </tr>
                                 </table>
@@ -214,8 +214,8 @@
                                         <tr>
                                             <td class="nowrap">Message (optional):</td>
                                             <td class="right" width="100%">
-                                                <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['submissionMessage'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                                <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['submissionMessage'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                                <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['submissionMessage'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                                <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['submissionMessage'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                             </td>
                                         </tr>
                                     </table>
@@ -233,8 +233,8 @@
                                     <tr>
                                         <td class="nowrap"><img src="../images/zoom.png" alt="" /> Item Details:</td>
                                         <td class="right" width="100%">
-                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="changeHeight(['srcItemDetails'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
-                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="changeHeight(['srcItemDetails'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt="" onclick="l7.Resize.changeHeight(['srcItemDetails'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt="" onclick="l7.Resize.changeHeight(['srcItemDetails'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                         </td>
                                     </tr>
                                 </table>
