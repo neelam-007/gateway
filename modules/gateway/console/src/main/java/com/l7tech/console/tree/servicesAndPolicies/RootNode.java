@@ -229,7 +229,7 @@ public final class RootNode extends AbstractTreeNode implements PolicyServiceTre
                 }
             }
 
-            for(FolderHeader folder : policyFolderHeaders) {
+            for(FolderHeader folder : allFolderHeaders) {
                 if(folder.getParentFolderOid() != null && root.getOid() == folder.getParentFolderOid()) {
                     FolderNode childNode = getFolderNodeFromHeaders(folder, allFolderEntities, policyFolderHeaders);
                     insert(childNode, getInsertPosition(childNode, RootNode.getComparator()));
