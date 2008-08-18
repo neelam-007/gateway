@@ -25,6 +25,7 @@ import java.util.regex.Matcher;
 
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.Cascade;
 
 /**
  * A Role groups zero or more {@link Permission}s so they can be assigned as a whole
@@ -51,6 +52,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
 
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="role")
     @Fetch(FetchMode.SUBSELECT)
+    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
     public Set<Permission> getPermissions() {
         return permissions;
     }
@@ -61,6 +63,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
 
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="role")
     @Fetch(FetchMode.SUBSELECT)
+    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
     public Set<RoleAssignment> getRoleAssignments() {
         return roleAssignments;
     }

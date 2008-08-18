@@ -13,6 +13,8 @@ import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.identity.ValidationException;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.security.auth.Subject;
@@ -69,10 +71,14 @@ public class AdminRemotingProvider implements RemotingProvider {
         // populate principal information
         Subject subject = JaasUtils.getCurrentSubject();
         if(subject != null){
-            String cookie = subject.getPublicCredentials(String.class).iterator().next();
-            Set<Principal> principals = adminSessionManager.getPrincipalsAndResumeSession(cookie);
-            if(principals != null){
-                subject.getPrincipals().addAll(principals);
+            try {
+                String cookie = subject.getPublicCredentials(String.class).iterator().next();
+                Set<Principal> principals = adminSessionManager.getPrincipalsAndResumeSession(cookie);
+                if(principals != null){
+                    subject.getPrincipals().addAll(principals);
+                }
+            } catch (ValidationException ve) {
+                logger.log(Level.INFO, "Validation failed for administrative user session '"+ExceptionUtils.getMessage(ve)+"'.", ExceptionUtils.getDebugException(ve));
             }
         }
     }

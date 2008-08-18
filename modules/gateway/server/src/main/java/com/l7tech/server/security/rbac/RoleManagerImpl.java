@@ -19,7 +19,6 @@ import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
-import org.hibernate.criterion.Criterion;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,6 +68,7 @@ public class RoleManagerImpl
                 Criteria userAssignmentQuery = session.createCriteria(RoleAssignment.class);
                 userAssignmentQuery.add(Restrictions.eq("identityId", user.getId()));
                 userAssignmentQuery.add(Restrictions.eq("providerId", user.getProviderId()));
+                userAssignmentQuery.add(Restrictions.eq("entityType", EntityType.USER.getName()));
                 List uras = userAssignmentQuery.list();
                 //(hibernate results aren't generic)
                 //noinspection ForLoopReplaceableByForEach
@@ -79,16 +79,16 @@ public class RoleManagerImpl
 
                 //Now get the Roles is can access via it's group membership
                 Set<IdentityHeader> iHeaders = JaasUtils.getCurrentUserGroupInfo();
-                if(iHeaders == null) return roles;
                 List<String> groupNames = new ArrayList<String>();
                 for(IdentityHeader iH: iHeaders){
                     groupNames.add(iH.getStrId());                
                 }
                 if(groupNames.size() == 0) return roles;
                 
-                Criterion groupNameIn = Restrictions.in("identityId", groupNames);
                 Criteria groupQuery = session.createCriteria(RoleAssignment.class);
-                groupQuery.add(groupNameIn);
+                groupQuery.add(Restrictions.in("identityId", groupNames));
+                groupQuery.add(Restrictions.eq("providerId", user.getProviderId()));
+                groupQuery.add(Restrictions.eq("entityType", EntityType.GROUP.getName()));
                 List gList = groupQuery.list();
 
                 for (Object aGList : gList) {
@@ -326,7 +326,7 @@ public class RoleManagerImpl
             final Entity entity;
             try {
                 if(header.getType() == com.l7tech.objectmodel.EntityType.POLICY) {
-                    entity = policyManager.findByGuid(header.getStrId());
+                    entity = policyManager==null ?  null : policyManager.findByGuid(header.getStrId());
                 }else{
                     entity = entityFinder.find(header);
                 }

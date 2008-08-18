@@ -16,25 +16,20 @@ import java.util.Set;
  */
 public class GroupPrincipal implements Principal {
 
-    private String name;
-    private IdentityHeader groupHeader;
-    private final long timestamp = System.currentTimeMillis();
+    private final String name;
+    private final IdentityHeader groupHeader;
     
     public GroupPrincipal(String name, IdentityHeader groupHeader){
         this.name = name;
-        this.groupHeader = groupHeader;
+        this.groupHeader = new IdentityHeader(groupHeader);
     }
 
     public IdentityHeader getGroupHeader() {
-        return groupHeader;
+        return new IdentityHeader(groupHeader);
     }
 
     public String getName() {
         return name;
-    }
-
-    public Long getTimestamp() {
-        return timestamp;
     }
 
 }

@@ -11,8 +11,8 @@ import javax.security.auth.Subject;
 import java.security.AccessController;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Collections;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 
 /**
  * @author alex
@@ -31,13 +31,19 @@ public class JaasUtils {
     }
 
     /*
-    * From the current subject, if it exists, retrieve the current users group membership.
-    * */
+     * Get group membership for the current subject, if it exists.
+     *
+     * @return The set of group IdentityHeaders (may be empty but not null)
+     */
     public static Set<IdentityHeader> getCurrentUserGroupInfo(){
         Subject subject = getCurrentSubject();
-        if (subject == null) return null;
+        if (subject == null) 
+            return Collections.emptySet();
+
         Set<GroupPrincipal> cPs = subject.getPrincipals(GroupPrincipal.class);
-        if (cPs == null || cPs.isEmpty()) return null;
+        if (cPs == null || cPs.isEmpty())
+            return Collections.emptySet();
+
         Set<IdentityHeader> returnSet = new HashSet<IdentityHeader>();
         for(GroupPrincipal gP: cPs){
             returnSet.add(gP.getGroupHeader());

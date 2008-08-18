@@ -21,6 +21,7 @@ import java.util.logging.Level;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.Cascade;
 
 /**
  * Abstract superclass of all of the different types of audit record.
@@ -138,6 +139,7 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
      */
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="auditRecord")
     @Fetch(FetchMode.SUBSELECT)
+    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
     public Set<AuditDetail> getDetails() {
         return details;
     }

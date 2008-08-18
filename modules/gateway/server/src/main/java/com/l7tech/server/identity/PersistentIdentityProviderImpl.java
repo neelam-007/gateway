@@ -8,6 +8,7 @@ package com.l7tech.server.identity;
 
 import com.l7tech.identity.PersistentGroup;
 import com.l7tech.identity.PersistentUser;
+import com.l7tech.identity.ValidationException;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.objectmodel.EntityType;
@@ -57,6 +58,10 @@ public abstract class PersistentIdentityProviderImpl<UT extends PersistentUser, 
 
     public Collection<IdentityHeader> search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException {
         throw new UnsupportedOperationException();
+    }
+
+    public void validate(UT u) throws ValidationException {
+        throw new ValidationException("Validation failed for user '"+u.getLogin()+"' (not supported).");
     }
 
     public void setClientCertManager(ClientCertManager clientCertManager) {

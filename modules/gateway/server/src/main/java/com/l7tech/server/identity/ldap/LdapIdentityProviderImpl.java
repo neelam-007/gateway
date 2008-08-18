@@ -947,13 +947,13 @@ public class LdapIdentityProviderImpl
     }
 
     /*
-    * ValidationException exceptions do not state that the user belongs to an ldap or in which
-    * ldap the user was not found
-    * */
-    public void validate(User u) throws ValidationException {
-        User validatedUser = null;
+     * ValidationException exceptions do not state that the user belongs to an ldap or in which
+     * ldap the user was not found
+     **/
+    public void validate(LdapUser u) throws ValidationException {
+        User validatedUser;
         try{
-            validatedUser = userManager.findByLogin(u.getLogin());
+            validatedUser = userManager.findByPrimaryKey(u.getId());
         }
         catch (FindException e){
             throw new ValidationException("User " + u.getLogin()+" did not validate", e);

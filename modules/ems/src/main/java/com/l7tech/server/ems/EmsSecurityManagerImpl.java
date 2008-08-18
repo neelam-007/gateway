@@ -12,7 +12,6 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
-import com.l7tech.gateway.common.admin.ValidationRuntimeException;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
@@ -74,8 +73,6 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
                         user = authResult == null ? null : authResult.getUser();
                     } catch (AuthenticationException e) {
                         logger.info("Authentication failed on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
-                    } catch (ValidationRuntimeException e) {
-                        logger.info("Validation failed on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
                     }
                 } else {
                     logger.info("Administrative users not enabled for provider '"+config.getName()+"'.");
@@ -147,8 +144,6 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
             logger.info("Invalid password on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
         } catch (AuthenticationException e) {
             logger.info("Authentication failed on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
-        } catch (ValidationRuntimeException e) {
-            logger.info("Validation failed on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
         } catch (FindException fe) {
             logger.log(Level.WARNING, "Error loading identity providers", fe);
         } catch (UpdateException ue) {

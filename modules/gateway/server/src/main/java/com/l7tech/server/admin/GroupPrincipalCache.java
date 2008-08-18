@@ -5,7 +5,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.gateway.common.admin.ValidationRuntimeException;
+import com.l7tech.util.ExceptionUtils;
 import com.whirlycott.cache.Cache;
 
 import java.util.Set;
@@ -51,12 +51,10 @@ public class GroupPrincipalCache {
 
         final long providerOid = ip.getConfig().getOid();
         final CacheKey ckey = new CacheKey(providerOid, u.getId());
-        Object cached = getCacheEntry(ckey, u.getLogin(), ip, maxAge);
+        final Set<GroupPrincipal> cached = getCacheEntry(ckey, u.getLogin(), ip, maxAge);
 
-        if (cached instanceof Set) {
-            return (Set<GroupPrincipal>)cached;
-        } else if (cached != null) {
-            return null;
+        if ( cached != null ) {
+            return cached;
         }        
 
         return getAndCacheNewResult(u, ckey, ip);
@@ -73,30 +71,27 @@ public class GroupPrincipalCache {
     /*
     * @return either Set<GroupPrincipal> or Long
     * */
-    private Object getCacheEntry(CacheKey ckey, String login, IdentityProvider idp, int maxAge) {
+    @SuppressWarnings({"unchecked"})
+    private Set<GroupPrincipal> getCacheEntry(CacheKey ckey, String login, IdentityProvider idp, int maxAge) {
 
         if (principalCache == null) return null; // fail fast if cache is disabled
 
-        CacheEntry<Set<GroupPrincipal>> groupPrincipals = null;
+        CacheEntry groupPrincipals = null;
 
         Object cachedObj = principalCache.retrieve(ckey);
-        if(cachedObj != null && cachedObj instanceof CacheEntry){
-            groupPrincipals = (CacheEntry<Set<GroupPrincipal>>)cachedObj;
+        if( cachedObj != null && cachedObj instanceof CacheEntry ){
+            groupPrincipals = (CacheEntry) cachedObj;
         }
 
-        if(cachedObj == null){
+        if( groupPrincipals == null ){
             return null;
         }
 
-        Object returnValue;
-        long cacheAddedTime;
-        cacheAddedTime = groupPrincipals.getTimestamp();
-        returnValue = groupPrincipals.getCachedObject();
-
-        if (cacheAddedTime + maxAge > System.currentTimeMillis()) {
+        long cacheAddedTime = groupPrincipals.getTimestamp();
+        if ( cacheAddedTime + maxAge > System.currentTimeMillis() ) {
             if (logger.isLoggable(Level.FINE))
                 logger.log(Level.FINE, "Cache hit for user {1} from IdP \"{2}\"", new String[] {login, idp.getConfig().getName()});
-            return returnValue;
+            return (Set<GroupPrincipal>) groupPrincipals.getCachedObject();
         } else {
             if (logger.isLoggable(Level.FINE)) {
                 logger.log(Level.FINE, "Cache expiry for user {1} is stale on IdP \"{2}\"; will revalidate", new String[] { login, idp.getConfig().getName()});
@@ -108,26 +103,26 @@ public class GroupPrincipalCache {
 
     // If caller wants only one thread at a time to authenticate any given username,
     // caller is responsible for ensuring that only one thread at a time calls this per username,
-    private Set<GroupPrincipal> getAndCacheNewResult(User u, CacheKey ckey, IdentityProvider idp) throws ValidationException{
+    @SuppressWarnings({"unchecked"})
+    private Set<GroupPrincipal> getAndCacheNewResult(User u, CacheKey ckey, IdentityProvider idp) throws ValidationException {
         idp.validate(u);
         //download group info and any other info to be added as a gP as and when required here..
 
         GroupManager gM = idp.getGroupManager();
-        Set<IdentityHeader> gHeaders = null;
-        try{
+        Set<IdentityHeader> gHeaders;
+        try {
             gHeaders = gM.getGroupHeaders(u);
-        }catch(FindException fe){
-            String msg = "Cannot find users groups";
-            logger.log(Level.FINE, msg, fe);
-            throw new ValidationException(msg);
+        } catch ( FindException fe ) {
+            logger.log( Level.WARNING, "Error accessing groups for user '"+u.getId()+"', error message '"+ExceptionUtils.getMessage(fe)+"'.", fe );
+            throw new ValidationException("Error accessing groups for user '"+u.getId()+"'.");
         }
 
-        if(gHeaders != null && gHeaders.size() > 0){
+        if( gHeaders != null && gHeaders.size() > 0 ){
             Set<GroupPrincipal> gPs = new HashSet<GroupPrincipal>();
             int count = 1;
             for(IdentityHeader iH: gHeaders){
-                if(count >= CACHE_MAX_GROUPS){
-                   logger.log(Level.INFO, "Capping group membership for user at " + CACHE_MAX_GROUPS);
+                if(count > CACHE_MAX_GROUPS){
+                   logger.log(Level.INFO, "Capping group membership for user '"+u.getId()+"' at " + CACHE_MAX_GROUPS);
                    break;
                 }
                 GroupPrincipal gP = new GroupPrincipal(u.getLogin(), iH);

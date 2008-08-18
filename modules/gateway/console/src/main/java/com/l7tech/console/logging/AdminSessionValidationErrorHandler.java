@@ -2,14 +2,12 @@ package com.l7tech.console.logging;
 
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.gateway.common.admin.ValidationRuntimeException;
+import com.l7tech.gateway.common.admin.AdminSessionValidationRuntimeException;
 import com.l7tech.gui.util.DialogDisplayer;
 
 import java.awt.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-
-import org.apache.commons.httpclient.HttpException;
 
 
 /**
@@ -19,7 +17,7 @@ import org.apache.commons.httpclient.HttpException;
  * Time: 4:15:47 PM
  * To change this template use File | Settings | File Templates.
  */
-public class ValidationErrorHandler implements ErrorHandler{
+public class AdminSessionValidationErrorHandler implements ErrorHandler{
     private final String errorMsg = "Session invalidated. Please contact your administrator";
     /**
      * handle the error event
@@ -29,7 +27,7 @@ public class ValidationErrorHandler implements ErrorHandler{
         final Frame topParent = TopComponents.getInstance().getTopParent();
         Throwable throwable = event.getThrowable();
 
-        if (ExceptionUtils.causedBy(throwable, ValidationRuntimeException.class)) {
+        if (ExceptionUtils.causedBy(throwable, AdminSessionValidationRuntimeException.class)) {
             // display error dialog
             DialogDisplayer.showMessageDialog(topParent, null, errorMsg,null);
             Logger.getLogger("ValidationErrorHandler").log(Level.WARNING, "User session invalidated");

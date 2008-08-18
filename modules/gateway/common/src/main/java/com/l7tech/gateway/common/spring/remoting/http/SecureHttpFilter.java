@@ -2,9 +2,6 @@ package com.l7tech.gateway.common.spring.remoting.http;
 
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.spring.remoting.RemotingProvider;
-//import com.l7tech.identity.UserBean;
-//import org.springframework.context.ApplicationContext;
-//import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.security.auth.Subject;
 import javax.servlet.*;
@@ -12,7 +9,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.security.Principal;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

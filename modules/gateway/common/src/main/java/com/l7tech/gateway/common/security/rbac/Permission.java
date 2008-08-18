@@ -21,6 +21,7 @@ import java.util.Set;
 
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.Cascade;
 
 /**
  * A permission that belongs to a {@link Role}.
@@ -112,6 +113,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
      */
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="permission")
     @Fetch(FetchMode.SUBSELECT)
+    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
     public Set<ScopePredicate> getScope() {
         return scope;
     }

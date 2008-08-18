@@ -3,6 +3,7 @@ package com.l7tech.server.admin;
 import org.apache.commons.collections.LRUMap;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Background;
+import com.l7tech.identity.ValidationException;
 
 import java.security.SecureRandom;
 import java.security.Principal;
@@ -68,6 +69,7 @@ public class AdminSessionManager {
     private SessionValidator sessionValidator;
     
     // TODO expire old sessions rather than wait for them to fall out of the LRU map.
+    @SuppressWarnings({"deprecation"})
     private final LRUMap sessionMap = new LRUMap(1000);
     private final SecureRandom random = new SecureRandom();
 
@@ -140,7 +142,7 @@ public class AdminSessionManager {
         return holder.getPrincipal();
     }
 
-    public synchronized Set<Principal> getPrincipalsAndResumeSession(String session) {
+    public synchronized Set<Principal> getPrincipalsAndResumeSession(String session) throws ValidationException {
         if (session == null) throw new NullPointerException();
         SessionHolder holder = (SessionHolder)sessionMap.get(session);
         if (holder == null) return null;
@@ -173,6 +175,7 @@ public class AdminSessionManager {
      *
      * @param principal the principal that was originally passed to {@link #createSession}.
      */
+    @SuppressWarnings({"unchecked"})
     public synchronized void destroySession(Principal principal) {
         boolean destroyed = false;
         for (Iterator<SessionHolder> iter = sessionMap.values().iterator(); iter.hasNext();) {

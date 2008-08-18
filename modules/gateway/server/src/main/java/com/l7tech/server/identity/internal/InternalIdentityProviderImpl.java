@@ -77,7 +77,7 @@ public class InternalIdentityProviderImpl
                 return null;
             }
 
-            if (dbUser.getExpiration() > -1 && dbUser.getExpiration() < System.currentTimeMillis()) {
+            if ( isExpired(dbUser) ) {
                 String err = "Credentials' login matches an internal user " + login + " but that " +
                         "account is now expired.";
                 logger.info(err);
@@ -178,17 +178,36 @@ public class InternalIdentityProviderImpl
     * ValidationException exceptions do not state that the user belongs to an ldap or in which
     * ldap the user was not found
     * */
-    public void validate(User u) throws ValidationException {
-        User validatedUser = null;
+    @Override
+    public void validate(InternalUser u) throws ValidationException {
+        InternalUser validatedUser;
         try{
-            validatedUser = userManager.findByLogin(u.getLogin());
+            validatedUser = userManager.findByPrimaryKey(u.getId());
         }
         catch (FindException e){
-            throw new ValidationException("User " + u.getLogin()+" did not validate", e);
+            throw new ValidationException("User '"+u.getLogin()+"' did not validate.", e);
         }
 
         if(validatedUser == null){
-            throw new ValidationException("IdentityProvider User " + u.getLogin()+" not found");
+            throw new ValidationException("IdentityProvider User " + u.getLogin()+" not found.");
+        } else if ( isExpired( validatedUser ) ) {
+            throw new ValidationException("User '"+u.getLogin()+"' did not validate (expired account)");
         }
-    }   
+    }
+
+    /**
+     * Check if the given user account is expired.
+     *
+     * @param dbUser The user to check
+     * @return True if expired.
+     */
+    private boolean isExpired( final InternalUser dbUser ) {
+        boolean expired = false;
+
+        if ( dbUser.getExpiration() > -1 && dbUser.getExpiration() < System.currentTimeMillis() ) {
+            expired = true;
+        }
+
+        return expired;
+    }
 }

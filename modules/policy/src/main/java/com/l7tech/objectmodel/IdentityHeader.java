@@ -9,13 +9,18 @@ package com.l7tech.objectmodel;
 public class IdentityHeader extends EntityHeader {
     private final long providerOid;
 
-    public IdentityHeader(long providerOid, String identityId, EntityType type, String name, String description) {
+    public IdentityHeader( final IdentityHeader header ) {
+        super(header.getStrId(), header.getType(), header.getName(), header.getDescription());
+        this.providerOid = header.getProviderOid();
+    }
+
+    public IdentityHeader( final long providerOid, final String identityId, final EntityType type, final String name, final String description) {
         super(identityId, type, name, description);
         if (type != EntityType.USER && type != EntityType.GROUP && type != EntityType.MAXED_OUT_SEARCH_RESULT) throw new IllegalArgumentException("EntityType must be USER or GROUP");
         this.providerOid = providerOid;
     }
 
-    public IdentityHeader(long providerOid, EntityHeader header) {
+    public IdentityHeader( final long providerOid, final EntityHeader header) {
         this(providerOid, header.getStrId(), header.getType(), header.getName(), header.getDescription());
     }
 

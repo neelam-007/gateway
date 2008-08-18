@@ -48,8 +48,8 @@ public interface IdentityProvider<UT extends User, GT extends Group, UMT extends
     void test(boolean fast) throws InvalidIdProviderCfgException;
 
     /**
-     * Allows an IdentityProvider to veto the saving of a client cert. Currently only used by
-     * {@link com.l7tech.server.identity.fed.FederatedIdentityProvider}.
+     * Allows an IdentityProvider to veto the saving of a client cert.
+     * 
      * @param user the user for whom the cert is to be saved
      * @param certChain the client certificate chain
      * @throws ClientCertManager.VetoSave if the provider wants to prevent the cert from being saved
@@ -62,9 +62,12 @@ public interface IdentityProvider<UT extends User, GT extends Group, UMT extends
 
     /**
      * Called to validate that the User is still valid.
-     * This validates that the user still exists in the Identity Provider and that the User has not been disabled
-     * Does not authenticate the user
      *
-     * */
-    void validate(User u) throws ValidationException;
+     * <P>This validates that the user still exists in the Identity Provider and that the User has not been disabled
+     * Does not authenticate the user</P>
+     *
+     * @param user The user to validate
+     * @throws ValidationException If the user is no longer valid.
+     */
+    void validate(UT user) throws ValidationException;
 }

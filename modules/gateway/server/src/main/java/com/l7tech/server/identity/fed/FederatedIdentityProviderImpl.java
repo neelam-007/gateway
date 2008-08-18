@@ -227,10 +227,6 @@ public class FederatedIdentityProviderImpl
         }
     }
 
-    public void validate(User u) throws ValidationException {
-        throw new UnsupportedOperationException("validate not available for Federated Identity Providers");
-    }
-    
     private X509AuthorizationHandler x509Handler;
     private SamlAuthorizationHandler samlHandler;
 
