@@ -677,8 +677,15 @@
     <!--
       Publish the latest dependency / artifact information to the build repository
     -->
-    <target name="idea-inspections" depends="publish-all-modules-quick, build-module-list">
+    <target name="idea-inspections" depends="build-module-list">
+        <property name="ivy.settings.filepath" location="etc/build/ivysettings_idea.xml"/>
         <mkdir dir="${build.etc}"/>
+        <!-- Clean cache -->
+        <delete dir="${build.dir}/ivycache"/>
+        <mkdir dir="${build.dir}/ivycache"/>
+        <delete dir="${build.dir}/idearepo"/>
+        <mkdir dir="${build.dir}/idearepo"/>
+
         <echo level="info">Building IDEA modules.</echo>
         <modules target="idea"/>
 
