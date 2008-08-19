@@ -193,7 +193,7 @@ public final class RootNode extends AbstractTreeNode implements PolicyServiceTre
     protected void loadChildren() {
         try {
             List<EntityHeader> allFolderEntities = new ArrayList<EntityHeader>();
-            List<FolderHeader> allFolderHeaders = new ArrayList<FolderHeader>();
+            Set<FolderHeader> allFolderHeaders = new HashSet<FolderHeader>();
 
             ServiceHeader[] serviceHeaders = serviceManager.findAllPublishedServices();
             List<ServiceHeader> serviceHeadersList = Arrays.asList(serviceHeaders);
