@@ -7,40 +7,52 @@ package com.l7tech.policy.wsp;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.AllAssertions;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 import java.util.logging.Logger;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Arrays;
+
+import org.junit.Test;
+import org.junit.Assert;
 
 /**
  * Ensures that everything that can be serialized is also listed in {@link AllAssertions#SERIALIZABLE_EVERYTHING}.
  */
-public class WspConstantsTest extends TestCase {
+public class WspConstantsTest {
     private static Logger log = Logger.getLogger(WspConstantsTest.class.getName());
-
-    public WspConstantsTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(WspConstantsTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
 
     private String getLocalName(Class c) {
         String fullname = c.getName();
         int lastdot = fullname.lastIndexOf('.');
         return fullname.substring(lastdot + 1);
     }
-    
+
+    @Test
+    public void testDuplicateMappings() throws Exception {
+        TypeMapping[] mappings = WspConstants.typeMappings;
+        Set<String> typeMapSet = new HashSet<String>();
+
+        // Accepted duplication for backwards compatibility
+        Set<String> dupeWhitelist = new HashSet<String>( Arrays.asList(
+            "com.l7tech.policy.wsp.IntegrityMapping/com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity/RequestWssIntegrity",
+            "com.l7tech.policy.wsp.ConfidentialityMapping/com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality/Confidentiality",
+            "com.l7tech.policy.wsp.ArrayTypeMapping/[Ljava.lang.String;/fieldNames"
+        ) );
+
+        // Check for duplicates
+        for (TypeMapping typeMapping : mappings) {
+            String mappingId = typeMapping.getClass().getName() + "/" + typeMapping.getMappedClass().getName();
+            String fullId = mappingId + "/" + typeMapping.getExternalName();
+            if ( !typeMapSet.add(mappingId) && !dupeWhitelist.contains(fullId)) {
+                Assert.fail("Duplicate type mapping: " + fullId);
+            }
+        }
+    }
+
+    @Test
     public void testAllAssertionsIsComplete() throws Exception {
         Set<Class<? extends Assertion>> assertionClasses = new HashSet<Class<? extends Assertion>>();
         Assertion[] all = AllAssertions.SERIALIZABLE_EVERYTHING;
@@ -70,7 +82,7 @@ public class WspConstantsTest extends TestCase {
                 System.out.println("        new " + assname + "(),");
             }
 
-            fail("At least one assertion mapping was found for an assertion class not represented in AllAssertions.SERIALIZABLE_EVERYTHING");
+            Assert.fail("At least one assertion mapping was found for an assertion class not represented in AllAssertions.SERIALIZABLE_EVERYTHING");
         }
     }
 }
