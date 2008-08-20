@@ -11,6 +11,8 @@ import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
 import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.criterion.Criterion;
+import org.hibernate.criterion.Order;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
@@ -75,6 +77,85 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     @Secured(operation=OperationType.READ)
     public ET findByPrimaryKey(long oid) throws FindException {
         return findEntity(oid);
+    }
+
+    /**
+     * Find the number of entities that are found for the given criterion.
+     *
+     * @param restrictions The restrictions (e.g before / after dates)
+     * @return The number of entities matched
+     * @throws FindException If an error occurs
+     */
+    protected int findCount( final Criterion... restrictions ) throws FindException {
+        try {
+            //noinspection unchecked
+            return (Integer) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
+                protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    Criteria crit = session.createCriteria(getImpClass());
+
+                    // Ensure manager specific criteria are added
+                    addFindAllCriteria( crit );
+
+                    // Add additional criteria
+                    for (Criterion restriction : restrictions ) {
+                        crit.add( restriction );
+                    }
+
+                    ScrollableResults results = crit.scroll( ScrollMode.SCROLL_SENSITIVE );
+                    results.last();
+                    return results.getRowNumber();
+                }
+            });
+        } catch (Exception e) {
+            throw new FindException("Couldn't check uniqueness", e);
+        }
+    }
+
+    /**
+     * Find a "page" worth of entities for the given sort, offset and count.
+     *
+     * <p>Additional restrictions may be passed in the form of hibernate Criterion.</p>
+     *
+     * @param sortProperty The property to sort by (e.g. name)
+     * @param ascending True to sort in ascending order
+     * @param offset The initial offset 0 for the first page
+     * @param count The number of items to return
+     * @param restrictions Additional restrictions (e.g before / after dates)
+     * @return  The matching entities or an empty list if none found
+     * @throws FindException If an error occurs
+     */
+    protected List<ET> findPage( final String sortProperty, final boolean ascending, final int offset, final int count, final Criterion... restrictions ) throws FindException {
+        try {
+            //noinspection unchecked
+            return (List<ET>)getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                @Override
+                protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    Criteria crit = session.createCriteria(getImpClass());
+
+                    // Ensure manager specific criteria are added
+                    addFindAllCriteria( crit );
+
+                    // Add additional criteria
+                    for (Criterion restriction : restrictions ) {
+                        crit.add( restriction );
+                    }
+
+                    if ( ascending ) {
+                        crit.addOrder( Order.asc(sortProperty) );
+                    } else {
+                        crit.addOrder( Order.desc(sortProperty) );    
+                    }
+
+                    crit.setFirstResult( offset );
+                    crit.setMaxResults( count );
+
+                    return crit.list();
+                }
+            });
+        } catch (Exception e) {
+            throw new FindException("Couldn't check uniqueness", e);
+        }
     }
 
     protected List<ET> findMatching(final Map<String, Object> map) throws FindException {

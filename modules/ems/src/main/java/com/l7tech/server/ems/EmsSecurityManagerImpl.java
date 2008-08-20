@@ -63,7 +63,7 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
         LoginCredentials creds = new LoginCredentials(username, password.toCharArray(), null);
         User user = null;
 
-        logger.info("Authenticating user '"+username+"'.");    
+        logger.info("Authenticating user '"+username+"'.");
         try {
             for ( IdentityProvider provider : identityProviderFactory.findAllIdentityProviders() ) {
                 IdentityProviderConfig config = provider.getConfig();
@@ -79,7 +79,7 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
                 }
             }
         } catch (FindException fe) {
-            logger.log(Level.WARNING, "Error loading identity providers", fe);            
+            logger.log(Level.WARNING, "Error loading identity providers", fe);
         }
 
         boolean authenticated = user != null;
@@ -88,7 +88,7 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
             session.setAttribute(ATTR_DATE, new Date());
         }
 
-        logger.info("Authenticating user '"+username+"', auth result is '"+authenticated+"'.");    
+        logger.info("Authenticating user '"+username+"', auth result is '"+authenticated+"'.");
 
         return authenticated;
     }
@@ -125,7 +125,7 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
         User user = (User) session.getAttribute(ATTR_ID);
 
         logger.info("Changing password for user '"+user.getLogin()+"'.");
-        
+
         LoginCredentials creds = new LoginCredentials(user.getLogin(), password.toCharArray(), null);
         IdentityProvider provider = null;
         try {

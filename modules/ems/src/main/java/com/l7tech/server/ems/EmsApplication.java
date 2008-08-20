@@ -4,6 +4,7 @@ import com.l7tech.server.ems.pages.*;
 import org.apache.wicket.Component;
 import org.apache.wicket.Page;
 import org.apache.wicket.ResourceReference;
+import org.apache.wicket.markup.html.PackageResourceGuard;
 import org.apache.wicket.authorization.Action;
 import org.apache.wicket.authorization.IAuthorizationStrategy;
 import org.apache.wicket.protocol.http.WebApplication;
@@ -61,6 +62,23 @@ public class EmsApplication extends WebApplication {
 
         IResourceSettings resourceSettings = getResourceSettings();
         resourceSettings.setResourceStreamLocator(new ResourceLocator());
+        resourceSettings.setPackageResourceGuard(new PackageResourceGuard(){
+            protected boolean acceptAbsolutePath( final String resourcePath ) {
+                boolean accept = false;
+                if ( resourcePath.startsWith("org/apache/wicket") ||
+                     (resourcePath.startsWith("com/l7tech/server/ems/resources/css") ||
+                      resourcePath.startsWith("com/l7tech/server/ems/resources/js") ||
+                      resourcePath.startsWith("com/l7tech/server/ems/resources/templates") ||
+                      resourcePath.startsWith("com/l7tech/server/ems/resources/yui"))) {
+                    accept = super.acceptAbsolutePath(resourcePath);
+                } else {
+                    logger.info("Rejecting access to resource '"+resourcePath+"'.");
+                }
+
+                return accept;
+            }
+
+        });
 
         IMarkupSettings markupSettings = getMarkupSettings();
         markupSettings.setStripWicketTags(true);

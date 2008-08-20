@@ -204,11 +204,19 @@
         <property name="groupManager"><null/></property>
     </bean>
 
+    <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean"/>
+
+    <!-- Account manager -->
+    <bean name="emsAccountManager" class="com.l7tech.server.ems.EmsAccountManagerImpl">
+        <constructor-arg ref="identityProviderFactory"/>
+    </bean>
+
     <!-- Initial setup manager -->
     <bean name="setupManager" class="com.l7tech.server.ems.SetupManagerImpl" depends-on="internalIdentityProvider">
         <constructor-arg index="0" ref="licenseManager"/>        
         <constructor-arg index="1" ref="identityProviderFactory"/>
         <constructor-arg index="2" ref="identityProviderConfigManager"/>
+        <constructor-arg index="3" ref="roleManager"/>
     </bean>
 
     <!-- Security Manager -->

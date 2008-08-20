@@ -9,11 +9,11 @@
     <!-- PROTOTYPE ONLY END -->
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>User Accounts [SecureSpan Enterprise Manager]</title>
-    <link rel="stylesheet" type="text/css" href="../css/l7.css" />
+    <link rel="stylesheet" type="text/css" href="../css/site.css" />
     <link rel="stylesheet" type="text/css" href="../yui/button/assets/skins/sam/button.css">
     <link rel="stylesheet" type="text/css" href="../yui/menu/assets/skins/sam/menu.css">
     <link type="text/css" rel="stylesheet" href="../yui/datatable/assets/skins/sam/datatable.css">
-    <link rel="stylesheet" type="text/css" href="../css/l7-yui-skin.css">
+    <link rel="stylesheet" type="text/css" href="../css/yui-skin.css">
     <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
     <script type="text/javascript" src="../yui/container/container_core-min.js"></script>
     <script type="text/javascript" src="../yui/element/element-beta-min.js"></script>
@@ -22,57 +22,9 @@
     <script type="text/javascript" src="../yui/datasource/datasource-beta-min.js"></script>
     <script type="text/javascript" src="../yui/dragdrop/dragdrop-min.js"></script>
     <script type="text/javascript" src="../yui/datatable/datatable-beta-min.js"></script>
-    <script type="text/javascript" src="../js/l7.js"></script>
+    <script type="text/javascript" src="../js/site.js"></script>
     <script type="text/javascript" src="../js/enterpriseTable.js"></script>
     <script type="text/javascript" src="../js/treeTable.js"></script>
-    <script type="text/javascript">
-        function init() {
-            var addUserButton = new YAHOO.widget.Button('addUserButton');
-            var removeUserButton = new YAHOO.widget.Button('removeUserButton');
-            var editUserButton = new YAHOO.widget.Button('editUserButton');
-            removeUserButton.set('disabled', true);
-            editUserButton.set('disabled', true);
-            // TODO assign URLs or use YAHOO.util.Event.addListener('addUserButton', 'click', function() {...})
-
-            var accounts = [
-                    {guid:'2a34df91-d78e-45a8-9bb9-e30c9beda337', userId:'bart', type:'User', surname:'Simpson', givenName:'Bart'},
-                    {guid:'d978bb7a-7cfd-4d89-8420-28d43f93081c', userId:'homer', type:'User', surname:'Simpson', givenName:'Homer'},
-                    {guid:'8fa8f98c-9ba8-4d65-8a19-2b604cbbda7a', userId:'lisa', type:'Administrator', surname:'Simpson', givenName:'Lisa'},
-                    {guid:'a9ea99f3-7bbc-45c0-9668-3b0db3b57b4f', userId:'marge', type:'Administrator', surname:'Simpson', givenName:'Marge'}
-                ];
-
-            var columnDefs = [
-                {key:'userId', label:'User ID', sortable:true, resizeable:true},
-                {key:'type', label:'Account Type', sortable:true, resizeable:true},
-                {key:'surname', label:'Surname', sortable:true, resizeable:true},
-                {key:'givenName', label:'Given Name', sortable:true, resizeable:true}
-            ];
-
-            var dataSource = new YAHOO.util.DataSource(accounts);
-            dataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
-            dataSource.responseSchema = {
-                fields: ['guid','userId','type','surname','givenName']
-            };
-
-            var dataTable = new YAHOO.widget.DataTable('userAccounts',
-                columnDefs, dataSource, {draggableColumns: true, selectionMode: 'single'});
-
-            // Subscribes to events for row selection.
-            dataTable.subscribe("rowMouseoverEvent", dataTable.onEventHighlightRow);
-            dataTable.subscribe("rowMouseoutEvent", dataTable.onEventUnhighlightRow);
-            dataTable.subscribe("rowClickEvent", dataTable.onEventSelectRow);
-
-            // Subscribes to row select changes for enabling/disabling toolbar buttons.
-            function enableOrDisableToolbarButtons(event, target) {
-                var selectedRows = this.getSelectedTrEls();
-                var hasSelectedRows = (selectedRows != null) && (selectedRows.length != 0);
-                removeUserButton.set('disabled', !hasSelectedRows);
-                editUserButton.set('disabled', !hasSelectedRows);
-            }
-            dataTable.subscribe("rowSelectEvent", enableOrDisableToolbarButtons);
-            dataTable.subscribe("rowUnSelectEvent", enableOrDisableToolbarButtons);
-        }
-    </script>
 </head>
 <body class="yui-skin-sam" onload="init();">
 <table width="100%">
@@ -166,11 +118,11 @@
                 </table>
             </div>
             <script language="JavaScript" type="text/javascript">
-                l7.TabBar.initTab('Policies');
-                l7.TabBar.initTab('Reports');
-                l7.TabBar.initTab('Backup');
-                l7.TabBar.initTab('Tools');
-                l7.TabBar.initTab('Settings');
+                initTab('Policies');
+                initTab('Reports');
+                initTab('Backup');
+                initTab('Tools');
+                initTab('Settings');
             </script>
             <div class="subtabBar">
                 <span class="subtabOff"><a href="EnterpriseGateways.html">Gateways</a></span>
@@ -179,16 +131,49 @@
             </div>
             <div class="content">
                 <wicket:extend>
-                    <form wicket:id="form" action="">
-                        <div class="panel">
-                            <div class="panelToolbar">
-                               <button id="addUserButton" type="button" wicket:id="addUserButton"><img src="../images/addUser.png" alt="" /> <wicket:message key="label.new">New</wicket:message></button>
-                               <button id="editUserButton" type="button" wicket:id="editUserButton"><img src="../images/editUser.png" alt="" /> <wicket:message key="label.edit">Edit</wicket:message></button>
-                               <input name="userId" type="hidden" value="" wicket:id="userId"/>
-                            </div>
-                            <div wicket:id="usertable"/>
+                    <div class="panel">
+                        <div class="panelTitle"><wicket:message key="panel.edituser.title">Edit User</wicket:message></div>
+                        <div class="panelContent">
+                            <div wicket:id="editFeedback" class="center"/>
+                            <form action="EnterpriseUsersNew.html" method="POST" wicket:id="editUserForm">
+                                <table class="indent spaced">
+                                    <tr>
+                                        <th>User ID:</th>
+                                        <td><span wicket:id="userId"/></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Surname:</th>
+                                        <td><input id="lastName" name="lastName" type="text" wicket:id="lastName"/></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Given Name:</th>
+                                        <td><input id="firstName" name="firstName" type="text" wicket:id="firstName"/></td>
+                                    </tr>
+                                 </table>
+                                 <input type="submit" value="Apply"/>
+                            </form>
                         </div>
-                    </form>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panelTitle"><wicket:message key="panel.password.title">Reset Password</wicket:message></div>
+                        <div class="panelContent">
+                            <div wicket:id="passwordFeedback" class="center"/>
+                            <form action="EnterpriseUsersNew.html" method="POST" wicket:id="resetPasswordForm">
+                                <table class="indent spaced">
+                                    <tr>
+                                        <th>Password:</th>
+                                        <td><input id="password" name="password" type="password" wicket:id="password"/></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Confirm Password:</th>
+                                        <td><input id="password2" name="password2" type="password" wicket:id="passwordConfirm"/></td>
+                                    </tr>
+                                 </table>
+                                 <input type="submit" value="Apply"/>
+                            </form>
+                        </div>
+                    </div>
                 </wicket:extend>
             </div>
             <div class="statusBar">

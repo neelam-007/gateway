@@ -7,11 +7,21 @@ import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.*;
+
 import com.l7tech.server.GatewayLicenseManager;
+import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.gateway.common.InvalidLicenseException;
+import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.Permission;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.InvalidPasswordException;
+import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.SaveException;
 import static org.springframework.transaction.annotation.Propagation.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.InitializingBean;
@@ -31,13 +41,17 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
     private GatewayLicenseManager licenseManager;
     private IdentityProviderFactory identityProviderFactory;
     private IdentityProviderConfigManager identityProviderConfigManager;
+    private RoleManager roleManager;
 
     public SetupManagerImpl(final GatewayLicenseManager licenseManager,
-                        final IdentityProviderFactory identityProviderFactory,
-                        final IdentityProviderConfigManager identityProviderConfigManager) {
+                            final IdentityProviderFactory identityProviderFactory,
+                            final IdentityProviderConfigManager identityProviderConfigManager,
+                            final RoleManager roleManager
+    ) {
         this.licenseManager = licenseManager;
         this.identityProviderFactory = identityProviderFactory;
         this.identityProviderConfigManager = identityProviderConfigManager;
+        this.roleManager = roleManager;
     }
 
     /**
@@ -101,6 +115,12 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
             }
 
             licenseManager.installNewLicense(licenseXml);
+
+            Role adminRole = roleManager.findByUniqueName("Administrator");
+            if ( adminRole != null ) {
+                adminRole.addAssignedUser( user );
+                roleManager.update( adminRole );
+            }
         } catch (InvalidPasswordException e) {
             throw new SetupException(e);
         } catch (FindException e) {
@@ -131,7 +151,10 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
      * Add initial identity provider configuration if not present. 
      */
     public void afterPropertiesSet() throws Exception {
-        if ( identityProviderConfigManager.findAll().isEmpty() ) {
+        if ( identityProviderConfigManager.findAll().isEmpty() &&
+             roleManager.findAll().isEmpty() ) {
+            logger.info("Generating initial database configuration.");
+
             logger.info("Creating configuration for internal identity provider.");
             IdentityProviderConfig config = new IdentityProviderConfig();
             config.setOid(-2);
@@ -141,6 +164,17 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
             config.setDescription("Internal Identity Provider");
             long id = identityProviderConfigManager.save(config);
             logger.info("Created configuration for internal identity provider with identifier '" + id + "'.");
+
+            logger.info("Creating configuration for administration role.");
+            Role role = new Role();
+            role.setName("Administrator");
+            role.setDescription("Users assigned to the {0} role have full access to the gateway.");
+            role.getPermissions().add(new Permission(role, OperationType.CREATE, EntityType.ANY));
+            role.getPermissions().add(new Permission(role, OperationType.READ, EntityType.ANY));
+            role.getPermissions().add(new Permission(role, OperationType.UPDATE, EntityType.ANY));
+            role.getPermissions().add(new Permission(role, OperationType.DELETE, EntityType.ANY));
+            id = roleManager.save(role);
+            logger.info("Created configuration for administration role with identifier '" + id + "'.");
         }
     }
 }

@@ -23,6 +23,7 @@ import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.criterion.Criterion;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.TransactionException;
@@ -39,6 +40,8 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,7 +58,6 @@ public class AuditRecordManagerImpl
         extends HibernateEntityManager<AuditRecord, EntityHeader>
         implements AuditRecordManager, ApplicationContextAware
 {
-    private static final Logger logger = Logger.getLogger(AuditRecordManagerImpl.class.getName());
     //- PUBLIC
 
     public void setApplicationContext(ApplicationContext applicationContext) {
@@ -64,7 +66,7 @@ public class AuditRecordManagerImpl
     }
 
     @Transactional(readOnly=true)
-    public Collection<AuditRecord> find(AuditSearchCriteria criteria) throws FindException {
+    public Collection<AuditRecord> find( final AuditSearchCriteria criteria ) throws FindException {
         if (criteria == null) throw new IllegalArgumentException("Criteria must not be null");
         Session session = null;
         try {
@@ -78,36 +80,9 @@ public class AuditRecordManagerImpl
             if (maxRecords <= 0) maxRecords = 4096;
             query.setMaxResults(maxRecords);
 
-            Date fromTime = criteria.fromTime;
-            Date toTime = criteria.toTime;
-
-            // TODO For some dumb reason this yellow becomes a red in IDEA if I autobox it...
-            if (fromTime != null) query.add(Restrictions.ge(PROP_TIME, Long.valueOf(fromTime.getTime())));
-            if (toTime != null) query.add(Restrictions.lt(PROP_TIME, Long.valueOf(toTime.getTime())));
-
-            Level fromLevel = criteria.fromLevel;
-            if (fromLevel == null) fromLevel = Level.FINEST;
-            Level toLevel = criteria.toLevel;
-            if (toLevel == null) toLevel = Level.SEVERE;
-
-            if (fromLevel.equals(toLevel)) {
-                query.add(Restrictions.eq(PROP_LEVEL, fromLevel.getName()));
-            } else {
-                if (fromLevel.intValue() > toLevel.intValue()) throw new FindException("fromLevel " + fromLevel.getName() + " is not lower in value than toLevel " + toLevel.getName());
-                Set<String> levels = new HashSet<String>();
-                for (Level level : LEVELS_IN_ORDER) {
-                    if (level.intValue() >= fromLevel.intValue() && level.intValue() <= toLevel.intValue()) {
-                        levels.add(level.getName());
-                    }
-                }
-                query.add(Restrictions.in(PROP_LEVEL, levels));
+            for ( Criterion criterion : asCriterion( criteria ) ) {
+                query.add( criterion );
             }
-
-            // TODO For some dumb reason this yellow becomes a red in IDEA if I autobox it...
-            if (criteria.startMessageNumber > 0) query.add(Restrictions.ge(PROP_OID, Long.valueOf(criteria.startMessageNumber)));
-            if (criteria.endMessageNumber > 0) query.add(Restrictions.lt(PROP_OID, Long.valueOf(criteria.endMessageNumber)));
-
-            if (criteria.nodeId != null) query.add(Restrictions.eq(PROP_NODEID, criteria.nodeId));
 
             query.addOrder(Order.desc(PROP_TIME));
 
@@ -120,6 +95,18 @@ public class AuditRecordManagerImpl
         }
     }
 
+    public int findCount( final AuditSearchCriteria criteria ) throws FindException {
+        return super.findCount( asCriterion(criteria) );
+    }
+
+    public Collection<AuditRecord> findPage( final SortProperty sortProperty,
+                                             final boolean ascending,
+                                             final int offset,
+                                             final int count,
+                                             final AuditSearchCriteria criteria) throws FindException {
+        return super.findPage( sortProperty.getPropertyName(), ascending, offset, count, asCriterion(criteria) );
+    }
+
     public void deleteOldAuditRecords() throws DeleteException {
         applicationContext.publishEvent(new AuditPurgeInitiated(this));
         String sMinAgeHours = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
@@ -127,7 +114,7 @@ public class AuditRecordManagerImpl
             sMinAgeHours = "168";
         int minAgeHours = 168;
         try {
-            minAgeHours = Integer.valueOf(sMinAgeHours).intValue();
+            minAgeHours = Integer.valueOf(sMinAgeHours);
         } catch (NumberFormatException e) {
             logger.info(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE + " value '" + sMinAgeHours +
                     "' is not a valid number. Using " + minAgeHours + " instead.");
@@ -140,16 +127,11 @@ public class AuditRecordManagerImpl
         new Thread(runnable).start();
     }
 
-    @Override
-    protected UniqueType getUniqueType() {
-        return UniqueType.NONE;
-    }
-
-    public Class getImpClass() {
+    public Class<AuditRecord> getImpClass() {
         return AuditRecord.class;
     }
 
-    public Class getInterfaceClass() {
+    public Class<AuditRecord> getInterfaceClass() {
         return AuditRecord.class;
     }
 
@@ -161,13 +143,64 @@ public class AuditRecordManagerImpl
         this.serverConfig = serverConfig;
     }
 
+    //- PROTECTED
+
+    @Override
+    protected UniqueType getUniqueType() {
+        return UniqueType.NONE;
+    }
+
     //- PRIVATE
 
+    private static final Level[] LEVELS_IN_ORDER = { Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.CONFIG, Level.INFO, Level.WARNING, Level.SEVERE, Level.OFF };
+    private static final String PROP_TIME = "millis";
+    private static final String PROP_LEVEL = "strLvl";
+    private static final String PROP_OID = "oid";
+    private static final String PROP_NODEID = "nodeId";
+
+    private static final Logger logger = Logger.getLogger(AuditRecordManagerImpl.class.getName());
     private ServerConfig serverConfig;
     private ApplicationContext applicationContext;
 
     private static class AuditRecordHolder {
         private SystemAuditRecord auditRecord = null;
+    }
+
+    private Criterion[] asCriterion( final AuditSearchCriteria criteria ) throws FindException {
+        List<Criterion> criterion = new ArrayList<Criterion>();
+
+        Date fromTime = criteria.fromTime;
+        Date toTime = criteria.toTime;
+
+        if (fromTime != null) criterion.add(Restrictions.ge(PROP_TIME, fromTime.getTime()));
+        if (toTime != null) criterion.add(Restrictions.lt(PROP_TIME, toTime.getTime()));
+
+        Level fromLevel = criteria.fromLevel;
+        if (fromLevel == null) fromLevel = Level.FINEST;
+        Level toLevel = criteria.toLevel;
+        if (toLevel == null) toLevel = Level.SEVERE;
+
+        if (fromLevel.equals(toLevel)) {
+            criterion.add(Restrictions.eq(PROP_LEVEL, fromLevel.getName()));
+        } else {
+            if (fromLevel.intValue() > toLevel.intValue())
+                throw new FindException("fromLevel " + fromLevel.getName() + " is not lower in value than toLevel " + toLevel.getName());
+
+            Set<String> levels = new HashSet<String>();
+            for (Level level : LEVELS_IN_ORDER) {
+                if (level.intValue() >= fromLevel.intValue() && level.intValue() <= toLevel.intValue()) {
+                    levels.add(level.getName());
+                }
+            }
+            criterion.add(Restrictions.in(PROP_LEVEL, levels));
+        }
+
+        if (criteria.startMessageNumber > 0) criterion.add(Restrictions.ge(PROP_OID, criteria.startMessageNumber));
+        if (criteria.endMessageNumber > 0) criterion.add(Restrictions.lt(PROP_OID, criteria.endMessageNumber));
+
+        if (criteria.nodeId != null) criterion.add(Restrictions.eq(PROP_NODEID, criteria.nodeId));
+
+        return criterion.toArray( new Criterion[criterion.size()] );
     }
 
     private class DeletionTask implements Runnable {
@@ -187,7 +220,7 @@ public class AuditRecordManagerImpl
             // 2. com.mysql.jdbc.Connection.setSocketTimeout() is not accessible through com.mchange.v2.c3p0.impl.NewProxyConnection.
             // 3. Setting MySQL session variables net_read_timeout and net_write_timeout has no effect.
             int totalDeleted = 0;
-            int numDeleted = 0;
+            int numDeleted;
             long startTime = System.currentTimeMillis();
             do {
                 try {
@@ -225,6 +258,7 @@ public class AuditRecordManagerImpl
 
         }
 
+        @SuppressWarnings({"deprecation"})
         private int deleteBatch(final AuditRecordHolder auditRecordHolder, final long maxTime, int totalDeleted) throws HibernateException, SQLException {
             final Session session = getSession();
             int numDeleted;

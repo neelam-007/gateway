@@ -21,4 +21,7 @@
     <!-- Audit Mock -->
     <bean name="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerStub"/>
 
+    <!-- Account Manager Mock -->
+    <bean name="emsAccountManager" class="com.l7tech.server.ems.MockEmsAccountManager"/>
+
 </beans>

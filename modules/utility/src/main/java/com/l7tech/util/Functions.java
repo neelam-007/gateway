@@ -120,6 +120,22 @@ public final class Functions {
     }
 
     /**
+     * Transforms an Iterator by applying a map function to each item
+     * to obtain a corresponding output item.
+     *
+     * @param in an iterator of input items
+     * @param transformation a transformation to apply to each input item to produce the corresponding output item
+     * @return an iterator of output items
+     */
+    public static <I,O> Iterator<O> map(final Iterator<I> in, final Unary<O,I> transformation) {
+        return new Iterator<O>(){
+            public boolean hasNext() { return in.hasNext(); }
+            public O next() { return transformation.call(in.next()); }
+            public void remove() { in.remove(); }
+        };
+    }
+
+    /**
      * Search the specified collection for the first object matching predicate.
      *
      * @param in the collection to search

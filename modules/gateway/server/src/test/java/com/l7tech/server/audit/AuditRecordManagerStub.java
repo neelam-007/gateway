@@ -30,4 +30,12 @@ public class AuditRecordManagerStub extends EntityManagerStub<AuditRecord,Entity
     public void update(AuditRecord entity) throws UpdateException {
         throw new UnsupportedOperationException();
     }
+
+    public int findCount(AuditSearchCriteria criteria) throws FindException {
+        return 0;
+    }
+
+    public Collection<AuditRecord> findPage(SortProperty sortProperty, boolean ascending, int offset, int count, AuditSearchCriteria criteria) throws FindException {
+        return Collections.emptyList();
+    }
 }
