@@ -170,23 +170,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             return viewValidatorMessages;
         }
 
-        if (!PolicyTree.isIdentityView(this)) {
-            viewValidatorMessages = this.validatorMessages;
-        } else {
-            //select only the path messages
-            List<PolicyValidatorResult.Message> pathMessages = new ArrayList<PolicyValidatorResult.Message>();
-            TreeNode[] path = getPath();
-            if (path.length >= 2) {
-                IdentityPolicyTreeNode in = (IdentityPolicyTreeNode)path[1];
-                for (PolicyValidatorResult.Message message : validatorMessages) {
-                    if (in.contains(message.getAssertionPathOrder())) {
-                        pathMessages.add(message);
-                    }
-                }
-            }
-            viewValidatorMessages = pathMessages;
-        }
-        return viewValidatorMessages;
+        return viewValidatorMessages = this.validatorMessages;
     }
 
     /**

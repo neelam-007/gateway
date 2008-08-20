@@ -323,7 +323,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
     }
 
     private boolean validPolicyAssertionNode() {
-        return lastAssertionNode != null && !PolicyTree.isIdentityView(lastAssertionNode);
+        return lastAssertionNode != null;
     }
 
     private boolean validPaletteNode() {

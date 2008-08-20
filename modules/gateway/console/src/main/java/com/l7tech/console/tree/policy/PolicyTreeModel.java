@@ -4,18 +4,13 @@ import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyWillChangeListener;
 import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.NodeFilter;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.advice.Advice;
 import com.l7tech.console.tree.policy.advice.Advices;
 import com.l7tech.console.tree.policy.advice.PolicyValidatorAdvice;
-import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.gateway.common.service.PublishedService;
 
 import javax.swing.event.EventListenerList;
@@ -24,9 +19,7 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
-import javax.swing.tree.TreeNode;
 import java.util.EventListener;
-import java.util.Set;
 
 
 /**
@@ -81,20 +74,6 @@ public class PolicyTreeModel extends DefaultTreeModel {
     }
 
     /**
-     * Creates a new identity view of PolicyTreeModel for the asserton
-     * tree.
-     * 
-     * @param root the assertion root
-     */
-    public static PolicyTreeModel identityModel(Assertion root) throws InterruptedException, PolicyAssertionException {
-        PolicyPathBuilderFactory factory = Registry.getDefault().getPolicyPathBuilderFactory();
-        Assertion rootWithIncludes = factory.makePathBuilder().inlineIncludes(root, null);
-
-        Set paths = IdentityPath.getPaths(rootWithIncludes, factory);
-        return new PolicyTreeModel(new IdentityViewRootNode(paths, rootWithIncludes));
-    }
-
-    /**
      * add the PolicyWillChangeListener
      * 
      * @param listener the PolicyWillChangeListener
@@ -120,48 +99,12 @@ public class PolicyTreeModel extends DefaultTreeModel {
         }
     }
 
-
     private void fireWillRemoveListeners(PolicyEvent event) {
         EventListener[] listeners = eventListenerList.getListeners(PolicyWillChangeListener.class);
         for (int i = listeners.length - 1; i >= 0; i--) {
             ((PolicyWillChangeListener)listeners[i]).policyWillRemove(event);
         }
     }
-
-    public static class IdentityNodeFilter implements NodeFilter {
-        /**
-         * @param node the <code>TreeNode</code> to examine
-         * @return true if filter accepts the node, false otherwise
-         */
-        public boolean accept(TreeNode node) {
-            if (node instanceof IdentityAssertionTreeNode) {
-                return false;
-            }
-
-            if (node instanceof CustomAssertionTreeNode) {
-                CustomAssertionTreeNode catn = (CustomAssertionTreeNode)node;
-                if (Category.ACCESS_CONTROL.equals(catn.getCategory())) {
-                    return false;
-                }
-            }
-
-            TreeNode[] nodePath = ((DefaultMutableTreeNode)node).getPath();
-            if (nodePath.length < 2)  return true;
-            IdentityPolicyTreeNode in = (IdentityPolicyTreeNode)nodePath[1];
-            AssertionTreeNode an = (AssertionTreeNode)node;
-            IdentityPath ip = in.getIdentityPath();
-            Set<AssertionPath> paths = ip.getPaths();
-            for (AssertionPath path : paths) {
-                Assertion[] apath = path.getPath();
-                for (int i = apath.length - 1; i >= 0; i--) {
-                    Assertion assertion = apath[i];
-                    if (assertion.equals(an.asAssertion())) return true;
-                }
-            }
-            return false;
-        }
-    }
-
 
     /**
      * Invoke this method after you've changed the assertion properties.

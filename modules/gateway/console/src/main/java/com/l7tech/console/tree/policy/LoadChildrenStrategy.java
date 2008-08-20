@@ -21,9 +21,6 @@ public abstract class LoadChildrenStrategy {
      * @return the <code>LoadChildrenStrategy</code> for the node
      */
     public static LoadChildrenStrategy newStrategy(AssertionTreeNode node) {
-        if (PolicyTree.isIdentityView((AssertionTreeNode)node.getRoot())) {
-            return new IdentityLoadChildrenStrategy();
-        }
         return new DefaultLoadChildrenStrategy();
     }
 

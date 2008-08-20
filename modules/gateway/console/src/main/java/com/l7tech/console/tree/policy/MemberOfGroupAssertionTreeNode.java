@@ -1,10 +1,7 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.console.action.IdentityPolicyAction;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
-
-import javax.swing.*;
 
 /**
  * Class AssertionTreeNode.
@@ -12,7 +9,7 @@ import javax.swing.*;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 
-public class MemberOfGroupAssertionTreeNode extends IdentityAssertionTreeNode {
+public class MemberOfGroupAssertionTreeNode extends IdentityAssertionTreeNode<MemberOfGroup> {
     /**
      * The <code>MemberOfGroupAssertionTreeNode</code> is the composite
      * assertion node that represents the group membership.
@@ -39,15 +36,6 @@ public class MemberOfGroupAssertionTreeNode extends IdentityAssertionTreeNode {
      */
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/group16.png";
-    }
-
-    /**
-     * Gets the default action for this node.
-     * 
-     * @return <code>null</code> indicating there should be none default action
-     */
-    public Action getPreferredAction() {
-        return new IdentityPolicyAction(this);
     }
 
     /**

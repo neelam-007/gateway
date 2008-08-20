@@ -21,7 +21,6 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.PolicyReference;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
@@ -81,7 +80,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     private JTextPane messagesTextPane;
     private AssertionTreeNode rootAssertion;
-    private AssertionTreeNode identityRootAssertion; // null unless currently displaying identity view
     private PolicyTree policyTree;
     private PolicyEditToolBar policyEditorToolbar;
     private JSplitPane splitPane;
@@ -149,7 +147,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         this.policyValidator = Registry.getDefault().getPolicyValidator();
         layoutComponents();
 
-        renderPolicy(false);
+        renderPolicy();
         setEditorListeners();
         if (validateOnOpen) {
             SwingUtilities.invokeLater(new Runnable() {
@@ -423,19 +421,13 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     private AssertionTreeNode getCurrentRoot() {
-        return identityRootAssertion != null ? identityRootAssertion : rootAssertion;
-    }
-
-    private boolean isIdentityView() {
-        return identityRootAssertion != null;
+        return rootAssertion;
     }
 
     /**
      * Render the policy into the editor
-     *
-     * @param identityView
      */
-    private void renderPolicy(boolean identityView)
+    private void renderPolicy()
       {
         updateHeadings();
 
@@ -443,46 +435,21 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         final PolicyToolBar pt = topComponents.getPolicyToolBar();
 
 
-        if (identityView) {
-            PolicyTreeModel model;
-            try {
-                if(rootAssertion == null) {
-                    model = PolicyTreeModel.identityModel(subject.getRootAssertion());
-                } else {
-                    model = PolicyTreeModel.identityModel(rootAssertion.asAssertion());
-                }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e); // can't happen here
-            } catch (PolicyAssertionException e) {
-                throw new RuntimeException(e); // TODO find some cleaner way to handle this (i.e. with an error message)
-            }
-            policyTreeModel = new FilteredTreeModel((TreeNode)model.getRoot());
-            ((FilteredTreeModel)policyTreeModel).setFilter(new PolicyTreeModel.IdentityNodeFilter());
-
+        PolicyTreeModel model;
+        if (rootAssertion != null) {
+            model = PolicyTreeModel.policyModel(rootAssertion.asAssertion());
         } else {
-            PolicyTreeModel model;
-            if (rootAssertion != null) {
-                model = PolicyTreeModel.policyModel(rootAssertion.asAssertion());
-            } else {
-                model = PolicyTreeModel.make(subject.getRootAssertion());
-            }
-            policyTreeModel = model;
+            model = PolicyTreeModel.make(subject.getRootAssertion());
         }
+        policyTreeModel = model;
 
         AssertionTreeNode newRootAssertion = (AssertionTreeNode)policyTreeModel.getRoot();
         ((AbstractTreeNode) newRootAssertion.getRoot()).addCookie(new AbstractTreeNode.NodeCookie(subject.getPolicyNode()));
         //rootAssertion.addCookie(new AbstractTreeNode.NodeCookie(subject.getServiceNode()));
 
         policyTree.setModel(policyTreeModel);
-        if (identityView) {
-            identityRootAssertion = newRootAssertion;
-            pt.unregisterPolicyTree(policyTree);
-        } else {
-            rootAssertion = newRootAssertion;
-            identityRootAssertion = null;
-            pt.registerPolicyTree(policyTree);
-        }
-
+        rootAssertion = newRootAssertion;
+        pt.registerPolicyTree(policyTree);
 
         policyTreeModel.addTreeModelListener(policyTreeModellistener);
         final TreeNode root = (TreeNode)policyTreeModel.getRoot();
@@ -616,39 +583,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 JButton buttonUDDIImport = new JButton(getUDDIImportAction());
                 this.add(buttonUDDIImport);
             }
-
-            JToggleButton policyViewButton = new JToggleButton(new PolicyViewAction());
-            policyViewButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    renderPolicyView(false);
-                }
-            });
-            this.add(policyViewButton);
-            policyViewButton.setSelected(true);
-
-            JToggleButton identityViewButton = new JToggleButton(new PolicyIdentityViewAction());
-            EntityWithPolicyNode pn = getPolicyNode();
-            if (pn instanceof ServiceNode) {
-                identityViewButton.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        renderPolicyView(true);
-                    }
-                });
-            } else {
-                identityViewButton.setEnabled(false);
-            }
-
-            add(identityViewButton);
-
-            ButtonGroup bg = new ButtonGroup();
-            bg.add(identityViewButton);
-            bg.add(policyViewButton);
-            add(Box.createHorizontalGlue());
         }
 
-        private void renderPolicyView(boolean identityView) {
+        private void renderPolicyView() {
             policyTree.getModel().removeTreeModelListener(policyTreeModellistener);
-            renderPolicy(identityView);
+            renderPolicy();
             validatePolicy();
             policyTree.getModel().addTreeModelListener(policyTreeModellistener);
         }
@@ -783,12 +722,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     void displayPolicyValidateResult(PolicyValidatorResult r) {
         for (Enumeration en = getCurrentRoot().preorderEnumeration(); en.hasMoreElements();) {
             AssertionTreeNode an = (AssertionTreeNode)en.nextElement();
-            if ( isIdentityView() ) {
-                int ordinal = an.asAssertion().getOrdinal();
-                an.setValidatorMessages(r.messages(ordinal));
-            } else {
-                an.setValidatorMessages(r.messages(an.asAssertionIndexPath()));
-            }
+            an.setValidatorMessages(r.messages(an.asAssertionIndexPath()));
         }
         if (!validating) {
             ((DefaultTreeModel)policyTree.getModel()).nodeChanged(getCurrentRoot());
@@ -870,13 +804,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         String msg;
         Assertion assertion = null;
 
-        if (isIdentityView()) {
-            assertion = getCurrentRoot().asAssertion().getAssertionWithOrdinal(pe.getAssertionOrdinal());
-        } else {
-            AssertionTreeNode atn = getCurrentRoot().getAssertionByIndexPath(pe.getAssertionIndexPath());
-            if ( atn != null ) {
-                assertion = atn.asAssertion();
-            }
+        AssertionTreeNode atn = getCurrentRoot().getAssertionByIndexPath(pe.getAssertionIndexPath());
+        if ( atn != null ) {
+            assertion = atn.asAssertion();
         }
 
         if (assertion != null) {
@@ -991,10 +921,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
               log.info(evt.getPropertyName() + "changed");
               if (POLICYNAME_PROPERTY.equals(evt.getPropertyName())) {
                   updateHeadings();
-                  renderPolicy(false);
+                  renderPolicy();
               } else if ("policy".equals(evt.getPropertyName())) {
                   rootAssertion = null;
-                  renderPolicy(false);
+                  renderPolicy();
                   policyEditorToolbar.setSaveButtonsEnabled(true);
                   validatePolicy();
               }
@@ -1021,19 +951,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                       path.add( Integer.parseInt( strtok.nextToken() ) );
                   }
 
-                  AssertionTreeNode an = null;
-                  if ( isIdentityView() ) {
-                      for (Enumeration en = getCurrentRoot().preorderEnumeration();  en.hasMoreElements();) {
-                          AssertionTreeNode atn = (AssertionTreeNode) en.nextElement();
-                          if (atn.asAssertion().getOrdinal() == path.get(0)) {
-                              an = atn;
-                              break;
-                          }
-                      }
-                  } else {
-                      an = getCurrentRoot().getAssertionByIndexPath( path.subList( 1, path.size() ) );
-                  }
-
+                  AssertionTreeNode an = getCurrentRoot().getAssertionByIndexPath( path.subList( 1, path.size() ) );
                   if ( an != null ) {
                       TreePath p = new TreePath(an.getPath());
                       if (!policyTree.hasBeenExpanded(p) || !policyTree.isExpanded(p)) {
@@ -1197,7 +1115,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                             if(getFragmentNameGuidMap() != null && !getFragmentNameGuidMap().isEmpty()) {
                                 try {
                                     updateIncludeAssertions(rootAssertion.asAssertion(), getFragmentNameGuidMap());
-                                    PolicyEditorPanel.this.renderPolicy(false);
+                                    PolicyEditorPanel.this.renderPolicy();
                                     PolicyEditorPanel.this.topComponents.refreshPoliciesFolderNode();
                                 } catch(Exception e) {
                                     log.log(Level.SEVERE, "Cannot update policy with new fragment OIDs", e);
@@ -1372,7 +1290,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 if (wiz.importedPolicy() != null) {
                     getPublishedService().getPolicy().setXml(wiz.importedPolicy());
                     rootAssertion = null;
-                    renderPolicy(false);
+                    renderPolicy();
                     policyEditorToolbar.setSaveButtonsEnabled(true);
                     validatePolicy();
                 }
@@ -1394,7 +1312,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                             Policy policy = subject.getPolicyNode().getPolicy();
                             if (importPolicy(policy)) {
                                 rootAssertion = null;
-                                renderPolicy(false);
+                                renderPolicy();
                                 policyEditorToolbar.setSaveButtonsEnabled(true);
                                 validatePolicy();
                             }

@@ -222,7 +222,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
          */
         @Override
         public void keyPressed(KeyEvent e) {
-            if (isIdentityView()) return;
             JTree tree = (JTree)e.getSource();
             TreePath path = tree.getSelectionPath();
             if (path == null) return;
@@ -307,8 +306,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
         protected void popUpMenuHandler(MouseEvent mouseEvent) {
             JTree tree = (JTree)mouseEvent.getSource();
 
-            if (isIdentityView()) return; // non editable if identity view
-
             AssertionTreeNode node;
             if (mouseEvent.isPopupTrigger()) {
                 int closestRow = tree.getClosestRowForLocation(mouseEvent.getX(), mouseEvent.getY());
@@ -387,7 +384,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
         @Override
         public void mouseClicked(MouseEvent e) {
             if (e.getClickCount() != 2) return;
-            if (isIdentityView()) return;
             JTree tree = (JTree)e.getSource();
             TreePath path = tree.getSelectionPath();
             if (path == null) return;
@@ -581,8 +577,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
             return false;
         if (isRootPath(path))
             return false;    // Ignore user trying to drag the root node
-        if (isIdentityView())
-            return false; // Ignore if in identity view
 
         if ( hasWriteAccess() ) {
             boolean allow = true;
@@ -633,16 +627,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
         TreePath rp = new TreePath(getModel().getRoot());
         return rp.equals(path);
         // return isRootVisible() && getRowForPath(path) == 0;
-    }
-
-    private boolean isIdentityView() {
-        TreeModel model = getModel();
-        AssertionTreeNode node = (AssertionTreeNode)model.getRoot();
-        return isIdentityView(node);
-    }
-
-    public static boolean isIdentityView(AssertionTreeNode an) {
-        return an.getRoot() instanceof IdentityViewRootNode;
     }
 
 // PolicyDropTargetListener interface object...
@@ -707,10 +691,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 return;
             }
 
-            if (isIdentityView()) {
-                e.rejectDrag();
-                return;
-            }
             DataFlavor[] flavors = e.getCurrentDataFlavors();
             for (DataFlavor flavor : flavors) {
                 if (TransferableTreePath.TREEPATH_FLAVOR.equals(flavor)) {
