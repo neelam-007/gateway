@@ -3,10 +3,9 @@ package com.l7tech.console.security.rbac;
 import com.l7tech.identity.Identity;
 import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
+import com.l7tech.gui.util.Utilities;
 
-import javax.swing.table.TableStringConverter;
 import javax.swing.table.TableModel;
-import javax.swing.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -21,7 +20,7 @@ import javax.swing.*;
  * how to sort these non String objects.
  * */
 
-public class RoleAssignmentTableStringConverter extends TableStringConverter{
+public class RoleAssignmentTableStringConverter implements Utilities.TableStringConverter {
 
     public String toString(TableModel model, int row, int column) {
         Object val = model.getValueAt(row, column);

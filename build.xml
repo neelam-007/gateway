@@ -622,6 +622,7 @@
             <propertyset dynamic="false">
                 <propertyref name="build.junit.xmlformat"/>
                 <propertyref name="module.obfuscate"/>
+                <propertyref name="module.compile.excludes"/>
                 <propertyref name="module.sign"/>
                 <propertyref name="module.pack200"/>
                 <propertyref name="src.root"/>
@@ -2508,8 +2509,10 @@
         <!-- Fail if not 1.5 jdk -->
         <condition property="compile15.versionOk">
           <equals arg1="1.5" arg2="${java.specification.version}"/>
-        </condition>
+        </condition> 
         <fail unless="compile15.versionOk">You must run this with a 1.5 JDK</fail>
+
+        <property name="module.compile.excludes" value="**/*JDK16*"/>
 
         <!-- Create build list for 1.5 modules (manager, xml vpn client) -->
         <ivy:buildlist root="layer7-gateway-console,layer7-xmlvpnclient" reference="module-build-path-15" skipbuildwithoutivy="true">

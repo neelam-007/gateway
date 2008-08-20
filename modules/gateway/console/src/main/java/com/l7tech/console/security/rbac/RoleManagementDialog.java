@@ -5,13 +5,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.util.Functions;
 import com.l7tech.console.panels.PermissionFlags;
-import com.l7tech.console.panels.GroupPanel;
-import com.l7tech.console.panels.UserPanel;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.identity.Identity;
-import com.l7tech.identity.User;
-import com.l7tech.identity.Group;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -19,7 +13,6 @@ import javax.swing.table.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
-import java.awt.List;
 import java.awt.event.*;
 import java.text.MessageFormat;
 import java.util.*;
@@ -209,19 +202,13 @@ public class RoleManagementDialog extends JDialog {
         this.roleAssigneeTable.setModel(roleAssignmentTableModel);
         //don't allow the user to be able to reorder columns in the table
         this.roleAssigneeTable.getTableHeader().setReorderingAllowed(false);
-        TableRowSorter sorter = new TableRowSorter(roleAssignmentTableModel);
-        java.util.List <RowSorter.SortKey> sortKeys = new ArrayList<RowSorter.SortKey>();
-        sortKeys.add(new RowSorter.SortKey(0, SortOrder.ASCENDING));
-        sortKeys.add(new RowSorter.SortKey(1, SortOrder.DESCENDING));
-        sorter.setSortKeys(sortKeys);
 
         RoleAssignmentTableStringConverter roleTableSringConvertor = new RoleAssignmentTableStringConverter();
-        sorter.setStringConverter(roleTableSringConvertor);
-        roleAssigneeTable.setRowSorter(sorter);
+        Utilities.setRowSorter(roleAssigneeTable, roleAssignmentTableModel, new int[]{0,1}, new boolean[]{true, false}, roleTableSringConvertor);
         TableColumn tC = roleAssigneeTable.getColumn(RoleAssignmentTableModel.USER_GROUPS);
         tC.setCellRenderer(new UserGroupTableCellRenderer(roleAssigneeTable));
-
     }
+    
     private void setupButtonListeners() {
         editRole.addActionListener(roleActionListener);
         addRole.addActionListener(roleActionListener);

@@ -35,7 +35,7 @@ public class UserGroupTableCellRenderer implements TableCellRenderer {
         TableModel tM = table.getModel();
         //what row does the param row reference in the model??
         //...row is from the JTable's view of the data which can have changed if the table has been sorted
-        int modelRow = table.convertRowIndexToModel(row);
+        int modelRow = Utilities.convertRowIndexToModel(table, row);
 
         Object colVal = tM.getValueAt(modelRow, column);
         if(colVal instanceof Identity){

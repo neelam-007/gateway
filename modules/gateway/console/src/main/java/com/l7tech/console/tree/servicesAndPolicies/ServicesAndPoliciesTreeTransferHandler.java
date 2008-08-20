@@ -18,19 +18,11 @@ import java.awt.datatransfer.DataFlavor;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Enumeration;
 
 /**
- * Created by IntelliJ IDEA.
- * User: njordan
- * Date: 24-Jul-2008
- * Time: 10:47:46 PM
- * To change this template use File | Settings | File Templates.
+ * TransferHandler for the Services and Policies tree.
  */
 public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
-    public ServicesAndPoliciesTreeTransferHandler() {
-        super();
-    }
 
     @Override
     public int getSourceActions(JComponent c) {
@@ -91,14 +83,10 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                     throw new RuntimeException("Node not a AbstractTreeNode: " + selectedNode);
                 }
 
-                if(selectedNode instanceof AbstractTreeNode){
-                    AbstractTreeNode treeNode = (AbstractTreeNode) selectedNode;
-                    treeNode.setCut(true);
-                    treeNode.setChildrenCut(true);
-                    model.nodeChanged(treeNode);
-                }else{
-                    throw new RuntimeException("Not an AbstractTreeNode: " + selectedNode);
-                }
+                AbstractTreeNode treeNode = (AbstractTreeNode) selectedNode;
+                treeNode.setCut(true);
+                treeNode.setChildrenCut(true);
+                model.nodeChanged(treeNode);
             }
 
             if(transferNodes.isEmpty()) {
@@ -117,56 +105,40 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
     }
 
     @Override
-    public boolean canImport(TransferHandler.TransferSupport support) {
-        if(support.getComponent() instanceof ServicesAndPoliciesTree && support.getDataFlavors().length == 1 &&
-                (FolderAndNodeTransferable.ALLOWED_DATA_FLAVOR.equals(support.getDataFlavors()[0]) ))
-        {
-            return true;
-        } else {
-            System.out.println("Cant import");
-            return false;
-        }
-    }
-
-    @Override
     public boolean canImport(JComponent c, DataFlavor[] transferFlavors) {
-        if(c instanceof ServicesAndPoliciesTree && transferFlavors.length == 1 &&
-                (FolderAndNodeTransferable.ALLOWED_DATA_FLAVOR.equals(transferFlavors[0]) ))
-        {
-            return true;
-        } else {
-            return false;
-        }
+        return c instanceof ServicesAndPoliciesTree && transferFlavors.length == 1 &&
+                (FolderAndNodeTransferable.ALLOWED_DATA_FLAVOR.equals(transferFlavors[0]));
     }
 
+    @SuppressWarnings({"unchecked"})
     @Override
-    public boolean importData(TransferHandler.TransferSupport support) {
-        if(support.getComponent() instanceof ServicesAndPoliciesTree) {
-            final ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree)support.getComponent();
+    public boolean importData(JComponent component, Transferable transferable) {
+        if(component instanceof ServicesAndPoliciesTree) {
+            final ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) component;
             try {
                 if(tree.getIgnoreCurrentclipboard()){
                     return false;
                 }
-
-                JTree.DropLocation dropLocation = tree.getDropLocation();
-                TreePath path;
-                if(dropLocation == null) { // Try using the selected path
+// TODO [Donal] ensure this is ok
+//                JTree.DropLocation dropLocation = tree.getDropLocation();
+                  TreePath path;
+//                if(dropLocation == null) { // Try using the selected path
                     if(tree.getSelectionCount() == 1) {
                         path = tree.getSelectionPath();
                     } else {
                         return false;
                     }
-                } else {
-                    path = dropLocation.getPath();
-                }
+//                } else {
+//                    path = dropLocation.getPath();
+//                }
 
-                if(support.getDataFlavors().length > 0 && FolderAndNodeTransferable.ALLOWED_DATA_FLAVOR.equals(support.getDataFlavors()[0])) {
+                if(transferable.getTransferDataFlavors().length > 0 && FolderAndNodeTransferable.ALLOWED_DATA_FLAVOR.equals(transferable.getTransferDataFlavors()[0])) {
                     if(!(path.getLastPathComponent() instanceof FolderNodeBase)) {
                         return false;
                     }
 
                     FolderNodeBase newParent = (FolderNodeBase)path.getLastPathComponent();
-                    List<AbstractTreeNode> nodes = (List<AbstractTreeNode>)support.getTransferable().getTransferData(FolderAndNodeTransferable.ALLOWED_DATA_FLAVOR);
+                    List<AbstractTreeNode> nodes = (List<AbstractTreeNode>)transferable.getTransferData(FolderAndNodeTransferable.ALLOWED_DATA_FLAVOR);
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     for(AbstractTreeNode transferNode : nodes) {
                         if(transferNode instanceof FolderNode) {
@@ -223,10 +195,5 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             }
         }
         return true;
-    }
-
-    @Override
-    public boolean importData(JComponent c, Transferable t) {
-        return importData(new TransferSupport(c, t));
     }
 }

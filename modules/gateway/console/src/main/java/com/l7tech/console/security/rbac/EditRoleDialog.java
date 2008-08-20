@@ -18,7 +18,6 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import org.apache.commons.lang.StringUtils;
 
@@ -27,13 +26,11 @@ import javax.swing.text.AbstractDocument;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableRowSorter;
 import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.List;
 import java.util.logging.Logger;
 
 public class EditRoleDialog extends JDialog {
@@ -66,7 +63,6 @@ public class EditRoleDialog extends JDialog {
     };
 
     private final IdentityAdmin identityAdmin = Registry.getDefault().getIdentityAdmin();
-    private final Map<Long, String> idpNames = new HashMap<Long, String>();
     private boolean shouldAllowEdits = RbacUtilities.isEnableRoleEditing();
 
     private static final String[] COL_NAMES = new String[]{"Operation", "Applies To"};
@@ -91,16 +87,6 @@ public class EditRoleDialog extends JDialog {
         final SecurityProvider provider = Registry.getDefault().getSecurityProvider();
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
-        }
-
-        try {
-            EntityHeader[] hs = identityAdmin.findAllIdentityProviderConfig();
-            for (EntityHeader h : hs) {
-                idpNames.put(h.getOid(), h.getName());
-            }
-
-        } catch (Exception e) {
-            throw new RuntimeException("Couldn't lookup Identity Providers", e);
         }
 
         this.tableModel = new PermissionTableModel();
@@ -141,15 +127,9 @@ public class EditRoleDialog extends JDialog {
         this.roleAssigneeTable.setSelectionModel(dlsm);
         //don't allow the user to be able to reorder columns in the table
         this.roleAssigneeTable.getTableHeader().setReorderingAllowed(false);
-        TableRowSorter sorter = new TableRowSorter(roleAssignmentTableModel);
-        java.util.List <RowSorter.SortKey> sortKeys = new ArrayList<RowSorter.SortKey>();
-        sortKeys.add(new RowSorter.SortKey(0, SortOrder.ASCENDING));
-        sortKeys.add(new RowSorter.SortKey(1, SortOrder.DESCENDING));
-        sorter.setSortKeys(sortKeys);
 
         RoleAssignmentTableStringConverter roleTableSringConvertor = new RoleAssignmentTableStringConverter();
-        sorter.setStringConverter(roleTableSringConvertor);
-        roleAssigneeTable.setRowSorter(sorter);
+        Utilities.setRowSorter(roleAssigneeTable, roleAssignmentTableModel, new int[]{0,1}, new boolean[]{true,false}, roleTableSringConvertor);
         TableColumn tC = roleAssigneeTable.getColumn(RoleAssignmentTableModel.USER_GROUPS);
         tC.setCellRenderer(new UserGroupTableCellRenderer(roleAssigneeTable));
     }
@@ -387,7 +367,7 @@ public class EditRoleDialog extends JDialog {
                     public void run() {
                         int [] selected = roleAssigneeTable.getSelectedRows();
                         for (int o : selected) {
-                            int modelRow = roleAssigneeTable.convertRowIndexToModel(o);
+                            int modelRow = Utilities.convertRowIndexToModel(roleAssigneeTable,o);
                             roleAssignmentTableModel.removeRoleAssignment(modelRow);
                         }
                         updateButtonStates();

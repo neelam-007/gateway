@@ -155,11 +155,10 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         addSeparator(d);
 
         enableOrDisableButton = add(getDisableOrEnableAssertionAction());
+        enableOrDisableButton.setText(null);
         enableOrDisableButton.setFocusable(false);
         enableOrDisableButton.setMargin(new Insets(0, 0, 0, 0));
-        // The reason of enableOrDisableButton.setHideActionText(true) is:
-        // Initially getDisableOrEnableAssertionAction() returns null, then the returned button won't be set to hide action text.
-        enableOrDisableButton.setHideActionText(true);
+
         addSeparator(d);
         setFloatable(false);
     }
@@ -309,6 +308,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         }
 
         enableOrDisableButton.setAction(getDisableOrEnableAssertionAction());
+        enableOrDisableButton.setText(null);        
 
         if (validPolicyAssertionNode) {
             getDeleteAssertionAction().setEnabled(canUpdate && canDelete(lastAssertionNode, lastAssertionNodes));
@@ -394,8 +394,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
 
           public void treeNodesRemoved(TreeModelEvent e) {
               final Object[] children = e.getChildren();
-              for (int i = 0; i < children.length; i++) {
-                  Object o = children[i];
+              for (Object o : children) {
                   if (o == lastAssertionNode) {
                       lastAssertionNode = null;
                       updateActions();
@@ -413,16 +412,15 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
       };
 
     private AssertionTreeNode[] toAssertionTreeNodeArray(TreePath[] paths) {
-        java.util.List assertionTreeNodes = new ArrayList();
+        java.util.List<AssertionTreeNode> assertionTreeNodes = new ArrayList<AssertionTreeNode>();
 
         if (paths != null) {
-            for (int p=0; p<paths.length; p++) {
-                TreePath path = paths[p];
-                assertionTreeNodes.add(path.getLastPathComponent());
+            for (TreePath path : paths) {
+                assertionTreeNodes.add((AssertionTreeNode)path.getLastPathComponent());
             }
         }
 
-        return (AssertionTreeNode[]) assertionTreeNodes.toArray(new AssertionTreeNode[assertionTreeNodes.size()]);
+        return assertionTreeNodes.toArray(new AssertionTreeNode[assertionTreeNodes.size()]);
     }
 
     /**
@@ -454,10 +452,9 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
 
         if (nodes == null) {
             delete = node.canDelete();
-        } else if (nodes != null && nodes.length > 0){
+        } else if (nodes.length > 0){
             boolean allDelete = true;
-            for (int n=0; n<nodes.length; n++) {
-                AssertionTreeNode current = nodes[n];
+            for (AssertionTreeNode current : nodes) {
                 if (current == null || !current.canDelete()) {
                     allDelete = false;
                     break;
@@ -474,10 +471,9 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
 
         if (nodes == null) {
             move = node.canMoveUp();
-        } else if (nodes != null && nodes.length > 0){
+        } else if (nodes.length > 0){
             boolean allMove = true;
-            for (int n=0; n<nodes.length; n++) {
-                AssertionTreeNode current = nodes[n];
+            for (AssertionTreeNode current : nodes) {
                 if (current == null || !current.canMoveUp()) {
                     allMove = false;
                     break;
@@ -494,10 +490,9 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
 
         if (nodes == null) {
             move = node.canMoveDown();
-        } else if (nodes != null && nodes.length > 0){
+        } else if (nodes.length > 0){
             boolean allMove = true;
-            for (int n=0; n<nodes.length; n++) {
-                AssertionTreeNode current = nodes[n];
+            for (AssertionTreeNode current : nodes) {
                 if (current == null || !current.canMoveDown()) {
                     allMove = false;
                     break;

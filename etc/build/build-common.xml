@@ -36,6 +36,7 @@
     <property name="module.compile.source" value="1.5"/>
     <property name="module.compile.target" value="1.5"/>
     <property name="module.compile.optimize" value="off"/>
+    <property name="module.compile.excludes" value=""/>
     <property name="module.jar.index" value="false"/>
 
     <!--
@@ -76,6 +77,7 @@
                verbose="no"
                source="${module.compile.source}"
                target="${module.compile.target}"
+               excludes="${module.compile.excludes}"
                 >
             <compilerarg value="-Xlint" compiler="modern"/>
             <compilerarg value="-Xlint:-serial" compiler="modern"/>

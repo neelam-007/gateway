@@ -80,7 +80,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
         setCellRenderer(new EntityTreeCellRenderer());
 
         setDragEnabled(true);
-        setDropMode(DropMode.ON);
+        //setDropMode(DropMode.ON); // TODO [Donal] is there a 1.5 equivalent of this
         setTransferHandler(new ServicesAndPoliciesTreeTransferHandler());
 
         // disable Edit menu actions
