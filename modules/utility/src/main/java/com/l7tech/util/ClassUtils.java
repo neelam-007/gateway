@@ -5,8 +5,16 @@
 
 package com.l7tech.util;
 
+import java.net.URL;
+import java.util.Collection;
+import java.util.List;
+import java.util.ArrayList;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.IOException;
+
 /**
- * Utility methods for dealing with classes and class names.
+ * Utility methods for dealing with classes, class names and resources.
  */
 public class ClassUtils {
     /**
@@ -91,5 +99,33 @@ public class ClassUtils {
         if (name.startsWith(prefix))
             name = name.length() <= prefix.length() ? "" : name.substring(prefix.length());
         return name;
+    }
+
+    /**
+     * List the resources contained in the path.
+     *
+     * <p>WARNING: This should work for JAR / file resources, but will not work
+     * in all scenarios.</p>
+     *
+     * @param baseClass The base class for resource resolution
+     * @param resourcePath The path to the resource directory (must be a directory, use a "/")
+     * @return The collection of resources (never null)
+     */
+    public static Collection<URL> listResources( final Class baseClass,
+                                                 final String resourcePath ) throws IOException {
+        URL resourceBaseUrl = baseClass.getResource( resourcePath );
+        List<URL> resourceUrls = new ArrayList<URL>();
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader( new InputStreamReader(resourceBaseUrl.openStream()) );
+            String name;
+            while( (name = reader.readLine()) != null ) {
+                resourceUrls.add( new URL(resourceBaseUrl, name) );
+            }
+        } finally {
+            ResourceUtils.closeQuietly( reader );
+        }
+
+        return resourceUrls;
     }
 }

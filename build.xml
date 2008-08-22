@@ -1464,8 +1464,6 @@
         <mkdir dir="${deploy.dir}/etc/inf/ssg/webadmin/applet/lib"/>
         <mkdir dir="${deploy.dir}/etc/conf/partitions/default_/var/attachments"/>
         <mkdir dir="${deploy.dir}/etc/conf/partitions/default_/var/modules"/>
-        <mkdir dir="${deploy.dir}/etc/ldapTemplates"/>
-        <mkdir dir="${deploy.dir}/etc/uddiTemplates"/>
         <mkdir dir="${deploy.dir}/logs"/>
 
         <echo level="info">Copying gateway configuration files</echo>
@@ -1480,12 +1478,6 @@
                     <replaceregex pattern="(?&lt;=^[ ]{0,32}hibernate.dbcp.validationQuery[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${database.pingstmt}"/>
                 </tokenfilter>
             </filterchain>
-        </copy>
-        <copy todir="${deploy.dir}/etc/ldapTemplates" preservelastmodified="true">
-            <fileset dir="${src.root}/etc/ldapTemplates"/>
-        </copy>
-        <copy todir="${deploy.dir}/etc/uddiTemplates" preservelastmodified="true">
-            <fileset dir="${src.root}/etc/uddiTemplates"/>
         </copy>
         <copy file="${src.root}/etc/tomcat/truststore.jks" todir="${deploy.dir}/etc/conf" preservelastmodified="true"/>
         <echo level="info">Copying web files</echo>
@@ -2688,8 +2680,6 @@
         <!-- Relative pathnames -->
         <property name="install.rel.libexec" value="libexec"/>
         <property name="install.rel.logs" value="logs"/>
-        <property name="install.rel.ldap" value="${install.rel.etc}/ldapTemplates"/>
-        <property name="install.rel.uddi" value="${install.rel.etc}/uddiTemplates"/>
         <property name="install.rel.partitions" value="partitions"/>
         <property name="install.rel.partitionTemplate" value="partitiontemplate_"/>
         <property name="install.rel.defaultPartition" value="default_"/>
@@ -2794,16 +2784,6 @@
         <!-- Copy bundled modular assertions -->
         <copy todir="${install.src.aarmods}">
             <fileset dir="${build.dir}/modules" includes="*.aar" excludes="*-client-*.aar"/>
-        </copy>
-
-        <!-- Copy LDAP templates -->
-        <copy todir="${install.src.ldap}">
-            <fileset dir="${src.root}/etc/ldapTemplates" includes="*.xml"/>
-        </copy>
-
-        <!-- Copy UDDI templates -->
-        <copy todir="${install.src.uddi}">
-            <fileset dir="${src.root}/etc/uddiTemplates" includes="*.xml"/>
         </copy>
 
         <!-- Copy modified / new files -->

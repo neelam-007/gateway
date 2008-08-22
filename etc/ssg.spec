@@ -73,8 +73,6 @@ rm %{buildroot}/ssg/migration/cfg/grandmaster_flash
 %config(noreplace) %attr(0775,gateway,gateway) /ssg/etc/profile.d/output_redirection.sh
 
 # Other stuff
-/ssg/etc/ldapTemplates
-/ssg/etc/uddiTemplates
 /ssg/etc/sql
 /ssg/etc/inf
 /ssg/lib
