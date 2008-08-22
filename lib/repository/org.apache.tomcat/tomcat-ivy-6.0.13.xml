@@ -33,5 +33,6 @@
 		<dependency org="org.apache.tomcat" name="jsp-api" rev="6.0.13" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.tomcat" name="juli" rev="6.0.13" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="org.apache.tomcat" name="tribes" rev="6.0.13" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+        <dependency org="javax.annotation" name="jsr250-api" rev="1.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 	</dependencies>
 </ivy-module>
