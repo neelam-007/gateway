@@ -32,6 +32,7 @@ public class PolicyFragmentsPaletteFolderNode extends AbstractPaletteFolderNode 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 JTree policiesTree = (JTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+                if(policiesTree == null) return;
                 final DefaultTreeModel policiesTreeModel = (DefaultTreeModel) policiesTree.getModel();
                 if (policiesTreeModel != null) policiesTreeModel.addTreeModelListener(new TreeModelListener() {
                     public void treeNodesChanged(TreeModelEvent e) { reloadChildren(); }

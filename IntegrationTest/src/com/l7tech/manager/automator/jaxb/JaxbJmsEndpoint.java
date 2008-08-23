@@ -1,6 +1,7 @@
 package com.l7tech.manager.automator.jaxb;
 
-import com.l7tech.common.transport.jms.JmsEndpoint;
+
+import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 
 import javax.xml.bind.annotation.XmlRootElement;
 

@@ -33,9 +33,9 @@ public interface FolderAdmin {
      * @throws com.l7tech.objectmodel.FindException   if there was a problem accessing the requested information.
      */
     @Transactional(readOnly=true)
-    //@Secured(stereotype=FIND_HEADERS)
+    //Secured(stereotype=MethodStereotype.FIND_HEADERS)
     @Administrative(licensed=false)
-    Collection<FolderHeader> findAllPolicyFolders() throws FindException;
+    Collection<FolderHeader> findAllFolders() throws FindException;
 
     /**
      * Store the specified new or existing service/policy folder. If the specified {@link com.l7tech.objectmodel.folder.Folder} contains a
@@ -48,7 +48,7 @@ public interface FolderAdmin {
      * @throws com.l7tech.objectmodel.UpdateException if the requested information could not be updated
      */
     @Secured(stereotype= MethodStereotype.SAVE_OR_UPDATE, relevantArg=0)
-    long savePolicyFolder(Folder folder) throws UpdateException, SaveException;
+    long saveFolder(Folder folder) throws UpdateException, SaveException;
 
     /**
      * Delete a {@link com.l7tech.objectmodel.folder.Folder} by its unique identifier.
@@ -57,5 +57,5 @@ public interface FolderAdmin {
      * @throws com.l7tech.objectmodel.DeleteException if the requested information could not be deleted
      */
     @Secured(types=EntityType.FOLDER, stereotype=MethodStereotype.DELETE_BY_ID)
-    void deletePolicyFolder(long oid) throws FindException, DeleteException;
+    void deleteFolder(long oid) throws FindException, DeleteException;
 }

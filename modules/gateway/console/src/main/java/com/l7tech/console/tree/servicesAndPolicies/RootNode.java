@@ -11,8 +11,7 @@ import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 
@@ -30,11 +29,13 @@ import java.util.logging.Logger;
  * This AbstractTreeNode loads all children shown in this tree
  * It has no subclasses
  */
-public final class RootNode extends AbstractTreeNode implements PolicyServiceTreeNodeCreator, FolderNodeBase{
+public final class RootNode extends FolderNode{
 
     private static ServicesAndPoliciesNodeComparator comparator = new ServicesAndPoliciesNodeComparator();
     private final AlterDefaultSortAction nameSort;
     private final AlterDefaultSortAction typeSort;
+    private Map<Long, Set<AbstractTreeNode>> oidToAliases = new HashMap<Long, Set<AbstractTreeNode>>();
+    private Map<Long, AbstractTreeNode> oidToEntity = new HashMap<Long, AbstractTreeNode>();
 
     public static RootNode.ServicesAndPoliciesNodeComparator getComparator(){
         return comparator;
@@ -122,7 +123,7 @@ public final class RootNode extends AbstractTreeNode implements PolicyServiceTre
      * a given service manager with the name.
      */
     public RootNode(String name) {
-        super(null, RootNode.getComparator());
+        super(new FolderHeader(OID, name, null));
         serviceManager = Registry.getDefault().getServiceManager();
         policyAdmin = Registry.getDefault().getPolicyAdmin();
         title = name;
@@ -161,7 +162,8 @@ public final class RootNode extends AbstractTreeNode implements PolicyServiceTre
         new PublishNonSoapServiceAction(),
         new PublishInternalServiceAction(),
         new CreatePolicyAction(),
-        new CreateFolderAction(OID, this, this, Registry.getDefault().getServiceManager()),
+        new CreateFolderAction(OID, this, Registry.getDefault().getServiceManager()),
+        new PasteAsAliasAction(this),
         new RefreshTreeNodeAction(this)
     };
     
@@ -174,6 +176,9 @@ public final class RootNode extends AbstractTreeNode implements PolicyServiceTre
         // Filter unlicensed actions
         List<Action> actions = new ArrayList<Action>();
         for (Action action : allActions) {
+            if(action instanceof PasteAsAliasAction){
+                if(!RootNode.isAliasSet()) continue;
+            }
             if (action.isEnabled())
                 actions.add(action);
         }
@@ -186,6 +191,74 @@ public final class RootNode extends AbstractTreeNode implements PolicyServiceTre
         return actions.toArray(new Action[actions.size()]);
     }
 
+    /**
+     * Called from loadChildren but also used by {@link PasteAsAliasAction}
+     * @param entityOid
+     * @param aliasNode
+     */
+    public void addAlias(Long entityOid, AbstractTreeNode aliasNode){
+        if(!oidToAliases.containsKey(entityOid)){
+            Set<AbstractTreeNode> aliases = new HashSet<AbstractTreeNode>();
+            oidToAliases.put(entityOid, aliases);
+        }
+        oidToAliases.get(entityOid).add(aliasNode);
+    }
+
+    public void addEntity(Long entityOid, AbstractTreeNode origEntity){
+        oidToEntity.put(entityOid, origEntity);
+    }
+    /**
+     * Remove an aliases from the set we are tracking for an entity. All operations around oidToAliases are
+     * convenience so that we don't need to search the tree to manage the state of displayable aliases to
+     * original entities when either of them changes. 
+     * @param entityOid
+     * @param aliasNode
+     * @throws RuntimeException if aliasNode is not found for entityOid and if it's not sucessfully removed
+     */
+    public void removeAlias(Long entityOid, AbstractTreeNode aliasNode) throws RuntimeException{
+        Set<AbstractTreeNode> aliases = oidToAliases.get(entityOid);
+        if(aliases == null){
+            throw new RuntimeException("Aliases not found. Cannot remove");
+        }
+        if(!aliases.contains(aliasNode)){
+            throw new RuntimeException("Aliases not found. Cannot remove");
+        }
+
+        if(!aliases.remove(aliasNode)){
+            throw new RuntimeException("Aliases not found. Cannot remove");            
+        }
+    }
+
+    public void removeEntity(Long entityOid) throws RuntimeException{
+        if(!oidToAliases.containsKey(entityOid)){
+            throw new RuntimeException("Aliases not found. Cannot remove");
+        }
+
+        oidToAliases.remove(entityOid);
+    }
+
+    public Set<AbstractTreeNode> getAliasesForEntity(Long entityOid){
+        Set<AbstractTreeNode> aliases = oidToAliases.get(entityOid);
+        if(aliases == null){
+            return Collections.emptySet();
+        }
+        return aliases;
+    }
+
+    public AbstractTreeNode getNodeForEntity(Long entityOid){
+        AbstractTreeNode atn = oidToEntity.get(entityOid);
+        if(atn == null){
+            throw new RuntimeException("Cannot find entity");
+        }
+        return atn;
+    }
+
+    public void updateAliasesForEntity(Long entityOid){
+        Set<AbstractTreeNode> aliases = oidToAliases.get(entityOid);
+        for(AbstractTreeNode atn: aliases){
+
+        }
+    }
     /**
      * load the service and policy folder children
      */
@@ -202,13 +275,15 @@ public final class RootNode extends AbstractTreeNode implements PolicyServiceTre
             allFolderEntities.addAll(serviceHeadersList);
             allFolderEntities.addAll(policyHeaders);
 
-            Collection<FolderHeader> policyFolderHeaders = policyAdmin.findAllPolicyFolders();
+            Collection<FolderHeader> policyFolderHeaders = policyAdmin.findAllFolders();
             allFolderHeaders.addAll(policyFolderHeaders);
 
-            Collection<FolderHeader> serviceFolderHeaders = serviceManager.findAllPolicyFolders();
+            Collection<FolderHeader> serviceFolderHeaders = serviceManager.findAllFolders();
             allFolderHeaders.addAll(serviceFolderHeaders);
 
             children = null;
+            oidToAliases.clear();
+            oidToEntity.clear();
 
             FolderHeader root = null;
             for(FolderHeader folder : allFolderHeaders) {
@@ -225,6 +300,16 @@ public final class RootNode extends AbstractTreeNode implements PolicyServiceTre
                         AbstractTreeNode child = TreeNodeFactory.asTreeNode(header, RootNode.getComparator());
                         insert(child, getInsertPosition(child, RootNode.getComparator()));
                         it.remove();
+                        if(header instanceof AliasableHeader){
+                            AliasableHeader aliasable = (AliasableHeader) header;
+                            if(aliasable.isAlias()){
+                                //remember the EntityHeader is created by the findAll - the oid of an alias is the
+                                //oid of the original
+                                addAlias(header.getOid(), child);
+                            }else{
+                                addEntity(header.getOid(), child);
+                            }
+                        }
                     }
                 }
             }
@@ -276,14 +361,24 @@ public final class RootNode extends AbstractTreeNode implements PolicyServiceTre
                                                 List<EntityHeader> entityHeaders,
                                                 Collection<FolderHeader> foldersHeaders)
     {
-        FolderNode node = new FolderNode(root, this);
+        FolderNode node = new FolderNode(root);
         for(Iterator<EntityHeader> it = entityHeaders.iterator();it.hasNext();) {
             EntityHeader header = it.next();
             if(header instanceof HasFolder){
                 HasFolder hasFolder = (HasFolder) header;
                 if(hasFolder.getFolderOid() == root.getOid()) {
-                    node.addEntityNode(header);
+                    AbstractTreeNode child = node.addEntityNode(header);
                     it.remove();
+                    if(header instanceof AliasableHeader){
+                        AliasableHeader aliasable = (AliasableHeader) header;
+                        if(aliasable.isAlias()){
+                            //remember the EntityHeader is created by the findAll - the oid of an alias is the
+                            //oid of the original
+                            addAlias(header.getOid(), child);
+                        }else{
+                            addEntity(header.getOid(), child);
+                        }
+                    }
                 }
             }
         }
@@ -298,8 +393,58 @@ public final class RootNode extends AbstractTreeNode implements PolicyServiceTre
         return node;
     }
 
-    public AbstractTreeNode createFolderNode(Folder folder) {
-        FolderHeader header = new FolderHeader(folder);
-        return new FolderNode(header, this);
+    private static List<AbstractTreeNode> entitiesToAlias = new ArrayList<AbstractTreeNode>();
+    
+    public static void setEntitiesToAlias(List<AbstractTreeNode> nodes){
+        entitiesToAlias = nodes;
     }
+
+    public static List<AbstractTreeNode> getEntitiesToAlias(){
+        return entitiesToAlias;
+    }
+
+    public static void clearEntitiesToAlias(){
+        entitiesToAlias = Collections.emptyList();
+    }
+    public static boolean isAliasSet(){
+       return (!entitiesToAlias.isEmpty())? true: false;
+    }
+
+    //todo [Donal] find methods may be no longer needed due to oid map of an entity to it's aliases - no need to search
+    /**
+     * Find and remove all aliases for the specified oid
+     * The oid represents the real alias and not the alias oid
+     * The oid can represent either a service or a policy
+     * Make sure the original entity has already been deleted and
+     * removed from the rootnode's children before call this method
+     * @param oid
+     */
+    public List<AbstractTreeNode> findAllAliasesNodes(long oid){
+        List<AbstractTreeNode> allFoundNodes = new ArrayList<AbstractTreeNode>();
+        for(Object o: this.children){
+            AbstractTreeNode atn = (AbstractTreeNode) o;
+            allFoundNodes.addAll(findAliasesFromNode(atn, oid));
+        }
+        return allFoundNodes;
+    }
+
+    private List<AbstractTreeNode> findAliasesFromNode(AbstractTreeNode treeNode, long oid){
+        List<AbstractTreeNode> foundNodes = new ArrayList<AbstractTreeNode>();
+        for(int i = 0; i < treeNode.getChildCount(); i++){
+            Object o = treeNode.getChildAt(i);
+            AbstractTreeNode atn = (AbstractTreeNode) o;
+            Object userObj = atn.getUserObject();
+            if(atn instanceof EntityWithPolicyNode){
+                EntityHeader eH = (EntityHeader) userObj;
+                if(eH.getOid() == oid){
+                    foundNodes.add(atn);
+                }
+            }else if(atn instanceof FolderNode){
+                foundNodes.addAll(findAliasesFromNode(atn, oid));
+            }
+        }
+
+        return foundNodes;
+    }
+
 }

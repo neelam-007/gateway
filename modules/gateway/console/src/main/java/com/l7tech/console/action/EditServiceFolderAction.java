@@ -70,7 +70,7 @@ public class EditServiceFolderAction extends SecureAction {
         if(dialog.isConfirmed()) {
             try {
                 folder.setName(dialog.getName());
-                folderAdmin.savePolicyFolder(folder);
+                folderAdmin.saveFolder(folder);
                 folderHeader.setName(dialog.getName());
                 JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                 if (tree != null) {

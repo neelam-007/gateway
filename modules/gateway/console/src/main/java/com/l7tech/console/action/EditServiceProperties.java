@@ -16,6 +16,7 @@ import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.DuplicateObjectException;
@@ -69,13 +70,20 @@ public class EditServiceProperties extends ServiceNodeAction {
                 if (changed) {
                     serviceNode.clearCachedEntities();
                     serviceNode.reloadChildren();
-                    JTree tree = (JTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+                    ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                     if (tree != null) {
                         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                         model.nodeChanged(node);
                         model.reload(node); // WSDL may have changed
                     }
-
+                    //if this is an original entity, update any aliases it may have, in case it's name, uri or
+                    //something else show to the user in the tree changes
+                    if(!serviceNode.isAlias()){
+                        if (tree !=null) {
+                            ServiceHeader sH = (ServiceHeader) serviceNode.getUserObject();
+                            tree.updateAllAliases(sH.getOid());
+                        }
+                    }
                     // update name on top of editor if that service is being edited
                     final WorkSpacePanel cws = TopComponents.getInstance().getCurrentWorkspace();
                     JComponent jc = cws.getComponent();
@@ -116,7 +124,8 @@ public class EditServiceProperties extends ServiceNodeAction {
                         if (documents == null)
                             Registry.getDefault().getServiceManager().savePublishedService(svc);
                         else
-                            Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(svc, documents);                        
+                            Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(svc, documents);
+
                     } catch (DuplicateObjectException e) {
                         JOptionPane.showMessageDialog(mw,
                               "Unable to save the service '" + svc.getName() + "'\n" +

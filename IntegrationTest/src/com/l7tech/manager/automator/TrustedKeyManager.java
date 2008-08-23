@@ -1,15 +1,16 @@
 package com.l7tech.manager.automator;
 
-import com.l7tech.admin.AdminContext;
-import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.AsyncAdminMethods;
-import com.l7tech.identity.IdentityAdmin;
+
 import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.gateway.common.admin.AdminContext;
+import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.gateway.common.AsyncAdminMethods;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.util.CausedIOException;
 
 import java.io.*;
 import java.security.cert.Certificate;

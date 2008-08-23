@@ -120,15 +120,15 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
         }
     }
 
-    public Collection<FolderHeader> findAllPolicyFolders() throws FindException {
-        return delegate.findAllPolicyFolders();
+    public Collection<FolderHeader> findAllFolders() throws FindException {
+        return delegate.findAllFolders();
 }
 
-    public long savePolicyFolder(Folder folder) throws UpdateException, SaveException {
-        return delegate.savePolicyFolder(folder);
+    public long saveFolder(Folder folder) throws UpdateException, SaveException {
+        return delegate.saveFolder(folder);
     }
 
-    public void deletePolicyFolder(long oid) throws FindException, DeleteException {
-        delegate.deletePolicyFolder(oid);
+    public void deleteFolder(long oid) throws FindException, DeleteException {
+        delegate.deleteFolder(oid);
     }
 }

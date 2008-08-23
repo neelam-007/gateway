@@ -15,7 +15,10 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.AliasableHeader;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.service.PublishedServiceAlias;
+import com.l7tech.gateway.common.service.ServiceHeader;
 
 import javax.swing.*;
 import java.awt.*;
@@ -242,7 +245,27 @@ public class Actions {
                 // Delete the  node and update the tree
                 try {
                     final ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
-                    serviceManager.deletePublishedService(Long.toString(node.getPublishedService().getOid()));
+                    Object userObj = node.getUserObject();
+                    if(userObj instanceof ServiceHeader){
+                        ServiceHeader sH = (ServiceHeader) userObj;
+                        if(sH.isAlias()){
+                            //delete the alias, leaving the original service alone
+                            //what alias does this node represent? Need it's service id and folder id to find out
+                            ServiceHeader sh = (ServiceHeader) userObj;
+                            //this service's folder id has been modified to point at the folder containing the alias
+                            PublishedServiceAlias psa = serviceManager.findAliasByServiceAndFolder(sh.getOid(), sh.getFolderOid());
+                            if(psa != null){
+                                serviceManager.deletePublishedServiceAlias((Long.toString(psa.getOid())));
+                            }else{
+                                DialogDisplayer.showMessageDialog(getTopParent(),
+                                  "Cannot find alias to delete",
+                                  "Delete Service Alias",
+                                  JOptionPane.ERROR_MESSAGE, null);
+                            }
+                        }else{
+                            serviceManager.deletePublishedService(Long.toString(sH.getOid()));
+                        }
+                    }
                     result.call(true);
                     return;
                 } catch (ObjectModelException ome) {

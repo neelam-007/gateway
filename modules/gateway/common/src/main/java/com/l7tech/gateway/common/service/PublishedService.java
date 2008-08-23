@@ -10,6 +10,7 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.Aliasable;
 import org.xml.sax.InputSource;
 
 import javax.wsdl.Port;
@@ -33,8 +34,7 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings( { "NonJaxWsWebServices" } )
 @XmlRootElement
-public class PublishedService extends NamedEntityImp
-//        implements AliasCapabilty
+public class PublishedService extends NamedEntityImp implements Aliasable<PublishedServiceAlias>
 {
     //private static final long serialVersionUID = 8711916262379377867L;
     private static final Logger logger = Logger.getLogger(PublishedService.class.getName());
@@ -50,7 +50,7 @@ public class PublishedService extends NamedEntityImp
     public PublishedService() {
         setVersion(1);
         policy = new Policy(PolicyType.PRIVATE_SERVICE, null, null, false);
-//        isAlias = false;
+        isAlias = false;
     }
 
     /**
@@ -70,8 +70,7 @@ public class PublishedService extends NamedEntityImp
         setSoap(objToCopy.isSoap());
         _wsdlUrl = objToCopy._wsdlUrl;
         setWsdlXml(objToCopy.getWsdlXml());
-//        setAlias(objToCopy.isAlias());
-//        setAliases(objToCopy.getAliases());
+        setIsAlias(objToCopy.isAlias());
     }
 
     /**
@@ -454,28 +453,20 @@ public class PublishedService extends NamedEntityImp
     }
 
     public long getFolderOid() {
-        return policyFolderOid;
+        return folderOid;
     }
 
     public void setFolderOid(long policyFolderOid) {
-        this.policyFolderOid = policyFolderOid;
+        this.folderOid = policyFolderOid;
     }
 
-//    public void setAlias(boolean isAlias) {
-//        this.isAlias = isAlias;
-//    }
-//
-//    public boolean isAlias() {
-//        return isAlias;
-//    }
-//
-//    public void setAliases(List<EntityAlias> aliases) {
-//        this.aliases = aliases;
-//    }
-//
-//    public List<EntityAlias> getAliases() {
-//        return aliases;
-//    }
+    public void setIsAlias(boolean isAlias) {
+        this.isAlias = isAlias;
+    }
+
+    public boolean isAlias() {
+        return isAlias;
+    }
 
     /**
      * 
@@ -522,7 +513,7 @@ public class PublishedService extends NamedEntityImp
     private String routingUri;
     private String httpMethodNames = METHODNAMES_SOAP; // invariants: never null, always in sync with httpMethods
     private boolean laxResolution;
-    private long policyFolderOid = -5002L;
+    private long folderOid = -5002L;
 
     private transient WsdlStrategy wsdlStrategy;
     private transient Wsdl _parsedWsdl;
@@ -532,7 +523,6 @@ public class PublishedService extends NamedEntityImp
     private transient Set<String> httpMethods; // invariants: never null, always in sync with httpMethodNames
     private transient Boolean multipart;
 
-//    private List<EntityAlias> aliases;
     private boolean isAlias;
     
     /**

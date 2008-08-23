@@ -5,6 +5,7 @@ package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.objectmodel.AnonymousEntityReference;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.Aliasable;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import javax.persistence.JoinColumn;
@@ -76,7 +77,13 @@ public class Permission extends PersistentEntityImp implements Cloneable {
         } else {
             eclass = entity.getClass();
         }
-        
+        if(entity instanceof Aliasable){
+            Aliasable aliasable = (Aliasable) entity;
+            if(aliasable.isAlias()){
+                //todo [Donal] until the behaviour of aliases is defined for rbac return false
+                return false;
+            }
+        }
         if (!entityType.getEntityClass().isAssignableFrom(eclass)) return false;
         for (ScopePredicate predicate : scope) {
             if (!predicate.matches(entity, eclass)) return false;

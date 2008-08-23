@@ -30,10 +30,7 @@ import com.l7tech.identity.mapping.SecurityTokenMapping;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.folder.Folder;
 import static com.l7tech.objectmodel.EntityType.UNDEFINED;
-import com.l7tech.gateway.common.service.MetricsBin;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.SampleMessage;
-import com.l7tech.gateway.common.service.ServiceTemplate;
+import com.l7tech.gateway.common.service.*;
 
 import java.util.Comparator;
 
@@ -47,6 +44,7 @@ public enum EntityType {
     USER("User", User.class, com.l7tech.objectmodel.EntityType.USER, true),
     GROUP("Group", Group.class, com.l7tech.objectmodel.EntityType.GROUP, true),
     SERVICE("Published Service", PublishedService.class, com.l7tech.objectmodel.EntityType.SERVICE, true),
+    SERVICE_ALIAS("Published Service Alias", PublishedServiceAlias.class, com.l7tech.objectmodel.EntityType.SERVICE_ALIAS, true),
     JMS_CONNECTION("JMS Connection", JmsConnection.class, com.l7tech.objectmodel.EntityType.JMS_CONNECTION, true),
     JMS_ENDPOINT("JMS Endpoint", JmsEndpoint.class, com.l7tech.objectmodel.EntityType.JMS_ENDPOINT, true),
     TRUSTED_CERT("Trusted Certificate", TrustedCert.class, com.l7tech.objectmodel.EntityType.TRUSTED_CERT, true),

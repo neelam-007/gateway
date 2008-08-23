@@ -1,6 +1,7 @@
-package com.l7tech.gateway.common.service;
+package com.l7tech.objectmodel;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -12,13 +13,9 @@ import java.util.List;
  * Defines the property aliases, which is every alias of an entity, which implements
  * this interface
  */
-public interface AliasCapabilty {
+public interface Aliasable<EA extends EntityAlias> {
 
     public boolean isAlias();
 
-    public void setAlias(boolean isAlias);
-
-    public void setAliases(List<EntityAlias> aliases);
-
-    public List<EntityAlias> getAliases();
+    public void setIsAlias(boolean isAlias);
 }

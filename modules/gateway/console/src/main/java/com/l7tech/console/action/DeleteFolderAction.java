@@ -64,7 +64,7 @@ public class DeleteFolderAction extends SecureAction {
 
             if(result == JOptionPane.YES_OPTION) {
                 try {
-                    folderAdmin.deletePolicyFolder(folderOid);
+                    folderAdmin.deleteFolder(folderOid);
 
                     JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                     if (tree != null) {

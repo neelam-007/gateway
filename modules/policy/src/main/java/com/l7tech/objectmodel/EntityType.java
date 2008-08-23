@@ -33,6 +33,7 @@ public class EntityType implements Serializable {
     public static final EntityType POLICY = new EntityType(18, "Policy");
     public static final EntityType POLICY_VERSION = new EntityType(19, "Policy Version");
     public static final EntityType FOLDER = new EntityType(21, "Folder");
+    public static final EntityType SERVICE_ALIAS = new EntityType(22, "Published Service Alias");
     public static final EntityType UNDEFINED = new EntityType(-1, "Undefined");
 
     private static final long serialVersionUID = -5485680679515491927L;

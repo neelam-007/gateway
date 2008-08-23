@@ -125,6 +125,7 @@
 
                 <!-- Entity managers -->
                 <idref bean="serviceManager"/>
+                <idref bean="serviceAliasManager"/>
                 <idref bean="identityProviderConfigManager"/>
                 <idref bean="trustedCertManager"/>
                 <idref bean="clientCertManager"/>

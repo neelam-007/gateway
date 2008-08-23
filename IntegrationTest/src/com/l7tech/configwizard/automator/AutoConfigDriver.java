@@ -1,14 +1,14 @@
 package com.l7tech.configwizard.automator;
 
+import com.l7tech.server.config.ui.console.SoftwareConfigWizard;
+import com.l7tech.server.config.ui.console.ConfigurationWizard;
 import com.l7tech.server.config.OSDetector;
-import com.l7tech.server.config.SilentConfigData;
-import com.l7tech.server.config.SilentConfigurator;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.SilentConfigurator;
+import com.l7tech.server.config.SilentConfigData;
 import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBActionsListener;
-import com.l7tech.server.config.ui.console.SoftwareConfigWizard;
-import com.l7tech.server.config.ui.console.ConfigurationWizard;
 import com.l7tech.server.partition.PartitionManager;
 
 import java.util.Map;

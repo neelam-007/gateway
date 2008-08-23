@@ -1,20 +1,5 @@
 package com.l7tech.manager.automator.jaxb;
 
-import com.l7tech.common.policy.PolicyAdmin;
-import com.l7tech.common.policy.Policy;
-import com.l7tech.common.policy.PolicyType;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.transport.jms.JmsAdmin;
-import com.l7tech.common.transport.jms.JmsConnection;
-import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.common.transport.TransportAdmin;
-import com.l7tech.common.transport.SsgConnector;
-import com.l7tech.common.transport.SsgConnectorProperty;
-import com.l7tech.common.xml.schema.SchemaAdmin;
-import com.l7tech.common.xml.schema.SchemaEntry;
-import com.l7tech.admin.AdminContext;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
@@ -23,9 +8,9 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.service.ServiceAdmin;
-import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceTemplate;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.PolicyHeader;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.*;
@@ -36,8 +21,26 @@ import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.manager.automator.Main;
 import com.l7tech.objectmodel.*;
-import com.l7tech.cluster.ClusterStatusAdmin;
-import com.l7tech.cluster.ClusterProperty;
+import com.l7tech.gateway.common.admin.AdminContext;
+import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.gateway.common.schema.SchemaAdmin;
+import com.l7tech.gateway.common.schema.SchemaEntry;
+import com.l7tech.gateway.common.transport.TransportAdmin;
+import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.transport.SsgConnectorProperty;
+import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.gateway.common.transport.jms.JmsAdmin;
+import com.l7tech.gateway.common.transport.jms.JmsConnection;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceTemplate;
+import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.common.io.XmlUtil;
 
 import javax.xml.bind.*;
 import javax.xml.transform.stream.StreamResult;
@@ -1123,9 +1126,11 @@ public class JaxbEntityManager {
                     long [] newOids = new long[certDns.size()];
                     int i = 0;
                     for(String s: certDns){
-                        TrustedCert tC = this.trustedCertAdmin.findCertBySubjectDn(s);
-                        if(tC != null){
-                            newOids[i] = tC.getOid();
+                        Collection<TrustedCert> tC = this.trustedCertAdmin.findCertsBySubjectDn(s);
+                        //todo [Donal] just fix for compile - update for multiple trusted certs later
+                        for(TrustedCert tc1: tC){
+                            newOids[i] = tc1.getOid();
+                            break;
                         }
                         i++;
                     }
@@ -1224,7 +1229,7 @@ public class JaxbEntityManager {
     public void downloadAllPublishedServices() throws Exception{
 
         System.out.println("Downloading all Published Services");
-        ServiceHeader [] serviceHeaders = this.serviceAdmin.findAllPublishedServices();
+        ServiceHeader[] serviceHeaders = this.serviceAdmin.findAllPublishedServices();
         int count = 0;
         for(ServiceHeader sH: serviceHeaders){
             PublishedService pService = serviceAdmin.findServiceByID(sH.getStrId());

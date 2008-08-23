@@ -2,13 +2,14 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
-import com.l7tech.console.tree.PolicyServiceTreeNodeCreator;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
+import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.PolicyFolderPropertiesDialog;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
@@ -27,18 +28,15 @@ public class CreateFolderAction extends SecureAction {
 
     private long parentFolderOid;
     private AbstractTreeNode parentNode;
-    private PolicyServiceTreeNodeCreator nodeCreator;
     private FolderAdmin folderAdmin;
 
     public CreateFolderAction(long parentFolderOid,
                                     AbstractTreeNode parentNode,
-                                    PolicyServiceTreeNodeCreator nodeCreator,
                                     FolderAdmin folderAdmin)
     {
         super(new AttemptedCreate(EntityType.FOLDER), UI_PUBLISH_SERVICE_WIZARD);
         this.parentFolderOid = parentFolderOid;
         this.parentNode = parentNode;
-        this.nodeCreator = nodeCreator;
         this.folderAdmin = folderAdmin;
     }
 
@@ -74,12 +72,13 @@ public class CreateFolderAction extends SecureAction {
         if(dialog.isConfirmed()) {
             Folder folder = new Folder(dialog.getName(), parentFolderOid);
             try {
-                folder.setOid(folderAdmin.savePolicyFolder(folder));
+                folder.setOid(folderAdmin.saveFolder(folder));
 
                 JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                 if (tree != null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                    final AbstractTreeNode sn = nodeCreator.createFolderNode(folder);
+                    FolderHeader header = new FolderHeader(folder);
+                    final AbstractTreeNode sn = new FolderNode(header);
                     model.insertNodeInto(sn, parentNode, parentNode.getInsertPosition(sn, RootNode.getComparator()));
                 }
             } catch(UpdateException e) {

@@ -47,7 +47,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
 
     public ServiceNode(ServiceHeader e, Comparator c){
         super(e, c);
-        setAllowsChildren(e.isSoap());        
+        setAllowsChildren(e.isSoap());
     }
     
     public void updateUserObject() throws FindException{
@@ -60,6 +60,11 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
 
         ServiceHeader serviceHeader = getEntityHeader();
         PublishedService svc = Registry.getDefault().getServiceManager().findServiceByID(serviceHeader.getStrId());
+        svc.setIsAlias(serviceHeader.isAlias());
+        if(serviceHeader.isAlias()){
+            //Adjust it's folder property
+            svc.setFolderOid(serviceHeader.getFolderOid());
+        }
         // throw something if null, the service may have been deleted
         if (svc == null) {
             TopComponents creg = TopComponents.getInstance();
@@ -91,6 +96,11 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         return getPublishedService().getPolicy();
     }
 
+    public boolean isAlias() {
+        ServiceHeader sH = (ServiceHeader) this.getUserObject();
+        return sH.isAlias();
+    }
+
     @Override
     public PublishedService getEntity() throws FindException {
         return getPublishedService();
@@ -118,6 +128,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         actions.add(new EditServiceProperties(this));
         if (getEntityHeader().isSoap() && !TopComponents.getInstance().isApplet()) actions.add(new PublishPolicyToUDDIRegistry(this));
         actions.add(new DeleteServiceAction(this));
+        if(!isAlias()) actions.add(new MarkEntityToAliasAction(this));
         actions.add(new PolicyRevisionsAction(this));
         actions.add(new RefreshTreeNodeAction(this));
         Action secureCut = ServicesAndPoliciesTree.getSecuredAction(EntityType.FOLDER,
@@ -174,6 +185,9 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
      */
     @Override
     public String getName() {
+        if(isAlias()){
+            return getEntityHeader().getDisplayName()+" alias"; 
+        }
         return getEntityHeader().getDisplayName();
     }
 
@@ -208,7 +222,11 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
             }
         } else {
             if(header.isSoap()) {
-                return "com/l7tech/console/resources/services16.png";
+                if(header.isAlias()){
+                    return "com/l7tech/console/resources/services16Alias.png";                    
+                }else{
+                    return "com/l7tech/console/resources/services16.png";
+                }
             } else {
                 return "com/l7tech/console/resources/xmlObject16.gif";
             }

@@ -2,6 +2,7 @@ package com.l7tech.policy;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.AliasableHeader;
 import com.l7tech.objectmodel.folder.HasFolder;
 
 /**
@@ -9,7 +10,7 @@ import com.l7tech.objectmodel.folder.HasFolder;
  *
  * @author Steve Jones
  */
-public class PolicyHeader extends EntityHeader implements HasFolder {
+public class PolicyHeader extends EntityHeader implements HasFolder, AliasableHeader {
 
     //- PUBLIC
     public PolicyHeader(final Policy policy) {
@@ -37,7 +38,11 @@ public class PolicyHeader extends EntityHeader implements HasFolder {
     public Long getFolderOid() {
         return folderOid;
     }
-    
+
+    public void setFolderOid(long folderOid) {
+        this.folderOid = folderOid;
+    }
+
     public String getGuid() {
         return guid;
     }
@@ -47,9 +52,18 @@ public class PolicyHeader extends EntityHeader implements HasFolder {
         return getName();
     }
 
+    public boolean isAlias() {
+        return isAlias;
+    }
+
+    public void setIsAlias(boolean isAlias) {
+        this.isAlias = isAlias;
+    }
+    
     //- PRIVATE
 
     private final boolean isSoap;
     private final String guid;
-    private final Long folderOid;
+    private Long folderOid;
+    private boolean isAlias = false;
 }

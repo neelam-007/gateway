@@ -5,18 +5,20 @@ import com.l7tech.console.util.Refreshable;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.servicesAndPolicies.ServicesAndPoliciesTreeTransferHandler;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.ClipboardActions;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.folder.Folder;
 
 import javax.swing.*;
 import javax.swing.tree.*;
 import java.awt.event.*;
 import java.util.logging.Logger;
-import java.util.EnumSet;
+import java.util.*;
 
 /**
  * Class ServiceTree is the specialized <code>JTree</code> that
@@ -297,5 +299,86 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
 
     public boolean getIgnoreCurrentclipboard(){
         return ignoreCurrentClipboard;
+    }
+
+    /**
+     * Smart method to return only the highest level selected nodes.
+     * E.g. if A-B and A-B-C is selected, then only the node A-B will be 
+     * in the returned List as A-B-C is a sub element to A-B
+     * @return List<AbstractTreeNode> only the nodes which are needed to provide operations on all selected nodes
+     */
+    public List<AbstractTreeNode> getSmartSelectedNodes(){
+        TreePath[] selectedPaths = this.getSelectionPaths();
+        List<AbstractTreeNode> selectedNodes = new ArrayList<AbstractTreeNode>(selectedPaths.length);
+
+        HashSet<Object> nodesToTransfer = new HashSet<Object>(selectedPaths.length);
+        for(TreePath path : selectedPaths) {
+            nodesToTransfer.add(path.getLastPathComponent());
+        }
+
+        for(TreePath path : selectedPaths) {
+            // Skip a node if an ancestor of its is selected
+            boolean skip = false;
+            for(int i = 0;i < path.getPathCount() - 1;i++) {
+                if(nodesToTransfer.contains(path.getPathComponent(i))) {
+                    skip = true;
+                    break;
+                }
+            }
+            if(skip) {
+                continue;
+            }
+
+            Object selectedNode = path.getLastPathComponent();
+            if(selectedNode instanceof AbstractTreeNode) {
+                AbstractTreeNode item = (AbstractTreeNode)path.getLastPathComponent();
+                selectedNodes.add(item);
+            }else{
+                throw new RuntimeException("Node not a AbstractTreeNode: " + selectedNode);
+            }
+        }
+
+        return selectedNodes;
+    }
+
+    private RootNode getRootNode(){
+        DefaultTreeModel model = (DefaultTreeModel) getModel();
+        RootNode rootNode = (RootNode) model.getRoot();
+        return rootNode;
+    }
+
+    public void updateAllAliases(Long entityOid){
+        DefaultTreeModel model = (DefaultTreeModel) getModel();
+        RootNode rootNode = (RootNode) model.getRoot();
+        Set<AbstractTreeNode> aliases = rootNode.getAliasesForEntity(entityOid);
+        AbstractTreeNode origEntity = rootNode.getNodeForEntity(entityOid);
+
+        for(AbstractTreeNode atn: aliases){
+            Object userObj = atn.getUserObject();
+            if(atn instanceof ServiceNode){
+                ServiceHeader eH = (ServiceHeader) userObj;
+                long folderOid = eH.getFolderOid();
+                Object origUserObject = origEntity.getUserObject();
+                ServiceHeader origServiceHeader = (ServiceHeader) origUserObject;
+                ServiceHeader newHeader = new ServiceHeader(origServiceHeader);
+                newHeader.setFolderOid(folderOid);
+                newHeader.setIsAlias(true);
+                atn.setUserObject(newHeader);
+                //model.nodeChanged(atn);
+                model.nodeStructureChanged(atn);
+                System.out.println(atn.getName());
+            }
+        }
+
+    }
+
+    public void removeTrackedAlias(Long entityOid, AbstractTreeNode atn){
+        RootNode rootNode = getRootNode();
+        rootNode.removeAlias(entityOid, atn);
+    }
+
+    public void removeTrackedEntity(Long entityOid){
+        RootNode rootNode = getRootNode();
+        rootNode.removeEntity(entityOid);
     }
 }

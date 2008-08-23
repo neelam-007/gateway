@@ -19,11 +19,7 @@ import com.l7tech.server.event.system.ServiceCacheEvent;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.server.HibernateEntityManager;
-import com.l7tech.gateway.common.service.MetricsBin;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.SampleMessage;
-import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.service.*;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -36,6 +32,7 @@ import java.text.MessageFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.*;
 
 /**
  * Manages {@link PublishedService} instances.
@@ -54,12 +51,15 @@ public class ServiceManagerImp
     private final RoleManager roleManager;
 
     private ApplicationContext spring;
+    private final ServiceAliasManager serviceAliasManager;
 
 
-    public ServiceManagerImp(ResolutionManager resolutionManager, RoleManager roleManager) {
+    public ServiceManagerImp(ResolutionManager resolutionManager, RoleManager roleManager, ServiceAliasManager serviceAliasManager) {
         this.roleManager = roleManager;
         this.resolutionManager = resolutionManager;
+        this.serviceAliasManager = serviceAliasManager;
     }
+
 
     @Override
     protected ServiceHeader newHeader(PublishedService entity) {
@@ -71,6 +71,39 @@ public class ServiceManagerImp
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public Collection<ServiceHeader> findAllHeaders() throws FindException{
+        Collection<ServiceHeader> origHeaders = super.findAllHeaders();
+        //Modify results for any aliases that may exist
+        Collection<PublishedServiceAlias> allAliases = serviceAliasManager.findAll();
+        
+        Map<Long, Set<PublishedServiceAlias>> serviceIdToAllItsAliases = new HashMap<Long, Set<PublishedServiceAlias>>();
+        for(PublishedServiceAlias psa: allAliases){
+            Long origServiceId = psa.getEntityOid();
+            if(!serviceIdToAllItsAliases.containsKey(origServiceId)){
+                Set<PublishedServiceAlias> aliasSet = new HashSet<PublishedServiceAlias>();
+                serviceIdToAllItsAliases.put(origServiceId, aliasSet);
+            }
+            serviceIdToAllItsAliases.get(origServiceId).add(psa);
+        }
+
+        Collection<ServiceHeader> returnHeaders = new ArrayList<ServiceHeader>();
+        for(ServiceHeader sh: origHeaders){
+            Long serviceId = sh.getOid();
+            returnHeaders.add(sh);
+            if(serviceIdToAllItsAliases.containsKey(serviceId)){
+                Set<PublishedServiceAlias> aliases = serviceIdToAllItsAliases.get(serviceId);
+                for(PublishedServiceAlias psa: aliases){
+                    ServiceHeader newSH = new ServiceHeader(sh);
+                    newSH.setIsAlias(true);
+                    newSH.setFolderOid(psa.getFolderOid());
+                    returnHeaders.add(newSH);
+                }
+            }
+        }
+        return returnHeaders;
+    }
+    
     @Override
     public long save(final PublishedService service) throws SaveException {
         // 1. record the service (no policy)

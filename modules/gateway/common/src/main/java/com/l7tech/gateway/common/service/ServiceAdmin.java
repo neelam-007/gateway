@@ -11,9 +11,8 @@ import static com.l7tech.gateway.common.security.rbac.EntityType.SAMPLE_MESSAGE;
 import static com.l7tech.gateway.common.security.rbac.EntityType.SERVICE;
 import static com.l7tech.gateway.common.security.rbac.EntityType.*;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
-import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.gateway.common.security.rbac.RbacAdmin;
-import com.l7tech.gateway.common.security.rbac.MethodStereotype;
+import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.uddi.UDDIRegistryInfo;
 import com.l7tech.uddi.WsdlInfo;
 import com.l7tech.objectmodel.*;
@@ -64,6 +63,19 @@ public interface ServiceAdmin extends ServiceAdminPublic, FolderAdmin, AsyncAdmi
     ServiceHeader[] findAllPublishedServicesByOffset(int offset, int windowSize) throws FindException;
 
     /**
+     * Find a PublishedServiceAlias based on the original services oid and the folderoid in which the published
+     * service alias currently resides
+     * @param serviceOid service oid of the real service
+     * @param folderOid folder oid of the folder in which the alias currently resides
+     * @return PublishedServiceAlias
+     * @throws FindException
+     */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_HEADERS)
+    @Administrative(licensed=false)
+    public PublishedServiceAlias findAliasByServiceAndFolder(final Long serviceOid, final Long folderOid) throws FindException;
+
+    /**
      * Retrieves changes in list of published services.
      *
      * @param oldVersionID  version ID from previous retrieval
@@ -97,6 +109,25 @@ public interface ServiceAdmin extends ServiceAdminPublic, FolderAdmin, AsyncAdmi
     @Secured(stereotype=SAVE_OR_UPDATE)
     long savePublishedService(PublishedService service)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException;
+
+    /**
+     * Store the specified new or existing published service alias. If the specified {@link PublishedServiceAlias} contains a
+     * unique object ID that already exists, this will replace the objects current configuration with the new configuration.
+     * Otherwise, a new object will be created.
+     * The only reason to save a published service is if you have changed it's folder attribute.
+     *
+     * @param serviceAlias
+     * @return
+     * @throws SaveException   if the requested information could not be saved
+     * @throws UpdateException if the requested information could not be updated
+     * @throws VersionException if the service version conflict is detected
+     * @throws PolicyAssertionException if the server policy could not be instantiated for this policy
+     * @throws IllegalStateException if this save represents anything other than a change to the aliases folder property
+     */
+    @Secured(stereotype=SAVE_OR_UPDATE)
+    long savePublishedServiceAlias(PublishedServiceAlias serviceAlias)
+            throws UpdateException, SaveException, VersionException, PolicyAssertionException, IllegalStateException;
+
 
     /**
      * Store the specified new or existing published service. If the specified {@link PublishedService} contains a
@@ -214,6 +245,15 @@ public interface ServiceAdmin extends ServiceAdminPublic, FolderAdmin, AsyncAdmi
     @Secured(stereotype= DELETE_BY_ID)
     void deletePublishedService(String oid) throws DeleteException;
 
+    /**
+     * Delete a {@link com.l7tech.gateway.common.service.PublishedServiceAlias} by its unique identifier.
+
+     * @param oid the unique identifier of the {@link com.l7tech.gateway.common.service.PublishedServiceAlias} to delete.
+     * @throws com.l7tech.objectmodel.DeleteException if the requested information could not be deleted
+     */
+    @Secured(stereotype= DELETE_BY_ID, types= EntityType.SERVICE_ALIAS)
+    void deletePublishedServiceAlias(String oid) throws DeleteException;
+    
     /**
      * @param serviceoid id of the service to publish on the systinet (or other UDDI) registry
      * @return registrykey

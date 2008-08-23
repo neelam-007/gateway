@@ -88,6 +88,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     private final RegistryPublicationManager registryPublicationManager;
     private final UddiAgentFactory uddiAgentFactory;
     private final ServiceManager serviceManager;
+    private final ServiceAliasManager serviceAliasManager;
     private final PolicyValidator policyValidator;
     private final SampleMessageManager sampleMessageManager;
     private final ServiceDocumentManager serviceDocumentManager;
@@ -116,6 +117,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
                             RegistryPublicationManager registryPublicationManager,
                             UddiAgentFactory uddiAgentFactory,
                             ServiceManager serviceManager,
+                            ServiceAliasManager serviceAliasManager,
                             PolicyValidator policyValidator,
                             SampleMessageManager sampleMessageManager,
                             ServiceDocumentManager serviceDocumentManager,
@@ -133,6 +135,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         this.registryPublicationManager = registryPublicationManager;
         this.uddiAgentFactory = uddiAgentFactory;
         this.serviceManager = serviceManager;
+        this.serviceAliasManager = serviceAliasManager;
         this.policyValidator = policyValidator;
         this.sampleMessageManager = sampleMessageManager;
         this.serviceDocumentManager = serviceDocumentManager;
@@ -233,7 +236,11 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
             return collectionToHeaderArray(res);
     }
 
-    public Collection<FolderHeader> findAllPolicyFolders() throws FindException {
+    public PublishedServiceAlias findAliasByServiceAndFolder(Long serviceOid, Long folderOid) throws FindException {
+        return serviceAliasManager.findAliasByServiceAndFolder(serviceOid, folderOid); 
+    }
+
+    public Collection<FolderHeader> findAllFolders() throws FindException {
         ServiceHeader [] allServices = findAllPublishedServices();
         return folderManager.findFolderHeaders(Arrays.asList(allServices));
     }
@@ -320,6 +327,25 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         try {
             if (service.getOid() > 0) {
                 // UPDATING EXISTING SERVICE
+                if(service.isAlias()){
+                    //when an alias, we need to save the original policy, we don't want to overwrite the orignal
+                    //policies folder oid with the alias we have here
+                    //so get the original and take out it's folder property and set it on this copy
+                    try {
+                        PublishedService ps = this.findServiceByID(service.getId());
+                        //Get the folder id from the original but nothing else as this will change the state
+                        //of the service we are saving. folder is all that should be different to the original
+                        if(!ps.getName().equals(service.getName())){
+                            throw new SaveException("Cannot change the service name on an alias");
+                        }else if(!ps.getRoutingUri().equals(service.getRoutingUri())){
+                            throw new SaveException("Cannot change the routing uri on an alias");                            
+                        }
+
+                        service.setFolderOid(ps.getFolderOid());
+                    } catch (FindException e) {
+                        throw new SaveException("Could not update original policy");
+                    }
+                }
                 oid = service.getOid();
                 logger.fine("Updating PublishedService: " + oid);
                 serviceManager.update(service);
@@ -339,6 +365,34 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
                     policyVersionManager.checkpointPolicy(policy, true, true);
                 }
                 serviceManager.addManageServiceRole(service);
+            }
+        } catch (UpdateException e) {
+            throw e;
+        } catch (SaveException e) {
+            throw e;
+        } catch (ObjectModelException e) {
+            throw new SaveException(e);
+        }
+        return oid;
+    }
+
+    public long savePublishedServiceAlias(PublishedServiceAlias psa) throws UpdateException, SaveException, VersionException, PolicyAssertionException, IllegalStateException {
+        long oid;
+        try {
+            if (psa.getOid() > 0) {
+                // UPDATING EXISTING SERVICE
+                oid = psa.getOid();
+                //Get the service and ensure nothing is changing other than the folder id
+                PublishedServiceAlias orig = serviceAliasManager.findByPrimaryKey(oid);
+                if(psa.getEntityOid() != orig.getEntityOid() || !psa.getName().equals(orig.getName())){
+                    throw new UpdateException("Only folder property is editable for an alias");
+                }
+                logger.fine("Updating PublishedServiceAlias: " + oid);
+                serviceAliasManager.update(psa);
+            } else {
+                // SAVING NEW SERVICE
+                logger.fine("Saving new PublishedServiceAlias");
+                oid = serviceAliasManager.save(psa);
             }
         } catch (UpdateException e) {
             throw e;
@@ -395,11 +449,28 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     public void deletePublishedService(String serviceID) throws DeleteException {
         final PublishedService service;
         try {
+            //Check to see if this service has any aliases
+            Collection<PublishedServiceAlias> aliases = serviceAliasManager.findAllAliasesForService(new Long(serviceID));
+            for(PublishedServiceAlias psa: aliases){
+                serviceAliasManager.delete(psa);
+            }
             long oid = toLong(serviceID);
             service = serviceManager.findByPrimaryKey(oid);
             serviceManager.delete(service);
             roleManager.deleteEntitySpecificRole(SERVICE, service.getOid());
             logger.info("Deleted PublishedService: " + oid);
+        } catch (FindException e) {
+            throw new DeleteException("Could not find object to delete.", e);
+        }
+    }
+
+    public void deletePublishedServiceAlias(String serviceID) throws DeleteException {
+        final PublishedServiceAlias alias;
+        try {
+            long oid = toLong(serviceID);
+            alias = serviceAliasManager.findByPrimaryKey(oid);
+            serviceAliasManager.delete(alias);
+            logger.info("Deleted PublishedServiceAlias: " + oid);
         } catch (FindException e) {
             throw new DeleteException("Could not find object to delete.", e);
         }
@@ -627,7 +698,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         this.auditor = new Auditor(this, applicationContext, logger);
     }
 
-    public long savePolicyFolder(Folder folder) throws UpdateException, SaveException {
+    public long saveFolder(Folder folder) throws UpdateException, SaveException {
         int maxDepth = ServerConfig.getInstance().getIntProperty("policyorganization.maxFolderDepth",8);
 
         Long parentFolderId = folder.getParentFolderOid();
@@ -667,7 +738,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         }
     }
 
-    public void deletePolicyFolder(long folderOid) throws FindException, DeleteException {
+    public void deleteFolder(long folderOid) throws FindException, DeleteException {
         folderManager.delete(folderOid);
     }
 }

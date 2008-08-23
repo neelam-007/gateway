@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.AliasableHeader;
 import com.l7tech.objectmodel.folder.HasFolder;
 
 /**
@@ -9,7 +10,8 @@ import com.l7tech.objectmodel.folder.HasFolder;
  *
  * @author Steve Jones
  */
-public class ServiceHeader extends EntityHeader implements HasFolder {
+//todo [Donal] create a common super class implementing HasFolder, AliasableHeader shared by services and policies
+public class ServiceHeader extends EntityHeader implements HasFolder, AliasableHeader {
 
     //- PUBLIC
 
@@ -20,21 +22,35 @@ public class ServiceHeader extends EntityHeader implements HasFolder {
               svc.getOid(),
               svc.getName(),
               svc.getName(),
-              svc.getFolderOid());
+              svc.getFolderOid(),
+              svc.isAlias());
     }
 
+    public ServiceHeader(final ServiceHeader serviceHeader){
+        this(serviceHeader.isSoap(),
+             serviceHeader.isDisabled(),
+             serviceHeader.getDisplayName(),
+             serviceHeader.getOid(),
+             serviceHeader.getName(),
+             serviceHeader.getDescription(),
+             serviceHeader.getFolderOid(),
+             serviceHeader.isAlias());
+    }
+    
     public ServiceHeader(final boolean isSoap,
                          final boolean isDisabled,
                          final String displayName,
                          final Long serviceOid,
                          final String name,
                          final String description,
-                         final long folderOid) {
+                         final long folderOid,
+                         final boolean isAlias) {
         super(serviceOid == null ? -1 : serviceOid, EntityType.SERVICE, name, description);
         this.isSoap = isSoap;
         this.isDisabled = isDisabled;
         this.displayName = displayName;
-        this.folderOid = folderOid;        
+        this.folderOid = folderOid;
+        this.isAlias = isAlias;
     }
 
     public boolean isSoap() {
@@ -52,9 +68,21 @@ public class ServiceHeader extends EntityHeader implements HasFolder {
     public Long getFolderOid() {
         return folderOid;
     }
-    
+
+    public void setFolderOid(long folderOid) {
+        this.folderOid = folderOid; 
+    }
+
     public String toString() {
         return getDisplayName();
+    }
+
+    public boolean isAlias() {
+        return isAlias;
+    }
+
+    public void setIsAlias(boolean isAlias) {
+        this.isAlias = isAlias;
     }
 
     //- PRIVATE
@@ -62,5 +90,6 @@ public class ServiceHeader extends EntityHeader implements HasFolder {
     private final boolean isSoap;
     private final boolean isDisabled;
     private final String displayName;
-    private final long folderOid;
+    private long folderOid;
+    private boolean isAlias;
 }

@@ -1,6 +1,7 @@
 package com.l7tech.manager.automator.jaxb;
 
-import com.l7tech.common.transport.SsgConnector;
+
+import com.l7tech.gateway.common.transport.SsgConnector;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Map;

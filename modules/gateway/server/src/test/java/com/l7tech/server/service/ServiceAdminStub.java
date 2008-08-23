@@ -17,13 +17,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
-import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceHeaderDifferentiator;
-import com.l7tech.gateway.common.service.ServiceDocument;
-import com.l7tech.gateway.common.service.SampleMessage;
-import com.l7tech.gateway.common.service.ServiceTemplate;
+import com.l7tech.gateway.common.service.*;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -47,6 +41,8 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     private static final Logger logger = Logger.getLogger(ServiceAdminStub.class.getName());
     private PolicyValidator policyValidator;
     private ServiceManager serviceManager;
+    private ServiceAliasManager serviceAliasManager;
+
     private AsyncAdminMethodsImpl asyncSupport = new AsyncAdminMethodsImpl();
     private CollectionUpdateProducer<ServiceHeader, FindException> publishedServicesUpdateProducer =
             new CollectionUpdateProducer<ServiceHeader, FindException>(5000, 10, new ServiceHeaderDifferentiator()) {
@@ -64,6 +60,9 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return serviceManager.findByPrimaryKey(toLong(oid));
     }
 
+    public PublishedServiceAlias findAliasByServiceAndFolder(Long serviceOid, Long folderOid) throws FindException {
+        return serviceAliasManager.findAliasByServiceAndFolder(serviceOid, folderOid);
+    }
 
     /**
      * Used by the console to retreive the actual wsdl located at a target
@@ -84,6 +83,10 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     public long savePublishedService(PublishedService service)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException {
         return serviceManager.save(service);
+    }
+
+    public long savePublishedServiceAlias(PublishedServiceAlias serviceAlias) throws UpdateException, SaveException, VersionException, PolicyAssertionException, IllegalStateException {
+        return serviceAliasManager.save(serviceAlias);
     }
 
     public long savePublishedService(PublishedService service, boolean activateAsWell)
@@ -132,6 +135,18 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
 
     }
 
+    public void deletePublishedServiceAlias(String serviceID) throws DeleteException {
+        final PublishedServiceAlias alias;
+        try {
+            long oid = toLong(serviceID);
+            alias = serviceAliasManager.findByPrimaryKey(oid);
+            serviceAliasManager.delete(alias);
+            logger.info("Deleted PublishedServiceAlias: " + oid);
+        } catch (FindException e) {
+            throw new DeleteException("Could not find object to delete.", e);
+        }
+    }
+    
     public JobId<PolicyValidatorResult> validatePolicy(final String policyXml,
                                                        final PolicyType policyType,
                                                        final boolean soap,
@@ -192,11 +207,11 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     /**
-     * Retrieve all of the {@link com.l7tech.common.policy.Folder} headers.
+     * Retrieve all of the {@link com.l7tech.objectmodel.Folder} headers.
      *
      * @return A <code>Collection</code> of EntityHeader objects.
      */
-    public Collection<FolderHeader> findAllPolicyFolders() throws FindException {
+    public Collection<FolderHeader> findAllFolders() throws FindException {
         throw new RuntimeException("Not Implemented");
     }
 
@@ -262,6 +277,10 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         this.serviceManager = serviceManager;
     }
 
+    public void setServiceAliasManager(ServiceAliasManager serviceAliasManager){
+        this.serviceAliasManager = serviceAliasManager;
+    }
+    
     public void afterPropertiesSet() throws Exception {
         if (policyValidator == null) {
             throw new IllegalArgumentException("Policy Validator is required");
@@ -325,11 +344,11 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return asyncSupport.getJobResult(jobId);
     }
 
-    public long savePolicyFolder(Folder folder) throws UpdateException, SaveException {
+    public long saveFolder(Folder folder) throws UpdateException, SaveException {
         throw new RuntimeException("Not Implemented");
     }
 
-    public void deletePolicyFolder(long folderOid) throws FindException, DeleteException {
+    public void deleteFolder(long folderOid) throws FindException, DeleteException {
         throw new RuntimeException("Not Implemented");
     }
 }

@@ -145,6 +145,20 @@ CREATE TABLE published_service (
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
+-- Table structure for table 'published_service_alias'
+--
+CREATE TABLE published_service_alias (
+  `objectid` bigint(20) NOT NULL,
+  `version` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `folder_oid` bigint(20) NOT NULL,
+  `published_service_oid` bigint(20) NOT NULL,
+  UNIQUE KEY (folder_oid, published_service_oid),
+  FOREIGN KEY (published_service_oid) REFERENCES published_service (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table 'policy'
 --
 

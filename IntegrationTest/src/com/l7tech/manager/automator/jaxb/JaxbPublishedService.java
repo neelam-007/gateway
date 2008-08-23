@@ -1,6 +1,7 @@
 package com.l7tech.manager.automator.jaxb;
 
-import com.l7tech.service.PublishedService;
+
+import com.l7tech.gateway.common.service.PublishedService;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Set;

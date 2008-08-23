@@ -85,9 +85,10 @@ public class PublishServiceAction extends SecureAction {
                 AbstractTreeNode root = TopComponents.getInstance().getServicesFolderNode();
                 TreeNode[] nodes = root.getPath();
                 TreePath nPath = new TreePath(nodes);
+                //todo [Donal] check if this is a bug we would always want to add to the tree
                 if (tree.hasBeenExpanded(nPath)) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                    final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh, null);
+                    final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh, RootNode.getComparator());
                     model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));
 
                     tree.setSelectionPath(new TreePath(sn.getPath()));

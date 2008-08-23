@@ -3,10 +3,7 @@
  */
 package com.l7tech.console.tree;
 
-import com.l7tech.console.action.DeletePolicyAction;
-import com.l7tech.console.action.EditPolicyAction;
-import com.l7tech.console.action.EditPolicyProperties;
-import com.l7tech.console.action.PolicyRevisionsAction;
+import com.l7tech.console.action.*;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -76,6 +73,11 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         return policy;
     }
 
+    public boolean isAlias() {
+        PolicyHeader policyHeader = (PolicyHeader) this.getUserObject();
+        return policyHeader.isAlias();
+    }
+
     public Policy getEntity() throws FindException {
         return getPolicy();
     }
@@ -86,6 +88,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         actions.add(new EditPolicyAction(this));
         actions.add(new EditPolicyProperties(this));
         actions.add(new DeletePolicyAction(this));
+        actions.add(new MarkEntityToAliasAction(this));
         actions.add(new PolicyRevisionsAction(this));
         actions.add(new RefreshTreeNodeAction(this));
         

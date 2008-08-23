@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.EntityAlias;
 
 /**
  * Created by IntelliJ IDEA.
@@ -9,7 +10,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
  * Time: 9:06:59 AM
  * To change this template use File | Settings | File Templates.
  */
-public class PublishedServiceAlias extends NamedEntityImp implements EntityAlias{
+public class PublishedServiceAlias extends NamedEntityImp implements EntityAlias {
 
     private long entityOid;
     private long folderOid;
@@ -18,8 +19,10 @@ public class PublishedServiceAlias extends NamedEntityImp implements EntityAlias
     public PublishedServiceAlias() {
     }
 
-    public PublishedServiceAlias(String name) {
-        this._name = name;
+    public PublishedServiceAlias(PublishedService pService, long folderOid) {
+        this._name = pService.getName()+"_Alias";
+        this.folderOid = folderOid;
+        this.entityOid = pService.getOid();
     }
 
     /**

@@ -6,15 +6,19 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.logging.Logger;
+import java.util.List;
 
 
 /**
@@ -73,9 +77,24 @@ public class DeleteServiceAction extends ServiceNodeAction {
                 Runnable runnable = new Runnable() {
                     public void run() {
                         final TopComponents creg = TopComponents.getInstance();
-                        JTree tree = (JTree)creg.getComponent(ServicesAndPoliciesTree.NAME);
+                        ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree)creg.getComponent(ServicesAndPoliciesTree.NAME);
                         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                         model.removeNodeFromParent(node);
+
+                        //Remove an aliases if they exist
+                        ServiceHeader sH = (ServiceHeader) node.getUserObject();
+                        long oldServiceOid = sH.getOid();
+                        if(!sH.isAlias()){
+                            Object root = model.getRoot();
+                            RootNode rootNode = (RootNode) root;
+                            List<AbstractTreeNode> foundNodes = rootNode.findAllAliasesNodes(oldServiceOid);
+                            for(AbstractTreeNode atn: foundNodes){
+                                model.removeNodeFromParent(atn);
+                            }
+                            tree.removeTrackedEntity(oldServiceOid);
+                        }else{
+                            tree.removeTrackedAlias(oldServiceOid, node);
+                        }
 
                         try {
                             final WorkSpacePanel cws = creg.getCurrentWorkspace();

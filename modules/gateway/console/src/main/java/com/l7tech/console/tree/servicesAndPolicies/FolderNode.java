@@ -9,6 +9,8 @@ import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Aliasable;
+import com.l7tech.objectmodel.AliasableHeader;
 
 import javax.swing.*;
 import javax.swing.tree.TreeNode;
@@ -27,30 +29,26 @@ import java.util.Comparator;
 public class FolderNode extends AbstractTreeNode implements FolderNodeBase{
  
     private FolderHeader folderHeader;
+    private final FolderAdmin folderAdmin;
+    private final Folder folder;
+    private final Action[] allActions;
 
-    private final List<Action> actions;
-
-    public FolderNode(FolderHeader folderHeader, PolicyServiceTreeNodeCreator nodeCreator) {
-        super(null, RootNode.getComparator());
+    public FolderNode(FolderHeader folderHeader) {
+        super(folderHeader, RootNode.getComparator());
         this.folderHeader = folderHeader;
 
-        final Folder folder = new Folder(folderHeader.getName(), folderHeader.getParentFolderOid());
+        folder = new Folder(folderHeader.getName(), folderHeader.getParentFolderOid());
         folder.setOid(folderHeader.getOid());
 
-        FolderAdmin folderAdmin = Registry.getDefault().getServiceManager();
-        actions = new ArrayList<Action>();
-        actions.add(new EditServiceFolderAction(folder, folderHeader, this, folderAdmin));
-        actions.add(new CreateFolderAction(folderHeader.getOid(), this, nodeCreator, folderAdmin));
-        actions.add(new DeleteFolderAction(folderHeader.getOid(), this, folderAdmin));
+        folderAdmin = Registry.getDefault().getServiceManager();
 
-        Action secureCut = ServicesAndPoliciesTree.getSecuredAction(EntityType.FOLDER,
-                                                                OperationType.UPDATE,
-                                                                ServicesAndPoliciesTree.ClipboardActionType.CUT);
-        if(secureCut != null) actions.add(secureCut);
-        Action securePaste = ServicesAndPoliciesTree.getSecuredAction(EntityType.FOLDER,
-                                                                OperationType.UPDATE,
-                                                                ServicesAndPoliciesTree.ClipboardActionType.PASTE);
-        if(securePaste != null) actions.add(securePaste);
+        allActions = new Action[]{
+        new EditServiceFolderAction(folder, folderHeader, this, folderAdmin),
+        new CreateFolderAction(folderHeader.getOid(), this, folderAdmin),
+        new DeleteFolderAction(folderHeader.getOid(), this, folderAdmin),
+        new PasteAsAliasAction(this),
+        new RefreshTreeNodeAction(this)
+    };
     }
 
     public String getName() {
@@ -92,13 +90,52 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase{
         insert(child, getInsertPosition(child, RootNode.getComparator()));
     }
 
-    public void addEntityNode(EntityHeader entityHeader) {
+    public AbstractTreeNode addEntityNode(EntityHeader entityHeader) {
         AbstractTreeNode child = TreeNodeFactory.asTreeNode(entityHeader, null);
         insert(child, getInsertPosition(child, RootNode.getComparator()));
+        return child;
     }
 
     @Override
     public Action[] getActions() {
+        // Filter unlicensed actions
+        List<Action> actions = new ArrayList<Action>();
+        for (Action action : allActions) {
+            if(action instanceof PasteAsAliasAction){
+                if(!RootNode.isAliasSet()) continue;
+            }
+            if (action.isEnabled())
+                actions.add(action);
+        }
+        Action secureCut = ServicesAndPoliciesTree.getSecuredAction(EntityType.FOLDER,
+                                                                OperationType.UPDATE,
+                                                                ServicesAndPoliciesTree.ClipboardActionType.CUT);
+        if(secureCut != null) actions.add(secureCut);
+        Action securePaste = ServicesAndPoliciesTree.getSecuredAction(EntityType.FOLDER,
+                                                                OperationType.UPDATE,
+                                                                ServicesAndPoliciesTree.ClipboardActionType.PASTE);
+        if(securePaste != null) actions.add(securePaste);
+
         return actions.toArray(new Action[]{});
+    }
+
+    /**
+     * Non recursive method to determine if the entity represented by the supplied oid is a direct child
+     * of this folder node. Will also return true if an alias representing this entity is in this folder
+     * @param oid the oid to search for
+     * @return true if oid's entity is a direct child, false otherwise
+     */
+    public boolean isEntityAChildNode(long oid){
+        for(int i = 0; i < getChildCount(); i++){
+            AbstractTreeNode atn = (AbstractTreeNode) getChildAt(i);
+            Object userObj = atn.getUserObject();
+            if(atn instanceof EntityWithPolicyNode){
+                EntityHeader aH = (EntityHeader) userObj;
+                if(aH.getOid() == oid){
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

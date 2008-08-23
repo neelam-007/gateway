@@ -38,7 +38,7 @@ public class FolderManagerImpl extends HibernateEntityManager<Folder, FolderHead
         Collection<FolderHeader> folderHeaders = new ArrayList<FolderHeader>(findAllHeaders());
         Map<Long, FolderHeader> folderOidToHeaderMap = new HashMap<Long, FolderHeader>();
 
-        //Even though we will have a map containing all the PolicyFolderHeader's in folderOidToHeaderMap
+        //Even though we will have a map containing all the FolderHeader's in folderOidToHeaderMap
         //that will end up in allFoldersFromCorrectRoot, we can't send Map.values() back over the wire due to
         //serialization issues
         List<FolderHeader> allFoldersFromCorrectRoot = new ArrayList<FolderHeader>();

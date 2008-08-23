@@ -10,5 +10,7 @@ package com.l7tech.objectmodel.folder;
  */
 public interface HasFolder {
     public Long getFolderOid();
+
+    public void setFolderOid(long folderOid);
 }
 

@@ -305,6 +305,7 @@
         <constructor-arg ref="registryPublicationManager"/>
         <constructor-arg ref="uddiAgentFactory"/>
         <constructor-arg ref="serviceManager"/>
+        <constructor-arg ref="serviceAliasManager"/>
         <constructor-arg ref="serverPolicyValidator"/>
         <constructor-arg ref="sampleMessageManager"/>
         <constructor-arg ref="serviceDocumentManager"/>

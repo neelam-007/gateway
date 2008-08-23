@@ -263,7 +263,7 @@ public class CreateServiceWsdlAction extends SecureAction {
         public void serviceAdded(final EntityHeader eh) {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+                    ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                     if (tree != null) {
                         AbstractTreeNode root = TopComponents.getInstance().getServicesFolderNode();
                         TreeNode[] nodes = root.getPath();
@@ -272,6 +272,8 @@ public class CreateServiceWsdlAction extends SecureAction {
                             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                             AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh, null);
                             model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));
+                            RootNode rootNode = (RootNode) model.getRoot();
+                            rootNode.addEntity(eh.getOid(), sn);
                         }
                     } else {
                         log.log(Level.WARNING, "Service tree unreachable.");

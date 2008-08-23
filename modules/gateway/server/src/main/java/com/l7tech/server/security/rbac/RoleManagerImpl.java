@@ -77,7 +77,7 @@ public class RoleManagerImpl
                     roles.add(ra.getRole());
                 }
 
-                //Now get the Roles is can access via it's group membership
+                //Now get the Roles the user can access via it's group membership
                 Set<IdentityHeader> iHeaders = JaasUtils.getCurrentUserGroupInfo();
                 List<String> groupNames = new ArrayList<String>();
                 for(IdentityHeader iH: iHeaders){
@@ -334,6 +334,15 @@ public class RoleManagerImpl
             } catch (FindException e) {
                 logger.log(Level.WARNING, MessageFormat.format("Unable to find entity for header: {0}; skipping", header), e);
                 continue;
+            }
+
+            //check for alias
+            if(header instanceof AliasableHeader){
+               AliasableHeader aH = (AliasableHeader) header;
+                if(aH.isAlias()){
+                    Aliasable a = (Aliasable) entity;
+                    a.setIsAlias(true);
+                }
             }
 
             if (isPermitted(userRoles, entity, requiredOperation, null))

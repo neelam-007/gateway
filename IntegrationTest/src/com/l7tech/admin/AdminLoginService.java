@@ -1,31 +1,31 @@
 package com.l7tech.admin;
 
-import com.l7tech.cluster.ClusterStatusAdmin;
-import com.l7tech.common.audit.AuditAdmin;
-import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.common.log.LogSinkAdmin;
-import com.l7tech.common.policy.PolicyAdmin;
-import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.kerberos.KerberosAdmin;
-import com.l7tech.common.security.rbac.RbacAdmin;
-import com.l7tech.common.transport.TransportAdmin;
-import com.l7tech.common.transport.ftp.FtpAdmin;
-import com.l7tech.common.transport.jms.JmsAdmin;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.security.InvalidHostCertificateException;
-import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.User;
 import com.l7tech.manager.automator.Main;
-import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
-import com.l7tech.service.ServiceAdmin;
-import com.l7tech.spring.remoting.http.ConfigurableHttpInvokerRequestExecutor;
-import com.l7tech.spring.remoting.rmi.NamingURL;
-import com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
-import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
-import com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory;
+import com.l7tech.gateway.common.admin.*;
+import com.l7tech.gateway.common.spring.remoting.rmi.NamingURL;
+import com.l7tech.gateway.common.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
+import com.l7tech.gateway.common.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
+import com.l7tech.gateway.common.spring.remoting.rmi.ssl.SslRMIClientSocketFactory;
+import com.l7tech.gateway.common.spring.remoting.http.ConfigurableHttpInvokerRequestExecutor;
+import com.l7tech.gateway.common.audit.AuditAdmin;
+import com.l7tech.gateway.common.audit.LogonEvent;
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.gateway.common.schema.SchemaAdmin;
+import com.l7tech.gateway.common.transport.jms.JmsAdmin;
+import com.l7tech.gateway.common.transport.TransportAdmin;
+import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
+import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.log.LogSinkAdmin;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.gateway.common.security.rbac.RbacAdmin;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.util.HexUtils;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
+
 import org.springframework.context.ApplicationContext;
 
 import javax.security.auth.login.LoginException;
@@ -174,7 +174,7 @@ public class AdminLoginService {
         byte[] certificate = adminLogin.getServerCertificate(credentials.getUserName());
         try {
             String password = new String(credentials.getPassword());
-            String encodedPassword = HexUtils.encodePasswd(credentials.getUserName(), password);
+            String encodedPassword = HexUtils.encodePasswd(credentials.getUserName(), password, HttpDigest.REALM);
             java.security.MessageDigest d = java.security.MessageDigest.getInstance("SHA-1");
             final byte[] bytes = encodedPassword.getBytes();
             d.update(bytes);

@@ -1,15 +1,21 @@
 package com.l7tech.manager.automator;
 
-import com.l7tech.admin.AdminContext;
 import com.l7tech.admin.AdminLoginService;
-import com.l7tech.common.util.SyspropUtil;
 import com.l7tech.manager.automator.jaxb.JaxbEntityManager;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import com.l7tech.util.SyspropUtil;
+import com.l7tech.gateway.common.admin.AdminContext;
+import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.PublishedServiceAlias;
 
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.Set;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
 
 /**
  * Connects an SSG and revokes the certificates for the users specified in the
@@ -63,7 +69,7 @@ public class Main {
      */
     public static void main(String[] args) {
         try {
-            properties.load(new FileReader("src/manager_automator.properties"));
+            properties.load(new FileReader("IntegrationTest/src/manager_automator.properties"));
         } catch(IOException e) {
             System.err.println("Failed to load properties file.");
             System.exit(-1);
@@ -89,7 +95,7 @@ public class Main {
             } else if(args[0].equals("entity-manager") && args.length == 2) {
                 JaxbEntityManager manager = new JaxbEntityManager(adminContext);
                 //manager.doTests(args[1]);
-                //if(true)return;
+                if(true)return;
 
                 if(args[1].equals("download")){
                     manager.downloadAllEntities();

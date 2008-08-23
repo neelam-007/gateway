@@ -41,6 +41,10 @@ public class WsdlImportStrategyServiceAdmin implements ServiceAdmin {
         delegate.deletePublishedService( oid );
     }
 
+    public void deletePublishedServiceAlias(String oid) throws DeleteException {
+        delegate.deletePublishedServiceAlias(oid);
+    }
+
     public void deleteSampleMessage( SampleMessage message ) throws DeleteException {
         delegate.deleteSampleMessage( message );
     }
@@ -49,8 +53,12 @@ public class WsdlImportStrategyServiceAdmin implements ServiceAdmin {
         return delegate.findAllPublishedServicesByOffset( offset, windowSize );
     }
 
-    public Collection<FolderHeader> findAllPolicyFolders() throws FindException {
-        return delegate.findAllPolicyFolders();
+    public Collection<FolderHeader> findAllFolders() throws FindException {
+        return delegate.findAllFolders();
+    }
+
+    public PublishedServiceAlias findAliasByServiceAndFolder(Long serviceOid, Long folderOid) throws FindException {
+        return delegate.findAliasByServiceAndFolder(serviceOid, folderOid);
     }
 
     public SampleMessage findSampleMessageById( long oid ) throws FindException {
@@ -95,6 +103,10 @@ public class WsdlImportStrategyServiceAdmin implements ServiceAdmin {
 
     public long savePublishedService( PublishedService service ) throws UpdateException, SaveException, VersionException, PolicyAssertionException {
         return delegate.savePublishedService( service );
+    }
+
+    public long savePublishedServiceAlias(PublishedServiceAlias serviceAlias) throws UpdateException, SaveException, VersionException, PolicyAssertionException, IllegalStateException {
+        return delegate.savePublishedServiceAlias(serviceAlias);
     }
 
     public long savePublishedServiceWithDocuments( PublishedService service, Collection<ServiceDocument> serviceDocuments ) throws UpdateException, SaveException, VersionException, PolicyAssertionException {
@@ -184,11 +196,11 @@ public class WsdlImportStrategyServiceAdmin implements ServiceAdmin {
         return content;
     }
 
-    public long savePolicyFolder(Folder folder) throws UpdateException, SaveException {
-        return delegate.savePolicyFolder(folder);
+    public long saveFolder(Folder folder) throws UpdateException, SaveException {
+        return delegate.saveFolder(folder);
     }
 
-    public void deletePolicyFolder(long folderOid) throws FindException, DeleteException {
-        delegate.deletePolicyFolder(folderOid);
+    public void deleteFolder(long folderOid) throws FindException, DeleteException {
+        delegate.deleteFolder(folderOid);
     }
 }

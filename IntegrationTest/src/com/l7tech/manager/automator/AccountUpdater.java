@@ -1,12 +1,12 @@
 package com.l7tech.manager.automator;
 
-import com.l7tech.admin.AdminContext;
-import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.admin.AdminContext;
 
 /**
  * Revokes certificates for certain accounts. The IIP accounts that are updated then have their password

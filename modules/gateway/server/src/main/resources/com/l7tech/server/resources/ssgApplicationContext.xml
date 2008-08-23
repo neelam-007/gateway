@@ -318,7 +318,11 @@
     <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp" parent="hibernateBean">
         <constructor-arg ref="roleManager"/>
         <constructor-arg ref="resolutionManager"/>
+        <constructor-arg ref="serviceAliasManager"/>
     </bean>
+
+    <!--service side service alias manager-->
+    <bean id="serviceAliasManager" class="com.l7tech.server.service.ServiceAliasManagerImpl" parent="hibernateBean" />
 
     <!-- server side resolution manager -->
     <bean id="resolutionManager" class="com.l7tech.server.service.resolution.ReolutionManagerImpl">

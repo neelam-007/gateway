@@ -48,4 +48,6 @@ public abstract class EntityWithPolicyNode<ET extends Entity, HT extends EntityH
     public abstract void clearCachedEntities();
 
     public abstract Policy getPolicy() throws FindException;
+
+    public abstract boolean isAlias();
 }

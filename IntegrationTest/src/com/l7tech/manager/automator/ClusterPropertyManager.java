@@ -1,12 +1,12 @@
 package com.l7tech.manager.automator;
 
-import com.l7tech.cluster.ClusterStatusAdmin;
-import com.l7tech.cluster.ClusterProperty;
-import com.l7tech.admin.AdminContext;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.gateway.common.admin.AdminContext;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 
 /**
  * Retrieves and updates cluster properties.

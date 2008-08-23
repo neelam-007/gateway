@@ -104,7 +104,7 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
         return policyManager.findHeadersByType(type);
     }
 
-    public Collection<FolderHeader> findAllPolicyFolders() throws FindException {
+    public Collection<FolderHeader> findAllFolders() throws FindException {
         Collection<PolicyHeader> policyHeaders = findPolicyHeadersWithTypes(EnumSet.of(PolicyType.INCLUDE_FRAGMENT, PolicyType.INTERNAL));
         return folderManager.findFolderHeaders(policyHeaders);
     }
@@ -411,7 +411,7 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
         this.auditor = new Auditor(this, applicationContext, logger);
     }
 
-    public long savePolicyFolder(Folder folder) throws UpdateException, SaveException {
+    public long saveFolder(Folder folder) throws UpdateException, SaveException {
         int maxDepth = ServerConfig.getInstance().getIntProperty("policyorganization.maxFolderDepth",8);
 
         Long parentFolderId = folder.getParentFolderOid();
@@ -451,7 +451,7 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
         }
     }
 
-    public void deletePolicyFolder(long folderOid) throws FindException, DeleteException {
+    public void deleteFolder(long folderOid) throws FindException, DeleteException {
         folderManager.delete(folderOid);
     }
 }

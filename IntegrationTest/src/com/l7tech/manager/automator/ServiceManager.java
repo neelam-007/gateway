@@ -1,7 +1,7 @@
 package com.l7tech.manager.automator;
 
-import com.l7tech.service.ServiceAdmin;
-import com.l7tech.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.service.PublishedService;
 
 import java.util.Set;
 import java.util.HashSet;

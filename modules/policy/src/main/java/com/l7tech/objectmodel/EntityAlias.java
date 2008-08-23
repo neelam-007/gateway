@@ -1,4 +1,5 @@
-package com.l7tech.gateway.common.service;
+package com.l7tech.objectmodel;
+
 
 /**
  * Created by IntelliJ IDEA.
@@ -9,7 +10,7 @@ package com.l7tech.gateway.common.service;
  * Implemented by any class which represents an alias instance of a real entity
  * Instances of this class are kept in the alias property of the real entity
  * Instance of this interface will be persisted. Each implementation will be persisted
- * in it's own db table. 
+ * in it's own db table.
  */
 public interface EntityAlias {
 
