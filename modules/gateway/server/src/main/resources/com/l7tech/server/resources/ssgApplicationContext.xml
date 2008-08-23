@@ -255,6 +255,15 @@
 
 
     <!-- Initialize the client-side SSLSocketFactory with the trust manager -->
+    <bean id="anonClientSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.transport.http.AnonymousSslClientSocketFactory"/>
+        <property name="targetMethod" value="setTrustManager"/>
+        <property name="arguments">
+            <list>
+                <ref bean="trustManager"/>
+            </list>
+        </property>
+    </bean>
     <bean id="clientSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.transport.http.SslClientSocketFactory"/>
         <property name="targetMethod" value="setTrustManager"/>
@@ -273,8 +282,19 @@
             </list>
         </property>
     </bean>
-    <bean id="clientSocketFactorySsgKeystoreManagerInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="targetClass" value="com.l7tech.server.transport.http.SslClientSocketFactory"/>
+
+    <!-- SSL for JMS -->
+    <bean id="mqSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.transport.jms.JmsSslCustomizerSupport"/>
+        <property name="targetMethod" value="setTrustManager"/>
+        <property name="arguments">
+            <list>
+                <ref bean="trustManager"/>
+            </list>
+        </property>
+    </bean>
+    <bean id="mqSocketFactoryKeyManagerInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.transport.jms.JmsSslCustomizerSupport"/>
         <property name="targetMethod" value="setSsgKeyStoreManager"/>
         <property name="arguments">
             <list>

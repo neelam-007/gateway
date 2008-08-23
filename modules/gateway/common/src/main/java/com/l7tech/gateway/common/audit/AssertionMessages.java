@@ -372,6 +372,9 @@ public class AssertionMessages extends Messages {
     public static final M EMAILALERT_BAD_TO_ADDR  = m(6701, Level.WARNING, "Bad destination email address(es)");
     public static final M EMAILALERT_BAD_FROM_ADDR= m(6702, Level.WARNING, "Bad source email address");
     public static final M SNMP_BAD_TRAP_OID       = m(6703, Level.WARNING, "The OID ending with zero is reserved for the message field: Using .1 for the trap OID instead");
+    public static final M EMAILALERT_AUTH_FAIL    = m(6704, Level.WARNING, "Authentication failure, message not sent");
+    public static final M EMAILALERT_SSL_FAIL     = m(6705, Level.WARNING, "SSL connection failure, message not sent");
+    public static final M EMAILALERT_CONNECT_FAIL = m(6706, Level.WARNING, "Connection failure, message not sent");
 
     // HTTP Form POST
     public static final M HTTPFORM_WRONG_TYPE    = m(6800, Level.WARNING, true, false, "Request does not appear to be an HTTP form submission ({0})");

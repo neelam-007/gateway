@@ -14,21 +14,26 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
+import com.l7tech.server.ServerConfig;
 import org.springframework.context.ApplicationContext;
 
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Transport;
+import javax.mail.AuthenticationFailedException;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import javax.net.ssl.*;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.WeakHashMap;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.logging.Logger;
-import java.security.GeneralSecurityException;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.net.InetAddress;
 
@@ -39,14 +44,14 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
     private static final Logger logger = Logger.getLogger(ServerEmailAlertAssertion.class.getName());
 
     private final Auditor auditor;
-    private final Properties props;
+    private final Map<String, String> propertyMap;
     private final InternetAddress[] toAddresses;
     private final InternetAddress[] ccAddresses;
     private final InternetAddress[] bccAddresses;
     private final InternetAddress[] recipients;
     private final InternetAddress fromAddress;
 
-    private static final Map<Properties, Session> sessionCache = new WeakHashMap<Properties, Session>();
+    private static final Map<Map<String,String>, Session> sessionCache = new WeakHashMap<Map<String,String>, Session>();
     private Session session = null;
     private final String[] varsUsed;
     private static final String SOCKET_FACTORY_CLASSNAME = SslClientSocketFactory.class.getName();
@@ -55,27 +60,10 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
         super(ass);
         auditor = new Auditor(this, spring, logger);
 
-        props = new Properties();
-        props.setProperty("mail.from", ass.getSourceEmailAddress());
-        props.setProperty("mail.stmp.sendpartial", "true");
-        EmailAlertAssertion.Protocol proto = assertion.getProtocol();
-        String propPrefix = "mail.smtp";
-        if (proto == EmailAlertAssertion.Protocol.SSL) {
-            props.setProperty("mail.smtps.socketFactory.fallback", "false");
-            props.setProperty("mail.smtps.socketFactory.class", SOCKET_FACTORY_CLASSNAME);
-            propPrefix = "mail.smtps";
-        } else if (proto == EmailAlertAssertion.Protocol.STARTTLS) {
-            props.put("mail.smtp.starttls.enable", "true");
-            // TODO should I set a socket factory here?
-            props.setProperty("mail.smtp.socketFactory.class", StartTlsSocketFactory.class.getName());
-        }
-
-        props.setProperty(propPrefix + ".host", ass.getSmtpHost());
-        props.setProperty(propPrefix + ".port", Integer.toString(ass.getSmtpPort()));
-
-        if(assertion.isAuthenticate()) {
-            props.setProperty(propPrefix + ".auth", "true");
-        }
+        ServerConfig config = (ServerConfig) spring.getBean( "serverConfig", ServerConfig.class );
+        long connectTimeout = config.getTimeUnitPropertyCached( "ioMailConnectTimeout", 60000, 30000 );
+        long readTimeout = config.getTimeUnitPropertyCached( "ioMailReadTimeout", 60000, 30000 );
+        propertyMap = buildProperties( ass, connectTimeout, readTimeout );
 
         InternetAddress[] addr;
         try {
@@ -138,6 +126,76 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
     }
 
     /**
+     * Test the assertion.
+     * /
+    public Collection<String> test()  {
+        Collection<String> messages = new ArrayList<String>();
+
+        Properties properties = new Properties();
+        properties.putAll( propertyMap );
+        Session session = Session.getInstance(properties, null);
+        String body = assertion.getBase64message();
+
+        if (toAddresses == null) {
+            messages.add("Invalid to address.");
+        } else if (fromAddress == null) {
+            messages.add("Invalid from address.");
+        } else {
+            try {
+                sendMessage( session, body );
+            } catch (AuthenticationFailedException e) {
+                messages.add("Authentication failed.");
+            } catch (MessagingException e) {
+                if ( ExceptionUtils.causedBy( e, ConnectException.class ) ) {
+                    messages.add("Connection failed.");
+                } else if ( ExceptionUtils.causedBy( e, SSLHandshakeException.class ) ) {
+                    messages.add("SSL connection failed.");
+                } else {
+                    messages.add( "An error occurred '" + ExceptionUtils.getMessage(e) + "'");            
+                }
+            }
+        }
+
+        return messages;
+    }*/
+
+    /**
+     * Build immutable properties for this assertion 
+     */
+    private Map<String,String> buildProperties( final EmailAlertAssertion emailAlertAssertion,
+                                                final long connectTimeout,
+                                                final long readTimeout ) {
+        EmailAlertAssertion.Protocol protocol = assertion.getProtocol();
+        String protoVal = protocol==EmailAlertAssertion.Protocol.SSL ? "smtps" : "smtp";
+
+        Map<String,String> props = new HashMap<String,String>();
+        props.put("mail.from", emailAlertAssertion.getSourceEmailAddress());
+
+        // Transport config
+        props.put("mail.transport.protocol", protoVal);
+        props.put("mail." + protoVal + ".sendpartial", "true");
+        props.put("mail." + protoVal + ".connectiontimeout", Long.toString(connectTimeout));
+        props.put("mail." + protoVal + ".timeout", Long.toString(readTimeout));
+        props.put("mail." + protoVal + ".host", emailAlertAssertion.getSmtpHost());
+        props.put("mail." + protoVal + ".port", Integer.toString(emailAlertAssertion.getSmtpPort()));
+        props.put("mail." + protoVal + ".fallback", "false");
+
+        // SSL Config
+        if ( protocol == EmailAlertAssertion.Protocol.STARTTLS ) {
+            props.put("mail." + protoVal + ".socketFactory.class", StartTlsSocketFactory.class.getName());
+            props.put("mail." + protoVal + ".starttls.enable", "true");
+        } else if ( protocol == EmailAlertAssertion.Protocol.SSL ) {
+            props.put("mail." + protoVal + ".socketFactory.class", SOCKET_FACTORY_CLASSNAME);
+        }
+
+        if( assertion.isAuthenticate() ) {
+            props.put("mail." + protoVal + ".auth", "true");
+        }
+
+        return Collections.unmodifiableMap( props );
+    }
+
+    /**
      * Find a shared session that uses the same SMTP host, SMTP port, and mail From address.
      *
      * @return a session, either new or reusing one from another ServerEmailAlertAssertion with compatible settings.
@@ -147,10 +205,15 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
             return session;
 
         synchronized (sessionCache) {
-            session = sessionCache.get(props);
+            session = sessionCache.get(propertyMap);
             if (session == null) {
-                session = Session.getInstance(props, null);
-                sessionCache.put(props, session);
+                // create properties for session instantiation
+                Properties properties = new Properties();
+                properties.putAll( propertyMap );
+                session = Session.getInstance(properties, null);
+
+                // store using immutable property map as key
+                sessionCache.put(propertyMap, session);
             }
             return session;
         }
@@ -169,26 +232,44 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
 
         try {
             final Session session = getSession();
+            final String body = ExpandVariables.process(assertion.messageString(), context.getVariableMap(varsUsed, auditor), auditor);
 
-            MimeMessage message = new MimeMessage(session);
-            message.addRecipients(javax.mail.Message.RecipientType.TO, toAddresses);
-            message.addRecipients(javax.mail.Message.RecipientType.CC, ccAddresses);
-            message.addRecipients(javax.mail.Message.RecipientType.BCC, bccAddresses);
-            message.setFrom(fromAddress);
-            message.setSentDate(new java.util.Date());
-            message.setSubject(assertion.getSubject());
-            message.setText(ExpandVariables.process(assertion.messageString(), context.getVariableMap(varsUsed, auditor), auditor));
-            message.saveChanges();
+            sendMessage( session, body );
 
-            Transport tr = session.getTransport(assertion.getProtocol() == EmailAlertAssertion.Protocol.SSL ? "smtps" : "smtp");
-            tr.connect(assertion.getSmtpHost(), assertion.getSmtpPort(), assertion.getAuthUsername(), assertion.getAuthPassword());
-            tr.sendMessage(message, recipients);
+            auditor.logAndAudit(AssertionMessages.EMAILALERT_MESSAGE_SENT);
+            return AssertionStatus.NONE;
+        } catch (AuthenticationFailedException e) {
+            auditor.logAndAudit(AssertionMessages.EMAILALERT_AUTH_FAIL, null, ExceptionUtils.getDebugException(e) );
+            return AssertionStatus.FAILED;
         } catch (MessagingException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Unable to send email: " + e.getMessage()}, e);
+            if ( ExceptionUtils.causedBy( e, ConnectException.class ) ) {
+                auditor.logAndAudit(AssertionMessages.EMAILALERT_CONNECT_FAIL, null, ExceptionUtils.getDebugException(e) );                
+            } else if ( ExceptionUtils.causedBy( e, SSLHandshakeException.class ) ) {
+                auditor.logAndAudit(AssertionMessages.EMAILALERT_SSL_FAIL, null, ExceptionUtils.getDebugException(e) );
+            } else {
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Unable to send email: " + e.getMessage()}, e);
+            }
             return AssertionStatus.FAILED;
         }
-        auditor.logAndAudit(AssertionMessages.EMAILALERT_MESSAGE_SENT);
-        return AssertionStatus.NONE;
+    }
+
+    /**
+     * Send the message. 
+     */
+    private void sendMessage( final Session session, final String body ) throws MessagingException {
+        MimeMessage message = new MimeMessage(session);
+        message.addRecipients(javax.mail.Message.RecipientType.TO, toAddresses);
+        message.addRecipients(javax.mail.Message.RecipientType.CC, ccAddresses);
+        message.addRecipients(javax.mail.Message.RecipientType.BCC, bccAddresses);
+        message.setFrom(fromAddress);
+        message.setSentDate(new java.util.Date());
+        message.setSubject(assertion.getSubject());
+        message.setText(body);
+        message.saveChanges();
+
+        Transport tr = session.getTransport(assertion.getProtocol() == EmailAlertAssertion.Protocol.SSL ? "smtps" : "smtp");
+        tr.connect(assertion.getSmtpHost(), assertion.getSmtpPort(), assertion.getAuthUsername(), assertion.getAuthPassword());
+        tr.sendMessage(message, recipients);
     }
 
     /**
@@ -215,13 +296,16 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
             return sslFactory.getSupportedCipherSuites();
         }
 
+        /**
+         * Wrap existing socket with SSL 
+         */
+        public Socket createSocket(Socket socket, String string, int i, boolean b) throws IOException {
+            return sslFactory.createSocket(socket, string, i, b);
+        }
+
         @Override
         public Socket createSocket() throws IOException {
             return new Socket();
-        }
-
-        public Socket createSocket(Socket socket, String string, int i, boolean b) throws IOException {
-            return sslFactory.createSocket(socket, string, i, b);
         }
 
         public Socket createSocket(String string, int i) throws IOException {

@@ -42,6 +42,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
     private JTextField ccAddressesField;
     private JTextField bccAddressesField;
     private JCheckBox authenticateCheckBox;
+    private JButton sendTestEmailButton;
 
     private final boolean readOnly;
     private final EmailAlertAssertion assertion;
@@ -85,7 +86,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
 
         validator.attachToButton(okButton, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                viewToModel();
+                viewToModel(assertion);
                 confirmed = true;
                 dispose();
             }
@@ -97,6 +98,20 @@ public class EmailAlertPropertiesDialog extends JDialog {
                 dispose();
             }
         });
+
+//        sendTestEmailButton.addActionListener(new ActionListener(){
+//            public void actionPerformed(ActionEvent e) {
+//                DialogDisplayer.showConfirmDialog(sendTestEmailButton, "This will send an email to the current recipient list(s).\nSelect OK to send a test email.", "Confirm Email Test", JOptionPane.OK_CANCEL_OPTION, new DialogDisplayer.OptionListener(){
+//                    public void reportResult(int option) {
+//                        if ( option == JOptionPane.OK_OPTION ) {
+//                            EmailAlertAssertion assertion = new EmailAlertAssertion();
+//                            viewToModel(assertion);
+//                            Collection<String> messages = Registry.getDefault().getPolicyAdmin().test(assertion);
+//                        }
+//                    }
+//                });
+//            }
+//        });
 
         protocolCombo.setModel(new DefaultComboBoxModel(Protocol.values()));
         protocolCombo.addActionListener(new ActionListener() {
@@ -122,7 +137,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
 
         pack();
         Utilities.centerOnScreen(this);
-        modelToView();
+        modelToView(assertion);
 
         updateEnableDisableState();
         final DocumentListener dl = new DocumentListener() {
@@ -143,7 +158,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
     /**
      * Sets the fields to the values from the EmailAlertAssertion object.
      */
-    private void modelToView() {
+    private void modelToView(final EmailAlertAssertion assertion) {
         hostField.setText(assertion.getSmtpHost());
         portField.setText(Integer.toString(assertion.getSmtpPort()));
         toAddressesField.setText(assertion.getTargetEmailAddress());
@@ -161,7 +176,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
     /**
      * Sets the EmailAlertAssertion properties to the values from the fields in this dialog.
      */
-    private void viewToModel() {
+    private void viewToModel(final EmailAlertAssertion assertion) {
         assertion.setSmtpHost(hostField.getText());
         assertion.setSmtpPort(safeParseInt(portField.getText(), EmailAlertAssertion.DEFAULT_PORT));
         assertion.setTargetEmailAddress(toAddressesField.getText());

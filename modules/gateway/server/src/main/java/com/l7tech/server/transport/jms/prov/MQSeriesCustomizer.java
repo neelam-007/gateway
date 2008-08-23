@@ -5,15 +5,15 @@ package com.l7tech.server.transport.jms.prov;
 
 import com.ibm.mq.jms.MQConnectionFactory;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
+import com.l7tech.server.transport.http.AnonymousSslClientSocketFactory;
 import com.l7tech.server.transport.jms.ConnectionFactoryCustomizer;
 import com.l7tech.server.transport.jms.JmsConfigException;
+import com.l7tech.server.transport.jms.JmsSslCustomizerSupport;
 
 import javax.jms.ConnectionFactory;
 import javax.naming.Context;
 import javax.net.ssl.SSLSocketFactory;
-import java.security.GeneralSecurityException;
 
 /**
  * @author alex
@@ -36,21 +36,14 @@ public class MQSeriesCustomizer implements ConnectionFactoryCustomizer {
         final String skid = (String)jmsConnection.properties().get(JmsConnection.PROP_QUEUE_SSG_KEYSTORE_ID);
         final SSLSocketFactory socketFactory;
 
-        if (alias != null && skid != null) {
-            try {
-                socketFactory = SslClientSocketFactory.getInstance(Long.valueOf(skid), alias);
-            } catch (NumberFormatException e) {
-                throw new JmsConfigException("Bad keystore ID: " + skid, e);
-            } catch (FindException e) {
-                throw new JmsConfigException("Unable to find SSG Keystore Entry", e);
-            } catch (GeneralSecurityException e) {
-                throw new JmsConfigException("Unable to initialize SSLSocketFactory", e);
-            }
+        if ( alias != null && skid != null ) {
+            socketFactory = JmsSslCustomizerSupport.getSocketFactory(skid, alias);
         } else if (clientAuth) {
             socketFactory = SslClientSocketFactory.getDefault();
         } else {
-            socketFactory = SslClientSocketFactory.getAnonymous();
+            socketFactory = AnonymousSslClientSocketFactory.getDefault();
         }
         mqcf.setSSLSocketFactory(socketFactory);
     }
+
 }
