@@ -657,11 +657,15 @@ public class ServerConfig implements ClusterPropertyListener {
     public long getTimeUnitPropertyCached(String propName, long emergencyDefault, long maxAge) {
         String strval = getPropertyCached(propName, maxAge);
         long val;
-        try {
-            val = TimeUnit.parse(strval, TimeUnit.MINUTES);
-        } catch (NumberFormatException e) {
-            logger.warning("Parameter " + propName + " value '" + strval + "' not a valid timeunit; using " + emergencyDefault + " instead");
+        if ( strval == null ) {
             val = emergencyDefault;
+        } else {
+            try {
+                val = TimeUnit.parse(strval, TimeUnit.MINUTES);
+            } catch (NumberFormatException e) {
+                logger.warning("Parameter " + propName + " value '" + strval + "' not a valid timeunit; using " + emergencyDefault + " instead");
+                val = emergencyDefault;
+            }
         }
         return val;
     }
