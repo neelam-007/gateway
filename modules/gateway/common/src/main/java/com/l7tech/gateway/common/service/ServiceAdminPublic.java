@@ -38,6 +38,16 @@ public interface ServiceAdminPublic {
     ServiceHeader[] findAllPublishedServices() throws FindException;
 
     /**
+     * Overloaded findAllPublishedServices to all caller to explicitly choose whether aliases are returned in
+     * the results or not. This is the only findAll method which will return aliases 
+     * @param includeAliases true if the returned array should contain aliases
+     * @return ServiceHeader []. If includeAliases is true then this array can contain aliases. Call isAlias
+     * on each ServiceHeader to determine if it is an alias.
+     * @throws FindException
+     */
+    ServiceHeader[] findAllPublishedServices(boolean includeAliases) throws FindException;
+
+    /**
      * Retrieve a specified published service given its service ID.
      *
      * @param oid the unique identifier of the service

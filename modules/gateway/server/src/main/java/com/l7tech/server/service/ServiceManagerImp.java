@@ -71,12 +71,13 @@ public class ServiceManagerImp
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public Collection<ServiceHeader> findAllHeaders() throws FindException{
+    public Collection<ServiceHeader> findAllHeaders(boolean includeAliases) throws FindException {
         Collection<ServiceHeader> origHeaders = super.findAllHeaders();
+        if(!includeAliases) return origHeaders;
+
         //Modify results for any aliases that may exist
         Collection<PublishedServiceAlias> allAliases = serviceAliasManager.findAll();
-        
+
         Map<Long, Set<PublishedServiceAlias>> serviceIdToAllItsAliases = new HashMap<Long, Set<PublishedServiceAlias>>();
         for(PublishedServiceAlias psa: allAliases){
             Long origServiceId = psa.getEntityOid();
@@ -103,7 +104,7 @@ public class ServiceManagerImp
         }
         return returnHeaders;
     }
-    
+
     @Override
     public long save(final PublishedService service) throws SaveException {
         // 1. record the service (no policy)

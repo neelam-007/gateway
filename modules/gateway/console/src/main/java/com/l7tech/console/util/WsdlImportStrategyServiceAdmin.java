@@ -129,6 +129,10 @@ public class WsdlImportStrategyServiceAdmin implements ServiceAdmin {
         return delegate.findAllPublishedServices();
     }
 
+    public ServiceHeader[] findAllPublishedServices(boolean includeAliases) throws FindException {
+        return delegate.findAllPublishedServices(includeAliases);
+    }
+
     public PublishedService findServiceByID( String oid ) throws FindException {
         return decorate(delegate.findServiceByID( oid ));
     }

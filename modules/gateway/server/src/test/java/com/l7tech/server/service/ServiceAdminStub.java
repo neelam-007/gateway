@@ -193,6 +193,18 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
 
     /**
      * Returns an unmodifiable collection of <code>EntityHeader</code>
+     * objects for all instances of the entity class corresponding to
+     * this Manager.
+     * @param includeAliases if true the returned array can contain aliases
+     * @return A <code>Collection</code> of EntityHeader objects.
+     */
+    public ServiceHeader[] findAllPublishedServices(boolean includeAliases) throws FindException {
+        Collection res = serviceManager.findAllHeaders(includeAliases);
+        return collectionToHeaderArray(res);
+    }
+
+    /**
+     * Returns an unmodifiable collection of <code>EntityHeader</code>
      * objects for instances of this entity class from a list sorted
      * by <code>oid</code>, selecting only a specific subset of the list.
      *

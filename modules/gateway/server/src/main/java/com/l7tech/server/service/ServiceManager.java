@@ -5,8 +5,11 @@ package com.l7tech.server.service;
 
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.PublishedService;
+
+import java.util.Collection;
 
 /**
  * Service API. Get instance of this through the Locator class.
@@ -28,4 +31,14 @@ public interface ServiceManager extends EntityManager<PublishedService, ServiceH
      * @throws com.l7tech.objectmodel.SaveException  if the new Role could not be saved
      */
     public void addManageServiceRole(PublishedService service) throws SaveException;
+
+    /**
+     * Overloads findAllHeaders in ReadOnlyEntityManager to allow a caller to explicitly include
+     * aliases in the results
+     * @param includeAliases true if the returned Collection should contain aliases or not
+     * @return Collection<PublishedService> if true was specified for includeAliases then the Collection
+     * returned will contain aliases if any exist. To determine call isAlias on each ServiceHeader
+     */
+    public Collection<ServiceHeader> findAllHeaders(boolean includeAliases) throws FindException;
+
 }

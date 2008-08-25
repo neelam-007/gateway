@@ -84,6 +84,17 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService, Serv
     }
 
     /**
+     * Returns the result from super.findAllHeaders. Specifying includealiases as either true or false has no affect
+     * on the Collection returned
+     * @param includeAliases
+     * @return
+     * @throws FindException
+     */
+    public Collection<ServiceHeader> findAllHeaders(boolean includeAliases) throws FindException {
+        return super.findAllHeaders();
+    }
+
+    /**
      * updates a policy service. call this instead of save if the service
      * has an history. on the console side implementation, you can call save
      * either way and the oid will dictate whether the object should be saved

@@ -268,7 +268,7 @@ public final class RootNode extends FolderNode{
             List<EntityHeader> allFolderEntities = new ArrayList<EntityHeader>();
             Set<FolderHeader> allFolderHeaders = new HashSet<FolderHeader>();
 
-            ServiceHeader[] serviceHeaders = serviceManager.findAllPublishedServices();
+            ServiceHeader[] serviceHeaders = serviceManager.findAllPublishedServices(true);
             List<ServiceHeader> serviceHeadersList = Arrays.asList(serviceHeaders);
             Collection<PolicyHeader> policyHeaders = policyAdmin.findPolicyHeadersWithTypes(EnumSet.of(PolicyType.INCLUDE_FRAGMENT, PolicyType.INTERNAL));
 

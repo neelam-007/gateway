@@ -230,6 +230,11 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         return collectionToHeaderArray(res);
     }
 
+    public ServiceHeader[] findAllPublishedServices(boolean includeAliases) throws FindException {
+        Collection<ServiceHeader> res = serviceManager.findAllHeaders(includeAliases);
+        return collectionToHeaderArray(res);
+    }
+
     public ServiceHeader[] findAllPublishedServicesByOffset(int offset, int windowSize)
                     throws FindException {
             Collection<ServiceHeader> res = serviceManager.findAllHeaders(offset, windowSize);
