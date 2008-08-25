@@ -449,19 +449,17 @@
         <ivy:report todir="${build.etc.dir}" outputpattern="dependency_gen.xml" conf="test" graph="false" xsl="false" xml="true"/>
 
         <copy file="${ivy.module}.iml" tofile="${build.etc.dir}/${ivy.module}.tmp.xml" overwrite="true" failonerror="false"/>
-        <available property="idea.module.current" value="${build.etc.dir}/${ivy.module}.tmp.xml" file="${build.etc.dir}/${ivy.module}.tmp.xml"/>
-        <property name="idea.module.current" value="${ivy.file}"/> <!-- Set to the IVY file if there is no IDEA module available (so the XSLT is happy) -->
+        <copy file="${src.root}/etc/build/idea_module.xml" tofile="${build.etc.dir}/${ivy.module}.tmp.xml" overwrite="false"/> <!-- Default to empty module -->
         <xslt in="${build.etc.dir}/dependency_gen.xml" out="${build.etc.dir}/dependency.xml"
               style="${src.root}/etc/build/identity.xsl" force="true"/>
-        <xslt in="${build.etc.dir}/dependency.xml" out="${ivy.module}.iml"
+        <xslt in="${build.etc.dir}/${ivy.module}.tmp.xml" out="${ivy.module}.iml"
               style="${src.root}/etc/build/idea_module.xsl" force="true">
             <param name="modulemeta" expression="${src.root}/etc/build/idea_meta.xml"/>
-            <param name="module" expression="${idea.module.current}"/>
+            <param name="data" expression="${build.etc.dir}/dependency.xml"/>
             <param name="source" expression="${module.source.available}"/>
             <param name="tests" expression="${module.tests.available}"/>
             <param name="source.resources" expression="${module.resources.available}"/>
             <param name="test.resources" expression="${module.testresources.available}"/>
-            <param name="runtime" expression="true" if="module.main"/>
         </xslt>
     </target>
 

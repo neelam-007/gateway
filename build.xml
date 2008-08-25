@@ -324,7 +324,7 @@
         <attribute name="refid"/>
         <attribute name="pathid"/>
         <sequential>
-            <pathconvert property="@{pathid}" targetos="unix" pathsep="${line.separator}            " refid="@{refid}">
+            <pathconvert property="@{pathid}" pathsep="${line.separator}            " dirsep="/" refid="@{refid}">
                 <mapper type="regexp" from=".*[/\\](modules.*)/build.xml" to="\1"/>
             </pathconvert>
             <echo level="info">
@@ -698,7 +698,7 @@
         </concat>
 
         <!-- Regenerate IDEA module for inspections (All modules) -->
-        <pathconvert property="module.paths.xml.text" pathsep="${line.separator}                ">
+        <pathconvert property="module.paths.xml.text" pathsep="${line.separator}                " dirsep="/">
             <mapper type="regexp" from=".*[\\/](modules[\\/].*)" to="&lt;path file=&quot;\1&quot;/&gt;"/>
             <path>
                 <dirset dir="modules">
@@ -734,16 +734,12 @@
         <echo level="info">Building IDEA modules.</echo>
         <modules target="idea" buildpathref="module-build-all-path"/>
 
-        <!-- Module for transitive dependencies -->
-        <copy file="etc/build/idea_module_runtime.xml" tofile="UneasyRooster.iml" overwrite="false"/>
-        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/gateway/console/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
-        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/gateway/server/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
-        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/skunkworks/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
-        <xslt-update file="UneasyRooster.iml" data="${src.root}/modules/xmlvpnclient/build/etc/dependency.xml" style="etc/build/idea_module_runtime.xsl"/>
+        <!-- Module for root content -->
+        <copy file="etc/build/idea_module.xml" tofile="UneasyRooster.iml" overwrite="false"/>
 
         <echo level="info">Building IDEA project.</echo>
         <!-- Generate XML descriptor for modules -->
-        <pathconvert property="modules.xml.text" pathsep="${line.separator}                ">
+        <pathconvert property="modules.xml.text" pathsep="${line.separator}                " dirsep="/">
             <mapper type="regexp" from=".*[/\\](modules.*.iml)" to="&lt;module file=&quot;\1&quot;/&gt;"/>
             <path>
                 <fileset dir="modules" includes="**/*.iml"/>
@@ -791,7 +787,7 @@
             <include name="modules/*/*/*.iml"/>
             <include name="modules/*/*/*/*.iml"/>
         </patternset>
-        <pathconvert property="project.files.text" pathsep="${line.separator}                ">
+        <pathconvert property="project.files.text" pathsep="${line.separator}                " dirsep="/">
             <mapper type="regexp" from=".*[/\\](.*\.i[mpw][lrs])" to="\1"/>
             <path>
                 <fileset dir=".">
@@ -831,7 +827,7 @@
     -->
     <target name="summary" unless="test">
         <echo level="info">Possible test classes are: (use -Dtest=...)</echo>
-        <pathconvert property="x" targetos="unix" pathsep="${line.separator}">
+        <pathconvert property="x" pathsep="${line.separator}" dirsep="/">
             <mapper type="regexp" from=".*[/\\](.*)\.class" to="\1"/>
             <path>
                 <fileset dir="modules" includes="**/build/test-classes/**/*Test.class"/>
@@ -947,8 +943,8 @@
           A cleaner approach may be to resolve all the dependencies of the skunkworks module when it is built.
         -->
         <ivy:cachepath organisation="com.l7tech" module="layer7-skunkworks" inline="true" conf="default,test" pathid="japex.skunk.path"/>
-        <pathconvert property="japex.skunk.text" targetos="unix" pathsep=":" refid="japex.skunk.path"/>
-        <pathconvert property="japex.class.text" targetos="unix" pathsep=":">
+        <pathconvert property="japex.skunk.text" pathsep=":" dirsep="/" refid="japex.skunk.path"/>
+        <pathconvert property="japex.class.text" pathsep=":" dirsep="/">
             <path>
                 <pathelement location="${japex.skunk.text}"/>
                 <fileset dir="${build.dir}">
@@ -1206,13 +1202,13 @@
                 <include name="managerlibs/*"/>
             </fileset>
         </path>
-        <pathconvert property="findbugs.target.class.xml" targetos="unix" pathsep="${line.separator}    " refid="findbugs.target.class.path">
+        <pathconvert property="findbugs.target.class.xml" pathsep="${line.separator}    " dirsep="/" refid="findbugs.target.class.path">
             <mapper type="regexp" from="(.*)" to="&lt;Jar&gt;\1&lt;/Jar&gt;"/>
         </pathconvert>
-        <pathconvert property="findbugs.aux.class.xml" targetos="unix" pathsep="${line.separator}    " refid="findbugs.aux.class.path">
+        <pathconvert property="findbugs.aux.class.xml" pathsep="${line.separator}    " dirsep="/" refid="findbugs.aux.class.path">
             <mapper type="regexp" from="(.*)" to="&lt;AuxClasspathEntry&gt;\1&lt;/AuxClasspathEntry&gt;"/>
         </pathconvert>
-        <pathconvert property="findbugs.source.xml" targetos="unix" pathsep="${line.separator}    " refid="findbugs.source.path">
+        <pathconvert property="findbugs.source.xml" pathsep="${line.separator}    " dirsep="/" refid="findbugs.source.path">
             <mapper type="regexp" from="(.*)" to="&lt;SrcDir&gt;\1&lt;/SrcDir&gt;"/>
         </pathconvert>
         <echo file="${build.etc}/findbugs.fbp">&lt;Project filename="${build.etc}/findbugs.fbp" projectName="UneasyRooster"&gt;
@@ -1716,7 +1712,7 @@
             <fileset id="@{propertyPrefix}.lib.fileset" dir="${src.root}/lib" casesensitive="yes">
                 <patternset refid="@{propertyPrefix}.libs"/>
             </fileset>
-            <pathconvert property="@{propertyPrefix}.libs.path" targetos="unix" pathsep=" " refid="@{propertyPrefix}.lib.fileset">
+            <pathconvert property="@{propertyPrefix}.libs.path" pathsep=" " dirsep="/" refid="@{propertyPrefix}.lib.fileset">
                 <mapper type="regexp" from=".*[/\\](.*)\.jar" to="lib/\1.jar"/>
             </pathconvert>
             <copy todir="${build.etc}">
@@ -3075,8 +3071,8 @@
         <attribute name="jarFileset"/>
         <attribute name="libFileset"/>
         <sequential>
-            <pathconvert property="obfuscate.@{name}.zkm.jars.path" targetos="unix" pathsep="&quot;${line.separator}&quot;" refid="@{jarFileset}"/>
-            <pathconvert property="obfuscate.@{name}.zkm.libs.path" targetos="unix" pathsep="&quot;${line.separator}&quot;" refid="@{libFileset}"/>            
+            <pathconvert property="obfuscate.@{name}.zkm.jars.path" pathsep="&quot;${line.separator}&quot;" dirsep="/" refid="@{jarFileset}"/>
+            <pathconvert property="obfuscate.@{name}.zkm.libs.path" pathsep="&quot;${line.separator}&quot;" dirsep="/" refid="@{libFileset}"/>            
             <copy file="@{zkmFilePath}" tofile="build/etc/@{name}.zkm" overwrite="true">
                 <filterset>
                     <filter token="CP" value="${obfuscate.@{name}.zkm.libs.path}"/>
