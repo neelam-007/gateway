@@ -16,15 +16,18 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.util.Collection;
-import java.util.Iterator;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.SecureRandom;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class ClusterBootProcess implements ServerComponentLifecycle, ApplicationContextAware {
+
+    //- PUBLIC
 
     public static class AddressAlreadyInUseException extends Exception {
         public AddressAlreadyInUseException(String address) {
@@ -58,21 +61,21 @@ public class ClusterBootProcess implements ServerComponentLifecycle, Application
             Collection allNodes = clusterInfoManager.retrieveClusterStatus();
 
             if ( multicastAddress == null || multicastAddress.length() == 0 ) {
-                for ( Iterator i = allNodes.iterator(); i.hasNext(); ) {
-                    ClusterNodeInfo nodeInfo = (ClusterNodeInfo)i.next();
+                for (Object allNode : allNodes) {
+                    ClusterNodeInfo nodeInfo = (ClusterNodeInfo) allNode;
                     String nodeAddress = nodeInfo.getMulticastAddress();
-                    if (nodeAddress == null) {
-                        continue;
-                    } else if (multicastAddress == null) {
-                        logger.info("Found an existing cluster node with multicast address " + nodeAddress);
-                        multicastAddress = nodeAddress;
-                    } else if (!multicastAddress.equals(nodeAddress)) {
-                        throw new LifecycleException("At least two nodes in database have different multicast addresses");
+                    if (nodeAddress != null) {
+                        if (multicastAddress == null) {
+                            logger.info("Found an existing cluster node with multicast address " + nodeAddress);
+                            multicastAddress = nodeAddress;
+                        } else if (!multicastAddress.equals(nodeAddress)) {
+                            throw new LifecycleException("At least two nodes in database have different multicast addresses");
+                        }
                     }
                 }
 
                 if (multicastAddress == null) {
-                    multicastAddress = ClusterInfoManagerImpl.generateMulticastAddress();
+                    multicastAddress = generateMulticastAddress();
                     myInfo.setMulticastAddress(multicastAddress);
                     clusterInfoManager.updateSelfStatus(myInfo);
                 }
@@ -109,7 +112,34 @@ public class ClusterBootProcess implements ServerComponentLifecycle, Application
         return "Cluster Boot Process";
     }
 
-    public static final String CHANNEL_NAME = "com.l7tech.cluster.jgroupsChannel";
+    //- PACKAGE
+
+    static String generateMulticastAddress() {
+        StringBuffer addr = new StringBuffer();
+
+        if (Boolean.getBoolean(PROP_OLD_MULTICAST_GEN)) {
+            // old method ... not so random
+            addr.append("224.0.7.");
+            addr.append(Math.abs(random.nextInt() % 256));
+        } else {
+            // randomize an address from the 224.0.2.0 - 224.0.255.255 range
+            addr.append("224.0.");
+            int randomVal = 0;
+            while (randomVal < 2) {
+                randomVal = Math.abs(random.nextInt() % 256);
+            }
+            addr.append(randomVal);
+            addr.append(".");
+            addr.append(Math.abs(random.nextInt() % 256));
+        }
+
+        return addr.toString();
+    }
+
+    //- PRIVATE
+
+    private static final String PROP_OLD_MULTICAST_GEN = "com.l7tech.cluster.macAddressOldGen"; // true for old
+    private static final Random random = new SecureRandom();
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
@@ -118,4 +148,5 @@ public class ClusterBootProcess implements ServerComponentLifecycle, Application
     private DistributedMessageIdManager distributedMessageIdManager;
     private String multicastAddress;
     private static final int PORT = 8777;
+
 }
