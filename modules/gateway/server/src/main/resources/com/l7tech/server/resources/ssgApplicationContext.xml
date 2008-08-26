@@ -81,6 +81,7 @@
                             </list>
                         </entry>
                         <entry key="auditDetailFilter"><list><value>auditAssociatedLogsThreshold</value></list></entry>
+                        <entry key="kerberosConfig"><list><value>krb5Keytab</value></list></entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -922,4 +923,7 @@
 
     <bean id="esmSubscriptionManager" class="com.l7tech.server.wsdm.subscription.SubscriptionManagerImpl" parent="hibernateBean"/>
 
+    <bean id="kerberosConfig" class="com.l7tech.server.security.kerberos.ServerKerberosConfig">
+        <constructor-arg ref="serverConfig"/>
+    </bean>
 </beans>

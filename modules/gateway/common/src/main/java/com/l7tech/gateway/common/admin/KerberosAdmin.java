@@ -56,4 +56,12 @@ public interface KerberosAdmin  {
      * @return The configuration map (could be empty but should not be NULL)
      */
     public Map<String,String> getConfiguration();
+
+    /**
+     * Install a new keytab file.
+     *
+     * @param data The data for the keytab file.
+     * @throws KerberosException if an error occurred.
+     */
+    public void installKeytab( byte[] data ) throws KerberosException;
 }

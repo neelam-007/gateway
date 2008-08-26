@@ -65,7 +65,8 @@ public class ClusterProperty extends NamedEntityImp {
         // Currently, there's only 1 hidden property, so for now we'll just hardcode it rather than
         // add a whole new DB column and support code
         return "license".equals(_name)
-            || "audit.acknowledge.highestTime".equals(_name);
+            || "audit.acknowledge.highestTime".equals(_name)
+            || "krb5.keytab".equals(_name);
     }
 
     public boolean equals(Object other) {

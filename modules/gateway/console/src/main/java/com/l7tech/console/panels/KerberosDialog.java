@@ -8,15 +8,23 @@ import java.util.Map;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.text.SimpleDateFormat;
+import java.io.File;
+import java.io.IOException;
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
 
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.gateway.common.admin.KerberosAdmin;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.FileChooserUtil;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.kerberos.KerberosException;
 import com.l7tech.kerberos.Keytab;
 import com.l7tech.util.Background;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.common.io.IOUtils;
 
 /**
  * Dialog for displaying Kerberos configuration information.
@@ -61,6 +69,7 @@ public class KerberosDialog extends JDialog {
     private JLabel summaryLabel;
     private JLabel encryptionTypesLabel;
     private JLabel errorMessageLabel;
+    private JButton uploadKeytab;
 
     private boolean validKeytab = false;
 
@@ -74,6 +83,12 @@ public class KerberosDialog extends JDialog {
         okButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e) {
                 KerberosDialog.this.dispose();
+            }
+        });
+
+        uploadKeytab.addActionListener(new ActionListener(){
+            public void actionPerformed(ActionEvent e) {
+                loadKeytab();
             }
         });
 
@@ -143,6 +158,11 @@ public class KerberosDialog extends JDialog {
     }
 
     private void testConfiguration() {
+        validLabel.setText(" - ");
+        summaryLabel.setText("Checking configuration ...");
+        errorMessageLabel.setText("");
+        errorMessageLabel.setVisible( false );
+        
         if ( validKeytab ) {
             Background.scheduleOneShot( new TimerTask(){
                 @Override
@@ -208,5 +228,101 @@ public class KerberosDialog extends JDialog {
         }
 
         return principal;
+    }
+
+    private void doUpload(  final File keytabFile  ) {
+        try {
+            byte[] fileData =IOUtils.slurpFile(keytabFile);
+
+            KerberosAdmin kerberosAdmin = Registry.getDefault().getKerberosAdmin();
+            kerberosAdmin.installKeytab( fileData );
+
+            SwingUtilities.invokeLater( new Runnable() {
+                public void run() {
+                    initData();
+                    testConfiguration();
+                }
+            });
+        } catch ( IOException ioe ) {
+            DialogDisplayer.showMessageDialog(
+                    KerberosDialog.this,
+                    "Error reading keytab:\n\t" + ExceptionUtils.getMessage(ioe),
+                    "Keytab Error",
+                    JOptionPane.WARNING_MESSAGE,
+                    null );
+        } catch ( KerberosException ome ) {
+            DialogDisplayer.showMessageDialog(
+                    KerberosDialog.this,
+                    "Error saving keytab:\n\t" + ExceptionUtils.getMessage(ome),
+                    "Error Saving Keytab",
+                    JOptionPane.WARNING_MESSAGE,
+                    null );
+        }
+    }
+
+    private void loadKeytab( final File keytabFile ) {
+        try {
+            Keytab keytab = new Keytab( keytabFile );
+
+            DialogDisplayer.showConfirmDialog(
+                    KerberosDialog.this,
+                    "Load keytab for principal:\n\t" + formatName(keytab.getKeyName()),
+                    "Confirm Keytab Update",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    new DialogDisplayer.OptionListener(){
+                        public void reportResult(int option) {
+                            if ( option == JOptionPane.OK_OPTION ) {
+                                doUpload( keytabFile );
+                            }
+                        }
+                    } );
+        } catch ( KerberosException ke ) {
+            DialogDisplayer.showMessageDialog(
+                    KerberosDialog.this,
+                    "Invalid kerberos keytab:\n\t" + ExceptionUtils.getMessage(ke),
+                    "Invalid Keytab",
+                    JOptionPane.WARNING_MESSAGE,
+                    null );
+        } catch ( IOException ioe ) {
+            DialogDisplayer.showMessageDialog(
+                    KerberosDialog.this,
+                    "Error reading keytab:\n\t" + ExceptionUtils.getMessage(ioe),
+                    "Keytab Error",
+                    JOptionPane.WARNING_MESSAGE,
+                    null );
+        }
+    }
+
+    private void loadKeytab() {
+        FileChooserUtil.doWithJFileChooser( new FileChooserUtil.FileChooserUser(){
+            public void useFileChooser( final JFileChooser fc ) {
+                fc.setDialogTitle("Select Keytab");
+                fc.setDialogType(JFileChooser.OPEN_DIALOG);
+                FileFilter fileFilter = new FileFilter() {
+                    public boolean accept(File f) {
+                        return  f.isDirectory() ||
+                                f.getName().toLowerCase().endsWith(".keytab");
+                    }
+                    public String getDescription() {
+                        return "(*.keytab) Kerberos Keytab.";
+                    }
+                };
+                fc.addChoosableFileFilter(fileFilter);
+                fc.setMultiSelectionEnabled(false);
+                int r = fc.showDialog(KerberosDialog.this, "Open");
+                if(r == JFileChooser.APPROVE_OPTION) {
+                    File file = fc.getSelectedFile();
+                    if( file != null ) {
+                        if( file.canRead() ) {
+                            loadKeytab( file );
+                        }
+                        else {
+                            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
+                                    "File not accessible: '" + file.getAbsolutePath() + "'.", null);
+                        }
+                    }
+                }
+            }
+        } );
     }
 }

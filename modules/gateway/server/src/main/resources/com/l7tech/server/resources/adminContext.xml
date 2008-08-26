@@ -365,7 +365,9 @@
     </bean>
 
     <!-- kerberos admin servant -->
-    <bean id="kerberosAdmin_UNSECURED" class="com.l7tech.server.KerberosAdminImpl"/>
+    <bean id="kerberosAdmin_UNSECURED" class="com.l7tech.server.KerberosAdminImpl">
+        <constructor-arg ref="clusterPropertyManager"/>        
+    </bean>
 
     <!-- trusted cert admin servant -->
     <bean id="clusterStatusAdmin_UNSECURED" class="com.l7tech.server.cluster.ClusterStatusAdminImp">

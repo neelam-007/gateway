@@ -436,6 +436,12 @@ public class KerberosClient {
         return aPrincipal;
     }
 
+    /**
+     * Reset any cached information
+     */
+    public static void reset() {
+        acceptPrincipal = null;        
+    }
 
     //- PACKAGE
 

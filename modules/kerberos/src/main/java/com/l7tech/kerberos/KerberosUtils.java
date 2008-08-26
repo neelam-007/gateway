@@ -70,6 +70,17 @@ public class KerberosUtils {
     }
 
     /**
+     * Regenerate kerberos configuration files using the given keytab.
+     *
+     * @param keytab The keytab data to use
+     * @throws KerberosException if an error occurs
+     */
+    public static void configureKerberos(byte[] keytab) throws KerberosException {
+        KerberosConfig.generateKerberosConfig(keytab);
+        KerberosClient.reset();
+    }
+
+    /**
      * If the kerberos configuration has been generated this will return the KDC host/ip.
      *
      * @return the KDC or null.

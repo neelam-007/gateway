@@ -1,9 +1,13 @@
 package com.l7tech.server;
 
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.kerberos.*;
 import com.l7tech.gateway.common.admin.KerberosAdmin;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.objectmodel.ObjectModelException;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -21,6 +25,10 @@ import java.util.logging.Level;
 public class KerberosAdminImpl implements KerberosAdmin {
 
     //- PUBLIC
+
+    public KerberosAdminImpl( final ClusterPropertyManager clusterPropertyManager ) {
+        this.clusterPropertyManager = clusterPropertyManager;
+    }
 
     public Keytab getKeytab() throws KerberosException {
         try {
@@ -83,7 +91,30 @@ public class KerberosAdminImpl implements KerberosAdmin {
         return Collections.unmodifiableMap(configMap);
     }
 
+    public void installKeytab(byte[] data) throws KerberosException {
+        try {
+            ClusterProperty property = clusterPropertyManager.findByUniqueName(KEYTAB_PROPERTY);
+            if (property == null) {
+                property = new ClusterProperty();
+                property.setName(KEYTAB_PROPERTY);
+            }
+            property.setValue( HexUtils.encodeBase64(data) );
+
+            long oid = property.getOid();
+            if ( oid == ClusterProperty.DEFAULT_OID ) {
+                clusterPropertyManager.save(property);
+            } else {
+                clusterPropertyManager.update(property);
+            }
+        } catch ( ObjectModelException ome ) {
+            throw new KerberosException( "Error persisting keytab.", ome );        
+        }
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(KerberosAdminImpl.class.getName());
+    private static final String KEYTAB_PROPERTY = "krb5.keytab";
+
+    private final ClusterPropertyManager clusterPropertyManager;
 }

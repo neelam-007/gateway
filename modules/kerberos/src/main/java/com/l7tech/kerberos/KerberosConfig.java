@@ -52,6 +52,27 @@ class KerberosConfig {
     }
 
     /**
+     * Can be called by a user to configure Kerberos info.
+     */
+    static void generateKerberosConfig(byte[] keytabData) throws KerberosException {
+        File keytab = getKeytabFile();
+
+        OutputStream out = null;
+        try {
+            out = new FileOutputStream(keytab);
+            out.write( keytabData );
+        }
+        catch(IOException ioe) {
+            throw new KerberosException( "Error writing Kerberos keytab.", ioe);
+        }
+        finally {
+            ResourceUtils.closeQuietly(out);
+        }
+
+        checkConfig();
+    }
+
+    /**
      * Get the kdc, note that this is the cached value (so call after checkConfig).
      *
      * @return The KDC that is in use.
@@ -86,6 +107,7 @@ class KerberosConfig {
             throw new KerberosException("Error reading Keytab file.", ioe);
         }
     }
+    
     static String getKeytabPrincipal() throws KerberosException {
         String principal;
 
@@ -116,9 +138,11 @@ class KerberosConfig {
     private static final String SYSPROP_KRB5_REALM = "java.security.krb5.realm";
     private static final String SYSPROP_KRB5_ENC_TKT = "com.l7tech.server.krb5.tktenc";
     private static final String SYSPROP_KRB5_ENC_TGS = "com.l7tech.server.krb5.tgsenc";
+    private static final String SYSPROP_KRB5_REFRESH = "com.l7tech.server.krb5.refresh";
 
     private static final String ENCTYPES_TKT_DEFAULT = "rc4-hmac,des-cbc-md5";
     private static final String ENCTYPES_TGS_DEFAULT = "rc4-hmac,des-cbc-md5";
+    private static final String REFRESH_DEFAULT = "true";
 
     private static final String PATH_KEYTAB = "/kerberos.keytab";
     private static final String PATH_LOGINCFG = "/login.config";
@@ -147,6 +171,7 @@ class KerberosConfig {
             "    com.sun.security.auth.module.Krb5LoginModule required\n" +
             "    useKeyTab=true\n" +
             "    keyTab=\"{0}\"\n" +
+            "    refreshKrb5Config={1}\n" +
             "    isInitiator=false\n" +
             "    storeKey=true;\n" +
             "};\n" +
@@ -156,6 +181,7 @@ class KerberosConfig {
             "    com.sun.security.auth.module.Krb5LoginModule required\n" +
             "    useKeyTab=true\n" +
             "    keyTab=\"{0}\"\n" +
+            "    refreshKrb5Config={1}\n" +                    
             "    storeKey=true;\n" +
             "};\n";
 
@@ -276,12 +302,14 @@ class KerberosConfig {
     private static void generateLoginConfig(File file) {
         File keytabFile = getKeytabFile();
 
+        String refresh = System.getProperty(SYSPROP_KRB5_REFRESH, REFRESH_DEFAULT);
         String ls = System.getProperty(SYSPROP_LINE_SEP, "\n");
         OutputStream out = null;
         try {
             out = new FileOutputStream(file);
             out.write(MessageFormat.format(LOGIN_CONFIG_TEMPLATE,
-                    keytabFile.getAbsolutePath()).replace("\n", ls).getBytes("UTF-8"));
+                    keytabFile.getAbsolutePath(),
+                    refresh).replace("\n", ls).getBytes("UTF-8"));
         }
         catch(IOException ioe) {
             logger.log(Level.SEVERE, "Error writing Kerberos login configuration.", ioe);
