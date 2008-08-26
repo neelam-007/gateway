@@ -42,7 +42,7 @@ public class RmiConfigCheck implements InitializingBean {
         // If the RMI hostname is set ensure it resolves to a local address
         String rmiHostName = SyspropUtil.getProperty(SYSPROP_RMI_HOSTNAME);
         if (rmiHostName == null) {
-            logger.log(Level.WARNING, "RMI host name is not set (java.rmi.server.hostname)");
+            logger.log(Level.CONFIG, "RMI host name is not set (java.rmi.server.hostname)");
         } else {
             if (logger.isLoggable(Level.CONFIG))
                 logger.config( "RMI host name is '"+rmiHostName+"'.");

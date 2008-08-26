@@ -30,6 +30,7 @@ public class SystemProperties implements InitializingBean {
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(SystemProperties.class.getName());
+    private static final String DEFAULT_PROPS_RES = "resources/system.properties";
 
     private final ServerConfig serverConfig;
 
@@ -40,8 +41,16 @@ public class SystemProperties implements InitializingBean {
         Properties props = new Properties();
 
         // Set default properties
-        props.setProperty("com.sun.jndi.ldap.connect.pool.timeout", Integer.toString(30 * 1000));
-        props.setProperty("com.sun.jndi.ldap.connect.pool.protocol", "plain ssl");
+        InputStream in = null;
+        try {
+            in = SystemProperties.class.getResourceAsStream(DEFAULT_PROPS_RES);
+            if ( in != null ) {
+                props.load( in );
+            }
+        } finally {
+            ResourceUtils.closeQuietly(in);
+        }
+
 
         InputStream is = null;
         try {
