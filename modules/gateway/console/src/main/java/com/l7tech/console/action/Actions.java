@@ -3,6 +3,8 @@ package com.l7tech.console.action;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.policy.PolicyDeletionForbiddenException;
+import com.l7tech.policy.PolicyHeader;
+import com.l7tech.policy.PolicyAlias;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.console.logging.ErrorManager;
@@ -15,7 +17,6 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.AliasableHeader;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.ServiceHeader;
@@ -201,7 +202,27 @@ public class Actions {
                 // Delete the  node and update the tree
                 try {
                     final PolicyAdmin policyAdmin = Registry.getDefault().getPolicyAdmin();
-                    policyAdmin.deletePolicy(node.getPolicy().getOid());
+                    Object userObj = node.getUserObject();
+                    if(userObj instanceof PolicyHeader){
+                        PolicyHeader pH = (PolicyHeader) userObj;
+                        if(pH.isAlias()){
+                            //delete the alias, leaving the original service alone
+                            //what alias does this node represent? Need it's policy id and folder id to find out
+                            //pH's folder id has been modified to point at the folder containing the alias
+                            PolicyAlias pa = policyAdmin.findAliasByEntityAndFolder(pH.getOid(), pH.getFolderOid());
+                            if(pa != null){
+                                policyAdmin.deleteEntityAlias((Long.toString(pa.getOid())));
+                            }else{
+                                DialogDisplayer.showMessageDialog(getTopParent(),
+                                  "Cannot find alias to delete",
+                                  "Delete Policy Alias",
+                                  JOptionPane.ERROR_MESSAGE, null);
+                            }
+                        }else{
+                            policyAdmin.deletePolicy(pH.getOid());
+                        }
+                    }
+
                     result.call(true);
                     return;
                 } catch (ObjectModelException ome) {
@@ -251,11 +272,10 @@ public class Actions {
                         if(sH.isAlias()){
                             //delete the alias, leaving the original service alone
                             //what alias does this node represent? Need it's service id and folder id to find out
-                            ServiceHeader sh = (ServiceHeader) userObj;
                             //this service's folder id has been modified to point at the folder containing the alias
-                            PublishedServiceAlias psa = serviceManager.findAliasByServiceAndFolder(sh.getOid(), sh.getFolderOid());
+                            PublishedServiceAlias psa = serviceManager.findAliasByEntityAndFolder(sH.getOid(), sH.getFolderOid());
                             if(psa != null){
-                                serviceManager.deletePublishedServiceAlias((Long.toString(psa.getOid())));
+                                serviceManager.deleteEntityAlias((Long.toString(psa.getOid())));
                             }else{
                                 DialogDisplayer.showMessageDialog(getTopParent(),
                                   "Cannot find alias to delete",

@@ -1988,11 +1988,9 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         JScrollPane serviceScroller = new JScrollPane(getServicesAndPoliciesTree());
         configureScrollPane(serviceScroller);
-        treePanel = new JTabbedPane();
-        treePanel.addTab("Services", serviceScroller);
 
         verticalSplitPane.setTopComponent(paletteSections);
-        verticalSplitPane.setBottomComponent(treePanel);
+        verticalSplitPane.setBottomComponent(serviceScroller);
 
         mainLeftPanel = new JPanel(new BorderLayout());
         mainLeftPanel.add(verticalSplitPane, BorderLayout.CENTER);

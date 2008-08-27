@@ -9,14 +9,10 @@ import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.Aliasable;
-import com.l7tech.objectmodel.AliasableHeader;
 
 import javax.swing.*;
-import javax.swing.tree.TreeNode;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Comparator;
 
 
 /**

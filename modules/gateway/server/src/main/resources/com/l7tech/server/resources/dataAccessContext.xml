@@ -152,6 +152,7 @@
                 <idref bean="revocationCheckPolicyManager"/>
                 <idref bean="ssgConnectorManager"/>
                 <idref bean="policyManager"/>
+                <idref bean="policyAliasManager"/>
                 <idref bean="policyVersionManager"/>
                 <idref bean="sinkManager"/>
                 <idref bean="esmSubscriptionManager"/>

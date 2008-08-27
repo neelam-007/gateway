@@ -41,8 +41,8 @@ public class WsdlImportStrategyServiceAdmin implements ServiceAdmin {
         delegate.deletePublishedService( oid );
     }
 
-    public void deletePublishedServiceAlias(String oid) throws DeleteException {
-        delegate.deletePublishedServiceAlias(oid);
+    public void deleteEntityAlias(String oid) throws DeleteException {
+        delegate.deleteEntityAlias(oid);
     }
 
     public void deleteSampleMessage( SampleMessage message ) throws DeleteException {
@@ -57,8 +57,8 @@ public class WsdlImportStrategyServiceAdmin implements ServiceAdmin {
         return delegate.findAllFolders();
     }
 
-    public PublishedServiceAlias findAliasByServiceAndFolder(Long serviceOid, Long folderOid) throws FindException {
-        return delegate.findAliasByServiceAndFolder(serviceOid, folderOid);
+    public PublishedServiceAlias findAliasByEntityAndFolder(Long serviceOid, Long folderOid) throws FindException {
+        return delegate.findAliasByEntityAndFolder(serviceOid, folderOid);
     }
 
     public SampleMessage findSampleMessageById( long oid ) throws FindException {
@@ -105,8 +105,8 @@ public class WsdlImportStrategyServiceAdmin implements ServiceAdmin {
         return delegate.savePublishedService( service );
     }
 
-    public long savePublishedServiceAlias(PublishedServiceAlias serviceAlias) throws UpdateException, SaveException, VersionException, PolicyAssertionException, IllegalStateException {
-        return delegate.savePublishedServiceAlias(serviceAlias);
+    public long saveAlias(PublishedServiceAlias serviceAlias) throws UpdateException, SaveException, VersionException, PolicyAssertionException, IllegalStateException {
+        return delegate.saveAlias(serviceAlias);
     }
 
     public long savePublishedServiceWithDocuments( PublishedService service, Collection<ServiceDocument> serviceDocuments ) throws UpdateException, SaveException, VersionException, PolicyAssertionException {

@@ -10,6 +10,7 @@ import com.l7tech.server.util.JaasUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
@@ -34,7 +35,7 @@ public class FolderManagerImpl extends HibernateEntityManager<Folder, FolderHead
     }
 
     @Transactional(readOnly=true)
-    public Collection<FolderHeader> findFolderHeaders(Iterable<? extends EntityHeader> entityHeaders) throws FindException {
+    public Collection<FolderHeader> findFolderHeaders(Iterable<? extends OrganizationHeader> entityHeaders) throws FindException {
         Collection<FolderHeader> folderHeaders = new ArrayList<FolderHeader>(findAllHeaders());
         Map<Long, FolderHeader> folderOidToHeaderMap = new HashMap<Long, FolderHeader>();
 

@@ -13,7 +13,7 @@ import java.util.Set;
  * Defines the property aliases, which is every alias of an entity, which implements
  * this interface
  */
-public interface Aliasable<EA extends EntityAlias> {
+public interface Aliasable{
 
     public boolean isAlias();
 

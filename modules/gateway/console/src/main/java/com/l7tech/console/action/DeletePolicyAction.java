@@ -10,12 +10,16 @@ import com.l7tech.console.panels.HomePagePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.policy.PolicyHeader;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.logging.Logger;
+import java.util.Set;
 
 /**
  * The <code>DeletePolicyAction</code> action deletes a {@link com.l7tech.policy.Policy}.
@@ -76,10 +80,25 @@ public class DeletePolicyAction extends PolicyNodeAction {
                 Runnable runnable = new Runnable() {
                     public void run() {
                         final TopComponents creg = TopComponents.getInstance();
-                        JTree tree = (JTree)creg.getComponent(ServicesAndPoliciesTree.NAME);
+                        ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree)creg.getComponent(ServicesAndPoliciesTree.NAME);
                         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                         model.removeNodeFromParent(node);
 
+                        //Remove an aliases if they exist
+                        PolicyHeader pH = (PolicyHeader) node.getUserObject();
+                        long oldPolicyOid = pH.getOid();
+                        if(!pH.isAlias()){
+                            Object root = model.getRoot();
+                            RootNode rootNode = (RootNode) root;
+                            Set<AbstractTreeNode> foundNodes = rootNode.getAliasesForEntity(oldPolicyOid);
+                            for(AbstractTreeNode atn: foundNodes){
+                                model.removeNodeFromParent(atn);
+                            }
+                            tree.removeTrackedEntity(oldPolicyOid);
+                        }else{
+                            tree.removeTrackedAlias(oldPolicyOid, node);
+                        }
+                        
                         try {
                             final WorkSpacePanel cws = creg.getCurrentWorkspace();
                             JComponent jc = cws.getComponent();

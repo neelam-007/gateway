@@ -241,8 +241,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
             return collectionToHeaderArray(res);
     }
 
-    public PublishedServiceAlias findAliasByServiceAndFolder(Long serviceOid, Long folderOid) throws FindException {
-        return serviceAliasManager.findAliasByServiceAndFolder(serviceOid, folderOid); 
+    public PublishedServiceAlias findAliasByEntityAndFolder(Long serviceOid, Long folderOid) throws FindException {
+        return serviceAliasManager.findAliasByEntityAndFolder(serviceOid, folderOid);
     }
 
     public Collection<FolderHeader> findAllFolders() throws FindException {
@@ -348,7 +348,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
 
                         service.setFolderOid(ps.getFolderOid());
                     } catch (FindException e) {
-                        throw new SaveException("Could not update original policy");
+                        throw new SaveException("Could not update original service");
                     }
                 }
                 oid = service.getOid();
@@ -381,17 +381,12 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         return oid;
     }
 
-    public long savePublishedServiceAlias(PublishedServiceAlias psa) throws UpdateException, SaveException, VersionException, PolicyAssertionException, IllegalStateException {
+    public long saveAlias(PublishedServiceAlias psa) throws UpdateException, SaveException, VersionException, PolicyAssertionException, IllegalStateException {
         long oid;
         try {
             if (psa.getOid() > 0) {
                 // UPDATING EXISTING SERVICE
                 oid = psa.getOid();
-                //Get the service and ensure nothing is changing other than the folder id
-                PublishedServiceAlias orig = serviceAliasManager.findByPrimaryKey(oid);
-                if(psa.getEntityOid() != orig.getEntityOid() || !psa.getName().equals(orig.getName())){
-                    throw new UpdateException("Only folder property is editable for an alias");
-                }
                 logger.fine("Updating PublishedServiceAlias: " + oid);
                 serviceAliasManager.update(psa);
             } else {
@@ -455,7 +450,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         final PublishedService service;
         try {
             //Check to see if this service has any aliases
-            Collection<PublishedServiceAlias> aliases = serviceAliasManager.findAllAliasesForService(new Long(serviceID));
+            Collection<PublishedServiceAlias> aliases = serviceAliasManager.findAllAliasesForEntity(new Long(serviceID));
             for(PublishedServiceAlias psa: aliases){
                 serviceAliasManager.delete(psa);
             }
@@ -469,7 +464,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         }
     }
 
-    public void deletePublishedServiceAlias(String serviceID) throws DeleteException {
+    public void deleteEntityAlias(String serviceID) throws DeleteException {
         final PublishedServiceAlias alias;
         try {
             long oid = toLong(serviceID);

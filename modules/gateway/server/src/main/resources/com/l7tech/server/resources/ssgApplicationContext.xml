@@ -867,8 +867,12 @@
 
     <bean id="policyManager" class="com.l7tech.server.policy.PolicyManagerImpl" parent="hibernateBean">
         <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="policyAliasManager"/>
         <property name="policyCache" ref="policyCache"/>
     </bean>
+
+    <!--service side policy alias manager-->
+    <bean id="policyAliasManager" class="com.l7tech.server.policy.PolicyAliasManagerImpl" parent="hibernateBean" />
 
     <bean id="policyFolderManager" class="com.l7tech.server.folder.FolderManagerImpl" parent="hibernateBean">
         <constructor-arg ref="roleManager" />

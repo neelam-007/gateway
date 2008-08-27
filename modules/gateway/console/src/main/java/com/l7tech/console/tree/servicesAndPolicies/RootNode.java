@@ -9,8 +9,6 @@ import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.objectmodel.folder.FolderHeader;
-import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
@@ -34,8 +32,20 @@ public final class RootNode extends FolderNode{
     private static ServicesAndPoliciesNodeComparator comparator = new ServicesAndPoliciesNodeComparator();
     private final AlterDefaultSortAction nameSort;
     private final AlterDefaultSortAction typeSort;
+    /**
+     * All operations around oidToAliases are
+     * convenience so that we don't need to search the tree to manage the state of displayable aliases to
+     * original entities when either of them changes. This saves us a lot of tree searching so it's worth it
+     * When ever you add or remove from the tree the corresponding method to udpate oidToAliases must be called
+     */
     private Map<Long, Set<AbstractTreeNode>> oidToAliases = new HashMap<Long, Set<AbstractTreeNode>>();
     private Map<Long, AbstractTreeNode> oidToEntity = new HashMap<Long, AbstractTreeNode>();
+    /**
+     * Used to track the current entities which the user has selected to alias
+     * We record AbstractTreeNode's, the entities are represented by the EntityHeader which is stored in
+     * the AbstractTreeNode's user object
+     */
+    private static List<AbstractTreeNode> entitiesToAlias = new ArrayList<AbstractTreeNode>();
 
     public static RootNode.ServicesAndPoliciesNodeComparator getComparator(){
         return comparator;
@@ -208,9 +218,7 @@ public final class RootNode extends FolderNode{
         oidToEntity.put(entityOid, origEntity);
     }
     /**
-     * Remove an aliases from the set we are tracking for an entity. All operations around oidToAliases are
-     * convenience so that we don't need to search the tree to manage the state of displayable aliases to
-     * original entities when either of them changes. 
+     * Remove an aliases from the set we are tracking for an entity.
      * @param entityOid
      * @param aliasNode
      * @throws RuntimeException if aliasNode is not found for entityOid and if it's not sucessfully removed
@@ -253,24 +261,18 @@ public final class RootNode extends FolderNode{
         return atn;
     }
 
-    public void updateAliasesForEntity(Long entityOid){
-        Set<AbstractTreeNode> aliases = oidToAliases.get(entityOid);
-        for(AbstractTreeNode atn: aliases){
-
-        }
-    }
     /**
      * load the service and policy folder children
      */
     @Override
     protected void loadChildren() {
         try {
-            List<EntityHeader> allFolderEntities = new ArrayList<EntityHeader>();
+            List<OrganizationHeader> allFolderEntities = new ArrayList<OrganizationHeader>();
             Set<FolderHeader> allFolderHeaders = new HashSet<FolderHeader>();
 
             ServiceHeader[] serviceHeaders = serviceManager.findAllPublishedServices(true);
             List<ServiceHeader> serviceHeadersList = Arrays.asList(serviceHeaders);
-            Collection<PolicyHeader> policyHeaders = policyAdmin.findPolicyHeadersWithTypes(EnumSet.of(PolicyType.INCLUDE_FRAGMENT, PolicyType.INTERNAL));
+            Collection<PolicyHeader> policyHeaders = policyAdmin.findPolicyHeadersWithTypes(EnumSet.of(PolicyType.INCLUDE_FRAGMENT, PolicyType.INTERNAL), true);
 
             allFolderEntities.addAll(serviceHeadersList);
             allFolderEntities.addAll(policyHeaders);
@@ -292,24 +294,18 @@ public final class RootNode extends FolderNode{
                 }
             }
 
-            for(Iterator<EntityHeader> it = allFolderEntities.iterator();it.hasNext();) {
-                EntityHeader header = it.next();
-                if(header instanceof HasFolder){
-                    HasFolder hasFolder = (HasFolder) header;
-                    if(hasFolder.getFolderOid() == root.getOid()) {
-                        AbstractTreeNode child = TreeNodeFactory.asTreeNode(header, RootNode.getComparator());
-                        insert(child, getInsertPosition(child, RootNode.getComparator()));
-                        it.remove();
-                        if(header instanceof AliasableHeader){
-                            AliasableHeader aliasable = (AliasableHeader) header;
-                            if(aliasable.isAlias()){
-                                //remember the EntityHeader is created by the findAll - the oid of an alias is the
-                                //oid of the original
-                                addAlias(header.getOid(), child);
-                            }else{
-                                addEntity(header.getOid(), child);
-                            }
-                        }
+            for(Iterator<OrganizationHeader> it = allFolderEntities.iterator();it.hasNext();) {
+                OrganizationHeader header = it.next();
+                if(header.getFolderOid() == root.getOid()) {
+                    AbstractTreeNode child = TreeNodeFactory.asTreeNode(header, RootNode.getComparator());
+                    insert(child, getInsertPosition(child, RootNode.getComparator()));
+                    it.remove();
+                    if(header.isAlias()){
+                        //remember the EntityHeader is created by the findAll - the oid of an alias is the
+                        //oid of the original
+                        addAlias(header.getOid(), child);
+                    }else{
+                        addEntity(header.getOid(), child);
                     }
                 }
             }
@@ -358,34 +354,28 @@ public final class RootNode extends FolderNode{
     }
 
     private FolderNode getFolderNodeFromHeaders(FolderHeader root,
-                                                List<EntityHeader> entityHeaders,
+                                                List<OrganizationHeader> organizationHeaders,
                                                 Collection<FolderHeader> foldersHeaders)
     {
         FolderNode node = new FolderNode(root);
-        for(Iterator<EntityHeader> it = entityHeaders.iterator();it.hasNext();) {
-            EntityHeader header = it.next();
-            if(header instanceof HasFolder){
-                HasFolder hasFolder = (HasFolder) header;
-                if(hasFolder.getFolderOid() == root.getOid()) {
-                    AbstractTreeNode child = node.addEntityNode(header);
-                    it.remove();
-                    if(header instanceof AliasableHeader){
-                        AliasableHeader aliasable = (AliasableHeader) header;
-                        if(aliasable.isAlias()){
-                            //remember the EntityHeader is created by the findAll - the oid of an alias is the
-                            //oid of the original
-                            addAlias(header.getOid(), child);
-                        }else{
-                            addEntity(header.getOid(), child);
-                        }
-                    }
+        for(Iterator<OrganizationHeader> it = organizationHeaders.iterator();it.hasNext();) {
+            OrganizationHeader header = it.next();
+            if(header.getFolderOid() == root.getOid()) {
+                AbstractTreeNode child = node.addEntityNode(header);
+                it.remove();
+                if(header.isAlias()){
+                    //remember the EntityHeader is created by the findAll - the oid of an alias is the
+                    //oid of the original
+                    addAlias(header.getOid(), child);
+                }else{
+                    addEntity(header.getOid(), child);
                 }
             }
         }
 
         for(FolderHeader folder : foldersHeaders) {
             if(folder.getParentFolderOid() != null && root.getOid() == folder.getParentFolderOid()) {
-                FolderNode childNode = getFolderNodeFromHeaders(folder, entityHeaders, foldersHeaders);
+                FolderNode childNode = getFolderNodeFromHeaders(folder, organizationHeaders, foldersHeaders);
                 node.addChild(childNode);
             }
         }
@@ -393,58 +383,38 @@ public final class RootNode extends FolderNode{
         return node;
     }
 
-    private static List<AbstractTreeNode> entitiesToAlias = new ArrayList<AbstractTreeNode>();
-    
+    /**
+     * Set the nodes the user wants to alias. This is recorded until clearEntitiesToAlias is called
+     * We record AbstractTreeNode's, the entities are represented by the EntityHeader which is stored in
+     * the AbstractTreeNode's user object
+     * @param nodes Any collection of nodes you want to alias
+     */
     public static void setEntitiesToAlias(List<AbstractTreeNode> nodes){
         entitiesToAlias = nodes;
     }
 
+    /**
+     * Get the list of entities which the user wants to alias. Extract the user object from the AbstractTreeNode
+     * and get it's user object to get the entity's header
+     * @return
+     */
     public static List<AbstractTreeNode> getEntitiesToAlias(){
         return entitiesToAlias;
     }
 
+    /**
+     * Clear the fact that any entities have been recorded to be aliased
+     */
     public static void clearEntitiesToAlias(){
         entitiesToAlias = Collections.emptyList();
     }
+
+    /**
+     * Used where you want to decide if the paste alias menu should be shown. False when entitiesToAlias has
+     * no elements
+     * @return
+     */
     public static boolean isAliasSet(){
        return (!entitiesToAlias.isEmpty())? true: false;
     }
-
-    //todo [Donal] find methods may be no longer needed due to oid map of an entity to it's aliases - no need to search
-    /**
-     * Find and remove all aliases for the specified oid
-     * The oid represents the real alias and not the alias oid
-     * The oid can represent either a service or a policy
-     * Make sure the original entity has already been deleted and
-     * removed from the rootnode's children before call this method
-     * @param oid
-     */
-    public List<AbstractTreeNode> findAllAliasesNodes(long oid){
-        List<AbstractTreeNode> allFoundNodes = new ArrayList<AbstractTreeNode>();
-        for(Object o: this.children){
-            AbstractTreeNode atn = (AbstractTreeNode) o;
-            allFoundNodes.addAll(findAliasesFromNode(atn, oid));
-        }
-        return allFoundNodes;
-    }
-
-    private List<AbstractTreeNode> findAliasesFromNode(AbstractTreeNode treeNode, long oid){
-        List<AbstractTreeNode> foundNodes = new ArrayList<AbstractTreeNode>();
-        for(int i = 0; i < treeNode.getChildCount(); i++){
-            Object o = treeNode.getChildAt(i);
-            AbstractTreeNode atn = (AbstractTreeNode) o;
-            Object userObj = atn.getUserObject();
-            if(atn instanceof EntityWithPolicyNode){
-                EntityHeader eH = (EntityHeader) userObj;
-                if(eH.getOid() == oid){
-                    foundNodes.add(atn);
-                }
-            }else if(atn instanceof FolderNode){
-                foundNodes.addAll(findAliasesFromNode(atn, oid));
-            }
-        }
-
-        return foundNodes;
-    }
-
 }

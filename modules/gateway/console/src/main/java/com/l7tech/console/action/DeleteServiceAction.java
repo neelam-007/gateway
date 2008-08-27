@@ -18,7 +18,7 @@ import com.l7tech.util.Functions;
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.logging.Logger;
-import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -87,7 +87,7 @@ public class DeleteServiceAction extends ServiceNodeAction {
                         if(!sH.isAlias()){
                             Object root = model.getRoot();
                             RootNode rootNode = (RootNode) root;
-                            List<AbstractTreeNode> foundNodes = rootNode.findAllAliasesNodes(oldServiceOid);
+                            Set<AbstractTreeNode> foundNodes = rootNode.getAliasesForEntity(oldServiceOid);
                             for(AbstractTreeNode atn: foundNodes){
                                 model.removeNodeFromParent(atn);
                             }

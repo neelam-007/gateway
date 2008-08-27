@@ -44,6 +44,10 @@ public class PolicyManagerStub extends EntityManagerStub<Policy,PolicyHeader> im
         return null;
     }
 
+    public Collection<PolicyHeader> findHeadersWithTypes(EnumSet<PolicyType> types, boolean includeAliases) {
+        return findHeadersWithTypes(types);        
+    }
+
     public Collection<PolicyHeader> findHeadersWithTypes(EnumSet<PolicyType> types) {
         Set<PolicyHeader> hs = new HashSet<PolicyHeader>();
         for (Policy policy : entities.values()) {

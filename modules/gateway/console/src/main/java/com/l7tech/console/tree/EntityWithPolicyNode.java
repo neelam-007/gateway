@@ -50,4 +50,6 @@ public abstract class EntityWithPolicyNode<ET extends Entity, HT extends EntityH
     public abstract Policy getPolicy() throws FindException;
 
     public abstract boolean isAlias();
+
+    public abstract void updateUserObject() throws FindException;
 }

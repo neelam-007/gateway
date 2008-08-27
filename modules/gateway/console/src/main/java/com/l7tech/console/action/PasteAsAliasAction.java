@@ -1,9 +1,6 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.TreeNodeFactory;
-import com.l7tech.console.tree.ServicesAndPoliciesTree;
+import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
@@ -13,27 +10,23 @@ import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.folder.FolderHeader;
-import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.VersionException;
-import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.objectmodel.*;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyAlias;
+import com.l7tech.policy.PolicyHeader;
 import com.l7tech.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.List;
-import java.util.Collections;
 
 /**
  * Created by IntelliJ IDEA.
  * User: darmstrong
  * Date: Aug 20, 2008
  * Time: 10:24:04 AM
- * To change this template use File | Settings | File Templates.
+ * Paste the list of entities stored in RootNode.getEntitiesToAlias() as new aliases.
  */
 public class PasteAsAliasAction extends SecureAction {
     static Logger log = Logger.getLogger(PasteAsAliasAction.class.getName());
@@ -73,7 +66,8 @@ public class PasteAsAliasAction extends SecureAction {
         List<AbstractTreeNode> abstractTreeNodes = RootNode.getEntitiesToAlias();
         RootNode.clearEntitiesToAlias();
         JTree tree = (JTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
-        //Make sure the folder is not the same
+        //Make sure the folder in which they are being created is not the same the folder they original entities are in
+        //this constraint is also enforced in MarkEntityToAliasAction and also in db
         if(abstractTreeNodes.size() > 0){
             AbstractTreeNode parentNode = (AbstractTreeNode) abstractTreeNodes.get(0).getParent();
             FolderHeader fH = (FolderHeader) parentNode.getUserObject();
@@ -90,33 +84,56 @@ public class PasteAsAliasAction extends SecureAction {
         long parentFolderOid = parentFolderHeader.getOid();
         //Create an alias of each node selected
         for(AbstractTreeNode atn: abstractTreeNodes){
-            if(atn instanceof ServiceNode){
-                ServiceNode sN = (ServiceNode) atn;
+
+            if(!(atn instanceof EntityWithPolicyNode)) return;
+            EntityWithPolicyNode ewpn = (EntityWithPolicyNode) atn;
+            Entity e;
+            try {
+                e = ewpn.getEntity();
+            } catch (FindException e1) {
+                throw new RuntimeException(e1.getMessage());
+            }
+            OrganizationHeader header = null;
+            if(e instanceof PublishedService){
+                PublishedService ps = (PublishedService) e;
+                //check if an alias already exists here
                 try {
-                    PublishedService ps = sN.getPublishedService();
-                    //check if an alias already exists here
-                    PublishedServiceAlias checkAlias = Registry.getDefault().getServiceManager().findAliasByServiceAndFolder(ps.getOid(), parentFolderOid);
+                    PublishedServiceAlias checkAlias = Registry.getDefault().getServiceManager().findAliasByEntityAndFolder(ps.getOid(), parentFolderOid);
                     if(checkAlias != null){
                         DialogDisplayer.showMessageDialog(tree,"Alias of service " + ps.displayName() + " already exists in folder " + parentFolderHeader.getName(), "Create Error", JOptionPane.ERROR_MESSAGE, null);
                         return;
                     }
-
-                    ServiceHeader serviceHeader = new ServiceHeader(ps);
-                    serviceHeader.setIsAlias(true);
-                    ServiceNode child = (ServiceNode) TreeNodeFactory.asTreeNode(serviceHeader, RootNode.getComparator());
-
+                    header = new ServiceHeader(ps);
                     PublishedServiceAlias psa = new PublishedServiceAlias(ps, parentFolderOid);
-
-                    Registry.getDefault().getServiceManager().savePublishedServiceAlias(psa);
-                    int insertPosition = parentNode.getInsertPosition(child, RootNode.getComparator());
-                    parentNode.insert(child, insertPosition);
-                    model.nodesWereInserted(parentNode, new int[]{insertPosition});
-                    rootNode.addAlias(serviceHeader.getOid(), child);
-                } catch (Exception e) {
-                    log.log(Level.INFO, "Could not create alias: " + e.getMessage());
-                }
-
+                    Registry.getDefault().getServiceManager().saveAlias(psa);
+                } catch (Exception e1) {
+                    throw new RuntimeException(e1.getMessage());
+                } 
             }
+            if(e instanceof Policy){
+                Policy policy = (Policy) e;
+                //check if an alias already exists here
+                try {
+                    PolicyAlias checkAlias = Registry.getDefault().getPolicyAdmin().findAliasByEntityAndFolder(policy.getOid(), parentFolderOid);
+                    if(checkAlias != null){
+                        DialogDisplayer.showMessageDialog(tree,"Alias of policy " + policy.getName() + " already exists in folder " + parentFolderHeader.getName(), "Create Error", JOptionPane.ERROR_MESSAGE, null);
+                        return;
+                    }
+                    header = new PolicyHeader(policy);
+                    PolicyAlias pa = new PolicyAlias(policy, parentFolderOid);
+                    Registry.getDefault().getPolicyAdmin().saveAlias(pa);
+                } catch (Exception e1) {
+                    throw new RuntimeException(e1.getMessage());
+                }
+            }
+
+            header.setIsAlias(true);
+            EntityWithPolicyNode childNode = (EntityWithPolicyNode) TreeNodeFactory.asTreeNode(header, RootNode.getComparator());
+
+            int insertPosition = parentNode.getInsertPosition(childNode, RootNode.getComparator());
+            parentNode.insert(childNode, insertPosition);
+            model.nodesWereInserted(parentNode, new int[]{insertPosition});
+            rootNode.addAlias(header.getOid(), childNode);
         }
     }
 }

@@ -23,7 +23,7 @@ import java.io.Serializable;
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types=POLICY)
-public interface PolicyAdmin extends FolderAdmin {
+public interface PolicyAdmin extends FolderAdmin, AliasAdmin<PolicyAlias> {
     /**
      * This is a container for a PolicyCheckpointState for the just saved policy and a map of the new policy
      * fragment names to their new OIDs.
@@ -85,11 +85,26 @@ public interface PolicyAdmin extends FolderAdmin {
      * Finds all policies in the system with any of the given types.
      * @param types the types of policies to find; pass <code>null</code> for policies of any type
      * @return the policies with the specified type
+     * @throws FindException
      */
     @Transactional(readOnly = true)
     @Secured(stereotype = MethodStereotype.FIND_HEADERS)
     @Administrative(licensed = false)
-    Collection<PolicyHeader> findPolicyHeadersWithTypes(EnumSet<PolicyType> types);
+    Collection<PolicyHeader> findPolicyHeadersWithTypes(EnumSet<PolicyType> types) throws FindException;
+
+    /**
+     * Finds all policies in the system with any of the given types. Overridden to allow client to specify if
+     * results should contain aliases or not
+     * @param types the types of policies to find; pass <code>null</code> for policies of any type
+     * @param includeAliases true if you want aliases to be included, false otherwise
+     * @return the policies with the specified type
+     * @throws FindException
+     */
+    @Transactional(readOnly = true)
+    @Secured(stereotype = MethodStereotype.FIND_HEADERS)
+    @Administrative(licensed = false)
+    Collection<PolicyHeader> findPolicyHeadersWithTypes(EnumSet<PolicyType> types, boolean includeAliases)
+            throws FindException;
 
     /**
      * Deletes the policy with the specified OID.  An impact analysis will be performed prior to deleting the policy,
@@ -115,6 +130,16 @@ public interface PolicyAdmin extends FolderAdmin {
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
     long savePolicy(Policy policy) throws PolicyAssertionException, SaveException;
+
+    /**
+     * Saves or updates the specified PolicyAlias.
+     *
+     * @param policyAlias the PolicyAlias to be saved.
+     * @return the OID of the PolicyAlias that was saved.
+     * @throws SaveException
+     */
+    @Secured(stereotype=SAVE_OR_UPDATE)
+    long saveAlias(PolicyAlias policyAlias) throws SaveException;
 
     /**
      * Saves or updates the specified policy.

@@ -36,6 +36,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         super(e, c);
     }
 
+    @Override
     public void updateUserObject() throws FindException{
         policy = null;
         getPolicy();
@@ -45,9 +46,15 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         if (policy != null) return policy;
 
         PolicyHeader eh = getEntityHeader();
-        Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(eh.getGuid());
+        Policy updatedPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(eh.getGuid());
+        updatedPolicy.setIsAlias(eh.isAlias());
+        if(eh.isAlias()){
+            //Adjust it's folder property
+            updatedPolicy.setFolderOid(eh.getFolderOid());
+        }
+
         // throw something if null, the service may have been deleted
-        if (policy == null) {
+        if (updatedPolicy == null) {
             TopComponents creg = TopComponents.getInstance();
             JTree tree = (JTree)creg.getComponent(ServicesAndPoliciesTree.NAME);
             if (tree !=null) {
@@ -64,13 +71,12 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
             throw new FindException("The policy for '"+eh.getName()+"' does not exist any more.");
         }
 
-        this.policy = policy;
-
-        EntityHeader newEh = new PolicyHeader(policy);
+        PolicyHeader newEh = new PolicyHeader(updatedPolicy);
         setUserObject(newEh);
         firePropertyChange(this, "UserObject", eh, newEh);
 
-        return policy;
+        this.policy = updatedPolicy;
+        return this.policy;
     }
 
     public boolean isAlias() {
@@ -88,7 +94,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         actions.add(new EditPolicyAction(this));
         actions.add(new EditPolicyProperties(this));
         actions.add(new DeletePolicyAction(this));
-        actions.add(new MarkEntityToAliasAction(this));
+        if(!isAlias()) actions.add(new MarkEntityToAliasAction(this));
         actions.add(new PolicyRevisionsAction(this));
         actions.add(new RefreshTreeNodeAction(this));
         
@@ -102,8 +108,9 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         return actions.toArray(new Action[0]);
     }
 
+    @Override
     protected String getEntityName() {
-        return policy.getName();
+        return getEntityHeader().getName();
     }
 
     public void clearCachedEntities() {
@@ -112,20 +119,17 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
 
     @Override
     public String getName() {
-        try {
-            String nodeName = getPolicy().getName();
-            if (nodeName == null) nodeName = getEntityName();
-            return nodeName;
-        } catch (Exception e) {
-            ErrorManager.getDefault().
-              notify(Level.SEVERE, e,
-                "Error accessing policy entity");
-            return null;
+        if(isAlias()){
+            return getEntityHeader().getName()+" alias";
         }
+        return getEntityHeader().getName();
     }
 
     @Override
     protected String iconResource(boolean open) {
+        PolicyHeader header = getEntityHeader();
+        if(header == null) return "com/l7tech/console/resources/include16.png";
+
         boolean isSoap;
         boolean isInternal;
         try {
@@ -140,11 +144,35 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         }
 
         if (isInternal) {
-            if (isSoap) return "com/l7tech/console/resources/include_internalsoap16.png";
-            else return "com/l7tech/console/resources/include_internal16.png";
+            if (isSoap){
+                if(header.isAlias()){
+                    return "com/l7tech/console/resources/include_internalsoap16Alias.png";                    
+                }else{
+                    return "com/l7tech/console/resources/include_internalsoap16.png";
+                }
+            }
+            else{
+                if(header.isAlias()){
+                    return "com/l7tech/console/resources/include_internal16Alias.png";                    
+                }else{
+                    return "com/l7tech/console/resources/include_internal16.png";
+                }
+            }
         } else {
-            if (isSoap) return "com/l7tech/console/resources/include_soap16.png";
-            else return "com/l7tech/console/resources/include16.png";
+            if (isSoap){
+                if(header.isAlias()){
+                    return "com/l7tech/console/resources/include_soap16Alias.png";                    
+                }else{
+                    return "com/l7tech/console/resources/include_soap16.png";
+                }
+            }
+            else{
+                if(header.isAlias()){
+                    return "com/l7tech/console/resources/include16Alias.png";                    
+                }else{
+                    return "com/l7tech/console/resources/include16.png";
+                }
+            }
         }
     }
 }

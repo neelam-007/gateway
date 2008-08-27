@@ -44,5 +44,7 @@ public interface PolicyManager extends EntityManager<Policy, PolicyHeader>, Guid
      */
     Policy findByGuid(String guid) throws FindException;
 
-    Collection<PolicyHeader> findHeadersWithTypes(EnumSet<PolicyType> types);
+    Collection<PolicyHeader> findHeadersWithTypes(EnumSet<PolicyType> types) throws FindException;
+
+    Collection<PolicyHeader> findHeadersWithTypes(EnumSet<PolicyType> types, boolean includeAliases) throws FindException;
 }

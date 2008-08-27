@@ -3,19 +3,15 @@ package com.l7tech.console.tree.servicesAndPolicies;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.PublishedServiceAlias;
-import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.admin.AliasAdmin;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyHeader;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gui.util.DialogDisplayer;
 
@@ -138,32 +134,43 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                             folder.setOid(child.getOid());
                             //todo [Donal] get this to use the FolderManager
                             Registry.getDefault().getServiceManager().saveFolder(folder);
-                        } else if(transferNode instanceof ServiceNode) {
-                            ServiceNode child = (ServiceNode) transferNode;
-                            PublishedService service = child.getPublishedService();
-                            Object parentObj = parentNode.getUserObject();
-                            if(!(parentObj instanceof FolderHeader)) return false;
+                        }else if(transferNode instanceof EntityWithPolicyNode){
+                            EntityWithPolicyNode childTransferNode = (EntityWithPolicyNode) transferNode;
+                            Object childObj = childTransferNode.getUserObject();
+                            if(!(childObj instanceof OrganizationHeader)) return false;
+                            OrganizationHeader oH = (OrganizationHeader) childObj;
 
                             //See if an node already representing this entity already exists in this folder location for this service
                             if(parentNode instanceof FolderNode){
                                 FolderNode fn = (FolderNode) parentNode;
-                                if(fn.isEntityAChildNode(service.getOid())){
+                                if(fn.isEntityAChildNode(oH.getOid())){
                                     if(tree != null){
                                         JOptionPane.showMessageDialog(tree, "Cannot move an entity with another entity (alias or original) in the same folder", "Move Error", JOptionPane.ERROR_MESSAGE);
                                     }
+                                    RootNode rootNode = (RootNode) model.getRoot();
+                                    rootNode.setCut(false);
+                                    rootNode.setChildrenCut(false);
                                     return false;
                                 }
                             }
 
-                            if(child.isAlias()){
-                                ServiceAdmin sAdmin = Registry.getDefault().getServiceManager();
-                                //With it's service oid and old folder oid we can find the actual alias
+                            Entity entity = childTransferNode.getEntity();
+                            if(!(entity instanceof Organizable)) return false;
+
+                            if(childTransferNode.isAlias()){
+                                //With the entity oid and the old folder oid we can find the actual alias
                                 //which we need to update
                                 Object userObj = oldParent.getUserObject();
                                 if(!(userObj instanceof FolderHeader)) return false;
                                 FolderHeader fh = (FolderHeader) userObj;
-                                PublishedServiceAlias psa = sAdmin.findAliasByServiceAndFolder(service.getOid(), fh.getOid());
-                                if(psa == null){
+                                AliasAdmin aliasAdmin = null;
+                                if(childTransferNode instanceof ServiceNode){
+                                    aliasAdmin = Registry.getDefault().getServiceManager();
+                                }else if(childTransferNode instanceof PolicyEntityNode){
+                                    aliasAdmin = Registry.getDefault().getPolicyAdmin();
+                                }
+                                AliasEntity aliasEntity = aliasAdmin.findAliasByEntityAndFolder(Long.valueOf(entity.getId()), fh.getOid());
+                                if(aliasEntity == null){
                                     DialogDisplayer.showMessageDialog(tree,
                                       "Cannot find alias",
                                       "Find Error",
@@ -171,25 +178,27 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                                     return false;
                                 }
                                 //now update the alias
-                                psa.setFolderOid(newParent.getOid());
-                                sAdmin.savePublishedServiceAlias(psa);
-                                //Update the ServiceHeader representing the alias
-                                ServiceHeader sH = (ServiceHeader) child.getUserObject();
-                                sH.setFolderOid(newParent.getOid());
+                                aliasEntity.setFolderOid(newParent.getOid());
+                                aliasAdmin.saveAlias(aliasEntity);
 
+                                //Update the OrganizationHeader representing the alias
+                                //this is enough to update the entity correctly. Below when updateUserObject is called
+                                //after it downloads the entity it will use the OrganizationHeader to update the aliases
+                                //folder and alias properties
+                                OrganizationHeader header = (OrganizationHeader) childTransferNode.getUserObject();
+                                header.setFolderOid(newParent.getOid());
                             }else{
-                                service.setFolderOid(newParent.getOid());
-                                Registry.getDefault().getServiceManager().savePublishedService(service);
+                                Organizable o = (Organizable) entity;
+                                o.setFolderOid(newParent.getOid());
+                                if(childTransferNode instanceof ServiceNode){
+                                    Registry.getDefault().getServiceManager().savePublishedService((PublishedService) entity);
+                                }else if(childTransferNode instanceof PolicyEntityNode){
+                                    Registry.getDefault().getPolicyAdmin().savePolicy((Policy) entity);
+                                }
                             }
-                            child.updateUserObject();
-                            
-                        } else if(transferNode instanceof PolicyEntityNode) {
-                            PolicyEntityNode child = (PolicyEntityNode) transferNode;
-                            Policy policy = child.getPolicy();
-                            policy.setFolderOid(newParent.getOid());
-                            Registry.getDefault().getPolicyAdmin().savePolicy(policy);
-                            child.updateUserObject();
+                            childTransferNode.updateUserObject();
                         }
+                        
                         int transferNodeIndex = oldParent.getIndex(transferNode);
                         int insertPosition = parentNode.getInsertPosition(transferNode, RootNode.getComparator());
                         parentNode.insert(transferNode, insertPosition);
@@ -202,7 +211,6 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                         transferNode.setChildrenCut(false);
                     }
                 }
-
             } catch (SaveException e) {
                 if(tree != null){
                     DialogDisplayer.showMessageDialog(tree,"Cannot save folder: " + e.getMessage(), "Save Error", JOptionPane.ERROR_MESSAGE, null);

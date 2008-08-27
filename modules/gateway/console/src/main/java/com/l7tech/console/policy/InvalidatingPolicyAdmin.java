@@ -40,8 +40,26 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
         return delegate.findPolicyHeadersByType( type );
     }
 
-    public Collection<PolicyHeader> findPolicyHeadersWithTypes(EnumSet<PolicyType> types) {
+    public Collection<PolicyHeader> findPolicyHeadersWithTypes(EnumSet<PolicyType> types) throws FindException{
         return delegate.findPolicyHeadersWithTypes(types);
+    }
+
+    public Collection<PolicyHeader> findPolicyHeadersWithTypes(EnumSet<PolicyType> types, boolean includeAliases)
+            throws FindException{
+        return delegate.findPolicyHeadersWithTypes(types, includeAliases);
+    }
+
+    public PolicyAlias findAliasByEntityAndFolder(Long entityOid, Long folderOid) throws FindException {
+        return delegate.findAliasByEntityAndFolder(entityOid, folderOid);
+    }
+
+
+    public void deleteEntityAlias(String oid) throws DeleteException {
+        delegate.deleteEntityAlias(oid);
+    }
+
+    public long saveAlias(PolicyAlias policyAlias) throws SaveException {
+        return delegate.saveAlias(policyAlias);
     }
 
     public void deletePolicy( long policyOid ) throws PolicyDeletionForbiddenException, DeleteException, FindException {

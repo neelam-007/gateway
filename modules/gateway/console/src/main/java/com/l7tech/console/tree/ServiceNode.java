@@ -49,7 +49,8 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         super(e, c);
         setAllowsChildren(e.isSoap());
     }
-    
+
+    @Override
     public void updateUserObject() throws FindException{
         svc = null;
         getPublishedService();
@@ -216,9 +217,17 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         }
         else if (header.isDisabled()) {
             if (!header.isSoap()) {
-                return "com/l7tech/console/resources/xmlObject_disabled16.png";
+                if(header.isAlias()){
+                    return "com/l7tech/console/resources/xmlObject_disabled16Alias.png";                    
+                }else{
+                    return "com/l7tech/console/resources/xmlObject_disabled16.png";
+                }
             } else {
-                return "com/l7tech/console/resources/services_disabled16.png";
+                if(header.isAlias()){
+                    return "com/l7tech/console/resources/services_disabled16Alias.png";                    
+                }else{
+                    return "com/l7tech/console/resources/services_disabled16.png";
+                }
             }
         } else {
             if(header.isSoap()) {
@@ -228,7 +237,11 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
                     return "com/l7tech/console/resources/services16.png";
                 }
             } else {
-                return "com/l7tech/console/resources/xmlObject16.gif";
+                if(header.isAlias()){
+                    return "com/l7tech/console/resources/xmlObject16Alias.gif";                    
+                }else{
+                    return "com/l7tech/console/resources/xmlObject16.gif";
+                }
             }
         }
     }

@@ -302,7 +302,7 @@ public class RoleManagerImpl
         return false;
     }
 
-    public <T extends EntityHeader> Iterable<T> filterPermittedHeaders(User authenticatedUser,
+    public <T extends OrganizationHeader> Iterable<T> filterPermittedHeaders(User authenticatedUser,
                                                                        OperationType requiredOperation,
                                                                        Iterable<T> headers,
                                                                        EntityFinder entityFinder)
@@ -337,12 +337,13 @@ public class RoleManagerImpl
             }
 
             //check for alias
-            if(header instanceof AliasableHeader){
-               AliasableHeader aH = (AliasableHeader) header;
-                if(aH.isAlias()){
-                    Aliasable a = (Aliasable) entity;
-                    a.setIsAlias(true);
+            if(header.isAlias()){
+                if(!(entity instanceof Aliasable)){
+                    //As T is an OrganizationHeader this implies that any entity found implements Alisable
+                    throw new IllegalStateException("Any organizable entity must be alisable");
                 }
+                Aliasable a = (Aliasable) entity;
+                a.setIsAlias(true);
             }
 
             if (isPermitted(userRoles, entity, requiredOperation, null))

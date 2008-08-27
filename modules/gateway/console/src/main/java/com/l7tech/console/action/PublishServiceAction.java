@@ -84,21 +84,18 @@ public class PublishServiceAction extends SecureAction {
             if (tree != null) {
                 AbstractTreeNode root = TopComponents.getInstance().getServicesFolderNode();
                 TreeNode[] nodes = root.getPath();
-                TreePath nPath = new TreePath(nodes);
-                //todo [Donal] check if this is a bug we would always want to add to the tree
-                if (tree.hasBeenExpanded(nPath)) {
-                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                    final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh, RootNode.getComparator());
-                    model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));
-                    RootNode rootNode = (RootNode) model.getRoot();
-                    rootNode.addEntity(eh.getOid(), sn);
-                    tree.setSelectionPath(new TreePath(sn.getPath()));
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() {
-                            new EditPolicyAction((ServiceNode)sn).invoke();
-                        }
-                    });
-                }
+                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh, RootNode.getComparator());
+                model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));
+                RootNode rootNode = (RootNode) model.getRoot();
+                rootNode.addEntity(eh.getOid(), sn);
+                tree.setSelectionPath(new TreePath(sn.getPath()));
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        new EditPolicyAction((ServiceNode)sn).invoke();
+                    }
+                });
+
             } else {
                 log.log(Level.WARNING, "Service tree unreachable.");
             }

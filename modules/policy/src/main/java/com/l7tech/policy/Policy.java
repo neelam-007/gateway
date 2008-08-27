@@ -4,6 +4,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.Organizable;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.assertion.FalseAssertion;
@@ -21,7 +22,7 @@ import java.util.logging.Logger;
  * @author alex
  */
 @XmlRootElement
-public class Policy extends NamedEntityImp {
+public class Policy extends NamedEntityImp  implements Organizable {
     private static final Logger logger = Logger.getLogger(Policy.class.getName());
 
     private String guid;
@@ -29,10 +30,12 @@ public class Policy extends NamedEntityImp {
     private PolicyType type;
     private boolean soap;
     private String internalTag;
-    private Long policyFolderOid;
+    private Long folderOid;
 
     private long versionOrdinal;   // Not persisted -- filled in by admin layer
     private boolean versionActive; // Not persisted -- filled in by admin layer
+
+    private boolean isAlias;
 
     private transient Assertion assertion;
     private static final AllAssertion DISABLED_POLICY = new AllAssertion(Arrays.asList(new CommentAssertion("Policy disabled"), new FalseAssertion()));
@@ -49,7 +52,7 @@ public class Policy extends NamedEntityImp {
         this.soap = soap;
 
         if(this.type == PolicyType.INCLUDE_FRAGMENT || this.type == PolicyType.INTERNAL) {
-            policyFolderOid = new Long(-5002);
+            folderOid = new Long(-5002);
         }
     }
 
@@ -236,12 +239,20 @@ public class Policy extends NamedEntityImp {
     }
 
     public Long getFolderOid() {
-        return policyFolderOid;
+        return folderOid;
     }
 
-    public void setFolderOid(Long policyFolderOid) {
-        this.policyFolderOid = policyFolderOid;
+    public void setFolderOid(Long folderOid) {
+        this.folderOid = folderOid;
     }
+
+    public void setIsAlias(boolean isAlias) {
+        this.isAlias = isAlias;
+    }
+
+    public boolean isAlias() {
+        return isAlias;
+    }    
 
     @SuppressWarnings({ "RedundantIfStatement" })
     public boolean equals(Object o) {

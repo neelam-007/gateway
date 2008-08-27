@@ -150,7 +150,6 @@ CREATE TABLE published_service (
 CREATE TABLE published_service_alias (
   `objectid` bigint(20) NOT NULL,
   `version` int(11) NOT NULL,
-  `name` varchar(255) NOT NULL,
   `folder_oid` bigint(20) NOT NULL,
   `published_service_oid` bigint(20) NOT NULL,
   UNIQUE KEY (folder_oid, published_service_oid),
@@ -200,6 +199,21 @@ CREATE TABLE policy_version (
   INDEX (policy_oid),
   FOREIGN KEY (policy_oid) REFERENCES policy (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+
+--
+-- Table structure for table 'policy_alias'
+--
+CREATE TABLE policy_alias (
+  `objectid` bigint(20) NOT NULL,
+  `version` int(11) NOT NULL,
+  `folder_oid` bigint(20) NOT NULL,
+  `policy_oid` bigint(20) NOT NULL,
+  UNIQUE KEY (folder_oid, policy_oid),
+  FOREIGN KEY (policy_oid) REFERENCES policy (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 --
 -- Dumping data for table 'published_service'

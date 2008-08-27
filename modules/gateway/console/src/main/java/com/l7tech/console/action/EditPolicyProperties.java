@@ -7,6 +7,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyHeader;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -63,7 +64,7 @@ public class EditPolicyProperties extends PolicyNodeAction {
         boolean canUpdate;
         final Policy policy;
         try {
-            policy = new Policy(policyNode.getPolicy());
+            policy = policyNode.getPolicy();
             canUpdate = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.POLICY, policy));
         } catch (FindException e) {
             logger.log(Level.WARNING, "Cannot get policy", e);
@@ -74,12 +75,22 @@ public class EditPolicyProperties extends PolicyNodeAction {
             public void call(Boolean changed) {
                 if (changed) {
                     policyNode.clearCachedEntities();
-                    JTree tree = (JTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+                    ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                     if (tree != null) {
                         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                         model.nodeChanged(node);
+                        model.reload(node);
                     }
 
+                    //if this is an original entity, update any aliases it may have, in case it's name or 
+                    //something else show to the user in the tree changes
+                    if(!policyNode.isAlias()){
+                        if (tree !=null) {
+                            PolicyHeader pH = (PolicyHeader) policyNode.getUserObject();
+                            tree.updateAllAliases(pH.getOid());
+                        }
+                    }
+                    
                     // update name on top of editor if that policy is being edited
                     final WorkSpacePanel cws = TopComponents.getInstance().getCurrentWorkspace();
                     JComponent jc = cws.getComponent();
@@ -112,17 +123,15 @@ public class EditPolicyProperties extends PolicyNodeAction {
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (dlg.wasOKed()) {
-                    boolean wasOk = false;
                     try {
                         Registry.getDefault().getPolicyAdmin().savePolicy(policy);
-                        wasOk = true;
                     } catch ( DuplicateObjectException doe) {
                         String msg =
                               "Unable to save the policy '" + policy.getName() + "'.\n" +
                               "The policy name is already used, please choose a different\n name and try again.";
                         DialogDisplayer.showMessageDialog(mw, "Duplicate policy name", msg, null);
                     } catch (SaveException e) {
-                        String msg = "Error while updating policy due to improper policy properties.";
+                        String msg = "Error updating policy:" + e.getMessage();
                         logger.log(Level.INFO, msg, e);
                         DialogDisplayer.showMessageDialog(mw, null, msg, null);
                     } catch (PolicyAssertionException e) {
@@ -130,7 +139,7 @@ public class EditPolicyProperties extends PolicyNodeAction {
                         logger.log(Level.INFO, msg, e);
                         DialogDisplayer.showMessageDialog(mw, null, msg, null);
                     }
-                    resultCallback.call(wasOk);
+                    resultCallback.call(true);
                 } else {
                     resultCallback.call(false);
                 }

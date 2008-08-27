@@ -1,20 +1,33 @@
 package com.l7tech.policy;
 
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.AliasableHeader;
-import com.l7tech.objectmodel.folder.HasFolder;
+import com.l7tech.objectmodel.OrganizationHeader;
 
 /**
  * Extension of EntityHeader with some policy information.
  *
  * @author Steve Jones
  */
-public class PolicyHeader extends EntityHeader implements HasFolder, AliasableHeader {
-
+public class PolicyHeader extends OrganizationHeader {
     //- PUBLIC
     public PolicyHeader(final Policy policy) {
-        this(policy.getOid(), policy.isSoap(), policy.getName(), policy.getInternalTag(), policy.getGuid(), policy.getFolderOid());
+        this(policy.getOid(),
+             policy.isSoap(),
+             policy.getName(),
+             policy.getInternalTag(),
+             policy.getGuid(),
+             policy.getFolderOid(),
+             policy.isAlias());
+    }
+
+    public PolicyHeader(final PolicyHeader policyHeader){
+        this(policyHeader.getOid(),
+             policyHeader.isSoap(),
+             policyHeader.getName(),
+             policyHeader.getDescription(),
+             policyHeader.getGuid(),
+             policyHeader.getFolderOid(),
+             policyHeader.isAlias());
     }
 
     public PolicyHeader(final long oid,
@@ -22,25 +35,19 @@ public class PolicyHeader extends EntityHeader implements HasFolder, AliasableHe
                         final String name,
                         final String description,
                         final String policyGuid,
-                        final Long folderOid)
+                        final Long folderOid,
+                        final boolean alias)
     {
         super(oid, EntityType.POLICY, name, description);
 
         this.guid = policyGuid;
         this.isSoap = isSoap;
         this.folderOid = folderOid;
+        this.alias = alias;
     }
 
     public boolean isSoap() {
         return isSoap;
-    }
-
-    public Long getFolderOid() {
-        return folderOid;
-    }
-
-    public void setFolderOid(long folderOid) {
-        this.folderOid = folderOid;
     }
 
     public String getGuid() {
@@ -52,18 +59,8 @@ public class PolicyHeader extends EntityHeader implements HasFolder, AliasableHe
         return getName();
     }
 
-    public boolean isAlias() {
-        return isAlias;
-    }
-
-    public void setIsAlias(boolean isAlias) {
-        this.isAlias = isAlias;
-    }
-    
     //- PRIVATE
 
     private final boolean isSoap;
     private final String guid;
-    private Long folderOid;
-    private boolean isAlias = false;
 }

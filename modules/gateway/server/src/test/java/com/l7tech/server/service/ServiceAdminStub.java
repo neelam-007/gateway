@@ -60,8 +60,8 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return serviceManager.findByPrimaryKey(toLong(oid));
     }
 
-    public PublishedServiceAlias findAliasByServiceAndFolder(Long serviceOid, Long folderOid) throws FindException {
-        return serviceAliasManager.findAliasByServiceAndFolder(serviceOid, folderOid);
+    public PublishedServiceAlias findAliasByEntityAndFolder(Long serviceOid, Long folderOid) throws FindException {
+        return serviceAliasManager.findAliasByEntityAndFolder(serviceOid, folderOid);
     }
 
     /**
@@ -85,7 +85,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return serviceManager.save(service);
     }
 
-    public long savePublishedServiceAlias(PublishedServiceAlias serviceAlias) throws UpdateException, SaveException, VersionException, PolicyAssertionException, IllegalStateException {
+    public long saveAlias(PublishedServiceAlias serviceAlias) throws UpdateException, SaveException, VersionException, PolicyAssertionException, IllegalStateException {
         return serviceAliasManager.save(serviceAlias);
     }
 
@@ -135,7 +135,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
 
     }
 
-    public void deletePublishedServiceAlias(String serviceID) throws DeleteException {
+    public void deleteEntityAlias(String serviceID) throws DeleteException {
         final PublishedServiceAlias alias;
         try {
             long oid = toLong(serviceID);

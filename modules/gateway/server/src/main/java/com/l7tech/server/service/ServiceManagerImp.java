@@ -75,34 +75,7 @@ public class ServiceManagerImp
         Collection<ServiceHeader> origHeaders = super.findAllHeaders();
         if(!includeAliases) return origHeaders;
 
-        //Modify results for any aliases that may exist
-        Collection<PublishedServiceAlias> allAliases = serviceAliasManager.findAll();
-
-        Map<Long, Set<PublishedServiceAlias>> serviceIdToAllItsAliases = new HashMap<Long, Set<PublishedServiceAlias>>();
-        for(PublishedServiceAlias psa: allAliases){
-            Long origServiceId = psa.getEntityOid();
-            if(!serviceIdToAllItsAliases.containsKey(origServiceId)){
-                Set<PublishedServiceAlias> aliasSet = new HashSet<PublishedServiceAlias>();
-                serviceIdToAllItsAliases.put(origServiceId, aliasSet);
-            }
-            serviceIdToAllItsAliases.get(origServiceId).add(psa);
-        }
-
-        Collection<ServiceHeader> returnHeaders = new ArrayList<ServiceHeader>();
-        for(ServiceHeader sh: origHeaders){
-            Long serviceId = sh.getOid();
-            returnHeaders.add(sh);
-            if(serviceIdToAllItsAliases.containsKey(serviceId)){
-                Set<PublishedServiceAlias> aliases = serviceIdToAllItsAliases.get(serviceId);
-                for(PublishedServiceAlias psa: aliases){
-                    ServiceHeader newSH = new ServiceHeader(sh);
-                    newSH.setIsAlias(true);
-                    newSH.setFolderOid(psa.getFolderOid());
-                    returnHeaders.add(newSH);
-                }
-            }
-        }
-        return returnHeaders;
+        return serviceAliasManager.expandEntityWithAliases(origHeaders);
     }
 
     @Override

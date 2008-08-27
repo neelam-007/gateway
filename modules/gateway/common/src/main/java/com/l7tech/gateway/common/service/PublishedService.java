@@ -10,7 +10,7 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.objectmodel.Aliasable;
+import com.l7tech.objectmodel.Organizable;
 import org.xml.sax.InputSource;
 
 import javax.wsdl.Port;
@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings( { "NonJaxWsWebServices" } )
 @XmlRootElement
-public class PublishedService extends NamedEntityImp implements Aliasable<PublishedServiceAlias>
+public class PublishedService extends NamedEntityImp implements Organizable
 {
     //private static final long serialVersionUID = 8711916262379377867L;
     private static final Logger logger = Logger.getLogger(PublishedService.class.getName());
@@ -452,11 +452,11 @@ public class PublishedService extends NamedEntityImp implements Aliasable<Publis
         this.laxResolution = laxResolution;
     }
 
-    public long getFolderOid() {
+    public Long getFolderOid() {
         return folderOid;
     }
 
-    public void setFolderOid(long policyFolderOid) {
+    public void setFolderOid(Long policyFolderOid) {
         this.folderOid = policyFolderOid;
     }
 
@@ -513,7 +513,7 @@ public class PublishedService extends NamedEntityImp implements Aliasable<Publis
     private String routingUri;
     private String httpMethodNames = METHODNAMES_SOAP; // invariants: never null, always in sync with httpMethods
     private boolean laxResolution;
-    private long folderOid = -5002L;
+    private Long folderOid = -5002L;
 
     private transient WsdlStrategy wsdlStrategy;
     private transient Wsdl _parsedWsdl;

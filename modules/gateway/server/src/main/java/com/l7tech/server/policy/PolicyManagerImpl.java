@@ -49,9 +49,11 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
 
     private PolicyCache policyCache;
     private final RoleManager roleManager;
+    private final PolicyAliasManager policyAliasManager;
 
-    public PolicyManagerImpl(RoleManager roleManager) {
+    public PolicyManagerImpl(RoleManager roleManager, PolicyAliasManager policyAliasManager) {
         this.roleManager = roleManager;
+        this.policyAliasManager = policyAliasManager;
     }
 
     @Transactional(propagation=Propagation.SUPPORTS)
@@ -75,7 +77,13 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
         }
     }
 
-    public Collection<PolicyHeader> findHeadersWithTypes(final EnumSet<PolicyType> types) {
+    public Collection<PolicyHeader> findHeadersWithTypes(final EnumSet<PolicyType> types) throws FindException{
+        return this.findHeadersWithTypes(types, false);
+    }
+
+    public Collection<PolicyHeader> findHeadersWithTypes(final EnumSet<PolicyType> types, boolean includeAliases)
+            throws FindException{
+
         //noinspection unchecked
         List<Policy> policies = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
             @Override
@@ -91,12 +99,41 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
                 return crit.list();
             }
         });
-        List<PolicyHeader> hs = new ArrayList<PolicyHeader>(policies.size());
+        List<PolicyHeader> origHeaders = new ArrayList<PolicyHeader>(policies.size());
         for (Policy policy : policies) {
-            hs.add(newHeader(policy));
+            origHeaders.add(newHeader(policy));
         }
-        return hs;
 
+        if(!includeAliases) return origHeaders;
+
+        //Modify results for any aliases that may exist
+        Collection<PolicyAlias> allAliases = policyAliasManager.findAll();
+
+        Map<Long, Set<PolicyAlias>> policyIdToAllItsAliases = new HashMap<Long, Set<PolicyAlias>>();
+        for(PolicyAlias pa: allAliases){
+            Long origServiceId = pa.getEntityOid();
+            if(!policyIdToAllItsAliases.containsKey(origServiceId)){
+                Set<PolicyAlias> aliasSet = new HashSet<PolicyAlias>();
+                policyIdToAllItsAliases.put(origServiceId, aliasSet);
+            }
+            policyIdToAllItsAliases.get(origServiceId).add(pa);
+        }
+
+        Collection<PolicyHeader> returnHeaders = new ArrayList<PolicyHeader>();
+        for(PolicyHeader ph: origHeaders){
+            Long serviceId = ph.getOid();
+            returnHeaders.add(ph);
+            if(policyIdToAllItsAliases.containsKey(serviceId)){
+                Set<PolicyAlias> aliases = policyIdToAllItsAliases.get(serviceId);
+                for(PolicyAlias pa: aliases){
+                    PolicyHeader newSH = new PolicyHeader(ph);
+                    newSH.setIsAlias(true);
+                    newSH.setFolderOid(pa.getFolderOid());
+                    returnHeaders.add(newSH);
+                }
+            }
+        }
+        return returnHeaders;
     }
 
     @Override

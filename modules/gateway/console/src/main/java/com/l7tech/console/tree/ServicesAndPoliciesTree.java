@@ -8,16 +8,20 @@ import com.l7tech.console.tree.servicesAndPolicies.ServicesAndPoliciesTreeTransf
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.ClipboardActions;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.admin.AliasAdmin;
 import com.l7tech.objectmodel.folder.Folder;
-
+import com.l7tech.objectmodel.*;
+import com.l7tech.policy.PolicyHeader;
 import javax.swing.*;
 import javax.swing.tree.*;
 import java.awt.event.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.*;
 
 /**
@@ -352,25 +356,42 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
         RootNode rootNode = (RootNode) model.getRoot();
         Set<AbstractTreeNode> aliases = rootNode.getAliasesForEntity(entityOid);
         AbstractTreeNode origEntity = rootNode.getNodeForEntity(entityOid);
+        Object origUserObject = origEntity.getUserObject();
 
         for(AbstractTreeNode atn: aliases){
             Object userObj = atn.getUserObject();
-            if(atn instanceof ServiceNode){
-                ServiceHeader eH = (ServiceHeader) userObj;
-                long folderOid = eH.getFolderOid();
-                Object origUserObject = origEntity.getUserObject();
-                ServiceHeader origServiceHeader = (ServiceHeader) origUserObject;
-                ServiceHeader newHeader = new ServiceHeader(origServiceHeader);
-                newHeader.setFolderOid(folderOid);
-                newHeader.setIsAlias(true);
-                atn.setUserObject(newHeader);
-                //model.nodeChanged(atn);
-                model.nodeStructureChanged(atn);
-                System.out.println(atn.getName());
-            }
-        }
+            if(!(userObj instanceof OrganizationHeader)) return;
 
-    }
+            OrganizationHeader oH = (OrganizationHeader) userObj;
+            long folderOid = oH.getFolderOid();
+
+            OrganizationHeader newHeader = null;
+            if(atn instanceof ServiceNode){
+                ServiceHeader origServiceHeader = (ServiceHeader) origUserObject;
+                newHeader = new ServiceHeader(origServiceHeader);
+            }else if(atn instanceof PolicyEntityNode){
+                PolicyHeader origPolicyHeader = (PolicyHeader) origUserObject;
+                newHeader = new PolicyHeader(origPolicyHeader);
+            }else{
+                String msg = "Tree node was not of correct type";
+                log.log(Level.INFO, msg);
+                throw new RuntimeException(msg);
+            }
+            newHeader.setFolderOid(folderOid);
+            newHeader.setIsAlias(true);
+
+            atn.setUserObject(newHeader);
+            if(atn instanceof EntityWithPolicyNode){
+                EntityWithPolicyNode ewpn = (EntityWithPolicyNode) atn;
+                try {
+                    ewpn.updateUserObject();
+                } catch (FindException e) {
+                    log.log(Level.INFO, e.getMessage());
+                }
+            }
+            model.nodeStructureChanged(atn);
+        }
+   }
 
     public void removeTrackedAlias(Long entityOid, AbstractTreeNode atn){
         RootNode rootNode = getRootNode();

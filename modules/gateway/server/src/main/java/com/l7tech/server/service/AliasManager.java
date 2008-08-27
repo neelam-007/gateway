@@ -1,0 +1,46 @@
+package com.l7tech.server.service;
+
+import com.l7tech.objectmodel.*;
+
+import java.util.Collection;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: darmstrong
+ * Date: Aug 20, 2008
+ * Time: 3:22:47 PM
+ *
+ * This interface defines the methods available to an AliasManager and currently this interface is implemented
+ * by {@link ServiceAliasManager} and {@link com.l7tech.server.policy.PolicyAliasManager}
+ * However the implementations of both {@link ServiceAliasManager} and {@link com.l7tech.server.policy.PolicyAliasManager}
+ * is handed by the abstract class {@link AliasManager} as the behaviour and implementation is identical for aliases
+ * of Services and Policies.
+ * AT represents the actual Alias persisted object that we are finding. Currently this is either
+ * {@link com.l7tech.gateway.common.service.PublishedServiceAlias} or {@link com.l7tech.policy.PolicyAlias}
+ */
+public interface AliasManager<ET extends AliasEntity, HT extends OrganizationHeader>
+        extends EntityManager<ET, HT> {
+
+    /**
+     * Find the alias entity by specifying the read entities oid and the folder the alias is related to
+     * This is all that is needed to find an alias.
+     * @param entityOid The oid of the original entity
+     * @param folderOid The oid of the folder the alias is related to
+     * @return The actual alias with correct type, or null if not found
+     * @throws FindException
+     */
+    public ET findAliasByEntityAndFolder(Long entityOid, Long folderOid) throws FindException;
+
+    public Collection<ET> findAllAliasesForEntity(Long entityOid) throws FindException;
+
+    /**
+     * Both Services and Policies have the same requirement for a set of entities returned from a findAll()
+     * => they need to be expanded to include all alises
+     * @param originalHeaders
+     * @return Collection<HT> The returned collection will have an extra OrganizationHeader for any aliases found
+     * The extra headers are the same as the original expect that their folder property represents the alias and their
+     * isAlias() method returns true
+     */
+    public Collection<HT> expandEntityWithAliases(Collection<HT> originalHeaders)
+            throws FindException;
+}

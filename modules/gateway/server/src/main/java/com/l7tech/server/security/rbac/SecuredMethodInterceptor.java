@@ -393,16 +393,29 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
     }
 
     private void checkEntityFromId(CheckInfo check, Object[] args, OperationType operation) throws FindException {
-        if (check.types.length != 1)
-            throw new IllegalStateException("Security declaration for method " + check.methodName +
-                    " specifies " + operation.getName() + ", but has multiple types");
 
         Serializable id = getIdArg(check, args);
         if (id == null) throwNoId(check);
 
         check.setBefore(CheckBefore.ENTITY);
         check.operation = operation;
-        check.entity = entityFinder.find(check.types[0].getEntityClass(), id);
+        FindException findException = null;
+        for(EntityType type: check.types){
+            try {
+                check.entity = entityFinder.find(type.getEntityClass(), id);
+            } catch (FindException e) {
+                //we are only going to remember the last FindException, if one is thrown
+                findException = e;
+            } 
+        }
+        
+        if(check.entity == null){
+            if(findException != null){
+                throw findException;
+            }else{
+                throw new FindException("Entity not found for any declared type");
+            }
+        }
         check.setAfter(CheckAfter.NONE);
     }
 

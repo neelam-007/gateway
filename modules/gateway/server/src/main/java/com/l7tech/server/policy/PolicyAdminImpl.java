@@ -49,22 +49,34 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
 
     private static final Set<PropertyDescriptor> OMIT_VERSION_AND_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "version", "xml");
     private static final Set<PropertyDescriptor> OMIT_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "xml");
+    private final PolicyAliasManager policyAliasManager;
 
     public PolicyAdminImpl(PolicyManager policyManager,
+                           PolicyAliasManager policyAliasManager,
                            PolicyCache policyCache,
                            PolicyVersionManager policyVersionManager,
                            RoleManager roleManager,
                            FolderManager folderManager)
     {
         this.policyManager = policyManager;
+        this.policyAliasManager = policyAliasManager;
         this.policyCache = policyCache;
         this.policyVersionManager = policyVersionManager;
         this.roleManager = roleManager;
         this.folderManager = folderManager;
     }
 
-    public Collection<PolicyHeader> findPolicyHeadersWithTypes(EnumSet<PolicyType> types) {
+    public Collection<PolicyHeader> findPolicyHeadersWithTypes(EnumSet<PolicyType> types) throws FindException{
         return policyManager.findHeadersWithTypes(types);
+    }
+
+    public PolicyAlias findAliasByEntityAndFolder(Long entityOid, Long folderOid) throws FindException {
+        return policyAliasManager.findAliasByEntityAndFolder(entityOid, folderOid);
+    }
+
+    public Collection<PolicyHeader> findPolicyHeadersWithTypes(EnumSet<PolicyType> types, boolean includeAliases)
+            throws FindException{
+        return policyManager.findHeadersWithTypes(types, includeAliases);
     }
 
     public Policy findPolicyByPrimaryKey(long oid) throws FindException {
@@ -118,6 +130,45 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
         return savePolicy(policy, true).getPolicyOid();
     }
 
+    public void deleteEntityAlias(String policyOid) throws DeleteException {
+        final PolicyAlias alias;
+        try {
+            long oid = Long.parseLong(policyOid);
+            alias = policyAliasManager.findByPrimaryKey(oid);
+            policyAliasManager.delete(alias);
+            logger.info("Deleted PolicyAlias: " + oid);
+        } catch (FindException e) {
+            throw new DeleteException("Could not find object to delete.", e);
+        }
+    }
+
+    public long saveAlias(PolicyAlias pa) throws SaveException {
+        long oid;
+        try {
+            if(pa.getOid() > 0){
+                oid = pa.getOid();
+                logger.fine("Updating PolicyAlias: " + oid);
+                policyAliasManager.update(pa);
+            }else{
+                logger.fine("Saving new PolicyAlias");
+                oid = policyAliasManager.save(pa);
+            }
+        } catch (SaveException e) {
+            throw e;
+        } catch (UpdateException ue) {
+            DuplicateObjectException doe = ExceptionUtils.getCauseIfCausedBy( ue, DuplicateObjectException.class );
+            if ( doe != null ) {
+                throw doe;
+            } else {
+                throw new SaveException("Couldn't update policy", ue);
+            }
+        } catch (ObjectModelException e) {
+            throw new SaveException("Couldn't update policy", e);
+        }
+
+        return oid;
+    }
+
     public PolicyCheckpointState savePolicy(Policy policy, boolean activateAsWell) throws SaveException {
         try {
             if (!activateAsWell)
@@ -133,6 +184,24 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
                 policyManager.addManagePolicyRole(policy);
                 return new PolicyCheckpointState(oid, checkpoint.getOrdinal(), checkpoint.isActive());
             } else {
+                if(policy.isAlias()){
+                    //when an alias, we need to save the original policy, we don't want to overwrite the orignal
+                    //policies folder oid with the alias we have here
+                    //so get the original and take out it's folder property and set it on this copy
+                    try {
+                        Policy p = this.findPolicyByPrimaryKey(policy.getOid());
+                        //Get the folder id from the original but nothing else as this will change the state
+                        //of the policy we are saving. folder is all that should be different to the original
+                        if(!p.getName().equals(policy.getName())){
+                            throw new SaveException("Cannot change the policy name on an alias");
+                        }
+
+                        policy.setFolderOid(p.getFolderOid());
+                    } catch (FindException e) {
+                        throw new SaveException("Could not update original policy");
+                    }
+                }
+
                 policyManager.update(policy);
                 final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(policy, true, false);
                 long versionOrdinal = checkpoint.getOrdinal();

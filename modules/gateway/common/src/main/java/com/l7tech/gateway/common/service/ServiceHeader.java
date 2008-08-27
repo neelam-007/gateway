@@ -1,17 +1,14 @@
 package com.l7tech.gateway.common.service;
 
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.AliasableHeader;
-import com.l7tech.objectmodel.folder.HasFolder;
+import com.l7tech.objectmodel.OrganizationHeader;
 
 /**
  * Extension of EntityHeader with some service information.
  *
  * @author Steve Jones
  */
-//todo [Donal] create a common super class implementing HasFolder, AliasableHeader shared by services and policies
-public class ServiceHeader extends EntityHeader implements HasFolder, AliasableHeader {
+public class ServiceHeader extends OrganizationHeader {
 
     //- PUBLIC
 
@@ -44,13 +41,13 @@ public class ServiceHeader extends EntityHeader implements HasFolder, AliasableH
                          final String name,
                          final String description,
                          final long folderOid,
-                         final boolean isAlias) {
+                         final boolean alias) {
         super(serviceOid == null ? -1 : serviceOid, EntityType.SERVICE, name, description);
         this.isSoap = isSoap;
         this.isDisabled = isDisabled;
         this.displayName = displayName;
         this.folderOid = folderOid;
-        this.isAlias = isAlias;
+        this.alias = alias;
     }
 
     public boolean isSoap() {
@@ -65,31 +62,13 @@ public class ServiceHeader extends EntityHeader implements HasFolder, AliasableH
         return displayName;
     }
 
-    public Long getFolderOid() {
-        return folderOid;
-    }
-
-    public void setFolderOid(long folderOid) {
-        this.folderOid = folderOid; 
-    }
-
     public String toString() {
         return getDisplayName();
     }
-
-    public boolean isAlias() {
-        return isAlias;
-    }
-
-    public void setIsAlias(boolean isAlias) {
-        this.isAlias = isAlias;
-    }
-
     //- PRIVATE
 
     private final boolean isSoap;
     private final boolean isDisabled;
     private final String displayName;
-    private long folderOid;
-    private boolean isAlias;
+
 }

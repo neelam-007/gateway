@@ -109,7 +109,7 @@ public interface RoleManager extends EntityManager<Role, EntityHeader> {
      * @throws FindException if the user's roles cannot be retrieved, but <em>not</em> if the entity headers cannot be
      *                       resolved.
      */
-    <T extends EntityHeader> Iterable<T> filterPermittedHeaders(User authenticatedUser,
+    <T extends OrganizationHeader> Iterable<T> filterPermittedHeaders(User authenticatedUser,
                                                                 OperationType requiredOperation,
                                                                 Iterable<T> headers,
                                                                 EntityFinder entityFinder)

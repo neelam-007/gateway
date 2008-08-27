@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyAlias;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -55,6 +56,7 @@ public enum EntityType {
     SAMPLE_MESSAGE("Sample Message", SampleMessage.class, com.l7tech.objectmodel.EntityType.SAMPLE_MESSAGE, true),
 
     POLICY("Policy", Policy.class, com.l7tech.objectmodel.EntityType.POLICY, true),
+    POLICY_ALIAS("Policy Alias", PolicyAlias.class, com.l7tech.objectmodel.EntityType.POLICY_ALIAS, true),
     FOLDER("Folder", Folder.class, com.l7tech.objectmodel.EntityType.FOLDER, true),
 
     MAP_ATTRIBUTE("Attribute Configuration", AttributeConfig.class, UNDEFINED, false),

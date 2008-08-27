@@ -100,8 +100,12 @@ public class CreatePolicyAction extends SecureAction {
 
                     AbstractTreeNode root = TopComponents.getInstance().getPoliciesFolderNode();
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                    PolicyHeader ph = new PolicyHeader(policy);
                     final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(new PolicyHeader(policy), null);
                     model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));
+                    RootNode rootNode = (RootNode) model.getRoot();
+                    rootNode.addEntity(ph.getOid(), sn);
+
                     tree.setSelectionPath(new TreePath(sn.getPath()));
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
