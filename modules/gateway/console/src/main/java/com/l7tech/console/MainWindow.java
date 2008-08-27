@@ -26,6 +26,7 @@ import com.l7tech.console.security.PermissionRefreshListener;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
+import com.l7tech.console.tree.servicesAndPolicies.AlterFilterAction;
 import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.tree.policy.PolicyToolBar;
@@ -201,6 +202,10 @@ public class MainWindow extends JFrame implements SheetHolder {
     private AuditAlertChecker auditAlertChecker;
     private X509Certificate serverSslCert;
     private RootNode rootNode;
+    public static final String FILTER_STATUS_LABEL = "FILTER_STATUS_LABEL";
+    public final static String FILTER_STATUS_NONE = "Filter: None";
+    public final static String FILTER_STATUS_SERVICES = "Filter: Services";
+    public final static String FILTER_STATUS_POLICY_FRAGMENTS = "Filter: Policy Fragments";
 
 
     /**
@@ -732,6 +737,12 @@ public class MainWindow extends JFrame implements SheetHolder {
         menu.add(getAuditMenuItem());
         menu.add(getFromFileMenuItem());
 
+        menu.addSeparator();
+
+        menu.add(new AlterFilterAction(AlterFilterAction.FilterType.ALL));
+        menu.add(new AlterFilterAction(AlterFilterAction.FilterType.SERVICES));
+        menu.add(new AlterFilterAction(AlterFilterAction.FilterType.POLICY_FRAGMENT));
+        
         int mnemonic = menu.getText().toCharArray()[0];
         menu.setMnemonic(mnemonic);
 
@@ -1990,7 +2001,17 @@ public class MainWindow extends JFrame implements SheetHolder {
         configureScrollPane(serviceScroller);
 
         verticalSplitPane.setTopComponent(paletteSections);
-        verticalSplitPane.setBottomComponent(serviceScroller);
+
+        JPanel servicesAndPoliciesTreePanel = new JPanel();
+        servicesAndPoliciesTreePanel.setLayout(new BorderLayout());
+
+        JLabel filterStatusLabel = new JLabel();
+        TopComponents.getInstance().registerComponent(MainWindow.FILTER_STATUS_LABEL, filterStatusLabel);
+        filterStatusLabel.setText(FILTER_STATUS_NONE);
+        servicesAndPoliciesTreePanel.add(serviceScroller, BorderLayout.CENTER);
+        servicesAndPoliciesTreePanel.add(filterStatusLabel, BorderLayout.SOUTH);
+        
+        verticalSplitPane.setBottomComponent(servicesAndPoliciesTreePanel);
 
         mainLeftPanel = new JPanel(new BorderLayout());
         mainLeftPanel.add(verticalSplitPane, BorderLayout.CENTER);

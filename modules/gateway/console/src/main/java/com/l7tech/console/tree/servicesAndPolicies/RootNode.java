@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  */
 public final class RootNode extends FolderNode{
 
-    private static ServicesAndPoliciesNodeComparator comparator = new ServicesAndPoliciesNodeComparator();
+    private final static ServicesAndPoliciesNodeComparator comparator = new ServicesAndPoliciesNodeComparator();
     private final AlterDefaultSortAction nameSort;
     private final AlterDefaultSortAction typeSort;
     /**
@@ -38,8 +38,8 @@ public final class RootNode extends FolderNode{
      * original entities when either of them changes. This saves us a lot of tree searching so it's worth it
      * When ever you add or remove from the tree the corresponding method to udpate oidToAliases must be called
      */
-    private Map<Long, Set<AbstractTreeNode>> oidToAliases = new HashMap<Long, Set<AbstractTreeNode>>();
-    private Map<Long, AbstractTreeNode> oidToEntity = new HashMap<Long, AbstractTreeNode>();
+    private final Map<Long, Set<AbstractTreeNode>> oidToAliases = new HashMap<Long, Set<AbstractTreeNode>>();
+    private final Map<Long, AbstractTreeNode> oidToEntity = new HashMap<Long, AbstractTreeNode>();
     /**
      * Used to track the current entities which the user has selected to alias
      * We record AbstractTreeNode's, the entities are represented by the EntityHeader which is stored in
@@ -124,9 +124,9 @@ public final class RootNode extends FolderNode{
 
     public static final long OID = -5002L;
 
-    private ServiceAdmin serviceManager;
-    private PolicyAdmin policyAdmin;
-    private String title;
+    private final ServiceAdmin serviceManager;
+    private final PolicyAdmin policyAdmin;
+    private final String title;
 
     /**
      * construct the <CODE>ServicesFolderNode</CODE> instance for
@@ -163,6 +163,14 @@ public final class RootNode extends FolderNode{
         JMenu returnMenu = new JMenu("Change sort");
         returnMenu.add(nameSort);
         returnMenu.add(typeSort);
+        return returnMenu;                
+    }
+
+    protected JMenu getFilterMenu(){
+        JMenu returnMenu = new JMenu("Filter");
+        returnMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.ALL));
+        returnMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.SERVICES));
+        returnMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.POLICY_FRAGMENT));
         return returnMenu;                
     }
 

@@ -1,6 +1,5 @@
 package com.l7tech.console.tree.servicesAndPolicies;
 
-import org.apache.log4j.Logger;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.action.BaseAction;
@@ -13,15 +12,15 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.EnumSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by IntelliJ IDEA.
  * User: darmstrong
  * Date: Aug 15, 2008
  * Time: 9:53:47 AM
- * To change this template use File | Settings | File Templates.
  */
-
 public class AlterDefaultSortAction extends BaseAction {
     static Logger log = Logger.getLogger(AlterDefaultSortAction.class.getName());
 
@@ -81,7 +80,8 @@ public class AlterDefaultSortAction extends BaseAction {
                  return "Sort " + sortType+ " desc";
             }
         }
-        throw new RuntimeException("Cant happen");
+        log.log(Level.INFO,"Unexpected SortType found");
+        throw new IllegalStateException("Unexpected SortType found");
     }
 
     /**
@@ -95,7 +95,7 @@ public class AlterDefaultSortAction extends BaseAction {
      * specify the resource name for this action
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/folder.gif";
+        return null;
     }
 
     /**
@@ -103,8 +103,6 @@ public class AlterDefaultSortAction extends BaseAction {
      * The comparator used by each node in this tree should be RootNode.getComparator()
      */
     protected void performAction() {
-        System.out.println("Action performed");
-
         RootNode.ServicesAndPoliciesNodeComparator comparator =  RootNode.getComparator();
 
         if(sortType.toString().equals(SortType.NAME.toString())){
@@ -132,12 +130,6 @@ public class AlterDefaultSortAction extends BaseAction {
         final Enumeration pathEnum = tree.getExpandedDescendants(rootPath);
 
         sortChildren(rootNode);
-//        for(int i = 0; i < rootNode.getChildCount(); i++){
-//            AbstractTreeNode childNode = (AbstractTreeNode)rootNode.getChildAt(i);
-//            sortChildren(childNode);
-//        }
-        
-
         model.nodeStructureChanged(rootNode);
 
         SwingUtilities.invokeLater(new Runnable(){
@@ -155,7 +147,7 @@ public class AlterDefaultSortAction extends BaseAction {
     }
 
     private void sortChildren(AbstractTreeNode node){
-        if(!(node instanceof FolderNode) && !(node instanceof RootNode)){
+        if(!(node instanceof FolderNode)){
             return;
         }
         

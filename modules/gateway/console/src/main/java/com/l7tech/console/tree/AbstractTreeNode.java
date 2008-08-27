@@ -271,6 +271,10 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         return null;
     }
 
+    protected JMenu getFilterMenu(){
+        return null;
+    }
+
     /**
      * Make a popup menu for this node.
      * The menu is constructed from the set of actions returned
@@ -300,7 +304,12 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         if(sortMenu != null){
             pm.add(sortMenu);
         }
-        
+
+        JMenu filterMenu = getFilterMenu();
+        if(filterMenu != null){
+            pm.add(filterMenu);
+        }
+
         Utilities.removeToolTipsFromMenuItems(pm);
         return pm;
     }
