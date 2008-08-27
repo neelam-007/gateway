@@ -239,6 +239,9 @@ seal)
   #dd if=/dev/zero of=/tmp/0bits bs=20971520 # bs=20m
   #rm -f /tmp/0bits
 
+  # Delete the ssh keys to ensure they are created new
+  rm -f /etc/ssh/ssh_host_*
+
   # Delete this script.
   rm -f /root/sealsys
 

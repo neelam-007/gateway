@@ -28,6 +28,10 @@ rm -f /etc/resolv.conf.*
 echo "" > /etc/resolv.conf
 echo "" > /etc/security/opasswd
 
+# Remove ssh keys so they are generated on first start
+echo "Removing ssh keys..."
+rm -f /etc/ssh/ssh_host_*
+
 # below only applies if run interactively
 echo "Done, now run:"
 echo ""
