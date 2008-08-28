@@ -3,7 +3,6 @@ package com.l7tech.server.ems.pages;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
-import org.apache.wicket.model.Model;
 import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.StringResourceModel;
@@ -52,15 +51,15 @@ public class Audits extends EmsPage {
         private final AuditRecord record;
 
         AuditModel( final AuditRecord record ) {
-            this.record = record;    
+            this.record = record;
         }
 
         public String getId() {
             return record.getId();
         }
 
-        public String getTime() {
-            return new Date(record.getMillis()).toString();
+        public Date getTime() {
+            return new Date(record.getMillis());
         }
 
         public String getLevel() {

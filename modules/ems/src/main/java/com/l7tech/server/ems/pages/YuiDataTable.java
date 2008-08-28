@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.logging.Logger;
 import java.io.Serializable;
 
 /**
@@ -198,8 +197,6 @@ public class YuiDataTable extends Panel {
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(YuiDataTable.class.getName());
-
     private final List<PropertyColumn> columns;
     private final ISortableDataProvider provider;
 
@@ -308,12 +305,13 @@ public class YuiDataTable extends Panel {
         }
     }
 
-    private final class PropertyModelConvertor implements JSON.Convertor {
+    private class PropertyModelConvertor implements JSON.Convertor {
         public void toJSON(Object o, JSON.Output output) {
             Model data = (Model) o;
 
             for ( PropertyColumn column : columns ) {
-                output.add( column.getPropertyExpression(), new PropertyModel(data.getObject(), column.getPropertyExpression()).getObject() );
+                Object object = new PropertyModel(data.getObject(), column.getPropertyExpression()).getObject();
+                output.add( column.getPropertyExpression(), getConverter(object.getClass()).convertToString(object, null));
             }
         }
 

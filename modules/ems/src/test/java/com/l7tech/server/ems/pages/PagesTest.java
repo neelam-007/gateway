@@ -7,10 +7,15 @@ import org.apache.wicket.util.resource.locator.ResourceStreamLocator;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.spring.injection.annot.SpringComponentInjector;
+import org.apache.wicket.Session;
+import org.apache.wicket.Request;
+import org.apache.wicket.Response;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.util.logging.Logger;
+
+import com.l7tech.server.ems.EmsSession;
 
 public class PagesTest {
 
@@ -29,6 +34,10 @@ public class PagesTest {
 
             public Class getHomePage() {
                 return Login.class;
+            }
+
+            public Session newSession(Request request, Response response) {
+                return new EmsSession(request);
             }
         });
 

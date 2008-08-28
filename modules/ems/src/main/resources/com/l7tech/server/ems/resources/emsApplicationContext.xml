@@ -50,6 +50,7 @@
                 <value>com.l7tech.gateway.common.cluster.ClusterProperty</value>
                 <value>com.l7tech.identity.internal.InternalUser</value>
                 <value>com.l7tech.identity.IdentityProviderConfig</value>
+                <value>com.l7tech.server.ems.user.UserProperty</value>
             </list>
         </property>
         <property name="hibernateProperties" value="hibernate.dialect=org.hibernate.dialect.DerbyDialect"/>
@@ -227,5 +228,7 @@
     <bean name="servletContainer" class="com.l7tech.server.ems.EmsServletContainer">
         <constructor-arg index="0" value="${com.l7tech.ems.httpPort}"/>
     </bean>
+
+    <bean name="userPropertyManager" class="com.l7tech.server.ems.user.UserPropertyManagerImpl" parent="hibernateBean"/>
 
 </beans>

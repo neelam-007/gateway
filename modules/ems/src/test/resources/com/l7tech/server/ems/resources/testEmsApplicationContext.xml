@@ -24,4 +24,7 @@
     <!-- Account Manager Mock -->
     <bean name="emsAccountManager" class="com.l7tech.server.ems.MockEmsAccountManager"/>
 
+    <!-- User Properties Manager Mock -->
+    <bean name="userPropertyManager" class="com.l7tech.server.ems.MockUserPropertyManager"/>
+    
 </beans>

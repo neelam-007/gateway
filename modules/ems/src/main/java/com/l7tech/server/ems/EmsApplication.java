@@ -4,6 +4,10 @@ import com.l7tech.server.ems.pages.*;
 import org.apache.wicket.Component;
 import org.apache.wicket.Page;
 import org.apache.wicket.ResourceReference;
+import org.apache.wicket.Session;
+import org.apache.wicket.Request;
+import org.apache.wicket.Response;
+import org.apache.wicket.RequestCycle;
 import org.apache.wicket.markup.html.PackageResourceGuard;
 import org.apache.wicket.authorization.Action;
 import org.apache.wicket.authorization.IAuthorizationStrategy;
@@ -13,9 +17,21 @@ import org.apache.wicket.spring.injection.annot.SpringComponentInjector;
 import org.apache.wicket.util.lang.Bytes;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.locator.ResourceStreamLocator;
+import org.apache.wicket.util.convert.ConverterLocator;
+import org.apache.wicket.util.convert.IConverter;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Collections;
+import java.util.List;
+import java.util.ArrayList;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
 
 /**
  * Wicket WebApplication for Enterprise Manager.
@@ -23,6 +39,8 @@ import java.util.logging.Logger;
 public class EmsApplication extends WebApplication {
 
     //- PUBLIC
+
+    public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     /**
      *
@@ -36,6 +54,10 @@ public class EmsApplication extends WebApplication {
      */
     public String getConfigurationType() {
         return WebApplication.DEPLOYMENT;
+    }
+
+    public Session newSession(Request request, Response response) {
+        return new EmsSession( request );
     }
 
     //- PROTECTED
@@ -104,6 +126,31 @@ public class EmsApplication extends WebApplication {
             }
         });
 
+        ((ConverterLocator) this.getConverterLocator()).set( Date.class, new IConverter() {
+            public DateFormat getDateFormat() {
+                String formatPattern = ((EmsSession)RequestCycle.get().getSession()).getDateTimeFormatPattern();
+                if ( formatPattern == null ) {
+                    formatPattern = DEFAULT_DATE_FORMAT;
+                }
+
+                return new SimpleDateFormat(formatPattern);
+            }
+
+            public Object convertToObject(String s, Locale locale) {
+                Date value = new Date(0);
+                try {
+                    value = getDateFormat().parse(s);
+                } catch ( ParseException pe ) {
+                    // not of interest
+                }
+                return value;
+            }
+
+            public String convertToString(Object o, Locale locale) {
+                return getDateFormat().format((Date)o);
+            }
+        } );
+
         // mount pages
         mountBookmarkablePage("/Audits.html", Audits.class);
         mountTemplate("/Backup.html");
@@ -123,15 +170,54 @@ public class EmsApplication extends WebApplication {
         mountTemplate("/Setup.html");
         mountTemplate("/StandardReports.html");
         mountTemplate("/SubmissionReceived.html");
-        mountTemplate("/SystemSettings.html");
+        mountBookmarkablePage("/SystemSettings.html", SystemSettings.class);
         mountTemplate("/TestWebService.html");
         mountTemplate("/UserSelector.html");
         mountBookmarkablePage("/UserSettings.html", UserSettings.class);
     }
 
+    public static List<String> getDateFormatkeys() {
+        return new ArrayList<String>(dates.keySet());
+    }
+
+    public static List<String> getTimeFormatkeys() {
+        return new ArrayList<String>(times.keySet());
+    }
+
+    public static String getDateFormatExample( final String key ) {
+        return dates.get(key);
+    }
+
+    public static String getTimeFormatExample( final String key ) {
+        return times.get(key);
+    }
+
+    public static String getDateFormat( final String dateKey, final String timeKey ) {
+        String dateValue = "friendly".equals(dateKey) ? "MMM dd, yyyy" : "yyyy-MM-dd";
+        String timeValue = "friendly".equals(timeKey) ? "hh:mm:ss a" : "HH:mm:ss";
+
+        return dateValue + " " + timeValue;
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( EmsApplication.class.getName() );
+
+    private static final Map<String,String> dates;
+    private static final Map<String,String> times;
+
+    static {
+        Map<String,String> dateMap = new LinkedHashMap<String,String>();
+        dateMap.put("formal", "2010-01-31");
+        dateMap.put("friendly", "Jan 31, 2010");
+
+        Map<String,String> timeMap = new LinkedHashMap<String,String>();
+        timeMap.put("formal", "13:00:00");
+        timeMap.put("friendly", "01:00:00 PM");
+
+        dates = Collections.unmodifiableMap(dateMap);
+        times = Collections.unmodifiableMap(timeMap);
+    }
 
     /**
      *

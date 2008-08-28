@@ -12,11 +12,18 @@ import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import com.l7tech.server.ems.SetupManager;
 import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.server.ems.SetupException;
+import com.l7tech.server.ems.EmsSession;
+import com.l7tech.server.ems.EmsApplication;
+import com.l7tech.server.ems.user.UserPropertyManager;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.FindException;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * Login page
@@ -32,6 +39,10 @@ public class Login extends WebPage {
     @SpringBean
     private EmsSecurityManager securityManager;
 
+    @SuppressWarnings({"UnusedDeclaration"})
+    @SpringBean
+    private UserPropertyManager userPropertyManager;
+    
     /**
      * Create login page
      */
@@ -90,7 +101,36 @@ public class Login extends WebPage {
         ServletWebRequest servletWebRequest = (ServletWebRequest) getRequest();
         HttpServletRequest request = servletWebRequest.getHttpServletRequest();
 
-        return securityManager.login( request.getSession(true), username, password );
+        boolean success = securityManager.login( request.getSession(true), username, password );
+
+        if ( success ) {
+            User user = securityManager.getLoginInfo(request.getSession(true)).getUser();
+            setUserPreferences( user, (EmsSession) getSession() );
+        }
+
+        return success;
+    }
+
+    /**
+     *
+     */
+    private void setUserPreferences( final User user, final EmsSession session ) {
+        String format = EmsApplication.DEFAULT_DATE_FORMAT;
+        String zoneid = TimeZone.getDefault().getID();
+
+        try {
+            Map<String,String> props = userPropertyManager.getUserProperties( user );
+            String dateFormat = props.get("dateformat");
+            String timeFormat = props.get("timeformat");
+
+            format = EmsApplication.getDateFormat(dateFormat, timeFormat);
+            zoneid = props.get("timezone");
+        } catch ( FindException fe ) {
+            // use default format            
+        }
+
+        session.setDateTimeFormatPattern( format );
+        session.setTimeZoneId(zoneid);
     }
 
     /**
