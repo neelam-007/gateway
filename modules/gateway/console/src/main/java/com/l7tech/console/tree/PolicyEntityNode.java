@@ -7,7 +7,6 @@ import com.l7tech.console.action.*;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
@@ -47,7 +46,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
 
         PolicyHeader eh = getEntityHeader();
         Policy updatedPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(eh.getGuid());
-        updatedPolicy.setIsAlias(eh.isAlias());
+        updatedPolicy.setAlias(eh.isAlias());
         if(eh.isAlias()){
             //Adjust it's folder property
             updatedPolicy.setFolderOid(eh.getFolderOid());

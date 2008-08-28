@@ -70,7 +70,7 @@ public class PublishedService extends NamedEntityImp implements Organizable
         setSoap(objToCopy.isSoap());
         _wsdlUrl = objToCopy._wsdlUrl;
         setWsdlXml(objToCopy.getWsdlXml());
-        setIsAlias(objToCopy.isAlias());
+        setAlias(objToCopy.isAlias());
     }
 
     /**
@@ -460,7 +460,7 @@ public class PublishedService extends NamedEntityImp implements Organizable
         this.folderOid = policyFolderOid;
     }
 
-    public void setIsAlias(boolean isAlias) {
+    public void setAlias(boolean isAlias) {
         this.isAlias = isAlias;
     }
 

@@ -127,7 +127,7 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
                 Set<PolicyAlias> aliases = policyIdToAllItsAliases.get(serviceId);
                 for(PolicyAlias pa: aliases){
                     PolicyHeader newSH = new PolicyHeader(ph);
-                    newSH.setIsAlias(true);
+                    newSH.setAlias(true);
                     newSH.setFolderOid(pa.getFolderOid());
                     returnHeaders.add(newSH);
                 }

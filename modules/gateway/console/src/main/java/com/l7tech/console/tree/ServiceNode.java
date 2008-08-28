@@ -61,7 +61,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
 
         ServiceHeader serviceHeader = getEntityHeader();
         PublishedService svc = Registry.getDefault().getServiceManager().findServiceByID(serviceHeader.getStrId());
-        svc.setIsAlias(serviceHeader.isAlias());
+        svc.setAlias(serviceHeader.isAlias());
         if(serviceHeader.isAlias()){
             //Adjust it's folder property
             svc.setFolderOid(serviceHeader.getFolderOid());

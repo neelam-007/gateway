@@ -17,5 +17,5 @@ public interface Aliasable{
 
     public boolean isAlias();
 
-    public void setIsAlias(boolean isAlias);
+    public void setAlias(boolean isAlias);
 }

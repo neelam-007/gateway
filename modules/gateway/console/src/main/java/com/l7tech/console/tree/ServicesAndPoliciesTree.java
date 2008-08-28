@@ -8,12 +8,10 @@ import com.l7tech.console.tree.servicesAndPolicies.ServicesAndPoliciesTreeTransf
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.ClipboardActions;
-import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.gateway.common.admin.AliasAdmin;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyHeader;
@@ -378,7 +376,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
                 throw new RuntimeException(msg);
             }
             newHeader.setFolderOid(folderOid);
-            newHeader.setIsAlias(true);
+            newHeader.setAlias(true);
 
             atn.setUserObject(newHeader);
             if(atn instanceof EntityWithPolicyNode){

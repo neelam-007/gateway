@@ -69,11 +69,16 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
                     testEntity = entityFinder.find(header);
                 }
                 //check for alias
-                if(header instanceof AliasableHeader){
-                   AliasableHeader aH = (AliasableHeader) header;
+                if(header instanceof Aliasable){
+                   Aliasable aH = (Aliasable) header;
                     if(aH.isAlias()){
+                        if(!(testEntity instanceof Aliasable)){
+                            String msg = "Unexpected entity found";
+                            logger.log(Level.INFO, msg);
+                            throw new IllegalStateException(msg);
+                        }
                         Aliasable a = (Aliasable) testEntity;
-                        a.setIsAlias(true);
+                        a.setAlias(true);
                     }
                 }
             } else {

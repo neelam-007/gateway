@@ -98,7 +98,7 @@ public abstract class AliasManagerImpl<ET extends AliasEntity, HT extends Organi
                 Set<ET> aliases = entityIdToAllItsAliases.get(serviceId);
                 for(ET pa: aliases){
                     HT newHT = getNewEntityHeader(ht);
-                    newHT.setIsAlias(true);
+                    newHT.setAlias(true);
                     newHT.setFolderOid(pa.getFolderOid());
                     returnHeaders.add(newHT);
                 }

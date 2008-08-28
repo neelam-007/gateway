@@ -36,7 +36,7 @@ public abstract class OrganizationHeader extends EntityHeader implements Aliasab
         return alias;
     }
 
-    public void setIsAlias(boolean isAlias) {
+    public void setAlias(boolean isAlias) {
         this.alias = isAlias;
     }
 

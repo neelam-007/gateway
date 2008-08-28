@@ -343,7 +343,7 @@ public class RoleManagerImpl
                     throw new IllegalStateException("Any organizable entity must be alisable");
                 }
                 Aliasable a = (Aliasable) entity;
-                a.setIsAlias(true);
+                a.setAlias(true);
             }
 
             if (isPermitted(userRoles, entity, requiredOperation, null))

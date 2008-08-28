@@ -246,7 +246,7 @@ public class Policy extends NamedEntityImp  implements Organizable {
         this.folderOid = folderOid;
     }
 
-    public void setIsAlias(boolean isAlias) {
+    public void setAlias(boolean isAlias) {
         this.isAlias = isAlias;
     }
 
