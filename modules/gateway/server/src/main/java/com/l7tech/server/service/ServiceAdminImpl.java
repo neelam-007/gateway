@@ -246,7 +246,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     }
 
     public Collection<FolderHeader> findAllFolders() throws FindException {
-        ServiceHeader [] allServices = findAllPublishedServices();
+        ServiceHeader [] allServices = findAllPublishedServices(true);
         return folderManager.findFolderHeaders(Arrays.asList(allServices));
     }
 

@@ -14,7 +14,6 @@ import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.EntityFinder;
-import com.l7tech.server.policy.PolicyManager;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -39,12 +38,6 @@ public class RoleManagerImpl
         implements RoleManager
 {
     private static final Logger logger = Logger.getLogger(RoleManagerImpl.class.getName());
-
-    private PolicyManager policyManager;
-
-    public void setPolicyManager( PolicyManager policyManager){
-        this.policyManager = policyManager;
-    }
 
     public Class<Role> getImpClass() {
         return Role.class;
@@ -325,11 +318,7 @@ public class RoleManagerImpl
         for (final T header : headers) {
             final Entity entity;
             try {
-                if(header.getType() == com.l7tech.objectmodel.EntityType.POLICY) {
-                    entity = policyManager==null ?  null : policyManager.findByGuid(header.getStrId());
-                }else{
-                    entity = entityFinder.find(header);
-                }
+                entity = entityFinder.find(header);
                 if (entity == null) continue;
             } catch (FindException e) {
                 logger.log(Level.WARNING, MessageFormat.format("Unable to find entity for header: {0}; skipping", header), e);

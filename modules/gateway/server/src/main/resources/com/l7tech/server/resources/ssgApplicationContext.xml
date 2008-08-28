@@ -112,10 +112,8 @@
         <constructor-arg ref="identityProviderConfigManager"/>
     </bean>
 
-    <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean">
-        <property name="policyManager" ref="policyManager" />
-    </bean>
-
+    <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean" />
+    
     <!-- server side identity configuration manager -->
     <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.IdProvConfManagerServer" parent="hibernateBean">
         <property name="roleManager" ref="roleManager"/>

@@ -117,7 +117,8 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
     }
 
     public Collection<FolderHeader> findAllFolders() throws FindException {
-        Collection<PolicyHeader> policyHeaders = findPolicyHeadersWithTypes(EnumSet.of(PolicyType.INCLUDE_FRAGMENT, PolicyType.INTERNAL));
+        Collection<PolicyHeader> policyHeaders = findPolicyHeadersWithTypes(
+                EnumSet.of(PolicyType.INCLUDE_FRAGMENT, PolicyType.INTERNAL), true);
         return folderManager.findFolderHeaders(policyHeaders);
     }
 
