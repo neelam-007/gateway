@@ -39,29 +39,8 @@ public class FolderManagerImpl extends HibernateEntityManager<Folder, FolderHead
         Collection<FolderHeader> folderHeaders = new ArrayList<FolderHeader>(findAllHeaders());
         Map<Long, FolderHeader> folderOidToHeaderMap = new HashMap<Long, FolderHeader>();
 
-        //Even though we will have a map containing all the FolderHeader's in folderOidToHeaderMap
-        //that will end up in allFoldersFromCorrectRoot, we can't send Map.values() back over the wire due to
-        //serialization issues
-        List<FolderHeader> allFoldersFromCorrectRoot = new ArrayList<FolderHeader>();
-        boolean done = false;
-        while(!done) { // Stop when there are no folders to add
-            done = true;
-            for(Iterator<FolderHeader> it = folderHeaders.iterator();it.hasNext();) {
-                FolderHeader header = it.next();
-                if(header.getParentFolderOid() == null) {
-                    if(header.getOid() == ROOT_FOLDER_OID) {
-                        allFoldersFromCorrectRoot.add(header);
-                        folderOidToHeaderMap.put(header.getOid(), header);
-                        it.remove();
-                        done = false;
-                    }
-                } else if(folderOidToHeaderMap.containsKey(header.getParentFolderOid())) {
-                    allFoldersFromCorrectRoot.add(header);
-                    folderOidToHeaderMap.put(header.getOid(), header);
-                    it.remove();
-                    done = false;
-                }
-            }
+        for(FolderHeader fH: folderHeaders){
+            folderOidToHeaderMap.put(fH.getOid(), fH);    
         }
 
         //Validate what folders to return based on the supplied entity headers
@@ -70,7 +49,7 @@ public class FolderManagerImpl extends HibernateEntityManager<Folder, FolderHead
         //Note anybody with read on entity_type service for any entity of type can see all folders
         //Currently this means only Admin and users with the 'Manage Webservices' role.
         if(roleManager.isPermittedForAnyEntityOfType(user, OperationType.READ, com.l7tech.gateway.common.security.rbac.EntityType.SERVICE)){
-            return allFoldersFromCorrectRoot;
+            return folderHeaders;
         }
 
         //Note this code (and called code) does not rely on the class of hierarchy of EntityHeader. It depends on the
@@ -106,7 +85,6 @@ public class FolderManagerImpl extends HibernateEntityManager<Folder, FolderHead
                 parentId = parentFolder.getParentFolderOid();
             }
         }
-
         return filteredFolders;
     }
 
