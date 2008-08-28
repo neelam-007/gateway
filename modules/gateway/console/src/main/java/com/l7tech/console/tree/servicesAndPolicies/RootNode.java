@@ -320,7 +320,7 @@ public final class RootNode extends FolderNode{
 
             for(FolderHeader folder : allFolderHeaders) {
                 if(folder.getParentFolderOid() != null && root.getOid() == folder.getParentFolderOid()) {
-                    FolderNode childNode = getFolderNodeFromHeaders(folder, allFolderEntities, policyFolderHeaders);
+                    FolderNode childNode = getFolderNodeFromHeaders(folder, allFolderEntities, allFolderHeaders);
                     insert(childNode, getInsertPosition(childNode, RootNode.getComparator()));
                 }
             }

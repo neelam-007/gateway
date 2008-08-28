@@ -45,6 +45,9 @@ public interface ServiceAdminPublic {
      * on each ServiceHeader to determine if it is an alias.
      * @throws FindException
      */
+    @Secured(stereotype=MethodStereotype.FIND_HEADERS)
+    @Transactional(readOnly=true)
+    @Administrative(licensed=false)
     ServiceHeader[] findAllPublishedServices(boolean includeAliases) throws FindException;
 
     /**
