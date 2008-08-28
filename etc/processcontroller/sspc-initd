@@ -1,0 +1,64 @@
+#!/bin/bash
+#
+# Startup script for the SecureSpan Process Controller
+#
+# chkconfig: - 99 01
+# description: Layer 7 SecureSpan Process Controller Daemon
+# processname: ssemd
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# See how we were called.
+USER=$(whoami)
+if [ $USER != "root" ] ; then
+    echo "Need to be root to run this script";
+    exit
+fi
+
+# Config
+PID_FILE="ssemd"
+EM_SCRIPT="/opt/SecureSpan/Gateway/Controller/bin/processcontroller.sh"
+
+start() {
+        [ -x "${PC_SCRIPT}" ] || exit 5
+
+        echo -n $"Starting Process Controller: "
+        daemon "${PC_SCRIPT}" "/var/run/${PID_FILE}.pid"
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && touch /var/lock/subsys/sspc
+        return $RETVAL
+}
+
+stop() {
+        echo -n $"Shutting down Process Controller: "
+        killproc "${PID_FILE}"
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/sspc
+        return $RETVAL
+}
+
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart)
+	stop
+        sleep 5
+	start
+	;;
+  status)
+        status ssemd
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+
+exit $RETVAL
