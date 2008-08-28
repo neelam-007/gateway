@@ -17,7 +17,7 @@ import java.util.Set;
  * Child entity of a {@link com.l7tech.server.management.config.host.PCHostConfig} describing one of the service
  * nodes hosted on the Gateway.
  * <p/>
- * Note: the inherited {@link #_name} property is used here as the partition name
+ * Note: the inherited {@link #name} property is used here as the partition name
  * <p/>
  * TODO someday configure a subset of the configuration available in this database (e.g. a folder)
  * @author alex
@@ -33,7 +33,6 @@ public class PCNodeConfig extends NodeConfig {
      */
     private String clusterHostname;
 
-    private boolean disabled;
     /** Is this node intended to be the sole user of the Tarari card on this Node? */
     private boolean tarariOwner;
 
@@ -46,6 +45,9 @@ public class PCNodeConfig extends NodeConfig {
     /** TCP port for Process Controller API */
     private int processControllerApiPort;
 
+    /** URI suffix for Process Controller API */
+    private String processControllerApiUrl;
+
     /**
      * Used to combine multiple {@link DatabaseConfig} host:ports for each DatabaseType into a single JDBC URL.
      *
@@ -57,14 +59,6 @@ public class PCNodeConfig extends NodeConfig {
      * Locally cached copy of keystores configured for this partition
      */
     private transient Set<SsgKeyEntry> keystores = new HashSet<SsgKeyEntry>();
-
-    public boolean isDisabled() {
-        return disabled;
-    }
-
-    public void setDisabled(boolean disabled) {
-        this.disabled = disabled;
-    }
 
     public boolean isTarariOwner() {
         return tarariOwner;
@@ -119,23 +113,23 @@ public class PCNodeConfig extends NodeConfig {
         this.rmiPort = rmiPort;
     }
 
-    public int getProcessControllerApiPort() {
-        return processControllerApiPort;
-    }
-
-    public void setProcessControllerApiPort(int processControllerApiPort) {
-        this.processControllerApiPort = processControllerApiPort;
-    }
-
     @Override
     @Transient
     public Set<NodeFeature> getFeatures() {
         final Set<NodeFeature> features = new HashSet<NodeFeature>();
         features.add(new RmiPortFeature(this, getRmiPort()));
-        features.add(new ProcessControllerApiPortFeature(this, getProcessControllerApiPort()));
+        features.add(new ProcessControllerApiUrlFeature(this, getProcessControllerApiUrl()));
         features.add(new TarariFeature(this, isTarariOwner()));
         features.add(new ScaFeature(this, isScaOwner()));
         return features;
+    }
+
+    public String getProcessControllerApiUrl() {
+        return processControllerApiUrl;
+    }
+
+    public void setProcessControllerApiUrl(String processControllerApiUrl) {
+        this.processControllerApiUrl = processControllerApiUrl;
     }
 
     public boolean equals(Object o) {
@@ -145,7 +139,7 @@ public class PCNodeConfig extends NodeConfig {
 
         PCNodeConfig that = (PCNodeConfig)o;
 
-        if (disabled != that.disabled) return false;
+        if (!enabled != !that.enabled) return false;
         if (scaOwner != that.scaOwner) return false;
         if (tarariOwner != that.tarariOwner) return false;
         if (host != null ? !host.equals(that.host) : that.host != null) return false;
@@ -156,7 +150,7 @@ public class PCNodeConfig extends NodeConfig {
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (host != null ? host.hashCode() : 0);
-        result = 31 * result + (disabled ? 1 : 0);
+        result = 31 * result + (!enabled ? 1 : 0);
         result = 31 * result + (tarariOwner ? 1 : 0);
         result = 31 * result + (scaOwner ? 1 : 0);
         result = 31 * result + (databaseUrlTemplate != null ? databaseUrlTemplate.hashCode() : 0);
@@ -166,9 +160,9 @@ public class PCNodeConfig extends NodeConfig {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("<node ");
-        sb.append("id=\"").append(_oid).append("\" ");
-        sb.append("name=\"").append(_name).append("\" ");
-        sb.append("disabled=\"").append(disabled).append("\" ");
+        sb.append("id=\"").append(guid).append("\" ");
+        sb.append("name=\"").append(name).append("\" ");
+        sb.append("disabled=\"").append(!enabled).append("\" ");
         sb.append(">\n");
         if (!connectors.isEmpty()) {
             sb.append("    <connectors>\n");
@@ -194,4 +188,5 @@ public class PCNodeConfig extends NodeConfig {
         sb.append("  </node>");
         return sb.toString();
     }
+
 }

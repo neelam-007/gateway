@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 /**
- * An embedded servlet container that the EMS uses to host itself.
+ * An embedded servlet container that the PC uses to host itself.
  *
  * TODO [steve] This needs cleanup
  */
@@ -39,18 +39,18 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
     private ApplicationContext applicationContext;
     private Server server;
 
-    public PCServletContainer(int httpPort) {
+    public PCServletContainer() {
         this.instanceId = nextInstanceId.getAndIncrement();
         //noinspection ThisEscapedInObjectConstruction
         instancesById.put(instanceId, new WeakReference<PCServletContainer>(this));
 
-        this.httpPort = httpPort;
+        this.httpPort = Integer.getInteger("com.l7tech.server.processcontroller.httpPort", 8765);
     }
 
     private void initializeServletEngine() throws Exception {
         server = new Server(httpPort);
         final Context root = new Context(server, "/", Context.SESSIONS);
-        root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/processcontroller/resources"));
+        root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/processcontroller/resources/web"));
         root.setDisplayName("Layer 7 Process Controller");
         root.setAttribute("javax.servlet.context.tempdir", new File("/tmp")); //TODO [steve] temp directory ?
         root.addEventListener(new PCContextLoaderListener());
@@ -61,13 +61,13 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         initParams.put("contextConfigLocation", "classpath:com/l7tech/server/processcontroller/resources/processControllerWebApplicationContext.xml");
         initParams.put(INIT_PARAM_INSTANCE_ID, Long.toString(instanceId));
 
-        CXFServlet cxfServlet = new CXFServlet();
-        ServletHolder cxfHolder = new ServletHolder(cxfServlet);
+        final CXFServlet cxfServlet = new CXFServlet();
+        final ServletHolder cxfHolder = new ServletHolder(cxfServlet);
         root.addServlet(cxfHolder, "/services/*");
 
         //Set DefaultServlet to handle all static resource requests
-        DefaultServlet defaultServlet = new DefaultServlet();
-        ServletHolder defaultHolder = new ServletHolder(defaultServlet);
+        final DefaultServlet defaultServlet = new DefaultServlet();
+        final ServletHolder defaultHolder = new ServletHolder(defaultServlet);
         root.addServlet(defaultHolder, "/");
 
         server.start();

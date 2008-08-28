@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /** @author alex */
-public class Version {
+public class SoftwareVersion {
     private final int major;
     private final int minor;
     private final Integer revision;
@@ -36,7 +36,7 @@ public class Version {
 
     private static final Pattern PARSER = Pattern.compile("(\\d+)\\.(\\d+)(?:\\.(\\d+))?(\\w+)?(?:-[bB](\\d+))?");
 
-    public static Version fromString(String s) throws NumberFormatException {
+    public static SoftwareVersion fromString(String s) throws NumberFormatException {
         final Matcher mat = PARSER.matcher(s);
         if (!mat.matches() || mat.groupCount() != 5) throw new IllegalArgumentException("Illegal version number format");
 
@@ -50,14 +50,24 @@ public class Version {
         final String sbuild = mat.group(5);
         final Integer build = sbuild != null ? Integer.parseInt(sbuild) : null;
 
-        return new Version(major, minor, revision, suffix, build);
+        return new SoftwareVersion(major, minor, revision, suffix, build);
     }
 
-    private Version(int major, int minor, Integer revision, String suffix, Integer build) {
+    private SoftwareVersion(int major, int minor, Integer revision, String suffix, Integer build) {
         this.major = major;
         this.minor = minor;
         this.revision = revision;
         this.build = build;
         this.revisionSuffix = suffix;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(major).append(".").append(minor);
+        if (revision != null) sb.append(".").append(revision);
+        if (revisionSuffix != null) sb.append(revisionSuffix);
+        if (build != null) sb.append("-b").append(build);
+        return sb.toString();
     }
 }

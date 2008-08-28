@@ -1,23 +1,21 @@
 package com.l7tech.server.boot;
 
-import com.l7tech.util.BuildInfo;
 import com.l7tech.gateway.common.Component;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.BootProcess;
 import com.l7tech.server.LifecycleException;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.log.JdkLogConfig;
+import com.l7tech.util.BuildInfo;
+import com.l7tech.util.ExceptionUtils;
 import com.mchange.v2.c3p0.C3P0Registry;
 import com.mchange.v2.c3p0.PooledDataSource;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import java.io.File;
+import java.sql.SQLException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.SQLException;
 
 /**
  * Object that represents a complete, running Gateway instance.
@@ -25,14 +23,12 @@ import java.sql.SQLException;
  */
 public class GatewayBoot {
     protected static final Logger logger = Logger.getLogger(GatewayBoot.class.getName());
-    public static final String SHUTDOWN_FILENAME = "SHUTDOWN.NOW";
-    private static final long SHUTDOWN_POLL_INTERVAL = 1987L;
     private static final long DB_CHECK_DELAY = 30;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     private ClassPathXmlApplicationContext applicationContext;
-    private ServerConfig serverConfig;
+    private ShutdownWatcher shutdowner;
 
     static {
         JdkLogConfig.configureLogging();
@@ -90,28 +86,8 @@ public class GatewayBoot {
      */
     public void runUntilShutdown() throws LifecycleException {
         start();
-        waitForShutdown();
+        shutdowner.waitForShutdown();
         destroy();
-    }
-
-    private void waitForShutdown() {
-        if (serverConfig == null)
-            throw new IllegalStateException("Unable to wait for shutdown - no serverConfig available");
-        File configDir = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_CONFIG_DIRECTORY, "/ssg", false);
-        if (configDir == null || !configDir.isDirectory())
-            throw new IllegalStateException("Config directory not found: " + configDir);
-        File shutFile = new File(configDir, SHUTDOWN_FILENAME);
-
-        do {
-            try {
-                Thread.sleep(SHUTDOWN_POLL_INTERVAL);
-            } catch (InterruptedException e) {
-                logger.info("Thread interrupted - treating as shutdown request");
-                break;
-            }
-        } while (!shutFile.exists());
-
-        logger.info("SHUTDOWN.NOW file detected - treating as shutdown request");
     }
 
     // Launch a background thread that warns if no DB connections appear within a reasonable period of time (Bug #4271)
@@ -153,7 +129,7 @@ public class GatewayBoot {
                 "org/codehaus/xfire/spring/xfire.xml",
                 "com/l7tech/server/resources/ssgProcessControllerSupportContext.xml",
         });
-        serverConfig = (ServerConfig)applicationContext.getBean("serverConfig", ServerConfig.class);
+        shutdowner = (ShutdownWatcher)applicationContext.getBean("ssgShutdown", ShutdownWatcher.class);
     }
 
     private String startBootProcess() throws LifecycleException {

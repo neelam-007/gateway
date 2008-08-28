@@ -3,9 +3,9 @@
  */
 package com.l7tech.server.management.config.host;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.HasFeatures;
+import com.l7tech.server.management.config.PCEntity;
+import com.l7tech.server.management.config.node.NodeConfig;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -16,10 +16,11 @@ import java.util.Set;
 
 /** @author alex */
 @Entity
-public abstract class HostConfig extends NamedEntityImp implements HasFeatures<HostFeature> {
+public abstract class HostConfig extends PCEntity implements HasFeatures<HostFeature> {
     private String localHostname;
     private HostType hostType;
     private OSType osType;
+
     /**
      * The set of {@link com.l7tech.server.management.config.node.NodeConfig}s hosted on this Host.
      */

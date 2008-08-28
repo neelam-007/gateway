@@ -3,11 +3,8 @@
  */
 package com.l7tech.server.processcontroller;
 
-import com.l7tech.server.management.config.node.PCNodeConfig;
-import com.l7tech.server.management.config.node.NodeConfig;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -17,6 +14,7 @@ public final class ProcessControllerMain {
     private ClassPathXmlApplicationContext ctx;
     private volatile boolean shutdown = false;
     private static final int SHUTDOWN_POLL_INTERVAL = 5000;
+    private ProcessController processController;
 
     private ProcessControllerMain() { }
 
@@ -29,6 +27,7 @@ public final class ProcessControllerMain {
         do {
             try {
                 Thread.sleep(SHUTDOWN_POLL_INTERVAL);
+                processController.visitNodes();
             } catch (InterruptedException e) {
                 logger.info("Thread interrupted - treating as shutdown request");
                 break;
@@ -42,14 +41,7 @@ public final class ProcessControllerMain {
         final ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("/com/l7tech/server/processcontroller/resources/processControllerApplicationContext.xml");
         ctx.registerShutdownHook();
         this.ctx = ctx;
-
-        final ProcessController pc = (ProcessController)ctx.getBean("processController");
-        Set<NodeConfig> nodes = pc.getConfigService().getGateway().getNodes();
-        if (nodes.isEmpty()) return;
-        
-        final NodeConfig node = nodes.iterator().next();
-        logger.info("Starting node " + node.getName());
-        pc.startNode((PCNodeConfig)node);
+        this.processController = (ProcessController)ctx.getBean("processController");
     }
 
     public int stop(int exitCode) {

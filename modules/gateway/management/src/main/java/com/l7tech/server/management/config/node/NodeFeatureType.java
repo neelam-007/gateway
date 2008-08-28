@@ -10,7 +10,8 @@ public enum NodeFeatureType {
     TARARI(true),
     SCA(true),
     RMI_PORT(true),
-    PC_NODE_API_PORT(true);
+    PC_NODE_API_PORT(true),
+    PC_NODE_API_URL(true);
 
     private final boolean unique;
 

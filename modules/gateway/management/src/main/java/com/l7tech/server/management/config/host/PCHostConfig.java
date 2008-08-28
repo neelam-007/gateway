@@ -48,7 +48,7 @@ public class PCHostConfig extends HostConfig {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("<host id=\"" + _oid + "\" name=\"" + _name + "\">\n");
+        StringBuilder sb = new StringBuilder("<host id=\"" + guid + "\" name=\"" + name + "\">\n");
         for (IpAddressConfig ipAddress : ipAddresses) {
             sb.append("  ").append(ipAddress).append("\n");
         }

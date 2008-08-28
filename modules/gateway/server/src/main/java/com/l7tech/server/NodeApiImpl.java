@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.boot.ShutdownWatcher;
 import com.l7tech.server.management.api.monitoring.NodeStatus;
 import com.l7tech.server.management.api.node.EventSubscription;
 import com.l7tech.server.management.api.node.NodeApi;
@@ -18,10 +19,8 @@ import com.l7tech.server.transport.http.HttpTransportModule;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.support.AbstractApplicationContext;
 
 import javax.annotation.Resource;
-import javax.jws.WebService;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.handler.MessageContext;
@@ -35,27 +34,24 @@ import java.util.logging.Logger;
  * TODO authentication/trust?
  * @author alex
  */
-@WebService(name="ServiceNodeAPI", targetNamespace = "http://ns.l7tech.com/secureSpan/5.0/component/processController/serviceNodeApi")
 public class NodeApiImpl implements NodeApi, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(NodeApiImpl.class.getName());
 
     private final SsgConnectorManager ssgConnectorManager;
-
-    private AbstractApplicationContext spring;
+    private final ShutdownWatcher shutdowner;
 
     @Resource
     private WebServiceContext context;
 
-    public NodeApiImpl(SsgConnectorManager ssgConnectorManager) {
+    public NodeApiImpl(SsgConnectorManager ssgConnectorManager, ShutdownWatcher shutdowner) {
         this.ssgConnectorManager = ssgConnectorManager;
+        this.shutdowner = shutdowner;
     }
 
     public void shutdown() {
         checkEndpoint();
-        logger.warning("shutdown");
-        spring.stop();
-        spring.destroy();
-        System.exit(0);
+        logger.warning("Node Shutdown requested");
+        shutdowner.shutdownNow();
     }
 
     private void checkEndpoint() {
@@ -120,6 +116,5 @@ public class NodeApiImpl implements NodeApi, ApplicationContextAware {
     }
 
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.spring = (AbstractApplicationContext)applicationContext;
     }
 }

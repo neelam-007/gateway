@@ -15,7 +15,6 @@ import javax.ejb.TransactionAttribute;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -29,6 +28,7 @@ import java.util.logging.Logger;
  * Top-level (possibly only) DAO for management of Process Controller configuration entities
  * @author alex
  */
+@SuppressWarnings({ "JpaQlInspection" })
 @TransactionAttribute
 public class ConfigServiceImpl implements ConfigService {
     private static final Logger logger = Logger.getLogger(ConfigServiceImpl.class.getName());
@@ -119,8 +119,6 @@ public class ConfigServiceImpl implements ConfigService {
                     final InetAddress addr = addrs.nextElement();
                     final IpAddressConfig iac = new IpAddressConfig(g);
                     iac.setHost(g);
-                    iac.setVersion(addr instanceof Inet4Address ? 4 : 6);
-                    iac.setName(nif.getDisplayName());
                     iac.setInterfaceName(nif.getName());
                     iac.setIpAddress(addr.getHostAddress());
                     ips.add(iac);

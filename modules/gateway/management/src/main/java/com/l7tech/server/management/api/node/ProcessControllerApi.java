@@ -4,25 +4,28 @@
 package com.l7tech.server.management.api.node;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+
+import javax.jws.WebService;
 
 /**
  * API published by the Process Controller for use by the Node
  *
  * @author alex
  */
+@WebService(name="ProcessControllerApi", targetNamespace = "http://ns.l7tech.com/secureSpan/5.0/component/processController/processControllerApi")
 public interface ProcessControllerApi {
     /** Tells the PC that the SN has been told to create a new connector; the PC may need to make firewall changes. */
-    void createConnector(SsgConnector connector) throws SaveException;
+    void connectorCreated(SsgConnector connector);
 
     /** Tells the PC that the SN has been told to update an existing connector; the PC may need to make firewall changes. */
-    void updateConnector(SsgConnector connector) throws UpdateException;
+    void connectorUpdated(SsgConnector connector);
 
     /** Tells the PC that the SN has been told to delete a connector; the PC may need to make firewall changes. */
-    void deleteConnector(SsgConnector connector) throws DeleteException;
+    void connectorDeleted(SsgConnector connector);
 
     /** Notifies the PC of an event that has occurred in the SN */
     void notifyEvent(EventSubscription sub, Object event);
+
+    /** Called periodically by the SN to ensure that the PC is still alive */
+    void ping();
 }

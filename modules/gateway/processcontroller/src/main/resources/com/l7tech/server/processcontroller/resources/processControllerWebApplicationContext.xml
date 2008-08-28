@@ -11,9 +11,14 @@
     <import resource="classpath:META-INF/cxf/cxf-extension-soap.xml"/>
     <import resource="classpath:META-INF/cxf/cxf-servlet.xml"/>
 
-    <bean id="nodeManagementApiImpl" class="com.l7tech.server.processcontroller.NodeManagementApiImpl">
-        <constructor-arg ref="configService"/>
-    </bean>
+    <context:annotation-config/>
+
+    <bean id="nodeManagementApiImpl" class="com.l7tech.server.processcontroller.NodeManagementApiImpl"/>
+
+    <bean id="processControllerApiImpl" class="com.l7tech.server.processcontroller.ProcessControllerApiImpl"/>
 
     <jaxws:endpoint id="nodeManagementApiEndpoint" implementor="#nodeManagementApiImpl" address="/nodeManagementApi"/>
+
+    <jaxws:endpoint id="processControllerApiEndpoint" implementor="#processControllerApiImpl" address="/processControllerApi"/>
+
 </beans>

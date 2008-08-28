@@ -102,9 +102,15 @@
         <dependency org="trove" name="trove" rev="1.0.2" force="true" conf="core"/>
         <dependency org="org.apache.ftpserver" name="ftpserver-parent" rev="1.0-543677-20070601" force="true"
                     conf="core"/>
+
+        <dependency org="org.apache.tomcat" name="annotations-api" rev="6.0.13" force="true" conf="core"/>
+
         <dependency org="org.apache.tomcat" name="tomcat" rev="6.0.13" force="true" conf="core">
             <exclude org="org.apache.tomcat" module="servlet-api" name="*" type="*" ext="*" conf=""
                      matcher="exact"/>
+<!--
+            <exclude org="org.apache.tomcat" module="annotations-api" name="*" type="*" ext="*" conf="" matcher="exact"/>
+-->
         </dependency>
         <dependency org="com.ibm.mq" name="mq6" rev="6.0.2.2" force="true" conf="optional"/>
         <dependency org="com.tibco" name="jms" rev="1.5" force="true" conf="optional"/>

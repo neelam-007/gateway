@@ -22,7 +22,7 @@ import java.util.Set;
  * 
  * @author alex
  */
-@WebService(name="Node API", targetNamespace = "http://ns.l7tech.com/secureSpan/5.0/component/processController/nodeApi")
+@WebService(name="NodeApi", targetNamespace = "http://ns.l7tech.com/secureSpan/5.0/component/clusterNode/nodeApi")
 public interface NodeApi {
     /** Tells the node to shut itself down */
     void shutdown();

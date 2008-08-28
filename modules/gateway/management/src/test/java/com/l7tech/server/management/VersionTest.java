@@ -3,13 +3,11 @@
  */
 package com.l7tech.server.management;
 
+import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import junit.framework.Test;
 
 import java.util.logging.Logger;
-
-import com.l7tech.server.management.Version;
 
 /** @author alex */
 public class VersionTest extends TestCase {
@@ -25,6 +23,13 @@ public class VersionTest extends TestCase {
 
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
+    }
+
+    public void testOtherStuff() throws Exception {
+        assertEquals(SoftwareVersion.fromString("5.0").toString(), "5.0");
+        assertEquals(SoftwareVersion.fromString("5.1").toString(), "5.1");
+        assertEquals(SoftwareVersion.fromString("5.1b1").toString(), "5.1b1");
+        assertEquals(SoftwareVersion.fromString("5.2b3-b1").toString(), "5.2b3-b1");
     }
 
     public void testStuff() throws Exception {
@@ -47,7 +52,7 @@ public class VersionTest extends TestCase {
     }
 
     private void live(String s, int major, int minor, Integer revision, String suffix, Integer build) {
-        Version v = Version.fromString(s);
+        SoftwareVersion v = SoftwareVersion.fromString(s);
         assertEquals(v.getMajor(), major);
         assertEquals(v.getMinor(), minor);
         assertEquals(v.getRevision(), revision);
@@ -56,7 +61,7 @@ public class VersionTest extends TestCase {
 
     private void die(String s) {
         try {
-            Version.fromString(s);
+            SoftwareVersion.fromString(s);
             fail("Expected IAE for " + s);
         } catch (IllegalArgumentException e) {
             // OK

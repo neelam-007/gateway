@@ -7,21 +7,26 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.management.NodeStateType;
+import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
-import com.l7tech.util.Triple;
 
 import javax.activation.DataHandler;
+import javax.jws.WebResult;
+import javax.jws.WebService;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlRootElement;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Map;
 import java.util.Set;
 
 /**
  * Part of the API invoked on the Process Controller by Enterprise Manager Servers.
  * @author alex
  */
+@WebService
 public interface NodeManagementApi {
     /**
      * Creates a new {@link com.l7tech.server.management.config.node.NodeConfig} with reasonable default parameters for the current host.
@@ -31,7 +36,8 @@ public interface NodeManagementApi {
      * TODO consider adding enough parameters to this method such that the resulting node is minimally specified
      *
      * @param newNodeName the name of the new node; must be unique within this host
-     * @param version the software version that the Node should be initialized for
+     * @param version     the software version that the Node should be initialized for, or null to use the most recent
+     *                    version available.
      * @param databaseConfigMap the database configuration to use for the new node.  If null is passed, the PC will
      *                          attempt to create new, standalone database(s) with the default {@link DatabaseType type(s)}
      *                          and {@link DatabaseConfig.Vendor vendor(s)}
@@ -42,7 +48,31 @@ public interface NodeManagementApi {
      * @return the newly created NodeConfig
      * @throws SaveException if the new node cannot be created
      */
-    NodeConfig createNode(String newNodeName, String version, Map<DatabaseType, DatabaseConfig> databaseConfigMap) throws SaveException;
+    NodeConfig createNode(String newNodeName, String version, Set<DatabaseConfigRow> databaseConfigs) throws SaveException;
+
+    /**
+     * This class only exists because JAXB can't handle a Map in any reasonable way
+     */
+    public static class DatabaseConfigRow {
+        private DatabaseType type;
+        private DatabaseConfig config;
+
+        public DatabaseType getType() {
+            return type;
+        }
+
+        public void setType(DatabaseType type) {
+            this.type = type;
+        }
+
+        public DatabaseConfig getConfig() {
+            return config;
+        }
+
+        public void setConfig(DatabaseConfig config) {
+            this.config = config;
+        }
+    }
 
     /**
      * Retrieves the {@link com.l7tech.server.management.config.node.NodeConfig} with the provided name, or null if no such node exists on this host.
@@ -62,7 +92,75 @@ public interface NodeManagementApi {
      *         host.
      * @throws FindException if the list of Nodes cannot be retrieved
      */
-    Set<Triple<String, String, Boolean>> listNodes() throws FindException;
+    @WebResult(name="node")
+    Set<NodeHeader> listNodes() throws FindException;
+
+    /**
+     * This class only exists because JAXB can't handle a Set&lt;Triple&lt;String, String, Boolean&gt;&gt; in any reasonable way
+     */
+    @XmlRootElement(name="node")
+    public static class NodeHeader {
+        private String id;
+        private String name;
+        private String version;
+        private boolean enabled;
+        private NodeStateType state;
+
+        public NodeHeader(String id, String name, SoftwareVersion softwareVersion, boolean enabled, NodeStateType state) {
+            this.id = id;
+            this.name = name;
+            this.state = state;
+            this.version = softwareVersion == null ? null : softwareVersion.toString();
+            this.enabled = enabled;
+        }
+
+        public NodeHeader() { }
+
+        @XmlAttribute
+        public String getId() {
+            return id;
+        }
+
+        @XmlAttribute
+        public String getName() {
+            return name;
+        }
+
+        @XmlAttribute
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        @XmlAttribute
+        public String getVersion() {
+            return version;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        @XmlAttribute
+        public NodeStateType getState() {
+            return state;
+        }
+
+        public void setState(NodeStateType state) {
+            this.state = state;
+        }
+    }
 
     /**
      * Updates a node's configuration.  If the node is already running when this method is invoked, a
@@ -116,12 +214,14 @@ public interface NodeManagementApi {
     void upgradeNode(String nodeName, String targetVersion) throws UpdateException, RestartRequiredException;
 
     /**
-     * Attempts to start the node with the specified name.  If the specified node is already started, no action is taken.
+     * Attempts to start the node with the specified name.  If the specified node is already starting or running, no
+     * action is taken.
+     * 
      * @param nodeName the name of the node to start.
      * @throws FindException if the named node cannot be located
      * @throws StartupException if the node cannot be started
      */
-    void startNode(String nodeName) throws FindException, StartupException;
+    NodeStateType startNode(String nodeName) throws FindException, StartupException;
 
     /**
      * Attempts to stop the named node within the provided timeout period (in milliseconds).  If the
@@ -146,8 +246,8 @@ public interface NodeManagementApi {
      * Thrown if a node is unable to start
      */
     public class StartupException extends Exception {
-        public StartupException(String node, String reason, Throwable cause) {
-            super(MessageFormat.format("{0} could not be started: {1}", node, reason), cause);
+        public StartupException(String node, String reason) {
+            super(MessageFormat.format("{0} could not be started: {1}", node, reason));
         }
     }
 

@@ -27,7 +27,7 @@
         <!-- Optional dependencies if using Java 5, not required for Java 6 -->
         <dependency org="com.sun.xml.ws" name="jaxws-rt" rev="2.0" force="true" conf="optional"/>
         <dependency org="com.sun.xml.bind" name="jaxb-impl" rev="2.0" force="true" conf="optional"/>
-        <dependency org="com.sun.xml.stream" name="sjsxp" rev="1.0" force="true" conf="optional"/>
+<!--        <dependency org="com.sun.xml.stream" name="sjsxp" rev="1.0" force="true" conf="optional"/> -->
         <dependency org="com.sun.org.apache.xml.internal" name="resolver" rev="1.0" force="true" conf="optional"/>
         <dependency org="javax.jws" name="jsr181" rev="1.0" force="true" conf="optional"/>
         <dependency org="javax.xml.bind" name="jaxb-api" rev="2.0" force="true" conf="optional"/>

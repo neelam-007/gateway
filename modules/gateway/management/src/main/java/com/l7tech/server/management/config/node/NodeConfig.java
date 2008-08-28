@@ -3,19 +3,24 @@
  */
 package com.l7tech.server.management.config.node;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.server.management.config.host.HostConfig;
+import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.config.HasFeatures;
+import com.l7tech.server.management.config.PCEntity;
+import com.l7tech.server.management.config.host.HostConfig;
 import org.hibernate.annotations.IndexColumn;
 
 import javax.persistence.*;
+import javax.xml.bind.annotation.XmlTransient;
 import java.util.*;
 
 /** @author alex */
 @Entity
-public class NodeConfig extends NamedEntityImp implements HasFeatures<NodeFeature> {
+public class NodeConfig extends PCEntity implements HasFeatures<NodeFeature> {
     protected HostConfig host;
+    protected SoftwareVersion softwareVersion;
     protected List<DatabaseConfig> databases = new ArrayList<DatabaseConfig>();
+    protected boolean enabled = true;
+
     /**
      * Map of SSG Connector to node-local IP address
      */
@@ -52,6 +57,32 @@ public class NodeConfig extends NamedEntityImp implements HasFeatures<NodeFeatur
     @Transient
     public Set<NodeFeature> getFeatures() {
         return Collections.emptySet();
+    }
+
+    @Transient
+    @XmlTransient
+    public SoftwareVersion getSoftwareVersion() {
+        return softwareVersion;
+    }
+
+    public void setVersionString(String s) throws NumberFormatException {
+        softwareVersion = (s == null ? null : SoftwareVersion.fromString(s));
+    }
+
+    public String getVersionString() {
+        return softwareVersion == null ? null : softwareVersion.toString();
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public void setSoftwareVersion(SoftwareVersion softwareVersion) {
+        this.softwareVersion = softwareVersion;
     }
 
     /** @author alex */
