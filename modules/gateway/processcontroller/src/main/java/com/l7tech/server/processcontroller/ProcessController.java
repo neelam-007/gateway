@@ -16,6 +16,7 @@ import org.springframework.context.ApplicationContext;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
+import javax.xml.ws.soap.SOAPFaultException;
 import java.io.*;
 import java.net.ConnectException;
 import java.text.MessageFormat;
@@ -168,10 +169,10 @@ public class ProcessController {
 
         howDoIStartedNode();
 
-        visitNodes();
+        loop();
     }
 
-    void visitNodes() {
+    void loop() {
         final Set<NodeConfig> nodeConfigs = configService.getGateway().getNodes();
         if (nodeConfigs.isEmpty()) return;
 
@@ -341,6 +342,17 @@ public class ProcessController {
                 nodeStates.put(node.getName(), new RunningNodeState(node, null, api));
             }
         } catch (Exception e) {
+            if (e instanceof SOAPFaultException) {
+                SOAPFaultException sfe = (SOAPFaultException)e;
+                if (NodeApi.NODE_NOT_CONFIGURED_FOR_PC.equals(sfe.getFault().getFaultString())) {
+                    logger.warning(node.getName() + " is already running but has not been configured for use with the PC; will try again later");
+                    nodeStates.put(node.getName(), new SimpleNodeState(node, NodeStateType.WONT_START));
+                    return;
+                }
+            }
+
+            // TODO what about other kinds of node-is-still-running? We want to avoid "address already in use".
+
             logger.log(Level.FINE, node.getName() + " isn't running", e);
             try {
                 StartingNodeState startingState = new StartingNodeState(this, node);
@@ -357,9 +369,14 @@ public class ProcessController {
         final File ssgPwd;
         switch(osType) {
             case RHEL:
-                ssgPwd = new File("build");
+                ssgPwd = new File("build"); // TODO get the node installation directory (preferably not hardcoded)
                 try {
-                    cmds = new String[] { "/ssg/jdk/bin/java", "-jar", "Gateway.jar", "-Dcom.l7tech.server.home=\"" + ssgPwd.getCanonicalPath() + "\""};
+                    cmds = new String[] {
+                            "/ssg/jdk/bin/java",
+                            "-Dcom.l7tech.server.home=\"" + ssgPwd.getCanonicalPath() + "\"",
+                            "-Dcom.l7tech.server.processControllerPresent=true",
+                            "-jar", "Gateway.jar", 
+                    };
                 } catch (IOException e) {
                     throw new RuntimeException(e); // If the
                 }

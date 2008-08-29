@@ -78,7 +78,7 @@ public class ConfigServiceImpl implements ConfigService {
             db.setHost("localhost");
             db.setNode(node);
             db.setName("ssg");
-            db.setUsername("gateway");
+            db.setNodeUsername("gateway");
             db.setNodePassword("7layer");
             node.getDatabases().add(db);
 

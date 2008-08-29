@@ -6,6 +6,7 @@ package com.l7tech.server.management.config.node;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import javax.persistence.*;
+import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * Inherited {@link #_name} is the database name.
@@ -20,8 +21,9 @@ public class DatabaseConfig extends NamedEntityImp {
     private NodeConfig.ClusterType clusterType = NodeConfig.ClusterType.STANDALONE;
     private String host;
     private int port;
-    private String username;
-    private String configurationPassword;
+    private transient String databaseAdminUsername;
+    private transient String databaseAdminPassword;
+    private String nodeUsername;
     private String nodePassword;
     private int ordinal;
 
@@ -58,12 +60,12 @@ public class DatabaseConfig extends NamedEntityImp {
         this.nodePassword = nodePassword;
     }
 
-    public String getUsername() {
-        return username;
+    public String getNodeUsername() {
+        return nodeUsername;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setNodeUsername(String nodeUsername) {
+        this.nodeUsername = nodeUsername;
     }
 
     @Enumerated(EnumType.STRING)
@@ -102,23 +104,45 @@ public class DatabaseConfig extends NamedEntityImp {
         this.ordinal = ordinal;
     }
 
-    public String getConfigurationPassword() {
-        return configurationPassword;
+    @XmlTransient @Transient
+    public String getDatabaseAdminPassword() {
+        return databaseAdminPassword;
     }
 
-    public void setConfigurationPassword(String configurationPassword) {
-        this.configurationPassword = configurationPassword;
+    public void setDatabaseAdminPassword(String databaseAdminPassword) {
+        this.databaseAdminPassword = databaseAdminPassword;
+    }
+
+    @XmlTransient @Transient
+    public String getDatabaseAdminUsername() {
+        return databaseAdminUsername;
+    }
+
+    public void setDatabaseAdminUsername(String databaseAdminUsername) {
+        this.databaseAdminUsername = databaseAdminUsername;
     }
 
     public enum Vendor {
-        MYSQL("jdbc:mysql://${host}:${port}/${db}", 3306);
+        MYSQL("jdbc:mysql://${host}:${port}/${db}", 3306, "root", "mysql");
 
+        public String getDefaultAdminUsername() {
+            return defaultAdminUsername;
+        }
+
+        public String getDefaultAdminDatabase() {
+            return defaultAdminDatabase;
+        }
+
+        private final String defaultAdminUsername;
+        private final String defaultAdminDatabase;
         private final int port;
         private final String urlTemplate;
 
-        private Vendor(String urlTemplate, int port) {
+        private Vendor(String urlTemplate, int port, String defaultAdminUsername, String defaultAdminDatabase) {
             this.urlTemplate = urlTemplate;
             this.port = port;
+            this.defaultAdminUsername = defaultAdminUsername;
+            this.defaultAdminDatabase = defaultAdminDatabase;
         }
 
         public int getPort() {
@@ -144,7 +168,7 @@ public class DatabaseConfig extends NamedEntityImp {
         if (node != null ? !node.equals(that.node) : that.node != null) return false;
         if (nodePassword != null ? !nodePassword.equals(that.nodePassword) : that.nodePassword != null) return false;
         if (type != that.type) return false;
-        if (username != null ? !username.equals(that.username) : that.username != null) return false;
+        if (nodeUsername != null ? !nodeUsername.equals(that.nodeUsername) : that.nodeUsername != null) return false;
         if (vendor != that.vendor) return false;
 
         return true;
@@ -158,7 +182,7 @@ public class DatabaseConfig extends NamedEntityImp {
         result = 31 * result + (clusterType != null ? clusterType.hashCode() : 0);
         result = 31 * result + (host != null ? host.hashCode() : 0);
         result = 31 * result + port;
-        result = 31 * result + (username != null ? username.hashCode() : 0);
+        result = 31 * result + (nodeUsername != null ? nodeUsername.hashCode() : 0);
         result = 31 * result + (nodePassword != null ? nodePassword.hashCode() : 0);
         return result;
     }
