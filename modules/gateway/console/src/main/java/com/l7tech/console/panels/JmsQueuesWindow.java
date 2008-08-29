@@ -38,6 +38,7 @@ public class JmsQueuesWindow extends JDialog {
     private JPanel sideButtonPanel;
     private JButton addButton;
     private JButton removeButton;
+    private JButton cloneButton;
     private final PermissionFlags flags;
 
     private JmsQueuesWindow(Frame owner) {
@@ -151,23 +152,28 @@ public class JmsQueuesWindow extends JDialog {
                 GridBagConstraints.CENTER,
                 GridBagConstraints.HORIZONTAL,
                 new Insets(0, 0, 0, 0), 0, 0));
-            sideButtonPanel.add(getRemoveButton(),
+            sideButtonPanel.add(getCloneButton(),
               new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
                 GridBagConstraints.CENTER,
                 GridBagConstraints.HORIZONTAL,
                 new Insets(6, 0, 0, 0), 0, 0));
-            sideButtonPanel.add(getPropertiesButton(),
+            sideButtonPanel.add(getRemoveButton(),
               new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
                 GridBagConstraints.CENTER,
                 GridBagConstraints.HORIZONTAL,
                 new Insets(6, 0, 0, 0), 0, 0));
+            sideButtonPanel.add(getPropertiesButton(),
+              new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.HORIZONTAL,
+                new Insets(6, 0, 0, 0), 0, 0));
             sideButtonPanel.add(Box.createGlue(),
-              new GridBagConstraints(0, 3, 1, 1, 1.0, 1.0,
+              new GridBagConstraints(0, 4, 1, 1, 1.0, 1.0,
                 GridBagConstraints.CENTER,
                 GridBagConstraints.VERTICAL,
                 new Insets(0, 0, 0, 0), 0, 0));
             sideButtonPanel.add(getCloseButton(),
-              new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
+              new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
                 GridBagConstraints.SOUTH,
                 GridBagConstraints.HORIZONTAL,
                 new Insets(0, 0, 0, 0), 0, 0));
@@ -248,6 +254,43 @@ public class JmsQueuesWindow extends JDialog {
         return addButton;
     }
 
+    private JButton getCloneButton() {
+        if (cloneButton == null) {
+            // In the QA function specification review, everyone liked the word, "Copy" instead of "Clone".
+            cloneButton = new JButton("Copy");
+            cloneButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent event) {
+                    int row = getJmsQueueTable().getSelectedRow();
+                    if (row >= 0) {
+                        JmsAdmin.JmsTuple currJmsTuple = (JmsAdmin.JmsTuple) getJmsQueueTableModel().getJmsQueues().get(row);
+                        if (currJmsTuple != null) {
+                            JmsConnection newConnection = new JmsConnection();
+                            newConnection.copyFrom(currJmsTuple.getConnection());
+                            newConnection.setOid(JmsConnection.DEFAULT_OID);
+
+                            JmsEndpoint newEndpoint = new JmsEndpoint();
+                            newEndpoint.copyFrom(currJmsTuple.getEndpoint());
+                            newEndpoint.setOid(JmsConnection.DEFAULT_OID);
+
+                            final JmsQueuePropertiesDialog pd = JmsQueuePropertiesDialog.createInstance(
+                                    JmsQueuesWindow.this, newConnection, newEndpoint, false);
+                            pd.pack();
+                            Utilities.centerOnScreen(pd);
+                            DialogDisplayer.display(pd, new Runnable() {
+                                public void run() {
+                                    if (! pd.isCanceled()) {
+                                        updateEndpointList(pd.getEndpoint());
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+        }
+        return cloneButton;
+    }
+
     private JButton getCloseButton() {
         if (closeButton == null) {
             closeButton = new JButton("Close");
@@ -309,17 +352,20 @@ public class JmsQueuesWindow extends JDialog {
     private void enableOrDisableButtons() {
         boolean propsEnabled = false;
         boolean removeEnabled = false;
+        boolean clonable = false;
         int row = getJmsQueueTable().getSelectedRow();
         if (row >= 0) {
             JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueueTableModel().getJmsQueues().get(row);
             if (i != null) {
                 removeEnabled = true;
                 propsEnabled = true;
+                clonable = true;
             }
         }
         //enable/disable taking into account the permissions that this user has.
         getAddButton().setEnabled(flags.canCreateSome());
         getRemoveButton().setEnabled(flags.canDeleteSome() && removeEnabled);
+        getCloneButton().setEnabled(flags.canCreateSome() && clonable);
         getPropertiesButton().setEnabled(propsEnabled);
     }
 
