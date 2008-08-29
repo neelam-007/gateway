@@ -27,7 +27,7 @@ public final class ProcessControllerMain {
         do {
             try {
                 Thread.sleep(SHUTDOWN_POLL_INTERVAL);
-                processController.visitNodes();
+                processController.loop();
             } catch (InterruptedException e) {
                 logger.info("Thread interrupted - treating as shutdown request");
                 break;
@@ -40,6 +40,12 @@ public final class ProcessControllerMain {
         logger.info("Starting Process Controller...");
         final ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("/com/l7tech/server/processcontroller/resources/processControllerApplicationContext.xml");
         ctx.registerShutdownHook();
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                shutdown = true;
+            }
+        });
         this.ctx = ctx;
         this.processController = (ProcessController)ctx.getBean("processController");
     }

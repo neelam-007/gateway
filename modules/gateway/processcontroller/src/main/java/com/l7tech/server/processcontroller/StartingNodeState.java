@@ -7,10 +7,13 @@ import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.server.management.NodeStateType;
 import com.l7tech.server.management.api.node.NodeApi;
 import com.l7tech.server.management.config.node.PCNodeConfig;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 
+import javax.xml.ws.soap.SOAPFaultException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -66,7 +69,22 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
             outputDoneSignal.set(true); // We're live
             return STARTED;
         } catch (Exception e) {
-            logger.fine(node.getName() + " is still starting...");
+            if (e instanceof SOAPFaultException) {
+                SOAPFaultException sfe = (SOAPFaultException)e;
+                if (NodeApi.NODE_NOT_CONFIGURED_FOR_PC.equals(sfe.getFault().getFaultString())) {
+                    logger.warning(node.getName() + " is already running but has not been configured for use with the PC; will try again later");
+
+                    outputDoneSignal.set(true);
+                    final Pair<byte[], byte[]> byteses = finishOutput();
+                    return new Died(-1, byteses.left, byteses.right);
+                }
+            }
+
+            if (ExceptionUtils.causedBy(e, SocketException.class)) {
+                logger.fine(node.getName() + " is still starting...");
+            } else {
+                logger.log(Level.WARNING, node.getName() + " may still be starting, but API is throwing unexpected exceptions", e);
+            }
             return STARTING;
         }
     }

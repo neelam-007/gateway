@@ -24,6 +24,8 @@ import java.util.Set;
  */
 @WebService(name="NodeApi", targetNamespace = "http://ns.l7tech.com/secureSpan/5.0/component/clusterNode/nodeApi")
 public interface NodeApi {
+    String NODE_NOT_CONFIGURED_FOR_PC = "This node has not been configured for use by the Process Controller";
+
     /** Tells the node to shut itself down */
     void shutdown();
 

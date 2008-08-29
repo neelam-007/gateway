@@ -20,6 +20,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.ws.WebServiceContext;
@@ -37,24 +38,39 @@ import java.util.logging.Logger;
 public class NodeApiImpl implements NodeApi, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(NodeApiImpl.class.getName());
 
-    private final SsgConnectorManager ssgConnectorManager;
-    private final ShutdownWatcher shutdowner;
+    /** Injected by Spring post-construct */
+    @Resource
+    private ServerConfig serverConfig;
 
+    /** Injected by Spring post-construct */
+    @Resource
+    private SsgConnectorManager ssgConnectorManager;
+
+    /** Injected by Spring post-construct */
+    @Resource
+    private ShutdownWatcher shutdowner;
+
+    /** Injected by CXF to get access to request metadata */
     @Resource
     private WebServiceContext context;
 
-    public NodeApiImpl(SsgConnectorManager ssgConnectorManager, ShutdownWatcher shutdowner) {
-        this.ssgConnectorManager = ssgConnectorManager;
-        this.shutdowner = shutdowner;
+    @PostConstruct
+    private void start() {
+        if (serverConfig == null || ssgConnectorManager == null || shutdowner == null) throw new NullPointerException("A required component is missing");
+    }
+
+    private boolean isProcessControllerPresent() {
+        return serverConfig.getBooleanPropertyCached(ServerConfig.PARAM_PROCESS_CONTROLLER_PRESENT, false, 30000);
     }
 
     public void shutdown() {
-        checkEndpoint();
+        checkRequest();
         logger.warning("Node Shutdown requested");
         shutdowner.shutdownNow();
     }
 
-    private void checkEndpoint() {
+    private void checkRequest() {
+        if (!isProcessControllerPresent()) throw new IllegalStateException(NODE_NOT_CONFIGURED_FOR_PC);
         final HttpServletRequest hsr = (HttpServletRequest)context.getMessageContext().get(MessageContext.SERVLET_REQUEST);
         if (hsr == null) throw new IllegalStateException("Request received outside of expected servlet context");
         try {
@@ -66,51 +82,51 @@ public class NodeApiImpl implements NodeApi, ApplicationContextAware {
     }
 
     public void ping() {
-        checkEndpoint();
+        checkRequest();
         logger.info("ping");
     }
 
     public Set<SsgConnector> getConnectors() throws FindException {
-        checkEndpoint();
+        checkRequest();
         return new HashSet(ssgConnectorManager.findAll());
     }
 
     public NodeStatus getNodeStatus() {
-        checkEndpoint();
+        checkRequest();
         logger.info("getNodeStatus");
         return new NodeStatus();
     }
 
     public void pushMonitoringScheme(MonitoringScheme scheme) throws UpdateException {
-        checkEndpoint();
+        checkRequest();
         logger.info("pushMonitoringScheme");
     }
 
     public MonitoringScheme getMonitoringScheme() throws FindException {
-        checkEndpoint();
+        checkRequest();
         logger.info("getMonitoringScheme");
         return null;
     }
 
     public Set<EventSubscription> subscribeEvents(Set<String> eventIds) throws UnsupportedEventException, SaveException {
-        checkEndpoint();
+        checkRequest();
         logger.info("subscribeEvents");
         return null;
     }
 
     public Set<EventSubscription> renewEventSubscriptions(Set<String> subscriptionIds) throws UpdateException {
-        checkEndpoint();
+        checkRequest();
         logger.info("renewEventSubscriptions");
         return null;
     }
 
     public void releaseEventSubscriptions(Set<String> subscriptionIds) throws DeleteException {
-        checkEndpoint();
+        checkRequest();
         logger.info("releaseEventSubscriptions");
     }
 
     public Object getProperty(String propertyId) throws UnsupportedPropertyException, FindException {
-        checkEndpoint();
+        checkRequest();
         logger.info("getProperty");
         return null;
     }

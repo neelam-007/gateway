@@ -1,10 +1,10 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:jaxws="http://cxf.apache.org/jaxws" xmlns:cxf="http://cxf.apache.org/core"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans
-                            http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
-                            http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd
-                            http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd">
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+                           http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd http://cxf.apache.org/core
+                           http://cxf.apache.org/schemas/core.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
     <import resource="classpath:META-INF/cxf/cxf.xml"/>
     <import resource="classpath:META-INF/cxf/cxf-extension-soap.xml"/>
@@ -12,17 +12,14 @@
     <import resource="classpath:META-INF/cxf/cxf-extension-http.xml"/>
     <!--<import resource="classpath:META-INF/cxf/cxf-extension-http-jetty.xml"/>-->
 
-    <bean id="processControllerNodeApiImpl" class="com.l7tech.server.NodeApiImpl">
-        <constructor-arg ref="ssgConnectorManager"/>
-        <constructor-arg ref="ssgShutdown"/>
-    </bean>
+    <context:annotation-config/>
 
+    <bean id="processControllerNodeApiImpl" class="com.l7tech.server.NodeApiImpl"/>
+
+    <!-- TODO move this to the main SSG application context if we replace XFire -->
     <bean id="cxf" class="org.apache.cxf.bus.extension.ExtensionManagerBus"/>
 
-    <bean id="processControllerEventProxy" class="com.l7tech.server.ProcessControllerEventProxyImpl">
-        <constructor-arg ref="ssgConnectorManager"/>
-        <constructor-arg ref="serverConfig"/>
-    </bean>
+    <bean id="processControllerEventProxy" class="com.l7tech.server.ProcessControllerEventProxyImpl"/>
 
     <jaxws:endpoint id="processControllerNodeApiEndpoint" implementor="#processControllerNodeApiImpl"
                     address="/processControllerNodeApi"/>

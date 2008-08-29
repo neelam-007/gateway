@@ -12,6 +12,9 @@ import com.l7tech.util.Background;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.springframework.context.ApplicationEvent;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.annotation.Resource;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,20 +23,37 @@ import java.util.logging.Logger;
 public class ProcessControllerEventProxyImpl implements ProcessControllerEventProxy {
     private static final Logger logger = Logger.getLogger(ProcessControllerEventProxyImpl.class.getName());
 
-    private final SsgConnectorManager ssgConnectorManager;
-    private final ServerConfig serverConfig;
+    @Resource
+    private SsgConnectorManager ssgConnectorManager;
 
+    @Resource
+    private ServerConfig serverConfig;
+
+    /** Access must be synchronized */
     private ProcessControllerApi processControllerApi;
 
-    public ProcessControllerEventProxyImpl(SsgConnectorManager ssgConnectorManager, ServerConfig config) {
-        this.ssgConnectorManager = ssgConnectorManager;
-        this.serverConfig = config;
-        getProcessControllerApi(true); // Ping on startup to log as early as possible if PC is down
-        Background.scheduleRepeated(new Background.SafeTimerTask(new TimerTask() {
-            public void run() {
-                getProcessControllerApi(false);
-            }
-        }), 15634, 5339);
+    private final TimerTask task = new TimerTask() {
+        public void run() {
+            if (isProcessControllerPresent()) getProcessControllerApi(false);
+        }
+    };
+
+    @PostConstruct
+    private void start() {
+        if (isProcessControllerPresent())
+            getProcessControllerApi(true); // Ping on startup to log as early as possible if PC is down
+
+        // Note that timer task is spawned unconditionally so that if the PC becomes enabled at runtime we'll know
+        Background.scheduleRepeated(new Background.SafeTimerTask(task), 15634, 5339);
+    }
+
+    @PreDestroy
+    private void stop() {
+        task.cancel();
+    }
+
+    private boolean isProcessControllerPresent() {
+        return serverConfig.getBooleanPropertyCached(ServerConfig.PARAM_PROCESS_CONTROLLER_PRESENT, false, 30000);
     }
 
     private synchronized ProcessControllerApi getProcessControllerApi(boolean important) {
@@ -69,6 +89,8 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
     }
 
     public void onApplicationEvent(ApplicationEvent event) {
+        if (!isProcessControllerPresent()) return;
+
         if (event instanceof EntityInvalidationEvent) {
             EntityInvalidationEvent eie = (EntityInvalidationEvent)event;
             if (SsgConnector.class.isAssignableFrom(eie.getEntityClass())) {
@@ -85,8 +107,8 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
                                 logger.log(Level.WARNING, "Unable to find recently created SsgConnector #" + oid, e);
                                 continue;
                             }
-                        case EntityInvalidationEvent.UPDATE:
-                        case EntityInvalidationEvent.DELETE:
+                        case EntityInvalidationEvent.UPDATE: // TODO
+                        case EntityInvalidationEvent.DELETE: // TODO
                     }
                 }
             }
