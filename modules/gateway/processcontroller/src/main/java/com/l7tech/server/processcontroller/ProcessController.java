@@ -6,8 +6,12 @@ package com.l7tech.server.processcontroller;
 import com.l7tech.server.management.NodeStateType;
 import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.api.node.NodeApi;
+import com.l7tech.server.management.config.Feature;
+import com.l7tech.server.management.config.HasCommandLineArguments;
 import com.l7tech.server.management.config.host.HostConfig;
+import com.l7tech.server.management.config.host.HostFeature;
 import com.l7tech.server.management.config.node.NodeConfig;
+import com.l7tech.server.management.config.node.NodeFeature;
 import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
@@ -50,8 +54,11 @@ public class ProcessController {
     private static final int DEFAULT_STOP_TIMEOUT = 10000;
 
     private final Map<String, NodeState> nodeStates = new ConcurrentHashMap<String, NodeState>();
+    private final Map<String, ProcessBuilder> processBuilders = new HashMap<String, ProcessBuilder>();
 
     private static final String LOG_TIMEOUT = "{0} still hasn''t started after {1}ms.  Killing it dead.";
+
+    private static final String nodeBaseDir = System.getProperty("com.l7tech.server.processcontroller.nodeBaseDirectory");
 
     public void stopNode(final String nodeName, final int timeout) {
         logger.info("Stopping " + nodeName);
@@ -72,10 +79,10 @@ public class ProcessController {
     }
 
     Process spawnProcess(PCNodeConfig node) throws IOException {
-        // TODO start different nodes differently?
-
-        // TODO get the OS helper to do this
-        return processBuilder.start();
+        // TODO Should the OS helper be doing this (once we have one)?
+        ProcessBuilder builder = getProcessBuilder(node);
+        if (builder == null) throw new IllegalStateException("Don't know how to start " + node.getName());
+        return builder.start();
     }
 
     public NodeStateType getNodeState(String nodeName) {
@@ -170,8 +177,6 @@ public class ProcessController {
     @PostConstruct
     public void start() {
         logger.info("Starting");
-
-        howDoIStartedNode();
 
         loop();
     }
@@ -367,35 +372,63 @@ public class ProcessController {
         }
     }
 
-    private void howDoIStartedNode() {
+    private ProcessBuilder getProcessBuilder(PCNodeConfig node) {
+        // TODO what if the node's config changes in any meaningful way?
+        ProcessBuilder processBuilder = processBuilders.get(node.getName());
+        if (processBuilder != null) return processBuilder;
+
         final HostConfig.OSType osType = configService.getHost().getOsType();
-        final String[] cmds;
+        final List<String> cmds;
         final File ssgPwd;
+        // TODO use info from the host profile
         switch(osType) {
             case RHEL:
-                ssgPwd = new File("build"); // TODO get the node installation directory (preferably not hardcoded)
+                String base = nodeBaseDir;
+                final File nodesDir;
+                nodesDir = base == null ?
+                        new File(new File(System.getProperty("user.dir")).getParentFile(), "node") :
+                        new File(nodeBaseDir);
+                if (!(nodesDir.exists() && nodesDir.isDirectory())) throw new IllegalStateException("Couldn't find node directory " + nodesDir.getAbsolutePath());
+
+                ssgPwd = new File(nodesDir, node.getName());
+                if (!(ssgPwd.exists() && ssgPwd.isDirectory())) throw new IllegalStateException("Node directory " + ssgPwd.getAbsolutePath() + " does not exist or is not a directory");
                 try {
-                    cmds = new String[] {
-                            "/ssg/jdk/bin/java",
-                            "-Dcom.l7tech.server.home=\"" + ssgPwd.getCanonicalPath() + "\"",
-                            "-Dcom.l7tech.server.processControllerPresent=true",
-                            "-jar", "Gateway.jar", 
-                    };
+                    // TODO make this less hard-coded (e.g. use the host profile)
+                    cmds = new LinkedList<String>(Arrays.asList(
+                        "java",
+                        "-Dcom.l7tech.server.home=\"" + ssgPwd.getCanonicalPath() + "\"",
+                        "-Dcom.l7tech.server.processControllerPresent=true"
+                    ));
+
+                    for (HostFeature hf : node.getHost().getFeatures()) {  // TODO needs more scala.Seq#filter
+                        collectArgs(cmds, hf);
+                    }
+
+                    for (NodeFeature nf : node.getFeatures()) {
+                        collectArgs(cmds, nf);
+                    }
+
+                    cmds.add("-jar");
+                    cmds.add("Gateway.jar"); // TODO is Gateway.jar in some subdirectory?
                 } catch (IOException e) {
                     throw new RuntimeException(e); // If the
                 }
-//                cmds = new String[] { "/ssg/bin/partitionControl.sh", "run", node.getName() };
-//                env = null;
                 break;
             default:
                 throw new UnsupportedOperationException();
         }
 
-        processBuilder = new ProcessBuilder(cmds);
+        processBuilder = new ProcessBuilder(cmds.toArray(new String[0]));
         processBuilder.redirectErrorStream(true);
         processBuilder.directory(ssgPwd);
-//        processBuilder.environment().clear();
-//        processBuilder.environment().put("SSG_HOME", "/ssg");
+        processBuilders.put(node.getName(), processBuilder);
+        return processBuilder;
+    }
+
+    private void collectArgs(List<String> cmds, Feature feature) {
+        if (feature instanceof HasCommandLineArguments) {
+            cmds.addAll(Arrays.asList(((HasCommandLineArguments)feature).getArguments()));
+        }
     }
 
     NodeApi getNodeApi(PCNodeConfig node) {
