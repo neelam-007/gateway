@@ -102,7 +102,7 @@ public class WssInteropTestMessage extends TestCase {
         XencUtil.XmlEncKey encKey = new XencUtil.XmlEncKey( XencUtil.AES_256_CBC, keyBytes);
 
         // Get the certs we're gonna use for the recipient
-        //KeystoreUtils ksu = (KeystoreUtils)ApplicationContexts.getProdApplicationContext().getBean("keystore");
+        //DefaultKey ksu = (DefaultKey)ApplicationContexts.getProdApplicationContext().getBean("keystore");
         //X509Certificate recipCert = ksu.getSslCert();
 //        X509Certificate recipCert = TestDocuments.getWssInteropBobCert();
         X509Certificate recipCert = CertUtils.decodeCert(LOCUTUS_CERT.getBytes("UTF-8"));

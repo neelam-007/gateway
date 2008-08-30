@@ -7,7 +7,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.identity.User;
-import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.DefaultKey;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -46,12 +46,12 @@ public class ManagerAppletServlet extends HttpServlet {
                     "</applet>";
 
     private WebApplicationContext applicationContext;
-    private KeystoreUtils keystoreUtils;
+    private DefaultKey defaultKey;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
 
-        keystoreUtils = (KeystoreUtils) getBean("keystore", null);
+        defaultKey = (DefaultKey) getBean("keystore", null);
     }
 
     private WebApplicationContext getContext() throws ServletException {
@@ -115,7 +115,7 @@ public class ManagerAppletServlet extends HttpServlet {
 
     private void emitServerCertParam(PrintStream ps) throws IOException {
         try {
-            emitParam(ps, "gatewayCert", HexUtils.encodeBase64(keystoreUtils.getSslCert().getEncoded(), true));
+            emitParam(ps, "gatewayCert", HexUtils.encodeBase64(defaultKey.getSslInfo().getCertificate().getEncoded(), true));
         } catch (CertificateException e) {
             // Leave it out
             logger.log(Level.WARNING, "Unable to provide gatewayCert to applet: " + ExceptionUtils.getMessage(e), e);

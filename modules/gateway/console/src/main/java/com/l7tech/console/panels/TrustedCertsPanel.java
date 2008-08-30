@@ -1,45 +1,32 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.event.CertListener;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.event.CertEvent;
+import com.l7tech.console.event.CertListener;
 import com.l7tech.console.util.Registry;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.ResolvingComparator;
-import com.l7tech.util.Resolver;
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.policy.CertificateInfo;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.CertificateInfo;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.Resolver;
+import com.l7tech.util.ResolvingComparator;
 
-import javax.swing.JPanel;
-import javax.swing.JTable;
-import javax.swing.JButton;
-import javax.swing.SwingUtilities;
-import javax.swing.JDialog;
-import javax.swing.ListSelectionModel;
-import javax.swing.JOptionPane;
-import javax.swing.event.ListSelectionListener;
+import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
-import java.awt.event.ActionListener;
+import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.util.Collection;
-import java.util.ArrayList;
+import java.awt.event.ActionListener;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.List;
-import java.util.ResourceBundle;
-import java.util.Locale;
-import java.util.Comparator;
-import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.SimpleDateFormat;
-import java.security.cert.CertificateException;
 
 /**
  * Component for selection of Trusted Certificates.
@@ -397,11 +384,7 @@ public class TrustedCertsPanel extends JPanel {
         java.util.List<CertificateInfo> signers = new ArrayList<CertificateInfo>();
 
         for ( TrustedCert cert : trustedCerts ) {
-            try {
-                signers.add( new CertificateInfo(cert.getCertificate()) );
-            } catch ( CertificateException ce ) {
-                logger.log( Level.WARNING, "Error processing trusted certificate '"+cert.getName()+"'.", ce );
-            }
+            signers.add( new CertificateInfo(cert.getCertificate()) );
         }
 
         return signers.toArray( new CertificateInfo[signers.size()] );
@@ -591,21 +574,17 @@ public class TrustedCertsPanel extends JPanel {
             TrustedCert trustedCert = trustedCertificates.get(rowIndex);
             Object value = null;
 
-            try {
-                switch ( columnIndex ) {
-                    case 0:
-                        value = trustedCert.getName();
-                        break;
-                    case 1:
-                        value = CertUtils.extractIssuerNameFromClientCertificate(trustedCert.getCertificate());
-                        break;
-                    case 2:
-                        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
-                        value = sdf.format(trustedCert.getCertificate().getNotAfter());
-                        break;
-                }
-            } catch ( CertificateException ce) {
-                value = "";
+            switch ( columnIndex ) {
+                case 0:
+                    value = trustedCert.getName();
+                    break;
+                case 1:
+                    value = CertUtils.extractIssuerNameFromClientCertificate(trustedCert.getCertificate());
+                    break;
+                case 2:
+                    SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
+                    value = sdf.format(trustedCert.getCertificate().getNotAfter());
+                    break;
             }
 
             return value;

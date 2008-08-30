@@ -5,12 +5,15 @@
 
 package com.l7tech.security.prov;
 
+import com.l7tech.util.SyspropUtil;
+
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import java.security.*;
-import java.util.Map;
-import java.util.HashMap;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Provide a single point where our JCE provider can be altered.
@@ -20,30 +23,24 @@ import java.util.Collections;
 public abstract class JceProvider {
     public static final String ENGINE_PROPERTY = "com.l7tech.common.security.jceProviderEngine";
 
+    private static final int DEFAULT_RSA_KEYSIZE = SyspropUtil.getInteger("com.l7tech.security.prov.defaultRsaKeySize", 1024);
+
     // Available drivers
     public static final String BC_ENGINE = "com.l7tech.security.prov.bc.BouncyCastleJceProviderEngine";
-    public static final String RSA_ENGINE = "com.l7tech.security.prov.rsa.RsaJceProviderEngine";
-    public static final String NCIPHER_ENGINE = "com.l7tech.security.prov.ncipher.NcipherJceProviderEngine";
     public static final String SUN_ENGINE = "com.l7tech.security.prov.sun.SunJceProviderEngine";
-    public static final String LUNA_ENGINE = "com.l7tech.security.prov.luna.LunaJceProviderEngine";
     public static final String PKCS11_ENGINE = "com.l7tech.security.prov.pkcs11.Pkcs11JceProviderEngine";
 
     // Old driver class names
     private static final String OLD_BC_ENGINE = "com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine";
-    private static final String OLD_RSA_ENGINE = "com.l7tech.common.security.prov.rsa.RsaJceProviderEngine";
-    private static final String OLD_NCIPHER_ENGINE = "com.l7tech.common.security.prov.ncipher.NcipherJceProviderEngine";
     private static final String OLD_SUN_ENGINE = "com.l7tech.common.security.prov.sun.SunJceProviderEngine";
-    private static final String OLD_LUNA_ENGINE = "com.l7tech.common.security.prov.luna.LunaJceProviderEngine";
     private static final String OLD_PKCS11_ENGINE = "com.l7tech.common.security.prov.pkcs11.Pkcs11JceProviderEngine";
 
     private static final Map<String,String> DRIVER_MAP;
+
     static {
         Map<String,String> driverMap = new HashMap<String,String>();
         driverMap.put( OLD_BC_ENGINE, BC_ENGINE );
-        driverMap.put( OLD_RSA_ENGINE, RSA_ENGINE );
-        driverMap.put( OLD_NCIPHER_ENGINE, NCIPHER_ENGINE );
         driverMap.put( OLD_SUN_ENGINE, SUN_ENGINE );
-        driverMap.put( OLD_LUNA_ENGINE, LUNA_ENGINE );
         driverMap.put( OLD_PKCS11_ENGINE, PKCS11_ENGINE );
         DRIVER_MAP = Collections.unmodifiableMap(driverMap);
     }
@@ -109,12 +106,12 @@ public abstract class JceProvider {
         return Holder.engine.getRsaPkcs1PaddingCipher();
     }
 
-    public static RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
-        return Holder.engine.createRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType);
+    public static RsaSignerEngine createRsaSignerEngine(PrivateKey caKey, X509Certificate[] caCertChain) {
+        return Holder.engine.createRsaSignerEngine(caKey, caCertChain);
     }
 
     public static KeyPair generateRsaKeyPair() {
-        return Holder.engine.generateRsaKeyPair();
+        return Holder.engine.generateRsaKeyPair(DEFAULT_RSA_KEYSIZE);
     }
 
     public static KeyPair generateRsaKeyPair(int keysize) {

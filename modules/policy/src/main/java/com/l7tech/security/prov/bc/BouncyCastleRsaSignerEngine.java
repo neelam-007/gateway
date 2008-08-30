@@ -5,13 +5,11 @@
 
 package com.l7tech.security.prov.bc;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.RsaSignerEngine;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.ResourceUtils;
-
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
@@ -19,22 +17,23 @@ import org.bouncycastle.jce.X509KeyUsage;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
- * @author mike
- * @version 1.0
+ * Uses the Bouncy Castle library to process PKCS#10 certificate requests and create signed
+ * certificates.
+ * <p/>
+ * Although this uses Bouncy Castle for ASN.1, PKCS#10, and X.509 parsing and generation,
+ * the underlying crypto implementation does not necessarily have to be Bouncy Castle.
+ * The provider name is specified when the instance is constructed.
  */
 public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
     private final Logger logger = Logger.getLogger(getClass().getName());
@@ -47,51 +46,27 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
     private PrivateKey caPrivateKey;
     private X509Certificate caCert;
     private static final SecureRandom random = new SecureRandom();
-
-    //----------------------------------------
-
-    //Location of CA keystore;
-    private String keyStorePath;
-
-    //Password for server keystore, comment out to prompt for pwd.;
-    private String storePass;
-
-    //Alias in keystore for CA private key;
-    private String privateKeyAlias;
-
-    //Password for CA private key, only used for JKS-keystore. Leave as null for PKCS12-keystore, comment out to prompt;
-    private String privateKeyPassString;
-
-    private final String keyStoreType;
-
     private final String providerName;
 
     /**
-     *  Constructor for the RsaCertificateSigner object sets all fields to their most common usage using
-     * the passed keystore parameters to retreive the private key,
+     * Constructor for the RsaCertificateSigner object sets all fields to their most common usage using
+     * the specified CA key and cert, and using the specified JCE provider for crypto operations.
+     *
+     * @param caPrivateKey  PrivateKey to use when signing certs.  Required.
+     * @param caCert        Certificate to use when signing certs.  Required.  No need for an entire chain here
+     *                      since we do not support intermediate CA certs.
+     * @param providerName  name of JCE provider implementation to use for crypto operations.
      */
-    public BouncyCastleRsaSignerEngine( String keyStorePath,
-                                        String storePass,
-                                        String privateKeyAlias,
-                                        String privateKeyPass,
-                                        String keyStoreType,
-                                        String providerName) {
-        this.keyStorePath = keyStorePath;
-        this.keyStoreType = keyStoreType;
-        this.storePass = storePass;
-        this.privateKeyAlias = privateKeyAlias;
-        this.privateKeyPassString = privateKeyPass;
+    public BouncyCastleRsaSignerEngine(PrivateKey caPrivateKey, X509Certificate caCert, String providerName) {
+        this.caPrivateKey = caPrivateKey;
+        this.caCert = caCert;
         this.providerName = providerName;
-        try {
-            initClass();
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new IllegalArgumentException(e.getMessage());
-        }
     }
 
     private static X509V3CertificateGenerator makeCertGenerator( X509Name subject, Date expiration,
-                                                                 PublicKey publicKey, CertType type ) {
+                                                                 PublicKey publicKey, CertType type )
+            throws InvalidKeyException
+    {
         Calendar cal = Calendar.getInstance();
         // Set back startdate ten minutes to avoid some problems with wrongly set clocks.
         cal.add(Calendar.MINUTE, -10);
@@ -126,11 +101,11 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         certgen.addExtension(X509Extensions.KeyUsage, true, new X509KeyUsage(usage));
 
         // Add subject public key info for fingerprint (not critical)
-        SubjectPublicKeyInfo spki = null;
+        final SubjectPublicKeyInfo spki;
         try {
             spki = new SubjectPublicKeyInfo(ASN1Sequence.getInstance(new ASN1InputStream(new ByteArrayInputStream(publicKey.getEncoded())).readObject()));
         } catch ( IOException e ) {
-            throw new RuntimeException(e);
+            throw new InvalidKeyException(e);
         }
         SubjectKeyIdentifier ski = new SubjectKeyIdentifier(spki);
         certgen.addExtension(X509Extensions.SubjectKeyIdentifier.getId(), false, ski);
@@ -160,8 +135,12 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         certgen.setIssuerDN(subject);
 
         try {
-            return certgen.generateX509Certificate(keypair.getPrivate(), JceProvider.getAsymmetricJceProvider().getName());
+            return certgen.generate(keypair.getPrivate(), JceProvider.getAsymmetricJceProvider().getName());
         } catch (NoSuchProviderException e) {
+            throw new SignatureException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new SignatureException(e);
+        } catch (CertificateEncodingException e) {
             throw new SignatureException(e);
         }
     }
@@ -180,8 +159,12 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         certgen.addExtension(X509Extensions.AuthorityKeyIdentifier.getId(), false, aki);
 
         try {
-            return certgen.generateX509Certificate(caKey, JceProvider.getAsymmetricJceProvider().getName());
+            return certgen.generate(caKey, JceProvider.getAsymmetricJceProvider().getName());
         } catch (NoSuchProviderException e) {
+            throw new SignatureException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new SignatureException(e);
+        } catch (CertificateEncodingException e) {
             throw new SignatureException(e);
         }
     }
@@ -225,11 +208,11 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
             dn = certReqInfo.getSubject().toString();
         }
         logger.info("Signing cert for subject DN = " + dn);
-        if (pkcs10.verify(providerName) == false) {
+        if (!pkcs10.verify(providerName)) {
             logger.severe("POPO verification failed for " + dn);
             throw new Exception("Verification of signature (popo) on PKCS10 request failed.");
         }
-        X509Certificate cert = null;
+        X509Certificate cert;
         if (expiration == -1) {
             cert = makeSignedCertificate(dn, CERT_DAYS_VALID, pkcs10.getPublicKey(providerName),
                                          caCert, caPrivateKey, CertType.CLIENT);
@@ -238,45 +221,9 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
                                          caCert, caPrivateKey, CertType.CLIENT);
         }
         // Verify before returning
-        // Convert to Sun cert first so BC won't screw us over by asking for some goofy algorithm names
+        // Convert to Sun cert first so BC won't screw us over by asking for some goofy BC-only algorithm names
         cert = (X509Certificate)CertUtils.getFactory().generateCertificate(new ByteArrayInputStream(cert.getEncoded()));
         cert.verify(caCert.getPublicKey(), providerName);
         return cert;
-    }
-
-
-    // makeBCCertificate
-
-    private void initClass() throws Exception {
-        KeyStore keyStore = KeyStore.getInstance(keyStoreType);
-        InputStream is = null;
-        try {
-            is = new FileInputStream(keyStorePath);
-
-            if (storePass == null)
-                throw new IllegalArgumentException("A CA keystore passphrase must be provided");
-            char[] keyStorePass = storePass.toCharArray();
-            keyStore.load(is, keyStorePass);
-        }
-        finally {
-            ResourceUtils.closeQuietly(is);
-        }
-
-        if (privateKeyPassString == null)
-            throw new IllegalArgumentException("A CA private key passphrase must be provided");
-        char[] privateKeyPass = privateKeyPassString.toCharArray();
-
-        caPrivateKey = (PrivateKey) keyStore.getKey(privateKeyAlias, privateKeyPass);
-        if (caPrivateKey == null) {
-            logger.severe("Cannot load key with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
-            throw new Exception("Cannot load key with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
-        }
-        Certificate[] certchain = keyStore.getCertificateChain(privateKeyAlias); // KeyTools.getCertChain(keyStore, privateKeyAlias);
-        if (certchain.length < 1) {
-            logger.severe("Cannot load certificate chain with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
-            throw new Exception("Cannot load certificate chain with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
-        }
-        // We only support a ca hierarchy with depth 2.
-        caCert = (X509Certificate) certchain[0];
     }
 }

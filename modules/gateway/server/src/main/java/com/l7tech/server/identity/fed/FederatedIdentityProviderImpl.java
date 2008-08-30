@@ -26,7 +26,6 @@ import com.l7tech.util.ExceptionUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -105,26 +104,11 @@ public class FederatedIdentityProviderImpl
             throw new ClientCertManager.VetoSave("User's X.509 Subject DN '" + userDn +
                     "'doesn't match cert's Subject DN '" + clientCertDn + "'");
         try {
-            if (validTrustedCertOids.isEmpty()) {
-                checkSignedByDefaultCaCert(clientCertChain);
-            } else {
+            if (!validTrustedCertOids.isEmpty()) {
                 checkSignedByRecognizedTrustedCert(clientCertChain);
             }
-        } catch (IOException e) {
-            throw new ClientCertManager.VetoSave("Couldn't parse CA cert: " + ExceptionUtils.getMessage(e), e);
-        } catch (CertificateException e) {
-            throw new ClientCertManager.VetoSave("CA cert is not valid: " + ExceptionUtils.getMessage(e), e);
         } catch (FindException e) {
             throw new ClientCertManager.VetoSave("Unable to look up trusted certificates: " + ExceptionUtils.getMessage(e), e);
-        }
-    }
-
-    private void checkSignedByDefaultCaCert(X509Certificate[] clientCertChain) throws ClientCertManager.VetoSave, IOException, CertificateException {
-        X509Certificate caCert = keystore.getRootCert();
-        if (clientCertChain.length > 1) {
-            if (CertUtils.certsAreEqual(caCert, clientCertChain[1]) || caCert.getSubjectDN().equals(clientCertChain[1].getIssuerDN())) {
-                throw new ClientCertManager.VetoSave("User's cert was issued by the internal certificate authority");
-            }
         }
     }
 

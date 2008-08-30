@@ -27,10 +27,7 @@ import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.DefaultStashManagerFactory;
-import com.l7tech.server.KeystoreUtils;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.*;
 import com.l7tech.server.event.PostRoutingEvent;
 import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -117,8 +114,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 PrivateKey privateKey = signerInfo.getPrivate();
                 keyManagers = new KeyManager[] { new SingleCertX509KeyManager(certChain, privateKey) };
             } else {
-                final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
-                keyManagers = ku.getSSLKeyManagers();
+                final DefaultKey ku = (DefaultKey)applicationContext.getBean("defaultKey");
+                keyManagers = ku.getSslKeyManagers();
             }
             SSLContext sslContext = SSLContext.getInstance("SSL");
 

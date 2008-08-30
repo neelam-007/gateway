@@ -36,15 +36,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements TrustedCertAdmin {
-    private final X509Certificate rootCertificate;
-    private final X509Certificate sslCertificate;
+    private final DefaultKey defaultKey;
     private final LicenseManager licenseManager;
     private final SsgKeyStoreManager ssgKeyStoreManager;
 
     public TrustedCertAdminImpl(TrustedCertManager trustedCertManager,
                                 RevocationCheckPolicyManager revocationCheckPolicyManager,
-                                X509Certificate rootCertificate,
-                                X509Certificate sslCertificate,
+                                DefaultKey defaultKey,
                                 LicenseManager licenseManager,
                                 SsgKeyStoreManager ssgKeyStoreManager)
     {
@@ -57,14 +55,9 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         if (revocationCheckPolicyManager == null) {
             throw new IllegalArgumentException("revocation check policy manager is required");
         }
-        this.rootCertificate = rootCertificate;
-        if (rootCertificate == null) {
-            throw new IllegalArgumentException("Root Certificate is required");
-        }
-        this.sslCertificate = sslCertificate;
-        if (sslCertificate == null) {
-            throw new IllegalArgumentException("Ssl Certificate is required");
-        }
+        this.defaultKey = defaultKey;
+        if (defaultKey == null)
+            throw new IllegalArgumentException("defaultKey is required");
         this.licenseManager = licenseManager;
         if (licenseManager == null)
             throw new IllegalArgumentException("License manager is required");
@@ -177,11 +170,14 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
     }
 
     public X509Certificate getSSGRootCert() throws IOException, CertificateException {
-        return rootCertificate;
+        SsgKeyEntry caInfo = defaultKey.getCaInfo();
+        if (caInfo == null)
+            throw new IOException("No default CA certificate is currently designated on this Gateway");
+        return caInfo.getCertificate();
     }
 
     public X509Certificate getSSGSslCert() throws IOException, CertificateException {
-        return sslCertificate;
+        return defaultKey.getSslInfo().getCertificate();
     }
 
     public List<KeystoreInfo> findAllKeystores(boolean includeHardware) throws IOException, FindException, KeyStoreException {
@@ -214,6 +210,8 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
             return list;
         } catch (KeyStoreException e) {
             throw new CertificateException(e);
+        } catch (ObjectNotFoundException e) {
+            throw new FindException("No keystore found with ID " + keystoreId);
         }
     }
 
@@ -236,6 +234,8 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
             throw new DeleteException("Unable to find keystore: " + ExceptionUtils.getMessage(e), e);
         } catch (InterruptedException e) {
             throw new DeleteException("Unable to find keystore: " + ExceptionUtils.getMessage(e), e);
+        } catch (ObjectNotFoundException e) {
+            throw new DeleteException("Unable to find keystore: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
@@ -249,12 +249,17 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         // Ensure that Sun certificate parser will like this dn
         new X500Principal(dn).getEncoded();
 
-        SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
+        SsgKeyFinder keyFinder;
+        try {
+            keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
+        } catch (ObjectNotFoundException e) {
+            throw new FindException("No keystore found with id " + keystoreId);
+        }
         SsgKeyStore keystore = null;
         if (keyFinder != null && keyFinder.isMutable())
             keystore = keyFinder.getKeyStore();
         if (keystore == null)
-            throw new FindException("No mutable keystore found with id " + keystoreId);
+            throw new FindException("Keystore with id " + keystoreId + " is not mutable");
         if (expiryDays < 1)
             throw new IllegalArgumentException("expiryDays must be positive");
 
@@ -268,6 +273,8 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
             keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
         } catch (KeyStoreException e) {
             logger.log(Level.WARNING, "error getting keystore", e);
+            throw new FindException("error getting keystore", e);
+        } catch (ObjectNotFoundException e) {
             throw new FindException("error getting keystore", e);
         }
         SsgKeyStore keystore;
@@ -298,6 +305,8 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
             throw new UpdateException("error getting keystore", e);
         } catch (FindException e) {
             throw new UpdateException("error getting keystore", e);
+        } catch (ObjectNotFoundException e) {
+            throw new UpdateException("error getting keystore", e);
         }
 
         SsgKeyStore keystore = keyFinder.getKeyStore();
@@ -325,6 +334,8 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         } catch (KeyStoreException e) {
             throw new SaveException("error getting keystore: " + ExceptionUtils.getMessage(e), e);
         } catch (FindException e) {
+            throw new SaveException("error getting keystore: " + ExceptionUtils.getMessage(e), e);
+        } catch (ObjectNotFoundException e) {
             throw new SaveException("error getting keystore: " + ExceptionUtils.getMessage(e), e);
         }
 

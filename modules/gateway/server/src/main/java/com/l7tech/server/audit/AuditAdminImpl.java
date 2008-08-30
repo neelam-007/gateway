@@ -4,20 +4,21 @@
 
 package com.l7tech.server.audit;
 
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.AuditSearchCriteria;
-import com.l7tech.util.Background;
-import com.l7tech.util.OpaqueId;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.server.KeystoreUtils;
+import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.util.Background;
+import com.l7tech.util.OpaqueId;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -26,9 +27,7 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.security.KeyStoreException;
 import java.security.PrivateKey;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
@@ -49,7 +48,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     private AuditRecordManager auditRecordManager;
     private LogRecordManager logRecordManager;
     private ApplicationContext applicationContext;
-    private KeystoreUtils keystore;
+    private DefaultKey keystore;
     private ServerConfig serverConfig;
     private ClusterPropertyManager clusterPropertyManager;
 
@@ -84,7 +83,7 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         this.logRecordManager = logRecordManager;
     }
 
-    public void setKeystore(KeystoreUtils keystore) {
+    public void setKeystore(DefaultKey keystore) {
         this.keystore = keystore;
     }
 
@@ -349,16 +348,15 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
                                       int chunkSizeInBytes) {
         try {
             final DownloadContext downloadContext;
-            downloadContext = new DownloadContext(fromTime, toTime, serviceOids, 0, (AuditExporter)applicationContext.getBean("auditExporter"), keystore.getSslCert(), keystore.getSSLPrivateKey());
+            SignerInfo sslKey = keystore.getSslInfo();
+            if (sslKey == null)
+                throw new RuntimeException("Unable to sign exported audits: no default SSL key is currently designated");
+            downloadContext = new DownloadContext(fromTime, toTime, serviceOids, 0, (AuditExporter)applicationContext.getBean("auditExporter"), sslKey.getCertificateChain()[0], sslKey.getPrivate());
             downloadContext.checkForException();
             downloadContexts.put(downloadContext.getOpaqueId(), downloadContext);
             return downloadContext.getOpaqueId();
-        } catch (KeyStoreException e) {
-            throw new RuntimeException("Server configuration error: unable to prepare keys for signing exported audits", e);
         } catch (IOException e) {
             throw new RuntimeException("IO error while preparing to export audits", e);
-        } catch (CertificateException e) {
-            throw new RuntimeException("Server configuration error: unable to prepare certificate for signing exported audits", e);
         }
     }
 

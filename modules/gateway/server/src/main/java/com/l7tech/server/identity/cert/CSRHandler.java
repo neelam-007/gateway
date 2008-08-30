@@ -1,46 +1,33 @@
 package com.l7tech.server.identity.cert;
 
-import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
-import com.l7tech.server.cluster.ClusterInfoManager;
-import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.common.io.IOUtils;
+import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.common.mime.MimeUtil;
-import com.l7tech.util.HexUtils;
-import com.l7tech.server.KeystoreUtils;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.IssuedCertNotPresentedException;
-import com.l7tech.identity.User;
 import com.l7tech.identity.MissingCredentialsException;
-import com.l7tech.security.cert.RsaCertificateSigner;
+import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.security.prov.JceProvider;
+import com.l7tech.security.prov.RsaSignerEngine;
+import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.AuthenticatableHttpServlet;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.transport.TransportModule;
+import com.l7tech.util.HexUtils;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLSession;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.security.KeyStore;
+import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.logging.Level;
 
 
@@ -61,17 +48,7 @@ import java.util.logging.Level;
 public class CSRHandler extends AuthenticatableHttpServlet {
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-
-        KeystoreUtils ku = (KeystoreUtils)getApplicationContext().getBean("keystore");
-        rootkstore = ku.getRootKeystorePath();
-        rootkstorepasswd = ku.getRootKeystorePasswd();
-        rootkstorealias = ku.getRootAlias();
-        rootkstoretype = ku.getRootKeyStoreType();
-        if (rootkstorepasswd == null || rootkstorepasswd.length() < 1) {
-            String msg = "Key store password not found (root CA).";
-            logger.log(Level.SEVERE, msg);
-            throw new ServletException(msg);
-        }
+        defaultKey = (DefaultKey)getApplicationContext().getBean("defaultKey", DefaultKey.class);
     }
 
     protected String getFeature() {
@@ -88,12 +65,6 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         // make sure we come in through ssl
         if (!request.isSecure()) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR requests must come through ssl port");
-            return;
-        }
-
-        // if the kstore cannot be found, try to proxy the request to the ssg that has the kstore
-        if (!keystorePresent()) {
-            proxyReqToSsgWithRootKStore(request, response);
             return;
         }
 
@@ -219,139 +190,22 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         return HexUtils.decodeBase64(b64str);
     }
 
+    private RsaSignerEngine getSigner() throws SignatureException {
+        SignerInfo ca = defaultKey.getCaInfo();
+        if (ca == null)
+            throw new SignatureException("This Gateway does not currently have a default CA key configured.");
+        return JceProvider.createRsaSignerEngine(ca.getPrivate(), ca.getCertificateChain());
+    }
+
     private Certificate sign(byte[] csr, String subject) throws Exception {
-        RsaCertificateSigner signer = getSigner();
-        // todo, refactor RsaCertificateSigner to throw more precise exceptions
-        return signer.createCertificate(csr, subject);
+        return getSigner().createCertificate(csr, subject);
     }
 
     private Certificate sign(byte[] csr, String subject, long expiration) throws Exception {
-        RsaCertificateSigner signer = getSigner();
-        // todo, refactor RsaCertificateSigner to throw more precise exceptions
-        return signer.createCertificate(csr, subject, expiration);
+        return getSigner().createCertificate(csr, subject, expiration);
     }
 
-    private RsaCertificateSigner getSigner() {
-        return new RsaCertificateSigner(rootkstore, rootkstorepasswd, rootkstorealias, rootkstorepasswd, rootkstoretype);
-    }
-
-    private boolean keystorePresent() {
-        if (rootkstore == null) return false;
-        // check that the file in rootkstore exists
-        return (new File(rootkstore)).exists();
-    }
-
-    private boolean isRequestAlreadyRoutedFromOtherPeer(HttpServletRequest req) {
-        String isalreadyrouted = req.getHeader(ROUTED_FROM_PEER);
-        return isalreadyrouted != null && isalreadyrouted.length() > 0;
-    }
-
-    private void proxyReqToSsgWithRootKStore(HttpServletRequest req, HttpServletResponse res) throws IOException {
-        // these requests should not be routed more than once!
-        if (isRequestAlreadyRoutedFromOtherPeer(req)) {
-            String msg = "could not get root key for signing";
-            logger.warning(msg + ". request re-routed!");
-            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
-            return;
-        }
-
-        // look for ip address of master server
-        ClusterInfoManager manager = (ClusterInfoManager)getApplicationContext().getBean("clusterInfoManager");
-        Collection clusterNodes;
-        try {
-            clusterNodes = manager.retrieveClusterStatus();
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "cannot get cluster info", e);
-            clusterNodes = null;
-        }
-        if (clusterNodes == null) {
-            String msg = "could not get root key for signing";
-            logger.warning(msg);
-            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
-            return;
-        }
-        String masterhostname = null;
-        for (Iterator i = clusterNodes.iterator(); i.hasNext();) {
-            ClusterNodeInfo node = (ClusterNodeInfo)i.next();
-            if (node.getIsMaster()) {
-                masterhostname = node.getAddress();
-                break;
-            }
-        }
-        if (masterhostname == null) {
-            String msg = "could not get root key for signing";
-            logger.warning(msg);
-            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
-            return;
-        }
-
-        logger.finest("redirecting request to master " + masterhostname);
-        // reconstruct url with master server host name
-        int pork = req.getServerPort();
-        String protocol = "https";
-        if (pork == 8080 || pork == 80) protocol = "http";
-        String url = protocol + "://" + masterhostname + ":" + pork + req.getRequestURI();
-        if (req.getQueryString() != null && req.getQueryString().length() > 0) {
-            url += "?" + req.getQueryString();
-        }
-        logger.finest("using url " + url);
-
-        // using HttpURLConnection
-        HttpURLConnection connection = (HttpURLConnection)(new URL(url)).openConnection();
-        connection.setDoOutput(true);
-        connection.setRequestMethod("POST");
-        try {
-            // loose hostname verifier
-            if (connection instanceof HttpsURLConnection) {
-                ((HttpsURLConnection)connection).setHostnameVerifier(new HostnameVerifier() {
-                    public boolean verify(String s, SSLSession sslSession) {
-                        return true;
-                    }
-                });
-            } else {
-                // this should not happen
-                logger.severe("non https connection(?): " + connection.getClass().getName());
-            }
-
-            connection.setRequestProperty(MimeUtil.CONTENT_TYPE, req.getContentType());
-            connection.setRequestProperty(ROUTED_FROM_PEER, "Yes");
-            connection.setRequestProperty(AUTH_HEADER_NAME, req.getHeader(AUTH_HEADER_NAME));
-            OutputStream outputstream = connection.getOutputStream();
-            InputStream inputSream = req.getInputStream();
-            byte[] buff = new byte[256];
-            // send the actual csr request
-            int read = inputSream.read(buff);
-            while (read > 0) {
-                outputstream.write(buff, 0, read);
-                read = inputSream.read(buff);
-            }
-            inputSream.close();
-            outputstream.close();
-            int status = connection.getResponseCode();
-            res.setStatus(status);
-            res.setContentType(connection.getContentType());
-            // get response and send back
-            inputSream = connection.getInputStream();
-            outputstream = res.getOutputStream();
-            read = inputSream.read(buff);
-            while (read > 0) {
-                outputstream.write(buff, 0, read);
-                read = inputSream.read(buff);
-            }
-            inputSream.close();
-            outputstream.close();
-        } catch (SSLHandshakeException e) {
-            logger.severe("forwarding this csr to the master failed because this node does not " +
-              "have the root cert in its trusted store. import root.cer into " +
-              "JAVA_HOME/jre/lib/security/cacerts " + e.getMessage());
-            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "cannot forward csr to master");
-        }
-    }
-
-    private String rootkstore = null;
-    private String rootkstorepasswd = null;
-    private String rootkstorealias = null;
-    private String rootkstoretype = KeyStore.getDefaultType();
+    private DefaultKey defaultKey;
 
     public static final String AUTH_HEADER_NAME = "Authorization";
     public static final String ROUTED_FROM_PEER = "Routed-From-Peer";

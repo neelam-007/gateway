@@ -67,6 +67,20 @@ public class ClusterPropertyManagerImpl
         }
     }
 
+    public ClusterProperty putProperty(String key, String value) throws FindException, SaveException, UpdateException {
+        ClusterProperty prop = findByKey(key);
+        if (prop == null) {
+            prop = new ClusterProperty(key, value);
+            long oid = save(prop);
+            if (oid != prop.getOid()) prop.setOid(oid);
+            return prop;
+        }
+
+        prop.setValue(value);
+        update(prop);
+        return prop;
+    }
+
     public long save(ClusterProperty p) throws SaveException {
         // monitor certain property changes
         propertyChangeMonitor(p);
@@ -117,29 +131,6 @@ public class ClusterPropertyManagerImpl
             throw new FindException(msg, e);
         }
     }
-
-/*
-    public void update(ClusterProperty clusterProperty) throws UpdateException {
-        ClusterProperty old;
-        try {
-            old = findByUniqueName(clusterProperty.getName());
-        } catch (FindException e) {
-            throw new UpdateException("Couldn't find original version", e);
-        }
-
-        try {
-            if (old == null) {
-                getHibernateTemplate().save(clusterProperty);
-            } else {
-                old.setName(clusterProperty.getName());
-                old.setValue(clusterProperty.getValue());
-                getHibernateTemplate().merge(clusterProperty);
-            }
-        } catch (Exception e) {
-            throw new UpdateException("Couldn't save new property", e);
-        }
-    }
-*/
 
     public Class getImpClass() {
         return ClusterProperty.class;

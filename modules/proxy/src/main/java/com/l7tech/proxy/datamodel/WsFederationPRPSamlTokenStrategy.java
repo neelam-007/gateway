@@ -122,7 +122,7 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
         String encrypted = "";
 
         if(password!=null && password.length>0 && username!=null && username.length()>0) {
-            encrypted = EncryptionUtil.encrypt(new String(password), username);
+            encrypted = EncryptionUtil.obfuscate(new String(password), username);
         }
 
         return encrypted;
@@ -311,7 +311,7 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
         if(encryptedPassword!=null && encryptedPassword.length()>0
         && username!=null && username.length()>0) {
             try {
-                password = EncryptionUtil.decrypt(encryptedPassword, username).toCharArray();
+                password = EncryptionUtil.deobfuscate(encryptedPassword, username).toCharArray();
                 encryptedPassword = null;
             }
             catch(IllegalArgumentException iae) {

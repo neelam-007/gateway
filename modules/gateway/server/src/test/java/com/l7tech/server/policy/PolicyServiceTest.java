@@ -6,19 +6,13 @@
 
 package com.l7tech.server.policy;
 
-import com.l7tech.server.ApplicationContexts;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.TestDocuments;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.identity.UserBean;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
-import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.server.identity.TestIdentityProvider;
-import com.l7tech.identity.UserBean;
+import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -29,13 +23,20 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
-import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.util.PolicyServiceClient;
+import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.TestDefaultKey;
 import com.l7tech.server.audit.AuditContextStub;
+import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.filter.FilterManager;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.xpath.XpathExpression;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -118,9 +119,7 @@ public class PolicyServiceTest extends TestCase {
     }
 
     private Document getPolicyResponse(final Assertion policyToTest, PolicyEnforcementContext context, boolean pre32PolicyCompat) throws Exception {
-        PolicyService ps = new PolicyService(
-                TestDocuments.getDotNetServerPrivateKey(),
-                TestDocuments.getDotNetServerCertificate(),
+        PolicyService ps = new PolicyService(new TestDefaultKey(),
                 (ServerPolicyFactory) applicationContext.getBean("policyFactory"),
                 (FilterManager) applicationContext.getBean("policyFilterManager"),
                 (SecurityTokenResolver) applicationContext.getBean("securityTokenResolver"),

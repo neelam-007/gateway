@@ -232,7 +232,6 @@
         <property name="address" column="address" type="string"/>
         <property name="multicastAddress" column="multicast_address" type="string"/>
         <property name="clusterPort" column="cluster_port" type="integer"/>
-        <property name="isMaster" column="ismaster" type="boolean"/>
         <property name="bootTime" column="uptime" type="long"/>
         <property name="avgLoad" column="avgload" type="double"/>
         <property name="lastUpdateTimeStamp" column="statustimestamp" type="long"/>

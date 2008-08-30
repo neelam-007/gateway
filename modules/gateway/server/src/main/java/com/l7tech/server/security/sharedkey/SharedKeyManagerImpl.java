@@ -1,31 +1,32 @@
 package com.l7tech.server.security.sharedkey;
 
-import com.l7tech.util.EncryptionUtil;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.dao.DataAccessException;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import javax.crypto.*;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.interfaces.RSAPublicKey;
+import java.security.spec.InvalidParameterSpecException;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Allow SSG access to a symmetric key shared throughout the cluster. This key is
@@ -48,44 +49,35 @@ import java.util.logging.Logger;
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedKeyManager {
     private final Logger logger = Logger.getLogger(SharedKeyManagerImpl.class.getName());
-    private KeystoreUtils keystore;
-    public static final String CIPHER = "RSA/ECB/PKCS1Padding";
+
+    public static final String CLUSTER_WIDE_IDENTIFIER = "%ClusterWidePBE%";
+    public static final String CIPHER = "PBEWithSHA1AndDESede";
+
+    private SecretKey sharedKeyDecryptionKey;
 
     /**
-     * Don't call this, you are supposed to get an instance of this through the
-     * web application context
+     * Create a SharedKeyManager that will decrypt the shared key using a symmetric key derived from the
+     * specified passphrase.
+     * @param clusterPassphrase passphrase to be used to create PBE key to decrypt cluster shared key
+     *                          (or to encrypt it if a new one needs to be created).
      */
-    public SharedKeyManagerImpl() {}
-
-    public KeystoreUtils getKeystore() {
-        return keystore;
-    }
-
-    public void setKeystore(KeystoreUtils keystore) {
-        this.keystore = keystore;
+    public SharedKeyManagerImpl(char[] clusterPassphrase) {
+        try {
+            SecretKeyFactory skf = SecretKeyFactory.getInstance(CIPHER);
+            this.sharedKeyDecryptionKey = skf.generateSecret(new PBEKeySpec(clusterPassphrase));
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException("Unable to initialize decryption key for cluster shared key: " + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     /**
-     * Get the shared key
+     * Get the shared key.
+     *
      * @return byte[64] containing the shared symmetric key (raw, unencrypted)
      * @throws com.l7tech.objectmodel.FindException if there was a problem finding or creating the key
      */
     public byte[] getSharedKey() throws FindException {
-        final String currentSSLPubID;
-        try {
-            currentSSLPubID = getCurrentSSLPubID();
-        } catch (IOException e) {
-            throw new FindException("could not get current SSL key id", e);
-        }
-        // try to get record from the database
-        final String query = " from shared_keys in class " + SharedKeyRecord.class.getName() +
-                             " where shared_keys.encodingID = ?";
-        final Collection res = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
-            public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                Query q = session.createQuery(query);
-                q.setString(0, currentSSLPubID);
-                return q.list();
-            }});
+        final Collection<SharedKeyRecord> res = selectSharedKeyRecordsByEncodingId();
 
         if (res != null && res.size() > 0) {
             SharedKeyRecord keyRecord = (SharedKeyRecord)res.toArray()[0];
@@ -93,56 +85,101 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
                 logger.fine("Shared key found, attempting to decrypt it");
                 return decryptKey(keyRecord.getB64edKey());
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Cannot decrypt shared key", e);
-                throw new FindException("could not decrypt shared key", e);
+                throw new FindException("could not decrypt shared key: " + ExceptionUtils.getMessage(e), e);
             }
-        } else {
-            logger.info("Shared key does not yet exist, attempting to create one");
-            final SharedKeyRecord sharedKeyToSave = new SharedKeyRecord();
-            byte[] theKey = initializeKeyFirstTime();
+        }
 
-            try {
-                sharedKeyToSave.setEncodingID(currentSSLPubID);
-                sharedKeyToSave.setB64edKey(encryptKey(theKey));
-            } catch (Exception e) {
-                logger.log(Level.SEVERE, "Could not encrypt new shared key", e);
-                throw new FindException("could not encrypt new shared key", e);
-            }
-            logger.info("new shared created, saving it");
-            try {
-                getHibernateTemplate().execute(new HibernateCallback() {
-                    public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                        session.save(sharedKeyToSave);
-                        session.flush();
-                        return null;
-                    }
-                });
-            } catch (DataAccessException e) {
-                throw new FindException("Unable to save new key", e);
-            }
+        return generateAndSaveNewKey();
+    }
+
+    private byte[] generateAndSaveNewKey() throws FindException {
+        logger.info("Shared key does not yet exist, attempting to create one");
+        final SharedKeyRecord sharedKeyToSave = new SharedKeyRecord();
+        byte[] theKey = generate64RandomBytes();
+
+        try {
+            sharedKeyToSave.setEncodingID(CLUSTER_WIDE_IDENTIFIER);
+            sharedKeyToSave.setB64edKey(encryptKey(theKey));
+        } catch (Exception e) {
+            throw new FindException("could not encrypt new shared key: " + ExceptionUtils.getMessage(e), e);
+        }
+
+        logger.info("new shared created, saving it");
+
+        try {
+            saveSharedKeyRecord(sharedKeyToSave);
             logger.info("new shared key saved, returning it");
             return theKey;
+        } catch (DataAccessException e) {
+            throw new FindException("Unable to save new key: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
-    private String getCurrentSSLPubID() throws IOException {
-        return EncryptionUtil.computeCustomRSAPubKeyID((RSAPublicKey)(keystore.getSslSignerInfo().getPublic()));
+    protected void saveSharedKeyRecord(final SharedKeyRecord sharedKeyToSave) throws DataAccessException {
+        getHibernateTemplate().execute(new HibernateCallback() {
+            public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                session.save(sharedKeyToSave);
+                session.flush();
+                return null;
+            }
+        });
+    }
+
+    protected Collection<SharedKeyRecord> selectSharedKeyRecordsByEncodingId() {
+        // try to get record from the database
+        final String query = " from shared_keys in class " + SharedKeyRecord.class.getName() +
+                             " where shared_keys.encodingID = ?";
+        //noinspection unchecked
+        return (Collection<SharedKeyRecord>)getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                Query q = session.createQuery(query);
+                q.setString(0, CLUSTER_WIDE_IDENTIFIER);
+                return q.list();
+            }});
     }
 
     private String encryptKey(byte[] toEncrypt) throws NoSuchAlgorithmException, NoSuchPaddingException,
-                                                       InvalidKeyException, BadPaddingException,
-                                                       IllegalBlockSizeException, IOException {
-        return EncryptionUtil.rsaEncAndB64(toEncrypt, keystore.getSslSignerInfo().getPublic());
+            InvalidKeyException, BadPaddingException,
+            IllegalBlockSizeException, IOException, InvalidParameterSpecException
+    {
+        Cipher cipher = Cipher.getInstance(CIPHER);
+        cipher.init(Cipher.ENCRYPT_MODE, sharedKeyDecryptionKey);
+        byte[] cipherBytes = cipher.doFinal(toEncrypt);
+        PBEParameterSpec pbeSpec = cipher.getParameters().getParameterSpec(PBEParameterSpec.class);
+        byte[] salt = pbeSpec.getSalt();
+        int itc = pbeSpec.getIterationCount();
+        return "$PBE1$" + HexUtils.encodeBase64(salt, true) + "$" + itc + "$" + HexUtils.encodeBase64(cipherBytes, true) + "$";
     }
 
-    private byte[] decryptKey(String b64edEncKey) throws IOException, KeyStoreException,
-                                                         NoSuchAlgorithmException, NoSuchPaddingException,
-                                                         InvalidKeyException, BadPaddingException,
-                                                         IllegalBlockSizeException {
-        return EncryptionUtil.deB64AndRsaDecrypt(b64edEncKey, keystore.getSSLPrivateKey());
+    private byte[] decryptKey(String b64edEncKey) throws IOException, GeneralSecurityException
+    {
+        Pattern pattern = Pattern.compile("^\\$PBE1\\$([^$]+)\\$(\\d+)\\$([^$]+)\\$$");
+        Matcher matcher = pattern.matcher(b64edEncKey);
+        if (!matcher.matches())
+            throw new IOException("Invalid shared key format: " + b64edEncKey);
+        String b64edSalt = matcher.group(1);
+        String strIterationCount = matcher.group(2);
+        String b64edCiphertext = matcher.group(3);
+
+        byte[] saltbytes;
+        int iterationCount;
+        byte[] cipherbytes;
+        try {
+            saltbytes = HexUtils.decodeBase64(b64edSalt);
+            iterationCount = Integer.parseInt(strIterationCount);
+            cipherbytes = HexUtils.decodeBase64(b64edCiphertext);
+        } catch (IOException e) {
+            throw new IOException("Invalid shared key format: " + b64edEncKey, e);
+        } catch (NumberFormatException nfe) {
+            throw new IOException("Invalid shared key format: " + b64edEncKey, nfe);
+        }
+
+        Cipher cipher = Cipher.getInstance(CIPHER);
+        cipher.init(Cipher.DECRYPT_MODE, sharedKeyDecryptionKey, new PBEParameterSpec(saltbytes, iterationCount));
+        return cipher.doFinal(cipherbytes);
     }
 
-    private byte[] initializeKeyFirstTime() {
+    private byte[] generate64RandomBytes() {
         // this should only be called once the first time the key is created
         byte[] output = new byte[64];
         (new SecureRandom()).nextBytes(output);

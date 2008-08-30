@@ -14,11 +14,11 @@ import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.server.KeystoreUtils;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContext;
+import com.l7tech.server.DefaultKey;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import java.util.Collection;
 import java.util.TreeSet;
@@ -32,7 +32,7 @@ public abstract class PersistentIdentityProviderImpl<UT extends PersistentUser, 
 {
     protected ApplicationContext applicationContext;
     protected ClientCertManager clientCertManager;
-    protected KeystoreUtils keystore;
+    protected DefaultKey keystore;
 
     /**
      * searches for users and groups whose name (cn) match the pattern described in searchString
@@ -68,7 +68,7 @@ public abstract class PersistentIdentityProviderImpl<UT extends PersistentUser, 
         this.clientCertManager = clientCertManager;
     }
 
-    public void setKeystore(KeystoreUtils keystore) {
+    public void setKeystore(DefaultKey keystore) {
         this.keystore = keystore;
     }
 

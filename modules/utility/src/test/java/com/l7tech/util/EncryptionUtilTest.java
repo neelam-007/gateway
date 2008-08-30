@@ -3,7 +3,6 @@ package com.l7tech.util;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import com.l7tech.util.EncryptionUtil;
 
 /**
  * @author $Author$
@@ -25,8 +24,8 @@ public class EncryptionUtilTest extends TestCase {
 
     public void testStringEncrytpion() {
         String clear = "Clear text to encrypt.";
-        String encrypted = EncryptionUtil.encrypt(clear, clear);
-        String decrypted = EncryptionUtil.decrypt(encrypted, clear);
+        String encrypted = EncryptionUtil.obfuscate(clear, clear);
+        String decrypted = EncryptionUtil.deobfuscate(encrypted, clear);
         assertEquals("Encrypt/Decrypt round trip", clear, decrypted);
     }
 
@@ -40,10 +39,10 @@ public class EncryptionUtilTest extends TestCase {
 
     public void testStringDecryptionFails() {
         String clear = "Clear text to encrypt.";
-        String encrypted = EncryptionUtil.encrypt(clear, clear);
+        String encrypted = EncryptionUtil.obfuscate(clear, clear);
 
         try {
-            String decrypted = EncryptionUtil.decrypt(encrypted, "incorrect value");
+            String decrypted = EncryptionUtil.deobfuscate(encrypted, "incorrect value");
             fail("Encrypt/Decrypt round tripped");
         }
         catch(IllegalArgumentException iae) {

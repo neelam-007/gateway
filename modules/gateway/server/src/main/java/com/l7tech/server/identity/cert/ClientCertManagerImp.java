@@ -1,12 +1,14 @@
 package com.l7tech.server.identity.cert;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.HexUtils;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.identity.User;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.HexUtils;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -15,19 +17,19 @@ import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.security.auth.x500.X500Principal;
 
 
 /**
@@ -42,32 +44,31 @@ import javax.security.auth.x500.X500Principal;
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class ClientCertManagerImp extends HibernateDaoSupport implements ClientCertManager {
-    private X509Certificate rootCertificate = null;
-    protected byte[] rootCertSki = null;
-    protected String rootCertSubjectName = null;
+    private final DefaultKey defaultKey;
 
-    @Transactional(propagation=Propagation.SUPPORTS)
-    public void setRootCertificate(X509Certificate rootCertificate) {
-        if (rootCertificate == null) throw new IllegalArgumentException("Root certificate must not be null");
-        this.rootCertificate = rootCertificate;
-        this.rootCertSubjectName = rootCertificate.getSubjectDN().getName();
-        this.rootCertSki = CertUtils.getSKIBytesFromCert(rootCertificate);
+    public ClientCertManagerImp(DefaultKey defaultKey) {
+        this.defaultKey = defaultKey;
     }
 
     @Transactional(propagation=Propagation.SUPPORTS)
     public boolean isCertPossiblyStale(X509Certificate userCert) {
-        if (rootCertificate == null) throw new IllegalStateException("No root certificate set");
-        if (rootCertSki == null || rootCertSubjectName == null) throw new IllegalStateException("Missing stuff");
+        SsgKeyEntry caInfo = defaultKey.getCaInfo();
+        if (caInfo == null) {
+            // No CA key currently configured -- assume cert is not stale
+            return false;
+        }
+
+        X509Certificate caCert = caInfo.getCertificate();
+        String rootCertSubjectName = caCert.getSubjectDN().getName();
+        byte[] rootCertSki = CertUtils.getSKIBytesFromCert(caCert);
+
         String requestCertIssuerName = userCert.getIssuerDN().getName();
 
         if (requestCertIssuerName.equals(rootCertSubjectName)) {
             // Check whether the request cert was signed with this version of the CA cert
             byte[] aki = CertUtils.getAKIBytesFromCert(userCert);
-            if (aki == null) {
-                // Bug #2094: mlyons: No aki -- can't tell if cert is stale.  Assume it isn't.
-                return false;
-            }
-            return !Arrays.equals(aki, rootCertSki);
+            // Bug #2094: mlyons: If no aki, can't tell if cert is stale.  Assume it isn't.
+            return aki != null && !Arrays.equals(aki, rootCertSki);
         }
 
         return false;
@@ -217,14 +218,9 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         if (currentdata != null) {
             boolean revoke = false;
             if (issuer != null) {
-                try {
-                    X509Certificate userCertificate = currentdata.getCertificate();
-                    if (userCertificate != null && userCertificate.getIssuerX500Principal().equals(issuer)) {
-                        revoke = true;
-                    }
-                } catch (CertificateException ce) {
+                X509Certificate userCertificate = currentdata.getCertificate();
+                if (userCertificate != null && userCertificate.getIssuerX500Principal().equals(issuer)) {
                     revoke = true;
-                    logger.log(Level.WARNING, "Error reading users certificate '"+user.getLogin()+"', revoking.", ce); 
                 }
             } else {
                 revoke = true;
@@ -282,7 +278,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     }
 
     public List<CertInfo> findAll() throws FindException {
-        List<CertInfo> allCerts = new ArrayList();
+        List<CertInfo> allCerts = new ArrayList<CertInfo>();
 
         try {
             List userCerts = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
@@ -328,7 +324,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     }
 
 
-    /**
+    /*
      * retrieves the table data for a specific user
      * @return the data in the table or null if no data exist for this user
      */

@@ -278,7 +278,6 @@ CREATE TABLE cluster_info (
   address varchar(16) NOT NULL,
   multicast_address varchar(16),
   cluster_port integer NOT NULL,
-  ismaster TINYINT(1) NOT NULL,
   uptime bigint NOT NULL,
   avgload double NOT NULL,
   statustimestamp bigint NOT NULL,
@@ -764,11 +763,6 @@ CREATE TABLE connector_property (
   PRIMARY KEY (objectid),
   FOREIGN KEY (connector_oid) REFERENCES connector (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
-
--- Default connectors
-INSERT INTO connector VALUES (-670,1,'Main',0,8080,'HTTP','MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS',0,0,NULL,NULL);
-INSERT INTO connector VALUES (-671,1,'Main SSL',0,8443,'HTTPS','MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS',1,2,NULL,NULL);
-INSERT INTO connector VALUES (-672,1,'Main SSL (No Client Auth)',0,9443,'HTTPS','MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS',1,0,NULL,NULL);
 
 --
 -- Table structure for table rbac_role

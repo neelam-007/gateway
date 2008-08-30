@@ -1,19 +1,16 @@
 package com.l7tech.gateway.common.spring.remoting.rmi.ssl;
 
-import com.l7tech.common.io.SingleCertX509KeyManager;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.SSLSocketWrapper;
+import com.l7tech.common.io.SingleCertX509KeyManager;
+import com.l7tech.security.xml.SignerInfo;
 
 import javax.net.ssl.*;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.server.RMIServerSocketFactory;
 import java.security.*;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -73,7 +70,8 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
      *                            enable on SSL connections accepted by server sockets created by
      *                            this factory, or <code>null</code> to use the protocol versions
      *                            that are enabled by default
-     * @param needClientAuth      <code>true</code> to require client
+     * @param wantClientAuth      <code>true</code> send client challenge; handshake may still succeed if client declines it
+     * @param needClientAuth      <code>true</code> send client challenge; handshake shall fail if client declines it
      *                            authentication on SSL connections accepted by server sockets
      *                            created by this factory; <code>false</code> to not require
      *                            client authentication
@@ -91,14 +89,14 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
                                      String[] enabledProtocols,
                                      boolean wantClientAuth,
                                      boolean needClientAuth)
-      throws IllegalArgumentException, IllegalStateException {
+      throws IllegalArgumentException {
 
         // Initialize the configuration parameters.
         //
         this.enabledCipherSuites = enabledCipherSuites == null ?
-          null : (String[])enabledCipherSuites.clone();
+          null : enabledCipherSuites.clone();
         this.enabledProtocols = enabledProtocols == null ?
-          null : (String[])enabledProtocols.clone();
+          null : enabledProtocols.clone();
         this.wantClientAuth = wantClientAuth;
         this.needClientAuth = needClientAuth;
 
@@ -146,7 +144,7 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
      */
     public final String[] getEnabledCipherSuites() {
         return enabledCipherSuites == null ?
-          null : (String[])enabledCipherSuites.clone();
+          null : enabledCipherSuites.clone();
     }
 
     /**
@@ -161,7 +159,7 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
      */
     public final String[] getEnabledProtocols() {
         return enabledProtocols == null ?
-          null : (String[])enabledProtocols.clone();
+          null : enabledProtocols.clone();
     }
 
     /**
@@ -189,48 +187,17 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
     }
 
     /**
-     * Set the algorithm. default is "SunX509"
-     * @param algorithm
+     * Set the private key and cert chain to use as the server cert.
+     *
+     * @param signerInfo private key and cert chain to use
      */
-    public void setAlgorithm(String algorithm) {
-        this.algorithm = algorithm;
-    }
-
-    /**
-     * Set the keystore file location
-     * @param keyStoreFile
-     */
-    public void setKeyStoreFile(String keyStoreFile) {
-        this.keyStoreFile = keyStoreFile;
-    }
-
-    /**
-     * Set the alias within the keystore to use.
-     * @param keyStoreAlias the alias of our server cert, or null to pick one randomly.
-     */
-    public void setKeyStoreAlias(String keyStoreAlias) {
-        this.keyStoreAlias = keyStoreAlias;
-    }
-
-    /**
-     * Set the keystore password
-     * @param keyStorePassword the keystore password
-     */
-    public void setKeyStorePassword(String keyStorePassword) {
-        this.keyStorePassword = keyStorePassword;
-    }
-
-    /**
-     * Set the keystore type, the default is "JKS"
-     * @param keyStoreType
-     */
-    public void setKeyStoreType(String keyStoreType) {
-        this.keyStoreType = keyStoreType;
+    public void setSignerInfo(SignerInfo signerInfo) {
+        this.signerInfo = signerInfo;
     }
 
     /**
      * set the protocol. The default is "TLS"
-     * @param protocol
+     * @param protocol protocol to use
      */
     public void setProtocol(String protocol) {
         this.protocol = protocol;
@@ -321,7 +288,7 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
      * @return the context or null;
      */
     public static Context getContext() {
-        return (Context) contextLocal.get();
+        return contextLocal.get();
     }
 
     /**
@@ -377,15 +344,14 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
     private static final Logger logger = Logger.getLogger(SslRMIServerSocketFactory.class.getName());
 
     private static SSLTrustFailureHandler trustFailureHandler = null;
-    private static SSLServerSocketFactory defaultSSLSocketFactory = null;
-    private static ThreadLocal contextLocal = new ThreadLocal();
 
-    private String keyStoreFile;
-    private String keyStoreType = KeyStore.getDefaultType();
-    private String keyStoreAlias;
-    private String algorithm = "SunX509";
+    @SuppressWarnings({"FieldCanBeLocal"})
+    private static SSLServerSocketFactory defaultSSLSocketFactory = null;
+
+    private static ThreadLocal<Context> contextLocal = new ThreadLocal<Context>();
+
     private String protocol = "TLS";
-    private String keyStorePassword;
+    private SignerInfo signerInfo;
     private final String[] enabledCipherSuites;
     private final String[] enabledProtocols;
     private final boolean wantClientAuth;
@@ -428,50 +394,13 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
 
     private SSLServerSocketFactory getDefaultSSLSocketFactory()
       throws NoSuchAlgorithmException, KeyStoreException,
-             IOException, UnrecoverableKeyException, CertificateException, KeyManagementException {
-        SSLServerSocketFactory ssf = null;
+             IOException, UnrecoverableKeyException, CertificateException, KeyManagementException
+    {
+        SSLServerSocketFactory ssf;
         // set up key manager to do server authentication
         SSLContext ctx;
-        KeyManagerFactory kmf;
-        KeyStore ks = null;
-        KeyManager[] keyManagers = null;
-        char[] pwd = null;
-
         ctx = SSLContext.getInstance(protocol);
-        kmf = KeyManagerFactory.getInstance(algorithm);
-        ks = KeyStore.getInstance(keyStoreType);
-
-        if (keyStorePassword !=null && keyStoreFile !=null) {
-            pwd = keyStorePassword.toCharArray();
-            FileInputStream fis = null;
-            try {
-                fis = new FileInputStream(keyStoreFile);
-                ks.load(fis, pwd);
-            }
-            finally {
-                ResourceUtils.closeQuietly(fis);
-            }
-        }
-
-        if (keyStoreAlias == null) {
-            logger.log(Level.INFO, "Using default KeyManagers for SSL RMI server socket");
-            kmf.init(ks, pwd);
-            keyManagers = kmf.getKeyManagers();
-        } else {
-            Certificate[] genericChain = ks.getCertificateChain(keyStoreAlias);
-            if (genericChain == null)
-                throw new KeyStoreException("Unable to create SSL RMI server socket: no certificate chain for alias " + keyStoreAlias);
-
-            X509Certificate[] x509Chain = CertUtils.asX509CertificateArray(genericChain);
-
-            Key key = ks.getKey(keyStoreAlias, keyStorePassword.toCharArray());
-            if (!(key instanceof PrivateKey))
-                throw new KeyStoreException("Unable to create SSL RMI server socket: key alias " + keyStoreAlias + " does not contain a private key");
-            PrivateKey privateKey = (PrivateKey)key;
-
-            keyManagers = new KeyManager[] { new SingleCertX509KeyManager(x509Chain, privateKey, keyStoreAlias) };
-        }
-
+        KeyManager[] keyManagers = new KeyManager[] { new SingleCertX509KeyManager(signerInfo.getCertificateChain(), signerInfo.getPrivate(), "SslRMIServerSocketFactory-Key") };
         ctx.init(keyManagers, new TrustManager[]{new SSLServerTrustManager()}, null);
         ssf = ctx.getServerSocketFactory();
         defaultSSLSocketFactory = ssf;
@@ -486,7 +415,7 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
      * @param socket the socket with the info
      */
     private void setContext(final SSLSocket socket) {
-        ThreadLocal local = contextLocal;
+        ThreadLocal<Context> local = contextLocal;
         if (local != null) { // may be null when system is shutting down
             if (socket == null) {
                 local.set(null);

@@ -1,11 +1,9 @@
 package com.l7tech.security;
 
 //import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.KeystoreUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.springframework.context.ApplicationContext;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,7 +13,6 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Properties;
 
 /**
  * The <code>Keys</code> class test.
@@ -81,13 +78,6 @@ public class KeysTest extends TestCase {
         assertTrue(key !=null);
         Certificate cert = ks.getCertificate(alias);
         assertTrue(cert != null);
-    }
-
-    public void testSsgKestoreProperties() throws Exception {
-        Properties props = Keys.createTestSsgKeystoreProperties();
-        //KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
-        //assertTrue(Keys.KEYSTORE_TYPE.equals(ku.getSslKeyStoreType()));
-        //assertTrue(props.getProperty(KeystoreUtils.ROOT_STOREPASSWD).equals(ku.getRootKeystorePasswd()));
     }
 
     /**

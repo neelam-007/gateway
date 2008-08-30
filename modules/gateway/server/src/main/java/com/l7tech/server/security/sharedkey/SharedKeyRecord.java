@@ -36,6 +36,11 @@ public class SharedKeyRecord implements Serializable {
     public SharedKeyRecord() {
     }
 
+    public SharedKeyRecord(String encodingID, String b64edKey) {
+        this.encodingID = encodingID;
+        this.b64edKey = b64edKey;
+    }
+
     public String getB64edKey() {
         return b64edKey;
     }

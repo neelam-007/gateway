@@ -14,6 +14,7 @@ import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import java.security.*;
+import java.security.cert.X509Certificate;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -42,16 +43,8 @@ public class SunJceProviderEngine implements JceProviderEngine {
         return PROVIDER;
     }
 
-    /**
-     * Create an RsaSignerEngine that uses the current crypto API.
-     *
-     * @param keyStorePath
-     * @param storePass
-     * @param privateKeyAlias
-     * @param privateKeyPass
-     */
-    public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
-        return new BouncyCastleRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType, PROVIDER.getName() );
+    public RsaSignerEngine createRsaSignerEngine(PrivateKey caKey, X509Certificate[] caCertChain) {
+        return new BouncyCastleRsaSignerEngine(caKey, caCertChain[0], PROVIDER.getName());
     }
 
     /**
@@ -61,10 +54,6 @@ public class SunJceProviderEngine implements JceProviderEngine {
         JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
         kpg.initialize(len);
         return kpg.generateKeyPair();
-    }
-
-    public KeyPair generateRsaKeyPair() {
-        return generateRsaKeyPair(RSA_KEY_LENGTH);
     }
 
     public Cipher getRsaNoPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {

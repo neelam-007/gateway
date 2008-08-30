@@ -5,31 +5,28 @@
 
 package com.l7tech.server;
 
-import com.l7tech.security.cert.X509Entity;
+import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.identity.cert.ClientCertManager;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.cert.TrustedCertManager;
+import com.l7tech.security.cert.X509Entity;
 import com.l7tech.security.token.KerberosSecurityToken;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
-import com.l7tech.util.Background;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.WhirlycacheFactory;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.security.cert.TrustedCertManager;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
-
+import com.l7tech.util.Background;
+import com.l7tech.util.ExceptionUtils;
 import com.whirlycott.cache.Cache;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,14 +44,6 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
     private final TrustedCertManager trustedCertManager;
     private final ClientCertManager clientCertManager;
 
-    private final X509Certificate sslKeystoreCertificate;
-    private final String sslKeystoreCertThumbprint;
-    private final String sslKeystoreCertSki;
-
-    private final X509Certificate rootCertificate;
-    private final String rootCertificateThumbprint;
-    private final String rootCertificateSki;
-
     private final Cache encryptedKeyCache;
     private final AtomicBoolean encryptedKeyCacheEnabled = new AtomicBoolean();
 
@@ -68,22 +57,16 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
      *
      * @param clientCertManager      required
      * @param trustedCertManager     required
-     * @param sslKeystoreCertificate     the Gateway's SSL cert. required
-     * @param rootCertificate           the Gateway's CA cert. required
      * @param serverConfig           required
      * @param keyStoreManager     private key sources.  required
      */
     public TrustedAndUserCertificateResolver(ClientCertManager clientCertManager,
                                              TrustedCertManager trustedCertManager,
-                                             X509Certificate sslKeystoreCertificate,
-                                             X509Certificate rootCertificate,
                                              final ServerConfig serverConfig,
                                              SsgKeyStoreManager keyStoreManager)
     {
         this.trustedCertManager = trustedCertManager;
         this.clientCertManager = clientCertManager;
-        this.sslKeystoreCertificate = sslKeystoreCertificate;
-        this.rootCertificate = rootCertificate;
         this.keyStoreManager = keyStoreManager;
 
         final int checkPeriod = 10181;
@@ -104,34 +87,12 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
                     logger.info("Ephemeral key cache is now " + (newval ? "enabled" : "disabled"));
             }
         }, checkPeriod, checkPeriod);
-
-        try {
-            if (sslKeystoreCertificate != null) {
-                this.sslKeystoreCertThumbprint = CertUtils.getThumbprintSHA1(sslKeystoreCertificate);
-                this.sslKeystoreCertSki = CertUtils.getSki(sslKeystoreCertificate);
-            } else {
-                this.sslKeystoreCertThumbprint = null;
-                this.sslKeystoreCertSki = null;
-            }
-            if (rootCertificate != null) {
-                this.rootCertificateThumbprint = CertUtils.getThumbprintSHA1(rootCertificate);
-                this.rootCertificateSki = CertUtils.getSki(rootCertificate);
-            } else {
-                this.rootCertificateThumbprint = null;
-                this.rootCertificateSki = null;
-            }
-        } catch (CertificateException e) {
-            throw new RuntimeException("Invalid SSL or root certificate", e);
-        }
     }
 
     public X509Certificate lookup(String thumbprint) {
         try {
-            if (rootCertificateThumbprint != null && rootCertificateThumbprint.equals(thumbprint))
-                return rootCertificate;
-
-            if (sslKeystoreCertThumbprint != null && sslKeystoreCertThumbprint.equals(thumbprint))
-                return sslKeystoreCertificate;
+            SignerInfo si = lookupPrivateKeyByX509Thumbprint(thumbprint);
+            if (si != null) return si.getCertificateChain()[0];
 
             List got = trustedCertManager.findByThumbprint(thumbprint);
             if (got != null && got.size() >= 1)
@@ -141,25 +102,16 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
             if (got != null && got.size() >= 1)
                 return ((X509Entity)got.get(0)).getCertificate();
 
-            SignerInfo si = lookupPrivateKeyByX509Thumbprint(thumbprint);
-            if (si != null) return si.getCertificateChain()[0];
-
             return null;
         } catch (FindException e) {
             throw new RuntimeException(e); // very bad place
-        } catch (CertificateException e) {
-            logger.log(Level.WARNING, "Bad certificate in database: " + e.getMessage(), e);
-            return null;
         }
     }
 
     public X509Certificate lookupBySki(String ski) {
         try {
-            if (rootCertificateSki != null && rootCertificateSki.equals(ski))
-                return rootCertificate;
-
-            if (sslKeystoreCertSki != null && sslKeystoreCertSki.equals(ski))
-                return sslKeystoreCertificate;
+            SignerInfo si = lookupPrivateKeyBySki(ski);
+            if (si != null) return si.getCertificateChain()[0];
 
             List got = trustedCertManager.findBySki(ski);
             if (got != null && got.size() >= 1)
@@ -169,15 +121,9 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
             if (got != null && got.size() >= 1)
                 return ((X509Entity)got.get(0)).getCertificate();
 
-            SignerInfo si = lookupPrivateKeyBySki(ski);
-            if (si != null) return si.getCertificateChain()[0];
-
             return null;
         } catch (FindException e) {
             throw new RuntimeException(e); // very bad place
-        } catch (CertificateException e) {
-            logger.log(Level.WARNING, "Bad certificate in database: " + e.getMessage(), e);
-            return null;
         }
     }
 
@@ -220,8 +166,10 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
             for (String alias : aliases) {
                 try {
                     SsgKeyEntry entry = keyFinder.getCertificateChain(alias);
-                    if (entry.isPrivateKeyAvailable())
+                    if (entry.isPrivateKeyAvailable()) {
+
                         infos.add(new SignerInfo(entry.getPrivateKey(), entry.getCertificateChain()));
+                    }
                 } catch (KeyStoreException e) {
                     logger.log(Level.WARNING, "Unable to access private key alias " + alias + " in key store " + keyFinder.getName() + ": " + ExceptionUtils.getMessage(e), e);
                 } catch (UnrecoverableKeyException e) {

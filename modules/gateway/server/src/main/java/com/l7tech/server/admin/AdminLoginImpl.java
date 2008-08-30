@@ -3,38 +3,39 @@
  */
 package com.l7tech.server.admin;
 
-import com.l7tech.gateway.common.admin.*;
-import com.l7tech.util.BuildInfo;
-import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.gateway.common.admin.*;
+import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.server.util.JaasUtils;
+import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.DefaultKey;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.FailedAdminLoginEvent;
+import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
+import com.l7tech.server.util.JaasUtils;
+import com.l7tech.util.BuildInfo;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.support.ApplicationObjectSupport;
 
+import javax.security.auth.Subject;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
-import javax.security.auth.Subject;
 import java.rmi.server.ServerNotActiveException;
 import java.security.AccessControlException;
 import java.security.NoSuchAlgorithmException;
@@ -44,6 +45,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 public class AdminLoginImpl
         extends ApplicationObjectSupport
@@ -54,12 +56,16 @@ public class AdminLoginImpl
     
     private AdminSessionManager sessionManager;
 
+    private final DefaultKey defaultKey;
     private IdentityProviderConfigManager identityProviderConfigManager;
     private IdentityProviderFactory identityProviderFactory;
     private final Object providerSync = new Object();
     private Set<IdentityProvider> adminProviders;
     private RoleManager roleManager;
-    private X509Certificate serverCertificate;
+
+    public AdminLoginImpl(DefaultKey defaultKey) {
+        this.defaultKey = defaultKey;
+    }
 
     public GroupPrincipalCache getGroupPrincipalCache() {
         return groupPrincipalCache;
@@ -201,8 +207,9 @@ public class AdminLoginImpl
                         logger.info("Authenticated on " + provider.getConfig().getName() + " (changing password)");
 
                         if (authenticatedUser instanceof InternalUser) {
-                            ((InternalUser)user).setCleartextPassword(newPassword);
-                            provider.getUserManager().update(user);
+                            InternalUser internalUser = (InternalUser) user;
+                            internalUser.setCleartextPassword(newPassword);
+                            ((InternalIdentityProvider)provider).getUserManager().update(internalUser);
                             break;
                         } else {
                             throw new IllegalStateException("Cannot change password for user.");
@@ -294,7 +301,7 @@ public class AdminLoginImpl
                 digestWith = Integer.toString(AdminLoginImpl.class.hashCode() * 17) + username;
             }
 
-            return getDigest(digestWith, serverCertificate);
+            return getDigest(digestWith, defaultKey.getSslInfo().getCertificate());
         } catch (InvalidIdProviderCfgException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication provider error").initCause(e);
@@ -302,6 +309,9 @@ public class AdminLoginImpl
             logger.log(Level.WARNING, "Server error", e);
             throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
         } catch (CertificateEncodingException e) {
+            logger.log(Level.WARNING, "Server error", e);
+            throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
+        } catch (IOException e) {
             logger.log(Level.WARNING, "Server error", e);
             throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
         }
@@ -323,10 +333,6 @@ public class AdminLoginImpl
 
     public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {
         this.identityProviderFactory = identityProviderFactory;
-    }
-
-    public void setServerCertificate(X509Certificate serverCertificate) {
-        this.serverCertificate = serverCertificate;
     }
 
     public void afterPropertiesSet() throws Exception {

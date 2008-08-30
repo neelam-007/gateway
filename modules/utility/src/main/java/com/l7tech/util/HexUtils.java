@@ -6,14 +6,13 @@ package com.l7tech.util;
 import org.apache.commons.codec.binary.Base64;
 
 import java.io.*;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.net.URLEncoder;
-import java.net.URLDecoder;
 import java.util.zip.GZIPOutputStream;
-import java.util.Collection;
 
 /**
  * Utility methods for hex encoding and dealing with streams and byte buffers.
@@ -37,6 +36,16 @@ public class HexUtils {
 
     public static byte[] getSha1Digest(byte[] stuffToDigest) {
         return getSha1().digest(stuffToDigest);
+    }
+
+    public static byte[] getSha512Digest(byte[] stuffToDigest) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-512");
+            md.reset();
+            return md.digest(stuffToDigest);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     //private HexUtils() {}

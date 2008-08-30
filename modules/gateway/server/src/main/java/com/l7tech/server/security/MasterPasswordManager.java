@@ -27,13 +27,9 @@ public class MasterPasswordManager {
     public static final String ENCRYPTION_PREFIX = "$" + ENCRYPTION_TAG + "$";
     private static final String PROP_FINDER_DEFAULT = DefaultMasterPasswordFinder.class.getName();
 
-    private static final MasterPasswordManager INSTANCE = new MasterPasswordManager();
     private MasterPasswordFinder finder;
+    private byte[] keyBytes;
 
-
-    public static MasterPasswordManager getInstance() {
-        return INSTANCE;
-    }
 
     /**
      * Create a MasterPasswordManager that will find the default master password finder.
@@ -51,6 +47,16 @@ public class MasterPasswordManager {
     }
 
     /**
+     * Create a MasterPasswordManager that will use the specified bytes to produce the key for encrypting
+     * and decrypting passwords.
+     *
+     * @param fixedKeyBytes a byte string that will be used to produce a key.  Will not be treated as characters.
+     */
+    public MasterPasswordManager(byte[] fixedKeyBytes) {
+        this.keyBytes = fixedKeyBytes;
+    }
+
+    /**
      * Create a MasterPasswordManager that will always use the specified master password.
      *
      * @param fixedMasterPassword the master password to use.  Required.
@@ -61,6 +67,21 @@ public class MasterPasswordManager {
                 return fixedMasterPassword;
             }
         });
+    }
+
+    /**
+     * @return the master password converted to key bytes, or null if the master password is unavailable.
+     */
+    private byte[] getMasterPasswordBytes() {
+        if (keyBytes != null)
+            return keyBytes;
+
+        char[] mp = getMasterPassword();
+        try {
+            return mp == null ? null : new String(mp).getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // can't happen - misconfigured VM
+        }
     }
 
     /**
@@ -97,10 +118,9 @@ public class MasterPasswordManager {
     private AesKey getKey(String salt) {
         try {
             MessageDigest sha = MessageDigest.getInstance("SHA-512");
-            char[] mp = getMasterPassword();
-            if (mp == null)
+            byte[] mpBytes = getMasterPasswordBytes();
+            if (mpBytes == null)
                 return null;
-            byte[] mpBytes = new String(mp).getBytes("UTF-8");
             byte[] saltBytes = salt.getBytes("UTF-8");
 
             sha.reset();
@@ -223,7 +243,7 @@ public class MasterPasswordManager {
      * @return true if a master key is currently available; false if no crypto will be done.
      */
     public boolean isKeyAvailable() {
-        return getMasterPassword() != null;
+        return keyBytes != null || getMasterPassword() != null;
     }
 
     /**

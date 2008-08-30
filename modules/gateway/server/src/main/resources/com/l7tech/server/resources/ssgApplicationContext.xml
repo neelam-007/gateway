@@ -86,6 +86,13 @@
                         </entry>
                         <entry key="auditDetailFilter"><list><value>auditAssociatedLogsThreshold</value></list></entry>
                         <entry key="kerberosConfig"><list><value>krb5Keytab</value></list></entry>
+                        <entry key="defaultKey">
+                            <list>
+                                <value>keyStoreDefaultSslKey</value>
+                                <value>keyStoreDefaultCaKey</value>
+                                <value>keyStoreSearchForAlias</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -93,7 +100,19 @@
         <property name="clusterPropertyCache" ref="clusterPropertyCache"/>
     </bean>
 
-    <bean id="masterPasswordManager" class="com.l7tech.server.security.MasterPasswordManager" factory-method="getInstance" depends-on="systemProperties"/>
+    <!-- Default password encryption, for reading passwords from per-node sources ie properties files -->
+    <bean id="masterPasswordManager" class="com.l7tech.server.security.MasterPasswordManager" depends-on="systemProperties"/>
+
+    <!-- Database password encryption, for reading passwords from cluster-wide sources ie cluster properties -->
+    <bean id="dbPasswordEncryption" class="com.l7tech.server.security.MasterPasswordManager">
+        <constructor-arg ref="clusterSharedKey"/>
+    </bean>
+
+    <!-- Current cluster shared key, as raw byte array -->
+    <bean id="clusterSharedKey" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject" ref="sharedKeyManager"/>
+        <property name="targetMethod" value="getSharedKey"/>
+    </bean>
 
     <bean id="propertiesDecryptor" class="com.l7tech.server.util.PropertiesDecryptor">
         <constructor-arg ref="masterPasswordManager"/>
@@ -113,7 +132,7 @@
     </bean>
 
     <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean" />
-    
+
     <!-- server side identity configuration manager -->
     <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.IdProvConfManagerServer" parent="hibernateBean">
         <property name="roleManager" ref="roleManager"/>
@@ -132,7 +151,7 @@
     </bean>
     <bean id="internalIdentityProvider" class="com.l7tech.server.identity.internal.InternalIdentityProviderImpl" singleton="false">
         <property name="clientCertManager" ref="clientCertManager"/>
-        <property name="keystore" ref='keystore'/>
+        <property name="keystore" ref="defaultKey"/>
         <property name="certificateAuthenticator" ref="certificateAuthenticator"/>
         <property name="userManager" ref="internalUserManager"/>
         <property name="groupManager" ref="internalGroupManager"/>
@@ -152,7 +171,7 @@
         <property name="clientCertManager" ref="clientCertManager"/>
         <property name="trustedCertManager" ref="cachingTrustedCertManager"/>
         <property name="trustedCertServices" ref="trustedCertServices"/>
-        <property name="keystore" ref='keystore'/>
+        <property name="keystore" ref="defaultKey"/>
         <property name="certValidationProcessor" ref="certValidationProcessor"/>
         <property name="userManager" ref="federatedUserManager"/>
         <property name="groupManager" ref="federatedGroupManager"/>
@@ -185,7 +204,6 @@
     <bean id="clusterInfoManager" class="com.l7tech.server.cluster.ClusterInfoManagerImpl" depends-on="clusterPropertyCache">
         <property name="sessionFactory" ref="sessionFactory"/>
         <property name="serverConfig" ref="serverConfig"/>
-        <property name="keystore" ref="keystore"/>
     </bean>
     <!-- server side Service Usage  manager -->
     <bean id="serviceUsageManager" class="com.l7tech.server.cluster.ServiceUsageManagerImpl">
@@ -327,12 +345,12 @@
 
     <!-- SSL hostname verifier for internode communication -->
     <bean id="internodeHostnameVerifier" class="com.l7tech.server.transport.http.InternodeSslClientHostnameVerifier">
-        <constructor-arg ref="keystore"/>
+        <constructor-arg ref="defaultKey"/>
     </bean>
 
     <!-- HTTP client factory for internode communication -->
     <bean id="internodeHttpClientFactory" class="com.l7tech.server.util.HttpClientFactory">
-        <constructor-arg ref="keystore"/>
+        <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="trustManager"/>
         <constructor-arg ref="internodeHostnameVerifier"/>
     </bean>
@@ -405,7 +423,7 @@
     <bean id="jmsPropertyMapper" class="com.l7tech.server.transport.jms.JmsPropertyMapper">
         <constructor-arg ref="trustedCertManager"/>
         <constructor-arg ref="ssgKeyStoreManager"/>
-        <constructor-arg ref="keystore"/>
+        <constructor-arg ref="defaultKey"/>
     </bean>
 
     <!-- server side policy validator -->
@@ -443,8 +461,8 @@
 
     <!-- server side client cert manager -->
     <bean id="clientCertManager" class="com.l7tech.server.identity.cert.ClientCertManagerImp">
+        <constructor-arg ref="defaultKey"/>
         <property name="sessionFactory" ref="sessionFactory"/>
-        <property name="rootCertificate" ref="rootCertificate"/>
     </bean>
 
     <!-- server side log ring buffer -->
@@ -473,29 +491,26 @@
     </bean>
 
     <!-- keystore root cert and ssl config  -->
-    <bean id="keystore" class="com.l7tech.server.KeystoreUtils">
-        <constructor-arg ref="serverConfig"/>
-        <constructor-arg ref="masterPasswordManager"/>
+    <bean id="defaultKey" class="com.l7tech.server.DefaultKeyImpl">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="clusterPropertyManager"/>
+        <constructor-arg index="2" ref="ssgKeyStoreManager"/>
+    </bean>
+
+    <!-- TODO sslKeyEntry, sslKeystoreCertificate, and sslKeyManagers should be removed so the default SSL key can be changed without a restart -->
+    <bean id="sslKeyEntry" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject" ref="defaultKey"/>
+        <property name="targetMethod" value="getSslInfo"/>
     </bean>
 
     <bean id="sslKeystoreCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="targetObject" ref='keystore'/>
-        <property name="targetMethod" value="getSslCert"/>
-    </bean>
-
-    <bean id="sslKeystorePrivateKey" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="targetObject" ref='keystore'/>
-        <property name="targetMethod" value="getSSLPrivateKey"/>
+        <property name="targetObject" ref="sslKeyEntry"/>
+        <property name="targetMethod" value="getCertificate"/>
     </bean>
 
     <bean id="sslKeyManagers" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="targetObject" ref='keystore'/>
-        <property name="targetMethod" value="getSSLKeyManagers"/>
-    </bean>
-
-    <bean id="rootCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="targetObject" ref='keystore'/>
-        <property name="targetMethod" value="getRootCert"/>
+        <property name="targetObject" ref="defaultKey"/>
+        <property name="targetMethod" value="getSslKeyManagers"/>
     </bean>
 
     <!--
@@ -541,8 +556,7 @@
      </bean>
     <!-- server side policy service -->
     <bean id="policyService" class="com.l7tech.server.policy.PolicyService">
-        <constructor-arg ref="sslKeystorePrivateKey"/>
-        <constructor-arg ref="sslKeystoreCertificate"/>
+        <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="policyFactory"/>
         <constructor-arg ref="policyFilterManager"/>
         <constructor-arg ref="securityTokenResolver"/>
@@ -550,8 +564,7 @@
     </bean>
     <!-- server side token service -->
     <bean id="tokenService" class="com.l7tech.server.TokenServiceImpl">
-        <constructor-arg ref="sslKeystorePrivateKey"/>
-        <constructor-arg ref="sslKeystoreCertificate"/>
+        <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="policyFactory"/>
         <constructor-arg ref="securityTokenResolver"/>
     </bean>
@@ -563,7 +576,7 @@
     <bean id="auditContextImpl" class="com.l7tech.server.audit.AuditContextImpl" singleton="false">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="auditRecordManager"/>
-        <property name="keystore" ref="keystore"/>
+        <property name="keystore" ref="defaultKey"/>
         <property name="auditLogListener" ref="auditLogListener"/>
     </bean>
 
@@ -633,7 +646,7 @@
 
     <bean id="registryPublicationManager" class="com.l7tech.server.uddi.RegistryPublicationManager">
         <property name="serverConfig" ref="serverConfig"/>
-        <property name="keystore" ref="keystore"/>
+        <property name="keystore" ref="defaultKey"/>
     </bean>
 
     <bean id="clusterPropertyManager" class="com.l7tech.server.cluster.ClusterPropertyManagerImpl" parent="hibernateBean">
@@ -659,8 +672,6 @@
     <bean id="securityTokenResolver" class="com.l7tech.server.TrustedAndUserCertificateResolver">
         <constructor-arg ref="clientCertManager"/>
         <constructor-arg ref="trustedCertManager"/>
-        <constructor-arg ref="sslKeystoreCertificate"/>
-        <constructor-arg ref="rootCertificate"/>
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="ssgKeyStoreManager"/>
     </bean>
@@ -741,7 +752,7 @@
     </bean>
 
     <bean id="httpClientFactory" class="com.l7tech.server.util.HttpClientFactory">
-        <constructor-arg ref="keystore"/>
+        <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="trustManager"/>
         <constructor-arg ref="hostnameVerifier"/>
     </bean>
@@ -811,8 +822,8 @@
     <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerImpl" depends-on="gatewaySanityChecker">
         <constructor-arg ref="sharedKeyManager"/>
         <constructor-arg ref="keystoreFileManager"/>
-        <constructor-arg ref="keystore"/>
         <constructor-arg ref="serverConfig"/>
+        <constructor-arg value="${sslkspasswd}"/>
     </bean>
 
     <bean id="ftpServerManager" class="com.l7tech.server.transport.ftp.FtpServerManager">
@@ -823,14 +834,14 @@
         <constructor-arg ref="stashManagerFactory"/>
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="ssgKeyStoreManager"/>
-        <constructor-arg ref="keystore"/>
+        <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="ssgConnectorManager"/>
         <constructor-arg ref="managedBackgroundTimer"/>
     </bean>
 
     <bean id="sharedKeyManager" class="com.l7tech.server.security.sharedkey.SharedKeyManagerImpl">
+        <constructor-arg value="${sslkspasswd}"/>
         <property name="sessionFactory" ref="sessionFactory"/>
-        <property name="keystore" ref='keystore'/>
     </bean>
 
     <bean id="crlCache" class="com.l7tech.server.security.cert.CrlCacheImpl">
@@ -846,7 +857,7 @@
     <bean id="certValidationProcessor" class="com.l7tech.server.security.cert.CertValidationProcessorImpl">
         <constructor-arg ref="trustedCertManager"/>
         <constructor-arg ref="revocationCheckPolicyManager"/>
-        <constructor-arg ref="rootCertificate"/>
+        <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="serverConfig"/>
         <!-- These make use of the certificate validation processor so cannot be constructor args -->
         <property name="crlCache" ref="crlCache"/>
@@ -856,7 +867,7 @@
     <bean id="httpTransportModule" class="com.l7tech.server.transport.http.HttpTransportModule" depends-on="systemAuditListener">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="masterPasswordManager"/>
-        <constructor-arg ref="keystore"/>
+        <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="ssgKeyStoreManager"/>
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="ssgConnectorManager"/>

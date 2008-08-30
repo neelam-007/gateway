@@ -1,47 +1,41 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.Authorizer;
-import com.l7tech.gui.util.GuiCertUtil;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.EntityType;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.ResolvingComparator;
-import com.l7tech.util.Resolver;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.gui.util.GuiCertUtil;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.VersionException;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.util.Resolver;
+import com.l7tech.util.ResolvingComparator;
 
 import javax.swing.*;
-import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.security.NoSuchAlgorithmException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.AccessControlException;
+import java.security.AccessController;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivilegedAction;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Collection;
-import java.util.logging.Logger;
+import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class provides a dialog for viewing a trusted certificate and its usage.
@@ -271,11 +265,6 @@ public class CertPropertiesWindow extends JDialog {
                     public Object run() {
                         try {
                             GuiCertUtil.exportCertificate(CertPropertiesWindow.this, trustedCert.getCertificate());
-                        } catch (CertificateException e) {
-                            logger.warning(resources.getString("cert.decode.error"));
-                            JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
-                                                          resources.getString("save.error.title"),
-                                                          JOptionPane.ERROR_MESSAGE);
                         } catch (AccessControlException ace) {
                             TopComponents.getInstance().showNoPrivilegesErrorMessage();
                         }
@@ -396,15 +385,7 @@ public class CertPropertiesWindow extends JDialog {
             return;
         }
 
-        X509Certificate cert = null;
-        try {
-            cert = trustedCert.getCertificate();
-        } catch (CertificateException e) {
-            logger.warning(resources.getString("cert.decode.error"));
-            JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
-                                          resources.getString("save.error.title"),
-                                          JOptionPane.ERROR_MESSAGE);
-        }
+        X509Certificate cert = trustedCert.getCertificate();
 
         // populate the general data
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");

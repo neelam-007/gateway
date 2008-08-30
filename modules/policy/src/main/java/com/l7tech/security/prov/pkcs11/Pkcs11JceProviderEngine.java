@@ -9,6 +9,7 @@ import com.l7tech.util.SyspropUtil;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import java.security.*;
+import java.security.cert.X509Certificate;
 import java.io.File;
 import java.util.logging.Logger;
 
@@ -67,25 +68,20 @@ public class Pkcs11JceProviderEngine implements JceProviderEngine {
         return PROVIDER;
     }
 
-    public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
-        return new BouncyCastleRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType, PROVIDER.getName());
-    }
-
-    public KeyPair generateRsaKeyPair() {
-        return generateRsaKeyPair(RSA_KEY_LENGTH);
+    public RsaSignerEngine createRsaSignerEngine(PrivateKey caKey, X509Certificate[] caCertChain) {
+        return new BouncyCastleRsaSignerEngine(caKey, caCertChain[0], PROVIDER.getName());
     }
 
     public KeyPair generateRsaKeyPair(int keysize) {
-        KeyPairGenerator kpg = null;
         try {
-            kpg = KeyPairGenerator.getInstance("RSA", PROVIDER.getName());
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", PROVIDER.getName());
+            kpg.initialize(keysize);
+            return kpg.generateKeyPair();
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("PKCS11 JCE provider misconfigured: " + e.getMessage(), e);
         } catch (NoSuchProviderException e) {
             throw new RuntimeException("PKCS11 JCE provider misconfigured: " + e.getMessage(), e);
         }
-        kpg.initialize(keysize);
-        return kpg.generateKeyPair();
     }
 
     public CertificateRequest makeCsr( String username, KeyPair keyPair ) throws SignatureException, InvalidKeyException {

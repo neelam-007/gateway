@@ -4,23 +4,15 @@
 
 package com.l7tech.server.admin.ws;
 
-import com.l7tech.gateway.common.admin.AdminLogin;
-import com.l7tech.gateway.common.admin.AdminLoginResult;
-import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.xml.soap.SoapFaultUtils;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.server.audit.AuditContext;
-import com.l7tech.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.security.xml.processor.*;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.admin.AdminLogin;
+import com.l7tech.gateway.common.admin.AdminLoginResult;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
+import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -30,7 +22,11 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.processor.*;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.system.AdminWebServiceEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
@@ -39,6 +35,11 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.util.DelegatingServletInputStream;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.xml.soap.SoapFaultUtils;
+import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
@@ -53,10 +54,7 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.GeneralSecurityException;
-import java.security.Principal;
-import java.security.PrivateKey;
-import java.security.PrivilegedExceptionAction;
+import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
@@ -103,8 +101,15 @@ public class AdminWebServiceFilter implements Filter {
 
         auditContext = (AuditContext)getBean(applicationContext, "auditContext", "audit context", AuditContext.class);
         soapFaultManager = (SoapFaultManager)getBean(applicationContext, "soapFaultManager", "soapFaultManager", SoapFaultManager.class);
-        serverPrivateKey = (PrivateKey)getBean(applicationContext, "sslKeystorePrivateKey", "server private key", PrivateKey.class);
-        serverCertificate = (X509Certificate)getBean(applicationContext, "sslKeystoreCertificate", "server certificate", X509Certificate.class);
+        DefaultKey defaultKey = (DefaultKey)getBean(applicationContext, "defaultKey", "defaultKey", DefaultKey.class);
+        try {
+            serverPrivateKey = defaultKey.getSslInfo().getPrivateKey();
+            serverCertificate = defaultKey.getSslInfo().getCertificate();
+        } catch (UnrecoverableKeyException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         securityTokenResolver = (SecurityTokenResolver)getBean(applicationContext, "securityTokenResolver", "certificate resolver", SecurityTokenResolver.class);
         stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
         adminLogin = (AdminLogin) applicationContext.getBean("adminLogin", AdminLogin.class);

@@ -1,20 +1,18 @@
 package com.l7tech.policy;
 
-import com.l7tech.policy.IncludeAssertionDereferenceTranslator;
-import com.l7tech.policy.Policy;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionTranslator;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Include;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
-import java.io.IOException;
 
 /**
  * Default policy path builder. The class builds assertion paths from

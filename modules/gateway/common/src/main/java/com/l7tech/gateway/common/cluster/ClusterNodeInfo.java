@@ -99,20 +99,6 @@ public class ClusterNodeInfo extends NamedEntityImp implements Comparable<Cluste
     }
 
     /**
-     * whether or not this node has access to the CA key necessary for signing CSRs
-     */
-    public boolean getIsMaster() {
-        return isMaster;
-    }
-
-    /**
-     * whether or not this node has access to the CA key necessary for signing CSRs
-     */
-    public void setIsMaster(boolean master) {
-        isMaster = master;
-    }
-
-    /**
      * how long has this been running (in ms). this is always calculated at server side.
      */
     public long getUptime() {
@@ -243,7 +229,6 @@ public class ClusterNodeInfo extends NamedEntityImp implements Comparable<Cluste
     private String address;
     private String multicastAddress;
     private int clusterPort;
-    private boolean isMaster;
     private long boottime;
     private long uptime;
     private double avgLoad;

@@ -137,12 +137,7 @@ public class RevocationCheckerFactory {
                 new Functions.Unary<X509Certificate, Long>() {
                     public X509Certificate call(Long oid) {
                         final TrustedCert cert = certValidationProcessor.getTrustedCertByOid(oid);
-                        if (cert == null) return null;
-                        try {
-                            return cert.getCertificate();
-                        } catch (CertificateException e) {
-                            throw new RuntimeException(e); // Can't happen
-                        }
+                        return cert == null ? null : cert.getCertificate();
                     }
                 },
                 keysByTrustedCertOid);

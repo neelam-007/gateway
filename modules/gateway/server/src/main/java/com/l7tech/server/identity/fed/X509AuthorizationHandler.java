@@ -22,7 +22,6 @@ import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 
 import java.io.IOException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -94,14 +93,9 @@ public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
             throw new BadCredentialsException("Signer '" + issuerDn + "' is not trusted");
 
         for (TrustedCert trustedCert : trustedCerts) {
-            try {
-                final X509Certificate trustedX509 = trustedCert.getCertificate();
-                if (CertUtils.isVerified(requestCert, trustedX509.getPublicKey()))
-                    return;
-            } catch (CertificateException e) {
-                // Periodic certificate checking task will eventually notice the corrupt trustedcert and audit it.
-                // FALLTHROUGH and try the next certificate in the list, if any
-            }
+            final X509Certificate trustedX509 = trustedCert.getCertificate();
+            if (CertUtils.isVerified(requestCert, trustedX509.getPublicKey()))
+                return;
         }
 
         throw new BadCredentialsException("Unable to authenticate certificate: no matching valid trusted certificate that is trusted for signing client certificates");

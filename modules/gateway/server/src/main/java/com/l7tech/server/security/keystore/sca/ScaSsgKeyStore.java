@@ -1,29 +1,24 @@
 package com.l7tech.server.security.keystore.sca;
 
-import com.l7tech.security.prov.JceProvider;
-import com.l7tech.security.prov.CertificateRequest;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.security.prov.JceProvider;
+import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore;
 import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.KeystoreFileManager;
 import static com.l7tech.server.security.keystore.SsgKeyFinder.SsgKeyStoreType.PKCS11_HARDWARE;
 import com.l7tech.server.security.keystore.SsgKeyStore;
-import com.l7tech.server.event.AdminInfo;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import org.jboss.util.stream.NullInputStream;
 
-import javax.security.auth.x500.X500Principal;
-import java.security.*;
-import java.security.cert.X509Certificate;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.concurrent.Future;
-import java.util.concurrent.Callable;
-import java.util.List;
-import java.util.ArrayList;
 
 /**
  * SsgKeyStore view of this node's local SCA 6000 board.
@@ -38,8 +33,6 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
     private final long id;
     private final String name;
     private final char[] password;
-    private final String sslAlias;
-    private final String caAlias;
     private final KeystoreFileManager kem;
     private final ScaManager scaManager;
     private KeyStore keystore;
@@ -52,20 +45,18 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
      *
      * @param id  the Id of this keystore, and also the object ID of the KeystoreFile row to use as backing store.  Required.
      * @param name the name to return when asked.  Required.
-     * @param sslAlias  alias of SSL cert in this keystore (ie, "tomcat"), or null if it does not contain one
-     * @param caAlias   alias of CA cert in this keystore (ie, "ssgroot"), or null if it does not contain one
      * @param password the password to use when accessing the PKCS#11 keystore
      * @param kem the KeystoreFileManager.  Required.
      * @return the ScaSsgKeyStore instance for this process
      * @throws KeyStoreException  if the global instance cannot be created
      */
-    public synchronized static ScaSsgKeyStore getInstance(long id, String name, String sslAlias, String caAlias, char[] password, KeystoreFileManager kem) throws KeyStoreException {
+    public synchronized static ScaSsgKeyStore getInstance(long id, String name, char[] password, KeystoreFileManager kem) throws KeyStoreException {
         if (INSTANCE != null)
             return INSTANCE;
-        return INSTANCE = new ScaSsgKeyStore(id, name, sslAlias, caAlias, password, kem);
+        return INSTANCE = new ScaSsgKeyStore(id, name, password, kem);
     }
 
-    private ScaSsgKeyStore(long id, String name, String sslAlias, String caAlias, char[] password, KeystoreFileManager kem) throws KeyStoreException {
+    private ScaSsgKeyStore(long id, String name, char[] password, KeystoreFileManager kem) throws KeyStoreException {
         if (!( JceProvider.PKCS11_ENGINE.equals(JceProvider.getEngineClass())))
             throw new KeyStoreException("Can only create ScaSsgKeyStore if current JceProvider is " + JceProvider.PKCS11_ENGINE);
         if (kem == null)
@@ -79,8 +70,6 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
         this.name = name;
         this.kem = kem;
         this.password = password;
-        this.sslAlias = sslAlias;
-        this.caAlias = caAlias;
     }
 
     public long getOid() {
@@ -164,89 +153,6 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
     @Override
     protected char[] getEntryPassword() {
         return new char[0];  // unused by PKCS#11
-    }
-
-    @Override
-    public List<String> getAliases() throws KeyStoreException {
-        // Convert system to display aliases, sorting SSL and CA to the top of the list, then leaving the
-        // rest in their natural order
-        List<String> aliases = super.getAliases();
-        boolean removedSsl = aliases.remove(sslAlias);
-        boolean removedCa = aliases.remove(caAlias);
-        List<String> ret = new ArrayList<String>();
-        if (removedSsl) ret.add(toDisplayAlias(sslAlias));
-        if (removedCa) ret.add(toDisplayAlias(caAlias));
-        for (String systemAlias : aliases)
-            ret.add(toDisplayAlias(systemAlias));
-        return ret;
-    }
-
-    @Override
-    public SsgKeyEntry getCertificateChain(String displayAlias) throws KeyStoreException {
-        SsgKeyEntry ret = super.getCertificateChain(toSystemAlias(displayAlias));
-        ret.setAlias(toDisplayAlias(ret.getAlias()));
-        return ret;
-    }
-
-    @Override
-    public synchronized Future<Boolean> replaceCertificateChain(final String displayAlias, final X509Certificate[] chain) throws InvalidKeyException, KeyStoreException {
-        return super.replaceCertificateChain(toSystemAlias(displayAlias), chain);
-    }
-
-    @Override
-    public synchronized CertificateRequest makeCertificateSigningRequest(String displayAlias, String dn) throws InvalidKeyException, SignatureException, KeyStoreException {
-        return super.makeCertificateSigningRequest(toSystemAlias(displayAlias), dn);
-    }
-
-    @Override
-    public synchronized Future<Boolean> deletePrivateKeyEntry(final String displayAlias) throws KeyStoreException {
-        String systemAlias = toSystemAlias(displayAlias);
-        if (isSystemAliasUndeletable(systemAlias))
-            throw new KeyStoreException("The specified entry is a system private key and cannot be deleted.");
-        return super.deletePrivateKeyEntry(systemAlias);
-    }
-
-    @Override
-    public synchronized Future<Boolean> storePrivateKeyEntry(final SsgKeyEntry entry, final boolean overwriteExisting) throws KeyStoreException {
-        entry.setAlias(toSystemAlias(entry.getAlias()));
-        if (isSystemAliasReserved(entry.getAlias()))
-            throw new KeyStoreException("The specified private key alias is reserved for system use and cannot be created.");
-        return super.storePrivateKeyEntry(entry, overwriteExisting);
-    }
-
-    @Override
-    public synchronized Future<X509Certificate> generateKeyPair(final String displayAlias, final X500Principal dn, final int keybits, final int expiryDays) throws GeneralSecurityException {
-        String systemAlias = toSystemAlias(displayAlias);
-        if (isSystemAliasUndeletable(systemAlias))
-            throw new KeyStoreException("The specified entry is a system private key and cannot be overwritten.");
-        if (isSystemAliasReserved(systemAlias))
-            throw new KeyStoreException("The specified private key alias is reserved for system use and cannot be created.");
-        return super.generateKeyPair(systemAlias, dn, keybits, expiryDays);
-    }
-
-    private String toDisplayAlias(String systemAlias) {
-        if (systemAlias.equalsIgnoreCase(sslAlias))
-            return "SSL";
-        if (systemAlias.equalsIgnoreCase(caAlias))
-            return "CA";
-        return systemAlias;
-    }
-
-    private String toSystemAlias(String displayAlias) {
-        if (sslAlias != null && displayAlias.equalsIgnoreCase("SSL"))
-            return sslAlias;
-        if (caAlias != null && displayAlias.equalsIgnoreCase("CA"))
-            return caAlias;
-        return displayAlias;
-    }
-
-    private boolean isSystemAliasUndeletable(String systemAlias) {
-        return systemAlias.equalsIgnoreCase(sslAlias) || systemAlias.equalsIgnoreCase(caAlias);
-    }
-
-    private boolean isSystemAliasReserved(String systemAlias) {
-        // Prevent creation of a system alias that might collide with a display alias
-        return ("CA".equalsIgnoreCase(systemAlias) || "SSL".equalsIgnoreCase(systemAlias));
     }
 
     /**

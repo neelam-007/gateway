@@ -20,7 +20,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.xml.SignerInfo;
-import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.Auditor;
@@ -90,8 +90,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         aep.addApplicationListener(jmsInvalidator);
         SignerInfo signerInfo = null;
         try {
-            KeystoreUtils ku = (KeystoreUtils)spring.getBean("keystore", KeystoreUtils.class);
-            signerInfo = ku.getSslSignerInfo();
+            DefaultKey ku = (DefaultKey)spring.getBean("defaultKey", DefaultKey.class);
+            signerInfo = ku.getSslInfo();
         } catch(Exception e) {
             logger.log(Level.WARNING, "Error getting SAML signer information.", e);
         }

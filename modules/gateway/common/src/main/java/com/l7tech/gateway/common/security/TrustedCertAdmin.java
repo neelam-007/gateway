@@ -204,7 +204,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     public List<KeystoreInfo> findAllKeystores(boolean includeHardware) throws IOException, FindException, KeyStoreException;
 
     /**
-     * Retrieves all SsgKeyEntry instances available on this Gateway node.
+     * Retrieves all SsgKeyEntry instances available in the specified keystore.
      *
      * @param keystoreId the key store in which to find the key entries.
      * @return a List of SsgKeyEntry.  May be empty but never null.

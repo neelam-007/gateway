@@ -8,6 +8,7 @@ package com.l7tech.security.prov;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import java.security.*;
+import java.security.cert.X509Certificate;
 
 /**
  * Provides routines that do cryptographic operations using an underlying crypto api.
@@ -15,8 +16,6 @@ import java.security.*;
  * @version 1.0
  */
 public interface JceProviderEngine {
-    int RSA_KEY_LENGTH = 1024;
-
     /**
      * Get the Provider.
      * @return the JCE Provider
@@ -31,21 +30,18 @@ public interface JceProviderEngine {
 
     /**
      * Create an RsaSignerEngine that uses the current crypto API.
+     * This can be used to sign certificates.
      *
-     * @param keyStorePath
-     * @param storePass
-     * @param privateKeyAlias
-     * @param privateKeyPass
+     * @param caKey       CA private key for signing.  Required.
+     * @param caCertChain CA cert chain for signing.  Required.
+     * @return an RsaSignerEngine that can be used to sign certificates.  Never null.
      */
-    RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType);
-
-    /**
-     * Generate an RSA public key / private key pair using the current Crypto provider.
-     */
-    KeyPair generateRsaKeyPair();
+    RsaSignerEngine createRsaSignerEngine(PrivateKey caKey, X509Certificate[] caCertChain);
 
     /**
      * Generate an RSA public key / private key pair using the current Crypto provider with the specified key size.
+     * @param keysize  desired RSA key size in bits, ie 1024.
+     * @return a new RSA KeyPair instance with the specified key size.
      */
     KeyPair generateRsaKeyPair(int keysize);
 
@@ -54,6 +50,9 @@ public interface JceProviderEngine {
      *
      * @param username  the username, ie "lyonsm"
      * @param keyPair  the public and private keys
+     * @return a new PKCS#10 CertificateRequest instance.  Never null.
+     * @throws java.security.InvalidKeyException  if the specified key is unsuitable
+     * @throws java.security.SignatureException   if there is a problem signing the CSR
      */
     CertificateRequest makeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException;
 

@@ -114,6 +114,8 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_SCHEMA_SOFTWARE_FALLBACK = "schemaSoftwareFallback";
 
     public static final String PARAM_KEYSTORE_SEARCH_FOR_ALIAS = "keyStoreSearchForAlias";
+    public static final String PARAM_KEYSTORE_DEFAULT_SSL_KEY = "keyStoreDefaultSslKey";
+    public static final String PARAM_KEYSTORE_DEFAULT_CA_KEY = "keyStoreDefaultCaKey";
 
     public static final String PARAM_CERT_EXPIRY_CHECK_PERIOD = "trustedCert.expiryCheckPeriod";
     public static final String PARAM_CERT_EXPIRY_FINE_AGE = "trustedCert.expiryFineAge";
@@ -400,6 +402,16 @@ public class ServerConfig implements ClusterPropertyListener {
         return getMappedServerConfigPropertyNames(SUFFIX_CLUSTER_KEY, SUFFIX_VISIBLE);
     }
 
+    /**
+     * Get the cluster property name, if any, for the specified ServerConfig property.
+     *
+     * @param serverConfigPropertyName the ServerConfig property whose cluster property name to look up.
+     * @return the cluster property name, or null if there isn't one.
+     */
+    public String getClusterPropertyName(String serverConfigPropertyName) {
+        return getPropertyUncached(serverConfigPropertyName + SUFFIX_CLUSTER_KEY, false);
+    }
+
     public String getNameFromClusterName(String clusterPropertyName) {
         return getServerConfigPropertyName(SUFFIX_CLUSTER_KEY, clusterPropertyName);
     }
@@ -489,11 +501,17 @@ public class ServerConfig implements ClusterPropertyListener {
 
             if (hostname == null) {
                 try {
-                    hostname = InetAddress.getLocalHost().getHostName();
+                    hostname = InetAddress.getLocalHost().getCanonicalHostName().toLowerCase();
                 } catch (UnknownHostException e) {
-                    logger.warning("HostName parameter not set and discovery failed.");
+                    try {
+                        hostname = InetAddress.getLocalHost().getHostName().toLowerCase();
+                    } catch (UnknownHostException e1) {
+                        logger.warning("HostName parameter not set and discovery failed.");
+                    }
                 }
             }
+
+            if (hostname == null) hostname = "UnknownGateway";
 
             propLock.writeLock().lock();
             try {

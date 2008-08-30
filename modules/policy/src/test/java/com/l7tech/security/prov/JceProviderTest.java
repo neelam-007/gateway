@@ -46,17 +46,11 @@ public class JceProviderTest {
     @Test
     public void testJceProviderMappings() {
         String bcmapped = JceProvider.mapEngine( "com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine" );
-        String rsmapped = JceProvider.mapEngine( "com.l7tech.common.security.prov.rsa.RsaJceProviderEngine" );
-        String ncmapped = JceProvider.mapEngine( "com.l7tech.common.security.prov.ncipher.NcipherJceProviderEngine" );
         String sjmapped = JceProvider.mapEngine( "com.l7tech.common.security.prov.sun.SunJceProviderEngine" );
-        String ljmapped = JceProvider.mapEngine( "com.l7tech.common.security.prov.luna.LunaJceProviderEngine" );
         String pjmapped = JceProvider.mapEngine( "com.l7tech.common.security.prov.pkcs11.Pkcs11JceProviderEngine" );
 
         Assert.assertEquals("BC Provider mapped", JceProvider.BC_ENGINE, bcmapped);
-        Assert.assertEquals("RSA Provider mapped", JceProvider.RSA_ENGINE, rsmapped);
-        Assert.assertEquals("NCIPHER Provider mapped", JceProvider.NCIPHER_ENGINE, ncmapped);
         Assert.assertEquals("SUN Provider mapped", JceProvider.SUN_ENGINE, sjmapped);
-        Assert.assertEquals("LUNA Provider mapped", JceProvider.LUNA_ENGINE, ljmapped);
         Assert.assertEquals("PKCS11 Provider mapped", JceProvider.PKCS11_ENGINE, pjmapped);
     }
 

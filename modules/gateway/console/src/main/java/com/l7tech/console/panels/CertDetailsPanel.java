@@ -1,13 +1,12 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.security.cert.TrustedCert;
 
 import javax.swing.*;
 import java.awt.*;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -78,56 +77,45 @@ public class CertDetailsPanel extends WizardStepPanel {
             if (settings instanceof TrustedCert) {
                 TrustedCert tc = (TrustedCert) settings;
 
-                if (tc != null) {
-                    try {
-                        cert = tc.getCertificate();
+                cert = tc.getCertificate();
+                if (cert != null) {
 
-                    } catch (CertificateException e) {
-                        logger.warning(resources.getString("cert.decode.error"));
-                        JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
-                                           resources.getString("save.error.title"),
-                                           JOptionPane.ERROR_MESSAGE);
+                    // retrieve the value of cn
+                    String subjectName = cert.getSubjectDN().getName();
+                    String cn = CertUtils.extractCommonNameFromClientCertificate(cert);
+
+                    if(cn.length() > 0) {
+                         certNameTextField.setText(cn);
+                    }
+                    else {
+                        // cn NOT found, use the subject name
+                        certNameTextField.setText(subjectName);
                     }
 
-                    if (cert != null) {
+                    // remove the old view
+                    if (certView != null) {
+                        certPanel.remove(certView);
+                    }
 
-                        // retrieve the value of cn
-                        String subjectName = cert.getSubjectDN().getName();
-                        String cn = CertUtils.extractCommonNameFromClientCertificate(cert);
-
-                        if(cn.length() > 0) {
-                             certNameTextField.setText(cn);
-                        }
-                        else {
-                            // cn NOT found, use the subject name
-                            certNameTextField.setText(subjectName);
+                    try {
+                        certView = getCertView();
+                        if (certView == null) {
+                            certView = new JLabel();
                         }
 
-                        // remove the old view
-                        if (certView != null) {
-                            certPanel.remove(certView);
-                        }
+                        certPanel.add(certView);
 
-                        try {
-                            certView = getCertView();
-                            if (certView == null) {
-                                certView = new JLabel();
-                            }
+                        revalidate();
+                        repaint();
 
-                            certPanel.add(certView);
-
-                            revalidate();
-                            repaint();
-
-                        } catch (CertificateEncodingException ee) {
-                            logger.warning("Unable to decode the certificate issued to: " + cert.getSubjectDN().getName());
-                            JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.encode.error"),
-                                           resources.getString("save.error.title"),
-                                           JOptionPane.ERROR_MESSAGE);
-                        } catch (NoSuchAlgorithmException ae) {
-                            logger.warning("Unable to decode the certificate issued to: " + cert.getSubjectDN().getName() +
-                                    ", Algorithm is not supported:" + cert.getSigAlgName());
-                        }
+                    } catch (CertificateEncodingException ee) {
+                        logger.warning("Unable to decode the certificate issued to: " + cert.getSubjectDN().getName());
+                        JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.encode.error"),
+                                       resources.getString("save.error.title"),
+                                       JOptionPane.ERROR_MESSAGE);
+                    } catch (NoSuchAlgorithmException ae) {
+                        logger.warning("Unable to decode the certificate issued to: " + cert.getSubjectDN().getName() +
+                                ", Algorithm is not supported:" + cert.getSigAlgName());
                     }
                 }
             }
@@ -150,15 +138,9 @@ public class CertDetailsPanel extends WizardStepPanel {
                 TrustedCert tc = (TrustedCert) settings;
 
                 if (cert != null) {
-                    try {
-                        tc.setCertificate(cert);
-                        tc.setName(certNameTextField.getText().trim());
-                        tc.setSubjectDn(cert.getSubjectDN().getName());
-
-                    } catch (CertificateEncodingException e) {
-                        logger.warning("Unable to decode the certificate issued to: " + cert.getSubjectDN().getName());
-                        cert = null;
-                    }
+                    tc.setCertificate(cert);
+                    tc.setName(certNameTextField.getText().trim());
+                    tc.setSubjectDn(cert.getSubjectDN().getName());
                 }
             }
         }
@@ -171,7 +153,7 @@ public class CertDetailsPanel extends WizardStepPanel {
         return "View Certificate Details";
     }
 
-    /**
+    /*
      * Returns a properties instance filled out with info about the certificate.
      */
     private JComponent getCertView()

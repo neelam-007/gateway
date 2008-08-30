@@ -169,7 +169,10 @@ public class TrustedCertManagerImp
 
     @Transactional(readOnly=true)
     public Collection<TrustedCert> getCachedCertsBySubjectDn(final String dn) throws FindException {
-        return findBySubjectDn(dn);
+        Collection<TrustedCert> certs = findBySubjectDn(dn);
+        for (TrustedCert cert : certs)
+            cert.setReadOnly();
+        return certs;
     }
 
     @Transactional(readOnly=true)
@@ -213,13 +216,9 @@ public class TrustedCertManagerImp
     }
 
     protected Map<String,Object> getUniqueAttributeMap(TrustedCert cert) {
-        try {
-            Map<String,Object> map = new HashMap<String, Object>();
-            map.put("thumbprintSha1", cert.getThumbprintSha1());
-            return map;
-        } catch (CertificateException e) {
-            throw new RuntimeException(e);
-        }
+        Map<String,Object> map = new HashMap<String, Object>();
+        map.put("thumbprintSha1", cert.getThumbprintSha1());
+        return map;
     }
 
     @Override
@@ -285,12 +284,7 @@ public class TrustedCertManagerImp
             try {
                 for (TrustedCert trustedCert : trustedCerts) {
                     final X509Certificate cert;
-                    try {
-                        cert = trustedCert.getCertificate();
-                    } catch (CertificateException e) {
-                        auditor.logAndAudit(SystemMessages.CERT_EXPIRY_BAD_CERT, Long.toString(trustedCert.getOid()), trustedCert.getSubjectDn());
-                        continue;
-                    }
+                    cert = trustedCert.getCertificate();
 
                     final long expiresUTC = cert.getNotAfter().getTime();
                     final long millisUntilExpiry = expiresUTC - nowUTC;

@@ -1,49 +1,42 @@
 package com.l7tech.server.transport.ftp;
 
-import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.ftpserver.ConfigurableFtpServerContext;
 import org.apache.ftpserver.FtpServer;
 import org.apache.ftpserver.FtpSessionImpl;
 import org.apache.ftpserver.config.PropertiesConfiguration;
-import org.apache.ftpserver.ftplet.FileSystemManager;
-import org.apache.ftpserver.ftplet.Ftplet;
-import org.apache.ftpserver.ftplet.UserManager;
-import org.apache.ftpserver.ftplet.FtpRequest;
-import org.apache.ftpserver.ftplet.FtpSession;
+import org.apache.ftpserver.ftplet.*;
 import org.apache.ftpserver.interfaces.CommandFactory;
 import org.apache.ftpserver.interfaces.FtpServerContext;
 import org.apache.ftpserver.interfaces.IpRestrictor;
 import org.apache.ftpserver.interfaces.Ssl;
-import org.apache.ftpserver.listener.Listener;
-import org.apache.ftpserver.listener.ConnectionManager;
 import org.apache.ftpserver.listener.Connection;
+import org.apache.ftpserver.listener.ConnectionManager;
+import org.apache.ftpserver.listener.Listener;
 import org.apache.ftpserver.listener.mina.MinaConnection;
 import org.apache.mina.common.support.BaseIoSession;
 import org.springframework.context.ApplicationListener;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.PrivateKey;
-import java.security.KeyStoreException;
-import java.security.cert.X509Certificate;
-import java.lang.reflect.Field;
 
 /**
  * Creates and controls an embedded FTP server for each configured SsgConnector
@@ -60,7 +53,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
                             final StashManagerFactory stashManagerFactory,
                             final LicenseManager licenseManager,
                             final SsgKeyStoreManager ssgKeyStoreManager,
-                            final KeystoreUtils defaultKeystore,
+                            final DefaultKey defaultKeystore,
                             final SsgConnectorManager ssgConnectorManager,
                             final Timer timer) {
         super("FTP Server Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager);
@@ -169,7 +162,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
     private final SoapFaultManager soapFaultManager;
     private final StashManagerFactory stashManagerFactory;
     private final SsgKeyStoreManager ssgKeyStoreManager;
-    private final KeystoreUtils defaultKeystore;
+    private final DefaultKey defaultKeystore;
     private final SsgConnectorManager ssgConnectorManager;
     private final Timer timer;
     private final Map<Long, FtpServer> ftpServers = new ConcurrentHashMap<Long, FtpServer>();
@@ -226,10 +219,8 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         if (alias == null) {
             // Use SSL key
             try {
-                X509Certificate[] chain = defaultKeystore.getSSLCertChain();
-                PrivateKey pk = defaultKeystore.getSSLPrivateKey();
-                return new SsgKeyEntry(-1, "SSL", chain, pk);
-            } catch (KeyStoreException e) {
+                return defaultKeystore.getSslInfo();
+            } catch (IOException e) {
                 throw new ListenerException("Unable to find private key for connector id " + connector.getOid() + ": " + ExceptionUtils.getMessage(e), e);
             }
         }

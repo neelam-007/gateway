@@ -1,31 +1,28 @@
 package com.l7tech.server.config;
 
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.common.io.ProcResult;
 import com.l7tech.common.io.ProcUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.config.db.DBActions;
 import com.l7tech.server.config.db.DBInformation;
 import com.l7tech.server.config.exceptions.KeystoreActionsException;
 import com.l7tech.server.config.exceptions.WrongKeystorePasswordException;
 import com.l7tech.server.config.ui.console.ConsoleWizardUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.ResourceUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.security.Provider;
 import java.security.Security;
 import java.sql.*;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -101,8 +98,9 @@ public class KeystoreActions {
                 System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.PKCS11_ENGINE);
                 break;
             case LUNA_KEYSTORE_NAME:
-                prepareLunaProviders();
-                System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.LUNA_ENGINE);
+                logger.log(Level.SEVERE, "Unsupported keystore type name (will use BC instead): " + ksType);
+                prepareProviders(KeyStoreConstants.DEFAULT_SECURITY_PROVIDERS);
+                System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.BC_ENGINE);
                 break;
         }
     }
@@ -132,64 +130,6 @@ public class KeystoreActions {
                 throw e;
             }
         }
-    }
-
-    private void prepareLunaProviders() throws FileNotFoundException, IllegalAccessException, InstantiationException {
-        File classDir = new File(osFunctions.getPathToJreLibExt());
-        if (!classDir.exists()) {
-            throw new FileNotFoundException("Could not locate the directory: \"" + classDir + "\"");
-        }
-
-        File[] lunaJars = classDir.listFiles(new FilenameFilter() {
-            public boolean accept(File file, String s) {
-                return  s.toUpperCase().startsWith("LUNA") &&
-                        s.toUpperCase().endsWith(".JAR");
-            }
-        });
-
-        if (lunaJars == null) {
-            throw new FileNotFoundException("Could not locate the Luna jar files in the specified directory: \"" + classDir + "\"");
-        }
-
-        URLClassLoader sysloader = (URLClassLoader)ClassLoader.getSystemClassLoader();
-        Class sysclass = URLClassLoader.class;
-        //this is a necessary hack to be able to hotplug some jars into the classloaders classpath.
-        // On linux, this happens already, but  not on windows
-
-        try {
-            Class[] parameters = new Class[]{URL.class};
-            Method method = sysclass.getDeclaredMethod("addURL", parameters);
-            method.setAccessible(true);
-            for (File lunaJar : lunaJars) {
-                URL url = lunaJar.toURI().toURL();
-                method.invoke(sysloader, new Object[]{url});
-            }
-            Class lunaJCAClass;
-            String lunaJCAClassName = "com.chrysalisits.crypto.LunaJCAProvider";
-            Class lunaJCEClass;
-            String lunaJCEClassName = "com.chrysalisits.cryptox.LunaJCEProvider";
-
-            try {
-                lunaJCAClass = sysloader.loadClass(lunaJCAClassName);
-                Object lunaJCA = lunaJCAClass.newInstance();
-                Security.addProvider((Provider) lunaJCA);
-
-                lunaJCEClass = sysloader.loadClass(lunaJCEClassName);
-                Object lunaJCE = lunaJCEClass.newInstance();
-                Security.addProvider((Provider) lunaJCE);
-
-            } catch (ClassNotFoundException cnfe) {
-                cnfe.printStackTrace();
-            }
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-        Security.addProvider(new sun.security.provider.Sun());
-        Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
     }
 
     /**

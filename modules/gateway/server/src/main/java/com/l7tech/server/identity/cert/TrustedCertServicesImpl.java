@@ -53,17 +53,14 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
         Collection<TrustedCert> trustedsWithDn = trustedCertManager.getCachedCertsBySubjectDn(subjectDn);
         List<TrustedCert> ret = new ArrayList<TrustedCert>();
         for (TrustedCert trusted : trustedsWithDn) {
-            try {
-                if (omitExpired && !CertUtils.isValid(trusted.getCertificate()))
-                    continue;
-                if (requiredTrustFlags != null && !trusted.isTrustedForAll(requiredTrustFlags))
-                    continue;
-                if (requiredOids != null && !requiredOids.contains(trusted.getOid()))
-                    continue;
-                ret.add(trusted);
-            } catch (CertificateException e) {
-                // Periodic check will eventually audit a warning about this corrupt cert
-            }
+            if (omitExpired && !CertUtils.isValid(trusted.getCertificate()))
+                continue;
+            if (requiredTrustFlags != null && !trusted.isTrustedForAll(requiredTrustFlags))
+                continue;
+            if (requiredOids != null && !requiredOids.contains(trusted.getOid()))
+                continue;
+            trusted.setReadOnly();
+            ret.add(trusted);
         }
         return ret;
     }

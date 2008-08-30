@@ -5,16 +5,15 @@
 
 package com.l7tech.security.xml;
 
-import com.l7tech.security.token.KerberosSecurityToken;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.token.KerberosSecurityToken;
 import com.l7tech.util.ExceptionUtils;
 
-import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,48 +24,20 @@ import java.util.logging.Logger;
 public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     private static final Logger logger = Logger.getLogger(SimpleSecurityTokenResolver.class.getName());
 
-    private Cert[] certs;
-    private final MyKey[] keys;
+    private final List<Cert> certs = new ArrayList<Cert>();
+    private final List<MyKey> keys = new ArrayList<MyKey>();
     private Map<String, byte[]> encryptedKeys = new HashMap<String, byte[]>();
     private Map<String, KerberosSecurityToken> kerberosTokens = new HashMap<String, KerberosSecurityToken>();
 
-    private static class Cert {
-        private final X509Certificate cert;
-        private String thumb = null;
-        private String ski = null;
-        private Principal subjectDn = null;
+    private static class Cert extends TrustedCert {
 
         public Cert(X509Certificate cert) {
-            this.cert = cert;
-        }
-
-        public String getThumb() {
-            if (thumb == null && cert != null) {
-                try {
-                    thumb = CertUtils.getThumbprintSHA1(cert);
-                } catch (CertificateEncodingException e) {
-                    logger.log(Level.WARNING, "Invalid certificate: " + e.getMessage(), e);
-                }
-            }
-            return thumb;
-        }
-
-        public String getSki() {
-            if (ski == null && cert != null) {
-                ski = CertUtils.getSki(cert);
-            }
-            return ski;
+            if (cert == null) throw new NullPointerException("A certificate is required");
+            setCertificate(cert);
         }
 
         public Object getPayload() {
-            return cert;
-        }
-
-        public Principal getSubjectDN() {
-            if (subjectDn == null && cert != null) {
-                subjectDn = cert.getSubjectDN();
-            }
-            return subjectDn;
+            return getCertificate();
         }
     }
 
@@ -78,7 +49,6 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
             this.signerInfo = info;
         }
 
-        @Override
         public Object getPayload() {
             return signerInfo;
         }
@@ -89,16 +59,15 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
      * (wiring up beans that require a resolver).
      */
     public SimpleSecurityTokenResolver() {
-        this.certs = new Cert[0];
-        this.keys = new MyKey[0];
     }
 
     /**
      * Create a thumbprint resolver that will recognize any cert in the specified list.
      * For convenience, the certs array may contain nulls which will be ignored.
      * @param certs certs to resolve
+     * @throws java.security.cert.CertificateEncodingException if one of the certificates cannot be encoded
      */
-    public SimpleSecurityTokenResolver(X509Certificate[] certs) {
+    public SimpleSecurityTokenResolver(X509Certificate[] certs) throws CertificateEncodingException {
         this(certs, null);
     }
 
@@ -106,8 +75,9 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
      * Create a resolver that will recognize the specified cert.
      *
      * @param cert the cert to resolve
+     * @throws java.security.cert.CertificateEncodingException if the certificate cannot be encoded
      */
-    public SimpleSecurityTokenResolver(X509Certificate cert) {
+    public SimpleSecurityTokenResolver(X509Certificate cert) throws CertificateEncodingException {
         this(new X509Certificate[] { cert });
     }
 
@@ -130,35 +100,28 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
      * @param privateKeys keys to resolve
      */
     public SimpleSecurityTokenResolver(X509Certificate[] certs, SignerInfo[] privateKeys) {
-        if (certs != null) {
-            this.certs = new Cert[certs.length];
-            for (int i = 0; i < certs.length; i++)
-                this.certs[i] = new Cert(certs[i]);
-        } else {
-            this.certs = new Cert[0];
-        }
-        if (privateKeys != null) {
-            this.keys = new MyKey[privateKeys.length];
-            for (int i = 0; i < privateKeys.length; i++)
-                this.keys[i] = new MyKey(privateKeys[i]);
-        } else {
-            this.keys = new MyKey[0];
-        }
+        addCerts(certs);
+        addPrivateKeys(privateKeys);
     }
 
     public void addCerts(X509Certificate[] newcerts) {
-        int newSize = newcerts.length;
-        if (certs != null) newSize += certs.length;
-        Cert[] sum = new Cert[newSize];
-        int pos = 0;
-        if (certs != null) {
-            System.arraycopy(certs, 0, sum, 0, certs.length);
-            pos += certs.length;
+        if (newcerts != null) for (X509Certificate newcert : newcerts) {
+            addCert(newcert);
         }
-        for (int i = 0; i < newcerts.length; i++) {
-            sum[i+pos] = new Cert(newcerts[i]);
+    }
+
+    public void addCert(X509Certificate cert) {
+        if (cert != null) certs.add(new Cert(cert));
+    }
+
+    public void addPrivateKeys(SignerInfo[] privateKeys) {
+        if (privateKeys != null) for (SignerInfo privateKey : privateKeys) {
+            addPrivateKey(privateKey);
         }
-        certs = sum;
+    }
+
+    private void addPrivateKey(SignerInfo privateKey) {
+        if (privateKey != null) keys.add(new MyKey(privateKey));
     }
 
     public X509Certificate lookup(String thumbprint) {
@@ -169,10 +132,10 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         return null;
     }
 
-    private <C extends Cert> Object doLookupByX09Thumbprint(C[] toSearch, String thumbprint) {
+    private <C extends Cert> Object doLookupByX09Thumbprint(Collection<C> toSearch, String thumbprint) {
         for (Cert cert : toSearch) {
-            String thumb = cert.getThumb();
-            if (thumb != null && thumb.equals(thumbprint))
+            String thumb = cert.getThumbprintSha1();
+            if (thumb != null && thumb.equals(thumbprint))             
                 return cert.getPayload();
         }
         return null;
@@ -186,7 +149,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         return null;
     }
 
-    private <C extends Cert> Object doLookupBySki(C[] toSearch, String targetSki) {
+    private <C extends Cert> Object doLookupBySki(Collection<C> toSearch, String targetSki) {
         for (Cert cert : toSearch) {
             String ski = cert.getSki();
             if (ski != null && ski.equals(targetSki))
@@ -203,9 +166,9 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         return null;
     }
 
-    private <C extends Cert> Object doLookupByKeyName(C[] toSearch, String keyName) {
+    private <C extends Cert> Object doLookupByKeyName(Collection<C> toSearch, String keyName) {
         for (final Cert cert : toSearch) {
-            final String name = cert.getSubjectDN().getName();
+            final String name = cert.getSubjectDn();
             if (name != null && name.equals(keyName))
                 return cert.getPayload();
         }

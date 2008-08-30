@@ -316,7 +316,12 @@ public final class License implements Serializable {
         Element signature = DomUtils.findOnlyOneChildElementByName(lic, DsigUtil.DIGSIG_URI, "Signature");
         if (signature != null && trustedIssuers != null) {
             // See if it is valid and if we trust it
-            X509Certificate gotCert = DsigUtil.checkSimpleEnvelopedSignature(signature, new SimpleSecurityTokenResolver(trustedIssuers));
+            X509Certificate gotCert = null;
+            try {
+                gotCert = DsigUtil.checkSimpleEnvelopedSignature(signature, new SimpleSecurityTokenResolver(trustedIssuers));
+            } catch (CertificateEncodingException e) {
+                throw new SignatureException("Unable to encode trusted issuer certificate: " + ExceptionUtils.getMessage(e), e);
+            }
             X509Certificate foundTrustedIssuer = null;
             //noinspection ForLoopReplaceableByForEach
             for (int i = 0; i < trustedIssuers.length; i++) {

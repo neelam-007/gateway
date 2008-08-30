@@ -1,7 +1,7 @@
 package com.l7tech.server.transport.http;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.DefaultKey;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
@@ -23,10 +23,10 @@ public class InternodeSslClientHostnameVerifier implements HostnameVerifier {
 
     private static final Logger _logger = Logger.getLogger(InternodeSslClientHostnameVerifier.class.getName());
 
-    private final KeystoreUtils _keystoreUtils;
+    private final DefaultKey defaultKey;
 
-    public InternodeSslClientHostnameVerifier(final KeystoreUtils keystoreUtils) {
-        _keystoreUtils = keystoreUtils;
+    public InternodeSslClientHostnameVerifier(final DefaultKey defaultKey) {
+        this.defaultKey = defaultKey;
     }
 
     /**
@@ -40,7 +40,7 @@ public class InternodeSslClientHostnameVerifier implements HostnameVerifier {
                 final Certificate[] certChain = sslSession.getPeerCertificates();
                 if (certChain.length > 0 && certChain[0] instanceof X509Certificate) {
                     X509Certificate certificate = (X509Certificate) certChain[0];
-                    verified = CertUtils.certsAreEqual(certificate, _keystoreUtils.getSslCert());
+                    verified = CertUtils.certsAreEqual(certificate, defaultKey.getSslInfo().getCertificate());
                 }
             } catch (Exception e) {
                 _logger.log(Level.WARNING, "Could not verify certificate.", e);

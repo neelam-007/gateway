@@ -1,5 +1,10 @@
 package com.l7tech.util;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -7,14 +12,9 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.security.Key;
+import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPublicKey;
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Utility class for encryption/decryption routines.
@@ -27,28 +27,29 @@ public class EncryptionUtil {
     //- PUBLIC
 
     /**
-     * Encrypt the given data.
+     * Obfuscate the given data by encrypting it with AES using a key derived from the specified keyMod.
      *
      * @param data the text to encrypt
      * @param keyMod the text used to obscure the hard-coded key
      * @return the encoded text (base64)
      * @throws IllegalArgumentException on error
      */
-    public static String encrypt(String data, String keyMod) {
+    public static String obfuscate(String data, String keyMod) {
         if(keyMod==null) throw new IllegalArgumentException("keyMod must not be null");
         if(keyMod.length()==0) throw new IllegalArgumentException("keyMod must not be empty");
         return encrypt(data, generatedModifedKey(DEFAULT_KEY, keyMod));
     }
 
     /**
-     * Decrypt the given data.
+     * De-obfuscate data that was previous obfuscated by calling {@link #obfuscate(String, String)} with the
+     * same keyMod.
      *
      * @param data the (base64) text to decrypt
      * @param keyMod the text used to obscure the hard-coded key
      * @return the decrypted text
      * @throws IllegalArgumentException on error
      */
-    public static String decrypt(String data, String keyMod) {
+    public static String deobfuscate(String data, String keyMod) {
         if(keyMod==null) throw new IllegalArgumentException("keyMod must not be null");
         if(keyMod.length()==0) throw new IllegalArgumentException("keyMod must not be empty");
         return decrypt(data, generatedModifedKey(DEFAULT_KEY, keyMod));
@@ -193,7 +194,7 @@ public class EncryptionUtil {
     // Encode strings using UTF-8
     private static final String DEFAULT_ENCODING = "UTF-8";
 
-    // Random default key
+    // Random default key for obfuscate and deobfuscate
     private static final byte[] DEFAULT_KEY = new byte[]{(byte)0xa2, (byte)0xb5, (byte)0xfb, (byte)0x9c
                                                         ,(byte)0x11, (byte)0x91, (byte)0x3a, (byte)0x82
                                                         ,(byte)0xea, (byte)0x5e, (byte)0xd3, (byte)0xba

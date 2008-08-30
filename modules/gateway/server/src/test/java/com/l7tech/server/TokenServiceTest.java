@@ -92,8 +92,7 @@ public class TokenServiceTest extends TestCase {
 
         ((SimpleSecurityTokenResolver)testTokenResolver).addCerts( new X509Certificate[]{TestDocuments.getDotNetServerCertificate()} );
 
-        final TokenService service = new TokenServiceImpl(TestDocuments.getDotNetServerPrivateKey(),
-                                                      TestDocuments.getDotNetServerCertificate(),
+        final TokenService service = new TokenServiceImpl(new TestDefaultKey(),
                                                       (ServerPolicyFactory)applicationContext.getBean("policyFactory"),
                                                       testTokenResolver)
         {
@@ -151,8 +150,7 @@ public class TokenServiceTest extends TestCase {
         requestMsg.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
         log.info("Decorated token request (reformatted): " + XmlUtil.nodeToFormattedString(requestMsg));
 
-        final TokenService service = new TokenServiceImpl(issuerPrivateKey,
-                                                          issuerCertificate,
+        final TokenService service = new TokenServiceImpl(new TestDefaultKey(issuerCertificate, issuerPrivateKey),
                                                           (ServerPolicyFactory)applicationContext.getBean("policyFactory"),
                                                           (SecurityTokenResolver)applicationContext.getBean("securityTokenResolver"));
 

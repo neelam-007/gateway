@@ -171,10 +171,6 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             final String msg = "Couldn't find TrustedCert entry for assertion signer";
             logger.log(Level.SEVERE, msg, e);
             throw new AuthenticationException(msg, e);
-        } catch (CertificateException e) {
-            final String msg = "Couldn't decode signing certificate";
-            logger.log(Level.WARNING, msg, e);
-            throw new AuthenticationException(msg, e);
         }
     }
 
@@ -195,10 +191,6 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
         } catch (FindException e) {
             final String msg = "Couldn't find TrustedCert entry for Attesting Entity Certificate";
             logger.log(Level.SEVERE, msg, e);
-            throw new AuthenticationException(msg, e);
-        } catch (CertificateException e) {
-            final String msg = "Couldn't decode signing Attesting Entity Certificate";
-            logger.log(Level.WARNING, msg, e);
             throw new AuthenticationException(msg, e);
         }
     }

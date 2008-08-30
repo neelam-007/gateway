@@ -24,14 +24,12 @@ import java.util.Set;
 @XmlRootElement
 public class TrustedCert extends X509Entity implements Serializable, Cloneable {
     public void copyFrom(TrustedCert cert) {
+        mutate();
+        super.copyFrom(cert);
         this._name = cert._name;
-        this.certBase64 = cert.certBase64;
-        this.cachedCert = cert.cachedCert;
-        this.subjectDn = cert.subjectDn;
         this.trustedFor.clear();
         this.trustedFor.addAll(cert.trustedFor);
         this.verifyHostname = cert.verifyHostname;
-        this.thumbprintSha1 = cert.thumbprintSha1;
     }
 
     public static final String CERT_FACTORY_ALGORITHM = "X.509";
@@ -217,7 +215,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * @return the cert subject's DN (distinguished name)
      */
     public String getSubjectDn() {
-        return subjectDn;
+        return super.getSubjectDn();
     }
 
     /**
@@ -225,7 +223,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * @param subjectDn the cert subject's DN (distinguished name)
      */
     public void setSubjectDn( String subjectDn ) {
-        this.subjectDn = subjectDn;
+        super.setSubjectDn(subjectDn);
     }
 
     /**
@@ -239,6 +237,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * @param trustAnchor true if this certificate is a trust anchor, i.e. path validation doesn't need to proceed any higher
      */
     public void setTrustAnchor(boolean trustAnchor) {
+        mutate();
         this.trustAnchor = trustAnchor;
     }
 
@@ -247,6 +246,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
     }
 
     public void setRevocationCheckPolicyType(PolicyUsageType revocationCheckPolicyType) {
+        mutate();
         this.revocationCheckPolicyType = revocationCheckPolicyType;
     }
 
@@ -255,6 +255,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
     }
 
     public void setRevocationCheckPolicyOid(Long oid) {
+        mutate();
         this.revocationCheckPolicyOid = oid;
     }
 
@@ -296,6 +297,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * @param value  the new value to set it to.
      */
     public void setTrustedFor(TrustedFor flag, boolean value) {
+        mutate();
         if (flag == null) throw new NullPointerException();
         if (value)
             trustedFor.add(flag);
@@ -313,7 +315,6 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
 
         if (trustAnchor != that.trustAnchor) return false;
         if (verifyHostname != that.verifyHostname) return false;
-        if (subjectDn != null ? !subjectDn.equals(that.subjectDn) : that.subjectDn != null) return false;
         if (trustedFor != null ? !trustedFor.equals(that.trustedFor) : that.trustedFor != null) return false;
 
         return true;
@@ -321,7 +322,6 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
 
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (subjectDn != null ? subjectDn.hashCode() : 0);
         result = 31 * result + (trustedFor != null ? trustedFor.hashCode() : 0);
         result = 31 * result + (verifyHostname ? 1 : 0);
         result = 31 * result + (trustAnchor ? 1 : 0);
@@ -330,7 +330,6 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
         return result;
     }
 
-    private String subjectDn;
     private final Set<TrustedFor> trustedFor = EnumSet.noneOf(TrustedFor.class);
     private boolean verifyHostname;
     private boolean trustAnchor;

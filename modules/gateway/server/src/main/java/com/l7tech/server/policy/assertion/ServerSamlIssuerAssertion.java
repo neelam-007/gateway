@@ -3,19 +3,12 @@
  */
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.identity.User;
 import com.l7tech.message.Message;
 import com.l7tech.message.TcpKnob;
 import com.l7tech.message.XmlKnob;
-import com.l7tech.security.saml.*;
-import com.l7tech.security.xml.SignerInfo;
-import com.l7tech.security.xml.KeyInfoInclusionType;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.security.xml.decorator.WssDecorator;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SamlIssuerAssertion;
@@ -23,12 +16,24 @@ import static com.l7tech.policy.assertion.SamlIssuerAssertion.DecorationType.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
-import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.security.saml.Attribute;
+import com.l7tech.security.saml.SamlAssertionGenerator;
+import com.l7tech.security.saml.SamlConstants;
+import com.l7tech.security.saml.SubjectStatement;
+import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.server.policy.assertion.xmlsec.ServerResponseWssIntegrity;
+import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -37,7 +42,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.security.PrivateKey;
+import java.security.KeyStoreException;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -72,17 +77,17 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             auditor = new Auditor(this, spring, logger);
         }
         ServerConfig sc = (ServerConfig) spring.getBean("serverConfig");
-        X509Certificate serverCert = (X509Certificate) spring.getBean("sslKeystoreCertificate");
         this.decorator = (WssDecorator) spring.getBean("wssDecorator");
 
         this.defaultBeforeOffsetMinutes = sc.getIntProperty("samlBeforeOffsetMinute", 2);
         this.varsUsed = assertion.getVariablesUsed();
         this.confirmationMethod = SubjectStatement.Confirmation.forUri(assertion.getSubjectConfirmationMethodUri());
-
-        if (serverCert == null) throw new IllegalStateException("Unable to locate server certificate");
-        X509Certificate[] serverCertChain = new X509Certificate[]{serverCert};
-        this.signerInfo = new SignerInfo((PrivateKey) spring.getBean("sslKeystorePrivateKey"), serverCertChain);
-        this.samlAssertionGenerator = new SamlAssertionGenerator(this.signerInfo);
+        try {
+            this.signerInfo = ServerResponseWssIntegrity.getSignerInfo(spring, assertion);
+        } catch (KeyStoreException e) {
+            throw new ServerPolicyException(assertion, "Unable to access configured private key: " + ExceptionUtils.getMessage(e), e);
+        }
+        this.samlAssertionGenerator = new SamlAssertionGenerator(signerInfo);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {

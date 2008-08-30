@@ -16,9 +16,7 @@
     <bean class="org.springframework.web.context.support.ServletContextAttributeExporter">
         <property name="attributes">
             <map>
-                <entry key="remotingProvider">
-                    <ref bean="remotingProvider"/>
-                </entry>
+                <entry key="remotingProvider" value-ref="remotingProvider"/>
             </map>
         </property>
     </bean>

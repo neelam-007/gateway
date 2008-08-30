@@ -3,21 +3,23 @@
  */
 package com.l7tech.server.security.cert;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.gateway.common.security.RevocationCheckPolicy;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.types.CertificateValidationResult;
 import static com.l7tech.security.types.CertificateValidationResult.OK;
 import com.l7tech.security.types.CertificateValidationType;
 import static com.l7tech.security.types.CertificateValidationType.CERTIFICATE_ONLY;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.security.cert.TrustedCertManager;
-import com.l7tech.gateway.common.security.RevocationCheckPolicy;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -47,7 +49,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
 
     private static final String PROP_USE_DEFAULT_ANCHORS = "pkixTrust.useDefaultAnchors";
 
-    private final X509Certificate caCert;
+    private final DefaultKey defaultKey;
     private final TrustedCertManager trustedCertManager;
     private final RevocationCheckPolicyManager revocationCheckPolicyManager;
     private final ServerConfig serverConfig;
@@ -71,14 +73,14 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
 
     public CertValidationProcessorImpl(final TrustedCertManager trustedCertManager,
                                        final RevocationCheckPolicyManager revocationCheckPolicyManager,
-                                       final X509Certificate caCert,
+                                       final DefaultKey defaultKey,
                                        final ServerConfig serverConfig)
     {
-        if (trustedCertManager == null || revocationCheckPolicyManager == null || caCert == null || serverConfig == null) throw new NullPointerException("A required component is missing");
+        if (trustedCertManager == null || revocationCheckPolicyManager == null || defaultKey == null || serverConfig == null) throw new NullPointerException("A required component is missing");
         this.trustedCertManager = trustedCertManager;
         this.revocationCheckPolicyManager = revocationCheckPolicyManager;
         //this.revocationCheckerFactory = new RevocationCheckerFactory(this, crlCache, ocspCache);
-        this.caCert = caCert;
+        this.defaultKey = defaultKey;
         this.permissiveRcp = new RevocationCheckPolicy();
         this.permissiveRcp.setDefaultSuccess(true);
         this.serverConfig = serverConfig;
@@ -589,7 +591,10 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
     private void initializeCertStoreAndTrustAnchors(Collection<TrustedCert> tces, boolean includeDefaults) {
         Map<String, TrustAnchor> anchors = new HashMap<String, TrustAnchor>();
         Set<X509Certificate> nonAnchors = new HashSet<X509Certificate>();
-        anchors.put(caCert.getSubjectDN().getName(), new TrustAnchor(caCert, null));
+
+        SignerInfo caInfo = defaultKey.getCaInfo();
+        if (caInfo != null)
+            anchors.put(caInfo.getCertificate().getSubjectDN().getName(), new TrustAnchor(caInfo.getCertificate(), null));
 
         if ( includeDefaults ) {
             TrustManagerFactory tmf;
@@ -619,14 +624,10 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         }
 
         for (TrustedCert tce : tces) {
-            try {
-                if (tce.isTrustAnchor()) {
-                    anchors.put(tce.getSubjectDn(), new TrustAnchor(tce.getCertificate(), null));
-                } else {
-                    nonAnchors.add(tce.getCertificate());
-                }
-            } catch (CertificateException e) {
-                throw new RuntimeException(e); // Can't happen, someone else has already parsed it
+            if (tce.isTrustAnchor()) {
+                anchors.put(tce.getSubjectDn(), new TrustAnchor(tce.getCertificate(), null));
+            } else {
+                nonAnchors.add(tce.getCertificate());
             }
         }
 

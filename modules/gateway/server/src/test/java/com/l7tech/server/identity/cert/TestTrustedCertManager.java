@@ -21,12 +21,14 @@ import java.util.Collection;
  * @version Dec 15, 2004
  */
 public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,EntityHeader> implements TrustedCertManager {
+    
+
     public Collection<TrustedCert> findBySubjectDn(String dn) throws FindException {
         throw new RuntimeException("Not implemented");
     }
 
     public Collection<TrustedCert> getCachedCertsBySubjectDn(String dn) throws FindException {
-        throw new RuntimeException("Not implemented");
+        return findBySubjectDn(dn);
     }
 
     public TrustedCert getCachedCertByOid(long oid, int maxAge) throws FindException, CertificateException {

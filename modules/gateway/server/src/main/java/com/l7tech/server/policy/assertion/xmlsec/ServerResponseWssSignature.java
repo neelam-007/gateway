@@ -19,13 +19,14 @@ import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfig;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
-import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -91,14 +92,16 @@ public abstract class ServerResponseWssSignature extends AbstractServerAssertion
             }
 
             // Default keystore
-            KeystoreUtils ku = (KeystoreUtils)ctx.getBean("keystore", KeystoreUtils.class);
-            return ku.getSslSignerInfo();
+            DefaultKey ku = (DefaultKey)ctx.getBean("defaultKey", DefaultKey.class);
+            return ku.getSslInfo();
         } catch (IOException e) {
             throw new KeyStoreException("Can't read the keystore for outbound message decoration: " + ExceptionUtils.getMessage(e), e);
         } catch (FindException e) {
             throw new KeyStoreException("Can't read the keystore for outbound message decoration: " + ExceptionUtils.getMessage(e), e);
         } catch (UnrecoverableKeyException e) {
             throw new KeyStoreException("Can't read the keystore for outbound message decoration: " + ExceptionUtils.getMessage(e), e);
+        } catch (ObjectNotFoundException e) {
+            throw new KeyStoreException("Can't find private key for outbound message decoration: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

@@ -1,5 +1,6 @@
 package com.l7tech.security.xml;
 
+import java.io.Serializable;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
@@ -10,10 +11,11 @@ import java.security.cert.X509Certificate;
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class SignerInfo {
+public class SignerInfo implements Serializable {
+    private static final long serialVersionUID = 2335356651146783429L;
 
-    private PrivateKey privateKey;
-    private X509Certificate[] certificateChain;
+    protected transient PrivateKey privateKey;
+    protected X509Certificate[] certificateChain;
 
     /**
      * Constructs a signer info from the given private key and certificate.
@@ -39,18 +41,42 @@ public class SignerInfo {
     /**
      * Returns a reference to the private key
      * 
-     * @return a reference to the private key.
+     * @return a reference to the private key, or null if the private key is not available here.
      */
     public PrivateKey getPrivate() {
         return privateKey;
     }
 
-      /**
-     * Returns a reference to the certificate
-     *
-     * @return a reference to the certificate.
+    /**
+     * @return the certificate chain for this private key.  Always contains at least one certificate.
+     *         The zeroth entry is the target certificate, containing the public key corresponding to this entry's
+     *         private key.  Entry #1, if it exists, contains the public key that was used to sign Entry #0, and so on.
      */
     public X509Certificate[] getCertificateChain() {
         return certificateChain;
+    }
+
+    /**
+     * Convenience metho that returns the first cert in the cert chain.
+     * Equivalent to getCertificateChain[0].
+     *
+     * @return the certificate for this private key.  Never null.
+     */
+    public X509Certificate getCertificate() {
+        return getCertificateChain()[0];
+    }
+
+    /**
+     * Convenience method that returns the Subject DN of the first cert in the cert chain.
+     * Equivalent to getCertificate().getSubjectDN().toString().
+     *
+     * @return the Subject DN of the first cert in the cert chain.
+     */
+    public String getSubjectDN() {
+        return getCertificateChain()[0].getSubjectDN().toString();
+    }
+
+    public SignerInfo getSignerInfo() {
+        return this;
     }
 }

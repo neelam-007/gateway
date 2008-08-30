@@ -14,7 +14,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Documented
 @Retention(value = RUNTIME)
 @Target(METHOD)
-public @interface Cachable {
+public @interface Cacheable {
 
     /**
      * The key for the cached object.

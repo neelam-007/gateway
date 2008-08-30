@@ -3,11 +3,13 @@
  */
 package com.l7tech.server.processcontroller;
 
-import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.server.management.config.host.HostConfig;
 import com.l7tech.server.management.config.host.IpAddressConfig;
 import com.l7tech.server.management.config.host.PCHostConfig;
-import com.l7tech.server.management.config.node.*;
+import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.server.management.config.node.DatabaseType;
+import com.l7tech.server.management.config.node.NodeConfig;
+import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.partition.PartitionManager;
 
@@ -18,7 +20,6 @@ import javax.persistence.Query;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
@@ -82,6 +83,7 @@ public class ConfigServiceImpl implements ConfigService {
             db.setNodePassword("7layer");
             node.getDatabases().add(db);
 
+/*
             Collection<ConnectorConfig> conns = node.getConnectors();
             for (SsgConnector sc : pinfo.getConnectorsFromServerXml()) {
                 ConnectorConfig cc = new ConnectorConfig();
@@ -89,6 +91,7 @@ public class ConfigServiceImpl implements ConfigService {
                 cc.copyFrom(sc);
                 conns.add(cc);
             }
+*/
 
             for (PartitionInformation.EndpointHolder endpointHolder : pinfo.getEndpoints()) {
                 final String ip = endpointHolder.getIpAddress();

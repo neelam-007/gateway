@@ -4,11 +4,10 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.cert.TrustedCert;
 
 import javax.swing.table.DefaultTableModel;
-import java.security.cert.CertificateException;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -134,16 +133,11 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
      * @return  true if the trusted cert already exists in the table model, false otherwise.
      */
     public boolean contains(TrustedCert tc) {
-
-        try {
-            String thumb1 = tc.getThumbprintSha1();
-            for (TrustedCert cert : sortedData) {
-                String thumb2 = cert.getThumbprintSha1();
-                if (thumb1.equals(thumb2))
-                    return true;
-            }
-        } catch (CertificateException e) {
-            logger.warning("Invalid certificate: " + e.getMessage());
+        String thumb1 = tc.getThumbprintSha1();
+        for (TrustedCert cert : sortedData) {
+            String thumb2 = cert.getThumbprintSha1();
+            if (thumb1.equals(thumb2))
+                return true;
         }
 
         return false;
@@ -263,30 +257,19 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
                     break;
 
                 case CERT_TABLE_ISSUER_NAME_COLUMN_INDEX:
-                    try {
-                        elementA = a.getCertificate().getIssuerDN().getName();
-                        elementB = b.getCertificate().getIssuerDN().getName();
-                    } catch (CertificateException e) {
-                        logger.log(Level.FINER, "Unable to compare certificates: at least one of the certificates is invalid", e);
-                    }
+                    elementA = a.getCertificate().getIssuerDN().getName();
+                    elementB = b.getCertificate().getIssuerDN().getName();
                     break;
 
                 case CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX:
-                    try {
-                        elementA = new Long(a.getCertificate().getNotAfter().getTime());
-                        elementB = new Long(b.getCertificate().getNotAfter().getTime());
-                    } catch (CertificateException e) {
-                        logger.log(Level.FINER, "Unable to compare certificates: at least one of the certificates is invalid", e);
-                    }
+                    elementA = a.getCertificate().getNotAfter().getTime();
+                    elementB = b.getCertificate().getNotAfter().getTime();
                     break;
 
                 case CERT_TABLE_THUMBPRINT_COLUMN_INDEX:
-                    try {
-                        elementA = a.getThumbprintSha1();
-                        elementB = b.getThumbprintSha1();
-                    } catch (CertificateException e) {
-                        logger.log(Level.FINER, "Unable to compare certificates: at least one of the certificates is invalid", e);
-                    }
+                    elementA = a.getThumbprintSha1();
+                    elementB = b.getThumbprintSha1();
+                    break;
 
                 case CERT_TABLE_CERT_USAGE_COLUMN_INDEX:
                     elementA = a.getUsageDescription();

@@ -17,6 +17,7 @@ import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import java.security.*;
+import java.security.cert.X509Certificate;
 
 /**
  * BouncyCastle-specific JCE provider engine.
@@ -46,29 +47,14 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
         return PROVIDER;
     }
 
-    /**
-     * Create an RsaSignerEngine that uses the current crypto API.
-     *
-     * @param keyStorePath
-     * @param storePass
-     * @param privateKeyAlias
-     * @param privateKeyPass
-     */
-    public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
-        return new BouncyCastleRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType, "BC" );
+    public RsaSignerEngine createRsaSignerEngine(PrivateKey caKey, X509Certificate[] caCertChain) {
+        return new BouncyCastleRsaSignerEngine(caKey, caCertChain[0], "BC" );
     }
 
     public KeyPair generateRsaKeyPair(int len) {
         JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
         kpg.initialize(len);
         return kpg.generateKeyPair();
-    }
-
-    /**
-     * Generate an RSA public key / private key pair.
-     */
-    public KeyPair generateRsaKeyPair() {
-        return generateRsaKeyPair(RSA_KEY_LENGTH);
     }
 
     public static final String REQUEST_SIG_ALG = "SHA1withRSA";
@@ -96,10 +82,14 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
     }
 
     /**
-     * Generate a CertificateRequest using the current Crypto provider.
+     * Generate a CertificateRequest using the specified Crypto provider.
      *
      * @param username  the username to put in the cert
      * @param keyPair the public and private keys
+     * @param providerName name of the provider to use for crypto operations.
+     * @return a new CertificateRequest instance.  Never null.
+     * @throws java.security.InvalidKeyException  if a CSR cannot be created using the specified keypair
+     * @throws java.security.SignatureException   if the CSR cannot be signed
      */
     public static CertificateRequest staticMakeCsr(String username, KeyPair keyPair, String providerName ) throws InvalidKeyException, SignatureException {
         X509Name subject = new X509Name("cn=" + username);
@@ -108,14 +98,13 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
         PrivateKey privateKey = keyPair.getPrivate();
 
         // Generate request
-        PKCS10CertificationRequest certReq = null;
         try {
-            certReq = new PKCS10CertificationRequest(REQUEST_SIG_ALG, subject, publicKey, attrs, privateKey);
+            PKCS10CertificationRequest certReq = new PKCS10CertificationRequest(REQUEST_SIG_ALG, subject, publicKey, attrs, privateKey);
+            return new BouncyCastleCertificateRequest(certReq, providerName);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e); // can't happen
         } catch (NoSuchProviderException e) {
             throw new RuntimeException(e); // can't happen
         }
-        return new BouncyCastleCertificateRequest(certReq, providerName);
     }
 }

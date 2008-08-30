@@ -122,7 +122,7 @@
     </bean>
 
     <!-- ssl config  -->
-    <bean id="keystore" class="com.l7tech.server.TestKeystoreUtils">
+    <bean id="keystore" class="com.l7tech.server.TestDefaultKey">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="masterPasswordManager"/>
     </bean>

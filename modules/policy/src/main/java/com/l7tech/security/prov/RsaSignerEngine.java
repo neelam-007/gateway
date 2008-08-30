@@ -32,7 +32,7 @@ public interface RsaSignerEngine {
      * @param expiration expiration of the cert (millis since era)
      * @param subject the subject for the cert, if null, use the subject contained in the csr
      * @return a signed X509 client certificate
-     * @throws Exception
+     * @throws Exception if the certificate cannot be signed
      */
     Certificate createCertificate(byte[] pkcs10req, String subject, long expiration) throws Exception;
 

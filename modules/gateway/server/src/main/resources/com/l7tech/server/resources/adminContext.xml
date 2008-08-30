@@ -44,10 +44,7 @@
     <!-- admin services, Rmi socket factories -->
     <bean id="rmiServerSocketFactory" class="com.l7tech.gateway.common.spring.remoting.rmi.ssl.SslRMIServerSocketFactory"
           depends-on="setNode2NodeInternalTrustFailureHandler">
-        <property name="keyStoreType" value="${keystoretype}"/>
-        <property name="keyStoreFile" value="${keystoredir}${file.separator}${sslkstorename}"/>
-        <property name="keyStoreAlias" value="${sslkeyalias}"/>
-        <property name="keyStorePassword" value="${sslkspasswd}"/>
+        <property name="signerInfo" ref="sslKeyEntry"/>
     </bean>
 
     <bean id="rmiClientSocketFactory" class="com.l7tech.gateway.common.spring.remoting.rmi.ssl.SslRMIClientSocketFactory"
@@ -110,12 +107,6 @@
         </property>
     </bean>
 
-    <bean id="remotingProvider" class="com.l7tech.server.admin.AdminRemotingProvider">
-        <constructor-arg ref="licenseManager"/>
-        <constructor-arg ref="adminSessionManager"/>
-        <constructor-arg ref="clusterInfoManager"/>
-    </bean>
-
     <!-- cluster login exporter -->
     <bean class="com.l7tech.gateway.common.spring.remoting.rmi.RmiServiceExporterStubFactoryBean" parent="sharedClusterExportProperties">
         <property name="serviceName" value="ClusterLogin"/>
@@ -142,6 +133,12 @@
           parent="sharedClusterExportProperties">
         <property name="service" ref="auditAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.logging.GenericLogAdmin"/>
+    </bean>
+
+    <bean id="remotingProvider" class="com.l7tech.server.admin.AdminRemotingProvider">
+        <constructor-arg ref="licenseManager"/>
+        <constructor-arg ref="adminSessionManager"/>
+        <constructor-arg ref="clusterInfoManager"/>
     </bean>
 
     <!-- admin session tracker -->
@@ -273,9 +270,9 @@
 
     <!-- admin login servant -->
     <bean id="adminLogin_UNSECURED" class="com.l7tech.server.admin.AdminLoginImpl">
+        <constructor-arg ref="defaultKey"/>
         <property name="identityProviderConfigManager" ref="identityProviderConfigManager"/>
         <property name="identityProviderFactory" ref='identityProviderFactory'/>
-        <property name="serverCertificate" ref ="sslKeystoreCertificate"/>
         <property name="adminSessionManager" ref="adminSessionManager"/>
         <property name="roleManager" ref="roleManager"/>
         <property name="groupPrincipalCache" ref="groupPrincipalCache"/>
@@ -284,7 +281,7 @@
     <!-- identity admin servant -->
     <bean id="identityAdmin_UNSECURED" class="com.l7tech.server.identity.IdentityAdminImpl">
         <constructor-arg ref="roleManager"/>
-        <constructor-arg ref="rootCertificate"/>
+        <constructor-arg ref="defaultKey"/>
         <property name="identityProviderConfigManager" ref="identityProviderConfigManager"/>
         <property name="clientCertManager" ref="clientCertManager"/>
         <property name="identityProviderFactory" ref="identityProviderFactory"/>
@@ -294,7 +291,7 @@
     <bean id="auditAdmin_UNSECURED" class="com.l7tech.server.audit.AuditAdminImpl">
         <property name="auditRecordManager" ref="auditRecordManager"/>
         <property name="logRecordManager" ref="logRecordManager"/>
-        <property name="keystore" ref="keystore"/>
+        <property name="keystore" ref="defaultKey"/>
         <property name="serverConfig" ref="serverConfig"/>
         <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
     </bean>
@@ -347,8 +344,7 @@
     <bean id="trustedCertAdmin_UNSECURED" class="com.l7tech.server.TrustedCertAdminImpl">
         <constructor-arg ref="trustedCertManager"/>
         <constructor-arg ref="revocationCheckPolicyManager"/>
-        <constructor-arg ref="rootCertificate"/>
-        <constructor-arg ref="sslKeystoreCertificate"/>
+        <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="ssgKeyStoreManager"/>
     </bean>
@@ -356,7 +352,7 @@
     <bean id="transportAdmin_UNSECURED" class="com.l7tech.server.transport.TransportAdminImpl">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="ssgConnectorManager"/>
-        <constructor-arg ref="keystore"/>
+        <constructor-arg ref="defaultKey"/>
     </bean>
 
     <!-- custom assertions admin servant -->

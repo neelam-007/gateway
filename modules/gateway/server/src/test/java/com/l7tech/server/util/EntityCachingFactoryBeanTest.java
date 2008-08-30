@@ -3,7 +3,7 @@ package com.l7tech.server.util;
 import org.junit.Test;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import com.l7tech.util.Cachable;
+import com.l7tech.util.Cacheable;
 import com.l7tech.util.TimeSource;
 
 /**
@@ -141,13 +141,13 @@ public class EntityCachingFactoryBeanTest {
     }
 
     public static interface TestInterface {
-        @Cachable(relevantArg=1, maxAge=1000)
+        @Cacheable(relevantArg=1, maxAge=1000)
         String getCached(String bogus, String key);
 
-        @Cachable(relevantArg=0, maxAge=1000)
+        @Cacheable(relevantArg=0, maxAge=1000)
         String getCached(String key);
 
-        @Cachable(relevantArg=0, maxAge=0)
+        @Cacheable(relevantArg=0, maxAge=0)
         String getNonCached(String key);
 
         String getNotCachable(String key);

@@ -9,7 +9,7 @@ import com.l7tech.gateway.common.audit.*;
 import com.l7tech.util.HexUtils;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 
 import javax.crypto.Cipher;
@@ -90,7 +90,7 @@ public class AuditContextImpl implements AuditContext {
         this.update = update;
     }
 
-    public void setKeystore(final KeystoreUtils keystore) {
+    public void setKeystore(final DefaultKey keystore) {
         this.keystore = keystore;
     }
 
@@ -258,7 +258,7 @@ public class AuditContextImpl implements AuditContext {
             } finally {
                 baos.close();
             }
-            PrivateKey pk = keystore.getSSLPrivateKey();
+            PrivateKey pk = keystore.getSslInfo().getPrivate();
             Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             rsaCipher.init(Cipher.ENCRYPT_MODE, pk);
             byte[] encrypteddata = rsaCipher.doFinal(siginput);
@@ -430,7 +430,7 @@ public class AuditContextImpl implements AuditContext {
 
     private final ServerConfig serverConfig;
     private final AuditRecordManager auditRecordManager;
-    private KeystoreUtils keystore;
+    private DefaultKey keystore;
     private AuditLogListener listener;
 
     private Level currentMessageThreshold;

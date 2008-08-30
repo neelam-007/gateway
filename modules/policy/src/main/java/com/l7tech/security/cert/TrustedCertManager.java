@@ -9,7 +9,7 @@ package com.l7tech.security.cert;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.util.Cachable;
+import com.l7tech.util.Cacheable;
 
 import java.security.cert.CertificateException;
 import java.util.Collection;
@@ -42,7 +42,7 @@ public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHea
      * @return the TrustedCert with the specified Subject DN, or null if no such cert exists.
      * @throws FindException if the TrustedCert cannot be found.
      */
-    @Cachable(relevantArg=0,maxAge=5000)
+    @Cacheable(relevantArg=0,maxAge=5000)
     Collection<TrustedCert> getCachedCertsBySubjectDn(String dn) throws FindException;
 
     /**

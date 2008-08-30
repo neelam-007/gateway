@@ -18,6 +18,7 @@ public class CertEntryRow extends X509Entity {
     }
 
     public void setProvider(long providerId) {
+        mutate();
         this.provider = providerId;
     }
 
@@ -26,6 +27,7 @@ public class CertEntryRow extends X509Entity {
     }
 
     public void setLogin(String userLogin) {
+        mutate();
         this.login = userLogin;
     }
 
@@ -34,6 +36,7 @@ public class CertEntryRow extends X509Entity {
     }
 
     public void setResetCounter(int resetCounter) {
+        mutate();
         this.resetCounter = resetCounter;
     }
 
@@ -42,6 +45,7 @@ public class CertEntryRow extends X509Entity {
     }
 
     public void setUserId( String userId ) {
+        mutate();
         this.userId = userId;
     }
 

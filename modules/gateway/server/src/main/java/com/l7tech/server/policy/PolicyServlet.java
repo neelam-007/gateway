@@ -30,10 +30,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
-import com.l7tech.server.AuthenticatableHttpServlet;
-import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.server.KeystoreUtils;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.system.PolicyServiceEvent;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -58,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
+import java.security.cert.CertificateException;
 
 
 /**
@@ -100,8 +98,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             ApplicationContext applicationContext = getApplicationContext();
             auditContext = (AuditContext)applicationContext.getBean("auditContext", AuditContext.class);
             soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager");
-            KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore", KeystoreUtils.class);
-            serverCertificate = ku.readSSLCert();
+            DefaultKey ku = (DefaultKey)applicationContext.getBean("defaultKey", DefaultKey.class);
+            serverCertificate = ku.getSslInfo().getCertificate().getEncoded();
             serverConfig = (ServerConfig)applicationContext.getBean("serverConfig");
             clusterPropertyManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
             PolicyPathBuilderFactory pathBuilderFactory = (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory");
@@ -110,6 +108,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         } catch (BeansException be) {
             throw new ServletException(be);
         }catch (IOException e) {
+            throw new ServletException(e);
+        } catch (CertificateException e) {
             throw new ServletException(e);
         }
     }
@@ -394,7 +394,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
       throws FindException, IOException {
         logger.finest("Request for root cert");
         // Find our certificate
-        //byte[] cert = KeystoreUtils.getInstance().readRootCert();
+        //byte[] cert = DefaultKey.getInstance().readRootCert();
         String pemEncodedServerCertificateString = CertUtils.encodeAsPEM(serverCertificate);
         byte[] pemEncodedServerCertificate = pemEncodedServerCertificateString.getBytes("UTF-8");
 

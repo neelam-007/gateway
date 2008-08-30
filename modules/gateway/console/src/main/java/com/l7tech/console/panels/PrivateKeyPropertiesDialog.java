@@ -1,13 +1,12 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.SsmApplication;
-import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
@@ -15,9 +14,10 @@ import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.FileChooserUtil;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.HexUtils;
 
 import javax.security.auth.x500.X500Principal;
@@ -29,11 +29,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.List;
 
 /**
  *
@@ -135,16 +134,24 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             destroyPrivateKeyButton.setEnabled(false);
             replaceCertificateChainButton.setEnabled(false);
             generateCSRButton.setEnabled(false);
-        } else if ("PKCS11_HARDWARE".equals(subject.getKeystore().type) && ("SSL".equals(subject.getAlias()) || "CA".equals(subject.getAlias()))) {
-            // Prevent the builtin keys from being deleted if this is an HSM keystore
-            // hack for Bug #3830 -- TODO replace this hack with proper key metadata so server can mark keys as undeletable
-            destroyPrivateKeyButton.setEnabled(false);
+        } else if (isDefaultSslKey(subject) || isDefaultCaKey(subject)) {
+            destroyPrivateKeyButton.setEnabled(false); // Bug #3830
         }
 
         if (!flags.canDeleteSome())
             destroyPrivateKeyButton.setEnabled(false);
         if (!flags.canUpdateSome())
             replaceCertificateChainButton.setEnabled(false);
+    }
+
+    private boolean isDefaultCaKey(PrivateKeyManagerWindow.KeyTableRow subject) {
+        // TODO
+        return false;
+    }
+
+    private boolean isDefaultSslKey(PrivateKeyManagerWindow.KeyTableRow subject) {
+        // TODO
+        return false;
     }
 
     class ListEntry {
@@ -176,20 +183,16 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         if (seled == null) {
             return;
         }
-        try {
-            X509Certificate cert = seled.getCert();
-            TrustedCert tc = new TrustedCert();
-            tc.setCertificate(cert);
-            tc.setName(cert.getSubjectDN().toString());
-            tc.setSubjectDn(cert.getSubjectDN().toString());
-            CertPropertiesWindow dlg = new CertPropertiesWindow(this, tc, false, false);
-            dlg.setModal(true);
-            dlg.setTitle("Certificate Properties");
-            Utilities.centerOnParentWindow(dlg);
-            DialogDisplayer.display(dlg);
-        } catch (CertificateEncodingException e) {
-            logger.log(Level.WARNING, "problem reading cert", e);
-        }
+        X509Certificate cert = seled.getCert();
+        TrustedCert tc = new TrustedCert();
+        tc.setCertificate(cert);
+        tc.setName(cert.getSubjectDN().toString());
+        tc.setSubjectDn(cert.getSubjectDN().toString());
+        CertPropertiesWindow dlg = new CertPropertiesWindow(this, tc, false, false);
+        dlg.setModal(true);
+        dlg.setTitle("Certificate Properties");
+        Utilities.centerOnParentWindow(dlg);
+        DialogDisplayer.display(dlg);
     }
 
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {

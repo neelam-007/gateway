@@ -1,35 +1,28 @@
 package com.l7tech.server.cluster;
 
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ResourceUtils;
 import com.l7tech.common.io.IOUtils;
+import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.ResourceUtils;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.orm.hibernate3.HibernateCallback;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.FileInputStream;
-import java.io.OutputStream;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -50,16 +43,11 @@ import java.util.regex.Pattern;
  * $Id$
  *
  */
+@SuppressWarnings({"JavaDoc"})
 public class ClusterInfoManagerImpl extends HibernateDaoSupport implements ClusterInfoManager {
-
-    //- PUBLIC
 
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
-    }
-
-    public void setKeystore(KeystoreUtils keystore) {
-        this.keystore = keystore;
     }
 
     /**
@@ -93,8 +81,6 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         } else {
             selfCI.setAvgLoad(avgLoad);
             selfCI.setLastUpdateTimeStamp(now);
-            boolean isMaster = isMasterMode();
-            selfCI.setIsMaster(isMaster);
             updateSelfStatus( selfCI );
         }
     }
@@ -111,7 +97,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
                     session.createQuery( HQL_DELETE_BY_ID )
                             .setString("nodeid", selfCI.getNodeIdentifier() )
                             .executeUpdate();
-                    if ( session.contains( selfCI ) ) { 
+                    if ( session.contains( selfCI ) ) {
                         session.evict( selfCI );
                     }
                     session.save( selfCI );
@@ -316,7 +302,6 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     private String thisNodeIPAddress = null;
 
     private ServerConfig serverConfig;
-    private KeystoreUtils keystore;
 
     private static String generateNodeId() {
         return UUID.randomUUID().toString().replace("-","");
@@ -350,8 +335,6 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         newClusterInfo.setNodeIdentifier(nodeid);
         newClusterInfo.setPartitionName(getPartitionName());
         newClusterInfo.setClusterPort(getClusterPort());
-        boolean isMaster = isMasterMode();
-        newClusterInfo.setIsMaster(isMaster);
         newClusterInfo.setMac(macid);
         // choose first available name
         String newnodename = null;
@@ -394,12 +377,6 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         logger.finest("Added cluster status row for this server. identifier= " + newClusterInfo.getNodeIdentifier() +
                       " name= " + newClusterInfo.getName());
         return newClusterInfo;
-    }
-
-    // returns true if this server has access to a root ca key
-    private boolean isMasterMode() {
-        String rootKeystorePath = keystore.getRootKeystorePath();
-        return rootKeystorePath != null && new File(rootKeystorePath).exists();
     }
 
     private void recordNodeInDB(ClusterNodeInfo node) throws HibernateException {
@@ -464,6 +441,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      * called by getMacs()
      *
      * tries to get mac addresses by running unix ifconfig command
+     * @return  collection of mac address strings.  May be empty but never null.
      */
     private Collection<String> getIfconfigMac() {
         Process up = null;
@@ -564,6 +542,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      * called by getMacs().
      *
      * tries to get mac addresses by running windows ipconfig command
+     * @return collection of mac address strings.  May be empty but never null.
      */
     private Collection<String> getIpconfigMac() {
         Process up = null;
@@ -615,9 +594,11 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      * by InetAddress.getLocalHost().getHostAddress(). (for cygwin support)
      *
      * If none of these methods work (is that possible?) then the output is null.
+     *
+     * @return IP address string, or null if we were unable to find one by any method.
      */
     private synchronized String getIPAddress() {
-        if (thisNodeIPAddress == null) {            
+        if (thisNodeIPAddress == null) {
             thisNodeIPAddress = getConfiguredIPAddress();
 
             if (thisNodeIPAddress == null) {
@@ -657,17 +638,17 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     }
 
     /**
-     * Get this partitions name.
+     * @return this partitions name.
      */
     private String getPartitionName() {
-        return serverConfig.getProperty("partitionName");        
+        return serverConfig.getProperty("partitionName");
     }
 
     /**
-     * Get this partitions cluster port.
+     * @return this partitions cluster port.
      */
     private int getClusterPort() {
-        return serverConfig.getIntProperty("clusterPort", 2124);        
+        return serverConfig.getIntProperty("clusterPort", 2124);
     }
 
     /**
@@ -700,7 +681,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
                     logger.log(Level.WARNING, "Address does not resolve to any local address '"+address+"'.");
                 }
                 else if (!matchesConfig) {
-                    valid = false;    
+                    valid = false;
                     logger.log(Level.CONFIG, "Updating cluster IP address to match configuration '"+configuredIp+"' (was '"+address+"')");
                 }
             }

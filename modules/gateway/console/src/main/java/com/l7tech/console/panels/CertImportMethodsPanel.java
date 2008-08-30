@@ -197,7 +197,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                 });
                 if (is == null) return false;
                 Collection<? extends Certificate> certs = CertUtils.getFactory().generateCertificates(is);
-                certChain = certs.toArray(new X509Certificate[0]);
+                //noinspection SuspiciousToArrayCall
+                certChain = certs.toArray(new X509Certificate[certs.size()]);
 
 
             } catch (CertificateException ce) {
@@ -352,14 +353,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
         if (settings instanceof TrustedCert) {
             TrustedCert tc = (TrustedCert) settings;
-
-            try {
-                tc.setCertificate(certChain[0]);
-            } catch (CertificateEncodingException e) {
-                JOptionPane.showMessageDialog(this, resources.getString("cert.encode.error"),
-                                              resources.getString("view.error.title"),
-                                              JOptionPane.ERROR_MESSAGE);
-            }
+            tc.setCertificate(certChain[0]);
         } else if (settings instanceof SsgKeyEntry) {
             SsgKeyEntry ssgKeyEntry = (SsgKeyEntry)settings;
             ssgKeyEntry.setCertificateChain(certChain);

@@ -6,7 +6,8 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.util.HexUtils;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.KeystoreUtils;
+import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 
@@ -39,14 +40,14 @@ public class JmsPropertyMapper {
      *
      * @param trustedCertManager    the source for trusted certificates
      * @param ssgKeyStoreManager    the source for client certificates
-     * @param keystoreUtils         the source for SSG SSL certificate
+     * @param defaultKey         the source for SSG SSL certificate
      */
     public JmsPropertyMapper(TrustedCertManager trustedCertManager,
                              SsgKeyStoreManager ssgKeyStoreManager,
-                             KeystoreUtils keystoreUtils) {
+                             DefaultKey defaultKey) {
         this.trustedCertManager = trustedCertManager;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
-        this.keystoreUtils = keystoreUtils;
+        this.defaultKey = defaultKey;
         this.random = new Random(System.currentTimeMillis());
     }
 
@@ -136,7 +137,7 @@ public class JmsPropertyMapper {
 
     private final TrustedCertManager trustedCertManager;
     private final SsgKeyStoreManager ssgKeyStoreManager;
-    private final KeystoreUtils keystoreUtils;
+    private final DefaultKey defaultKey;
     private final Random random;
 
     /** Collection of KeyStoreInfo objects constructed.
@@ -212,8 +213,9 @@ public class JmsPropertyMapper {
                 String alias = null;
                 if (ssgKeystoreId == -1 || ssgKeyAlias == null) {
                     // version 3.7 format - Defaults to SSG SSL private key and cert.
-                    certChain = keystoreUtils.getSSLCertChain();
-                    privateKey = keystoreUtils.getSSLPrivateKey();
+                    SsgKeyEntry dk = defaultKey.getSslInfo();
+                    certChain = dk.getCertificateChain();
+                    privateKey = dk.getPrivateKey();
                     alias = (String) properties.get(JmsConnection.PROP_KEYSTORE_ALIAS);
                     if (alias == null) alias = "jms";
                 } else {
@@ -248,6 +250,8 @@ public class JmsPropertyMapper {
             } catch (CertificateException e) {
                 throw new KeyStoreException("Error creating keystore", e);
             } catch (UnrecoverableKeyException e) {
+                throw new KeyStoreException("Error creating keystore", e);
+            } catch (ObjectNotFoundException e) {
                 throw new KeyStoreException("Error creating keystore", e);
             }
 

@@ -1,27 +1,12 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.message.Message;
-import com.l7tech.message.XmlKnob;
-import com.l7tech.message.SecurityKnob;
-import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.security.xml.decorator.DecoratorException;
-import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.security.xml.processor.WssProcessor;
-import com.l7tech.security.xml.processor.WssProcessorImpl;
-import com.l7tech.xml.soap.SoapFaultUtils;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.MissingRequiredElementException;
-import com.l7tech.xml.SoapFaultDetail;
-import com.l7tech.xml.SoapFaultLevel;
-import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.identity.User;
+import com.l7tech.message.Message;
+import com.l7tech.message.SecurityKnob;
+import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.PolicyPathResult;
@@ -38,11 +23,29 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.security.saml.SamlConstants;
+import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.decorator.DecoratorException;
+import com.l7tech.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.security.xml.processor.WssProcessor;
+import com.l7tech.security.xml.processor.WssProcessorImpl;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.SoapConstants;
+import com.l7tech.xml.MissingRequiredElementException;
+import com.l7tech.xml.SoapFaultDetail;
+import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.xml.soap.SoapFaultUtils;
+import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -51,10 +54,8 @@ import org.xml.sax.SAXException;
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
+import java.security.SignatureException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -75,9 +76,8 @@ import java.util.logging.Logger;
 public class PolicyService extends ApplicationObjectSupport {
     private static final Logger logger = Logger.getLogger(PolicyService.class.getName());
 
-    private final List allCredentialAssertions;
-    private final PrivateKey privateServerKey;
-    private final X509Certificate serverCert;
+    private final List<Assertion> allCredentialAssertions;
+    private final DefaultKey serverCertFinder;
     private final ServerPolicyFactory policyFactory;
     private final FilterManager filterManager;
     private final SecurityTokenResolver securityTokenResolver;
@@ -106,38 +106,35 @@ public class PolicyService extends ApplicationObjectSupport {
 
     public interface PolicyGetter {
         /**
+         * @param serviceId the ID of the service whose policy to query for
          * @return the policy or null if service does not exist
          */
         ServiceInfo getPolicy(String serviceId);
     }
 
-    public PolicyService(PrivateKey privateServerKey,
-                         X509Certificate serverCert,
+    public PolicyService(DefaultKey serverCertFinder,
                          ServerPolicyFactory policyFactory,
                          FilterManager filterManager,
                          SecurityTokenResolver securityTokenResolver,
                          PolicyPathBuilderFactory policyPathBuilderFactory)
     {
-        if (privateServerKey == null || serverCert == null) throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
+        if (serverCertFinder == null) throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
         if (policyFactory == null) throw new IllegalArgumentException("Policy Factory is required");
         if (filterManager == null) throw new IllegalArgumentException("Filter Manager is required");
         if (policyPathBuilderFactory == null) throw new IllegalArgumentException("Policy Path Builder Factory is required");
 
-        this.privateServerKey = privateServerKey;
-        this.serverCert = serverCert;
+        this.serverCertFinder = serverCertFinder;
         this.policyFactory = policyFactory;
         this.filterManager = filterManager;
         this.securityTokenResolver = securityTokenResolver;
         this.policyPathBuilderFactory = policyPathBuilderFactory;
 
         // populate all possible credentials sources
-        this.allCredentialAssertions = new ArrayList();
-        for (int i = 0; i < ALL_CREDENTIAL_ASSERTIONS_TYPES.length; i++) {
-            Assertion assertion = ALL_CREDENTIAL_ASSERTIONS_TYPES[i];
-
+        this.allCredentialAssertions = new ArrayList<Assertion>();
+        for (Assertion assertion : ALL_CREDENTIAL_ASSERTIONS_TYPES) {
             if (assertion instanceof RequestWssSaml) {
-                // Lighed saml requirements for policy download
-                RequestWssSaml requestWssSaml = (RequestWssSaml)assertion;
+                // Lighten saml requirements for policy download
+                RequestWssSaml requestWssSaml = (RequestWssSaml) assertion;
                 requestWssSaml.setCheckAssertionValidity(false);
                 requestWssSaml.setNameFormats(SamlConstants.ALL_NAMEIDENTIFIERS);
                 SamlAuthenticationStatement as = new SamlAuthenticationStatement();
@@ -151,7 +148,22 @@ public class PolicyService extends ApplicationObjectSupport {
     }
 
     /**
+     * Handle a policy download request and return a policy XML document (as a DOM tree).
+     *
+     * @param policyId                 the ID of the policy to download.
+     * @param preAuthenticatedUser     the already-authenticated User that wishes to download this policy.
+     * @param policyGetter             a PolicyGetter implementation that can be used to look up the policy.
+     * @param pre32PolicyCompat        true if the returned policy document should be in a format readable by
+     *                                 versions of the SecureSpan Bridge before the 3.2 release.
+     * @param isFullDoc                if true, we will not filter out any non-client-visible assertions from the policy
+     *                                 before returning it.
      * @return the filtered policy or null if the target policy does not exist or the requestor should not see it
+     * @throws com.l7tech.server.policy.filter.FilteringException if an exception occurs while filtering the policy
+     * @throws com.l7tech.policy.assertion.PolicyAssertionException if a policy is invalid (ie, an include cannot be expanded,
+     *                                                              or an assertion cannot be translated)
+     *
+     * @throws java.io.IOException if an exception occurs while serializing policy XML
+     * @throws org.xml.sax.SAXException if an exception occurs while parsing policy XML
      */
     public Document respondToPolicyDownloadRequest(String policyId,
                                                    User preAuthenticatedUser,
@@ -178,7 +190,7 @@ public class PolicyService extends ApplicationObjectSupport {
         }
 
         // in case where the request is anonyymous but request was not authenticated, we return null
-        boolean isanonymous = false;
+        boolean isanonymous;
         try {
             isanonymous = atLeastOnePathIsAnonymous(targetPolicy);
         } catch (InterruptedException e) {
@@ -382,7 +394,7 @@ public class PolicyService extends ApplicationObjectSupport {
             if (relatesTo != null)
                 rte = SoapUtil.setL7aRelatesTo(responseDoc, relatesTo);
             if (signResponse)
-                signresponse(responseDoc, pver, rte);
+                signresponse(responseDoc, pver, rte, serverCertFinder.getSslInfo());
             else
                 SoapUtil.addTimestamp(header, SoapConstants.WSU_NAMESPACE, null, 0, 0);
             return responseDoc;
@@ -390,14 +402,16 @@ public class PolicyService extends ApplicationObjectSupport {
             throw new RuntimeException(e); // can't happen
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException(e); // can't happen
+        } catch (IOException e) {
+            throw new SignatureException("Unable to sign policy: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
-    private void signresponse(Document responseDoc, Element policyVersion, Element relatesTo) throws GeneralSecurityException, DecoratorException {
+    private void signresponse(Document responseDoc, Element policyVersion, Element relatesTo, SsgKeyEntry signer) throws GeneralSecurityException, DecoratorException {
         WssDecoratorImpl decorator = new WssDecoratorImpl();
         DecorationRequirements reqmts = new DecorationRequirements();
-        reqmts.setSenderMessageSigningCertificate(serverCert);
-        reqmts.setSenderMessageSigningPrivateKey(privateServerKey);
+        reqmts.setSenderMessageSigningCertificate(signer.getCertificate());
+        reqmts.setSenderMessageSigningPrivateKey(signer.getPrivate());
         reqmts.setSignTimestamp();
         try {
             reqmts.getElementsToSign().add(SoapUtil.getBodyElement(responseDoc));
@@ -456,15 +470,16 @@ public class PolicyService extends ApplicationObjectSupport {
     }
 
     /**
-         * Constructs a policy that determines if a requestor should be allowed to download a policy.
-         *
-         * @param targetPolicy the policy targeted by a requestor.
-         * @return the policy that should be validated by the policy download request for the passed target
-         */
+     * Constructs a policy that determines if a requestor should be allowed to download a policy.
+     *
+     * @param targetPolicy the policy targeted by a requestor.
+     * @return the policy that should be validated by the policy download request for the passed target
+     * @throws ServerPolicyException if targetPolicy could not be compiled into server assertion instances
+     */
     ServerAssertion constructPolicyPolicy(Assertion targetPolicy) throws ServerPolicyException {
         AllAssertion base = new AllAssertion();
         base.addChild(new OneOrMoreAssertion(allCredentialAssertions));
-        List allTargetIdentities = new ArrayList();
+        List<Assertion> allTargetIdentities = new ArrayList<Assertion>();
         addIdAssertionToList(targetPolicy, allTargetIdentities);
         if (allTargetIdentities.size() > 0)
             base.addChild(new OneOrMoreAssertion(allTargetIdentities));
@@ -475,26 +490,25 @@ public class PolicyService extends ApplicationObjectSupport {
         }
     }
 
-    private void addIdAssertionToList(Assertion assertion, List receptacle) {
+    private void addIdAssertionToList(Assertion assertion, List<Assertion> receptacle) {
         if (assertion instanceof IdentityAssertion)
             receptacle.add(assertion);
         if (!(assertion instanceof CompositeAssertion))
             return;
         CompositeAssertion composite = (CompositeAssertion)assertion;
-        for (Iterator i = composite.getChildren().iterator(); i.hasNext();) {
-            Assertion a = (Assertion)i.next();
+        for (Object o : composite.getChildren()) {
+            Assertion a = (Assertion) o;
             addIdAssertionToList(a, receptacle);
         }
     }
 
     private boolean atLeastOnePathIsAnonymous(Assertion rootAssertion) throws InterruptedException, PolicyAssertionException {
         PolicyPathResult paths = policyPathBuilderFactory.makePathBuilder().generate(rootAssertion);
-        for (Iterator iterator = paths.paths().iterator(); iterator.hasNext();) {
-            AssertionPath assertionPath = (AssertionPath)iterator.next();
+        for (Object o : paths.paths()) {
+            AssertionPath assertionPath = (AssertionPath) o;
             Assertion[] path = assertionPath.getPath();
             boolean pathContainsIdAssertion = false;
-            for (int i = 0; i < path.length; i++) {
-                Assertion a = path[i];
+            for (Assertion a : path) {
                 if (a instanceof IdentityAssertion) {
                     pathContainsIdAssertion = true;
                 }

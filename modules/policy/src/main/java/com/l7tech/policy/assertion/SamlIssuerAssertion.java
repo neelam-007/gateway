@@ -25,7 +25,7 @@ import java.util.*;
 /**
  * @author alex
  */
-public class SamlIssuerAssertion extends SamlPolicyAssertion implements SetsVariables, UsesVariables {
+public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateKeyable, SetsVariables, UsesVariables {
     private int conditionsNotBeforeSecondsInPast = -1;
     private int conditionsNotOnOrAfterExpirySeconds = -1;
     /**
@@ -39,6 +39,9 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements SetsVari
     private String nameIdentifierValue;
     private KeyInfoInclusionType signatureKeyInfoType = KeyInfoInclusionType.CERT;
     private KeyInfoInclusionType subjectConfirmationKeyInfoType = KeyInfoInclusionType.CERT;
+    private boolean usesDefaultKeyStore = true;
+    private long nonDefaultKeystoreId = -1;
+    private String keyAlias = "SSL";
 
     public static final Set<String> HOK_URIS = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
         SamlConstants.CONFIRMATION_HOLDER_OF_KEY,
@@ -68,6 +71,30 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements SetsVari
 
     public SamlIssuerAssertion(SamlAuthorizationStatement authzStmt) {
         this.authorizationStatement = authzStmt;
+    }
+
+    public boolean isUsesDefaultKeyStore() {
+        return usesDefaultKeyStore;
+    }
+
+    public void setUsesDefaultKeyStore(boolean usesDefaultKeyStore) {
+        this.usesDefaultKeyStore = usesDefaultKeyStore;
+    }
+
+    public long getNonDefaultKeystoreId() {
+        return nonDefaultKeystoreId;
+    }
+
+    public void setNonDefaultKeystoreId(long nonDefaultKeystoreId) {
+        this.nonDefaultKeystoreId = nonDefaultKeystoreId;
+    }
+
+    public String getKeyAlias() {
+        return keyAlias;
+    }
+
+    public void setKeyAlias(String keyAlias) {
+        this.keyAlias = keyAlias;
     }
 
     public static enum DecorationType {

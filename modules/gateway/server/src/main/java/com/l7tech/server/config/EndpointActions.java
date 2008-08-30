@@ -65,8 +65,7 @@ public class EndpointActions {
 
         Collection<SsgConnector> allEndpoints = new ArrayList<SsgConnector>();
 
-        Collection<SsgConnector> legacyHttp = pinfo.getConnectorsFromServerXml();
-        if (legacyHttp != null && !legacyHttp.isEmpty()) allEndpoints.addAll(legacyHttp);
+        // TODO server.xml parsing happened here, in case we decide to care again about upgrades from pre-4.3
 
         Collection<SsgConnector> legacyFtp = pinfo.parseFtpEndpointsAsSsgConnectors();
         if (legacyFtp != null && !legacyFtp.isEmpty()) allEndpoints.addAll(legacyFtp);

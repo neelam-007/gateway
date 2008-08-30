@@ -1,31 +1,16 @@
 package com.l7tech.server;
 
-import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
 import com.l7tech.message.Message;
 import com.l7tech.message.SecurityKnob;
 import com.l7tech.message.TcpKnob;
 import com.l7tech.message.XmlKnob;
-import com.l7tech.security.saml.*;
-import com.l7tech.security.token.SecurityToken;
-import com.l7tech.security.token.X509SecurityToken;
-import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.security.xml.SignerInfo;
-import com.l7tech.security.xml.XencUtil;
-import com.l7tech.security.xml.KeyInfoInclusionType;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.security.xml.decorator.DecoratorException;
-import com.l7tech.security.xml.decorator.WssDecorator;
-import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.security.xml.processor.*;
-import com.l7tech.util.*;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.SoapFaultLevel;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -40,6 +25,21 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.security.saml.NameIdentifierInclusionType;
+import com.l7tech.security.saml.SamlAssertionGenerator;
+import com.l7tech.security.saml.SamlConstants;
+import com.l7tech.security.saml.SubjectStatement;
+import com.l7tech.security.token.SecurityToken;
+import com.l7tech.security.token.X509SecurityToken;
+import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.security.xml.XencUtil;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.decorator.DecoratorException;
+import com.l7tech.security.xml.decorator.WssDecorator;
+import com.l7tech.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.security.xml.processor.*;
 import com.l7tech.server.event.system.TokenServiceEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -49,6 +49,9 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.util.*;
+import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -59,7 +62,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -83,21 +85,22 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
     private static final SecureRandom rand = new SecureRandom();
     private static final Logger logger = Logger.getLogger(TokenServiceImpl.class.getName());
 
-    private final PrivateKey serverPrivateKey;
-    private final X509Certificate serverCert;
+    private final DefaultKey defaultKey;
     private final ServerAssertion tokenServicePolicy;
     private final SecurityTokenResolver securityTokenResolver;
 
     /**
      * specify the server key and cert at construction time instead of letting the object try to retreive them
+     * @param defaultKey     used to find the default SSL private key
+     * @param policyFactory  used to compile policies into server policies
+     * @param securityTokenResolver used to locate security tokens
      */
-    public TokenServiceImpl(PrivateKey privateServerKey, X509Certificate serverCert, ServerPolicyFactory policyFactory, SecurityTokenResolver securityTokenResolver) {
-        if (privateServerKey == null || serverCert == null) {
-            throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
+    public TokenServiceImpl(DefaultKey defaultKey, ServerPolicyFactory policyFactory, SecurityTokenResolver securityTokenResolver) {
+        if (defaultKey == null) {
+            throw new IllegalArgumentException("DefaultKey must be provided to create a TokenService");
         }
 
-        this.serverPrivateKey = privateServerKey;
-        this.serverCert = serverCert;
+        this.defaultKey = defaultKey;
         this.securityTokenResolver = securityTokenResolver;
         try {
             // Compile with license enforcement disabled (dogfood policy can use any assertion it wants)
@@ -250,7 +253,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         }
     }
 
-    /**
+    /*
      * Constructs the following policy (server-side version)<br/>
      * <pre>
      * AllAssertion:
@@ -324,7 +327,12 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         if (SamlConstants.NS_SAML2.equals(samlNs)) {
             options.setVersion(SamlAssertionGenerator.Options.VERSION_2);
         }
-        SignerInfo signerInfo = new SignerInfo(serverPrivateKey, new X509Certificate[] { serverCert });
+        SignerInfo signerInfo;
+        try {
+            signerInfo = defaultKey.getSslInfo();
+        } catch (IOException e) {
+            throw new TokenServiceException("Unable to get default SSL key: " + ExceptionUtils.getMessage(e), e);
+        }
         KeyInfoInclusionType keyInfoType = useThumbprintForSubject ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT;
         SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds,
                                                                                            SubjectStatement.HOLDER_OF_KEY,
@@ -422,21 +430,25 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
     }
 
     private Document prepareSignedResponse( Document response ) throws TokenServiceException {
+        SsgKeyEntry signer;
         Element body;
         try {
             body = SoapUtil.getBodyElement(response);
+            signer = defaultKey.getSslInfo();
         } catch (InvalidDocumentFormatException e) {
             throw new TokenServiceException(e);
+        } catch (IOException e) {
+            throw new TokenServiceException("Unable to get default SSL key: " + ExceptionUtils.getMessage(e), e);
         }
 
         WssDecorator wssDecorator = new WssDecoratorImpl();
         DecorationRequirements req = new DecorationRequirements();
         req.setSignTimestamp();
-        req.setSenderMessageSigningCertificate(serverCert);
-        req.setSenderMessageSigningPrivateKey(serverPrivateKey);
         req.getElementsToSign().add(body);
 
         try {
+            req.setSenderMessageSigningCertificate(signer.getCertificate());
+            req.setSenderMessageSigningPrivateKey(signer.getPrivateKey());
             wssDecorator.decorateMessage(new Message(response), req);
         } catch (InvalidDocumentFormatException e) {
             throw new TokenServiceException(e);
@@ -496,7 +508,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         return encryptedKeyXml.toString();
     }
 
-    /**
+    /*
      * checks if this request is for a sec conv context
      * does not check things like whether the body is signed since this is the
      * responsibility of the policy
@@ -516,7 +528,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         return true;
     }
 
-    /**
+    /*
      * checks if this request is for a sec conv context
      * does not check things like whether the body is signed since this is the
      * responsibility of the policy
@@ -536,7 +548,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         return true;
     }
 
-    /**
+    /*
      * Checks whether this request is meant to be for a SAML version 2.0 token.
      * expected value of   TokenType is 'urn:oasis:names:tc:SAML:2.0:assertion#Assertion',
      * expected value of RequestType is 'http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue'
@@ -556,7 +568,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         return true;
     }
 
-    /**
+    /*
      * Retrieves soap:Envelope/soap:Body/wst:RequestSecurityToken/wst:TokenType/text() and puts it in the return map
      * under the SoapUtil.WST_TOKENTYPE key.
      * Retrieves soap:Envelope/soap:Body/wst:RequestSecurityToken/wst:RequestType/text() and puts it in the return map
@@ -613,7 +625,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
     /** Regexp that recognizes all known SAML token type URIs and qnames. */
     private final Pattern PSAML = Pattern.compile("[:#]Assertion$|^SAML$");
 
-     /**
+    /*
      * checks if this request is for a saml assertion
      * does not check things like whether the body is signed since this is the
      * responsibility of the policy

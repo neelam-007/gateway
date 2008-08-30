@@ -1,26 +1,24 @@
 package com.l7tech.server.util;
 
-import java.lang.reflect.Proxy;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.Arrays;
-
+import com.l7tech.common.io.WhirlycacheFactory;
+import com.l7tech.util.Cacheable;
+import com.l7tech.util.TimeSource;
+import com.whirlycott.cache.Cache;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
 
-import com.l7tech.common.io.WhirlycacheFactory;
-import com.l7tech.util.Cachable;
-import com.l7tech.util.TimeSource;
-
-import com.whirlycott.cache.Cache;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Factory for creating caching proxies.
  *
  * <p>Interface methods should be annotated to allow caching.</p>
  *  
- * @see com.l7tech.util.Cachable
+ * @see com.l7tech.util.Cacheable
  * @author Steve Jones
  */
 public class EntityCachingFactoryBean extends AbstractFactoryBean {
@@ -105,7 +103,7 @@ public class EntityCachingFactoryBean extends AbstractFactoryBean {
                 Object result;
 
                 // Get the cache configuration for the method.
-                Cachable cacheConfig = method.getAnnotation(Cachable.class);
+                Cacheable cacheConfig = method.getAnnotation(Cacheable.class);
                 MethodArgumentKey mak = null;
                 CachedValue cacheResult = null;
 
@@ -162,7 +160,7 @@ public class EntityCachingFactoryBean extends AbstractFactoryBean {
     /**
      *
      */
-    private MethodArgumentKey buildCacheKey( Cachable cacheConfig, Object[] args, Method method) {
+    private MethodArgumentKey buildCacheKey( Cacheable cacheConfig, Object[] args, Method method) {
         Object[] cacheArgs = new Object[]{};
 
         if ( cacheConfig.relevantArg() >= 0 ) {

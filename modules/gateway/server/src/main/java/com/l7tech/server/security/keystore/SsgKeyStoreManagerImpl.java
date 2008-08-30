@@ -1,13 +1,12 @@
 package com.l7tech.server.security.keystore;
 
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.KeystoreUtils;
+import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.security.keystore.sca.ScaSsgKeyStore;
 import com.l7tech.server.security.keystore.software.DatabasePkcs12SsgKeyStore;
-import com.l7tech.server.security.keystore.software.TomcatSsgKeyFinder;
 import com.l7tech.server.security.sharedkey.SharedKeyManager;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,17 +33,17 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
     private final char[] softwareKeystorePasssword;
 
     private final KeystoreFileManager keystoreFileManager;
-    private final KeystoreUtils keystoreUtils;
     private final ServerConfig serverConfig;
+    private char[] sslKeystorePassphrase;
 
     private boolean initialized = false;
     private List<SsgKeyFinder> keystores = null;
 
-    public SsgKeyStoreManagerImpl(SharedKeyManager skm, KeystoreFileManager kem, KeystoreUtils keystoreUtils, ServerConfig serverConfig) throws KeyStoreException, FindException {
+    public SsgKeyStoreManagerImpl(SharedKeyManager skm, KeystoreFileManager kem, ServerConfig serverConfig, char[] sslKeystorePassphrase) throws KeyStoreException, FindException {
         this.keystoreFileManager = kem;
-        this.keystoreUtils = keystoreUtils;
         this.softwareKeystorePasssword = toPassphrase(skm.getSharedKey());
         this.serverConfig = serverConfig;
+        this.sslKeystorePassphrase = sslKeystorePassphrase;
     }
 
     private char[] toPassphrase(byte[] b) {
@@ -83,17 +82,11 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
                 } else {
                     if (createdHsmFinder)
                         throw new KeyStoreException("Database contains more than one keystore_file row with a format of hsm");
-                    char[] hsmPassword = keystoreUtils.getSslKeystorePasswd().toCharArray();
-                    String sslAlias = keystoreUtils.getSSLAlias();
-                    String caAlias = keystoreUtils.getRootAlias();
-                    list.add(ScaSsgKeyStore.getInstance(id, name, sslAlias, caAlias, hsmPassword, keystoreFileManager));
+                    list.add(ScaSsgKeyStore.getInstance(id, name, sslKeystorePassphrase, keystoreFileManager));
                     createdHsmFinder = true;
                 }
             } else if (format.equals("ss")) {
-                if (haveHsm)
-                    logger.info("Ignoring keystore_file row with a format of ss because this Gateway node is using an HSM instead");
-                else
-                    list.add(new TomcatSsgKeyFinder(id, name, keystoreUtils));
+                logger.fine("Ignoring keystore_file row with a format of ss because this keystore type is no longer supported");
             } else if (format.startsWith("sdb.")) {
                 if (haveHsm)
                     logger.info("Ignoring keystore_file row with a format of sdb because this Gateway node is using an HSM instead");
@@ -104,8 +97,8 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
 
         // TODO maybe offer software keystores even if HSM is available?
         // TODO support multiple software keystores?
-        // TODO remove keystoreUtils entirely, eliminating special privileges for SSL and CA keys?
         keystores = Collections.unmodifiableList(list);
+        sslKeystorePassphrase = null;
         initialized = true;
     }
 
@@ -118,17 +111,19 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
         return keystores;
     }
 
-    public SsgKeyFinder findByPrimaryKey(long id) throws FindException, KeyStoreException {
+    public SsgKeyFinder findByPrimaryKey(long id) throws FindException, KeyStoreException, ObjectNotFoundException {
         init();
         for (SsgKeyFinder keystore : keystores) {
             if (keystore.getOid() == id)
                 return keystore;
         }
-        throw new FindException("No SsgKeyFinder available on this node with id=" + id);
+        throw new ObjectNotFoundException("No SsgKeyFinder available on this node with id=" + id);
     }
 
     @Transactional(readOnly = true)
-    public SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws FindException, KeyStoreException {
+    public SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws ObjectNotFoundException, FindException, KeyStoreException {
+        boolean mustSearchAll = preferredKeystoreId == -1;
+
         // First look in the preferred keystore
         SsgKeyFinder alreadySearched = null;
         if (preferredKeystoreId != -1) {
@@ -138,6 +133,8 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
                 if (alreadySearched != null)
                     return alreadySearched.getCertificateChain(keyAlias);
                 /* FALLTHROUGH and scan all keystores */
+            } catch (ObjectNotFoundException e) {
+                /* FALLTHROUGH and scan all keystores */
             } catch (FindException e) {
                 /* FALLTHROUGH and scan all keystores */
             } catch (KeyStoreException e) {
@@ -145,7 +142,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
             }
         }
 
-        boolean scanOthers = serverConfig.getBooleanPropertyCached(ServerConfig.PARAM_KEYSTORE_SEARCH_FOR_ALIAS, true, 2 * 60 * 1000);
+        boolean scanOthers = mustSearchAll || serverConfig.getBooleanPropertyCached(ServerConfig.PARAM_KEYSTORE_SEARCH_FOR_ALIAS, true, 2 * 60 * 1000);
 
         // Scan the other keystores
         List<SsgKeyFinder> finders = scanOthers ? findAll() : Collections.<SsgKeyFinder>emptyList();
@@ -159,6 +156,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
             }
         }
 
-        throw new FindException("No key with alias " + keyAlias + " found in any keystore");
+        String whichks = scanOthers ? "any keystore" : "keystore ID " + preferredKeystoreId;
+        throw new ObjectNotFoundException("No key with alias " + keyAlias + " found in " + whichks);
     }
 }

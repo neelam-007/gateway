@@ -5,11 +5,8 @@ import com.l7tech.security.cert.TrustedCert;
 
 import javax.swing.*;
 import java.awt.*;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -24,7 +21,6 @@ public class CertUsagePanel extends WizardStepPanel {
     private JCheckBox outboundSSLConnCheckBox;
     private JCheckBox samlAttestingEntityCheckBox;
     private JLabel headerLabel;
-    private static Logger logger = Logger.getLogger(CertUsagePanel.class.getName());
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
 
     public CertUsagePanel(WizardStepPanel next) {
@@ -70,18 +66,6 @@ public class CertUsagePanel extends WizardStepPanel {
     public void readSettings(Object settings) throws IllegalArgumentException {
         if (!(settings instanceof TrustedCert))
             throw new IllegalArgumentException("The settings object must be TrustedCert");
-
-        TrustedCert trustedCert = (TrustedCert) settings;
-
-        X509Certificate cert = null;
-        try {
-            cert = trustedCert.getCertificate();
-        } catch (CertificateException e) {
-             logger.warning(resources.getString("cert.decode.error"));
-            JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
-                                           resources.getString("save.error.title"),
-                                           JOptionPane.ERROR_MESSAGE);
-        }
     }
 
     /**

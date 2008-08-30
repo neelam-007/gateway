@@ -37,7 +37,7 @@ public interface TrustedCertServices {
      * @param requiredOids a Set of TrustedCert OIDs that are acceptable, or null to perform no filtering by OID.
      *                     If a Set is specified, only TrustedCert instances with an OID in the set will be returned.
      *                     If an empty set is specified, no TrustedCert instances will be returned.
-     * @return a Collection of TrustedCert instances that match the specified criteria.  May be empty, but never null.
+     * @return a Collection of read-only TrustedCert instances that match the specified criteria.  May be empty, but never null.
      * @throws com.l7tech.objectmodel.FindException if there is a problem reading TrustedCert instances from the database.
      */
     Collection<TrustedCert> getCertsBySubjectDnFiltered(String subjectDn, boolean omitExpired, Set<TrustedCert.TrustedFor> requiredTrustFlags, Set<Long> requiredOids) throws FindException;

@@ -118,6 +118,10 @@ CREATE TABLE published_service_alias (
   FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+---
+--- All nodes are now assumed always to have access to the CA key
+---
+ALTER TABLE cluster_info DROP COLUMN ismaster;
 
 --
 -- Table structure for table 'policy_alias'

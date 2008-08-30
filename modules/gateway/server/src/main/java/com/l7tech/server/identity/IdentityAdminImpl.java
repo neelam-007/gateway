@@ -1,19 +1,21 @@
 package com.l7tech.server.identity;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
-import static com.l7tech.gateway.common.security.rbac.EntityType.ID_PROVIDER_CONFIG;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
-import com.l7tech.util.HexUtils;
-import com.l7tech.server.util.JaasUtils;
+import static com.l7tech.gateway.common.security.rbac.EntityType.ID_PROVIDER_CONFIG;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.event.admin.AuditRevokeAllUserCertificates;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.server.util.JaasUtils;
+import com.l7tech.util.HexUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 
@@ -22,7 +24,6 @@ import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -42,17 +43,17 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     private ClientCertManager clientCertManager;
 
     private final RoleManager roleManager;
-    private final X509Certificate certificateAuthorityCertificate;
+    private final DefaultKey defaultKey;
     private ApplicationEventPublisher applicationEventPublisher;
 
     private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);
 
     public IdentityAdminImpl(final RoleManager roleManager,
-                             final X509Certificate caCert) {
+                             final DefaultKey defaultKey) {
         if (roleManager == null) throw new IllegalArgumentException("roleManager is required");
 
         this.roleManager = roleManager;
-        this.certificateAuthorityCertificate = caCert;
+        this.defaultKey = defaultKey;
     }
 
     public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
@@ -406,9 +407,9 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         int revocationCount = 0;
         try {
             // determine DN of internal CA
-            X509Certificate caCert = certificateAuthorityCertificate;
-            if (caCert == null) throw new UpdateException("Certificate authority is not configured.");
-            X500Principal caSubject = caCert.getSubjectX500Principal();            
+            SignerInfo caInfo = defaultKey.getCaInfo();
+            if (caInfo == null) throw new UpdateException("Certificate authority is not configured.");
+            X500Principal caSubject = caInfo.getCertificate().getSubjectX500Principal();
 
             // revoke the cert in internal CA
             List<ClientCertManager.CertInfo> infos = clientCertManager.findAll();

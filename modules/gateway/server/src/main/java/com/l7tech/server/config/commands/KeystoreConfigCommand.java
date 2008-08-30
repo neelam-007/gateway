@@ -3,7 +3,6 @@ package com.l7tech.server.config.commands;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.RsaSignerEngine;
 import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
-import com.l7tech.security.prov.luna.LunaCmu;
 import com.l7tech.util.*;
 import com.l7tech.common.io.ProcUtils;
 import com.l7tech.common.io.ProcResult;
@@ -16,7 +15,6 @@ import com.l7tech.server.config.exceptions.KeystoreActionsException;
 import com.l7tech.server.partition.PartitionManager;
 import com.l7tech.server.security.keystore.sca.ScaException;
 import com.l7tech.server.security.keystore.sca.ScaManager;
-import com.l7tech.server.util.MakeLunaCerts;
 import com.l7tech.server.util.SetKeys;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -89,13 +87,12 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                         doDefaultKeyConfig(ksBean);
                         updateSharedKey(ksBean);
                         break;
-                    case LUNA_KEYSTORE_NAME:
-                        doLunaKeyConfig(ksBean);
-                        updateSharedKey(ksBean);
-                        break;
                     case SCA6000_KEYSTORE_NAME:
                         doHSMConfig(ksBean);
                         updateSharedKey(ksBean);
+                        break;
+                    default:
+                        logger.log(Level.SEVERE, "Unsupported keystore type: " + ksType.getShortTypeName());
                         break;
                 }
             } catch (Exception e) {
@@ -254,56 +251,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 logger.info("The config wizard is running in cluster cloning mode and will not generate new keys. The existing cluster keys will be used");
             }
             updateJavaSecurity(javaSecFile, newJavaSecFile, KeyStoreConstants.DEFAULT_SECURITY_PROVIDERS);
-            updateKeystoreProperties(keystorePropertiesFile, ksPassword);
-            updateSystemPropertiesFile(systemPropertiesFile);
-        } catch (Exception e) {
-            String mess = "problem generating keys or keystore - skipping keystore configuration: ";
-            logger.log(Level.SEVERE, mess + e.getMessage(), e);
-            throw e;
-        }
-    }
-
-    private void doLunaKeyConfig(KeystoreConfigBean ksBean) throws Exception {
-        char[] ksPassword = ksBean.getKsPassword();
-        //we don't actually care what the password is for Luna, so make it obvious.
-        ksPassword = "ignoredbyluna".toCharArray();
-
-        String ksDir = getOsFunctions().getKeystoreDir();
-
-        File newJavaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile() + ".new");
-
-        File javaSecFile = new File(getOsFunctions().getPathToJavaSecurityFile());
-        File systemPropertiesFile = new File(getOsFunctions().getSsgSystemPropertiesFile());
-        File keystorePropertiesFile = new File(getOsFunctions().getKeyStorePropertiesFile());
-        File tomcatServerConfigFile = new File(getOsFunctions().getTomcatServerConfig());
-        File caKeyStoreFile = new File( ksDir + KeyStoreConstants.CA_KEYSTORE_FILE);
-        File sslKeyStoreFile = new File(ksDir + KeyStoreConstants.SSL_KEYSTORE_FILE);
-        File caCertFile = new File(ksDir + KeyStoreConstants.CA_CERT_FILE);
-        File sslCertFile = new File(ksDir + KeyStoreConstants.SSL_CERT_FILE);
-
-        File[] files = new File[]
-        {
-            javaSecFile,
-            systemPropertiesFile,
-            keystorePropertiesFile,
-            tomcatServerConfigFile,
-            caKeyStoreFile,
-            sslKeyStoreFile,
-            caCertFile,
-            sslCertFile
-        };
-
-        backupFiles(files, BACKUP_FILE_NAME);
-
-
-        try {
-            KeystoreActions ka = new KeystoreActions(getOsFunctions());
-            //prepare the JDK and the Luna environment before generating keys
-            setLunaSystemProps(ksBean);
-            copyLunaJars(ksBean);
-            ka.prepareJvmForNewKeystoreType(KeystoreType.LUNA_KEYSTORE_NAME);
-            if (!cloningMode) makeLunaKeys(ksBean, caCertFile, sslCertFile, caKeyStoreFile, sslKeyStoreFile);
-            updateJavaSecurity(javaSecFile, newJavaSecFile, KeyStoreConstants.LUNA_SECURITY_PROVIDERS);
             updateKeystoreProperties(keystorePropertiesFile, ksPassword);
             updateSystemPropertiesFile(systemPropertiesFile);
         } catch (Exception e) {
@@ -812,51 +759,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private boolean makeLunaKeys(KeystoreConfigBean ksBean, File caCertFile, File sslCertFile, File caKeyStoreFile, File sslKeyStoreFile) throws Exception {
-        boolean success = false;
-        String hostname = ksBean.getHostname();
-        boolean exportOnly = false;
-        try {
-//            exportOnly = (sharedWizardInfo.getClusterType() == ClusteringType.CLUSTER_JOIN);
-            MakeLunaCerts.makeCerts(hostname, true, false, caCertFile, sslCertFile);
-            success = true;
-        } catch (LunaCmu.LunaCmuException e) {
-            logger.severe("Could not locate the Luna CMU. Please rerun the wizard and check the Luna paths");
-            logger.severe(e.getMessage());
-            throw e;
-        } catch (KeyStoreException e) {
-            logger.severe("There has been a problem creating the Luna Keystore, or in creating/locating a key within it");
-            logger.severe(e.getMessage());
-            throw e;
-        } catch (IOException e) {
-            logger.severe("Could not write the certificates to disk");
-            logger.severe(e.getMessage());
-            throw e;
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();    //should not happen
-            throw e;
-        } catch (CertificateException e) {
-            e.printStackTrace(); //should not happen
-            throw e;
-        } catch (ClassNotFoundException e) {
-            logger.severe("Luna classes not found in the classpath - cannot generate Luna certs");
-            logger.severe(e.getMessage());
-            throw e;
-        } catch (MakeLunaCerts.CertsAlreadyExistException e) {
-            logger.severe("Luna certificates already exist - new certs will not be written");
-            throw e;
-        } catch (LunaCmu.LunaTokenNotLoggedOnException e) {
-            logger.severe("This SSG is not already logged into the luna partition, please log in and re-run");
-            logger.severe(e.getMessage());
-            throw e;
-        }
-
-        if (success) {
-            truncateKeystores(caKeyStoreFile, sslKeyStoreFile);
-        }
-        return success;
-    }
-
     private void updateSystemPropertiesFile(File systemPropertiesFile) throws IOException, ConfigurationException {
         PropertiesConfiguration systemProps = new PropertiesConfiguration();
         InputStream is = null;
@@ -870,7 +772,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
             switch (ourType) {
                 case LUNA_KEYSTORE_NAME:
-                    systemProps.setProperty(PROPKEY_JCEPROVIDER, JceProvider.LUNA_ENGINE);
+                    logger.log(Level.SEVERE, "Unsupported JCE provider (will use BC instead): " + ourType);
+                    systemProps.setProperty(PROPKEY_JCEPROVIDER, JceProvider.BC_ENGINE);
                     break;
                 case SCA6000_KEYSTORE_NAME:
                     systemProps.setProperty(PROPKEY_JCEPROVIDER, JceProvider.PKCS11_ENGINE);

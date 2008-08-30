@@ -1,11 +1,9 @@
 package com.l7tech.security;
 
 import com.l7tech.security.xml.SignerInfo;
-import com.l7tech.server.KeystoreUtils;
-import com.l7tech.server.util.SetKeys;
 import org.bouncycastle.jce.X509Principal;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -17,7 +15,6 @@ import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Random;
-import java.util.Properties;
 
 /**
  * Test class that generates key pair and self signed certificate
@@ -183,67 +180,6 @@ public class Keys {
         fo.close();
         file.deleteOnExit();
         return ks;
-    }
-
-    /**
-     * Create the test ssg keystore properties, and set the system
-     * property 'com.l7tech.server.keystorePropertiesPath' soe the ServerConfig
-     * can pickup those properties in test mode.
-     *
-     * @return the properties that correspond to the '/keystore.properties'
-     */
-    public static Properties createTestSsgKeystoreProperties() throws IOException {
-
-        File f = File.createTempFile("blee", null);
-        f.deleteOnExit();
-
-        File propertiesPath = f.getParentFile();
-
-        if (!propertiesPath.isDirectory()) {
-            throw new IOException("properties path is not a directory");
-        }
-        final String kPath = propertiesPath.getAbsolutePath();
-        final String keystorePropertiesPath = kPath +"/keystore.properties";
-
-        final String password = "password";
-        try {
-            SetKeys.NewCa.main(new String[] {"localhost",
-                                             kPath,
-                                             password,
-                                             password,
-                                             KeyStore.getDefaultType()});
-        } catch (Exception e) {
-            IOException ioe = new IOException();
-            ioe.initCause(e);
-            throw ioe;
-        }
-
-        final Properties sprop = System.getProperties();
-        sprop.setProperty("com.l7tech.server.keystorePropertiesPath", keystorePropertiesPath);
-
-        Properties keystoreProps = new Properties();
-        keystoreProps.put(KeystoreUtils.KSTORE_PATH_PROP_NAME, kPath);
-
-        keystoreProps.put(KeystoreUtils.SSL_KSTORE_NAME, "ssl.ks");
-        keystoreProps.put(KeystoreUtils.SSL_CERT_NAME, "ssl.cer");
-        keystoreProps.put(KeystoreUtils.SSL_KSTORE_PASSWD, password);
-        keystoreProps.put(KeystoreUtils.SSL_KSTORE_TYPE, Keys.KEYSTORE_TYPE);
-
-        keystoreProps.put(KeystoreUtils.ROOT_STORENAME, "ca.ks");
-        keystoreProps.put(KeystoreUtils.ROOT_CERTNAME, "ca.cer");
-        keystoreProps.put(KeystoreUtils.ROOT_STOREPASSWD, password);
-        keystoreProps.put(KeystoreUtils.ROOT_KSTORE_TYPE, Keys.KEYSTORE_TYPE);
-        FileOutputStream fo = new FileOutputStream(keystorePropertiesPath);
-        keystoreProps.store(fo, "test keystore properties");
-        fo.close();
-        new File(keystorePropertiesPath).deleteOnExit();
-        File parent = new File(kPath);
-        new File(parent, "ssl.ks").deleteOnExit();
-        new File(parent, "ssl.cer").deleteOnExit();
-        new File(parent, "ca.ks").deleteOnExit();
-        new File(parent, "ca.cer").deleteOnExit();
-
-        return keystoreProps;
     }
 
     /**

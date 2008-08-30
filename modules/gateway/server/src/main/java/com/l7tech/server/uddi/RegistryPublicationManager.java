@@ -1,13 +1,12 @@
 package com.l7tech.server.uddi;
 
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.KeystoreUtils;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.server.DefaultKey;
+import com.l7tech.server.ServerConfig;
 
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.cert.CertificateException;
 
 /**
  * server side component that acts as a systinet registry client publishing wsdl and service policies.
@@ -21,7 +20,7 @@ import java.security.cert.CertificateException;
 public class RegistryPublicationManager {
     private static final Logger logger = Logger.getLogger(RegistryPublicationManager.class.getName());
     private ServerConfig serverConfig;
-    private KeystoreUtils keystoreUtils;
+    private DefaultKey defaultKey;
     private String myhostname;
 
     public String publishServiceWSDLAndPolicy(String serviceid) {
@@ -35,8 +34,8 @@ public class RegistryPublicationManager {
         this.serverConfig = serverConfig;
     }
 
-    public void setKeystore(KeystoreUtils keystore) {
-        this.keystoreUtils = keystore;
+    public void setKeystore(DefaultKey keystore) {
+        this.defaultKey = keystore;
     }
 
     private String getMyHostName() {
@@ -45,11 +44,8 @@ public class RegistryPublicationManager {
             // most reliable hostname referencable from the outside is probably the subject of
             // the ssl cert for this server
             try {
-                myhostname = keystoreUtils.getSslCert().getSubjectDN().getName();
+                myhostname = defaultKey.getSslInfo().getCertificate().getSubjectDN().getName();
             } catch (IOException e) {
-                logger.log(Level.WARNING, "cannot get hostname from ssl cert", e);
-                myhostname = serverConfig.getHostname();
-            } catch (CertificateException e) {
                 logger.log(Level.WARNING, "cannot get hostname from ssl cert", e);
                 myhostname = serverConfig.getHostname();
             }

@@ -1,22 +1,27 @@
 package com.l7tech.server.transport.http;
 
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.common.io.IOUtils;
-import com.l7tech.server.security.MasterPasswordManager;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.util.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.TransportEvent;
+import com.l7tech.server.partition.DefaultHttpConnectors;
+import com.l7tech.server.security.MasterPasswordManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.tomcat.*;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
+import com.l7tech.util.ResourceUtils;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.connector.Connector;
@@ -80,8 +85,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     private final ServerConfig serverConfig;
     private final MasterPasswordManager masterPasswordManager;
-    private final KeystoreUtils keystoreUtils;
     private final SsgKeyStoreManager ssgKeyStoreManager;
+    private final DefaultKey defaultKeyManager;
     private final Object connectorCrudLuck = new Object();
     private final Map<Long, Pair<SsgConnector, Connector>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, Connector>>();
     private Embedded embedded;
@@ -93,7 +98,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     public HttpTransportModule(ServerConfig serverConfig,
                                MasterPasswordManager masterPasswordManager,
-                               KeystoreUtils keystoreUtils,
+                               DefaultKey defaultKeyManager,
                                SsgKeyStoreManager ssgKeyStoreManager,
                                LicenseManager licenseManager,
                                SsgConnectorManager ssgConnectorManager)
@@ -101,7 +106,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         super("HTTP Transport Module", logger, GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager);
         this.serverConfig = serverConfig;
         this.masterPasswordManager = masterPasswordManager;
-        this.keystoreUtils = keystoreUtils;
+        this.defaultKeyManager = defaultKeyManager;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
         this.instanceId = nextInstanceId.getAndIncrement();
         //noinspection ThisEscapedInObjectConstruction
@@ -352,13 +357,35 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             }
             
             if (!foundHttp )  {
-                logger.severe(NO_HTTPS_CONNECTORS_DEFINED);
-                throw new ListenerException(NO_HTTPS_CONNECTORS_DEFINED);
+                createFallbackConnectors(actuallyStartThem);
             }
 
         } catch (FindException e) {
             throw new ListenerException("Unable to find initial connectors: " + ExceptionUtils.getMessage(e), e);
         }
+    }
+
+    /**
+     * Add some connectors to the DB table, getting them from server.xml if possible, but just creating
+     * some defaults if not.
+     *
+     * @param actuallyStartThem if true, start each connector immediately after saving it.
+     * @return zero or more connectors that have already been saved to the database.  Never null or empty.
+     */
+    private Collection<SsgConnector> createFallbackConnectors(boolean actuallyStartThem) {
+        Collection<SsgConnector> toAdd = DefaultHttpConnectors.getDefaultConnectors();
+        for (SsgConnector connector : toAdd) {
+            try {
+                ssgConnectorManager.save(connector);
+                if (actuallyStartThem) addConnector(connector);
+            } catch (SaveException e) {
+                logger.log(Level.WARNING, "Unable to save fallback connector to DB: " + ExceptionUtils.getMessage(e), e);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
+                            ": " + ExceptionUtils.getMessage(e), e);
+            }
+        }
+        return toAdd;
     }
 
     protected void addConnector(SsgConnector connector) throws ListenerException {
@@ -383,7 +410,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         }
     }
 
-    private Map<String, Object> asTomcatConnectorAttrs(SsgConnector c) {
+    private Map<String, Object> asTomcatConnectorAttrs(SsgConnector c) throws ListenerException {
         Map<String, Object> m = new LinkedHashMap<String, Object>();
 
         m.put("maxThreads", "150");
@@ -417,10 +444,13 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 m.put("clientAuth", "false");
 
             if (c.getKeystoreOid() == null) {
-                m.put("keystoreFile", keystoreUtils.getSslKeystorePath());
-                m.put("keystorePass", keystoreUtils.getSslKeystorePasswd());
-                m.put("keystoreType", keystoreUtils.getSslKeyStoreType());
-                m.put("keyAlias", keystoreUtils.getSSLAlias());
+                try {
+                    SsgKeyEntry defaultKey = defaultKeyManager.getSslInfo();
+                    m.put(SsgJSSESocketFactory.ATTR_KEYALIAS, defaultKey.getAlias());
+                    m.put(SsgJSSESocketFactory.ATTR_KEYSTOREOID, String.valueOf(defaultKey.getKeystoreId()));
+                } catch (IOException e) {
+                    throw new ListenerException("No default SSL key is currently available: " + ExceptionUtils.getMessage(e), e);
+                }
             } else {
                 m.put(SsgJSSESocketFactory.ATTR_KEYALIAS, c.getKeyAlias());
                 m.put(SsgJSSESocketFactory.ATTR_KEYSTOREOID, c.getKeystoreOid().toString());

@@ -24,7 +24,7 @@ public class NewPreorderIterator implements Iterator {
 
     public NewPreorderIterator(final Assertion origRoot,
                                final AssertionTranslator translator)
-            throws PolicyAssertionException 
+            throws PolicyAssertionException
     {
         this.translator = translator;
 

@@ -33,7 +33,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.logging.Logger;
@@ -230,8 +229,6 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
                     auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_VAL_ERROR, new String[]{what}, gse);
                 }
             }
-        } catch ( CertificateException ce ) {
-            auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_VAL_ERROR, new String[]{what}, ce);
         } catch ( FindException fe ) {
             auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_VAL_ERROR, new String[]{what}, fe);
         }

@@ -339,13 +339,7 @@ public class CertSearchPanel extends JDialog {
      */
     private boolean isShown(TrustedCert tc) {
 
-        X509Certificate cert;
-        try {
-            cert = tc.getCertificate();
-        } catch (CertificateException e) {
-            logger.warning(resources.getString("cert.decode.error"));
-            return false;
-        }
+        X509Certificate cert = tc.getCertificate();
 
         String subjectName = CertUtils.extractCommonNameFromClientCertificate(cert).toLowerCase();
         String issuerName = CertUtils.extractIssuerNameFromClientCertificate(cert).toLowerCase();

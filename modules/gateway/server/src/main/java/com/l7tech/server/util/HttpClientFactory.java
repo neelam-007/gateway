@@ -7,7 +7,7 @@ package com.l7tech.server.util;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.DefaultKey;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
@@ -23,7 +23,7 @@ public class HttpClientFactory implements GenericHttpClientFactory {
     private final Object initLock = new Object();
     private SSLContext sslContext;
 
-    private final KeystoreUtils keystore;
+    private final DefaultKey keystore;
     private final X509TrustManager trustManager;
     private final HostnameVerifier hostnameVerifier;
 
@@ -34,7 +34,7 @@ public class HttpClientFactory implements GenericHttpClientFactory {
         params.setMaxTotalConnections(1000);
     }
 
-    public HttpClientFactory(final KeystoreUtils keystore,
+    public HttpClientFactory(final DefaultKey keystore,
                              final X509TrustManager trustManager,
                              final HostnameVerifier hostnameVerifier) {
         if (keystore==null) throw new IllegalArgumentException("keystore must not be null");
@@ -89,7 +89,7 @@ public class HttpClientFactory implements GenericHttpClientFactory {
             // no harm done if multiple threads try to create it the very first time.  s'all good.
             if (sslContext != null) return sslContext;
             SSLContext sc = SSLContext.getInstance("SSL");
-            KeyManager[] keyman = keystore.getSSLKeyManagers();
+            KeyManager[] keyman = keystore.getSslKeyManagers();
             sc.init(keyman, new TrustManager[]{trustManager}, null);
             final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
                                                    HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT);

@@ -1,25 +1,22 @@
 package com.l7tech.gateway.common.security.keystore;
 
 import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.security.xml.SignerInfo;
 
-import java.security.cert.X509Certificate;
-import java.security.UnrecoverableKeyException;
-import java.security.PrivateKey;
-import java.util.Arrays;
 import java.io.Serializable;
+import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.X509Certificate;
 
 /**
  * Represents a private key entry in a Gateway key store, including information about a cert chain and
  * RSA private key.
  */
-public class SsgKeyEntry implements NamedEntity, Serializable {
+public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable {
     private static final long serialVersionUID = 23272983482973429L;
 
     private long keystoreId;
     private String alias;
-    private X509Certificate[] certificateChain;
-    private transient PrivateKey privateKey;
-
 
     /**
      * Create an SsgKeyEntry.
@@ -36,12 +33,11 @@ public class SsgKeyEntry implements NamedEntity, Serializable {
                        X509Certificate[] certificateChain,
                        PrivateKey privateKey)
     {
-        if (certificateChain == null || certificateChain.length < 1 || certificateChain[0] == null)
+        super(privateKey, certificateChain);
+        if (keystoreId != Long.MIN_VALUE && alias != null && (certificateChain == null || certificateChain.length < 1 || certificateChain[0] == null))
             throw new IllegalArgumentException("certificateChain must contain at least one certificate");
         this.keystoreId = keystoreId;
         this.alias = alias;
-        this.certificateChain = certificateChain;
-        this.privateKey = privateKey;
     }
 
     /**
@@ -62,15 +58,6 @@ public class SsgKeyEntry implements NamedEntity, Serializable {
     }
 
     /**
-     * @return the certificate chain for this private key.  Always contains at least one certificate.
-     *         The zeroth entry is the target certificate, containing the public key corresponding to this entry's
-     *         private key.  Entry #1, if it exists, contains the public key that was used to sign Entry #0, and so on.
-     */
-    public X509Certificate[] getCertificateChain() {
-        return certificateChain;
-    }
-
-    /**
      * @return true if getPrivateKey() would return non-null without throwing.
      */
     public boolean isPrivateKeyAvailable() {
@@ -88,26 +75,6 @@ public class SsgKeyEntry implements NamedEntity, Serializable {
         if (privateKey == null)
             throw new UnrecoverableKeyException("The private key is not available to this code");
         return privateKey;
-    }
-
-    /**
-     * Convenience method that returns the Subject DN of the first cert in the cert chain.
-     * Equivalent to getCertificate().getSubjectDN().toString().
-     *
-     * @return the Subject DN of the first cert in the cert chain.
-     */
-    public String getSubjectDN() {
-        return getCertificateChain()[0].getSubjectDN().toString();
-    }
-
-    /**
-     * Convenience metho that returns the first cert in the cert chain.
-     * Equivalent to getCertificateChain[0].
-     *
-     * @return the certificate for this private key.  Never null.
-     */
-    public X509Certificate getCertificate() {
-        return getCertificateChain()[0];
     }
 
     /** @return the keystore id from which this entry came. */
@@ -133,27 +100,5 @@ public class SsgKeyEntry implements NamedEntity, Serializable {
     /** @param privateKey the new RSA private key, or null to clear it. */
     public void setPrivateKey(PrivateKey privateKey) {
         this.privateKey = privateKey;
-    }
-
-    /** @noinspection RedundantIfStatement*/
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        SsgKeyEntry that = (SsgKeyEntry)o;
-
-        if (keystoreId != that.keystoreId) return false;
-        if (alias != null ? !alias.equals(that.alias) : that.alias != null) return false;
-        if (!Arrays.equals(certificateChain, that.certificateChain)) return false;
-
-        return true;
-    }
-
-    public int hashCode() {
-        int result;
-        result = (int)(keystoreId ^ (keystoreId >>> 32));
-        result = 31 * result + (alias != null ? alias.hashCode() : 0);
-        result = 31 * result + (certificateChain != null ? Arrays.hashCode(certificateChain) : 0);
-        return result;
     }
 }

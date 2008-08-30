@@ -1,20 +1,20 @@
 package com.l7tech.server.transport;
 
+import com.l7tech.common.io.PortRange;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Triple;
-import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.common.io.PortRange;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.partition.FirewallRules;
 import com.l7tech.server.tomcat.ConnectionIdValve;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.Triple;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -22,10 +22,11 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.security.KeyManagementException;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.List;
 
 /**
  * Server-side implementation of the TransportAdmin API.
@@ -33,13 +34,13 @@ import java.util.*;
 public class TransportAdminImpl implements TransportAdmin {
     private final ServerConfig serverConfig;
     private final SsgConnectorManager connectorManager;
-    private final KeystoreUtils defaultKeystore;
+    private final DefaultKey defaultKeystore;
 
     private FirewallRules.PortInfo portInfo;
     private long portInfoUpdated = 0;
     private Long portInfoCacheTime;
 
-    public TransportAdminImpl(ServerConfig serverConfig, SsgConnectorManager connectorManager, KeystoreUtils defaultKeystore) {
+    public TransportAdminImpl(ServerConfig serverConfig, SsgConnectorManager connectorManager, DefaultKey defaultKeystore) {
         this.serverConfig = serverConfig;
         this.connectorManager = connectorManager;
         this.defaultKeystore = defaultKeystore;
@@ -85,16 +86,12 @@ public class TransportAdminImpl implements TransportAdmin {
         SSLContext context;
         try {
             final KeyManager[] keyManagers;
-            keyManagers = defaultKeystore.getSSLKeyManagers();
+            keyManagers = defaultKeystore.getSslKeyManagers();
             context = SSLContext.getInstance("SSL");
             context.init(keyManagers, null, null);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(ExceptionUtils.getMessage(e));
         } catch (KeyManagementException e) {
-            throw new RuntimeException(ExceptionUtils.getMessage(e));
-        } catch (KeyStoreException e) {
-            throw new RuntimeException(ExceptionUtils.getMessage(e));
-        } catch (UnrecoverableKeyException e) {
             throw new RuntimeException(ExceptionUtils.getMessage(e));
         }
         return context;
@@ -119,7 +116,7 @@ public class TransportAdminImpl implements TransportAdmin {
                     ret.add(addrs.nextElement());
                 }
             }
-            return ret.toArray(new InetAddress[0]);
+            return ret.toArray(new InetAddress[ret.size()]);
         } catch (SocketException e) {
             throw new RuntimeException("Unable to get network interfaces: " + ExceptionUtils.getMessage(e), e);
         }
