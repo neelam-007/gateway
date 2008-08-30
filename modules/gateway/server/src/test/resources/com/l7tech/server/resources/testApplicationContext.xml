@@ -122,51 +122,21 @@
     </bean>
 
     <!-- ssl config  -->
-    <bean id="keystore" class="com.l7tech.server.TestDefaultKey">
-        <constructor-arg ref="serverConfig"/>
-        <constructor-arg ref="masterPasswordManager"/>
-    </bean>
+    <bean id="defaultKey" class="com.l7tech.server.TestDefaultKey"/>
 
-    <bean id="sslKeystoreType" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="targetObject">
-            <ref local='keystore'/>
-        </property>
-        <property name="targetMethod" value="getSslKeyStoreType"/>
-    </bean>
-
-    <bean id="sslKeystorePassword" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="targetObject">
-            <ref local='keystore'/>
-        </property>
-        <property name="targetMethod" value="getSslKeystorePasswd"/>
-    </bean>
-
-    <bean id="sslKeystoreFile" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="targetObject">
-            <ref local='keystore'/>
-        </property>
-        <property name="targetMethod" value="getSslKeystorePath"/>
+    <bean id="sslKeyEntry" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject" ref="defaultKey"/>
+        <property name="targetMethod" value="getSslInfo"/>
     </bean>
 
     <bean id="sslKeystoreCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="targetObject">
-            <ref local='keystore'/>
-        </property>
-        <property name="targetMethod" value="getSslCert"/>
+        <property name="targetObject" ref="sslKeyEntry"/>
+        <property name="targetMethod" value="getCertificate"/>
     </bean>
 
-    <bean id="sslKeystorePrivateKey" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="targetObject">
-            <ref local='keystore'/>
-        </property>
-        <property name="targetMethod" value="getSSLPrivateKey"/>
-    </bean>
-
-    <bean id="rootCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="targetObject">
-            <ref local='keystore'/>
-        </property>
-        <property name="targetMethod" value="getRootCert"/>
+    <bean id="sslKeyManagers" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject" ref="defaultKey"/>
+        <property name="targetMethod" value="getSslKeyManagers"/>
     </bean>
 
     <!-- server Wss Decorator -->
@@ -232,7 +202,7 @@
     </bean>
 
     <bean id="httpClientFactory" class="com.l7tech.server.util.HttpClientFactory">
-        <constructor-arg ref="keystore"/>
+        <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="trustManager"/>
         <constructor-arg ref="hostnameVerifier"/>
     </bean>
@@ -258,7 +228,7 @@
         <constructor-arg>
             <bean class="com.l7tech.server.security.keystore.SsgKeyStoreManagerStub"/>
         </constructor-arg>
-        <constructor-arg ref="keystore"/>
+        <constructor-arg ref="defaultKey"/>
     </bean>
     
     <bean id="jmsEndpointManager" class="com.l7tech.server.transport.jms.JmsEndpointManagerStub"/>
