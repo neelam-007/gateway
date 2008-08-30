@@ -27,6 +27,7 @@
             <entry name="?*.ico"/>
             <entry name="?*.cer"/>
             <entry name="?*.crt"/>
+            <entry name="?*.db"/>
             <entry name="?*.ks"/>
             <entry name="?*.pfx"/>
         </wildcardResourcePatterns>
