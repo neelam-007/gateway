@@ -74,6 +74,9 @@ public class AdminInfo {
                 if (uniqueId == null) uniqueId = "principal:"+login;
             }
         }
+        if (login == null) login = "unknownClientSubject";
+        if (uniqueId == null) uniqueId = "principal:"+login;
+        if (address == null) address = LOCALHOST_IP;
 
         return new AdminInfo(login, uniqueId, providerOid, address, clientSubject);
     }
