@@ -147,6 +147,7 @@ CREATE TABLE published_service (
 --
 -- Table structure for table 'published_service_alias'
 --
+DROP TABLE IF EXISTS published_service_alias;
 CREATE TABLE published_service_alias (
   `objectid` bigint(20) NOT NULL,
   `version` int(11) NOT NULL,
@@ -204,6 +205,7 @@ CREATE TABLE policy_version (
 --
 -- Table structure for table 'policy_alias'
 --
+DROP TABLE IF EXISTS policy_alias;
 CREATE TABLE policy_alias (
   `objectid` bigint(20) NOT NULL,
   `version` int(11) NOT NULL,
@@ -489,7 +491,7 @@ CREATE TABLE message_context_mapping_values (
   PRIMARY KEY  (objectid),
   FOREIGN KEY (mapping_keys_oid) REFERENCES message_context_mapping_keys (objectid),
   INDEX (mapping_keys_oid)
-) TYPE=InnoDB DEFAULT CHARACTER SET utf8
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Table structure for table `audit`
