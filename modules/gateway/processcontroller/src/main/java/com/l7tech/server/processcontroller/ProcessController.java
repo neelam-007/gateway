@@ -4,6 +4,7 @@
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.server.management.NodeStateType;
+import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.api.node.NodeApi;
 import com.l7tech.server.management.config.host.HostConfig;
 import com.l7tech.server.management.config.node.NodeConfig;
@@ -20,8 +21,7 @@ import javax.xml.ws.soap.SOAPFaultException;
 import java.io.*;
 import java.net.ConnectException;
 import java.text.MessageFormat;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -85,6 +85,10 @@ public class ProcessController {
 
     public void startNode(PCNodeConfig node) throws IOException {
         nodeStates.put(node.getName(), new StartingNodeState(this, node));
+    }
+
+    public List<SoftwareVersion> getAvailableNodeVersions() {
+        return Collections.emptyList(); // TODO
     }
 
     private static abstract class NodeState {
@@ -173,7 +177,7 @@ public class ProcessController {
     }
 
     void loop() {
-        final Set<NodeConfig> nodeConfigs = configService.getGateway().getNodes();
+        final Collection<NodeConfig> nodeConfigs = configService.getHost().getNodes().values();
         if (nodeConfigs.isEmpty()) return;
 
         // TODO when do we notice if a node has been deleted or disabled?
@@ -364,7 +368,7 @@ public class ProcessController {
     }
 
     private void howDoIStartedNode() {
-        final HostConfig.OSType osType = configService.getGateway().getOsType();
+        final HostConfig.OSType osType = configService.getHost().getOsType();
         final String[] cmds;
         final File ssgPwd;
         switch(osType) {

@@ -38,7 +38,7 @@ public class ConfigServiceImpl implements ConfigService {
 
     private volatile HostConfig host;
 
-    public HostConfig getGateway() {
+    public HostConfig getHost() {
         if (host == null) {
             Query q = entityManager.createQuery("select g FROM PCHostConfig g");
             List<PCHostConfig> gs = q.getResultList();
@@ -101,7 +101,7 @@ public class ConfigServiceImpl implements ConfigService {
                     PartitionInformation.OtherEndpointHolder otherEndpointHolder = (PartitionInformation.OtherEndpointHolder)endpointHolder;
                 }
             }
-            g.getNodes().add(node);
+            g.getNodes().put(node.getName(), node);
         }
     }
 
@@ -134,7 +134,10 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     public void addServiceNode(NodeConfig node) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        entityManager.persist(node);
+        final PCHostConfig host = (PCHostConfig)getHost();
+        host.getNodes().put(node.getName(), node);
+        this.host = entityManager.merge(host);
     }
 
     public void updateServiceNode(NodeConfig node) {

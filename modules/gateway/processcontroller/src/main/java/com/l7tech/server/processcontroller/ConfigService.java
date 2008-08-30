@@ -9,7 +9,7 @@ import com.l7tech.server.management.config.node.NodeConfig;
 
 /** @author alex */
 public interface ConfigService {
-    HostConfig getGateway();
+    HostConfig getHost();
 
     void updateGateway(PCHostConfig host);
 

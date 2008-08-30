@@ -29,7 +29,7 @@ public class PCNodeConfig extends NodeConfig {
     /**
      * The hostname of the load balancer in front of this partition's nodes
      * <p/>
-     * TODO is it useful/relevant to know which ports on the LB  
+     * TODO is it useful/relevant to know about the ports on the LB?  
      */
     private String clusterHostname;
 
@@ -41,9 +41,6 @@ public class PCNodeConfig extends NodeConfig {
 
     /** TCP port for intra-cluster RMI communications */
     private int rmiPort;
-
-    /** TCP port for Process Controller API */
-    private int processControllerApiPort;
 
     /** URI suffix for Process Controller API */
     private String processControllerApiUrl;

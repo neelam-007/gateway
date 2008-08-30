@@ -52,7 +52,7 @@ public class PCHostConfig extends HostConfig {
         for (IpAddressConfig ipAddress : ipAddresses) {
             sb.append("  ").append(ipAddress).append("\n");
         }
-        for (NodeConfig node : nodes) {
+        for (NodeConfig node : nodes.values()) {
             sb.append("  ").append(node).append("\n");
         }
         sb.append("</host>");

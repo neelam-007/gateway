@@ -177,7 +177,7 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
                     }
 
                     if (quitter.get()) {
-                        logger.info(node + " " + what + " reader done");
+                        logger.fine(node + " " + what + " reader done");
                         break;
                     }
                 }

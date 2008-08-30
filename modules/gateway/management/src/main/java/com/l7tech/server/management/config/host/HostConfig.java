@@ -7,12 +7,9 @@ import com.l7tech.server.management.config.HasFeatures;
 import com.l7tech.server.management.config.PCEntity;
 import com.l7tech.server.management.config.node.NodeConfig;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.OneToMany;
-import java.util.HashSet;
-import java.util.Set;
+import javax.persistence.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /** @author alex */
 @Entity
@@ -24,7 +21,7 @@ public abstract class HostConfig extends PCEntity implements HasFeatures<HostFea
     /**
      * The set of {@link com.l7tech.server.management.config.node.NodeConfig}s hosted on this Host.
      */
-    protected Set<NodeConfig> nodes = new HashSet<NodeConfig>();
+    protected Map<String, NodeConfig> nodes = new HashMap<String, NodeConfig>();
 
     public HostType getHostType() {
         return hostType;
@@ -43,11 +40,12 @@ public abstract class HostConfig extends PCEntity implements HasFeatures<HostFea
     }
 
     @OneToMany(mappedBy="host", cascade= CascadeType.ALL, fetch= FetchType.EAGER)
-    public Set<NodeConfig> getNodes() {
+    @MapKey(name="name")
+    public Map<String, NodeConfig> getNodes() {
         return nodes;
     }
 
-    public void setNodes(Set<NodeConfig> nodes) {
+    public void setNodes(Map<String, NodeConfig> nodes) {
         this.nodes = nodes;
     }
 

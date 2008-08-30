@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.management.NodeStateType;
+import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.PCNodeConfig;
@@ -15,7 +16,9 @@ import javax.annotation.Resource;
 import javax.jws.WebService;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.Map;
 
 @WebService(name="NodeManagementAPI",
             targetNamespace="http://ns.l7tech.com/secureSpan/5.0/component/processController/nodeManagementApi",
@@ -27,22 +30,42 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     @Resource
     private ProcessController processController;
 
-    public NodeConfig createNode(String newNodeName, String version, Set<DatabaseConfigRow> databaseConfigs)
+    public NodeConfig createNode(String newNodeName, String desiredVersion, Set<DatabaseConfigRow> databaseConfigs)
             throws SaveException {
-        throw new UnsupportedOperationException("Not yet implemented");
+
+        final Map<String,NodeConfig> nodes = configService.getHost().getNodes();
+        PCNodeConfig temp = (PCNodeConfig)nodes.get(newNodeName);
+        if (temp != null) throw new IllegalArgumentException(newNodeName + " already exists");
+
+        SoftwareVersion nodeVersion = null;
+        final List<SoftwareVersion> versions = processController.getAvailableNodeVersions();
+        if (desiredVersion == null) {
+            nodeVersion = versions.get(0);
+        } else for (SoftwareVersion aversion : versions) {
+            if (aversion.toString().equals(desiredVersion)) {
+                nodeVersion = aversion;
+                break;
+            }
+        }
+
+        if (nodeVersion == null) throw new IllegalArgumentException("Node version " + desiredVersion + " is not available on this host");
+        final PCNodeConfig node = new PCNodeConfig();
+        node.setEnabled(false);
+        node.setName(newNodeName);
+        node.setSoftwareVersion(nodeVersion);
+        // TODO create/copy the filesystem artifacts
+        // TODO create the database
+        configService.addServiceNode(node);
+        return node;
     }
 
     public NodeConfig getNode(String nodeName) throws FindException {
-        final Set<NodeConfig> nodes = configService.getGateway().getNodes();
-        for (NodeConfig node : nodes) {
-            if (node.getName().equals(nodeName)) return node;
-        }
-        return null;
+        return configService.getHost().getNodes().get(nodeName);
     }
 
     public Set<NodeHeader> listNodes() throws FindException {
         final Set<NodeHeader> nodes = new HashSet<NodeHeader>();
-        for (NodeConfig config : configService.getGateway().getNodes()) {
+        for (NodeConfig config : configService.getHost().getNodes().values()) {
             final PCNodeConfig pcNodeConfig = (PCNodeConfig)config;
             final NodeStateType state = processController.getNodeState(pcNodeConfig.getName());
             nodes.add(new NodeHeader(pcNodeConfig.getId(), pcNodeConfig.getName(), pcNodeConfig.getSoftwareVersion(), pcNodeConfig.isEnabled(), state));
@@ -84,26 +107,16 @@ public class NodeManagementApiImpl implements NodeManagementApi {
             case STOPPED:
             case UNKNOWN:
             default:
-                final Set<NodeConfig> nodeConfigs;
+                final PCNodeConfig node = (PCNodeConfig)configService.getHost().getNodes().get(nodeName);
+                if (node == null) throw new StartupException(nodeName, "No such node");
+
                 try {
-                    nodeConfigs = configService.getGateway().getNodes();
-                } catch (Exception e) {
-                    throw new FindException("Couldn't get Gateway or Nodes");
+                    if (!node.isEnabled()) throw new StartupException(nodeName, "Node is disabled");
+                    processController.startNode((PCNodeConfig)node);
+                    return NodeStateType.STARTING;
+                } catch (IOException e) {
+                    throw new StartupException(nodeName, "Couldn't be started: " + ExceptionUtils.getMessage(e));
                 }
-
-                for (NodeConfig nodeConfig : nodeConfigs) {
-                    if (nodeName.equals(nodeConfig.getName())) {
-                        try {
-                            if (!nodeConfig.isEnabled()) throw new StartupException(nodeName, "Node is disabled");
-                            processController.startNode((PCNodeConfig)nodeConfig);
-                            return NodeStateType.STARTING;
-                        } catch (IOException e) {
-                            throw new StartupException(nodeName, "Couldn't be started: " + ExceptionUtils.getMessage(e));
-                        }
-                    }
-                }
-
-                throw new StartupException(nodeName, "No such node");
         }
     }
 

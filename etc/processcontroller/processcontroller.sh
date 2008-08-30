@@ -26,7 +26,7 @@ function fail() {
 cd "${SSPC_HOME}" || fail "Directory not found: ${SSPC_HOME}"
 
 #
-"${JAVA_HOME}/bin/java" -jar Controller.jar &>/dev/null <&- &
+"${JAVA_HOME}/bin/java" -Dcom.l7tech.server.processcontroller.hostPropertiesFile="$SSPC_HOME/etc/host.properties" -jar Controller.jar &>/dev/null <&- &
 if [ ${?} -eq 0 ] ; then
   [ -z "${PID_FILE}" ] || echo "${!}" > "${PID_FILE}"
 else
