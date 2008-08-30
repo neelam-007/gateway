@@ -36,6 +36,7 @@ import com.l7tech.server.util.DelegatingServletInputStream;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.mapping.MessageContextMappingManager;
 import com.l7tech.gateway.common.service.PublishedService;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -75,6 +76,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private AuditContext auditContext;
     private SoapFaultManager soapFaultManager;
     private ClusterPropertyManager clusterPropertyManager;
+    private MessageContextMappingManager messageContextMappingManager;
     private LicenseManager licenseManager;
     private StashManagerFactory stashManagerFactory;
     private ServiceCache serviceCache;
@@ -94,6 +96,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         stashManagerFactory = (StashManagerFactory)applicationContext.getBean("stashManagerFactory");
         serviceCache = (ServiceCache)applicationContext.getBean("serviceCache");
         auditor = new Auditor(this, applicationContext, logger);
+        messageContextMappingManager = (MessageContextMappingManager)applicationContext.getBean("messageContextMappingManager");
     }
 
     /**
@@ -157,6 +160,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             context.setAuditContext(auditContext);
             context.setSoapFaultManager(soapFaultManager);
             context.setClusterPropertyManager(clusterPropertyManager);
+            context.setMessageContextMappingManager(messageContextMappingManager);
 
             request.initialize(stashManager, ctype, hrequest.getInputStream());
 

@@ -90,7 +90,7 @@
                 </constructor-arg>
             </bean>
         </property>
-        <property name="clusterPropertyCache" ref="clusterPropertyCache"/> 
+        <property name="clusterPropertyCache" ref="clusterPropertyCache"/>
     </bean>
 
     <bean id="masterPasswordManager" class="com.l7tech.server.security.MasterPasswordManager" factory-method="getInstance" depends-on="systemProperties"/>
@@ -311,7 +311,7 @@
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="trustedCertServices"/>
     </bean>
-    
+
     <!-- server side HTTP routing HTTP client factory -->
     <bean id="httpRoutingHttpClientFactory"
           class="com.l7tech.server.util.IdentityBindingHttpClientFactory"
@@ -717,6 +717,7 @@
                 <ref bean="sinkManager"/>
                 <ref bean="policyManager"/>
                 <ref bean="keystoreFileManager"/>
+                <ref bean="messageContextMappingKeyManager"/>
             </list>
         </property>
         <property name="timer">
@@ -740,7 +741,7 @@
     </bean>
 
     <bean id="httpClientFactory" class="com.l7tech.server.util.HttpClientFactory">
-        <constructor-arg ref="keystore"/>    
+        <constructor-arg ref="keystore"/>
         <constructor-arg ref="trustManager"/>
         <constructor-arg ref="hostnameVerifier"/>
     </bean>
@@ -803,7 +804,7 @@
     <bean id="keystoreFileManager" class="com.l7tech.server.security.keystore.KeystoreFileManagerImpl" parent="hibernateBean"/>
 
     <bean id="ssgConnectorManager" class="com.l7tech.server.transport.SsgConnectorManagerImpl" parent="hibernateBean">
-        <constructor-arg ref="serverConfig"/>            
+        <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="applicationEventProxy"/>
     </bean>
 
@@ -931,5 +932,12 @@
 
     <bean id="kerberosConfig" class="com.l7tech.server.security.kerberos.ServerKerberosConfig">
         <constructor-arg ref="serverConfig"/>
+    </bean>
+
+    <bean id="messageContextMappingKeyManager" class="com.l7tech.server.mapping.MessageContextMappingKeyManagerImpl" parent="hibernateBean"/>
+    <bean id="messageContextMappingValueManager" class="com.l7tech.server.mapping.MessageContextMappingValueManagerImpl" parent="hibernateBean"/>
+    <bean id="messageContextMappingManager" class="com.l7tech.server.mapping.MessageContextMappingManagerImpl">
+        <constructor-arg ref="messageContextMappingKeyManager"/>
+        <constructor-arg ref="messageContextMappingValueManager"/>
     </bean>
 </beans>

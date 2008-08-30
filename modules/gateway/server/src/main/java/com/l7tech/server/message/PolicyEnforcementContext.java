@@ -5,6 +5,7 @@ package com.l7tech.server.message;
 
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.gateway.common.RequestId;
+import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditDetail;
@@ -28,6 +29,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.mapping.MessageContextMappingManager;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
@@ -76,6 +78,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private boolean operationAttempted = false;
     private Operation cachedOperation = null;
     private ClusterPropertyManager clusterPropertyManager = null;
+    private MessageContextMappingManager messageContextMappingManager;
 
     private RoutingStatus routingStatus = RoutingStatus.NONE;
     private URL routedServiceUrl;
@@ -85,6 +88,8 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private AssertionStatus policyoutcome;
     private Long hardwiredService = null;
     private static ThreadLocal<PolicyEnforcementContext> instanceHolder = new ThreadLocal<PolicyEnforcementContext>();
+    private List<MessageContextMapping> mappings = new ArrayList<MessageContextMapping>(5);
+    private long mapping_values_oid;
 
     public PolicyEnforcementContext(Message request, Message response) {
         super(request, response);
@@ -154,13 +159,16 @@ public class PolicyEnforcementContext extends ProcessingContext {
         this.clusterPropertyManager = clusterPropertyManager;
     }
 
+    public MessageContextMappingManager getMessageContextMappingManager() {
+        return messageContextMappingManager;
+    }
+
+    public void setMessageContextMappingManager(MessageContextMappingManager messageContextMappingManager) {
+        this.messageContextMappingManager = messageContextMappingManager;
+    }
+
     public void setAuditContext(AuditContext auditContext) {
         this.auditContext = auditContext;
-        /*if (auditContext != null) {
-            auditContext.setPec(this);
-        } else {
-            Logger.getLogger("com.l7tech.blah").severe("unexpected audit context " + auditContext);
-        }*/
     }
 
     public RoutingStatus getRoutingStatus() {
@@ -362,7 +370,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     /**
      * Get the value of a context variable, with name resolution
-     *  
+     *
      * @param inName the name of the variable to get (case-insensitive), ie "requestXpath.result".  Required.
      * @return a Pair containing the matched variable name and the variable value; never null but the variable value can be null
      * @throws NoSuchVariableException if the given name does not resolve to any variable
@@ -604,9 +612,29 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public Long getHardwiredService() {
         return hardwiredService;
-}
+    }
 
     public void setHardwiredService(Long hardwiredService) {
         this.hardwiredService = hardwiredService;
+    }
+
+    public List<MessageContextMapping> getMappings() {
+        return mappings;
+    }
+
+    public void setMappings(List<MessageContextMapping> mappings) {
+        this.mappings = mappings;
+    }
+
+    public long getMapping_values_oid() {
+        return mapping_values_oid;
+    }
+
+    public void setMapping_values_oid(long mapping_values_oid) {
+        this.mapping_values_oid = mapping_values_oid;
+    }
+
+    public boolean haveMappingsSaved() {
+        return getMapping_values_oid() > 0;
     }
 }

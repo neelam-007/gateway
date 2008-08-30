@@ -46,6 +46,59 @@ create unique index i_thumb on trusted_cert (thumbprint_sha1);
 drop index name on trusted_cert;
 
 --
+-- Table structure for message_context_mapping_keys
+--
+DROP TABLE IF EXISTS message_context_mapping_keys;
+CREATE TABLE message_context_mapping_keys (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  guid char(36) NOT NULL,
+  mapping1_type varchar(36),
+  mapping1_key varchar(128),
+  mapping2_type varchar(36),
+  mapping2_key varchar(128),
+  mapping3_type varchar(36),
+  mapping3_key varchar(128),
+  mapping4_type varchar(36),
+  mapping4_key varchar(128),
+  mapping5_type varchar(36),
+  mapping5_key varchar(128),
+  create_time bigint(20),
+  PRIMARY KEY (objectid),
+  UNIQUE KEY (guid),
+  INDEX (guid)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
+-- Table structure for message_context_mapping_values
+--
+DROP TABLE IF EXISTS message_context_mapping_values;
+CREATE TABLE message_context_mapping_values (
+  objectid bigint(20) NOT NULL,
+  mapping_keys_oid bigint(20) NOT NULL,
+  mapping1_value varchar(255),
+  mapping2_value varchar(255),
+  mapping3_value varchar(255),
+  mapping4_value varchar(255),
+  mapping5_value varchar(255),
+  create_time bigint(20),
+  PRIMARY KEY  (objectid),
+  FOREIGN KEY (mapping_keys_oid) REFERENCES message_context_mapping_keys (objectid),
+  INDEX (mapping_keys_oid)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8
+
+--
+-- Add a new column, mapping_values_oid into service_metrics
+--
+ALTER TABLE service_metrics ADD COLUMN mapping_values_oid BIGINT(20);
+ALTER TABLE service_metrics ADD CONSTRAINT FOREIGN KEY (mapping_values_oid) REFERENCES message_context_mapping_values (objectid);
+--
+-- Add a new column, mapping_values_oid into audit_message
+--
+ALTER TABLE audit_message ADD COLUMN mapping_values_oid BIGINT(20);
+ALTER TABLE audit_message ADD CONSTRAINT FOREIGN KEY (mapping_values_oid) REFERENCES message_context_mapping_values (objectid);
+
+--
 -- Folder changes
 --
 INSERT INTO folder (objectid, name, parent_folder_oid) VALUES (-5002, 'Root Node', NULL);

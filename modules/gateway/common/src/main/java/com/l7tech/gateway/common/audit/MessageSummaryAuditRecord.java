@@ -9,13 +9,15 @@ package com.l7tech.gateway.common.audit;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
+import com.l7tech.gateway.common.mapping.MessageContextMapping;
+import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.security.token.SecurityTokenType;
 
-import javax.persistence.Table;
-import javax.persistence.Entity;
-import javax.persistence.Column;
+import javax.persistence.*;
 import java.util.logging.Level;
+import java.util.List;
 import java.io.OutputStream;
 import java.io.IOException;
 
@@ -65,7 +67,8 @@ public class MessageSummaryAuditRecord extends AuditRecord {
                                      String clientAddr, String requestXml, int requestContentLength,
                                      String responseXml, int responseContentLength, int httpRespStatus, int routingLatency,
                                      long serviceOid, String serviceName, Object operationNameHaver,
-                                     boolean authenticated, SecurityTokenType authenticationType, long identityProviderOid, String userName, String userId)
+                                     boolean authenticated, SecurityTokenType authenticationType, long identityProviderOid,
+                                     String userName, String userId, Long mapping_values_oid)
     {
         super(level, nodeId, clientAddr, identityProviderOid, userName, userId, serviceName, null);
         StringBuffer msg = new StringBuffer("Message ");
@@ -95,6 +98,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         this.serviceOid = serviceOid;
         this.authenticated = authenticated;
         this.authenticationType = authenticationType;
+        this.mapping_values_oid = mapping_values_oid;
     }
 
     /**
@@ -209,6 +213,15 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         return operationName;
     }
 
+    @Column(name="mapping_values_oid")
+    public Long getMapping_values_oid() {
+        return mapping_values_oid;
+    }
+
+    public void setMapping_values_oid(long mapping_values_oid) {
+        this.mapping_values_oid = mapping_values_oid;
+    }
+
     /** @deprecated to be called only for serialization and persistence purposes! */
     protected void setOperationName(String operationName) {
         this.operationNameHaver = null;
@@ -265,6 +278,30 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         this.routingLatency = routingLatency;
     }
 
+    @ManyToOne
+    @JoinColumn(name="mapping_values_oid", insertable=false, updatable=false)
+    public MessageContextMappingValues getMappingValuesEntity() {
+        return mappingValuesEntity;
+    }
+
+    public void setMappingValuesEntity(MessageContextMappingValues mappingValuesEntity) {
+        this.mappingValuesEntity = mappingValuesEntity;
+    }
+
+    public MessageContextMapping[] obtainMessageContextMappings() {
+        if (mappingValuesEntity == null) return new MessageContextMapping[0];
+        MessageContextMappingKeys mappingKeysEntity = mappingValuesEntity.getMappingKeysEntity();
+        if (mappingKeysEntity == null) return new MessageContextMapping[0];
+
+        List<MessageContextMapping> mappings = mappingKeysEntity.obtainMappingsWithEmptyValues();
+        String[] mappingValues = mappingValuesEntity.obtainValues();
+        for (int i = 0; i < mappings.size(); i++) {
+            mappings.get(i).setValue(mappingValues[i]);
+        }
+
+        return mappings.toArray(new MessageContextMapping[0]);
+    }
+
     /** Status of the request so far, or AssertionStatus.UNDEFINED if it's not yet known. */
     protected int status;
 
@@ -300,6 +337,10 @@ public class MessageSummaryAuditRecord extends AuditRecord {
 
     /** Used to lazily populate operationName if it is not yet set. */
     private Object operationNameHaver;
+
+    private Long mapping_values_oid;
+
+    private MessageContextMappingValues mappingValuesEntity;
 
     public void serializeOtherProperties(OutputStream out) throws IOException {
         // status:request_id:service_oid:operation_name:authenticated:authenticationType:request_length:response_length:request_zipxml:

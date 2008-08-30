@@ -28,6 +28,7 @@ import com.l7tech.console.util.jcalendar.TimeRangePicker;
 import com.l7tech.gateway.common.logging.GenericLogAdmin;
 import com.l7tech.gateway.common.logging.LogMessage;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
+import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.objectmodel.FindException;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
@@ -620,6 +621,24 @@ public class LogPanel extends JPanel {
                         msg += "Auth Method: " + sum.getAuthenticationType().getName() + "\n";
                     }
 
+                    MessageContextMapping[] mappings = sum.obtainMessageContextMappings();
+                    if (mappings != null && mappings.length > 0) {
+                        StringBuilder sb = new StringBuilder("\nMessage Context Mappings\n");
+                        boolean foundCustomMapping = false;
+                        for (MessageContextMapping mapping: mappings) {
+                            String customMappingType = MessageContextMapping.MAPPING_TYPES[MessageContextMapping.CUSTOM_MAPPING_TYPE_IDX];
+                            if (mapping.getMappingType().equals(customMappingType)) {
+                                sb.append("Mapping Key  : ").append(mapping.getKey()).append("\n");
+                                sb.append("Mapping Value: ").append(mapping.getValue()).append("\n");
+                                foundCustomMapping = true;
+                            }
+                        }
+
+                        if (foundCustomMapping) {
+                            msg += sb.toString();
+                        }
+                    }
+
                     if (sum.getRequestXml() != null) {
                         reqXmlVisible = true;
                         reqXmlDisplayed = sum.getRequestXml();
@@ -986,19 +1005,19 @@ public class LogPanel extends JPanel {
             JLabel aLabel = new JLabel("All");
 
             aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
-            table.put(new Integer(0), aLabel);
+            table.put(0, aLabel);
 
             aLabel = new JLabel("Info");
             aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
-            table.put(new Integer(40), aLabel);
+            table.put(40, aLabel);
 
             aLabel = new JLabel("Warning");
             aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
-            table.put(new Integer(80), aLabel);
+            table.put(80, aLabel);
 
             aLabel = new JLabel("Severe");
             aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
-            table.put(new Integer(120), aLabel);
+            table.put(120, aLabel);
 
             slider.setPaintLabels(true);
             slider.setLabelTable(table);
@@ -1946,7 +1965,7 @@ public class LogPanel extends JPanel {
         logger.info(dialogMessage);
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                DialogDisplayer.showMessageDialog((Dialog) null, dialogMessage, null);
+                DialogDisplayer.showMessageDialog(null, dialogMessage, null);
             }
         });
     }
@@ -2054,7 +2073,7 @@ public class LogPanel extends JPanel {
         }
 
         public int compareTo(Object o) {
-            return new Long(ssgLogRecord.getMillis()).compareTo(new Long(((WriteableLogMessage)o).ssgLogRecord.getMillis()));
+            return new Long(ssgLogRecord.getMillis()).compareTo(((WriteableLogMessage) o).ssgLogRecord.getMillis());
         }
     }
 
@@ -2065,7 +2084,6 @@ public class LogPanel extends JPanel {
         private JPanel mainPanel;
         private JRadioButton durationButton;
         private JRadioButton timeRangeButton;
-        private JPanel durationPanel;
         private JTextField hoursTextField;
         private JTextField minutesTextField;
         private JCheckBox autoRefreshCheckBox;

@@ -21,7 +21,12 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.mapping.MessageContextMappingManager;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
+import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
+import com.l7tech.gateway.common.mapping.MessageContextMapping;
 
 import javax.wsdl.Operation;
 import java.io.UnsupportedEncodingException;
@@ -44,7 +49,7 @@ public class MessageSummaryAuditFactory {
     private final String nodeId;
     private static final Logger logger = Logger.getLogger(MessageSummaryAuditFactory.class.getName());
     private static final String FALLBACK_ENCODING = "ISO8859-1";
-
+    private static final String CLUSTER_PROP_ADD_MAPPINGS = "customerMapping.addToServiceMetrics";
     private static final Set<String> KNOWN_GOOD_ENCODINGS = new HashSet<String>(Arrays.asList("utf-8", "utf-16", "iso8859-1"));
 
     public MessageSummaryAuditFactory(String nodeId) {
@@ -113,6 +118,11 @@ public class MessageSummaryAuditFactory {
                 requestContentLength = requestContentLengths[0];
             }
 
+            boolean clusterPropEnabledToAddMappings = Boolean.valueOf(ServerConfig.getInstance().getProperty(CLUSTER_PROP_ADD_MAPPINGS));
+            if (clusterPropEnabledToAddMappings && !context.haveMappingsSaved()) {
+                saveMessageContextMapping(context);
+            }
+
             TcpKnob reqTcp = (TcpKnob)request.getKnob(TcpKnob.class);
             if (reqTcp != null)
                 clientAddr = reqTcp.getRemoteAddress();
@@ -156,7 +166,33 @@ public class MessageSummaryAuditFactory {
                                              responseHttpStatus,
                                              routingLatency,
                                              serviceOid, serviceName, operationNameHaver,
-                                             authenticated, authType, identityProviderOid, userName, userId);
+                                             authenticated, authType, identityProviderOid, userName, userId,
+                                             context.getMapping_values_oid());
+    }
+
+    private void saveMessageContextMapping(PolicyEnforcementContext context) {
+        MessageContextMappingKeys keysEntity = new MessageContextMappingKeys();
+        keysEntity.setCreateTime(System.currentTimeMillis());
+        MessageContextMappingValues valuesEntity = new MessageContextMappingValues();
+        valuesEntity.setCreateTime(System.currentTimeMillis());
+
+        List<MessageContextMapping> mappings = context.getMappings();
+        for (int i = 0; i < mappings.size(); i++) {
+            MessageContextMapping mapping = mappings.get(i);
+            keysEntity.setTypeAndKey(i, mapping.getMappingType(), mapping.getKey());
+            valuesEntity.setValue(i, mapping.getValue());
+        }
+
+        MessageContextMappingManager messageContextMappingManager = context.getMessageContextMappingManager();
+        try {
+            long mapping_keys_oid = messageContextMappingManager.saveMessageContextMappingKeys(keysEntity);
+            valuesEntity.setMappingKeysOid(mapping_keys_oid);
+
+            long mapping_values_oid = messageContextMappingManager.saveMessageContextMappingValues(valuesEntity);
+            context.setMapping_values_oid(mapping_values_oid);
+        } catch (Exception e) {
+            logger.warning("Faied to save the keys or values of the message context mapping.");
+        }
     }
 
     private String getMessageBodyText(Message msg, int[] lengthHolder, boolean isRequest) {

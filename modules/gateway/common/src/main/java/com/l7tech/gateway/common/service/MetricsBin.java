@@ -46,6 +46,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
 
     /** Object ID of the {@link PublishedService} for which this bin collects data. */
     private long _serviceOid;
+    private Long _mappingValuesOid = null;
 
     /**
      * Resolution of this bin.
@@ -311,12 +312,13 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
      *                                  but <code>fineInterval</code> <= 0
      */
     public MetricsBin(final long startTime, int fineInterval, int resolution,
-                      String clusterNodeId, long serviceOid)
+                      String clusterNodeId, long serviceOid, Long mappingValuesOid)
     {
         checkResolutionType(resolution);
 
         _clusterNodeId = clusterNodeId;
         _serviceOid = serviceOid;
+        _mappingValuesOid = mappingValuesOid;
         _resolution = resolution;
         _periodStart = periodStartFor(resolution, fineInterval, startTime);
         if (resolution == RES_FINE) {
@@ -347,6 +349,14 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
 
     public long getServiceOid() {
         return _serviceOid;
+    }
+
+    public Long getMappingValuesOid() {
+        return _mappingValuesOid;
+    }
+
+    public void setMappingValuesOid(Long mappingValuesOid) {
+        _mappingValuesOid = mappingValuesOid;
     }
 
     public int getResolution() {

@@ -361,7 +361,8 @@ public class GatewayFeatureSets {
             fs(snmp),
             ass(AuditAssertion.class),
             ass(AuditDetailAssertion.class),
-            ass(EmailAlertAssertion.class));
+            ass(EmailAlertAssertion.class),
+            mass("assertion:MessageContext"));
 
         // Policy logic
         GatewayFeatureSet policyAccel =

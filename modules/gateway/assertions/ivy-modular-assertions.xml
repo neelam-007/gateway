@@ -26,5 +26,6 @@
         <dependency name="NcesValidatorAssertion" rev="latest.integration"/>
         <dependency name="LDAPQueryAssertion" rev="latest.integration"/>
         <dependency name="EsmAssertion" rev="latest.integration"/>
+        <dependency name="MessageContextAssertion" rev="latest.integration"/>
     </dependencies>
 </ivy-module>

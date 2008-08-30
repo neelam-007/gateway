@@ -572,4 +572,9 @@ public class AssertionMessages extends Messages {
     public static final M NCESVALID_CERT_NOT_USED   = m(8709, Level.WARNING, "{0} signing X.509 certificate does not cover expected elements");
     public static final M NCESVALID_CERT_VAL_ERROR  = m(8710, Level.WARNING, "{0} signing X.509 certificate validation error");
     public static final M NCESVALID_CERT_UNTRUSTED  = m(8711, Level.WARNING, "{0} signing X.509 certificate is not trusted");
+
+    public static final M MCM_VARIABLE_NOT_FOUND = m(9001, Level.WARNING, "Message context mapping variable not found {0}.");
+    public static final M MCM_MAPPING_OVERRIDDEN = m(9002, Level.INFO, "Message context mapping overridden {0}.");
+    public static final M MCM_TOO_MANY_MAPPINGS  = m(9003, Level.WARNING, "Message context mapping dropped {0}.");
+    public static final M MCM_TOO_LONG_VALUE     = m(9004, Level.WARNING, "Message context mapping value truncated {0}.");
 }

@@ -61,7 +61,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     private static final Logger logger = Logger.getLogger(ServiceMetricsManager.class.getName());
 
     //- PUBLIC
-
+    public static boolean _clusterPropEnabledToAddMappings;
+    
     public ServiceMetricsManager(String clusterNodeId, ManagedTimer timer) {
         _clusterNodeId = clusterNodeId;
 
@@ -107,7 +108,9 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             synchronized (_serviceMetricsMapLock) {
                 serviceMetrics = _serviceMetricsMap.get(oid);
                 if (serviceMetrics == null) {
-                    serviceMetrics = new ServiceMetrics(serviceOid, clusterNodeId, fineBinInterval, _flusherQueue);
+                    // Set mappingValuesOid = null, because the policy hasn't been processed when the method gets called,
+                    // so the mappings haven't been ready.
+                    serviceMetrics = new ServiceMetrics(serviceOid, clusterNodeId, fineBinInterval, _flusherQueue, null);
                     _serviceMetricsMap.put(oid, serviceMetrics);
                 }
             }
@@ -329,6 +332,15 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                 disable();
             }
         }
+
+        if (CLUSTER_PROP_ADD_MAPPINGS.equals(event.getPropertyName())) {
+            if (Boolean.valueOf((String)event.getNewValue())) {
+                _clusterPropEnabledToAddMappings = true;
+            } else {
+                _clusterPropEnabledToAddMappings = false;
+                _logger.info("Adding message context mappings to Service Metrics is currently disabled.");
+            }
+        }
     }
 
     //- PROTECTED
@@ -343,12 +355,20 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         } else {
             _logger.info("Service metrics collection is currently disabled.");
         }
+
+        if (Boolean.valueOf(ServerConfig.getInstance().getProperty(CLUSTER_PROP_ADD_MAPPINGS))) {
+            _clusterPropEnabledToAddMappings = true;
+        } else {
+            _clusterPropEnabledToAddMappings = false;
+            _logger.info("Adding message context mappings to Service Metrics is currently disabled.");
+        }
     }
 
     //- PRIVATE
 
     /** Name of cluster property that enables/disables service metrics collection. */
     private static final String CLUSTER_PROP_ENABLED = "serviceMetricsEnabled";
+    private static final String CLUSTER_PROP_ADD_MAPPINGS = "customerMapping.addToServiceMetrics";
 
     private static final String HQL_DELETE = "DELETE FROM " + MetricsBin.class.getName() + " WHERE periodStart < ? AND resolution = ?";
     private static final int MINUTE = 60 * 1000;
@@ -466,7 +486,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                     Collection<ServiceHeader> serviceHeaders = _serviceManager.findAllHeaders();
                     for ( ServiceHeader service : serviceHeaders) {
                         final Long oid = new Long(service.getOid());
-                        ServiceMetrics serviceMetrics = new ServiceMetrics(service.getOid(), _clusterNodeId, _fineBinInterval, _flusherQueue);
+                        ServiceMetrics serviceMetrics = new ServiceMetrics(service.getOid(), _clusterNodeId, _fineBinInterval, _flusherQueue, null);
                          _serviceMetricsMap.put(oid, serviceMetrics);
                         // There won't be any deleted services on startup
                         serviceStates.put(oid, service.isDisabled() ? ServiceState.DISABLED : ServiceState.ENABLED);
@@ -684,7 +704,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             // 2. to keep Dashboard moving chart advancing when no request is going through a service
             final long periodEnd = MetricsBin.periodStartFor(MetricsBin.RES_FINE, _fineBinInterval, System.currentTimeMillis());
             final long periodStart = periodEnd - _fineBinInterval;
-            final MetricsBin emptyBin = new MetricsBin(periodStart, _fineBinInterval, MetricsBin.RES_FINE, _clusterNodeId, -1L);
+            final MetricsBin emptyBin = new MetricsBin(periodStart, _fineBinInterval, MetricsBin.RES_FINE, _clusterNodeId, -1L, null);
             emptyBin.setEndTime(periodEnd);
             try {
                 _flusherQueue.put(emptyBin);

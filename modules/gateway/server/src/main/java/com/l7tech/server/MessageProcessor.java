@@ -32,7 +32,6 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.MessageProcessed;
-import com.l7tech.server.hpsoam.WSMFService;
 import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.server.message.HttpSessionPolicyContextCache;
 import com.l7tech.server.message.PolicyContextCache;
@@ -285,6 +284,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             attemptedRequest = true;
 
             status = serverPolicy.checkRequest(context);
+
+            metrics.addMessageContextMappings(context);
 
             // Execute deferred actions for request, then response
             if (status == AssertionStatus.NONE) {

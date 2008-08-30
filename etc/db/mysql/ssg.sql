@@ -451,6 +451,48 @@ CREATE TABLE fed_group_virtual (
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
+-- Table structure for message_context_mapping_keys
+--
+DROP TABLE IF EXISTS message_context_mapping_keys;
+CREATE TABLE message_context_mapping_keys (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  guid char(36) NOT NULL,
+  mapping1_type varchar(36),
+  mapping1_key varchar(128),
+  mapping2_type varchar(36),
+  mapping2_key varchar(128),
+  mapping3_type varchar(36),
+  mapping3_key varchar(128),
+  mapping4_type varchar(36),
+  mapping4_key varchar(128),
+  mapping5_type varchar(36),
+  mapping5_key varchar(128),
+  create_time bigint(20),
+  PRIMARY KEY (objectid),
+  UNIQUE KEY (guid),
+  INDEX (guid)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
+-- Table structure for message_context_mapping_values
+--
+DROP TABLE IF EXISTS message_context_mapping_values;
+CREATE TABLE message_context_mapping_values (
+  objectid bigint(20) NOT NULL,
+  mapping_keys_oid bigint(20) NOT NULL,
+  mapping1_value varchar(255),
+  mapping2_value varchar(255),
+  mapping3_value varchar(255),
+  mapping4_value varchar(255),
+  mapping5_value varchar(255),
+  create_time bigint(20),
+  PRIMARY KEY  (objectid),
+  FOREIGN KEY (mapping_keys_oid) REFERENCES message_context_mapping_keys (objectid),
+  INDEX (mapping_keys_oid)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8
+
+--
 -- Table structure for table `audit`
 --
 
@@ -508,11 +550,13 @@ CREATE TABLE audit_message (
   response_zipxml mediumblob,
   response_status int(11),
   routing_latency int(11),
+  mapping_values_oid BIGINT(20),
   PRIMARY KEY  (objectid),
   KEY idx_status (status),
   KEY idx_request_id (request_id),
   KEY idx_service_oid (service_oid),
-  FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
+  FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (mapping_values_oid) REFERENCES message_context_mapping_value (objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS audit_system;
@@ -633,11 +677,13 @@ CREATE TABLE service_metrics (
   front_max INTEGER NOT NULL,
   front_sum INTEGER NOT NULL,
   service_state VARCHAR(16),
+  mapping_values_oid BIGINT(20),
   INDEX i_sm_nodeid (nodeid),
   INDEX i_sm_serviceoid (published_service_oid),
   INDEX i_sm_resolution (resolution),
   INDEX i_sm_pstart (period_start),
-  PRIMARY KEY (nodeid, published_service_oid, resolution, period_start)
+  PRIMARY KEY (nodeid, published_service_oid, resolution, period_start),
+  FOREIGN KEY (mapping_values_oid) REFERENCES message_context_mapping_value (objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --

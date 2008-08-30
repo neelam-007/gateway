@@ -87,7 +87,9 @@
                 <value>com.l7tech.gateway.common.audit.SystemAuditRecord</value>
                 <value>com.l7tech.gateway.common.audit.AuditDetail</value>
                 <value>com.l7tech.gateway.common.audit.MessageSummaryAuditDetail</value>
-                <value>com.l7tech.gateway.common.audit.MessageSummaryAuditDetail</value>
+
+                <value>com.l7tech.gateway.common.mapping.MessageContextMappingKeys</value>
+                <value>com.l7tech.gateway.common.mapping.MessageContextMappingValues</value>
             </list>
         </property>
         <property name="dataSource" ref="switchedDataSource"/>
@@ -156,6 +158,8 @@
                 <idref bean="policyVersionManager"/>
                 <idref bean="sinkManager"/>
                 <idref bean="esmSubscriptionManager"/>
+                <idref bean="messageContextMappingKeyManager"/>
+                <idref bean="messageContextMappingValueManager"/>
                 <idref bean="policyFolderManager" />
             </list>
         </property>

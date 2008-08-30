@@ -471,6 +471,7 @@
             <key-property name="periodStart" column="period_start" type="long"/>
         </composite-id>
 
+        <property name="mappingValuesOid" column="mapping_values_oid" type="long"/>
         <property name="startTime" column="start_time" type="long"/>
         <property name="endTime" column="end_time" type="long"/>
 
