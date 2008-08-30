@@ -32,7 +32,8 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     private static class Cert extends TrustedCert {
 
         public Cert(X509Certificate cert) {
-            if (cert == null) throw new NullPointerException("A certificate is required");
+            if (cert == null)
+                throw new NullPointerException("A certificate is required");
             setCertificate(cert);
         }
 
@@ -84,12 +85,15 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     /**
      * Create a resolver that will recognize the specified private key (with corresponding cert).
      *
-     * @param publicCert  the certificate that corresponds to privateKey.  Required.
-     * @param privateKey  the private key that corresponds to publicCert.  Required.
+     * @param publicCert  the certificate that corresponds to privateKey, or null to resolve nothing.
+     * @param privateKey  the private key that corresponds to publicCert, or null to resolve the cert but not the key.
      */
     public SimpleSecurityTokenResolver(X509Certificate publicCert, PrivateKey privateKey) {
-        this(new X509Certificate[] { publicCert },
-             new SignerInfo[] { new SignerInfo(privateKey, new X509Certificate[] { publicCert } ) });
+        if (publicCert != null) {
+            addCerts(new X509Certificate[] { publicCert });
+            if (privateKey != null)
+                addPrivateKeys(new SignerInfo[] { new SignerInfo(privateKey, new X509Certificate[] { publicCert } ) });
+        }
     }
 
     /**
