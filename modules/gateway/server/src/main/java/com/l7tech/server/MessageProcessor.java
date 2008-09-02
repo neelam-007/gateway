@@ -285,7 +285,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             status = serverPolicy.checkRequest(context);
 
-            metrics.addMessageContextMappings(context);
+            if (metrics != null) metrics.addMessageContextMappings(context);
 
             // Execute deferred actions for request, then response
             if (status == AssertionStatus.NONE) {

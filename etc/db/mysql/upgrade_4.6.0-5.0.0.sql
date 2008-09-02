@@ -85,7 +85,7 @@ CREATE TABLE message_context_mapping_values (
   PRIMARY KEY  (objectid),
   FOREIGN KEY (mapping_keys_oid) REFERENCES message_context_mapping_keys (objectid),
   INDEX (mapping_keys_oid)
-) TYPE=InnoDB DEFAULT CHARACTER SET utf8
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
 -- Add a new column, mapping_values_oid into service_metrics
