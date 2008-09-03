@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
+import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -22,7 +23,7 @@ public class DeleteFolderAction extends SecureAction {
     private FolderAdmin folderAdmin;
 
     public DeleteFolderAction(long folderOid, AbstractTreeNode folderToDelete, FolderAdmin folderAdmin) {
-        super(new AttemptedCreate(EntityType.FOLDER), UI_PUBLISH_SERVICE_WIZARD);
+        super(new AttemptedDeleteAll(EntityType.FOLDER), UI_PUBLISH_SERVICE_WIZARD);
         this.folderOid = folderOid;
         this.folderToDelete = folderToDelete;
         this.folderAdmin = folderAdmin;

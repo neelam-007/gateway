@@ -162,7 +162,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JPanel statusBarPane = null;
     private JLabel statusMsgLeft = null;
     private JLabel statusMsgRight = null;
-
+    private JLabel filterStatusLabel = new JLabel();
 
     private JToolBar toolBarPane = null;
     private PolicyToolBar policyToolBar = null;
@@ -2004,12 +2004,10 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         JPanel servicesAndPoliciesTreePanel = new JPanel();
         servicesAndPoliciesTreePanel.setLayout(new BorderLayout());
+        getFilterStatusLabel().setText(FILTER_STATUS_NONE);
 
-        JLabel filterStatusLabel = new JLabel();
-        TopComponents.getInstance().registerComponent(MainWindow.FILTER_STATUS_LABEL, filterStatusLabel);
-        filterStatusLabel.setText(FILTER_STATUS_NONE);
         servicesAndPoliciesTreePanel.add(serviceScroller, BorderLayout.CENTER);
-        servicesAndPoliciesTreePanel.add(filterStatusLabel, BorderLayout.SOUTH);
+        servicesAndPoliciesTreePanel.add(getFilterStatusLabel(), BorderLayout.SOUTH);
         
         verticalSplitPane.setBottomComponent(servicesAndPoliciesTreePanel);
 
@@ -2018,6 +2016,15 @@ public class MainWindow extends JFrame implements SheetHolder {
         mainLeftPanel.add(getPolicyToolBar(), BorderLayout.EAST);
         mainLeftPanel.setBorder(null);
         return mainLeftPanel;
+    }
+
+    private JLabel getFilterStatusLabel(){
+        if(filterStatusLabel != null){
+            return filterStatusLabel;
+        }
+        filterStatusLabel = new JLabel();
+        TopComponents.getInstance().registerComponent(MainWindow.FILTER_STATUS_LABEL, filterStatusLabel);
+        return filterStatusLabel;
     }
 
     private Component getAssertionDescriptionPane() {

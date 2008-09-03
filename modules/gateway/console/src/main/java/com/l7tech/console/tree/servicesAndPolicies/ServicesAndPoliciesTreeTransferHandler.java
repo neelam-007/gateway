@@ -101,20 +101,13 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                 if(tree.getIgnoreCurrentclipboard()){
                     return false;
                 }
-// TODO [Donal] ensure this is ok
-//                JTree.DropLocation dropLocation = tree.getDropLocation();
-                  TreePath path;
-//                if(dropLocation == null) { // Try using the selected path
-                    if(tree.getSelectionCount() == 1) {
-                        path = tree.getSelectionPath();
-                    } else {
-                        return false;
-                    }
-//                } else {
-//                    path = dropLocation.getPath();
-//                }
-                //TODO [Donal] When ever going to paste need to make sure that the service / policy has not been changed
-                //TODO [Donal] by another admin user via a different SSM, load the service and check it's in the same folder
+                TreePath path;
+                if(tree.getSelectionCount() == 1) {
+                    path = tree.getSelectionPath();
+                } else {
+                    return false;
+                }
+
                 if(transferable.getTransferDataFlavors().length > 0 && FolderAndNodeTransferable.ALLOWED_DATA_FLAVOR.equals(transferable.getTransferDataFlavors()[0])) {
                     if(!(path.getLastPathComponent() instanceof FolderNodeBase)) {
                         return false;

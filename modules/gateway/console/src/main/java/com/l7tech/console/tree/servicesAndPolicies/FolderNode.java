@@ -39,7 +39,7 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase{
         folderAdmin = Registry.getDefault().getServiceManager();
 
         allActions = new Action[]{
-        new EditServiceFolderAction(folder, folderHeader, this, folderAdmin),
+        new EditFolderAction(folder, folderHeader, this, folderAdmin),
         new CreateFolderAction(folderHeader.getOid(), this, folderAdmin),
         new DeleteFolderAction(folderHeader.getOid(), this, folderAdmin),
         new PasteAsAliasAction(this),

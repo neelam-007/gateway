@@ -84,7 +84,6 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
         setCellRenderer(new EntityTreeCellRenderer());
 
         setDragEnabled(true);
-        //setDropMode(DropMode.ON); // TODO [Donal] is there a 1.5 equivalent of this
         setTransferHandler(new ServicesAndPoliciesTreeTransferHandler());
 
         // disable Edit menu actions
@@ -257,7 +256,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
     /**
      * Get the standard global cut action, but only if the current user has permissions to carry out
      * the supplied operationType on the supplied entityType.
-     * Currently only supports POLICY_FOLDER and UPDATE
+     * Currently only supports FOLDER and UPDATE
      * Use this method when you need a secured Action which is not part of the SecureAction hierarchy
      * If a client uses this method in a once off initialization for cut and paste actions there is the chance that
      * the clipboard is not yet ready, in which case null will be returned.
@@ -276,7 +275,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
             if(!ClipboardActionType.ALL_ACTIONS.contains(clipboardActionType)) return null;
 
             if(ClipboardActions.isSystemClipboardAvailable()) {
-                //use an AttemptedUpdate, which represents an Update attempty on a Policy_Folder to determine
+                //use an AttemptedUpdate, which represents an Update attempty on a Folder to determine
                 //whether cut should be available for this node
                 final Folder folder = new Folder("TestFolder", null);
                 AttemptedUpdate attemptedUpdate = new AttemptedUpdate(EntityType.FOLDER, folder);
