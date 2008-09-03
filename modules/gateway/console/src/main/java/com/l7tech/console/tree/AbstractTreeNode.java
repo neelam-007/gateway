@@ -165,6 +165,9 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     /**
      * @return the TreeNode in this node's child array at the specified
      *         index using the filter if specified
+     * @throw java.lang.ArrayIndexOutOfBoundsException if a filter has been set and we can't match the node at the
+     * requested index to the index's of nodes the filter's accept() method shows. This will happen if a filter is set
+     * and an update operation is performed on the model. Remove any filters before any updates are done.
      */
     public TreeNode getChildAt(int index, NodeFilter filter) {
         if (filter == null) {

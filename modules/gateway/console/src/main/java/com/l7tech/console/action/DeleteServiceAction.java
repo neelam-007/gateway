@@ -84,16 +84,19 @@ public class DeleteServiceAction extends ServiceNodeAction {
                         //Remove an aliases if they exist
                         ServiceHeader sH = (ServiceHeader) node.getUserObject();
                         long oldServiceOid = sH.getOid();
+                        Object root = model.getRoot();
+                        RootNode rootNode = (RootNode) root;
+                        
                         if(!sH.isAlias()){
-                            Object root = model.getRoot();
-                            RootNode rootNode = (RootNode) root;
                             Set<AbstractTreeNode> foundNodes = rootNode.getAliasesForEntity(oldServiceOid);
-                            for(AbstractTreeNode atn: foundNodes){
-                                model.removeNodeFromParent(atn);
+                            if(!foundNodes.isEmpty()){
+                                for(AbstractTreeNode atn: foundNodes){
+                                    model.removeNodeFromParent(atn);
+                                }
+                                rootNode.removeEntity(oldServiceOid);                                
                             }
-                            tree.removeTrackedEntity(oldServiceOid);
                         }else{
-                            tree.removeTrackedAlias(oldServiceOid, node);
+                            rootNode.removeAlias(oldServiceOid, node);
                         }
 
                         try {

@@ -162,7 +162,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JPanel statusBarPane = null;
     private JLabel statusMsgLeft = null;
     private JLabel statusMsgRight = null;
-    private JLabel filterStatusLabel = new JLabel();
+    private JLabel filterStatusLabel = null;
 
     private JToolBar toolBarPane = null;
     private PolicyToolBar policyToolBar = null;

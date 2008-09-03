@@ -16,6 +16,7 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
+import com.l7tech.console.tree.servicesAndPolicies.AlterFilterAction;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityHeader;
 
@@ -85,6 +86,10 @@ public class PublishServiceAction extends SecureAction {
                 AbstractTreeNode root = TopComponents.getInstance().getServicesFolderNode();
                 TreeNode[] nodes = root.getPath();
                 DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                //Remove any filter before insert
+                AlterFilterAction afa = new AlterFilterAction(AlterFilterAction.FilterType.ALL);
+                afa.invoke();
+                
                 final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh, RootNode.getComparator());
                 model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));
                 RootNode rootNode = (RootNode) model.getRoot();

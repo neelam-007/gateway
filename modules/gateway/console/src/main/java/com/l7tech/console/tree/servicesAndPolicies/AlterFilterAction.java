@@ -11,6 +11,7 @@ import java.util.Enumeration;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.FilteredTreeModel;
+import com.l7tech.console.tree.NodeFilter;
 import com.l7tech.console.action.BaseAction;
 import com.l7tech.console.MainWindow;
 
@@ -101,14 +102,22 @@ public class AlterFilterAction extends BaseAction {
 
         FilteredTreeModel ftm = (FilteredTreeModel) model;
 
-        final JLabel filterStatusLabel = (JLabel) TopComponents.getInstance().getComponent(MainWindow.FILTER_STATUS_LABEL);        
+        final JLabel filterStatusLabel = (JLabel) TopComponents.getInstance().getComponent(MainWindow.FILTER_STATUS_LABEL);
+        if(filterStatusLabel == null) return;
+
+        NodeFilter nodeFilter = ftm.getFilter();
+        //use nodeFilter below to determine if we actually need to take any action
+        //if the filter is the same, do nothing
         if(filterType.equals(FilterType.SERVICES)){
+            if(nodeFilter instanceof ServiceNodeFilter) return;
             ftm.setFilter(serviceNodeFilter);
             filterStatusLabel.setText(MainWindow.FILTER_STATUS_SERVICES);
         }else if (filterType.equals(FilterType.POLICY_FRAGMENT)){
+            if(nodeFilter instanceof PolicyNodeFilter) return;
             ftm.setFilter(policyNodeFilter);
             filterStatusLabel.setText(MainWindow.FILTER_STATUS_POLICY_FRAGMENTS);
         }else{
+            if(nodeFilter == null) return;
             ftm.setFilter(null);
             filterStatusLabel.setText(MainWindow.FILTER_STATUS_NONE);
         }

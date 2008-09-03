@@ -87,16 +87,18 @@ public class DeletePolicyAction extends PolicyNodeAction {
                         //Remove an aliases if they exist
                         PolicyHeader pH = (PolicyHeader) node.getUserObject();
                         long oldPolicyOid = pH.getOid();
+                        Object root = model.getRoot();
+                        RootNode rootNode = (RootNode) root;
                         if(!pH.isAlias()){
-                            Object root = model.getRoot();
-                            RootNode rootNode = (RootNode) root;
                             Set<AbstractTreeNode> foundNodes = rootNode.getAliasesForEntity(oldPolicyOid);
-                            for(AbstractTreeNode atn: foundNodes){
-                                model.removeNodeFromParent(atn);
+                            if(!foundNodes.isEmpty()){
+                                for(AbstractTreeNode atn: foundNodes){
+                                    model.removeNodeFromParent(atn);
+                                }
+                                rootNode.removeEntity(oldPolicyOid);
                             }
-                            tree.removeTrackedEntity(oldPolicyOid);
                         }else{
-                            tree.removeTrackedAlias(oldPolicyOid, node);
+                            rootNode.removeAlias(oldPolicyOid, node);
                         }
                         
                         try {

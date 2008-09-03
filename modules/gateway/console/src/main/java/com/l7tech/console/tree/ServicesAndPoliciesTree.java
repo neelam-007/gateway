@@ -389,14 +389,4 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
             model.nodeStructureChanged(atn);
         }
    }
-
-    public void removeTrackedAlias(Long entityOid, AbstractTreeNode atn){
-        RootNode rootNode = getRootNode();
-        rootNode.removeAlias(entityOid, atn);
-    }
-
-    public void removeTrackedEntity(Long entityOid){
-        RootNode rootNode = getRootNode();
-        rootNode.removeEntity(entityOid);
-    }
 }
