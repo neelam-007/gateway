@@ -95,7 +95,7 @@ public class ProcessController {
     }
 
     public List<SoftwareVersion> getAvailableNodeVersions() {
-        return Collections.emptyList(); // TODO
+        return Collections.singletonList(SoftwareVersion.fromString("5.0")); //TODO 
     }
 
     private static abstract class NodeState {
@@ -367,7 +367,7 @@ public class ProcessController {
                 StartingNodeState startingState = new StartingNodeState(this, node);
                 nodeStates.put(node.getName(), startingState);
             } catch (IOException e1) {
-                logger.log(Level.WARNING, "Unable to start " + node + "; will retry", e);
+                logger.log(Level.WARNING, "Unable to start " + node + "; will retry", e1);
             }
         }
     }
@@ -386,7 +386,7 @@ public class ProcessController {
                 String base = nodeBaseDir;
                 final File nodesDir;
                 nodesDir = base == null ?
-                        new File(new File(System.getProperty("user.dir")).getParentFile(), "node") :
+                        new File(new File(System.getProperty("user.dir")).getParentFile(), "Nodes") :
                         new File(nodeBaseDir);
                 if (!(nodesDir.exists() && nodesDir.isDirectory())) throw new IllegalStateException("Couldn't find node directory " + nodesDir.getAbsolutePath());
 
@@ -397,7 +397,8 @@ public class ProcessController {
                     cmds = new LinkedList<String>(Arrays.asList(
                         "java",
                         "-Dcom.l7tech.server.home=\"" + ssgPwd.getCanonicalPath() + "\"",
-                        "-Dcom.l7tech.server.processControllerPresent=true"
+                        "-Dcom.l7tech.server.processControllerPresent=true",
+                        "-Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig"
                     ));
 
                     for (HostFeature hf : node.getHost().getFeatures()) {  // TODO needs more scala.Seq#filter

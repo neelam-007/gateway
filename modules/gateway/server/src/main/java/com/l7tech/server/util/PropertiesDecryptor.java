@@ -1,6 +1,6 @@
 package com.l7tech.server.util;
 
-import com.l7tech.server.security.MasterPasswordManager;
+import com.l7tech.util.MasterPasswordManager;
 
 import java.util.Properties;
 import java.util.Map;

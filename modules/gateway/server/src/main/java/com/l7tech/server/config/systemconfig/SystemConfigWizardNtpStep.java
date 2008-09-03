@@ -1,10 +1,11 @@
 package com.l7tech.server.config.systemconfig;
 
 import com.l7tech.server.config.exceptions.WizardNavigationException;
-import com.l7tech.server.config.ui.console.BaseConsoleStep;
-import com.l7tech.server.config.ui.console.ConfigurationWizard;
+import com.l7tech.server.config.wizard.BaseConsoleStep;
+import com.l7tech.server.config.wizard.ConfigurationWizard;
+import com.l7tech.server.config.OSDetector;
+import com.l7tech.server.config.OSSpecificFunctions;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.collections.map.HashedMap;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -52,6 +53,7 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
     }
 
     private void doTimeZoneConfig() throws IOException, WizardNavigationException {
+        OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions();
         if (StringUtils.isNotEmpty(osFunctions.getTimeZonesDir())) {
             boolean shouldConfigureTz = getConfirmationFromUser("Would you like to configure the timezone on this system?","y");
 
@@ -76,6 +78,7 @@ public class SystemConfigWizardNtpStep extends BaseConsoleStep {
             printText("*** " + "Could not determine available timezones. Timezone directory \"" + dir.getAbsolutePath() + "\" does not exist" + " ***" + getEolChar());
             logger.warning("Could not determine available timezones. Timezone directory \"" + dir.getAbsolutePath() + "\" does not exist");
         } else {
+            OSSpecificFunctions osFunctions = OSDetector.getOSSpecificFunctions();
             File[] allTimeZones = getTimezones(dir);
             File[] timezonesToDisplay;
             int howManyTimeZones = allTimeZones.length;

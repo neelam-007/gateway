@@ -2,7 +2,6 @@ package com.l7tech.server.flasher;
 
 import com.l7tech.util.HexUtils;
 import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.db.DBActions;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -21,8 +20,10 @@ import java.util.logging.Logger;
  * Date: Nov 8, 2006<br/>ma
  */
 public class DBDumpUtil {
+
+    //TODO [steve] fix flasher
+
     private static final Logger logger = Logger.getLogger(DBDumpUtil.class.getName());
-    private static DBActions dbActions;
     public static final String DBDUMPFILENAME_STAGING = "dbdump_migrate.sql";
     public static final String DBDUMPFILENAME_CLONE = "dbdump_restore.sql";
     public static final String LICENCEORIGINALID = "originallicenseobjectid.txt";
@@ -44,7 +45,7 @@ public class DBDumpUtil {
      */
     public static void dump(OSSpecificFunctions osFunctions, String databaseURL, String databaseUser, String databasePasswd,
                             boolean includeAudit, String outputDirectory, PrintStream stdout) throws SQLException, IOException {
-        Connection c = getDBActions(osFunctions).getConnection(databaseURL, databaseUser, databasePasswd);
+        Connection c = null;//getDBActions(osFunctions).getConnection(databaseURL, databaseUser, databasePasswd);
         if (c == null) {
             logger.warning("cannot get connection");
             throw new SQLException("could not connect using url: " + databaseURL +
@@ -182,14 +183,14 @@ public class DBDumpUtil {
         return false;
     }
 
-    private static DBActions getDBActions(OSSpecificFunctions osFunctions) throws SQLException {
-        if (dbActions == null) {
-            try {
-                dbActions = new DBActions(osFunctions);
-            } catch (ClassNotFoundException e) {
-                throw new SQLException(e.getMessage());
-            }
-        }
-        return dbActions;
-    }
+//    private static DBActions getDBActions(OSSpecificFunctions osFunctions) throws SQLException {
+//        if (dbActions == null) {
+//            try {
+//                dbActions = new DBActions(osFunctions);
+//            } catch (ClassNotFoundException e) {
+//                throw new SQLException(e.getMessage());
+//            }
+//        }
+//        return dbActions;
+//    }
 }

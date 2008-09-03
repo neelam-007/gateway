@@ -5,7 +5,7 @@ use FileHandle;
 
 my $timestamp = localtime time;
 my $logFile = new FileHandle;
-if ($logFile->open(">>/ssg/sysconfigwizard/ssgsysconfig.log")) {
+if ($logFile->open(">>/opt/SecureSpan/Appliance/sysconfigwizard/ssgsysconfig.log")) {
 	$logFile->print("\n-------------------------------------------------------------------\n");
 	$logFile->print("$timestamp: System Configuration Started\n");
 	$logFile->print("-------------------------------------------------------------------\n");
@@ -22,13 +22,13 @@ my $timezone = undef;
 my @filesToDelete;
 
 my $netConfigCommand = "/usr/sbin/netconfig";
-my $netConfigPattern = "/ssg/sysconfigwizard/configfiles/netconfig_*";
+my $netConfigPattern = "/opt/SecureSpan/Appliance/sysconfigwizard/configfiles/netconfig_*";
 
 my $inputFh = new FileHandle;
 my %inputFiles = (
-    "HOSTNAMEFILE" => "/ssg/sysconfigwizard/configfiles/hostname",
-    "NTPFILE" => "/ssg/sysconfigwizard/configfiles/ntpconfig",
-    "TIMEZONEFILE" => "/ssg/sysconfigwizard/configfiles/timezone"
+    "HOSTNAMEFILE" => "/opt/SecureSpan/Appliance/sysconfigwizard/configfiles/hostname",
+    "NTPFILE" => "/opt/SecureSpan/Appliance/sysconfigwizard/configfiles/ntpconfig",
+    "TIMEZONEFILE" => "/opt/SecureSpan/Appliance/sysconfigwizard/configfiles/timezone"
 );
 
 my $outputFh = new FileHandle;

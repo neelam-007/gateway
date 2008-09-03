@@ -26,6 +26,7 @@ public class NodeConfig extends PCEntity implements HasFeatures<NodeFeature> {
      */
     protected transient Set<ConnectorConfig> connectors = new HashSet<ConnectorConfig>();
 
+    @XmlTransient
     @ManyToOne(cascade= CascadeType.ALL, optional=false)
     public HostConfig getHost() {
         return host;

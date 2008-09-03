@@ -13,8 +13,6 @@ import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.TransportEvent;
-import com.l7tech.server.partition.DefaultHttpConnectors;
-import com.l7tech.server.security.MasterPasswordManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.tomcat.*;
 import com.l7tech.server.transport.SsgConnectorManager;
@@ -22,6 +20,7 @@ import com.l7tech.server.transport.TransportModule;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.MasterPasswordManager;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.connector.Connector;
@@ -144,7 +143,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
         File ssgHome = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_SSG_HOME_DIRECTORY, null, false);
         if (ssgHome == null) throw new LifecycleException("No ssgHome set");
-        File inf = new File(ssgHome, "etc" + File.separator + "inf");
+        File inf = new File(ssgHome, "web");
         if (!inf.exists() || !inf.isDirectory()) throw new LifecycleException("No such directory: " + inf.getPath());
 
         final String s = inf.getAbsolutePath();
@@ -176,7 +175,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     public void propertyChange(PropertyChangeEvent evt) {
         if (executor == null) return; // not yet started
-        
+
         final String clusterProp = ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY;
         if (evt.getPropertyName().equals(clusterProp)) {
             try {
@@ -355,7 +354,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                     }
                 }
             }
-            
+
             if (!foundHttp )  {
                 createFallbackConnectors(actuallyStartThem);
             }

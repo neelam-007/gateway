@@ -20,11 +20,8 @@ fi
 alias startssg='/etc/rc.d/init.d/ssg start'
 alias stopssg='/etc/rc.d/init.d/ssg stop'
 
-ALL_PARTITIONS=`ls ${SSG_HOME}/etc/conf/partitions/ | grep -v template_`
-PARTITION_COUNT=`echo ${ALL_PARTITIONS} | wc -w`
-
 system_ram=`grep MemTotal /proc/meminfo |cut -c 15-23`
-# Maximum amount of RAM for _SINGLE_ partition
+# Maximum amount of RAM to use
 multiplier="2/3"
 #
 let java_ram="$system_ram*$multiplier"
@@ -35,21 +32,10 @@ if [ `expr $java_ram \> 2074412` == 1 ]; then
 	# CAP at 2 gigs
 fi
 
-if [ ${PARTITION_COUNT} -gt 1 ]; then
-  let java_ram="${system_ram}*${multiplier}/${PARTITION_COUNT}"
-  if [ `expr $java_ram \< 524288 ` == 1 ]; then
-      # Set a floor, prevent OOM situation
-    java_ram=524288;
-  fi
-fi
-
 # Setting larger permsize for java 1.6
-PARTITION_OPTS="-Xmx${java_ram}k -XX:MaxPermSize=128M -Xss256k"
+NODE_OPTS="-Xmx${java_ram}k -XX:MaxPermSize=128M -Xss256k"
 
-# End Per-Partition
-#########################################################################
-
-export PARTITION_OPTS
+export NODE_OPTS
 export PATH
 
 unset system_ram

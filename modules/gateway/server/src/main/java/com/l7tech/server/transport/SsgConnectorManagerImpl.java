@@ -8,9 +8,10 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.server.partition.FirewallRules;
+import com.l7tech.server.util.FirewallRules;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -24,7 +25,7 @@ import java.util.logging.Logger;
  */
 public class SsgConnectorManagerImpl
         extends HibernateEntityManager<SsgConnector, EntityHeader>
-        implements SsgConnectorManager, InitializingBean
+        implements SsgConnectorManager, InitializingBean, DisposableBean
 {
     protected static final Logger logger = Logger.getLogger(SsgConnectorManagerImpl.class.getName());
 
@@ -157,10 +158,14 @@ public class SsgConnectorManagerImpl
         File program = getFirewallUpdater();
         if (program != null && sudo != null)
             logger.log(Level.INFO, "Using firewall rules updater program: sudo " + program);
-        writeFirewallDropfile();
+        openFirewallForConnectors();
     }
 
-    private void writeFirewallDropfile() {
+    public void destroy() throws Exception {
+        closeFirewallForConnectors();
+    }
+
+    private void openFirewallForConnectors() {
         try {
             File conf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_CONFIG_DIRECTORY, "/ssg/etc/conf", true);
             String firewallRules = new File(conf, FIREWALL_RULES_FILENAME).getPath();
@@ -173,6 +178,23 @@ public class SsgConnectorManagerImpl
 
         } catch (IOException e) {
             logger.log(Level.WARNING, "Unable to update port list dropfile " + FIREWALL_RULES_FILENAME + ": " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    private void closeFirewallForConnectors() {
+        if (sudo == null)
+            return;
+        File program = getFirewallUpdater();
+        if (program == null)
+            return;
+
+        File conf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_CONFIG_DIRECTORY, "/ssg/etc/conf", true);
+        String rulesFile = new File(conf, FIREWALL_RULES_FILENAME).getPath();
+
+        try {
+            ProcUtils.exec(null, sudo, new String[] { program.getAbsolutePath(), rulesFile, "stop" }, null, false);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Unable to execute firewall rules program: " + program + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
         }
     }
 
@@ -229,7 +251,7 @@ public class SsgConnectorManagerImpl
         httpConnectorsByService.clear();
         httpsConnectorsByService.clear();
         updateDefaultPorts();
-        writeFirewallDropfile();
+        openFirewallForConnectors();
     }
 
     private void onConnectorChanged(long id) {

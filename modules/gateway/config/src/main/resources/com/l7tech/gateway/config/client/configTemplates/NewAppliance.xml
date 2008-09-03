@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<optionSet id="application">
+    <prompt>
+----------------------------------------------------------------------
+Configure SecureSpan Gateway
+----------------------------------------------------------------------
+At any time type "quit" to quit.</prompt>
+
+    <!--
+      Option Groups
+    -->
+    <optionGroup id="db">
+        <description>Database Connection</description>
+        <prompt>
+-----------------------
+Set Up the SSG Database
+-----------------------
+At any time type "quit" to quit.
+Press "&lt;" to go to the previous step.
+
+This step lets you create or set up a connection to the SSG database.</prompt>
+    </optionGroup>
+    <optionGroup id="cluster">
+        <description>Cluster Configuration</description>
+        <prompt>
+----------------------
+Set Up the SSG Cluster
+----------------------
+At any time type "quit" to quit.
+Press "&lt;" to go to the previous step.
+
+This step lets you set up the SSG cluster.</prompt>
+    </optionGroup>
+
+    <!--
+      Options for Database configuration
+    -->
+    <option id="db-host" group="db" type="HOSTNAME" order="100" name="Database Host">
+        <configName>database.host</configName>
+        <configValue>localhost</configValue>
+        <description>Database Hostname</description>
+        <prompt>Specify the database hostname.</prompt>
+    </option>
+    <option id="db-port" group="db" type="PORT" order="101" name="Database Port">
+        <configName>database.port</configName>
+        <configValue>3306</configValue>
+        <description>Database Port</description>
+    </option>
+    <option id="db-name" group="db" type="TEXT" order="102" name="Database Name">
+        <configName>database.name</configName>
+        <configValue>ssg</configValue>
+        <regex>^[\p{Graph}]{1,64}$</regex>
+        <description>Database Name</description>
+    </option>
+    <option id="db-user" group="db" type="USERNAME" order="103" name="Database Username">
+        <configName>database.user</configName>
+        <configValue>gateway</configValue>
+        <description>Database Username</description>
+    </option>
+    <option id="db-pass" group="db" type="PASSWORD" order="104" name="Database Password">
+        <configName>database.pass</configName>
+        <description>Database Password</description>
+    </option>
+    <option id="db-admin-user" group="db" type="USERNAME" order="105" name="Administrative Database Username">
+        <configName>database.admin.user</configName>
+        <configValue>root</configValue>
+        <description>Administrative Database Username</description>
+    </option>
+    <option id="db-admin-pass" group="db" type="PASSWORD" order="106" name="Administrative Database Password">
+        <configName>database.admin.pass</configName>
+        <description>Administrative Database Password</description>
+    </option>
+
+
+    <!--
+      Options for Cluster configuration
+    -->
+    <option id="cluster-pass" group="cluster" type="PASSWORD" order="200" name="Cluster Password">
+        <configName>cluster.pass</configName>
+        <description>Cluster Password</description>
+    </option>
+
+</optionSet>

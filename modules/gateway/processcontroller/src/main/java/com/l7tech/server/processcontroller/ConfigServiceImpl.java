@@ -6,12 +6,9 @@ package com.l7tech.server.processcontroller;
 import com.l7tech.server.management.config.host.HostConfig;
 import com.l7tech.server.management.config.host.IpAddressConfig;
 import com.l7tech.server.management.config.host.PCHostConfig;
-import com.l7tech.server.management.config.node.DatabaseConfig;
-import com.l7tech.server.management.config.node.DatabaseType;
-import com.l7tech.server.management.config.node.NodeConfig;
-import com.l7tech.server.management.config.node.PCNodeConfig;
-import com.l7tech.server.partition.PartitionInformation;
-import com.l7tech.server.partition.PartitionManager;
+import com.l7tech.server.management.config.node.*;
+import com.l7tech.server.management.SoftwareVersion;
+import com.l7tech.util.ResourceUtils;
 
 import javax.ejb.TransactionAttribute;
 import javax.persistence.EntityManager;
@@ -23,7 +20,13 @@ import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
+import java.util.Properties;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.io.File;
+import java.io.IOException;
+import java.io.FileInputStream;
+import java.io.InputStream;
 
 /**
  * Top-level (possibly only) DAO for management of Process Controller configuration entities
@@ -39,6 +42,7 @@ public class ConfigServiceImpl implements ConfigService {
 
     private volatile HostConfig host;
 
+    @SuppressWarnings({"unchecked"})
     public HostConfig getHost() {
         if (host == null) {
             Query q = entityManager.createQuery("select g FROM PCHostConfig g");
@@ -52,7 +56,7 @@ public class ConfigServiceImpl implements ConfigService {
                     reverseEngineerIps(g);
                     reverseEngineerNodes(g);
 
-                    entityManager.persist(g);
+                    entityManager.merge(g);
                     host = g;
                     break;
                 case 1:
@@ -68,43 +72,52 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     private void reverseEngineerNodes(PCHostConfig g) {
-        final PartitionManager pmgr = PartitionManager.getInstance();
-        for (String pid : pmgr.getPartitionNames()) {
-            final PartitionInformation pinfo = pmgr.getPartition(pid);
-            final PCNodeConfig node = new PCNodeConfig();
-            node.setHost(g);
-            node.setName(pid);
-            node.getDatabaseUrlTemplate().put(DatabaseType.NODE_ALL, DatabaseConfig.Vendor.MYSQL.getUrlTemplate());
-            final DatabaseConfig db = new DatabaseConfig();
-            db.setHost("localhost");
-            db.setNode(node);
-            db.setName("ssg");
-            db.setNodeUsername("gateway");
-            db.setNodePassword("7layer");
-            node.getDatabases().add(db);
+        try {
+            File nodes = new File("../Nodes").getCanonicalFile();
 
-/*
-            Collection<ConnectorConfig> conns = node.getConnectors();
-            for (SsgConnector sc : pinfo.getConnectorsFromServerXml()) {
-                ConnectorConfig cc = new ConnectorConfig();
-                cc.setNode(node);
-                cc.copyFrom(sc);
-                conns.add(cc);
-            }
-*/
+            if ( nodes.isDirectory() ) {
+                for ( File nodeDirectory : nodes.listFiles() ) {
+                    File nodeConfigFile = new File( nodeDirectory, "etc/conf/node.properties" );
+                    if ( !nodeConfigFile.isFile() ) continue;
 
-            for (PartitionInformation.EndpointHolder endpointHolder : pinfo.getEndpoints()) {
-                final String ip = endpointHolder.getIpAddress();
-                final int port = endpointHolder.getPort();
-                if (endpointHolder instanceof PartitionInformation.HttpEndpointHolder) {
-                    PartitionInformation.HttpEndpointHolder httpEndpointHolder = (PartitionInformation.HttpEndpointHolder)endpointHolder;
-                } else if (endpointHolder instanceof PartitionInformation.FtpEndpointHolder) {
-                    PartitionInformation.FtpEndpointHolder o = (PartitionInformation.FtpEndpointHolder)endpointHolder;
-                } else if (endpointHolder instanceof PartitionInformation.OtherEndpointHolder) {
-                    PartitionInformation.OtherEndpointHolder otherEndpointHolder = (PartitionInformation.OtherEndpointHolder)endpointHolder;
+                    Properties nodeProperties = new Properties();
+                    InputStream in = null;
+                    try {
+                        nodeProperties.load(in = new FileInputStream(nodeConfigFile));
+                    } finally {
+                        ResourceUtils.closeQuietly(in);
+                    }
+
+                    if ( !nodeProperties.containsKey("node.enabled") ||
+                         !nodeProperties.containsKey("node.id") ) {
+                        logger.log( Level.WARNING, "Ignoring node ''{0}'' due to invalid properties.", nodeDirectory.getName());
+                        continue;
+                    }
+
+                    final PCNodeConfig node = new PCNodeConfig();
+                    node.setHost(g);
+                    node.setName(nodeDirectory.getName());
+                    node.setSoftwareVersion(SoftwareVersion.fromString("5.0")); //TODO get version for node
+                    node.setEnabled( Boolean.valueOf(nodeProperties.getProperty("node.enabled")) );
+                    node.setGuid( nodeProperties.getProperty("node.id") );
+
+//                    final DatabaseConfig db = new DatabaseConfig();
+//                    db.setType(DatabaseType.NODE_ALL);
+//                    db.setHost( nodeProperties.getProperty() );
+//                    db.setPort( Integer.parseInt(nodeProperties.getProperty()) );
+//                    db.setName( nodeProperties.getProperty() );
+//                    db.setNodeUsername( nodeProperties.getProperty() );
+//                    db.setNodePassword( nodeProperties.getProperty() );
+//                    node.getDatabases().add(db);
+
+                    logger.log(Level.INFO, "Detected node ''{0}''.", nodeDirectory.getName());
+                    g.getNodes().put(node.getName(), node);
                 }
             }
-            g.getNodes().put(node.getName(), node);
+        } catch (IOException ioe) {
+            logger.log( Level.WARNING, "Error when detecting nodes.", ioe);
+        } catch (NumberFormatException nfe) {
+            logger.log( Level.WARNING, "Error when detecting nodes.", nfe);
         }
     }
 
@@ -144,7 +157,7 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     public void updateServiceNode(NodeConfig node) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // TODO implement
     }
 
 }

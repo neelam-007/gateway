@@ -1,8 +1,8 @@
 package com.l7tech.server.config.systemconfig;
 
 import com.l7tech.util.HexUtils;
-import com.l7tech.server.config.ui.console.ConfigurationWizard;
-import com.l7tech.server.config.ui.console.ConsoleWizardUtils;
+import com.l7tech.server.config.wizard.ConfigurationWizard;
+import com.l7tech.server.config.wizard.ConsoleWizardUtils;
 import com.l7tech.server.config.Utilities;
 
 import java.io.InputStream;

@@ -8,7 +8,7 @@
                          http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd">
 
     <bean id="dataSource" class="org.apache.derby.jdbc.EmbeddedDataSource40">
-        <property name="databaseName" value="pcdb"/>
+        <property name="databaseName" value="var/db/pcdb"/>
         <property name="createDatabase" value="create"/>
     </bean>
 

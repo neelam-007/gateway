@@ -1,21 +1,14 @@
 package com.l7tech.server.config.beans;
 
 import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.partition.PartitionInformation;
-import com.l7tech.server.partition.PartitionManager;
 
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: megery
  * Date: Aug 11, 2005
  * Time: 11:38:38 AM
- * To change this template use File | Settings | File Templates.
  */
 public abstract class BaseConfigurationBean implements ConfigurationBean {
 
@@ -50,17 +43,6 @@ public abstract class BaseConfigurationBean implements ConfigurationBean {
         explanations.clear();
         populateExplanations();
         return explanations.toArray(new String[explanations.size()]);
-    }
-
-
-    public OSSpecificFunctions getOsFunctions() {
-        PartitionInformation pi = PartitionManager.getInstance().getActivePartition();
-        if (pi == null) {
-            //SSG might not be migrated to partitioning yet so migrate it.
-            PartitionManager.doMigration(true);
-            pi = PartitionManager.getInstance().getActivePartition();
-        }
-        return pi.getOSSpecificFunctions();
     }
 
     protected abstract void populateExplanations();

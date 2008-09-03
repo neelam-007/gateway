@@ -5,8 +5,8 @@ import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
-import com.l7tech.server.config.ui.console.BaseConsoleStep;
-import com.l7tech.server.config.ui.console.ConfigurationWizard;
+import com.l7tech.server.config.wizard.BaseConsoleStep;
+import com.l7tech.server.config.wizard.ConfigurationWizard;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;

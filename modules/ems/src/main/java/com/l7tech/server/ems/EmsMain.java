@@ -16,7 +16,7 @@ public class EmsMain {
 
     public static void main(String[] args) {
         // configure logging if the logs directory is found, else leave console output
-        if ( new File("logs").exists() ) {
+        if ( new File("var/logs").exists() ) {
             JdkLoggerConfigurator.configure("com.l7tech.server.ems", "com/l7tech/server/ems/resources/logging.properties");
         }
         // initialize config location

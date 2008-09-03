@@ -1,8 +1,8 @@
 package com.l7tech.server.config.systemconfig;
 
 import com.l7tech.server.config.exceptions.WizardNavigationException;
-import com.l7tech.server.config.ui.console.BaseConsoleStep;
-import com.l7tech.server.config.ui.console.ConfigurationWizard;
+import com.l7tech.server.config.wizard.BaseConsoleStep;
+import com.l7tech.server.config.wizard.ConfigurationWizard;
 import com.l7tech.common.io.InetAddressUtil;
 import org.apache.commons.lang.StringUtils;
 

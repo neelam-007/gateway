@@ -6,7 +6,6 @@ package com.l7tech.server.management.config.node;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import javax.persistence.*;
-import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * Inherited {@link #_name} is the database name.
@@ -21,11 +20,43 @@ public class DatabaseConfig extends NamedEntityImp {
     private NodeConfig.ClusterType clusterType = NodeConfig.ClusterType.STANDALONE;
     private String host;
     private int port;
-    private transient String databaseAdminUsername;
-    private transient String databaseAdminPassword;
+    private String databaseAdminUsername;
+    private String databaseAdminPassword;
     private String nodeUsername;
     private String nodePassword;
     private int ordinal;
+
+    public DatabaseConfig() {
+    }
+
+    /**
+     * Create a copy of the configuration but not identity of the given configuration.
+     *
+     * @param config The config to copy.
+     */
+    public DatabaseConfig( final DatabaseConfig config ) {
+        setType( config.getType() );
+        setVendor( config.getVendor() );
+        setHost( config.getHost() );
+        setPort( config.getPort() );
+        setName( config.getName() );
+        setNodeUsername( config.getNodeUsername() );
+        setNodePassword( config.getNodePassword() );
+        setDatabaseAdminUsername( config.getDatabaseAdminUsername() );
+        setDatabaseAdminPassword( config.getDatabaseAdminPassword() );
+    }
+
+    public DatabaseConfig( final String host,
+                           final int port,
+                           final String name,
+                           final String nodeUsername,
+                           final String nodePassword ) {
+        setHost( host );
+        setPort( port );
+        setName( name );
+        setNodeUsername( nodeUsername );
+        setNodePassword( nodePassword );
+    }
 
     @ManyToOne(optional=false)
     public NodeConfig getNode() {
@@ -104,7 +135,7 @@ public class DatabaseConfig extends NamedEntityImp {
         this.ordinal = ordinal;
     }
 
-    @XmlTransient @Transient
+    @Transient
     public String getDatabaseAdminPassword() {
         return databaseAdminPassword;
     }
@@ -113,7 +144,7 @@ public class DatabaseConfig extends NamedEntityImp {
         this.databaseAdminPassword = databaseAdminPassword;
     }
 
-    @XmlTransient @Transient
+    @Transient
     public String getDatabaseAdminUsername() {
         return databaseAdminUsername;
     }
@@ -155,6 +186,7 @@ public class DatabaseConfig extends NamedEntityImp {
     }
 
 
+    @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

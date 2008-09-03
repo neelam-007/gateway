@@ -7,9 +7,9 @@ License: Commercial
 URL: http://www.layer7tech.com
 Vendor: Layer 7 Technologies
 Packager: Layer 7 Technologies, <support@layer7tech.com>
-source0: ssg.tar.gz
-buildroot: %{_builddir}/%{name}-%{version}
-Prefix: /ssg
+Source0: ssg.tar.gz
+BuildRoot: %{_builddir}/%{name}-%{version}
+Prefix: /opt/SecureSpan/Gateway
 
 # Prevents rpm build from erroring and halting
 #%undefine       __check_files
@@ -26,79 +26,73 @@ rm -fr %{buildroot}
 %setup -qc %{buildroot}
 
 %build
-mkdir -p %{buildroot}/ssg/etc/profile.d/
-mkdir -p %{buildroot}/ssg/bin/samples
-
-mv %{buildroot}/ssg/bin/profile %{buildroot}/ssg/etc/
-mv %{buildroot}/ssg/bin/java.sh %{buildroot}/ssg/etc/profile.d/
-mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/ssg/etc/profile.d/
-mv %{buildroot}/ssg/bin/ssg-utilities.sh %{buildroot}/ssg/etc/profile.d/
-mv %{buildroot}/ssg/bin/setopts.sh %{buildroot}/ssg/etc/profile.d/
-mv %{buildroot}/ssg/bin/jvmoptions %{buildroot}/ssg/etc/profile.d/
-mv %{buildroot}/ssg/bin/output_redirection.sh %{buildroot}/ssg/etc/profile.d/
-
-mv %{buildroot}/ssg/bin/ssg-java.security %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/java.security
-mv %{buildroot}/ssg/etc/conf/*.properties %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
-mv %{buildroot}/ssg/etc/conf/cluster_hostname-dist %{buildroot}/ssg/etc/conf/partitions/partitiontemplate_/
-
-rm %{buildroot}/ssg/migration/cfg/grandmaster_flash
 
 %files
 # Root owned OS components
 
-# Main tree, owned by gateway
-%defattr(0644,gateway,gateway,0755)
-%dir /ssg
+# Main tree, owned by root
+%defattr(0644,root,root,0755)
+%dir /opt/SecureSpan
+%dir /opt/SecureSpan/Gateway
 
 # Group writable config files
-%dir /ssg/etc
-%config(noreplace) /ssg/etc/conf
-%attr(0775,gateway,gateway) /ssg/etc/conf/partitions/
-%attr(0775,gateway,gateway) /ssg/etc/conf/partitions/*
-%attr(0755,gateway,gateway) /ssg/etc/profile
+%dir /opt/SecureSpan/Gateway/Nodes/default/etc
+%attr(0755,gateway,gateway) %config(noreplace) /opt/SecureSpan/Gateway/Nodes/default/etc/conf
+%attr(0755,gateway,gateway) /opt/SecureSpan/Gateway/Nodes/default/etc/profile
 
 # Group writeable directories and files
 
+/opt/SecureSpan/Gateway/Controller/Controller.jar
+%dir /opt/SecureSpan/Gateway/Controller/bin
+%dir /opt/SecureSpan/Gateway/Controller/etc
+%attr(0755,root,root) /opt/SecureSpan/Gateway/Controller/bin/*
+/opt/SecureSpan/Gateway/Controller/lib
+%defattr(0644,gateway,gateway,0755)
+/opt/SecureSpan/Gateway/Controller/var
+
 # The main Gateway jar
-/ssg/Gateway.jar
+%defattr(0644,root,root,0755)
+/opt/SecureSpan/Gateway/Nodes/default/Gateway.jar
 
 # Ssg bin
-%dir /ssg/bin
-%attr(0755,gateway,gateway) /ssg/bin/*
+%dir /opt/SecureSpan/Gateway/Nodes/default/bin
+%attr(0755,root,root) /opt/SecureSpan/Gateway/Nodes/default/bin/*
 
-%dir /ssg/etc/profile.d
-%attr(0775,gateway,gateway) /ssg/etc/profile.d/
-%config(noreplace) %attr(0775,gateway,gateway) /ssg/etc/profile.d/java.sh
-%config(noreplace) %attr(0775,gateway,gateway) /ssg/etc/profile.d/jvmoptions
-%config(noreplace) %attr(0775,gateway,gateway) /ssg/etc/profile.d/output_redirection.sh
+%defattr(0775,gateway,gateway,0755)
+%dir /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d
+%config(noreplace) /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/ssgruntimedefs.sh
+%config(noreplace) /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/ssg-utilities.sh
+%config(noreplace) /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/setopts.sh
+%config(noreplace) /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/java.sh
+%config(noreplace) /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/jvmoptions
+%config(noreplace) /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/output_redirection.sh
 
 # Other stuff
-/ssg/etc/sql
-/ssg/etc/inf
-/ssg/lib
-%dir /ssg/logs
-/ssg/modules
-/ssg/var
+%defattr(0644,root,root,0755)
+/opt/SecureSpan/Gateway/Nodes/default/etc/sql
+/opt/SecureSpan/Gateway/Nodes/default/web
+/opt/SecureSpan/Gateway/Nodes/default/lib
+%defattr(0644,root,root,0755)
+/opt/SecureSpan/Gateway/Nodes/default/modules
+%defattr(0644,gateway,gateway,0755)
+/opt/SecureSpan/Gateway/Nodes/default/var
 
 #Config Wizard
-%defattr(755,gateway,gateway,0664)
-%dir /ssg/configwizard
-/ssg/configwizard/lib
-/ssg/configwizard/*.jar
-/ssg/configwizard/*.properties
-/ssg/configwizard/*.sh
-#needed so we can write files in the dir (like logs)
-%attr(0775,gateway,gateway) /ssg/configwizard
+%defattr(0664,gateway,gateway,0775)
+%dir /opt/SecureSpan/Gateway/configwizard
+/opt/SecureSpan/Gateway/configwizard/lib
+/opt/SecureSpan/Gateway/configwizard/*.properties
+%attr(0775,gateway,gateway) /opt/SecureSpan/Gateway/configwizard/*.sh
+/opt/SecureSpan/Gateway/configwizard/*.jar
 
 # Group writable for migration stuff
-%defattr(755,gateway,gateway,0664)
-%dir /ssg/migration
-/ssg/migration/lib
-/ssg/migration/*.jar
-/ssg/migration/*.properties
-/ssg/migration/*.sh
-%attr(0775,gateway,gateway) /ssg/migration
-%attr(0775,gateway,gateway) /ssg/migration/cfg
+%defattr(0664,gateway,gateway,0755)
+%dir /opt/SecureSpan/Gateway/migration
+/opt/SecureSpan/Gateway/migration/cfg
+/opt/SecureSpan/Gateway/migration/lib
+/opt/SecureSpan/Gateway/migration/*.jar
+/opt/SecureSpan/Gateway/migration/*.properties
+%attr(0775,gateway,gateway) /opt/SecureSpan/Gateway/migration/*.sh
 
 %pre
 if [ `grep ^gateway: /etc/group` ]; then

@@ -22,6 +22,7 @@
     </publications>
     <dependencies>
         <dependency name="layer7-gateway-common" rev="latest.integration" force="true" conf="core"/>
+        <dependency name="layer7-gateway-config" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-gateway-management" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-gateway-server" rev="latest.integration" force="true" conf="core">
             <exclude org="org.apache.tomcat" module="annotations-api" name="*" type="*" ext="*" conf="" matcher="exact"/>

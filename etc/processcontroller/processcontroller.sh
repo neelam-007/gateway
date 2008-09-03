@@ -8,12 +8,17 @@ if [ -z "${SSPC_HOME}" ] ; then
   SSPC_HOME="/opt/SecureSpan/Gateway/Controller"
 fi
 if [ -z "${JAVA_HOME}" ] ; then
-  JAVA_HOME="/ssg/jdk"
+  JAVA_HOME="/opt/SecureSpan/JDK"
 fi
 
-PID_FILE=""
-if [ ! -z "${1}" ] ; then
-  PID_FILE="${1}"
+PC_USER=""
+PC_PIDFILE=""
+PC_PIDTEMP=""
+if [ ! -z "${1}" ] && [ ! -z "${2}" ] ; then
+  PC_USER="${1}"
+  PC_PIDFILE="${2}"
+  PC_PIDTEMP=$(mktemp -p /tmp $(basename "${PC_PIDFILE}").XXXX)
+  chown "${PC_USER}" "${PC_PIDTEMP}"
 fi
 
 #
@@ -25,12 +30,21 @@ function fail() {
 #
 cd "${SSPC_HOME}" || fail "Directory not found: ${SSPC_HOME}"
 
+# Currently "java" is used to start gateway
+export PATH="${PATH}:${JAVA_HOME}/bin"
+
 #
-"${JAVA_HOME}/bin/java" -Dcom.l7tech.server.processcontroller.hostPropertiesFile="$SSPC_HOME/etc/host.properties" -jar Controller.jar &>/dev/null <&- &
+if [ -z "${PC_USER}" ] ; then
+  "${JAVA_HOME}/bin/java" -Dcom.l7tech.server.processcontroller.hostPropertiesFile="$SSPC_HOME/etc/host.properties" -jar Controller.jar &>/dev/null <&- &
+else 
+  export JAVA_HOME SSPC_HOME PC_PIDTEMP
+  runuser "${PC_USER}" -c '"${JAVA_HOME}/bin/java" -Dcom.l7tech.server.processcontroller.hostPropertiesFile="$SSPC_HOME/etc/host.properties" -jar Controller.jar &>/dev/null <&- & echo "${!}" > "${PC_PIDTEMP}"'
+fi
+
 if [ ${?} -eq 0 ] ; then
-  [ -z "${PID_FILE}" ] || echo "${!}" > "${PID_FILE}"
+  [ -z "${PC_PIDFILE}" ] || mv -f "${PC_PIDTEMP}" "${PC_PIDFILE}"
 else
-  [ -z "${PID_FILE}" ] || rm -f "${PID_FILE}" &>/dev/null
+  [ -z "${PC_PIDFILE}" ] || rm -f "${PC_PIDFILE}" &>/dev/null
   fail "${?}" "Error starting Process Controller."
 fi
 

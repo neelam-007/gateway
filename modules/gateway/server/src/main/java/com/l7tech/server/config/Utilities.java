@@ -17,8 +17,6 @@ import java.io.IOException;
 public class Utilities {
     private static final Logger logger = Logger.getLogger(Utilities.class.getName());
 
-    public static final String EOL_CHAR = System.getProperty("line.separator");
-    
     public static String getFormattedMac(String mac) {
         String formattedMac = mac;
         //format the mac with colons

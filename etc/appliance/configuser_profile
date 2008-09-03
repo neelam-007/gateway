@@ -3,15 +3,15 @@ set -e
 
 trap doLogout INT
 
-SYSWIZARD="/ssg/sysconfigwizard/systemconfig.sh"
-CONFWIZARD="/ssg/configwizard/ssgconfig.sh"
-UPDATEWIZARD="/ssg/updatewizard/ssgupdatewizard.sh"
-MASTERKEYMANAGE="/ssg/appliance/libexec/masterkey-manage.pl"
+SYSWIZARD="/opt/SecureSpan/Appliance/sysconfigwizard/systemconfig.sh"
+CONFWIZARD="/opt/SecureSpan/Gateway/configwizard/ssgconfig.sh"
+UPDATEWIZARD="/ssg/updatewizard/ssgupdatewizard.sh" 
+MASTERKEYMANAGE="/opt/SecureSpan/Appliance/libexec/masterkey-manage.pl"
 GETROOT="su -"
 MASTER_KEY_BACKUP_FILE_NAME="ssg_mkey.bak"
 
 checkForUpdater() {
-    if [ -e "/ssg/updatewizard/ssgupdatewizard.sh" ] ; then
+    if [ -e "${UPDATEWIZARD}" ] ; then
         UPDATER_PRESENT="true"
     else
         UPDATER_PRESENT=""
@@ -30,7 +30,9 @@ checkForSca() {
 checkForEm() {
     EM_PRESENT=""
     EM_ENABLED=""
-    [ -d "/opt/SecureSpan/EnterpriseManager" ] && EM_PRESENT="true"
+    if [ -d "/opt/SecureSpan/EnterpriseManager" ] ; then
+        EM_PRESENT="true"
+    fi
 }
 
 doLogout() {

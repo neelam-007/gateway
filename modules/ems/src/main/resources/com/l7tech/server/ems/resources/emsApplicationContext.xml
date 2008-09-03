@@ -25,7 +25,7 @@
     </bean>
 
     <bean id="dataSource" class="org.apache.derby.jdbc.EmbeddedDataSource40">
-        <property name="databaseName" value="emsdb"/>
+        <property name="databaseName" value="var/db/emsdb"/>
         <property name="createDatabase" value="create"/>
     </bean>
 

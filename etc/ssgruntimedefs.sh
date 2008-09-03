@@ -9,9 +9,6 @@ default_java_opts="$default_java_opts -Dcom.l7tech.server.home=${SSG_HOME}"
 
 SSG_JAVA_OPTS="$SSG_JAVA_OPTS $default_java_opts";
 
-ALL_PARTITIONS=`ls ${SSG_HOME}/etc/conf/partitions/ | grep -v template_`
-PARTITION_COUNT=`echo ${ALL_PARTITIONS} | wc -w`
-
 unset default_java_opts
 
 export SSG_JAVA_OPTS

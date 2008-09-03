@@ -4,7 +4,6 @@ import com.l7tech.util.DomUtils;
 import com.l7tech.util.TooManyChildElementsException;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.db.DBActions;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -31,6 +30,8 @@ import java.util.regex.Pattern;
  * Date: Nov 8, 2006<br/>
  */
 public class MappingUtil {
+    //TODO [steve] fix flasher
+
     private static final Logger logger = Logger.getLogger(MappingUtil.class.getName());
     private static final Pattern ipaddresspattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
     private static final String STAGINGMAPPINGNS = "http://www.layer7tech.com/migration/stagingmapping";
@@ -42,7 +43,6 @@ public class MappingUtil {
     private static final String TARGETVALUEATTRNAME = "targetvalue";
     private static final String VARMAPELNAME = "varmap";
     private static final String GLOBALVARMAPPINGELNAME = "globalvarmapping";
-    private static DBActions dbActions;
 
     public static class CorrespondanceMap {
         public HashMap<String, String> backendIPMapping = new HashMap<String, String>();
@@ -135,7 +135,7 @@ public class MappingUtil {
 
     private static Connection getConnection(OSSpecificFunctions osFunctions, String databaseURL, String databaseUser, String databasePasswd) throws SQLException {
         Connection c;
-        c = getDbActions(osFunctions).getConnection(databaseURL, databaseUser, databasePasswd);
+        c = null;//getDbActions(osFunctions).getConnection(databaseURL, databaseUser, databasePasswd);
         if (c == null) {
             throw new SQLException("could not connect using url: " + databaseURL +
                                    ". with username " + databaseUser +
@@ -207,16 +207,16 @@ public class MappingUtil {
         fos.close();
     }
 
-    private static DBActions getDbActions(OSSpecificFunctions osFunctions) throws SQLException {
-        if (dbActions == null) {
-            try {
-                dbActions = new DBActions(osFunctions);
-            } catch (ClassNotFoundException e) {
-                throw new SQLException(e.getMessage());
-            }
-        }
-        return dbActions;
-    }
+//    private static DBActions getDbActions(OSSpecificFunctions osFunctions) throws SQLException {
+//        if (dbActions == null) {
+//            try {
+//                dbActions = new DBActions(osFunctions);
+//            } catch (ClassNotFoundException e) {
+//                throw new SQLException(e.getMessage());
+//            }
+//        }
+//        return dbActions;
+//    }
 
     /**
      * Searches for routing IP addresses in policies stored in a table column.

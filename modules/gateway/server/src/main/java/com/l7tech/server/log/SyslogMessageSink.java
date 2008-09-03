@@ -44,7 +44,7 @@ class SyslogMessageSink extends MessageSinkSupport {
                        final SyslogManager manager) throws ConfigurationException {
         super( configuration );
         this.syslog = buildSyslog( configuration, manager, serverConfig.getHostname() );
-        this.process = "SSG-" + serverConfig.getProperty(ServerConfig.PARAM_PARTITION_NAME);
+        this.process = "SSG-default_";
     }
 
     void processMessage(final MessageCategory category, final LogRecord record) {

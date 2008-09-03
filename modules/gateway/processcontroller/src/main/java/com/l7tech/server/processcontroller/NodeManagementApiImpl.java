@@ -9,6 +9,9 @@ import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.PCNodeConfig;
+import com.l7tech.server.management.config.node.DatabaseType;
+import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.activation.DataHandler;
@@ -19,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
+import java.util.UUID;
 
 @WebService(name="NodeManagementAPI",
             targetNamespace="http://ns.l7tech.com/secureSpan/5.0/component/processController/nodeManagementApi",
@@ -50,11 +54,30 @@ public class NodeManagementApiImpl implements NodeManagementApi {
 
         if (nodeVersion == null) throw new IllegalArgumentException("Node version " + desiredVersion + " is not available on this host");
         final PCNodeConfig node = new PCNodeConfig();
-        node.setEnabled(false);
+        node.setEnabled(true);
         node.setName(newNodeName);
         node.setSoftwareVersion(nodeVersion);
-        // TODO create/copy the filesystem artifacts
-        // TODO create the database
+        node.setGuid(UUID.randomUUID().toString().replace("-",""));
+        node.setHost(configService.getHost());
+
+        DatabaseConfig databaseConfig = null;
+        for ( DatabaseConfigRow config : databaseConfigs ) {
+            if ( config.getType() == DatabaseType.NODE_ALL ) {
+                databaseConfig = config.getConfig();
+                break;
+            }
+        }
+
+        if ( databaseConfig == null ) {
+            throw new SaveException( "Database configuration is required." );
+        }
+
+        try {
+            NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), databaseConfig );
+        } catch ( IOException ioe ) {
+            throw new SaveException( "Error during node configuration.", ioe);
+        }
+
         configService.addServiceNode(node);
         return node;
     }
@@ -96,7 +119,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
             case RUNNING:
             case STARTING:
                 return tempState; // Good enough
-            
+
             case WONT_START:
                 throw new StartupException(nodeName, "Node couldn't be started last time it was attempted; the PC will retry soon");
 
@@ -112,7 +135,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
 
                 try {
                     if (!node.isEnabled()) throw new StartupException(nodeName, "Node is disabled");
-                    processController.startNode((PCNodeConfig)node);
+                    processController.startNode(node);
                     return NodeStateType.STARTING;
                 } catch (IOException e) {
                     throw new StartupException(nodeName, "Couldn't be started: " + ExceptionUtils.getMessage(e));

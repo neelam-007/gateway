@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="UneasyRooster" default="dev" basedir="." xmlns:mvn="urn:maven-artifact-ant" xmlns:ivy="antlib:org.apache.ivy.ant">
+<project name="UneasyRooster" default="dev" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
     <description>
         Ant build file for UneasyRooster
     </description>
@@ -264,11 +264,15 @@
         <property name="test.perf.from" value="teamcity@tyan64.l7tech.com"/>
         <property name="test.perf.to" value=""/>
 
+        <!-- Deprecated, but preserved in case used in anyones build.properties -->
+        <property name="deploy.keys.password" value="blahblah"/>
+
         <!-- Defaults for development SSG deployments -->
         <property name="deploy.dir" value="${build.dir}"/>
-        <property name="deploy.keys.password" value="blahblah"/>
+        <property name="deploy.cluster.password" value="${deploy.keys.password}"/>
         <property name="deploy.db.username" value="gateway"/>
         <property name="deploy.db.password" value="7layer"/>
+
     </target>
 
     <!--
@@ -1440,11 +1444,10 @@
     -->
     <target name="cleandeploy" description="Delete deployed libraries/modules" depends="init">
         <echo level="info">Deleting web libraries</echo>
-        <delete dir="${deploy.dir}/etc/inf/ssg/webadmin/applet"/>
+        <delete dir="${deploy.dir}/web/ssg/webadmin/applet"/>
 
         <echo level="info">Deleting modules</echo>
         <delete dir="${deploy.dir}/modules/assertions"/>
-        <delete dir="${deploy.dir}/modules/lib"/>
 
         <echo level="info">Deleting libraries</echo>
         <delete dir="${deploy.dir}/lib"/>
@@ -1455,29 +1458,23 @@
       Deploy SSG configuration files for development (to run with classes from IDE)
       This will not deploy the Manager Applet or any modular assertions
     -->
-    <target name="deployconfig" description="Deploy configuration files for a development SSG (run from IDE)" depends="init,db.properties,deploy.keys">
+    <target name="deployconfig" description="Deploy configuration files for a development SSG (run from IDE)" depends="init,db.properties">
         <echo level="info">Creating deployment directories</echo>
-        <mkdir dir="${deploy.dir}/etc/inf/ssg/webadmin/applet/lib"/>
-        <mkdir dir="${deploy.dir}/etc/conf/partitions/default_/var/attachments"/>
-        <mkdir dir="${deploy.dir}/etc/conf/partitions/default_/var/modules"/>
-        <mkdir dir="${deploy.dir}/logs"/>
+        <mkdir dir="${deploy.dir}/web/ssg/webadmin/applet/lib"/>
+        <mkdir dir="${deploy.dir}/var/attachments"/>
+        <mkdir dir="${deploy.dir}/var/modules"/>
+        <mkdir dir="${deploy.dir}/var/logs"/>
 
         <echo level="info">Copying gateway configuration files</echo>
         <echo level="info">Copying configuration files</echo>
-        <copy file="${src.root}/etc/db/${database.type}/hibernate.properties" todir="${deploy.dir}/etc/conf/partitions/default_" overwrite="true">
-            <filterchain>
-                <tokenfilter>
-                    <replaceregex pattern="(?&lt;=^[ ]{0,32}hibernate.connection.url[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${database.url}"/>
-                    <replaceregex pattern="(?&lt;=^[ ]{0,32}hibernate.connection.username[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${deploy.db.username}"/>
-                    <replaceregex pattern="(?&lt;=^[ ]{0,32}hibernate.connection.password[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${deploy.db.password}"/>
-                    <replaceregex pattern="(?&lt;=^[ ]{0,32}hibernate.connection.driver_class[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${database.driver}"/>
-                    <replaceregex pattern="(?&lt;=^[ ]{0,32}hibernate.dbcp.validationQuery[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${database.pingstmt}"/>
-                </tokenfilter>
-            </filterchain>
-        </copy>
+        <echo file="${deploy.dir}/etc/conf/node.properties"># Generated properties file, do not edit
+            ${line.separator}node.db.user = ${deploy.db.username}
+            ${line.separator}node.db.pass = ${deploy.db.password}
+            ${line.separator}node.cluster.pass = ${deploy.cluster.password}
+        </echo>
         <copy file="${src.root}/etc/tomcat/truststore.jks" todir="${deploy.dir}/etc/conf" preservelastmodified="true"/>
         <echo level="info">Copying web files</echo>
-        <copy file="${src.root}/web/index.html" todir="${deploy.dir}/etc/inf/ssg" preservelastmodified="true"/>
+        <copy file="${src.root}/web/index.html" todir="${deploy.dir}/web/ssg" preservelastmodified="true"/>
 
         <echo level="info">Finished copying gateway configuration files</echo>
     </target>
@@ -1485,21 +1482,20 @@
     <!--
       Deploy SSG for development
     -->
-    <target name="deploy" description="Deploy a development SSG (run with ./run.sh gateway)" depends="package.gateway.ifrequired, deploy.keys, deployconfig">
+    <target name="deploy" description="Deploy a development SSG (run with ./run.sh gateway)" depends="package.gateway.ifrequired, deployconfig">
         <echo level="info">Creating deployment directories</echo>
         <mkdir dir="${deploy.dir}/lib"/>
-        <mkdir dir="${deploy.dir}/logs"/>
+        <mkdir dir="${deploy.dir}/var/logs"/>
         <mkdir dir="${deploy.dir}/modules/assertions"/>
-        <mkdir dir="${deploy.dir}/modules/lib"/>
 
         <echo level="info">Copying gateway files</echo>
         <echo level="info">Copying web files</echo>
-        <copy file="${src.root}/web/index.html" todir="${deploy.dir}/etc/inf/ssg" preservelastmodified="true"/>
-        <copy file="${build.dir}/ManagerApplet.jar" todir="${deploy.dir}/etc/inf/ssg/webadmin/applet/" preservelastmodified="true"/>
+        <copy file="${src.root}/web/index.html" todir="${deploy.dir}/web/ssg" preservelastmodified="true"/>
+        <copy file="${build.dir}/ManagerApplet.jar" todir="${deploy.dir}/web/ssg/webadmin/applet/" preservelastmodified="true"/>
         <delete>
-            <fileset dir="${deploy.dir}/etc/inf/ssg/webadmin/applet/lib" includes="layer7-*"/>
+            <fileset dir="${deploy.dir}/web/ssg/webadmin/applet/lib" includes="layer7-*"/>
         </delete>
-        <copy todir="${deploy.dir}/etc/inf/ssg/webadmin/applet/lib" preservelastmodified="true">
+        <copy todir="${deploy.dir}/web/ssg/webadmin/applet/lib" preservelastmodified="true">
            <fileset dir="${build.dir}/managerappletlibs"/>
         </copy>
 
@@ -1520,37 +1516,6 @@
         </copy>
         <copy file="${build.dir}/Gateway.jar" todir="${deploy.dir}/" preservelastmodified="true"/>
         <echo level="info">Finished copying gateway files</echo>
-    </target>
-
-    <target name="deploy.keys.check">
-        <available property="deploy.keys.notrequired" file="${deploy.dir}/etc/conf/partitions/default_/keystore.properties"/>
-    </target>
-    <target name="deploy.keys" unless="deploy.keys.notrequired" depends="deploy.keys.check">
-        <available file="${build.dir}/Gateway.jar" property="deploy.keys.jarpresent"/>
-        <fail unless="deploy.keys.jarpresent">Gateway must be built to allow key generation.</fail>
-        <echo level="info">Generating X.509 keys and configuration ...</echo>
-        <mkdir dir="${deploy.dir}/etc/conf/partitions/default_/keys"/>
-        <copy file="${src.root}/etc/keystore.properties" todir="${deploy.dir}/etc/conf/partitions/default_" overwrite="true">
-            <filterchain>
-                <tokenfilter>
-                    <replaceregex pattern="(?&lt;=^[ ]{0,32}keystoredir[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${deploy.dir}/etc/conf/partitions/default_/keys"/>
-                    <replaceregex pattern="(?&lt;=^[ ]{0,32}rootcakspasswd[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${deploy.keys.password}"/>
-                    <replaceregex pattern="(?&lt;=^[ ]{0,32}sslkspasswd[ ]{0,32}=)[ 0-9\._\-,a-zA-Z/]{0,1024}$" replace=" ${deploy.keys.password}"/>
-                </tokenfilter>
-            </filterchain>
-        </copy>
-        <java classname="com.l7tech.server.util.SetKeys$NewCa">
-            <classpath>
-                <pathelement location="${build.dir}/Gateway.jar"/>
-                <fileset dir="${build.dir}/gatewaylibs"/>
-            </classpath>
-            <!-- hostname ksdir capass sslpass kstype -->
-            <arg value="${hostname}"/>
-            <arg value="${deploy.dir}/etc/conf/partitions/default_/keys"/>
-            <arg value="${deploy.keys.password}"/>
-            <arg value="${deploy.keys.password}"/>
-            <arg value="PKCS12"/>
-        </java>
     </target>
 
     <target name="pack.manager" depends="pack.manager.compress"/>
@@ -1663,6 +1628,18 @@
       Package the SSG (JAR).
     -->
     <target name="package.gateway" depends="package.jars" unless="package.gateway.notrequired">
+        <!-- packaging process controller libs -->
+        <mkdir dir="${build.dir}/processcontrollerlibs"/>
+        <delete>
+            <fileset dir="${build.dir}/processcontrollerlibs" includes="layer7-*"/>
+        </delete>
+        <copy todir="${build.dir}/processcontrollerlibs">
+            <fileset dir="modules/gateway/processcontroller/build/dependency">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
+        <copy file="modules/gateway/processcontroller/build/layer7-gateway-processcontroller.jar" tofile="${build.dir}/Controller.jar"/>
+
         <!-- packaging gateway libs -->
         <mkdir dir="${build.dir}/gatewaylibs"/>
         <delete>
@@ -1997,12 +1974,13 @@
         </exec>
     </target>
 
-    <target name="package.installgateway.work.rpm.check" if="makerpm.enabled">
+    <target name="package.installgateway.work.rpm.check" if="makerpm.enabled" depends="prepare.base">
         <available property="package.installgateway.work.rpm.sourceavailable" file="${tarball}"/>
         <available property="package.installgateway.work.rpm.appliance.sourceavailable" file="${appliance-tarball}"/>
         <condition property="package.installgateway.work.rpm.x86_64.appliance.required">
           <and>
             <isset property="install.jdk64.tar.gz"/>
+            <available file="${install.jdk64.tar.gz}"/>
             <isset property="package.installgateway.work.rpm.appliance.sourceavailable"/>
           </and>
         </condition>
@@ -2190,17 +2168,11 @@
 
         <chmod file="${build.dir}/migration/ssgmigration.sh" perm="755"/>
 
-        <copy todir="${build.dir}/migration/cfg">
-            <fileset dir="${src.root}/etc">
-                <include name="grandmaster_flash"/>
-            </fileset>
-        </copy>
-
         <jar jarfile="${build.dir}/migration/SSGMigration.jar">
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
                 <attribute name="Class-Path" value="lib/layer7-utility-${build.version}.jar"/>
-                <attribute name="X-Layer7-Jar" value="../Gateway.jar"/>
+                <attribute name="X-Layer7-Jar" value="../Nodes/default/Gateway.jar"/>
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.server.flasher.FlashUtilityLauncher"/>
             </manifest>
         </jar>
@@ -2243,8 +2215,8 @@
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
                 <attribute name="Class-Path" value="lib/layer7-utility.jar"/>
-                <attribute name="X-Layer7-Jar" value="../Gateway.jar"/>
-                <attribute name="X-Layer7-Main-Class" value="com.l7tech.server.config.ConfigurationWizardLauncher"/>
+                <attribute name="X-Layer7-Jar" value="../Controller/lib/layer7-gateway-config-5.0.0-dev-b1.jar"/> <!-- TODO [steve] fix configuration jar naming -->
+                <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.client.Main"/>
             </manifest>
         </jar>
     </target>
@@ -2282,7 +2254,7 @@
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
                 <attribute name="Class-Path" value="lib/layer7-utility.jar"/>
-                <attribute name="X-Layer7-Jar" value="../Gateway.jar"/>
+                <attribute name="X-Layer7-Jar" value="../../Gateway/Nodes/default/Gateway.jar"/>
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.server.config.systemconfig.SysConfigWizardLauncher"/>
             </manifest>
         </jar>
@@ -2606,36 +2578,6 @@
     </target>
 
     <!--
-      Process configuration files for the full install
-    -->
-    <target name="INTERNAL-ssg-install-properties" depends="db.properties" if="ssg.install.enabled">
-        <!-- Copy hibernate.properties -->
-        <property name="install.src.hibernate.properties" value="${install.src.conf}/hibernate.properties"/>
-        <copy file="${src.root}/etc/db/${database.type}/hibernate.properties"
-              tofile="${install.src.hibernate.properties}"/>
-
-        <replace file="${install.src.hibernate.properties}" token="DB_URL" value="${database.url}"/>
-        <replace file="${install.src.hibernate.properties}" token="DB_DRIVER" value="${database.driver}"/>
-        <replace file="${install.src.hibernate.properties}" token="DB_PINGSTMT" value="${database.pingstmt}"/>
-
-        <copy file="${src.root}/etc/system.properties" todir="${install.src.conf}"/>
-
-        <copy file="${src.root}/etc/keystore.properties" tofile="${install.src.keystore.properties}"/>
-        <echo>Patching ${install.src.keystore.properties}...</echo>
-
-        <replaceregexp file="${install.src.keystore.properties}">
-            <regexp pattern="keystoredir=.*"/>
-            <substitution expression="keystoredir=${install.target.keys}"/>
-        </replaceregexp>
-
-        <copy file="${src.root}/etc/ssglog.template.properties" tofile="${install.src.ssglog.properties}"/>
-        <copy file="${src.root}/etc/uddi.properties" tofile="${install.src.uddi.properties}"/>
-
-        <!-- Copy cluster_hostname -->
-        <copy file="${src.root}/etc/cluster_hostname" tofile="${install.src.cluster_hostname}-dist"/>
-    </target>
-
-    <!--
       Initialize full install (before anything is done, ie. packaging)
     -->
     <target name="INTERNAL-ssg-install-init-pre" if="ssg.install.enabled" depends="prepare.base">
@@ -2673,158 +2615,133 @@
 
         <fail unless="jdk.exists" message="Couldn't find ${install.jdk.tar.gz}! Check your install.properties file!"/>
 
-        <!-- Relative pathnames -->
-        <property name="install.rel.libexec" value="libexec"/>
-        <property name="install.rel.logs" value="logs"/>
-        <property name="install.rel.partitions" value="partitions"/>
-        <property name="install.rel.partitionTemplate" value="partitiontemplate_"/>
-        <property name="install.rel.defaultPartition" value="default_"/>
-        <property name="install.rel.sql" value="${install.rel.etc}/sql"/>
-        <property name="install.rel.jdk" value="${install.jdk.dir}"/>
-
-        <!-- Absolute source paths -->
-        <property name="install.src.lib" value="${install.src.ssgonly.base}/lib"/>
-        <property name="install.src.lib.ext" value="${install.src.lib}/ext"/>
-        <property name="install.src.mods" value="${install.src.ssgonly.base}/modules/lib"/>
-        <property name="install.src.aarmods" value="${install.src.ssgonly.base}/modules/assertions"/>
-        <property name="install.src.doc" value="${install.src.ssgonly.base}/${install.rel.doc}"/>
-        <property name="install.src.etc" value="${install.src.ssgonly.base}/${install.rel.etc}"/>
-        <property name="install.src.sql" value="${install.src.ssgonly.base}/${install.rel.sql}"/>
-        <property name="install.src.partitions" value="${install.src.conf}/${install.rel.partitions}"/>
-        <property name="install.src.partitionTemplate" value="${install.src.partitions}/${install.rel.partitionTemplate}"/>
-        <property name="install.src.defaultPartition" value="${install.src.partitions}/${install.rel.defaultPartition}"/>
-        <property name="install.src.keystore.properties" value="${install.src.conf}/keystore.properties"/>
-        <property name="install.src.cluster_hostname" value="${install.src.conf}/cluster_hostname"/>
-        <property name="install.src.ssglog.properties" value="${install.src.conf}/ssglog.properties"/>
-        <property name="install.src.uddi.properties" value="${install.src.conf}/uddi.properties"/>
-        <property name="install.src.logs" value="${install.src.ssgonly.base}/${install.rel.logs}"/>
-        <property name="install.src.ldap" value="${install.src.ssgonly.base}/${install.rel.ldap}"/>
-        <property name="install.src.uddi" value="${install.src.ssgonly.base}/${install.rel.uddi}"/>
-        <property name="install.src.var" value="${install.src.ssgonly.base}/var"/>
-        <property name="install.src.var.attachments" value="${install.src.var}/attachments"/>
-        <property name="install.src.jar" value="${install.src.ssgonly.base}/Gateway.jar"/>
-        <property name="install.src.configwizard" value="${install.src.ssgonly.base}/configwizard"/>
-        <property name="install.src.flasher" value="${install.src.ssgonly.base}/migration"/>
-        <property name="install.src.sysconfigwizard" value="${install.src.appliance.base}/sysconfigwizard"/>
-
-        <!-- Absolute target paths -->
-        <property name="install.target.ldap" value="${install.target.base}/${install.rel.ldap}"/>
-        <property name="install.target.uddi" value="${install.target.base}/${install.rel.uddi}"/>
-        <property name="install.target.jdk" value="${install.target.base}/${install.rel.jdk}"/>
-        <property name="install.target.logs" value="${install.target.base}/${install.rel.logs}"/>
-
         <echo>Making directories...</echo>
-        <mkdir dir="${install.src.appliance.base}"/>
-        <mkdir dir="${install.src.ssgonly.base}"/>
-        <mkdir dir="${install.src.lib}"/>
-        <mkdir dir="${install.src.lib.ext}"/>
-        <mkdir dir="${install.src.mods}"/>
-        <mkdir dir="${install.src.aarmods}"/>
-        <mkdir dir="${install.src.doc}"/>
-        <mkdir dir="${install.src.etc}"/>
-        <mkdir dir="${install.src.sql}"/>
-        <mkdir dir="${install.src.ldap}"/>
-        <mkdir dir="${install.src.uddi}"/>
-        <mkdir dir="${install.src.ssgonly.bin}"/>
-        <mkdir dir="${install.src.ssgonly.bin}/samples"/>
-        <mkdir dir="${install.src.appliance.bin}"/>
-        <mkdir dir="${install.src.appliance.libexec}"/>
-        <mkdir dir="${install.src.conf}"/>
-        <mkdir dir="${install.src.partitions}"/>
-        <mkdir dir="${install.src.partitionTemplate}"/>
-        <mkdir dir="${install.src.partitionTemplate}/var/attachments"/>
-        <mkdir dir="${install.src.partitionTemplate}/var/modules"/>
-        <mkdir dir="${install.src.defaultPartition}"/>
-        <mkdir dir="${install.src.logs}"/>
-        <mkdir dir="${install.src.var}"/>
-        <mkdir dir="${install.src.var.attachments}"/>
-        <mkdir dir="${install.src.configwizard}"/>
-        <mkdir dir="${install.src.flasher}"/>
-        <mkdir dir="${install.src.inf}"/>
-        <mkdir dir="${install.src.inf}/ssg"/>
-        <mkdir dir="${install.src.inf}/ssg/webadmin"/>
-        <mkdir dir="${install.src.inf}/ssg/webadmin/applet"/>
-        <mkdir dir="${install.src.inf}/ssg/webadmin/applet/lib"/>
-        <mkdir dir="${install.src.inf}/ssg/webadmin/help"/>
+
+        <!-- Appliance directories -->
+        <mkdir dir="${install.src.app}/etc/init.d"/>
+        <mkdir dir="${install.src.app}/etc/snmp"/>
+        <mkdir dir="${install.src.app}/etc/sysconfig"/>
+        <mkdir dir="${install.src.app.bin}" />
+        <mkdir dir="${install.src.app.etc}" />
+        <mkdir dir="${install.src.app.firewall}" />
+        <mkdir dir="${install.src.app.migconfig}"/>
+        <mkdir dir="${install.src.app.libexec}"/>
+        <mkdir dir="${install.src.app.ssgconfig}"/>
+        <mkdir dir="${install.src.app.ssgprofile}"/>
+        <mkdir dir="${install.src.app.ssgsamples}"/>
+        <mkdir dir="${install.src.app.sysconfigwizard}"/>
+
+        <!-- Gateway directories -->
+        <mkdir dir="${install.src.ssg.applet}"/>
+        <mkdir dir="${install.src.ssg.appletlib}"/>
+        <mkdir dir="${install.src.ssg.attachment}"/>
+        <mkdir dir="${install.src.ssg.base}"/>
+        <mkdir dir="${install.src.ssg.bin}"/>
+        <mkdir dir="${install.src.ssg.conf}"/>
+        <mkdir dir="${install.src.ssg.configwizard}"/>
+        <mkdir dir="${install.src.ssg.control}"/>
+        <mkdir dir="${install.src.ssg.controlbin}"/>
+        <mkdir dir="${install.src.ssg.controletc}"/>
+        <mkdir dir="${install.src.ssg.controllib}"/>
+        <mkdir dir="${install.src.ssg.controllogs}"/>
+        <mkdir dir="${install.src.ssg.etc}"/>
+        <mkdir dir="${install.src.ssg.flasher}"/>
+        <mkdir dir="${install.src.ssg.help}"/>
+        <mkdir dir="${install.src.ssg.lib}"/>
+        <mkdir dir="${install.src.ssg.libext}"/>
+        <mkdir dir="${install.src.ssg.logs}"/>
+        <mkdir dir="${install.src.ssg.profile}"/>        
+        <mkdir dir="${install.src.ssg.aarmods}"/>
+        <mkdir dir="${install.src.ssg.samples}"/>
+        <mkdir dir="${install.src.ssg.sql}"/>
+        <mkdir dir="${install.src.ssg.web}"/>
     </target>
 
     <!--                                                                                                   
       Full install main work
     -->
-    <target name="INTERNAL-ssg-install-main" depends="INTERNAL-ssg-install-properties" if="ssg.install.enabled">
-        <!-- Extract JDK tarball -->
-        <!-- Note that the RPM does this later to get the correct JDK for the architecture -->
-        <untar src="${install.jdk.tar.gz}" dest="${install.src.base}/appliance/" compression="gzip"/>
-
+    <target name="INTERNAL-ssg-install-main" if="ssg.install.enabled">
         <!--copy the config wizard -->
-        <copy todir="${install.src.configwizard}">
+        <copy todir="${install.src.ssg.configwizard}">
             <fileset dir="${build.dir}/configwizard">
                 <include name="**/*"/>
             </fileset>
         </copy>
 
         <!--copy the system config wizard -->
-        <copy todir="${install.src.sysconfigwizard}">
+        <copy todir="${install.src.app.sysconfigwizard}">
             <fileset dir="${build.dir}/sysconfigwizard">
                 <include name="**/*"/>
             </fileset>
         </copy>
 
         <!--copy the ssg flasher -->
-        <copy todir="${install.src.flasher}">
+        <copy todir="${install.src.ssg.flasher}">
             <fileset dir="${build.dir}/migration">
                 <include name="**/*"/>
             </fileset>
         </copy>
 
         <!-- Copy bundled modular assertions -->
-        <copy todir="${install.src.aarmods}">
+        <copy todir="${install.src.ssg.aarmods}">
             <fileset dir="${build.dir}/modules" includes="*.aar" excludes="*-client-*.aar"/>
         </copy>
 
         <!-- Copy modified / new files -->
-        <copy file="${src.root}/etc/omp.dat" tofile="${install.src.partitionTemplate}/omp.dat"/>
+        <copy file="${src.root}/etc/omp.dat" tofile="${install.src.ssg.conf}/omp.dat"/>
     </target>
 
     <!--
       Top level work target for official builds
     -->
     <target name="INTERNAL-ssg-install" depends="INTERNAL-ssg-install-init, INTERNAL-ssg-install-main" if="ssg.install.enabled">
+        <!-- Copy Controller.jar -->
+        <copy todir="${install.src.ssg.control}">
+            <fileset dir="${build.dir}" includes="Controller.jar"/>
+        </copy>
+
+        <!-- Copy Controller libs -->
+        <copy todir="${install.src.ssg.controllib}" flatten="true">
+            <fileset dir="${build.dir}/processcontrollerlibs" casesensitive="yes">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
+
+        <!-- Copy Controller bin -->
+        <copy todir="${install.src.ssg.controlbin}">
+            <fileset dir="${src.root}/etc/processcontroller" includes="processcontroller.sh"/>
+        </copy>
+
         <!-- Copy Gateway.jar -->
-        <copy todir="${install.src.ssgonly.base}">
+        <copy todir="${install.src.ssg.base}">
             <fileset dir="${build.dir}" includes="Gateway.jar"/>
         </copy>
 
         <!-- Copy Gateway libs -->
-        <copy todir="${install.src.lib}" flatten="true">
+        <copy todir="${install.src.ssg.lib}" flatten="true">
             <fileset dir="${build.dir}/gatewaylibs" casesensitive="yes">
                 <include name="*.jar"/>
             </fileset>
         </copy>
 
         <!-- Copy JMS lib -->
-        <copy todir="${install.src.lib.ext}" flatten="true">
+        <copy todir="${install.src.ssg.libext}" flatten="true">
             <fileset dir="${src.root}/lib" casesensitive="yes">
                 <include name="jms-1.1.jar"/>
             </fileset>
         </copy>
 
         <!-- Copy misc. stuff -->
-        <copy todir="${install.src.sql}">
+        <copy todir="${install.src.ssg.sql}">
             <fileset dir="${src.root}/etc/db/${database.type}">
                 <include name="ssg.sql"/>
                 <include name="upgrade*.sql"/>
             </fileset>
         </copy>
 
-        <copy todir="${install.src.ssgonly.bin}">
+        <!-- profile files -->
+        <copy todir="${install.src.ssg.profile}">
             <fileset dir="${src.root}/etc">
-                <include name="partitionControl.sh"/>
-                <include name="gateway.sh"/>
-                <include name="ssg-java.security"/>
-                <include name="install.sh"/>
-                <include name="configure.sh"/>
-                <include name="profile"/>
                 <include name="ssgruntimedefs.sh"/>
                 <include name="java.sh"/>
                 <include name="ssg-utilities.sh"/>
@@ -2834,23 +2751,66 @@
             </fileset>
         </copy>
 
-        <!--copy this in so that users have an example to use in case they are acually installing the "software mode" on a RedHat system-->
-        <copy todir="${install.src.ssgonly.bin}/samples">
-            <fileset dir="${src.root}/etc/appliance/">
-                <include name="ssg-initd"/>
+        <!-- etc files -->
+        <copy todir="${install.src.ssg.etc}">
+            <fileset dir="${src.root}/etc">
+                <include name="profile"/>
             </fileset>
         </copy>
 
-        <!--copy this in so that users have a sample my.cnf to refer to when configuring mysql in a software installation-->
-        <copy tofile="${install.src.ssgonly.bin}/samples/my.cnf.example">
-            <fileset dir="${src.root}/etc/db/mysql">
-                <include name="my.cnf"/>
+        <!-- conf files -->
+        <copy file="${src.root}/etc/ssg-java.security" tofile="${install.src.ssg.conf}/java.security"/>
+        <copy file="${src.root}/etc/system.properties" todir="${install.src.ssg.conf}"/>
+        <copy file="${src.root}/etc/ssglog.template.properties" tofile="${install.src.ssg.conf}/ssglog.properties"/>
+
+        <!-- bin files -->
+        <copy todir="${install.src.ssg.bin}">
+            <fileset dir="${src.root}/etc">
+                <include name="gateway.sh"/>
+                <include name="partitionControl.sh"/>
+                <include name="install.sh"/>
+                <include name="configure.sh"/>
             </fileset>
+        </copy>
+
+        <!--copy this in so that users have an example to use in case they are acually installing the "software mode" on a RedHat system-->
+        <copy file="${src.root}/etc/appliance/ssg-initd" todir="${install.src.ssg.samples}"/>
+
+        <!--copy this in so that users have a sample my.cnf to refer to when configuring mysql in a software installation-->
+        <copy file="${src.root}/etc/db/mysql/my.cnf" tofile="${install.src.ssg.samples}/my.cnf.example"/>
+
+        <mkdir dir="${install.src.ssg.web}/ssg"/>
+        <copy todir="${install.src.ssg.web}/ssg">
+            <fileset dir="${src.root}/web" includes="*"/>
+            <fileset dir="${src.root}/modules/common/src/main/resources/com/l7tech/common/resources" includes="wsil2xhtml.xml"/>
+        </copy>
+
+        <copy todir="${install.src.ssg.applet}">
+            <fileset dir="${build.dir}" includes="ManagerApplet.jar*"/>
+        </copy>
+
+        <unzip src="${src.root}/webhelp/ssm/help.zip" dest="${install.src.ssg.help}"/>
+
+        <copy todir="${install.src.ssg.appletlib}">
+            <fileset dir="${build.dir}/managerappletlibs"/>
         </copy>
 
         <!-- copy new sudo exececuted files to new libexec directory -->
-        <copy todir="${install.src.appliance.libexec}">
-            <fileset dir="${src.root}/etc/appliance/">
+        <copy file="${src.root}/etc/grandmaster_flash" todir="${install.src.app.migconfig}"/>
+        <copy file="${src.root}/etc/db/mysql/my.cnf" tofile="${install.src.app}/etc/my.cnf.ssg"/>
+        <copy file="${src.root}/etc/appliance/fix_banner.sh" todir="${install.src.app.ssgsamples}"/>
+        <copy file="${src.root}/etc/appliance/appliancedefs.sh" todir="${install.src.app.ssgprofile}"/>
+        <!--<copy file="${src.root}/etc/appliance/ssg-initd" tofile="${install.src.app}/etc/init.d/ssg"/>-->
+        <copy file="${src.root}/etc/processcontroller/sspc-initd" tofile="${install.src.app}/etc/init.d/ssg"/>
+        <copy file="${src.root}/etc/appliance/sysconfigscript-initd" tofile="${install.src.app}/etc/init.d/ssgsysconfig"/>
+        <copy file="${src.root}/etc/appliance/ssg-dbstatus-initd" tofile="${install.src.app}/etc/init.d/ssg-dbstatus"/>
+        <copy file="${src.root}/etc/appliance/tcp_tune.sh" tofile="${install.src.app}/etc/init.d/tcp_tune"/>
+        <copy file="${src.root}/etc/appliance/snmpd.conf" tofile="${install.src.app}/etc/snmp/snmpd.conf_example"/>
+        <copy file="${src.root}/etc/appliance/iptables" tofile="${install.src.app}/etc/sysconfig/iptables"/>
+        <copy file="${src.root}/etc/appliance/configuser_profile" tofile="${install.src.app.ssgconfig}/.bash_profile"/>
+
+        <copy todir="${install.src.app.libexec}">
+            <fileset dir="${src.root}/etc/appliance">
                 <include name="load_keydata"/>
                 <include name="save_keydata"/>
                 <include name="wipe_keydata"/>
@@ -2860,7 +2820,7 @@
             </fileset>
         </copy>
 
-        <copy todir="${install.src.appliance.bin}">
+        <copy todir="${install.src.app.bin}">
             <fileset dir="${src.root}/etc/appliance">
                 <include name="setkeys.sh"/>
                 <include name="md5passwd.pl"/>
@@ -2870,54 +2830,28 @@
                 <include name="upgrade.sh"/>
                 <include name="buildVersion.txt"/>
                 <include name="passServiceUsage.sh"/>
-                <include name="appliancedefs.sh"/>
                 <include name="ssg_appliance_startup_config.sh"/>
-                <include name="tcp_tune.sh"/>
-                <include name="iptables"/>
-                <include name="partition_firewall.pl"/>
-                <include name="ssg-initd"/>
-                <include name="ssg-dbstatus-initd"/>
-                <include name="snmpd.conf"/>
-                <include name="configuser_profile"/>
-                <include name="sysconfigscript-initd"/>
-                <include name="pkcs11_linux.cfg"/>
+                <include name="firewall_control.sh"/>
                 <include name="systeminfo.sh"/>
-                <include name="tarari.sh"/>
-                <include name="fix_banner.sh"/>
-            </fileset>
-            <fileset dir="${src.root}/etc">
-                <include name="grandmaster_flash"/>
-            </fileset>
-            <fileset dir="${src.root}/etc/db/mysql">
-                <include name="my.cnf"/>
             </fileset>
         </copy>
 
-        <copy todir="${install.src.inf}/ssg">
-            <fileset dir="${src.root}/web" includes="*"/>
-            <fileset dir="${src.root}/modules/common/src/main/resources/com/l7tech/common/resources" includes="wsil2xhtml.xml"/>
+        <copy todir="${install.src.app.etc}">
+            <fileset dir="${src.root}/etc/appliance">
+                <include name="host.properties"/>
+                <include name="pkcs11_linux.cfg"/>            
+            </fileset>
         </copy>
 
-        <copy todir="${install.src.inf}/ssg/webadmin/applet">
-            <fileset dir="${build.dir}" includes="ManagerApplet.jar*"/>
-        </copy>
-
-        <unzip src="${src.root}/webhelp/ssm/help.zip" dest="${install.src.inf}/ssg/webadmin"/>
-
-        <copy todir="${install.src.inf}/ssg/webadmin/applet/lib">
-            <fileset dir="${build.dir}/managerappletlibs"/>
-        </copy>
-
-        <!-- Create software only tarball -->
+        <!-- Create software tarball -->
         <property name="tarball" value="${build.dir}/ssg-b${install.build.number}.tar.gz"/>
         <echo level="info">Creating Software Tarball (${tarball})...</echo>
         <tar destfile="${tarball}" compression="gzip" longfile="gnu">
-            <tarfileset dir="${install.src.ssgonly}" username="gateway" group="gateway" mode="644">
+            <tarfileset dir="${install.src.ssg}" username="gateway" group="gateway" mode="644" prefix="${install.target.ssg}">
                 <include name="**/*"/>
                 <exclude name="**/bin/*"/>
-                <exclude name="ssg/dist/*"/>
             </tarfileset>
-            <tarfileset dir="${install.src.ssgonly}" username="gateway" group="gateway" mode="755">
+            <tarfileset dir="${install.src.ssg}" username="gateway" group="gateway" mode="755" prefix="${install.target.ssg}">
                 <include name="**/bin/*"/>
                 <exclude name="**/bin/*.bat"/>
                 <exclude name="**/bin/*.cnf"/>
@@ -2929,7 +2863,7 @@
                 <exclude name="**/bin/*.txt"/>
                 <exclude name="**/bin/*.xml"/>
             </tarfileset>
-            <tarfileset dir="${install.src.ssgonly}" username="gateway" group="gateway" mode="644">
+            <tarfileset dir="${install.src.ssg}" username="gateway" group="gateway" mode="644" prefix="${install.target.ssg}">
                 <include name="**/bin/*.bat"/>
                 <include name="**/bin/*.cnf"/>
                 <include name="**/bin/*.conf"/>
@@ -2945,7 +2879,7 @@
         <property name="appliance-tarball" value="${build.dir}/ssg-appliance-b${install.build.number}.tar.gz"/>
         <echo level="info">Creating Appliance Add-On Tarball (${appliance-tarball})...</echo>
         <tar destfile="${appliance-tarball}" compression="gzip" longfile="gnu">
-            <tarfileset dir="${install.src.appliance}" username="gateway" group="gateway" mode="644">
+            <tarfileset dir="${install.src.app}" username="gateway" group="gateway" mode="644" prefix="${install.target.app}">
                 <include name="**/**/*"/>
             </tarfileset>
         </tar>
@@ -2993,7 +2927,7 @@
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/bin"/>
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/lib"/>
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/logs"/>
-        <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/var"/>
+        <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/var/db"/>
 
         <!-- copy files to install locations -->
         <copy file="${src.root}/etc/enterprisemanager/ssem-initd" tofile="${install.src.em}/etc/init.d/ssem"/>

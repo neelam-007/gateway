@@ -7,10 +7,10 @@ License: Commercial
 URL: http://www.layer7tech.com
 Vendor: Layer 7 Technologies
 Packager: Layer 7 Technologies, <support@layer7tech.com>
-source0: ssg-appliance.tar.gz
-source1: jdk.tar.gz
-buildroot: %{_builddir}/%{name}-%{version}
-requires: ssg >= 5.0
+Source0: ssg-appliance.tar.gz
+Source1: jdk.tar.gz
+BuildRoot: %{_builddir}/%{name}-%{version}
+Requires: ssg >= 5.0
 
 # Prevents rpm build from erroring and halting
 #%undefine       __check_files
@@ -26,61 +26,22 @@ rm -fr %{buildroot}
 
 %setup -qc %{buildroot}
 %setup -qDTa 1 %{buildroot}
-rm -rf %{buildroot}/ssg/jdk
-mv %{buildroot}/jdk %{buildroot}/ssg/
-[ ! -e %{buildroot}/ssg/jdk/db ] || rm -rf %{buildroot}/ssg/jdk/db
-[ ! -e %{buildroot}/ssg/jdk/demo ] || rm -rf %{buildroot}/ssg/jdk/demo
-[ ! -e %{buildroot}/ssg/jdk/sample ] || rm -rf %{buildroot}/ssg/jdk/sample
-[ ! -e %{buildroot}/ssg/jdk/man ] || rm -rf %{buildroot}/ssg/jdk/man
-[ ! -e %{buildroot}/ssg/jdk/jre/.systemPrefs ] || rm -rf %{buildroot}/ssg/jdk/jre/.systemPrefs
-[ ! -e %{buildroot}/ssg/jdk/jre/javaws ] || rm -rf %{buildroot}/ssg/jdk/jre/javaws
-[ ! -e %{buildroot}/ssg/jdk/jre/plugin ] || rm -rf %{buildroot}/ssg/jdk/jre/plugin
-[ ! -e %{buildroot}/ssg/jdk/jre/CHANGES ] || rm -f %{buildroot}/ssg/jdk/jre/CHANGES
-[ ! -e %{buildroot}/ssg/jdk/jre/lib/deploy ] || rm -rf %{buildroot}/ssg/jdk/jre/lib/deploy
-[ ! -e %{buildroot}/ssg/jdk/jre/lib/desktop ] || rm -rf %{buildroot}/ssg/jdk/jre/lib/desktop
+
+[ ! -e %{buildroot}/jdk/db ] || rm -rf %{buildroot}/jdk/db
+[ ! -e %{buildroot}/jdk/demo ] || rm -rf %{buildroot}/jdk/demo
+[ ! -e %{buildroot}/jdk/sample ] || rm -rf %{buildroot}/jdk/sample
+[ ! -e %{buildroot}/jdk/man ] || rm -rf %{buildroot}/jdk/man
+[ ! -e %{buildroot}/jdk/jre/.systemPrefs ] || rm -rf %{buildroot}/jdk/jre/.systemPrefs
+[ ! -e %{buildroot}/jdk/jre/javaws ] || rm -rf %{buildroot}/jdk/jre/javaws
+[ ! -e %{buildroot}/jdk/jre/plugin ] || rm -rf %{buildroot}/jdk/jre/plugin
+[ ! -e %{buildroot}/jdk/jre/CHANGES ] || rm -f %{buildroot}/jdk/jre/CHANGES
+[ ! -e %{buildroot}/jdk/jre/lib/deploy ] || rm -rf %{buildroot}/jdk/jre/lib/deploy
+[ ! -e %{buildroot}/jdk/jre/lib/desktop ] || rm -rf %{buildroot}/jdk/jre/lib/desktop
 # Ensure that the libs are not executable, if they are then their dependencies are required by this rpm.
-chmod -R '-x+X' %{buildroot}/ssg/jdk/jre/lib
+chmod -R '-x+X' %{buildroot}/jdk/jre/lib
+mv %{buildroot}/jdk %{buildroot}/opt/SecureSpan/JDK
 
 %build
-mkdir %{buildroot}/etc/
-mkdir %{buildroot}/etc/snmp/
-mkdir %{buildroot}/etc/profile.d/
-mkdir %{buildroot}/etc/init.d/
-mkdir %{buildroot}/etc/sysconfig
-mkdir %{buildroot}/etc/logrotate.d/
-mkdir -p %{buildroot}/home/ssgconfig/
-mkdir -p %{buildroot}/ssg/appliance/libexec/
-mkdir -p %{buildroot}/ssg/appliance/bin
-mkdir -p %{buildroot}/ssg/etc/profile.d/
-mkdir -p %{buildroot}/ssg/migration/cfg/
-mkdir -p %{buildroot}/ssg/bin/samples
-
-mv %{buildroot}/ssg/bin/ssg-initd %{buildroot}/etc/init.d/ssg
-mv %{buildroot}/ssg/bin/sysconfigscript-initd %{buildroot}/etc/init.d/ssgsysconfig
-mv %{buildroot}/ssg/bin/ssg-dbstatus-initd %{buildroot}/etc/init.d/ssg-dbstatus
-mv %{buildroot}/ssg/bin/my.cnf %{buildroot}/etc/my.cnf.ssg
-mv %{buildroot}/ssg/bin/iptables %{buildroot}/etc/sysconfig/iptables
-mv %{buildroot}/ssg/bin/appliancedefs.sh %{buildroot}/ssg/etc/profile.d/
-mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
-mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
-mv %{buildroot}/ssg/bin/configuser_profile %{buildroot}/home/ssgconfig/.bash_profile
-mv %{buildroot}/ssg/bin/pkcs11_linux.cfg %{buildroot}/ssg/appliance/pkcs11.cfg
-mv %{buildroot}/ssg/bin/fix_banner.sh %{buildroot}/ssg/bin/samples/
-mv %{buildroot}/ssg/bin/* %{buildroot}/ssg/appliance/bin/
-mv %{buildroot}/ssg/appliance/bin/samples %{buildroot}/ssg/bin/
-mv %{buildroot}/ssg/libexec/* %{buildroot}/ssg/appliance/libexec
-mv %{buildroot}/ssg/appliance/bin/grandmaster_flash %{buildroot}/ssg/migration/cfg/
-
-# Root war is redundant
-rm -f %{buildroot}/ssg/dist/*
-# so is the windows mysql config
-rm -f %{buildroot}/ssg/bin/my.ini
-# tarari rpm has this
-rm -f %{buildroot}/ssg/bin/tarari-initd
-
-chmod 755 %{buildroot}/etc/init.d/*
-chmod 755 %{buildroot}/ssg/appliance/libexec
-chmod 711 %{buildroot}/ssg/appliance/libexec/*
 
 %files
 # Root owned OS components
@@ -90,65 +51,61 @@ chmod 711 %{buildroot}/ssg/appliance/libexec/*
 /etc/init.d/ssg-dbstatus
 /etc/init.d/tcp_tune
 
+# Config components, owned by root
+%defattr(0644,root,root)
 %config(noreplace) /etc/sysconfig/iptables
 %defattr(0644,root,sys)
 /etc/snmp/snmpd.conf_example
-# Config components, owned by root
-%config(noreplace) /etc/my.cnf.ssg
+/etc/my.cnf.ssg
 
-# Main tree, owned by gateway
-%defattr(0644,gateway,gateway,0755)
-%dir /ssg
-/ssg/appliance
-/ssg/appliance/pkcs11.cfg
-%attr(0755,root,root) /ssg/appliance/libexec
-%attr(0755,root,root) /ssg/appliance/libexec/*
+# SecureSpan base
+%defattr(0644,root,root,0755)
+%dir /opt/SecureSpan
 
-# Ssg bin
-%dir /ssg/appliance/bin
-%attr(0755,gateway,gateway) /ssg/appliance/bin/*.pl
-%attr(0755,gateway,gateway) /ssg/appliance/bin/*.sh
+# SecureSpan JDK
+%dir /opt/SecureSpan/JDK
+/opt/SecureSpan/JDK/COPYRIGHT
+/opt/SecureSpan/JDK/LICENSE
+/opt/SecureSpan/JDK/README.html
+/opt/SecureSpan/JDK/THIRDPARTYLICENSEREADME.txt
+%attr(0755,root,root) /opt/SecureSpan/JDK/bin
+/opt/SecureSpan/JDK/include
+%dir /opt/SecureSpan/JDK/jre
+/opt/SecureSpan/JDK/jre/COPYRIGHT
+/opt/SecureSpan/JDK/jre/LICENSE
+/opt/SecureSpan/JDK/jre/README
+/opt/SecureSpan/JDK/jre/THIRDPARTYLICENSEREADME.txt
+/opt/SecureSpan/JDK/jre/Welcome.html
+%attr(0755,root,root) /opt/SecureSpan/JDK/jre/bin
+/opt/SecureSpan/JDK/jre/lib
+/opt/SecureSpan/JDK/lib
 
-%attr(0775,gateway,gateway) %dir /ssg/etc/profile.d
-%attr(0775,gateway,gateway) /ssg/etc/profile.d/appliancedefs.sh
-%attr(0764,gateway,gateway) /ssg/bin/samples/fix_banner.sh
+# Main appliance tree, owned by root
+%defattr(0644,root,root,0755)
+%dir /opt/SecureSpan/Appliance
+/opt/SecureSpan/Appliance/etc
+/opt/SecureSpan/Appliance/var
+%attr(0755,root,root) /opt/SecureSpan/Appliance/bin
+%attr(0755,root,root) /opt/SecureSpan/Appliance/libexec
 
-# JDK
-%dir /ssg/jdk
-/ssg/jdk/COPYRIGHT
-/ssg/jdk/LICENSE
-/ssg/jdk/README.html
-/ssg/jdk/THIRDPARTYLICENSEREADME.txt
-%attr(0755,gateway,gateway) /ssg/jdk/bin
-/ssg/jdk/include
-%dir /ssg/jdk/jre
-/ssg/jdk/jre/COPYRIGHT
-/ssg/jdk/jre/LICENSE
-/ssg/jdk/jre/README
-/ssg/jdk/jre/THIRDPARTYLICENSEREADME.txt
-/ssg/jdk/jre/Welcome.html
-%attr(0755,gateway,gateway) /ssg/jdk/jre/bin
-/ssg/jdk/jre/lib
-%config(noreplace) /ssg/jdk/jre/lib/security/java.security
-%attr(0775,gateway,gateway) /ssg/jdk/jre/lib/security/
-
-/ssg/jdk/lib
+# Extra ssg files
+%attr(0775,gateway,gateway) %dir /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d
+%attr(0775,gateway,gateway) /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/*.sh
+%attr(0644,gateway,gateway) /opt/SecureSpan/Gateway/Nodes/default/bin/samples/fix_banner.sh
 
 #System Config Wizard
-%defattr(0755,gateway,gateway,0664)
-%dir /ssg/sysconfigwizard
-%dir /ssg/sysconfigwizard/configfiles
-/ssg/sysconfigwizard/lib
-/ssg/sysconfigwizard/*.jar
-/ssg/sysconfigwizard/*.properties
+%defattr(0664,gateway,gateway,0775)
+%dir /opt/SecureSpan/Appliance/sysconfigwizard
+/opt/SecureSpan/Appliance/sysconfigwizard/configfiles
+/opt/SecureSpan/Appliance/sysconfigwizard/lib
+/opt/SecureSpan/Appliance/sysconfigwizard/*.jar
+/opt/SecureSpan/Appliance/sysconfigwizard/*.properties
 # this script does not need to be executable
-/ssg/sysconfigwizard/ssg_sys_config.pl
-%attr(0775,gateway,gateway) /ssg/sysconfigwizard/
-%attr(0775,gateway,gateway) /ssg/sysconfigwizard/configfiles
-%attr(0755,gateway,gateway) /ssg/sysconfigwizard/*.sh
+/opt/SecureSpan/Appliance/sysconfigwizard/ssg_sys_config.pl
+%attr(0755,gateway,gateway) /opt/SecureSpan/Appliance/sysconfigwizard/*.sh
 
 %attr(0664,ssgconfig,gateway) /home/ssgconfig/.bash_profile
-%attr(0775,gateway,gateway) /ssg/migration/cfg/grandmaster_flash
+/opt/SecureSpan/Gateway/migration/cfg
 
 %pre
 if [ `grep ^gateway: /etc/group` ]; then
@@ -187,7 +144,7 @@ fi
 echo "ssgconfig  ALL = NOPASSWD: /sbin/reboot" >> /etc/sudoers
 #the ssgconfig user is allowed to run the sca stuff without having to enter a password
 echo "ssgconfig    ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
-echo "ssgconfig    ALL = NOPASSWD: /ssg/appliance/libexec/" >> /etc/sudoers
+echo "ssgconfig    ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /etc/sudoers
 echo "ssgconfig    ALL = NOPASSWD: /opt/sun/sca6000/sbin/scadiag" >> /etc/sudoers
 
 GATEWAYCONFIGENTRY=`grep ^gateway /etc/sudoers`
@@ -198,7 +155,7 @@ fi
 
 #the gateway user is allowed to run the sca stuff without having to enter a password
 echo "gateway    ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
-echo "gateway    ALL = NOPASSWD: /ssg/appliance/libexec/" >> /etc/sudoers
+echo "gateway    ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /etc/sudoers
 
 rebootparam=`grep kernel.panic /etc/sysctl.conf`
 
@@ -253,39 +210,25 @@ fi
 %post
 
 #modify java.sh to use the appliance jdk
-cat > /ssg/etc/profile.d/java.sh <<-EOF
-SSG_JAVA_HOME="/ssg/jdk"
+cat > /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/java.sh <<-EOF
+SSG_JAVA_HOME="/opt/SecureSpan/JDK"
 export SSG_JAVA_HOME
 EOF
 
-if [ -e '/ssg/etc/profile.d/output_redirection.sh' ]; then
-    sed -i -e 's/^export LOG_REDIRECTION_OPERATOR=">"/export LOG_REDIRECTION_OPERATOR="|"/' /ssg/etc/profile.d/output_redirection.sh
-    sed -i -e 's/^export LOG_REDIRECTION_DEST="\/dev\/null"/export LOG_REDIRECTION_DEST="logger -t SSG-<PARTITION_NAME>"/' /ssg/etc/profile.d/output_redirection.sh
+if [ -e '/opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/output_redirection.sh' ]; then
+    sed -i -e 's/^export LOG_REDIRECTION_OPERATOR=">"/export LOG_REDIRECTION_OPERATOR="|"/' /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/output_redirection.sh
+    sed -i -e 's/^export LOG_REDIRECTION_DEST="\/dev\/null"/export LOG_REDIRECTION_DEST="logger -t SSG-default_"/' /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/output_redirection.sh
 fi
 
-/ssg/configwizard/ssgconfig.sh -partitionMigrate &> /dev/null
 # Change issue. This may move to a layer7-release file
 
 echo "Layer 7 SecureSpan(tm) Gateway v5.0" >/etc/issue
 echo "Kernel \r on an \m" >>/etc/issue
 #add the ssg and the configuration service to chkconfig if they are not already there
-/sbin/chkconfig --list ssg &>/dev/null
-if [ ${?} -ne 0 ]; then
-    # add service if not found
-    /sbin/chkconfig --add ssg
-fi
-
-/sbin/chkconfig --list ssgsysconfig &>/dev/null
-if [ ${?} -ne 0 ]; then
-    # add service if not found
-    /sbin/chkconfig --add ssgsysconfig
-fi
-
-/sbin/chkconfig --list ssg-dbstatus &>/dev/null
-if [ ${?} -ne 0 ]; then
-    # add service if not found
-    /sbin/chkconfig --add ssg-dbstatus
-fi
+/sbin/chkconfig --add ssg
+/sbin/chkconfig --add ssgsysconfig
+/sbin/chkconfig --add ssg-dbstatus
+/sbin/chkconfig ssg on
 
 # After above item has executed, on first install only
 # we need to set password for ssgconfig and pre-expire it

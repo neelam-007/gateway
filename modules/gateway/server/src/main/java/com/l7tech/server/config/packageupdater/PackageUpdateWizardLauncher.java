@@ -1,8 +1,8 @@
 package com.l7tech.server.config.packageupdater;
 
-import com.l7tech.server.config.ui.console.ConfigWizardConsoleResultsStep;
-import com.l7tech.server.config.ui.console.ConfigWizardConsoleStep;
-import com.l7tech.server.config.ui.console.ConfigWizardConsoleSummaryStep;
+import com.l7tech.server.config.wizard.ConfigWizardConsoleResultsStep;
+import com.l7tech.server.config.wizard.ConfigWizardConsoleStep;
+import com.l7tech.server.config.wizard.ConfigWizardConsoleSummaryStep;
 
 import java.io.InputStream;
 import java.io.PrintStream;

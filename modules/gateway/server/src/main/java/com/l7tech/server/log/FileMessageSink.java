@@ -44,8 +44,7 @@ class FileMessageSink extends MessageSinkSupport {
 
     private static final Logger logger = Logger.getLogger(FileMessageSink.class.getName());
 
-    private static final String DEFAULT_PARTITION_NAME = "default_";
-    private static final String DEFAULT_FILE_PATTERN_TEMPLATE = "{0}-{1}_%g_%u.log";
+    private static final String DEFAULT_FILE_PATTERN_TEMPLATE = "{1}_%g_%u.log";
     private static final String PROP_FILE_LOG_PATH = "file.logPath";
     private static final String DEFAULT_LOG_FORMAT_STANDARD = "%1$tb %1$te, %1$tY %1$tl:%1$tM:%1$tS %1$Tp %5$d %3$s%n%2$s: %4$s%n";
     private static final String DEFAULT_LOG_FORMAT_VERBOSE = "%1$tb %1$te, %1$tY %1$tl:%1$tM:%1$tS %1$Tp %5$d %3$s %6$s%n%2$s: %4$s%n";
@@ -106,7 +105,7 @@ class FileMessageSink extends MessageSinkSupport {
      * Get the format pattern for the given name.
      */
     private String getFormatPattern( final String name ) {
-        String formatPattern = null;
+        String formatPattern;
 
         // see if customized in logging properties
         formatPattern = LogManager.getLogManager().getProperty("sink.format." + name);
@@ -152,18 +151,13 @@ class FileMessageSink extends MessageSinkSupport {
             ssgLogs += "/";
         }
 
-        String partitionName = serverConfig.getProperty( ServerConfig.PARAM_PARTITION_NAME );
-        if ( partitionName == null ) {
-            partitionName = DEFAULT_PARTITION_NAME;
-        }
-
         String filePatternTemplate = serverConfig.getProperty( ServerConfig.PARAM_SSG_LOG_FILE_PATTERN_TEMPLATE );
         if ( filePatternTemplate == null ) {
             filePatternTemplate = DEFAULT_FILE_PATTERN_TEMPLATE;
         }
 
         try {
-            return ssgLogs + MessageFormat.format( filePatternTemplate , partitionName, filenamepart, "%g", "%u" );
+            return ssgLogs + MessageFormat.format( filePatternTemplate , "default_", filenamepart, "%g", "%u" );
         } catch (IllegalArgumentException iae) {
             throw new ConfigurationException("Invalid log file pattern '" + filePatternTemplate + "'.");
         }

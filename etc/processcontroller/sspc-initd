@@ -4,7 +4,7 @@
 #
 # chkconfig: - 99 01
 # description: Layer 7 SecureSpan Process Controller Daemon
-# processname: ssemd
+# processname: sspc
 
 # Source function library.
 . /etc/rc.d/init.d/functions
@@ -17,14 +17,15 @@ if [ $USER != "root" ] ; then
 fi
 
 # Config
-PID_FILE="ssemd"
-EM_SCRIPT="/opt/SecureSpan/Gateway/Controller/bin/processcontroller.sh"
+PID_FILE="sspcd"
+PC_USER="gateway"
+PC_SCRIPT="/opt/SecureSpan/Gateway/Controller/bin/processcontroller.sh"
 
 start() {
         [ -x "${PC_SCRIPT}" ] || exit 5
 
         echo -n $"Starting Process Controller: "
-        daemon "${PC_SCRIPT}" "/var/run/${PID_FILE}.pid"
+        daemon --check "${PID_FILE}" "${PC_SCRIPT}" "${PC_USER}" "/var/run/${PID_FILE}.pid"
         RETVAL=$?
         echo
         [ $RETVAL -eq 0 ] && touch /var/lock/subsys/sspc
@@ -53,7 +54,7 @@ case "$1" in
 	start
 	;;
   status)
-        status ssemd
+        status sspcd
         ;;
   *)
         echo $"Usage: $0 {start|stop|restart|status}"

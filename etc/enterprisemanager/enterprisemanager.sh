@@ -8,7 +8,7 @@ if [ -z "${SSEM_HOME}" ] ; then
   SSEM_HOME="/opt/SecureSpan/EnterpriseManager"
 fi
 if [ -z "${JAVA_HOME}" ] ; then
-  JAVA_HOME="/ssg/jdk"
+  JAVA_HOME="/opt/SecureSpan/JDK"
 fi
 
 PID_FILE=""

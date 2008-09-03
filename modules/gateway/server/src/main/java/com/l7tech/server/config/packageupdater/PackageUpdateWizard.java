@@ -1,6 +1,6 @@
 package com.l7tech.server.config.packageupdater;
 
-import com.l7tech.server.config.ui.console.ConfigurationWizard;
+import com.l7tech.server.config.wizard.ConfigurationWizard;
 
 import java.io.InputStream;
 import java.io.PrintStream;

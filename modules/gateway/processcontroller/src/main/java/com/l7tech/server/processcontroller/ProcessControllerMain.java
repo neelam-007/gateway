@@ -7,6 +7,10 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.File;
+
+import com.l7tech.util.JdkLoggerConfigurator;
+import com.l7tech.server.util.UncaughtExceptionLogger;
 
 /** @author alex */
 public final class ProcessControllerMain {
@@ -19,10 +23,12 @@ public final class ProcessControllerMain {
     private ProcessControllerMain() { }
 
     public static void main(String[] args) {
+        Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionLogger());
         new ProcessControllerMain().runUntilShutdown();
     }
 
     private void runUntilShutdown() {
+        init();
         start();
         do {
             try {
@@ -34,6 +40,13 @@ public final class ProcessControllerMain {
             }
         } while (!shutdown);
         stop(0);
+    }
+
+    private void init() {
+        // configure logging if the logs directory is found, else leave console output
+        if ( new File("var/logs").exists() ) {
+            JdkLoggerConfigurator.configure("com.l7tech.server.ems", "com/l7tech/server/processcontroller/resources/logging.properties");
+        }        
     }
 
     public void start() {

@@ -1,7 +1,7 @@
 package com.l7tech.server.config.packageupdater;
 
-import com.l7tech.server.config.ui.console.BaseConsoleStep;
-import com.l7tech.server.config.ui.console.ConfigurationWizard;
+import com.l7tech.server.config.wizard.BaseConsoleStep;
+import com.l7tech.server.config.wizard.ConfigurationWizard;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 
 import java.io.IOException;

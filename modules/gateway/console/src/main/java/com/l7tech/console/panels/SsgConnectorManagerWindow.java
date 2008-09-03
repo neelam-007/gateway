@@ -10,7 +10,6 @@ import com.l7tech.util.Pair;
 import com.l7tech.util.Triple;
 import com.l7tech.common.io.PortRange;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -168,11 +167,6 @@ public class SsgConnectorManagerWindow extends JDialog {
                         }
                     };
 
-                    if (warnAboutConflicts(connector)) {
-                        reedit.run();
-                        return;
-                    }
-
                     try {
                         long oid = getTransportAdmin().saveSsgConnector(connector);
                         if (oid != connector.getOid()) connector.setOid(oid);
@@ -194,48 +188,6 @@ public class SsgConnectorManagerWindow extends JDialog {
                 }
             }
         });
-    }
-
-    /**
-     * Check if the specified possibly-unsaved connector conflicts with any other ports known to be
-     * in use in the system and, if so, display a warning dialog.
-     *
-     * @param connector the connector to check
-     * @return true if conflicts were detected and the user opted not to continue anyway;
-     *         false if no conflicts were detected or the user chose to ignore them
-     */
-    private boolean warnAboutConflicts(SsgConnector connector) {
-        try {
-            Collection<Pair<PortRange,String>> conflicts = getTransportAdmin().findPortConflicts(connector);
-            if (conflicts == null || conflicts.isEmpty())
-                return false;
-
-            Pair<PortRange, String> conflict = conflicts.iterator().next();
-            PortRange range = conflict.left;
-            if (range == null) {
-                logger.warning("Port conflict: range is null"); // can't happen
-                return false;
-            }
-            String message = explainConflict(conflict);
-
-            String cancelOption = "Cancel";
-            String saveOption = "Save Anyway";
-            String[] options = new String[] { saveOption, cancelOption };
-
-            int option = JOptionPane.showOptionDialog(TopComponents.getInstance().getTopParent(),
-                                                      message,
-                                                      "Port Conflict Detected",
-                                                      JOptionPane.CANCEL_OPTION,
-                                                      JOptionPane.WARNING_MESSAGE,
-                                                      null,
-                                                      options,
-                                                      cancelOption);
-            return option != 0;
-
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Unable to check for port conflicts: " + ExceptionUtils.getMessage(e), e);
-            return false;
-        }
     }
 
     private static String explainConflict(Pair<PortRange, String> conflict) {
@@ -280,11 +232,6 @@ public class SsgConnectorManagerWindow extends JDialog {
             for (SsgConnector connector : connectors)
                 rows.add(new ConnectorTableRow(connector));
             connectorTable.setData(rows);
-
-            Collection<Triple<Long,PortRange,String>> conflicts = transportAdmin.findAllPortConflicts();
-            for (Triple<Long, PortRange, String> conflict : conflicts) {
-                connectorTable.flagConflict(conflict);
-            }
 
         } catch (FindException e) {
             showErrorMessage("Deletion Failed", "Unable to delete listen port: " + ExceptionUtils.getMessage(e), e);

@@ -21,7 +21,7 @@
                 <value>classpath:com/l7tech/server/resources/c3p0.properties</value>
                 <value>classpath:com/l7tech/server/resources/hibernate_default.properties</value>
                 <value>classpath:hibernate.properties</value>
-                <value>file:${com.l7tech.server.configDirectory}${file.separator}database.properties</value>
+                <value>file:${com.l7tech.server.configDirectory}${file.separator}node.properties</value>
                 <value>file:${com.l7tech.server.configDirectory}${file.separator}hibernate.properties</value>
             </list>
         </property>

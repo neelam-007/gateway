@@ -43,8 +43,9 @@ import java.util.regex.Pattern;
  * $Id$
  *
  */
-@SuppressWarnings({"JavaDoc"})
 public class ClusterInfoManagerImpl extends HibernateDaoSupport implements ClusterInfoManager {
+
+    //- PUBLIC
 
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
@@ -202,7 +203,6 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
             try {
                 // special query, dont do this everytime
                 // (cache return value as this will not change while the server is up)
-                String partition = getPartitionName();
                 Collection<String> macs = getMacs();
                 List<String> nodeids = new ArrayList<String>();
                 nodeids.add(propertiesNodeId);
@@ -212,7 +212,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
                     if (anymac == null) {
                         anymac = mac;
                     }
-                    nodeids.add(toNodeId(mac, partition));
+                    nodeids.add(toNodeId(mac));
                 }
 
                 // find out which id works for us
@@ -307,8 +307,8 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         return UUID.randomUUID().toString().replace("-","");
     }
 
-    private static String toNodeId(String mac, String partition) {
-        String identifierText = mac + "-" + partition;
+    private static String toNodeId(String mac) {
+        String identifierText = mac + "-default_"; // for compatibility with default_ partition
         byte[] identifierBytes = HexUtils.encodeUtf8(identifierText);
         byte[] md5IdentifierBytes = HexUtils.getMd5Digest(identifierBytes);
         return HexUtils.encodeMd5Digest(md5IdentifierBytes).toLowerCase();
@@ -333,7 +333,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         ClusterNodeInfo newClusterInfo = new ClusterNodeInfo();
         newClusterInfo.setAddress(getIPAddress());
         newClusterInfo.setNodeIdentifier(nodeid);
-        newClusterInfo.setPartitionName(getPartitionName());
+        newClusterInfo.setPartitionName("default");
         newClusterInfo.setClusterPort(getClusterPort());
         newClusterInfo.setMac(macid);
         // choose first available name
@@ -638,14 +638,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     }
 
     /**
-     * @return this partitions name.
-     */
-    private String getPartitionName() {
-        return serverConfig.getProperty("partitionName");
-    }
-
-    /**
-     * @return this partitions cluster port.
+     * Get the cluster port.
      */
     private int getClusterPort() {
         return serverConfig.getIntProperty("clusterPort", 2124);

@@ -13,8 +13,6 @@ import java.io.UnsupportedEncodingException;
 import java.io.IOException;
 import java.io.File;
 
-import com.l7tech.server.partition.PartitionInformation;
-
 /**
  * Java logging Handler implementation used on java startup.
  *
@@ -151,8 +149,8 @@ public class StartupHandler extends Handler {
     }
 
     private File getStartupLogFile() {
-        String path = System.getProperty("com.l7tech.server.home", "/ssg");
-        String name = System.getProperty("com.l7tech.server.partitionName", PartitionInformation.DEFAULT_PARTITION_NAME);
+        String path = System.getProperty("com.l7tech.server.home", "/opt/SecureSpan/Gateway/Nodes/default");
+        String name = "default_";
 
         return new File(new File(new File(path), "logs"), name + "_startup_%g_%u.log");
     }

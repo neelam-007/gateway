@@ -24,7 +24,6 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.system.BackupEvent;
 import com.l7tech.server.flasher.Exporter;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.partition.PartitionInformation;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.transport.TransportModule;
@@ -182,9 +181,6 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             return;
         }
 
-        // What partition am I?
-        final String partitionName = System.getProperty(PartitionInformation.SYSTEM_PROP_PARTITIONNAME);
-
         response.setContentType("text/html");
         final PrintWriter out = response.getWriter();
         try {
@@ -212,7 +208,6 @@ public class BackupServlet extends AuthenticatableHttpServlet {
                 // URL to be displayed in the browser status bar when hover.
                 out.println("<p><a class=\"button\" href=\"?node=" + nodeInfo.getName() + "\">" + nodeInfo.getName() + "</a></p>");
             }
-            out.println("<p><i>Note:</i> Only the current partition &ldquo;" + partitionName + "&rdquo; will be included.</p>");
             out.println("</body>");
             out.println("</html>");
         } finally {
@@ -240,9 +235,8 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             tmpFile = File.createTempFile("backup", ".tmp");
             final String ssgHome = System.getProperty("com.l7tech.server.home");
             final File flasherHome = new File(ssgHome, "migration");
-            final String partitionName = System.getProperty(PartitionInformation.SYSTEM_PROP_PARTITIONNAME);
             final Exporter exporter = new Exporter(flasherHome, null, null);
-            exporter.doIt(partitionName, false, null, tmpFile.getCanonicalPath());
+            exporter.doIt(false, null, tmpFile.getCanonicalPath());
         } catch (Exception e) {
             logAndAudit(getOriginalClientAddr(request), user, "Backup failed", ServiceMessages.BACKUP_CANT_CREATE_IMAGE, e, nodeName);
             respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Backup failed");

@@ -1,9 +1,9 @@
 package com.l7tech.server.config.systemconfig;
 
-import com.l7tech.server.config.ui.console.ConfigWizardConsoleResultsStep;
-import com.l7tech.server.config.ui.console.ConfigWizardConsoleStep;
-import com.l7tech.server.config.ui.console.ConfigWizardConsoleSummaryStep;
-import com.l7tech.server.config.ui.console.ConsoleWizardUtils;
+import com.l7tech.server.config.wizard.ConfigWizardConsoleStep;
+import com.l7tech.server.config.wizard.ConfigWizardConsoleSummaryStep;
+import com.l7tech.server.config.wizard.ConsoleWizardUtils;
+import com.l7tech.server.config.wizard.ConfigWizardConsoleResultsStep;
 
 import java.io.InputStream;
 import java.io.PrintStream;

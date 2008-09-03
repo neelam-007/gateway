@@ -100,11 +100,16 @@
         <property name="clusterPropertyCache" ref="clusterPropertyCache"/>
     </bean>
 
-    <!-- Default password encryption, for reading passwords from per-node sources ie properties files -->
-    <bean id="masterPasswordManager" class="com.l7tech.server.security.MasterPasswordManager" depends-on="systemProperties"/>
+    <bean id="masterPasswordManager" class="com.l7tech.util.MasterPasswordManager" depends-on="systemProperties">
+        <constructor-arg>
+            <bean class="com.l7tech.util.DefaultMasterPasswordFinder">
+                <constructor-arg value="file:${com.l7tech.server.configDirectory}${file.separator}omp.dat"/>
+            </bean>
+        </constructor-arg>
+    </bean>
 
     <!-- Database password encryption, for reading passwords from cluster-wide sources ie cluster properties -->
-    <bean id="dbPasswordEncryption" class="com.l7tech.server.security.MasterPasswordManager">
+    <bean id="dbPasswordEncryption" class="com.l7tech.util.MasterPasswordManager">
         <constructor-arg ref="clusterSharedKey"/>
     </bean>
 
@@ -118,10 +123,8 @@
         <constructor-arg ref="masterPasswordManager"/>
         <property name="passwordProperties">
             <list>
-                <value>sslkspasswd</value>
-                <value>rootcakspasswd</value>
-                <value>hibernate.connection.password</value>
-                <value>database.password</value>
+                <value>node.cluster.pass</value>
+                <value>node.db.pass</value>
             </list>
         </property>
     </bean>
@@ -514,13 +517,13 @@
     </bean>
 
     <!--
-      Allow use of keystore.properties keys in bean values (e.g "${sslkstorename}")
+      Allow use of node.properties keys in bean values (e.g "${node.cluster.pass}")
     -->
     <bean id="ssgPropertyPlaceholderConfigurer" class="com.l7tech.server.util.PasswordDecryptingPropertyPlaceholderConfigurer" depends-on="systemProperties">
         <constructor-arg ref="propertiesDecryptor"/>
         <property name="locations">
             <list>
-                <value>file:${com.l7tech.server.configDirectory}${file.separator}keystore.properties</value>
+                <value>file:${com.l7tech.server.configDirectory}${file.separator}node.properties</value>
             </list>
         </property>
     </bean>
@@ -823,7 +826,7 @@
         <constructor-arg ref="sharedKeyManager"/>
         <constructor-arg ref="keystoreFileManager"/>
         <constructor-arg ref="serverConfig"/>
-        <constructor-arg value="${sslkspasswd}"/>
+        <constructor-arg value="${node.cluster.pass}"/>
     </bean>
 
     <bean id="ftpServerManager" class="com.l7tech.server.transport.ftp.FtpServerManager">
@@ -840,7 +843,7 @@
     </bean>
 
     <bean id="sharedKeyManager" class="com.l7tech.server.security.sharedkey.SharedKeyManagerImpl">
-        <constructor-arg value="${sslkspasswd}"/>
+        <constructor-arg value="${node.cluster.pass}"/>
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
