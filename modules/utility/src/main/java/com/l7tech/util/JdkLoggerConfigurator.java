@@ -8,7 +8,6 @@ import java.io.SequenceInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Collections;
@@ -38,7 +37,7 @@ public class JdkLoggerConfigurator {
     private static AtomicBoolean debugState =
             new AtomicBoolean(Boolean.getBoolean("com.l7tech.logging.debug"));
     private static AtomicReference<Properties> nonDefaultProperties =
-            new AtomicReference();
+            new AtomicReference<Properties>();
 
     /**
      * this class cannot be instantiated
@@ -93,7 +92,7 @@ public class JdkLoggerConfigurator {
         try {
             System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
             String cf = SyspropUtil.getProperty("java.util.logging.config.file");
-            List configCandidates = new ArrayList(3);
+            List<String> configCandidates = new ArrayList<String>(3);
             if (cf != null) {
                 configCandidates.add(cf);
             }
@@ -120,12 +119,12 @@ public class JdkLoggerConfigurator {
             }
 
             // Check config files
-            for (Iterator iterator = configCandidates.iterator(); iterator.hasNext();) {
-                configCandidate = (String)iterator.next();
+            for ( String configurationCandidate : configCandidates) {
+                configCandidate = configurationCandidate;
 
                 final File file = new File(configCandidate);
                 if (file.exists()) {
-                    if  ( readConfiguration(logManager, probeDef, file.toURI().toURL(), false) ) {
+                    if (readConfiguration(logManager, probeDef, file.toURI().toURL(), false)) {
                         configFound = true;
                         probeFile = file;
                         break;
@@ -133,7 +132,7 @@ public class JdkLoggerConfigurator {
                 }
 
                 URL resource = cl.getResource(configCandidate);
-                if ( readConfiguration(logManager, probeDef, resource, false) ) {
+                if (readConfiguration(logManager, probeDef, resource, false)) {
                     configFound = true;
                     probeFile = new File(resource.getPath());
                     break;
@@ -207,6 +206,7 @@ public class JdkLoggerConfigurator {
      *
      * If either URL is null it is ignored
      */
+    @SuppressWarnings({"unchecked"})
     private static boolean readConfiguration(final LogManager logManager,
                                              final URL configDefs,
                                              final URL config,
@@ -361,7 +361,7 @@ public class JdkLoggerConfigurator {
                             interval = getInterval();
                             logger.log(Level.CONFIG,
                                        "logging config file reread complete, new interval is {0} secs",
-                                       new Long(interval));
+                                       interval);
                         } catch (Throwable t) {
                             logger.log(Level.WARNING,
                               "exception reading logging config file",
@@ -381,6 +381,7 @@ public class JdkLoggerConfigurator {
                     }
                 }
             } catch (InterruptedException e) {
+                logger.fine("Log configuration thread interrupted.");
             } finally {
                 logger.config("logging config file probe terminating");
             }
@@ -397,7 +398,7 @@ public class JdkLoggerConfigurator {
         String val = logManager.getProperty("com.l7tech.logging.interval");
         if (val != null) {
             try {
-                interval = Long.decode(val.trim()).longValue();
+                interval = Long.decode(val.trim());
             } catch (NumberFormatException e) {
                 e.printStackTrace(); // can't really log from this class
             }
