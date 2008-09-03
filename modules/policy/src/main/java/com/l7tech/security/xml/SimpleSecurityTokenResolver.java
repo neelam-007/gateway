@@ -57,7 +57,8 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
 
     /**
      * Create a thumbprint resolver that will find no certs at all, ever.  Useful for testing
-     * (wiring up beans that require a resolver).
+     * (wiring up beans that require a resolver), or if you plan to add certs or keys later
+     * with {@link #addCert(java.security.cert.X509Certificate)} or {@link #addPrivateKey(SignerInfo)}. 
      */
     public SimpleSecurityTokenResolver() {
     }
@@ -124,7 +125,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         }
     }
 
-    private void addPrivateKey(SignerInfo privateKey) {
+    public void addPrivateKey(SignerInfo privateKey) {
         if (privateKey != null) keys.add(new MyKey(privateKey));
     }
 
