@@ -1464,6 +1464,7 @@
         <mkdir dir="${deploy.dir}/var/attachments"/>
         <mkdir dir="${deploy.dir}/var/modules"/>
         <mkdir dir="${deploy.dir}/var/logs"/>
+        <mkdir dir="${deploy.dir}/etc/conf"/>
 
         <echo level="info">Copying gateway configuration files</echo>
         <echo level="info">Copying configuration files</echo>
