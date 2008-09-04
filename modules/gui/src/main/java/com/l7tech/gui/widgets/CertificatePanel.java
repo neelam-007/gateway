@@ -7,6 +7,7 @@
 package com.l7tech.gui.widgets;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.util.Pair;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -14,8 +15,7 @@ import java.awt.*;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.List;
 
 /**
  * Panel that displays the fields of an X509Certificate.
@@ -69,13 +69,12 @@ public class CertificatePanel extends JPanel {
     }
 
     private void loadCertificateInfo() throws CertificateEncodingException, NoSuchAlgorithmException {
-        ArrayList props = CertUtils.getCertProperties(cert);
+        List<Pair<String,String>> props = CertUtils.getCertProperties(cert);
         int y = 0;
         cp.removeAll();
-        for (Iterator i = props.iterator(); i.hasNext();) {
-            String[] pair = (String[]) i.next();
-            JLabel key = new JLabel(pair[0] + ": ");
-            JLabel value = new JLabel(pair[1]);
+        for (Pair<String, String> pair : props) {
+            JLabel key = new JLabel(pair.left + ": ");
+            JLabel value = new JLabel(pair.right);
             GridBagConstraints c = new GridBagConstraints();
             c.gridx = 0;
             c.gridy = y++;

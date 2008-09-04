@@ -35,7 +35,7 @@ import java.util.Map;
 public class LoginCredentials implements SecurityToken {
 
     public static LoginCredentials makeCertificateCredentials(X509Certificate cert, Class credentialSource) {
-        String login = CertUtils.getCn(cert);
+        String login = CertUtils.extractFirstCommonNameFromCertificate(cert);
 
         return new LoginCredentials(login, null, CredentialFormat.CLIENTCERT, credentialSource, null, cert);
     }
@@ -44,7 +44,7 @@ public class LoginCredentials implements SecurityToken {
         String login;
         X509Certificate cert = assertion.getSubjectCertificate();
         if (cert != null) {
-            login = CertUtils.getCn(cert);
+            login = CertUtils.extractFirstCommonNameFromCertificate(cert);
         } else {
             login = assertion.getNameIdentifierValue();
         }

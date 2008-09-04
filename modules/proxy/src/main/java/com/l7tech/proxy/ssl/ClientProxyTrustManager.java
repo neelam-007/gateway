@@ -60,7 +60,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
         String expectedHostname = peer.getHostname();
         String cn = "";
         X509Certificate cert = x509Certificates[0];
-        cn = CertUtils.getCn(cert);
+        cn = CertUtils.extractFirstCommonNameFromCertificate(cert);
 
         if (!cn.equalsIgnoreCase(expectedHostname)) {
             final String msg = "Server certificate name (" + cn +

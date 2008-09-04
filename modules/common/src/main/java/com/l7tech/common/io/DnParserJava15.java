@@ -14,27 +14,26 @@ class DnParserJava15 implements CertUtils.DnParser {
         dnToAttributeMap("cn=blah");
     }
 
-    public Map dnToAttributeMap(String dn) {
-        LdapName name = null;
+    public Map<String, List<String>> dnToAttributeMap(String dn) {
+        final LdapName name;
         try {
             name = new LdapName(dn);
         } catch (InvalidNameException e) {
             throw new IllegalArgumentException("Invalid DN", e);
         }
 
-        Map map = new HashMap();
-        List rdns = name.getRdns();
-        for (Iterator i = rdns.iterator(); i.hasNext();) {
-            Rdn rdn = (Rdn)i.next();
+        Map<String, List<String>> map = new HashMap<String, List<String>>();
+        List<Rdn> rdns = name.getRdns();
+        for (Rdn rdn : rdns) {
             String type = rdn.getType().toUpperCase();
 
-            List values = (List)map.get(type);
+            List<String> values = map.get(type);
             if (values == null) {
-                values = new ArrayList();
+                values = new ArrayList<String>();
                 map.put(type, values);
             }
 
-            values.add(rdn.getValue());
+            values.add(rdn.getValue().toString());
         }
 
         return map;

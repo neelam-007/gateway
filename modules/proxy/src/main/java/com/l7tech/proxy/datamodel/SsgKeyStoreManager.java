@@ -158,7 +158,7 @@ public abstract class SsgKeyStoreManager {
             CertificateAlreadyIssuedException, IOException, ServerFeatureUnavailableException;
 
 
-    /** @return the username in our client certificate, or null if we don't have an active client cert. */
+    /** @return the username in our client certificate, or null if we don't have an active client cert or if the cert doesn't contain a username. */
     public abstract String lookupClientCertUsername();
 
     /**

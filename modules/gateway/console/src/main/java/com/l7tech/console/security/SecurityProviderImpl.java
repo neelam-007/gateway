@@ -345,7 +345,7 @@ public class SecurityProviderImpl extends SecurityProvider
                 if (chain == null || chain.length == 0) {
                     return false;
                 }
-                final String peerHost = CertUtils.getCn(chain[0]);
+                final String peerHost = CertUtils.extractFirstCommonNameFromCertificate(chain[0]);
 
                 if(e!=null && failure) serverCertificateChain = chain;
 

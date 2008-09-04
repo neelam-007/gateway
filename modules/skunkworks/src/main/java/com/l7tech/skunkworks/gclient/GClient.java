@@ -763,7 +763,7 @@ public class GClient {
             clientCertificate = data.getCertificate();
             clientPrivateKey = data.getPrivateKey();
             sslSocketFactory = null;
-            clientCertLabel.setText(CertUtils.extractCommonNameFromClientCertificate(clientCertificate));
+            clientCertLabel.setText(CertUtils.extractFirstCommonNameFromCertificate(clientCertificate));
         }
         else {
             clientCertificate = null;
@@ -777,7 +777,7 @@ public class GClient {
         GuiCertUtil.ImportedData data = GuiCertUtil.importCertificate(frame, false, new GuiPasswordCallbackHandler());
         if (data != null) {
             serverCertificate = data.getCertificate();
-            serverCertLabel.setText( CertUtils.extractCommonNameFromClientCertificate(serverCertificate));
+            serverCertLabel.setText( CertUtils.extractFirstCommonNameFromCertificate(serverCertificate));
         } else {
             serverCertificate = null;
             serverCertLabel.setText("");

@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.Authorizer;
@@ -377,6 +376,8 @@ public class CertPropertiesWindow extends JDialog {
         return populated;
     }
 
+
+
     /**
      * Populate the data to the views
      */
@@ -393,8 +394,8 @@ public class CertPropertiesWindow extends JDialog {
         cal.setTime(cert.getNotAfter());
         certExpiredOnTextField.setText(sdf.format(cal.getTime()));
 
-        certIssuedToTextField.setText(CertUtils.extractCommonNameFromClientCertificate(cert));
-        certIssuedByTextField.setText(CertUtils.extractIssuerNameFromClientCertificate(cert));
+        certIssuedToTextField.setText(cert.getSubjectDN().getName());
+        certIssuedByTextField.setText(cert.getIssuerDN().getName());
         certNameTextField.setText(trustedCert.getName());
 
         if (!certNameTextField.isEnabled()) {

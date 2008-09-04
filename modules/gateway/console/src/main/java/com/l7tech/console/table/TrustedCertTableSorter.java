@@ -192,7 +192,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
                     return sortedData[row].getName();
 
                 case CERT_TABLE_ISSUER_NAME_COLUMN_INDEX:
-                    return CertUtils.extractIssuerNameFromClientCertificate(sortedData[row].getCertificate());
+                    return CertUtils.extractFirstIssuerNameFromCertificate(sortedData[row].getCertificate());
 
                 case CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX:
                     SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");

@@ -535,8 +535,8 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
      * @param credentials  the username and password to use for the application
      * @param keyPair  the public and private keys to use.  Get this from JceProvider
      * @throws com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException if we haven't yet discovered the Ssg server cert
-     * @throws java.security.GeneralSecurityException   if there was a problem making the CSR
-     * @throws java.security.GeneralSecurityException   if we were unable to complete SSL handshake with the Ssg
+     * @throws java.security.GeneralSecurityException   if there was a problem making the CSR; or,
+     *                                                  if we were unable to complete SSL handshake with the Ssg
      * @throws java.io.IOException                if there was a network problem
      * @throws com.l7tech.proxy.datamodel.exceptions.BadCredentialsException    if the SSG rejected the credentials we provided
      * @throws com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException if the SSG has already issued the client certificate for this account
@@ -544,7 +544,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
      * @throws ServerFeatureUnavailableException if the Gateway isn't licensed for a CSR service
      */
     private void obtainClientCertificate(PasswordAuthentication credentials, KeyPair keyPair)
-            throws ServerCertificateUntrustedException, GeneralSecurityException, IOException,
+            throws GeneralSecurityException, IOException,
             BadCredentialsException, CertificateAlreadyIssuedException, KeyStoreCorruptException, ServerFeatureUnavailableException {
         CertificateRequest csr = JceProvider.makeCsr(ssg.getUsername(), keyPair);
 
@@ -569,31 +569,27 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
     }
 
     public String lookupClientCertUsername() {
-        boolean badKeystore = false;
+        try {
+            return isClientCertAvailabile()
+                    ? CertUtils.extractSingleCommonNameFromCertificate(getClientCert())
+                    : null;
+        } catch (CertUtils.MultipleCnValuesException e) {
+            // No username in cert
+            return null;
+        } catch (IllegalArgumentException e) {
+            // fallthrough and offer to erase keystore
+        } catch (KeyStoreCorruptException e) {
+            // fallthrough and offer to erase keystore
+        }
 
         try {
-            if (isClientCertAvailabile()) {
-                X509Certificate cert = null;
-                cert = getClientCert();
-                return CertUtils.extractCommonNameFromClientCertificate(cert);
-            }
-        } catch (IllegalArgumentException e) {
-            // bad client certificate format
-            badKeystore = true; // TODO This will fail with arbitrary third-party PKI not using CN=username
-        } catch (KeyStoreCorruptException e) {
-            badKeystore = true;
+            ssg.getRuntime().handleKeyStoreCorrupt();
+            // continue, with newly-blank keystore
+            return null;
+        } catch (OperationCanceledException e1) {
+            // continue, pretending we had no keystore
+            return null;
         }
-
-        if (badKeystore) {
-            try {
-                ssg.getRuntime().handleKeyStoreCorrupt();
-                // FALLTHROUGH -- continue, with newly-blank keystore
-            } catch (OperationCanceledException e1) {
-                // FALLTHROUGH -- continue, pretending we had no keystore
-            }
-        }
-
-        return null;
     }
 
     public void importClientCertificate(File certFile,

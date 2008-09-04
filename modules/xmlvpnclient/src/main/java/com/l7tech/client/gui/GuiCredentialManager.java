@@ -169,8 +169,12 @@ class GuiCredentialManager extends CredentialManager {
             holder.showUsername = ssg.getUsername();
             final X509Certificate cert = ssg.getClientCertificate();
             if (cert != null) {
-                holder.showUsername = CertUtils.extractCommonNameFromClientCertificate(cert);
-                holder.lockUsername = true;
+                try {
+                    holder.showUsername = CertUtils.extractSingleCommonNameFromCertificate(cert);
+                    holder.lockUsername = true;
+                } catch (CertUtils.MultipleCnValuesException e) {
+                    // Custom cert.  Fallthrough and let username be editable.
+                }
             }
         }
 

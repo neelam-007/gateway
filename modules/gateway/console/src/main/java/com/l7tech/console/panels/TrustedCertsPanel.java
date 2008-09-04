@@ -579,7 +579,7 @@ public class TrustedCertsPanel extends JPanel {
                     value = trustedCert.getName();
                     break;
                 case 1:
-                    value = CertUtils.extractIssuerNameFromClientCertificate(trustedCert.getCertificate());
+                    value = CertUtils.extractFirstIssuerNameFromCertificate(trustedCert.getCertificate());
                     break;
                 case 2:
                     SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");

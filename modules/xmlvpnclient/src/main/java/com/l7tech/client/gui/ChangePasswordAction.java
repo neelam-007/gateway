@@ -94,8 +94,12 @@ class ChangePasswordAction extends AbstractAction {
                     boolean usernameEditable = true;
                     final X509Certificate cert = ssg.getClientCertificate();
                     if (cert != null) {
-                        username = CertUtils.extractCommonNameFromClientCertificate(cert);
-                        usernameEditable = false;
+                        try {
+                            username = CertUtils.extractSingleCommonNameFromCertificate(cert);
+                            usernameEditable = false;
+                        } catch (CertUtils.MultipleCnValuesException e1) {
+                            // Custom cert.  Fallthrough and let username be editable.
+                        }
                     }
                     String message = "Change password for gateway: " + ssg.getSsgAddress();
                     ChangePasswordDialog cpd = new ChangePasswordDialog(Gui.getInstance().getFrame(), message, username, usernameEditable);

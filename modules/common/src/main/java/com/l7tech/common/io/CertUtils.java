@@ -43,7 +43,7 @@ public class CertUtils {
 
     private static final Logger logger = Logger.getLogger(CertUtils.class.getName());
     private static final String PROPBASE = CertUtils.class.getName();
-    private static final int CERT_VERIFY_CACHE_MAX = SyspropUtil.getInteger(PROPBASE + ".certVerifyCacheSize", 500).intValue();
+    private static final int CERT_VERIFY_CACHE_MAX = SyspropUtil.getInteger(PROPBASE + ".certVerifyCacheSize", 500);
     private static CertificateFactory certFactory;
 
     public static final String ALG_MD5 = "MD5";
@@ -59,7 +59,7 @@ public class CertUtils {
     public static final String X509_OID_AUTHORITY_INFORMATION_ACCESS = "1.3.6.1.5.5.7.1.1";
     
     public interface DnParser {
-        Map dnToAttributeMap(String dn);
+        Map<String, List<String>> dnToAttributeMap(String dn);
     }
     static final DnParser DEFAULT_DN_PARSER;
     static {
@@ -101,6 +101,9 @@ public class CertUtils {
         DEFAULT_DN_PARSER = dp;
     }
     static DnParser DN_PARSER = DEFAULT_DN_PARSER;
+
+    /** Exception thrown if there is more than one CN in a cert DN. */
+    public static class MultipleCnValuesException extends Exception {}
 
 
     // Map of VerifiedCert => Boolean.TRUE
@@ -153,7 +156,7 @@ public class CertUtils {
         public boolean isVerified() {
             final Object got;
             got = certVerifyCache.retrieve(this);
-            return got instanceof Boolean && ((Boolean)got).booleanValue();
+            return got instanceof Boolean && (Boolean) got;
         }
 
         /** Report that this cert was successfully verified with its public key. */
@@ -290,16 +293,15 @@ public class CertUtils {
     }
 
     public static X509Certificate[] decodeCertChain(byte[] bytes) throws CertificateException {
-        Collection list = getFactory().generateCertificates(new ByteArrayInputStream(bytes));
-        ArrayList certs = new ArrayList(list.size());
-        for ( Iterator i = list.iterator(); i.hasNext(); ) {
-            Certificate certificate = (Certificate) i.next();
+        Collection<? extends Certificate> list = getFactory().generateCertificates(new ByteArrayInputStream(bytes));
+        List<X509Certificate> certs = new ArrayList<X509Certificate>(list.size());
+        for (Certificate certificate : list) {
             if (certificate instanceof X509Certificate)
-                certs.add(certificate);
+                certs.add((X509Certificate)certificate);
             else
                 throw new IllegalArgumentException("Certificate in chain was not X.509");
         }
-        return (X509Certificate[])certs.toArray(new X509Certificate[0]);
+        return certs.toArray(new X509Certificate[certs.size()]);
     }
 
     public synchronized static CertificateFactory getFactory() {
@@ -405,7 +407,7 @@ public class CertUtils {
         }
 
         byte[] keyData = HexUtils.decodeBase64(keyHeadersAndData, true);
-        PrivateKey privateKey = null;
+        final PrivateKey privateKey;
         try {
             if (rsa) {
                 KeyFactory kf = KeyFactory.getInstance("RSA");
@@ -451,16 +453,6 @@ public class CertUtils {
         byte[] skiBytes = getSKIBytesFromCert(cert);
         if (skiBytes == null) return null;
         return HexUtils.encodeBase64(skiBytes);
-    }
-
-    public static String getCn(X509Certificate cert) {
-        Map dnMap = dnToAttributeMap(cert.getSubjectDN().getName());
-        List cnValues = (List)dnMap.get("CN");
-        String login = null;
-        if (cnValues != null && cnValues.size() >= 1) {
-            login = (String)cnValues.get(0);
-        }
-        return login;
     }
 
     public static final class KeyUsage {
@@ -536,7 +528,7 @@ public class CertUtils {
      * @param dn the X.500 DN to parse
      * @return a Map of attribute names to value lists
      */
-    public static Map dnToAttributeMap(String dn) {
+    public static Map<String, List<String>> dnToAttributeMap(String dn) {
         return DN_PARSER.dnToAttributeMap(dn);
     }
 
@@ -561,24 +553,22 @@ public class CertUtils {
      * @throws IllegalArgumentException if the pattern is not a valid DN.
      */
     public static boolean dnMatchesPattern(String dn, String pattern) {
-        Map dnMap = dnToAttributeMap(dn);
-        Map patternMap = dnToAttributeMap(pattern);
+        Map<String, List<String>> dnMap = dnToAttributeMap(dn);
+        Map<String, List<String>> patternMap = dnToAttributeMap(pattern);
 
         boolean matches = true;
-        for ( Iterator i = patternMap.keySet().iterator(); i.hasNext(); ) {
-            String oid = (String)i.next();
-            List patternValues = (List)patternMap.get(oid);
-            List dnValues = (List)dnMap.get(oid);
+        for (String oid : patternMap.keySet()) {
+            List<String> patternValues = patternMap.get(oid);
+            List<String> dnValues = dnMap.get(oid);
 
-            if ( dnValues == null ) {
+            if (dnValues == null) {
                 matches = false;
                 break;
             }
 
-            for ( Iterator j = patternValues.iterator(); j.hasNext(); ) {
-                String patternValue = (String) j.next();
-                if ( !dnValues.contains(patternValue) ) {
-                    if ( !("*".equals(patternValue)) ) {
+            for (String patternValue : patternValues) {
+                if (!dnValues.contains(patternValue)) {
+                    if (!("*".equals(patternValue))) {
                         matches = false;
                         break;
                     }
@@ -599,11 +589,10 @@ public class CertUtils {
      */
     public static String toString(X509Certificate cert) throws CertificateEncodingException {
         StringBuffer sb = new StringBuffer();
-        List p = getCertProperties(cert);
-        for (Iterator i = p.iterator(); i.hasNext();) {
-            String[] s = (String[]) i.next();
-            String label = s[0];
-            String value = s[1];
+        List<Pair<String, String>> p = getCertProperties(cert);
+        for (Pair<String, String> prop : p) {
+            String label = prop.left;
+            String value = prop.right;
             sb.append(label).append(": ").append(value).append("\n");
         }
         return sb.toString();
@@ -613,49 +602,47 @@ public class CertUtils {
      * Obtain structured information about a certificate in an easy-to-display tabular format.
      *
      * @param cert The certificate to analyze
-     * @return a list of String[] tuples, where each is of the form {"Label", "Value"}
+     * @return a List of Pairs of {"Label", "Value"}
      * @throws CertificateEncodingException if the cert could not be decoded
      */
-    public static ArrayList getCertProperties(X509Certificate cert)
+    public static List<Pair<String, String>> getCertProperties(X509Certificate cert)
       throws CertificateEncodingException {
-        ArrayList l = new ArrayList();
+        List<Pair<String, String>> l = new ArrayList<Pair<String, String>>();
         if (cert == null) return l;
 
-        // l.add(new String[]{"Revocation date", new Date().toString()});
-        l.add(new String[]{"Creation date", nullNa(cert.getNotBefore())});
-        l.add(new String[]{"Expiry date", nullNa(cert.getNotAfter())});
-        l.add(new String[]{"Issued to", nullNa(cert.getSubjectDN())});
-        l.add(new String[]{"Serial number", nullNa(cert.getSerialNumber())});
-        l.add(new String[]{"Issuer", nullNa(cert.getIssuerDN())});
+        l.add(new Pair<String, String>("Creation date", nullNa(cert.getNotBefore())));
+        l.add(new Pair<String, String>("Expiry date", nullNa(cert.getNotAfter())));
+        l.add(new Pair<String, String>("Issued to", nullNa(cert.getSubjectDN())));
+        l.add(new Pair<String, String>("Serial number", nullNa(cert.getSerialNumber())));
+        l.add(new Pair<String, String>("Issuer", nullNa(cert.getIssuerDN())));
 
         try {
-            l.add(new String[]{"SHA-1 fingerprint", getCertificateFingerprint(cert, "SHA1")});
-            l.add(new String[]{"MD5 fingerprint", getCertificateFingerprint(cert, "MD5")});
+            l.add(new Pair<String, String>("SHA-1 fingerprint", getCertificateFingerprint(cert, "SHA1")));
+            l.add(new Pair<String, String>("MD5 fingerprint", getCertificateFingerprint(cert, "MD5")));
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e); // misconfigured VM
         }
 
-        l.add(new String[]{"Key usage", keyUsageToString(cert.getKeyUsage())});
+        l.add(new Pair<String, String>("Key usage", keyUsageToString(cert.getKeyUsage())));
 
         PublicKey publicKey = cert.getPublicKey();
         if (publicKey != null) {
-            l.add(new String[]{"Key type", nullNa(publicKey.getAlgorithm())});
+            l.add(new Pair<String, String>("Key type", nullNa(publicKey.getAlgorithm())));
 
             if (publicKey instanceof RSAPublicKey) {
                 RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
                 String modulus = rsaKey.getModulus().toString(16);
-                l.add(new String[]{"RSA strength", (modulus.length() * 4) + " bits"});
-                //l.add(new String[]{"RSA modulus", modulus});
-                l.add(new String[]{"RSA public exponent", rsaKey.getPublicExponent().toString(16)});
+                l.add(new Pair<String, String>("RSA strength", (modulus.length() * 4) + " bits"));
+                //l.add(new Pair<String, String>("RSA modulus", modulus});
+                l.add(new Pair<String, String>("RSA public exponent", rsaKey.getPublicExponent().toString(16)));
             } else if (publicKey instanceof DSAPublicKey) {
                 DSAPublicKey dsaKey = (DSAPublicKey) publicKey;
                 DSAParams params = dsaKey.getParams();
-                l.add(new String[]{"DSA prime (P)", params.getP().toString(16)});
-                l.add(new String[]{"DSA subprime (P)", params.getQ().toString(16)});
-                l.add(new String[]{"DSA base (P)", params.getG().toString(16)});
+                l.add(new Pair<String, String>("DSA prime (P)", params.getP().toString(16)));
+                l.add(new Pair<String, String>("DSA subprime (P)", params.getQ().toString(16)));
+                l.add(new Pair<String, String>("DSA base (P)", params.getG().toString(16)));
             }
         }
-
 
         return l;
     }
@@ -764,7 +751,7 @@ public class CertUtils {
     public static void verifyCertificateChain( X509Certificate[] chain,
                                                X509Certificate trustedCert,
                                                int maxDepth )
-            throws CertificateException, CertificateExpiredException, CertificateUntrustedException
+            throws CertificateException, CertificateUntrustedException
     {
 
         Principal trustedDN = trustedCert.getSubjectDN();
@@ -801,43 +788,119 @@ public class CertUtils {
     }
 
     /**
-     * Extract the subject common name from the specified client certificate.
+     * Extract the subject common name from the specified certificate.
      *
      * @param cert the certificate to examine
      * @return the username from the certificate.  Might be empty string, but won't be null.
      * @throws IllegalArgumentException if the certificate does not contain a subject DN.
+     * @throws com.l7tech.common.io.CertUtils.MultipleCnValuesException if the subject DN contains more than one CN attribute.
+     *         This is apparently permitted by X.509.
      */
-    public static String extractCommonNameFromClientCertificate(X509Certificate cert) throws IllegalArgumentException {
+    public static String extractSingleCommonNameFromCertificate(X509Certificate cert) throws IllegalArgumentException, MultipleCnValuesException {
         Principal principal = cert.getSubjectDN();
         if (principal == null)
-            throw new IllegalArgumentException("Cert contains no user subject DN");
-        String ret = extractCommonName(principal);
+            throw new IllegalArgumentException("Cert contains no subject DN");
+        String ret = extractSingleCommonName(principal);
         return ret == null ? "" : ret;
     }
 
     /**
-     * Extract the issuer common name from the specified client certificate.
+     * Extract a single subject common name attribute value from a certificate.
+     * If multiple CN values are present, this will find and return only one of them.
+     *
+     * @param cert the certificate to examine.  Required.
+     * @return One of the CN attribute values, or null if there aren't any.
+     */
+    public static String extractFirstCommonNameFromCertificate(X509Certificate cert) {
+        Principal principal = cert.getSubjectDN();
+        if (principal == null)
+            throw new IllegalArgumentException("Cert contains no subject DN");
+        Map<String, List<String>> dnMap = dnToAttributeMap(principal.getName());
+        List<String> cnValues = dnMap.get("CN");
+        String login = null;
+        if (cnValues != null && cnValues.size() >= 1) {
+            login = cnValues.get(0);
+        }
+        return login;
+    }
+
+    /**
+     * Extract all subject common names from the specified certificate.
+     *
+     * @param cert the certificate to examine.  Required.
+     * @return a List of the CN attribute values for this certificate's subject.  May be empty but never null.
+     * @throws IllegalArgumentException if the certificate does not contain a subject DN.
+     */
+    public static List<String> extractCommonNamesFromCertificate(X509Certificate cert) throws IllegalArgumentException {
+        Principal principal = cert.getSubjectDN();
+        if (principal == null)
+            throw new IllegalArgumentException("Cert contains no subject DN");
+        List<String> vals = dnToAttributeMap(principal.getName()).get("CN");
+        return vals == null ? Collections.<String>emptyList() : vals;
+    }
+
+    /**
+     * Extract a single issuer common name from the specified certificate, failing if there is more than one CN.
      *
      * @param cert the certificate to examine
      * @return the issuer common name from the certificate.  Might be empty string, but won't be null.
      * @throws IllegalArgumentException if the certificate does not contain an issuer DN.
+     * @throws com.l7tech.common.io.CertUtils.MultipleCnValuesException if the issuer DN contains more than one CN attribute.
+     *         This is apparently permitted by X.509.
      */
-    public static String extractIssuerNameFromClientCertificate (X509Certificate cert) throws IllegalArgumentException {
+    public static String extractSingleIssuerNameFromCertificate(X509Certificate cert) throws IllegalArgumentException, MultipleCnValuesException {
         Principal principal = cert.getIssuerDN();
         if (principal == null)
             throw new IllegalArgumentException("Cert contains no issuer DN");
-        String ret = extractCommonName(principal);
+        String ret = extractSingleCommonName(principal);
         if (ret == null) ret = principal.getName();
         return ret == null ? "" : ret;
     }
 
     /**
-     * Extract the value of the CN attribute from the DN in the Principal.
-     * @param principal
-     * @return String  The value of CN attribute in the DN.  Might be null.
-     * @throws IllegalArgumentException if the DN contains multiple CN values or is otherwise invalid.
+     * Extract an issuer CN value from the specified certificate.
+     * If the issuer DN has multiple CN values, this will find and return one of them.
+     *
+     * @param cert  the certificate to examine.  Required.
+     * @return an issuer CN value, or null if there weren't any.
+     * @throws IllegalArgumentException if the certificate does not contain an issuer DN.
      */
-    private static String extractCommonName(Principal principal) {
+    public static String extractFirstIssuerNameFromCertificate(X509Certificate cert) {
+        Principal principal = cert.getIssuerDN();
+        if (principal == null)
+            throw new IllegalArgumentException("Cert contains no issuer DN");
+        Map<String, List<String>> dnMap = dnToAttributeMap(principal.getName());
+        List<String> cnValues = dnMap.get("CN");
+        String login = null;
+        if (cnValues != null && cnValues.size() >= 1) {
+            login = cnValues.get(0);
+        }
+        return login;
+    }
+
+    /**
+     * Extract the issuer common names from the specified certificate.
+     *
+     * @param cert the certificate to examine
+     * @return a List of the CN attribute values for this certificate's Issuer DN.  May be null or empty.
+     */
+    public static List<String> extractIssuerNamesFromCertificate(X509Certificate cert) {
+        Principal principal = cert.getIssuerDN();
+        if (principal == null)
+            throw new IllegalArgumentException("Cert contains no issuer DN");
+        List<String> vals = dnToAttributeMap(principal.getName()).get("CN");
+        return vals == null ? Collections.<String>emptyList() : vals;
+    }
+
+    /**
+     * Extract the value of the CN attribute from the DN in the Principal, which is
+     * expected to contain exactly one CN attribute.
+     *
+     * @param principal an X.500 Principal, whose getName() method will return a String in X.500 name format.  Required.
+     * @return String  The value of CN attribute in the DN.  Might be null.
+     * @throws MultipleCnValuesException if the DN contains multiple CN values.
+     */
+    private static String extractSingleCommonName(Principal principal) throws MultipleCnValuesException {
         String dn = principal.getName();
         Map dnParts = dnToAttributeMap(dn);
         List cns = (List)dnParts.get("CN");
@@ -848,7 +911,7 @@ public class CertUtils {
             case 1:
                 return (String)cns.get(0);
             default:
-                throw new IllegalArgumentException("DN '" + dn + "' has more than one CN value");
+                throw new MultipleCnValuesException();
         }
     }
 

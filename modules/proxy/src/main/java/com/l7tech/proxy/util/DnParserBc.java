@@ -20,9 +20,9 @@ public class DnParserBc implements CertUtils.DnParser {
         dnToAttributeMap("cn=blah");
     }
 
-    public Map dnToAttributeMap(String dn) {
+    public Map<String, List<String>> dnToAttributeMap(String dn) {
         X509Name x509name = new X509Name(dn);
-        Map map = new HashMap();
+        Map<String, List<String>> map = new HashMap<String, List<String>>();
         for (int i = 0; i < x509name.getOIDs().size(); i++ ) {
             final DERObjectIdentifier oid = (DERObjectIdentifier)x509name.getOIDs().get(i);
 
@@ -30,9 +30,9 @@ public class DnParserBc implements CertUtils.DnParser {
             if (name == null) name = (String)X509Name.RFC2253Symbols.get(oid);
             if (name == null) name = oid.getId();
 
-            List values = (List) map.get(name);
+            List<String> values = map.get(name);
             if ( values == null ) {
-                values = new ArrayList();
+                values = new ArrayList<String>();
                 map.put(name, values);
             }
             String value = (String)x509name.getValues().get(i);

@@ -239,7 +239,7 @@ public class FunctionalTest {
         }
 
         public String lookupClientCertUsername() {
-            return CertUtils.getCn(clientCert);
+            return CertUtils.extractFirstCommonNameFromCertificate(clientCert);
         }
 
         protected X509Certificate getServerCert() throws KeyStoreCorruptException {

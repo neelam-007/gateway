@@ -167,7 +167,7 @@ public class SamlGenerator {
                     issuerCertificate = data.getCertificate();
                     issuerPrivateKey = data.getPrivateKey();
                     if (issuerCertificate != null)
-                        issuerCertLabel.setText( CertUtils.extractCommonNameFromClientCertificate(issuerCertificate));
+                        issuerCertLabel.setText( CertUtils.extractFirstCommonNameFromCertificate(issuerCertificate));
                     else
                         issuerCertLabel.setText("");
                 }
@@ -181,7 +181,7 @@ public class SamlGenerator {
                     subjectCertificate = data.getCertificate();
                     subjectPrivateKey = data.getPrivateKey();
                     if (subjectCertificate != null)
-                        subjectCertLabel.setText(CertUtils.extractCommonNameFromClientCertificate(subjectCertificate));
+                        subjectCertLabel.setText(CertUtils.extractFirstCommonNameFromCertificate(subjectCertificate));
                     else
                         subjectCertLabel.setText("");
                 }

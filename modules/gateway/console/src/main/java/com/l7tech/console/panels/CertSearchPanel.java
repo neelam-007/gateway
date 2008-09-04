@@ -3,35 +3,32 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.TextUtils;
 import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.event.CertListener;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.security.RevocationCheckPolicy;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
 import javax.swing.event.*;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.EventListener;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.Collection;
-import java.util.logging.Logger;
+import java.util.*;
 import java.util.logging.Level;
-import java.io.IOException;
+import java.util.logging.Logger;
 
 /**
  * @author fpang
@@ -319,7 +316,7 @@ public class CertSearchPanel extends JDialog {
         try {
             TrustedCert sslCertHolder = new TrustedCert();
             sslCertHolder.setCertificate(getTrustedCertAdmin().getSSGSslCert());
-            sslCertHolder.setName(CertUtils.getCn(sslCertHolder.getCertificate()));
+            sslCertHolder.setName(CertUtils.extractFirstCommonNameFromCertificate(sslCertHolder.getCertificate()));
             sslCertHolder.setSubjectDn(sslCertHolder.getCertificate().getSubjectDN().toString());
             certList.add(sslCertHolder);
         }
@@ -332,6 +329,19 @@ public class CertSearchPanel extends JDialog {
         return certList;
     }
 
+    private boolean textMatches(JTextComponent tc, boolean fullMatch, Collection<String> values) {
+        String text = tc.getText().trim();
+        if (text.length() < 1)
+            return true;
+
+        for (String value : values) {
+            if (TextUtils.matches(text, value, false, fullMatch))
+                return true;
+        }
+
+        return false;
+    }
+
     /**
      * Check if the cert should be shown or not
      * @param tc  The trusted cert
@@ -341,30 +351,14 @@ public class CertSearchPanel extends JDialog {
 
         X509Certificate cert = tc.getCertificate();
 
-        String subjectName = CertUtils.extractCommonNameFromClientCertificate(cert).toLowerCase();
-        String issuerName = CertUtils.extractIssuerNameFromClientCertificate(cert).toLowerCase();
+        Collection<String> subjectNames = CertUtils.extractCommonNamesFromCertificate(cert);
+        Collection<String> issuerNames = CertUtils.extractIssuerNamesFromCertificate(cert);
 
-        boolean show1 = false;
-        boolean show2 = false;
-        if (subjectNameTextField.getText().trim().length() > 0) {
-            boolean fullMatch = subjectSearchComboBox.getSelectedIndex() != SEARCH_SELECTION_STARTS_WITH;
-            if (TextUtils.matches(subjectNameTextField.getText().trim(), subjectName, false, fullMatch)) {
-                 show1 = true;
-            }
-        } else {
-            show1 = true;
-        }
+        boolean subjectFullMatch = subjectSearchComboBox.getSelectedIndex() != SEARCH_SELECTION_STARTS_WITH;
+        boolean issuerFullMatch = issuerSearchComboBox.getSelectedIndex() != SEARCH_SELECTION_STARTS_WITH;
 
-        if (issuerNameTextField.getText().trim().length() > 0) {
-            boolean fullMatch = issuerSearchComboBox.getSelectedIndex() != SEARCH_SELECTION_STARTS_WITH;
-            if (TextUtils.matches(issuerNameTextField.getText().trim(), issuerName, false, fullMatch)) {
-                 show2 = true;
-            }
-        } else {
-            show2 = true;
-        }
-
-        return (show1 && show2);
+        return textMatches(subjectNameTextField, subjectFullMatch, subjectNames) &&
+               textMatches(issuerNameTextField, issuerFullMatch, issuerNames);
     }
 
     /**

@@ -278,10 +278,15 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
             // retrieve the value of cn
             String subjectName = cert.getSubjectDN().getName();
-            String cn = CertUtils.extractCommonNameFromClientCertificate(cert);
+            String cn = null;
+            try {
+                cn = CertUtils.extractSingleCommonNameFromCertificate(cert);
+            } catch (CertUtils.MultipleCnValuesException e) {
+                // Fallthrough and use subject name
+            }
 
-            // use the subjectDN name if the CN attribute not found
-            if (cn.length() == 0) {
+            // use the subjectDN name if a single CN attribute isn't found
+            if (cn == null || cn.length() == 0) {
                 cn = subjectName;
             }
 

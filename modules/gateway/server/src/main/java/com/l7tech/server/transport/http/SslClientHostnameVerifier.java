@@ -13,6 +13,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,14 +58,14 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
     private final ServerConfig serverConfig;
     private final TrustedCertServices trustedCertServices;
 
-    private boolean doVerify(String hostname, SSLSession sslSession) throws SSLPeerUnverifiedException, FindException, CertificateException {
+    private boolean doVerify(String expectedHostname, SSLSession sslSession) throws SSLPeerUnverifiedException, FindException, CertificateException {
         Certificate[] certChain = sslSession.getPeerCertificates();
         if (certChain.length < 1 || !(certChain[0] instanceof X509Certificate))
             return isSkipHostnameVerificationByDefault();
 
         X509Certificate certificate = (X509Certificate)certChain[0];
 
-        return isHostnameMatch(hostname, certificate) ||
+        return isHostnameMatch(expectedHostname, certificate) ||
                isCertDirectlyTrustedWithoutHostnameVerification(certificate) ||
                isCertSignerTrustedWithoutHostnameVerification(certificate) ||
                isSkipHostnameVerificationByDefault();
@@ -81,9 +82,15 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
         return !verify;
     }
 
-    private boolean isHostnameMatch(String hostname, X509Certificate certificate) {
-        String expectedHost = CertUtils.getCn(certificate);
-        return expectedHost != null && expectedHost.equalsIgnoreCase(hostname);
+    private boolean isHostnameMatch(String expectedHostname, X509Certificate certificate) {
+        if (expectedHostname == null)
+            return false;
+        List<String> cnValues = CertUtils.extractCommonNamesFromCertificate(certificate);
+        for (String cnValue : cnValues) {
+            if (expectedHostname.equalsIgnoreCase(cnValue))
+                return true;
+        }
+        return false;
     }
 
     private boolean isCertSignerTrustedWithoutHostnameVerification(X509Certificate certificate) throws FindException {

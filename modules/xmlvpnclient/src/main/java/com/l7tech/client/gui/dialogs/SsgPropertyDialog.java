@@ -288,8 +288,11 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                             kcb.setEnabled(false);
 
                             JTextField utf = ((TrustedSsgIdentityPanel)ssgIdentityPane).getUsernameTextField();
-                            utf.setText(ssg.getRuntime().getSsgKeyStoreManager().lookupClientCertUsername());
-                            utf.setEditable(false);
+                            String nameFromCert = ssg.getRuntime().getSsgKeyStoreManager().lookupClientCertUsername();
+                            if (nameFromCert != null) {
+                                utf.setText(nameFromCert);
+                                utf.setEditable(false);
+                            }
                         }
                         new CertDialog(cert, "Client Certificate", "Client Certificate for " + serverName()).setVisible(true);
                     }

@@ -772,7 +772,9 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
         public String lookupClientCertUsername() {
             try {
-                return CertUtils.extractCommonNameFromClientCertificate(getClientCert());
+                return CertUtils.extractSingleCommonNameFromCertificate(getClientCert());
+            } catch (CertUtils.MultipleCnValuesException e) {
+                return null;
             } catch (KeyStoreCorruptException e) {
                 throw new CausedIllegalStateException(e); // can't happen
             }
