@@ -6,7 +6,7 @@
 
 package com.l7tech.common.mime;
 
-import com.l7tech.util.HexUtils;
+import com.l7tech.common.io.IOUtils;
 
 import java.io.*;
 import java.util.HashMap;
@@ -53,7 +53,7 @@ public class FileStashManager implements StashManager {
         unstash(ordinal);
         FileInfo fi = new FileInfo(makeFile(ordinal));
         final OutputStream outputStream = fi.getOutputStream();
-        HexUtils.copyStream(in, outputStream);
+        IOUtils.copyStream(in, outputStream);
         outputStream.flush();
         outputStream.close();
         fi.closeOutputStream();

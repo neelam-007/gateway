@@ -6,8 +6,8 @@
 
 package com.l7tech.common.mime;
 
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.RandomInputStream;
-import com.l7tech.util.HexUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -94,7 +94,7 @@ public class StashManagerTest extends TestCase {
             assertTrue(sm.peek(i));
             assertEquals(lastSize[i], sm.getSize(i));
             InputStream is = sm.recall(i);
-            assertTrue(HexUtils.compareInputStreams(is, true, new RandomInputStream(lastSeed[i], lastSize[i]), true));
+            assertTrue(IOUtils.compareInputStreams(is, true, new RandomInputStream(lastSeed[i], lastSize[i]), true));
             checkSize(sm);
         }
 
@@ -109,7 +109,7 @@ public class StashManagerTest extends TestCase {
                 byte[] got = sm.recallBytes(i); // must not throw
 
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
-                HexUtils.copyStream(new RandomInputStream(lastSeed[i], lastSize[i]), out);
+                IOUtils.copyStream(new RandomInputStream(lastSeed[i], lastSize[i]), out);
                 assertTrue(Arrays.equals(out.toByteArray(), got));
 
             } else {
@@ -125,12 +125,12 @@ public class StashManagerTest extends TestCase {
         if (num > 0) {
             // Test replacement stash without unstash
             assertTrue(sm.peek(0));
-            assertTrue(HexUtils.compareInputStreams(sm.recall(0), true, new RandomInputStream(lastSeed[0], lastSize[0]), true));
+            assertTrue(IOUtils.compareInputStreams(sm.recall(0), true, new RandomInputStream(lastSeed[0], lastSize[0]), true));
             checkSize(sm);
             lastSize[0] = makeSize(rand, minSize, maxSize);
             lastSeed[0] = seed + 333;
             sm.stash(0, new RandomInputStream(lastSeed[0], lastSize[0]));
-            assertTrue(HexUtils.compareInputStreams(sm.recall(0), true, new RandomInputStream(lastSeed[0], lastSize[0]), true));
+            assertTrue(IOUtils.compareInputStreams(sm.recall(0), true, new RandomInputStream(lastSeed[0], lastSize[0]), true));
             checkSize(sm);
             assertTrue(sm.peek(0));
         }
@@ -141,14 +141,14 @@ public class StashManagerTest extends TestCase {
             for (int pass = 0; pass < 6; ++pass) {
                 for (int i = 0; i < num; ++i) {
                     assertTrue(sm.peek(i));
-                    assertTrue(HexUtils.compareInputStreams(sm.recall(i), true, new RandomInputStream(lastSeed[i], lastSize[i]), true));
+                    assertTrue(IOUtils.compareInputStreams(sm.recall(i), true, new RandomInputStream(lastSeed[i], lastSize[i]), true));
                     checkSize(sm);
                     if (rand.nextBoolean())
                         sm.unstash(i);
                     lastSize[i] = makeSize(rand, minSize, maxSize);
                     lastSeed[i] = seed + i + 333;
                     sm.stash(i, new RandomInputStream(lastSeed[i], lastSize[i]));
-                    assertTrue(HexUtils.compareInputStreams(sm.recall(i), true, new RandomInputStream(lastSeed[i], lastSize[i]), true));
+                    assertTrue(IOUtils.compareInputStreams(sm.recall(i), true, new RandomInputStream(lastSeed[i], lastSize[i]), true));
                     checkSize(sm);
                     assertTrue(sm.peek(i));
                 }

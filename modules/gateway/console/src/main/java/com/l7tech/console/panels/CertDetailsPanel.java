@@ -1,6 +1,8 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.gui.MaxLengthDocument;
+import com.l7tech.objectmodel.EntityUtil;
 import com.l7tech.security.cert.TrustedCert;
 
 import javax.swing.*;
@@ -30,6 +32,7 @@ public class CertDetailsPanel extends WizardStepPanel {
     private JTextField certNameTextField;
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertDetailsPanel.class.getName());
+    private static int maxNameLength = EntityUtil.getMaxFieldLength(TrustedCert.class, "name", 64);
 
     public CertDetailsPanel(WizardStepPanel next) {
         super(next);
@@ -42,6 +45,7 @@ public class CertDetailsPanel extends WizardStepPanel {
         certMainPanel.setBackground(Color.white);
         certPanel.setLayout(new FlowLayout());
         certPanel.setBackground(Color.white);
+        certNameTextField.setDocument(new MaxLengthDocument(maxNameLength));
     }
 
     /**
@@ -85,11 +89,11 @@ public class CertDetailsPanel extends WizardStepPanel {
                     String cn = CertUtils.extractCommonNameFromClientCertificate(cert);
 
                     if(cn.length() > 0) {
-                         certNameTextField.setText(cn);
+                         certNameTextField.setText(truncName(cn));
                     }
                     else {
                         // cn NOT found, use the subject name
-                        certNameTextField.setText(subjectName);
+                        certNameTextField.setText(truncName(subjectName));
                     }
 
                     // remove the old view
@@ -139,11 +143,15 @@ public class CertDetailsPanel extends WizardStepPanel {
 
                 if (cert != null) {
                     tc.setCertificate(cert);
-                    tc.setName(certNameTextField.getText().trim());
+                    tc.setName(truncName(certNameTextField.getText().trim()));
                     tc.setSubjectDn(cert.getSubjectDN().getName());
                 }
             }
         }
+    }
+
+    private String truncName(String s) {
+        return s == null || s.length() < maxNameLength ? s : s.substring(0, maxNameLength);
     }
 
     /**

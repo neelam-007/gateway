@@ -1,39 +1,39 @@
 package com.l7tech.skunkworks.uddi;
 
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.Toolkit;
-import java.awt.Dimension;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.net.URL;
-import java.io.IOException;
-import java.io.InputStream;
+import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.uddi.guddiv3.*;
+import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.ResourceUtils;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
-import javax.xml.ws.BindingProvider;
+import javax.xml.namespace.QName;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPMessage;
+import javax.xml.soap.SOAPPart;
+import javax.xml.transform.Source;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamSource;
 import javax.xml.ws.Binding;
+import javax.xml.ws.BindingProvider;
 import javax.xml.ws.handler.Handler;
 import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.soap.SOAPMessageContext;
-import javax.xml.namespace.QName;
-import javax.xml.soap.SOAPMessage;
-import javax.xml.soap.SOAPPart;
-import javax.xml.soap.SOAPException;
-import javax.xml.transform.Source;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamSource;
-
-import com.l7tech.common.uddi.guddiv3.*;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.util.Functions;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.ExceptionUtils;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.*;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * UDDI Tool for WS-Policies in UDDI. 
@@ -1070,7 +1070,7 @@ public class UDDIPolicyTool extends JFrame {
                             InputStream in = null;
                             try {
                                 in = streamSource.getInputStream();
-                                HexUtils.copyStream(in, System.out);
+                                IOUtils.copyStream(in, System.out);
                             } finally {
                                 ResourceUtils.closeQuietly(in);
                             }

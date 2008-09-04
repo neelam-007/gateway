@@ -108,6 +108,9 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
         return super.clone();
     }
 
+    public void setName(String name) {
+        super.setName(name);
+    }
 
     /**
      * Is this cert is trusted as an SSL server cert? (probably self-signed)

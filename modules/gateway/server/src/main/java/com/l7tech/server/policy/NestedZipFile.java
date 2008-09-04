@@ -1,7 +1,7 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
-import com.l7tech.util.HexUtils;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.util.ResourceUtils;
 
 import java.io.Closeable;
@@ -115,7 +115,7 @@ class NestedZipFile implements Closeable {
 
                 BufferPoolByteArrayOutputStream bout = new BufferPoolByteArrayOutputStream();
                 try {
-                    HexUtils.copyStream(zipIn, bout);
+                    IOUtils.copyStream(zipIn, bout);
                     byte[] fileBytes = bout.toByteArray();
                     cachedFileBytes.put(entry.getName(), new SoftReference<byte[]>(fileBytes));
                     if (wantedFile != null && wantedFile.equals(entry.getName()))

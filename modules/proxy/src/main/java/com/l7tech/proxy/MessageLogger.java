@@ -8,14 +8,14 @@ package com.l7tech.proxy;
 
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
-import com.l7tech.message.MimeKnob;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
+import com.l7tech.message.MimeKnob;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.message.PolicyApplicationContext;
+import com.l7tech.util.ExceptionUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -72,7 +72,7 @@ public class MessageLogger implements RequestInterceptor {
             if (mk != null) {
                 is = mk.getFirstPart().getInputStream(false);
                 baos = new BufferPoolByteArrayOutputStream();
-                HexUtils.copyStream(is, baos);
+                IOUtils.copyStream(is, baos);
                 responseStr = baos.toString();
             }
         } catch (IOException e) {

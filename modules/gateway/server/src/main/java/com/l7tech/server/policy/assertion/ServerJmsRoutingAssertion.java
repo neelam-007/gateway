@@ -5,15 +5,16 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
-import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.gateway.common.transport.jms.JmsConnection;
-import com.l7tech.gateway.common.transport.jms.JmsReplyType;
-import com.l7tech.gateway.common.transport.jms.JmsOutboundMessageType;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.transport.jms.JmsConnection;
+import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.gateway.common.transport.jms.JmsOutboundMessageType;
+import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.message.JmsKnob;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.objectmodel.FindException;
@@ -32,8 +33,6 @@ import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsResourceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.CausedIOException;
-import com.l7tech.util.HexUtils;
-
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -491,7 +490,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         final byte[] outboundRequestBytes;
         final MimeKnob mk = context.getRequest().getMimeKnob();
         try {
-            HexUtils.copyStream(mk.getEntireMessageBodyAsInputStream(), baos);
+            IOUtils.copyStream(mk.getEntireMessageBodyAsInputStream(), baos);
             outboundRequestBytes = baos.toByteArray();
         } catch (NoSuchPartException e) {
             throw new CausedIOException("Couldn't read from JMS request"); // can't happen

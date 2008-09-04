@@ -7,8 +7,8 @@
 package com.l7tech.common.mime;
 
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.util.BufferPool;
-import com.l7tech.util.HexUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -29,7 +29,7 @@ public class ByteArrayStashManager implements StashManager {
         BufferPoolByteArrayOutputStream baos = null;
         try {
             baos = new BufferPoolByteArrayOutputStream(4096);
-            HexUtils.copyStream(in, baos);
+            IOUtils.copyStream(in, baos);
 
             int length = baos.size();
             byte[] data = baos.detachPooledByteArray();

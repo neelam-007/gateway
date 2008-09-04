@@ -123,13 +123,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
 
         loadNotificationProperties(true);
 
-        String hostname = serverConfig.getProperty(ServerConfig.PARAM_HOSTNAME);
-        if (hostname == null) try {
-            hostname = InetAddress.getLocalHost().getHostName();
-        } catch (UnknownHostException e) {
-            logger.log(Level.WARNING, "Unable to retrieve SSG hostname; using localhost");
-            hostname = "localhost";
-        }
+        String hostname = serverConfig.getHostname();
 
         String url = null;
         try {

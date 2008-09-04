@@ -1,12 +1,8 @@
 package com.l7tech.util;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.FileInputStream;
+import com.l7tech.common.io.IOUtils;
+
+import java.io.*;
 import java.security.SecureRandom;
 import java.util.Random;
 
@@ -144,21 +140,12 @@ public class DefaultMasterPasswordFinder implements MasterPasswordManager.Master
 
     public char[] findMasterPassword() {
         File filePath = getMasterPasswordFile();
-        InputStream in = null;
         try {
-            in = new FileInputStream( filePath );
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            int read;
-            while ( (read = in.read()) != -1 ) {
-                baos.write( read );
-            }            
-            byte[] bytes = baos.toByteArray();
+            byte[] bytes = IOUtils.slurpFile(filePath);
             String obfuscated = new String(bytes);
             return unobfuscate(obfuscated).toCharArray();
         } catch (IOException e) {
             throw new IllegalStateException("Unable to read " + filePath + ": " + ExceptionUtils.getMessage(e), e);
-        } finally {
-            ResourceUtils.closeQuietly(in);
         }
     }
 

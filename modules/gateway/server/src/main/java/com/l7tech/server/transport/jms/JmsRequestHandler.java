@@ -3,26 +3,26 @@
  */
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.server.audit.AuditContext;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.message.JmsKnob;
-import com.l7tech.message.MimeKnob;
-import com.l7tech.message.XmlKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.xml.soap.SoapFaultUtils;
+import com.l7tech.message.JmsKnob;
+import com.l7tech.message.MimeKnob;
+import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.util.SoapConstants;
+import com.l7tech.xml.soap.SoapFaultUtils;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -251,7 +251,7 @@ class JmsRequestHandler {
                         BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
                         final byte[] responseBytes;
                         try {
-                            HexUtils.copyStream(responseStream, baos);
+                            IOUtils.copyStream(responseStream, baos);
                             responseBytes = baos.toByteArray();
                         } finally {
                             baos.close();

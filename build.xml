@@ -272,6 +272,9 @@
         <property name="deploy.cluster.password" value="${deploy.keys.password}"/>
         <property name="deploy.db.username" value="gateway"/>
         <property name="deploy.db.password" value="7layer"/>
+        <property name="deploy.db.name" value="ssg"/>
+        <property name="deploy.db.host" value="localhost"/>
+        <property name="deploy.db.port" value="3306"/>
 
     </target>
 
@@ -1469,6 +1472,9 @@
         <echo level="info">Copying gateway configuration files</echo>
         <echo level="info">Copying configuration files</echo>
         <echo file="${deploy.dir}/etc/conf/node.properties"># Generated properties file, do not edit
+            ${line.separator}node.db.host = ${deploy.db.host}
+            ${line.separator}node.db.port = ${deploy.db.port}
+            ${line.separator}node.db.name = ${deploy.db.name}
             ${line.separator}node.db.user = ${deploy.db.username}
             ${line.separator}node.db.pass = ${deploy.db.password}
             ${line.separator}node.cluster.pass = ${deploy.cluster.password}

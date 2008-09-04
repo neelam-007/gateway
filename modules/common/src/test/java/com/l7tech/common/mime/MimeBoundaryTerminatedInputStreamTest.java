@@ -6,9 +6,10 @@
 
 package com.l7tech.common.mime;
 
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.NullOutputStream;
-import com.l7tech.util.HexUtils;
 import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.HexUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -471,7 +472,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
 
         ByteArrayOutputStream got = new ByteArrayOutputStream();
         try {
-            HexUtils.copyStream(mbtis, got);
+            IOUtils.copyStream(mbtis, got);
             fail("Did not receive expected IOException reading preamble with no CRLF before initial boundary");
         } catch (IOException e) {
             log.info("Received expected IOException when trying to read preamble with no CRLF before initial boundary: " + e.getMessage());

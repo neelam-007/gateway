@@ -5,13 +5,15 @@ package com.l7tech.proxy.processor;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.TeeInputStream;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.kerberos.KerberosServiceTicket;
+import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -25,28 +27,25 @@ import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.ssl.SslPeer;
-import com.l7tech.proxy.util.SslUtils;
 import com.l7tech.proxy.util.CertificateDownloader;
-import com.l7tech.security.xml.processor.*;
-import com.l7tech.security.xml.decorator.WssDecorator;
-import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.security.xml.decorator.DecoratorException;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.proxy.util.SslUtils;
+import com.l7tech.security.token.KerberosSecurityToken;
+import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
-import com.l7tech.security.xml.SecurityActor;
-import com.l7tech.security.token.SecurityTokenType;
-import com.l7tech.security.token.KerberosSecurityToken;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.decorator.DecoratorException;
+import com.l7tech.security.xml.decorator.WssDecorator;
+import com.l7tech.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.security.xml.processor.*;
 import com.l7tech.util.CausedIOException;
-import com.l7tech.message.*;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.xml.soap.SoapFaultUtils;
-import com.l7tech.xml.SoapFaultDetail;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.MessageNotSoapException;
-import com.l7tech.kerberos.KerberosServiceTicket;
+import com.l7tech.xml.SoapFaultDetail;
+import com.l7tech.xml.soap.SoapFaultUtils;
+import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -668,7 +667,7 @@ public class MessageProcessor {
                         BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
                         try {
                             InputStream bodyStream = request.getMimeKnob().getEntireMessageBodyAsInputStream();
-                            HexUtils.copyStream(bodyStream, baos);
+                            IOUtils.copyStream(bodyStream, baos);
                             log.info("Posting to Gateway (unformatted, including attachments):\n" +
                                      baos.toString(request.getMimeKnob().getOuterContentType().getEncoding()));
                         } finally {
@@ -857,7 +856,7 @@ public class MessageProcessor {
                         BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
                         try {
                             InputStream bodyStream = respMime.getEntireMessageBodyAsInputStream();
-                            HexUtils.copyStream(bodyStream, baos);
+                            IOUtils.copyStream(bodyStream, baos);
                             log.info("Got " + respMime.getOuterContentType().getMainValue() + " response from Gateway (unformatted, including attachments):\n" +
                                      baos.toString(respMime.getOuterContentType().getEncoding()));
                         } finally {

@@ -8,7 +8,6 @@ package com.l7tech.common.mime;
 
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.io.IOUtils;
-import com.l7tech.util.HexUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -54,14 +53,14 @@ public class MimeBodyTest extends TestCase {
         PartInfo rubyPart = mm.getPart(1);
         InputStream rubyStream = rubyPart.getInputStream(true);
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
-        HexUtils.copyStream(rubyStream, bo);
+        IOUtils.copyStream(rubyStream, bo);
         assertTrue(Arrays.equals(RUBY.getBytes(), bo.toByteArray()));
         log.info("Ruby part retrieved " + bo.toByteArray().length + " bytes: \n" + new String(bo.toByteArray()));
 
         PartInfo soapPart = mm.getPart(0);
         InputStream soapStream = soapPart.getInputStream(true);
         bo = new ByteArrayOutputStream();
-        HexUtils.copyStream(soapStream, bo);
+        IOUtils.copyStream(soapStream, bo);
         assertTrue(Arrays.equals(SOAP.getBytes(), bo.toByteArray()));
         log.info("Soap part retrieved " + bo.toByteArray().length + " bytes: \n" + new String(bo.toByteArray()));
 
@@ -89,13 +88,13 @@ public class MimeBodyTest extends TestCase {
         PartInfo rubyPart = mm.getPart(1);
         InputStream rubyStream = rubyPart.getInputStream(true);
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
-        HexUtils.copyStream(rubyStream, bo);
+        IOUtils.copyStream(rubyStream, bo);
         log.info("Ruby part retrieved " + bo.toByteArray().length + " bytes: \n" + new String(bo.toByteArray()));
 
         PartInfo soapPart = mm.getPart(0);
         InputStream soapStream = soapPart.getInputStream(true);
         bo = new ByteArrayOutputStream();
-        HexUtils.copyStream(soapStream, bo);
+        IOUtils.copyStream(soapStream, bo);
         log.info("Soap part retrieved " + bo.toByteArray().length + " bytes: \n" + new String(bo.toByteArray()));
 
         // We read them out of order, so this part will have been stashed
@@ -215,14 +214,14 @@ public class MimeBodyTest extends TestCase {
         PartInfo rubyPart = mm.getPartByContentId(MESS_RUBYCID);
         InputStream rubyStream = rubyPart.getInputStream(true);
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
-        HexUtils.copyStream(rubyStream, bo);
+        IOUtils.copyStream(rubyStream, bo);
         assertTrue(Arrays.equals(RUBY.getBytes(), bo.toByteArray()));
         log.info("Ruby part retrieved " + bo.toByteArray().length + " bytes: \n" + new String(bo.toByteArray()));
 
         PartInfo soapPart = mm.getPartByContentId(MESS_SOAPCID);
         InputStream soapStream = soapPart.getInputStream(true);
         bo = new ByteArrayOutputStream();
-        HexUtils.copyStream(soapStream, bo);
+        IOUtils.copyStream(soapStream, bo);
         assertTrue(Arrays.equals(SOAP.getBytes(), bo.toByteArray()));
         log.info("Soap part retrieved " + bo.toByteArray().length + " bytes: \n" + new String(bo.toByteArray()));
 

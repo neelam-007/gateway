@@ -7,11 +7,12 @@ package com.l7tech.internal.license;
 
 import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
+import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.xml.DsigUtil;
+import com.l7tech.util.DomUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ISO8601Date;
-import com.l7tech.util.DomUtils;
-import com.l7tech.common.io.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -132,7 +133,7 @@ public final class LicenseGenerator {
         if (in == null || in.trim().length() < 1)
             return null;
         try {
-            String enc = HexUtils.encodeBase64(HexUtils.compressGzip(in.getBytes("UTF-8")));
+            String enc = HexUtils.encodeBase64(IOUtils.compressGzip(in.getBytes("UTF-8")));
             return enc.replaceAll("(?<!\n)\r(?!\n)|(?<!\r)\n(?!\r)", "\r\n");
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e); // can't happen

@@ -1,9 +1,9 @@
 package com.l7tech.external.assertions.multipartassembly.server;
 
-import com.l7tech.message.Message;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.mime.*;
-import com.l7tech.util.HexUtils;
 import com.l7tech.external.assertions.multipartassembly.MultipartAssemblyAssertion;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import junit.framework.Test;
@@ -83,8 +83,8 @@ public class ServerMultipartAssemblyAssertionTest extends TestCase {
         List<PartInfo> parts = collectParts(mb.iterator());
         final PartInfo part0 = parts.get(0);
         final PartInfo part1 = parts.get(1);
-        assertTrue(HexUtils.compareInputStreams(part0.getInputStream(false), true, new ByteArrayInputStream(bodySoap), true));
-        assertTrue(HexUtils.compareInputStreams(part1.getInputStream(false), true, new ByteArrayInputStream(bodyRuby), true));
+        assertTrue(IOUtils.compareInputStreams(part0.getInputStream(false), true, new ByteArrayInputStream(bodySoap), true));
+        assertTrue(IOUtils.compareInputStreams(part1.getInputStream(false), true, new ByteArrayInputStream(bodyRuby), true));
         assertEquals(part0.getContentType().getFullValue(), ctypeSoap.getFullValue());
         assertEquals(part1.getContentType().getFullValue(), ctypeRuby.getFullValue());
         assertEquals(part0.getContentId(true), partIdSoap);
@@ -118,9 +118,9 @@ public class ServerMultipartAssemblyAssertionTest extends TestCase {
         final PartInfo soap1 = parts.get(1);
         final PartInfo ruby = parts.get(2);
         final PartInfo soap2 = parts.get(3);
-        assertTrue(HexUtils.compareInputStreams(soap1.getInputStream(false), true, new ByteArrayInputStream(bodySoap), true));
-        assertTrue(HexUtils.compareInputStreams(ruby.getInputStream(false), true, new ByteArrayInputStream(bodyRuby), true));
-        assertTrue(HexUtils.compareInputStreams(soap2.getInputStream(false), true, new ByteArrayInputStream(bodySoap), true));
+        assertTrue(IOUtils.compareInputStreams(soap1.getInputStream(false), true, new ByteArrayInputStream(bodySoap), true));
+        assertTrue(IOUtils.compareInputStreams(ruby.getInputStream(false), true, new ByteArrayInputStream(bodyRuby), true));
+        assertTrue(IOUtils.compareInputStreams(soap2.getInputStream(false), true, new ByteArrayInputStream(bodySoap), true));
         assertEquals(soap1.getContentType().getFullValue(), ctypeSoap.getFullValue());
         assertEquals(ruby.getContentType().getFullValue(), ctypeRuby.getFullValue());
         assertEquals(soap2.getContentType().getFullValue(), ctypeSoap.getFullValue());
@@ -179,9 +179,9 @@ public class ServerMultipartAssemblyAssertionTest extends TestCase {
         final PartInfo soap1 = parts.get(1);
         final PartInfo ruby = parts.get(2);
         final PartInfo soap2 = parts.get(3);
-        assertTrue(HexUtils.compareInputStreams(soap1.getInputStream(false), true, new ByteArrayInputStream(bodySoap), true));
-        assertTrue(HexUtils.compareInputStreams(ruby.getInputStream(false), true, new ByteArrayInputStream(bodyRuby), true));
-        assertTrue(HexUtils.compareInputStreams(soap2.getInputStream(false), true, new ByteArrayInputStream(bodySoap), true));
+        assertTrue(IOUtils.compareInputStreams(soap1.getInputStream(false), true, new ByteArrayInputStream(bodySoap), true));
+        assertTrue(IOUtils.compareInputStreams(ruby.getInputStream(false), true, new ByteArrayInputStream(bodyRuby), true));
+        assertTrue(IOUtils.compareInputStreams(soap2.getInputStream(false), true, new ByteArrayInputStream(bodySoap), true));
         assertEquals(soap1.getContentType().getFullValue(), ctypeSoap.getFullValue());
         assertEquals(ruby.getContentType().getFullValue(), ctypeRuby.getFullValue());
         assertEquals(soap2.getContentType().getFullValue(), ctypeSoap.getFullValue());
@@ -196,8 +196,8 @@ public class ServerMultipartAssemblyAssertionTest extends TestCase {
         List<PartInfo> parts = collectParts(mb.iterator());
         final PartInfo part0 = parts.get(0);
         final PartInfo part1 = parts.get(1);
-        assertTrue(HexUtils.compareInputStreams(part0.getInputStream(false), true, new ByteArrayInputStream(bodySoap), true));
-        assertTrue(HexUtils.compareInputStreams(part1.getInputStream(false), true, new ByteArrayInputStream(bodyRuby), true));
+        assertTrue(IOUtils.compareInputStreams(part0.getInputStream(false), true, new ByteArrayInputStream(bodySoap), true));
+        assertTrue(IOUtils.compareInputStreams(part1.getInputStream(false), true, new ByteArrayInputStream(bodyRuby), true));
         assertEquals(part0.getContentType().getFullValue(), ctypeSoap.getFullValue());
         assertEquals(part1.getContentType().getFullValue(), ctypeRuby.getFullValue());
         assertEquals(part0.getContentId(true), partIdSoap);

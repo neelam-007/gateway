@@ -6,21 +6,21 @@
 
 package com.l7tech.common.http;
 
-import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.common.io.EmptyInputStream;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.failover.FailoverStrategy;
-import com.l7tech.util.HexUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A {@link GenericHttpClient} that uses a {@link FailoverStrategy} to implement failover, over top of an
@@ -157,7 +157,7 @@ public class FailoverHttpClient implements GenericHttpClient {
                                 if (logger != null)
                                     logger.finer("Buffering request body");
                                 try {
-                                    HexUtils.copyStream(inputStream, baos);
+                                    IOUtils.copyStream(inputStream, baos);
                                     inputStream = null;
                                     bodyBytes = baos.toByteArray();
                                     final byte[] body = bodyBytes;

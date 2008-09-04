@@ -1,17 +1,10 @@
 package com.l7tech.util;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ByteArrayInputStream;
-import java.io.SequenceInputStream;
-import java.io.ByteArrayOutputStream;
+import com.l7tech.common.io.IOUtils;
+
+import java.io.*;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.Collections;
-import java.util.Collection;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -235,7 +228,7 @@ public class JdkLoggerConfigurator {
 
             if ( fullIn != null ) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                HexUtils.copyStream(fullIn, baos);
+                IOUtils.copyStream(fullIn, baos);
                 byte[] configBytes = baos.toByteArray();
 
                 // work around bug http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=5035854

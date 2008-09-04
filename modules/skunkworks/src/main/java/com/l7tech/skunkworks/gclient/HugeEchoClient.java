@@ -5,12 +5,12 @@ import com.l7tech.common.http.GenericHttpRequest;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.GenericHttpResponse;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.common.io.TeeInputStream;
 import com.l7tech.common.io.TeeOutputStream;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
 
 import javax.xml.soap.SOAPConstants;
 import java.io.*;
@@ -183,7 +183,7 @@ public class HugeEchoClient {
     public static void createTestFile(long size, File file, OutputStream logreq) throws IOException {
         FileOutputStream fos = new FileOutputStream(file);
         try {
-            HexUtils.copyStream(createGenerator(size), new TeeOutputStream(fos, logreq));
+            IOUtils.copyStream(createGenerator(size), new TeeOutputStream(fos, logreq));
         } finally {
             fos.close();
         }
@@ -205,7 +205,7 @@ public class HugeEchoClient {
 
         GenericHttpResponse resp = request.getResponse();
 
-        boolean equal = HexUtils.compareInputStreams(createGenerator(size), true, new TeeInputStream(resp.getInputStream(), logres), true);
+        boolean equal = IOUtils.compareInputStreams(createGenerator(size), true, new TeeInputStream(resp.getInputStream(), logres), true);
 
         int status = resp.getStatus();
         if (status != 200)

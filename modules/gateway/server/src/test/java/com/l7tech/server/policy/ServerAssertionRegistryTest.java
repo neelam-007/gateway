@@ -1,17 +1,16 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.io.RandomInputStream;
+import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import junit.framework.Test;
 
-import java.util.logging.Logger;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.io.IOException;
-
-import com.l7tech.util.HexUtils;
-import com.l7tech.common.io.RandomInputStream;
+import java.io.OutputStream;
+import java.util.logging.Logger;
 
 /**
  *
@@ -43,8 +42,8 @@ public class ServerAssertionRegistryTest extends TestCase {
     private void doTestGetFileSha1(File file) throws IOException {
         file.delete();
         OutputStream os = new FileOutputStream(file);
-        HexUtils.copyStream(new RandomInputStream(1, 16384), os);
-        HexUtils.copyStream(new RandomInputStream(2, 382733), os);
+        IOUtils.copyStream(new RandomInputStream(1, 16384), os);
+        IOUtils.copyStream(new RandomInputStream(2, 382733), os);
         os.close();
 
         String hash1 = ServerAssertionRegistry.getFileSha1(file);
@@ -53,8 +52,8 @@ public class ServerAssertionRegistryTest extends TestCase {
 
         file.delete();
         os = new FileOutputStream(file);
-        HexUtils.copyStream(new RandomInputStream(1, 16384), os);
-        HexUtils.copyStream(new RandomInputStream(3, 442233), os);
+        IOUtils.copyStream(new RandomInputStream(1, 16384), os);
+        IOUtils.copyStream(new RandomInputStream(3, 442233), os);
         os.close();
 
         String hash2 = ServerAssertionRegistry.getFileSha1(file);

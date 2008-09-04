@@ -8,38 +8,31 @@ package com.l7tech.common.http.prov.apache;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.CausedIOException;
-import com.l7tech.util.HexUtils;
-
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.params.HttpConnectionParams;
-import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
-import org.apache.commons.httpclient.params.HttpClientParams;
-import org.apache.commons.httpclient.params.HttpMethodParams;
-import org.apache.commons.httpclient.params.HttpParams;
-import org.apache.commons.httpclient.params.DefaultHttpParams;
-import org.apache.commons.httpclient.params.DefaultHttpParamsFactory;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.methods.*;
+import org.apache.commons.httpclient.params.*;
 import org.apache.commons.httpclient.protocol.Protocol;
-import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
+import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 
-import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.*;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * GenericHttpClient driver for the Apache Commons HTTP client.
@@ -262,7 +255,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                         }
 
                         public void writeRequest(OutputStream outputStream) throws IOException {
-                            HexUtils.copyStream(bodyInputStream, outputStream);
+                            IOUtils.copyStream(bodyInputStream, outputStream);
                         }
                     });
                 } else {
@@ -281,7 +274,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                         }
 
                         public void writeRequest(OutputStream outputStream) throws IOException {
-                            HexUtils.copyStream(bodyInputStream, outputStream);
+                            IOUtils.copyStream(bodyInputStream, outputStream);
                         }
                     });
                 }
@@ -332,7 +325,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                             InputStream inputStream = null;
                             try {
                                 inputStream = inputStreamFactory.getInputStream();
-                                HexUtils.copyStream(inputStream, outputStream);
+                                IOUtils.copyStream(inputStream, outputStream);
                             } finally {
                                 if (inputStream != null) try { inputStream.close(); }catch(IOException ioe){ /*ok*/ }
                             }
@@ -357,7 +350,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                             InputStream inputStream = null;
                             try {
                                 inputStream = inputStreamFactory.getInputStream();
-                                HexUtils.copyStream(inputStream, outputStream);
+                                IOUtils.copyStream(inputStream, outputStream);
                             } finally {
                                 if (inputStream != null) try { inputStream.close(); }catch(IOException ioe){ /*ok*/ }
                             }

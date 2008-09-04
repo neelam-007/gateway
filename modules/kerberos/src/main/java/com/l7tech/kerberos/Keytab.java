@@ -1,24 +1,15 @@
 package com.l7tech.kerberos;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.FileInputStream;
-import java.io.Serializable;
-import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.io.ObjectInputStream;
+import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.ResourceUtils;
+
+import javax.security.auth.kerberos.KerberosKey;
+import javax.security.auth.kerberos.KerberosPrincipal;
+import java.io.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.ArrayList;
-
-import javax.security.auth.kerberos.KerberosPrincipal;
-import javax.security.auth.kerberos.KerberosKey;
-
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.HexUtils;
 
 /**
  * Parser for Kerberos Keytab files.
@@ -146,7 +137,7 @@ public class Keytab implements Serializable {
         try {
             in = new FileInputStream(keytabFile);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            HexUtils.copyStream(in, out);
+            IOUtils.copyStream(in, out);
             init(out.toByteArray());
         }
         finally {

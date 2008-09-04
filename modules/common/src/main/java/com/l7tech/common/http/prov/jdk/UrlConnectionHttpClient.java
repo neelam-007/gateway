@@ -7,6 +7,7 @@
 package com.l7tech.common.http.prov.jdk;
 
 import com.l7tech.common.http.*;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.util.HexUtils;
@@ -18,8 +19,8 @@ import java.net.HttpURLConnection;
 import java.net.PasswordAuthentication;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * An implementation of GenericHttpClient that uses the JDK's {@link java.net.URL#openConnection()} as the
@@ -96,7 +97,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                 public GenericHttpResponse getResponse() throws GenericHttpException {
                     try {
                         if (requestInputStream != null)
-                            HexUtils.copyStream(requestInputStream, conn.getOutputStream());
+                            IOUtils.copyStream(requestInputStream, conn.getOutputStream());
 
                         final int status = httpConn.getResponseCode();
                         String ctval = conn.getContentType();

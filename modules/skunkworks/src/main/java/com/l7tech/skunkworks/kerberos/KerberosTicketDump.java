@@ -1,28 +1,27 @@
 package com.l7tech.skunkworks.kerberos;
 
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.security.GeneralSecurityException;
-import java.math.BigInteger;
-import javax.swing.*;
-import javax.security.auth.kerberos.KerberosPrincipal;
-import javax.security.auth.kerberos.KerberosKey;
-
-import sun.security.util.DerValue;
-import sun.security.util.DerInputStream;
-import sun.security.util.ObjectIdentifier;
+import com.l7tech.common.io.IOUtils;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.util.HexUtils;
+import org.ietf.jgss.Oid;
 import sun.security.jgss.GSSHeader;
 import sun.security.krb5.EncryptedData;
 import sun.security.krb5.EncryptionKey;
+import sun.security.util.DerInputStream;
+import sun.security.util.DerValue;
+import sun.security.util.ObjectIdentifier;
 
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.util.HexUtils;
-
-import org.ietf.jgss.Oid;
+import javax.security.auth.kerberos.KerberosKey;
+import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.security.GeneralSecurityException;
 
 /**
  * Utility to dump information from a kerberos ticket.
@@ -174,7 +173,7 @@ public class KerberosTicketDump extends JFrame {
             messages.append("Removed GSS wrapper.\n");
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            HexUtils.copyStream(is, baos);
+            IOUtils.copyStream(is, baos);
             return baos.toByteArray();
         } catch (Exception e) {
             e.printStackTrace();

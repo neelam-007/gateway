@@ -1,6 +1,6 @@
 package com.l7tech.kerberos;
 
-import com.l7tech.util.HexUtils;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.util.ResourceUtils;
 
 import java.io.*;
@@ -258,7 +258,7 @@ class KerberosConfig {
                     in = KerberosConfig.class.getResourceAsStream(RESOURCE_SSB_LOGINCFG);
                     if (in != null) {
                         out = new FileOutputStream(loginConfigFile);
-                        HexUtils.copyStream(in, out);
+                        IOUtils.copyStream(in, out);
                         out.flush();
                     }
                 }

@@ -1,20 +1,18 @@
 package com.l7tech.security.xml;
 
+import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.MimeHeaders;
+import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.util.HexUtils;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.security.MessageDigest;
-
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
-import com.l7tech.common.mime.MimeHeaders;
-import com.l7tech.common.mime.MimeUtil;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.util.HexUtils;
-import com.l7tech.security.xml.AttachmentContentTransform;
-import com.l7tech.security.xml.AttachmentCompleteTransform;
 
 /**
  * JUnit tests for transform of SOAP attachments.
@@ -302,7 +300,7 @@ public class AttachmentTransformTest extends TestCase {
         ContentTypeHeader cth = headers.getContentType();
         transform.processHeaders(headers, out);
         InputStream transformedInput = transform.processBody(cth, partIn);
-        HexUtils.copyStream(transformedInput, out);
+        IOUtils.copyStream(transformedInput, out);
 
         System.out.println(new String(out.toByteArray()));
 

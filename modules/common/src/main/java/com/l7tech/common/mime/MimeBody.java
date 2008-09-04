@@ -7,19 +7,18 @@
 package com.l7tech.common.mime;
 
  import com.l7tech.common.io.*;
- import com.l7tech.util.CausedIOException;
- import com.l7tech.util.CausedIllegalStateException;
- import com.l7tech.util.HexUtils;
- import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.CausedIOException;
+import com.l7tech.util.CausedIllegalStateException;
+import com.l7tech.util.ResourceUtils;
 
- import java.io.ByteArrayInputStream;
- import java.io.IOException;
- import java.io.InputStream;
- import java.io.SequenceInputStream;
- import java.util.*;
- import java.util.concurrent.atomic.AtomicLong;
- import java.util.logging.Level;
- import java.util.logging.Logger;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Encapsulates the body of a message that might be multipart/related.
@@ -230,7 +229,7 @@ public class MimeBody implements Iterable<PartInfo> {
         mainInputStream.unread("\r\n".getBytes()); // Fix problem reading initial boundary when there's no preamble
         MimeBoundaryTerminatedInputStream preamble = new MimeBoundaryTerminatedInputStream(boundary, mainInputStream, pushbackSize);
         NullOutputStream nowhere = new NullOutputStream();
-        HexUtils.copyStream(preamble, nowhere);
+        IOUtils.copyStream(preamble, nowhere);
         if (preamble.isLastPartProcessed()) {
             moreParts = false;  // just in case
             throw new IOException("Multipart message had zero parts");
@@ -836,7 +835,7 @@ public class MimeBody implements Iterable<PartInfo> {
             // Are we the current Part?
             if (partInfos.size() == ordinal + 1 && moreParts)
                 try {
-                    HexUtils.copyStream(getInputStream(true), new NullOutputStream()); // Read and discard existing body
+                    IOUtils.copyStream(getInputStream(true), new NullOutputStream()); // Read and discard existing body
                 } catch (NoSuchPartException e) {
                     throw new CausedIllegalStateException("getInputStream threw unexpectedly even though moreParts is true", e);
                 }

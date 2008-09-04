@@ -6,10 +6,10 @@
 package com.l7tech.skunkworks.tarari;
 
 import com.l7tech.common.io.EmptyInputStream;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.NullOutputStream;
-import com.l7tech.test.BenchmarkRunner;
 import com.l7tech.message.TarariMessageContextFactory;
-import com.l7tech.util.HexUtils;
+import com.l7tech.test.BenchmarkRunner;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.GlobalTarariContextImpl;
 import com.l7tech.xml.tarari.TarariMessageContextImpl;
@@ -106,7 +106,7 @@ public class TarariXsltTest {
                         XmlResult result = new XmlResult(output);
                         transformer.transform(source, result);
                         byte[] transformedmessage = output.toByteArray();
-                        HexUtils.copyStream(new ByteArrayInputStream(transformedmessage), new NullOutputStream());
+                        IOUtils.copyStream(new ByteArrayInputStream(transformedmessage), new NullOutputStream());
                     } finally {
                         ctx.close();
                     }

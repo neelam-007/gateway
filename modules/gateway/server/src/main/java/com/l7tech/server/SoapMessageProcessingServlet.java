@@ -6,38 +6,38 @@
 
 package com.l7tech.server;
 
-import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
-import com.l7tech.message.*;
+import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
+import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.FaultProcessed;
+import com.l7tech.server.mapping.MessageContextMappingManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.tomcat.ResponseKillerValve;
+import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.DelegatingServletInputStream;
 import com.l7tech.server.util.SoapFaultManager;
-import com.l7tech.server.transport.http.HttpTransportModule;
-import com.l7tech.server.transport.TransportModule;
-import com.l7tech.server.mapping.MessageContextMappingManager;
-import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.xml.SoapFaultLevel;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.xml.sax.SAXException;
@@ -235,7 +235,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     hresponse.setContentType(response.getMimeKnob().getOuterContentType().getFullValue());
                 }
                 OutputStream responseos = hresponse.getOutputStream();
-                HexUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), responseos);
+                IOUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), responseos);
                 responseos.close();
                 logger.fine("servlet transport returned status " + routeStat +
                             ". content-type " + response.getMimeKnob().getOuterContentType().getFullValue());

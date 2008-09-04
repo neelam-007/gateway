@@ -1,17 +1,12 @@
 package com.l7tech.util;
 
+import com.l7tech.common.io.IOUtils;
+
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ByteArrayOutputStream;
 import java.net.URL;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.StringTokenizer;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Collection;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -133,7 +128,7 @@ public final class Service {
                     resStream = url.openStream();
 
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    HexUtils.copyStream(resStream, baos);
+                    IOUtils.copyStream(resStream, baos);
                     StringTokenizer dataStr = new StringTokenizer(new String(baos.toByteArray(), "UTF-8"));
                     if(dataStr.hasMoreTokens()) {
                         String className = dataStr.nextToken();

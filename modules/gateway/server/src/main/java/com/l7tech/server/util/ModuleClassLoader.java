@@ -1,6 +1,6 @@
 package com.l7tech.server.util;
 
-import com.l7tech.util.HexUtils;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.util.ResourceUtils;
 
 import java.io.*;
@@ -278,7 +278,7 @@ public class ModuleClassLoader extends ClassLoader {
                         try {
                             entryIn = jarFile.getInputStream(entry);
                             entryOut = new BufferedOutputStream(new FileOutputStream(moduleLib));
-                            HexUtils.copyStream(entryIn, entryOut);
+                            IOUtils.copyStream(entryIn, entryOut);
                             entryOut.flush();
                         }
                         catch(IOException ioe) {

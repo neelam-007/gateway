@@ -3,17 +3,16 @@
  */
 package com.l7tech.server;
 
-import com.l7tech.server.cluster.ClusterInfoManager;
-import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
+import com.l7tech.common.http.*;
+import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.ServiceMessages;
-import com.l7tech.common.http.*;
-import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.util.HexUtils;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.IssuedCertNotPresentedException;
 import com.l7tech.identity.MissingCredentialsException;
@@ -21,6 +20,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.event.system.BackupEvent;
 import com.l7tech.server.flasher.Exporter;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -270,7 +270,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             response.setHeader("Accept-Ranges", "none");
 
             out = response.getOutputStream();
-            HexUtils.copyStream(in, out);
+            IOUtils.copyStream(in, out);
         } finally {
             if (in != null) in.close();
             if (out != null) out.close();

@@ -66,13 +66,16 @@ public class PrivateKeyManagerWindow extends JDialog {
                                 return;
 
                             for (PrivateKeyManagerWindow client : timerClients.keySet())
-                                if (client != null) {
-                                    try {
-                                        client.onTimerTick();
-                                    } catch (Exception e) {
-                                        logger.log(Level.WARNING, "Unable to check status of background key management jobs: " + ExceptionUtils.getMessage(e), e);
-                                    }
-                                }
+                                if (client != null)
+                                    deliverTimerTick(client);
+                        }
+
+                        private void deliverTimerTick(PrivateKeyManagerWindow client) {
+                            try {
+                                client.onTimerTick();
+                            } catch (Exception e) {
+                                logger.log(Level.WARNING, "Unable to check status of background key management jobs: " + ExceptionUtils.getMessage(e), e);
+                            }
                         }
                     });
                 }

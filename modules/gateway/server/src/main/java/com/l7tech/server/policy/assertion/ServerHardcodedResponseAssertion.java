@@ -3,36 +3,36 @@
  */
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.gateway.common.audit.Messages;
-import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpConstants;
-import com.l7tech.message.AbstractHttpResponseKnob;
-import com.l7tech.message.HttpResponseKnob;
-import com.l7tech.message.Message;
-import com.l7tech.message.HttpServletResponseKnob;
+import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.Messages;
+import com.l7tech.message.AbstractHttpResponseKnob;
+import com.l7tech.message.HttpResponseKnob;
+import com.l7tech.message.HttpServletResponseKnob;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HardcodedResponseAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * The Server side Hardcoded Response.
@@ -135,7 +135,7 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
                         hresponse.setContentType(contentType.getFullValue());
                         hresponse.addHeader(HttpConstants.HEADER_CONNECTION, "close");
                         OutputStream responseos = hresponse.getOutputStream();
-                        HexUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), responseos);
+                        IOUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), responseos);
                         responseos.close();
                     }
                     hresponse.flushBuffer();

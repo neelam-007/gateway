@@ -1,33 +1,35 @@
 package com.l7tech.server;
 
-import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.common.http.GenericHttpHeader;
+import com.l7tech.common.http.GenericHttpHeaders;
+import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.io.IOUtils;
-import com.l7tech.common.http.*;
-import com.l7tech.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
-import com.l7tech.security.prov.JceProvider;
-import com.l7tech.security.MockGenericHttpClient;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.xml.SoapFaultLevel;
-import com.l7tech.xml.TarariLoader;
-import com.l7tech.xml.tarari.GlobalTarariContext;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.UserBean;
-import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.message.*;
 import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.wsp.WspConstants;
+import com.l7tech.security.MockGenericHttpClient;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.service.ServiceCacheStub;
 import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.transport.http.ConnectionId;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.TestingHttpClientFactory;
-import com.l7tech.server.service.ServiceCacheStub;
-import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.xml.TarariLoader;
+import com.l7tech.xml.tarari.GlobalTarariContext;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -36,7 +38,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
-                                                   
+
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -521,7 +523,7 @@ public class PolicyProcessingTest extends TestCase {
                     hresponse.setStatus(routeStat);
                     hresponse.setContentType(response.getMimeKnob().getOuterContentType().getFullValue());
                     OutputStream responseos = hresponse.getOutputStream();
-                    HexUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), responseos);
+                    IOUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), responseos);
                     responseos.close();
                     logger.fine("servlet transport returned status " + routeStat +
                                 ". content-type " + response.getMimeKnob().getOuterContentType().getFullValue());
