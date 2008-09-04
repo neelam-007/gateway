@@ -23,11 +23,13 @@ import java.util.logging.Level;
 
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ems.EmsAccountManager;
+import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.identity.internal.InternalUser;
 
 /**
  * Enterprise Users page
  */
+@NavigationPage(page="EnterpriseUsers",section="Enterprise",pageUrl="EnterpriseUsers.html")
 public class EnterpriseUsers extends EmsPage {
 
     //- PUBLIC

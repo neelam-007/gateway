@@ -15,6 +15,7 @@ import org.apache.wicket.validation.validator.StringValidator;
 
 import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.server.ems.EmsApplication;
+import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
@@ -32,6 +33,7 @@ import java.util.logging.Level;
 /**
  * User settings web page 
  */
+@NavigationPage(page="UserSettings",section="Settings",sectionIndex=200,pageUrl="UserSettings.html")
 public class UserSettings extends EmsPage {
 
     private static final Logger logger = Logger.getLogger( UserSettings.class.getName() );

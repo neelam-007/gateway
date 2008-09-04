@@ -9,38 +9,40 @@
     <!-- PROTOTYPE ONLY END -->
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>Policy Migration [SecureSpan Enterprise Manager]</title>
-    <link rel="stylesheet" href="../css/l7.css" media="all" type="text/css" />
-    <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
-    <script type="text/javascript" src="../yui/animation/animation-min.js"></script>
-    <script type="text/javascript" src="../js/l7.js"></script>
-    <script type="text/javascript">
-        var MIN_FRAME_HEIGHT = 150;
-        var MAX_FRAME_HEIGHT = 500;
-        var INCR_FRAME_HEIGHT = 50;
-        var DECR_FRAME_HEIGHT = - INCR_FRAME_HEIGHT;
+    <wicket:head>
+        <link rel="stylesheet" href="../css/l7.css" media="all" type="text/css" />
+        <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
+        <script type="text/javascript" src="../yui/animation/animation-min.js"></script>
+        <script type="text/javascript" src="../js/l7.js"></script>
+        <script type="text/javascript">
+            var MIN_FRAME_HEIGHT = 150;
+            var MAX_FRAME_HEIGHT = 500;
+            var INCR_FRAME_HEIGHT = 50;
+            var DECR_FRAME_HEIGHT = - INCR_FRAME_HEIGHT;
 
-        function initSrcSSGClusterSelector(self) {
-            self.contentWindow.ssgClusterContentIFrameName = 'srcSSGClusterContent';
-            self.contentWindow.ssgClusterContentIFrameType = 'ssgClusterContentWithCheckbox';
-        }
-
-        function initDestSSGClusterSelector(self) {
-            self.contentWindow.ssgClusterContentIFrameName = 'destSSGClusterContent';
-            self.contentWindow.ssgClusterContentIFrameType = 'ssgClusterContentWithFolderRadio';
-        }
-
-        function initSrcSSGClusterContent(self) {
-            if (self.src != '') {
-                self.contentWindow.setDetailsIFrameName('srcItemDetails');
+            function initSrcSSGClusterSelector(self) {
+                self.contentWindow.ssgClusterContentIFrameName = 'srcSSGClusterContent';
+                self.contentWindow.ssgClusterContentIFrameType = 'ssgClusterContentWithCheckbox';
             }
-        }
 
-        function initDestSSGClusterContent(self) {
-            if (self.src != '') {
-                self.contentWindow.setDetailsIFrameName('destItemDetails');
+            function initDestSSGClusterSelector(self) {
+                self.contentWindow.ssgClusterContentIFrameName = 'destSSGClusterContent';
+                self.contentWindow.ssgClusterContentIFrameType = 'ssgClusterContentWithFolderRadio';
             }
-        }
-    </script>
+
+            function initSrcSSGClusterContent(self) {
+                if (self.src != '') {
+                    self.contentWindow.setDetailsIFrameName('srcItemDetails');
+                }
+            }
+
+            function initDestSSGClusterContent(self) {
+                if (self.src != '') {
+                    self.contentWindow.setDetailsIFrameName('destItemDetails');
+                }
+            }
+        </script>
+    </wicket:head>
 </head>
 <body>
 <table width="100%">
@@ -150,6 +152,7 @@
                 <span class="subtabOff"><a href="PolicyMapping.html">Mapping</a></span>
             </div>
             <div class="content">
+              <wicket:extend>
                 <div class="sideBySide">
                     <table>
                         <tr>
@@ -265,7 +268,8 @@
                             <td class="srcDestBottom"><iframe id="destItemDetails" frameborder="0" scrolling="yes" height="150" width="100%"></iframe></td>
                         </tr>
                     </table>
-                </div>
+                </div>                  
+              </wicket:extend>
             </div>
             <div class="statusBar">
                 <table>

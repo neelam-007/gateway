@@ -9,146 +9,148 @@
     <!-- PROTOTYPE ONLY END -->
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>Gateways [SecureSpan Enterprise Manager]</title>
-    <link rel="stylesheet" type="text/css" href="../css/l7.css" />
-    <link rel="stylesheet" type="text/css" href="../yui/button/assets/skins/sam/button.css" />
-    <link rel="stylesheet" type="text/css" href="../yui/menu/assets/skins/sam/menu.css" />
-    <link rel="stylesheet" type="text/css" href="../css/l7-yui-skin.css" />
-    <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
-    <script type="text/javascript" src="../yui/container/container_core-min.js"></script>
-    <script type="text/javascript" src="../yui/element/element-beta-min.js"></script>
-    <script type="text/javascript" src="../yui/button/button-min.js"></script>
-    <script type="text/javascript" src="../yui/menu/menu-min.js"></script>
-    <script type="text/javascript" src="../js/l7.js"></script>
-    <script type="text/javascript" src="../js/enterpriseTable.js"></script>
-    <script type="text/javascript" src="../js/treeTable.js"></script>
-    <script type="text/javascript">
-        // Overriding default strings in enterpriseTable.js for localization.
-        l7.EnterpriseTable.NEW_FOLDER = 'New Folder';
-        l7.EnterpriseTable.ADD_SSG_CLUSTER = 'Add SSG Cluster';
-        l7.EnterpriseTable.CREATE_SSG_NODE = 'Create SSG Node';
-        l7.EnterpriseTable.RENAME = 'Rename';
-        l7.EnterpriseTable.MOVE = 'Move';
-        l7.EnterpriseTable.DELETE = 'Delete';
-        l7.EnterpriseTable.DESTROY = 'Destroy';
-        l7.EnterpriseTable.LAUNCH_SSM = 'Launch SecureSpan Manager';
+    <wicket:head>
+        <link rel="stylesheet" type="text/css" href="../css/l7.css" />
+        <link rel="stylesheet" type="text/css" href="../yui/button/assets/skins/sam/button.css" />
+        <link rel="stylesheet" type="text/css" href="../yui/menu/assets/skins/sam/menu.css" />
+        <link rel="stylesheet" type="text/css" href="../css/l7-yui-skin.css" />
+        <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
+        <script type="text/javascript" src="../yui/container/container_core-min.js"></script>
+        <script type="text/javascript" src="../yui/element/element-beta-min.js"></script>
+        <script type="text/javascript" src="../yui/button/button-min.js"></script>
+        <script type="text/javascript" src="../yui/menu/menu-min.js"></script>
+        <script type="text/javascript" src="../js/l7.js"></script>
+        <script type="text/javascript" src="../js/enterpriseTable.js"></script>
+        <script type="text/javascript" src="../js/treeTable.js"></script>
+        <script type="text/javascript">
+            // Overriding default strings in enterpriseTable.js for localization.
+            l7.EnterpriseTable.NEW_FOLDER = 'New Folder';
+            l7.EnterpriseTable.ADD_SSG_CLUSTER = 'Add SSG Cluster';
+            l7.EnterpriseTable.CREATE_SSG_NODE = 'Create SSG Node';
+            l7.EnterpriseTable.RENAME = 'Rename';
+            l7.EnterpriseTable.MOVE = 'Move';
+            l7.EnterpriseTable.DELETE = 'Delete';
+            l7.EnterpriseTable.DESTROY = 'Destroy';
+            l7.EnterpriseTable.LAUNCH_SSM = 'Launch SecureSpan Manager';
 
-        var numDashboardsPerRow = null;
-        var collapsedDashboardIds = new Array();
+            var numDashboardsPerRow = null;
+            var collapsedDashboardIds = new Array();
 
-        function onDashboardTippyChanged(tippy, ssgClusterId) {
-            if (l7.Tippy.isTippyExpanded(tippy)) {
-                l7.Util.removeArrayElement(collapsedDashboardIds, ssgClusterId);
-            } else {
-                if (!l7.Util.arrayContains(collapsedDashboardIds, ssgClusterId)) {
-                    collapsedDashboardIds.push(ssgClusterId);
-                }
-            }
-        }
-
-        function showDashboards() {
-            // Clears the tiling table first.
-            var table = document.getElementById('dashboardsTable');
-            while (table.rows.length > 0) {
-                table.deleteRow(0);
-            }
-
-            var numDashboard = 0;
-            var row = null;
-            var checkboxes = l7.Util.getElementsByClassName('dashboardCheckbox');
-            for (var k = 0; k < checkboxes.length; ++k) {
-                var checkbox = checkboxes[k];
-                var ssgClusterId = checkbox.parentNode.parentNode.id;
-                if (checkbox.checked) {
-                    if (numDashboard % numDashboardsPerRow == 0) {
-                        row = table.insertRow(table.rows.length);
-                    }
-                    var cell = row.insertCell(row.cells.length);
-                    var tippyId = 'dashboard-tippy-' + ssgClusterId;
-                    var dashboardId = 'dashboard-' + ssgClusterId;
-                    cell.innerHTML = '<div class="dashboardPanel">'
-                                   + '    <div class="panelTitle">'
-                                   + '        <img id="' + tippyId + '" class="tippy dashboardTippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, \'' + dashboardId + '\'); onDashboardTippyChanged(this, \'' + ssgClusterId + '\')" /><span class="clickable" onclick="l7.Tippy.toggleTippy(\'' + tippyId + '\', \'' + dashboardId + '\')">' + l7.Util.escapeAsText(checkbox.value) + '</span>'
-                                   + '    </div>'
-                                   + '    <div class="dashboardPanelContent" id="' + dashboardId + '">'
-                                   + '        <img src="../images/FAKE_DASHBOARD_' + (numDashboard % 2) + '.png" alt="" />'
-                                   + '    </div>'
-                                   + '</div>';
-                    if (l7.Util.arrayContains(collapsedDashboardIds, ssgClusterId)) {
-                        document.getElementById(tippyId).onclick();
-                    }
-                    ++numDashboard;
-                } else {
+            function onDashboardTippyChanged(tippy, ssgClusterId) {
+                if (l7.Tippy.isTippyExpanded(tippy)) {
                     l7.Util.removeArrayElement(collapsedDashboardIds, ssgClusterId);
+                } else {
+                    if (!l7.Util.arrayContains(collapsedDashboardIds, ssgClusterId)) {
+                        collapsedDashboardIds.push(ssgClusterId);
+                    }
                 }
             }
 
-            document.getElementById('numDashboards').innerHTML = numDashboard;
-        }
+            function showDashboards() {
+                // Clears the tiling table first.
+                var table = document.getElementById('dashboardsTable');
+                while (table.rows.length > 0) {
+                    table.deleteRow(0);
+                }
 
-        function setNumDashboardsPerRow(n) {
-            if (numDashboardsPerRow != n) {
-                numDashboardsPerRow = n;
-                for (var i = 1; i <= 4; ++i) {
-                    var img = document.getElementById('columns' + i);
-                    if (i == n) {
-                        l7.Util.removeClass(img, 'unselected');
+                var numDashboard = 0;
+                var row = null;
+                var checkboxes = l7.Util.getElementsByClassName('dashboardCheckbox');
+                for (var k = 0; k < checkboxes.length; ++k) {
+                    var checkbox = checkboxes[k];
+                    var ssgClusterId = checkbox.parentNode.parentNode.id;
+                    if (checkbox.checked) {
+                        if (numDashboard % numDashboardsPerRow == 0) {
+                            row = table.insertRow(table.rows.length);
+                        }
+                        var cell = row.insertCell(row.cells.length);
+                        var tippyId = 'dashboard-tippy-' + ssgClusterId;
+                        var dashboardId = 'dashboard-' + ssgClusterId;
+                        cell.innerHTML = '<div class="dashboardPanel">'
+                                       + '    <div class="panelTitle">'
+                                       + '        <img id="' + tippyId + '" class="tippy dashboardTippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, \'' + dashboardId + '\'); onDashboardTippyChanged(this, \'' + ssgClusterId + '\')" /><span class="clickable" onclick="l7.Tippy.toggleTippy(\'' + tippyId + '\', \'' + dashboardId + '\')">' + l7.Util.escapeAsText(checkbox.value) + '</span>'
+                                       + '    </div>'
+                                       + '    <div class="dashboardPanelContent" id="' + dashboardId + '">'
+                                       + '        <img src="../images/FAKE_DASHBOARD_' + (numDashboard % 2) + '.png" alt="" />'
+                                       + '    </div>'
+                                       + '</div>';
+                        if (l7.Util.arrayContains(collapsedDashboardIds, ssgClusterId)) {
+                            document.getElementById(tippyId).onclick();
+                        }
+                        ++numDashboard;
                     } else {
-                        l7.Util.addClass(img, 'unselected');
+                        l7.Util.removeArrayElement(collapsedDashboardIds, ssgClusterId);
                     }
                 }
-                showDashboards();
+
+                document.getElementById('numDashboards').innerHTML = numDashboard;
             }
-        }
 
-        function init() {
-            var addFolderButton = new YAHOO.widget.Button('addFolderButton');
-            var addSSGClusterButton = new YAHOO.widget.Button('addSSGClusterButton');
-            var addSSGNodeButton = new YAHOO.widget.Button('addSSGNodeButton');
-            var renameButton = new YAHOO.widget.Button('renameButton');
-            var moveButton = new YAHOO.widget.Button('moveButton');
-            var deleteButton = new YAHOO.widget.Button('deleteButton');
-            var destroyButton = new YAHOO.widget.Button('destroyButton');
-            var ssmButton = new YAHOO.widget.Button('ssmButton');
-            // TODO assign URLs or use YAHOO.util.Event.addListener('addUserButton', 'click', function() {...})
-
-            l7.TreeTable.initAll();
-            l7.EnterpriseTable.initAll('../images');
-            var enterpriseTable = document.getElementById('enterpriseTreeTable').l7_enterpriseTable;
-            enterpriseTable.onRowSelectionChange = function(oldRow, newRow) {
-                addFolderButton.set('disabled', true);
-                addSSGClusterButton.set('disabled', true);
-                addSSGNodeButton.set('disabled', true);
-                renameButton.set('disabled', true);
-                moveButton.set('disabled', true);
-                deleteButton.set('disabled', true);
-                destroyButton.set('disabled', true);
-                ssmButton.set('disabled', true);
-                if (newRow != null) {
-                    if (l7.Util.hasClass(newRow, 'l7-folder')) {
-                        addFolderButton.set('disabled', false);
-                        addSSGClusterButton.set('disabled', false);
-                        renameButton.set('disabled', false);
-                        moveButton.set('disabled', false);
-                        deleteButton.set('disabled', l7.Util.hasClass(newRow, 'l7-enterpriseTable-cannotDelete'));
-                    } else if (l7.Util.hasClass(newRow, 'l7-SSGCluster')) {
-                        addSSGNodeButton.set('disabled', false);
-                        moveButton.set('disabled', false);
-                        deleteButton.set('disabled', false);
-                        ssmButton.set('disabled', false);
-                    } else if (l7.Util.hasClass(newRow, 'l7-SSGNode')) {
-                        destroyButton.set('disabled', false);
-                    } else if (l7.Util.hasClass(newRow, 'l7-folder')) {
-                        addFolderButton.set('disabled', false);
-                        moveButton.set('disabled', false);
-                        deleteButton.set('disabled', false);
+            function setNumDashboardsPerRow(n) {
+                if (numDashboardsPerRow != n) {
+                    numDashboardsPerRow = n;
+                    for (var i = 1; i <= 4; ++i) {
+                        var img = document.getElementById('columns' + i);
+                        if (i == n) {
+                            l7.Util.removeClass(img, 'unselected');
+                        } else {
+                            l7.Util.addClass(img, 'unselected');
+                        }
                     }
+                    showDashboards();
                 }
             }
-            enterpriseTable.onRowSelectionChange(null, enterpriseTable.getSelectedRow());
 
-            setNumDashboardsPerRow(1);
-        }
-    </script>
+            function init() {
+                var addFolderButton = new YAHOO.widget.Button('addFolderButton');
+                var addSSGClusterButton = new YAHOO.widget.Button('addSSGClusterButton');
+                var addSSGNodeButton = new YAHOO.widget.Button('addSSGNodeButton');
+                var renameButton = new YAHOO.widget.Button('renameButton');
+                var moveButton = new YAHOO.widget.Button('moveButton');
+                var deleteButton = new YAHOO.widget.Button('deleteButton');
+                var destroyButton = new YAHOO.widget.Button('destroyButton');
+                var ssmButton = new YAHOO.widget.Button('ssmButton');
+                // TODO assign URLs or use YAHOO.util.Event.addListener('addUserButton', 'click', function() {...})
+
+                l7.TreeTable.initAll();
+                l7.EnterpriseTable.initAll('../images');
+                var enterpriseTable = document.getElementById('enterpriseTreeTable').l7_enterpriseTable;
+                enterpriseTable.onRowSelectionChange = function(oldRow, newRow) {
+                    addFolderButton.set('disabled', true);
+                    addSSGClusterButton.set('disabled', true);
+                    addSSGNodeButton.set('disabled', true);
+                    renameButton.set('disabled', true);
+                    moveButton.set('disabled', true);
+                    deleteButton.set('disabled', true);
+                    destroyButton.set('disabled', true);
+                    ssmButton.set('disabled', true);
+                    if (newRow != null) {
+                        if (l7.Util.hasClass(newRow, 'l7-folder')) {
+                            addFolderButton.set('disabled', false);
+                            addSSGClusterButton.set('disabled', false);
+                            renameButton.set('disabled', false);
+                            moveButton.set('disabled', false);
+                            deleteButton.set('disabled', l7.Util.hasClass(newRow, 'l7-enterpriseTable-cannotDelete'));
+                        } else if (l7.Util.hasClass(newRow, 'l7-SSGCluster')) {
+                            addSSGNodeButton.set('disabled', false);
+                            moveButton.set('disabled', false);
+                            deleteButton.set('disabled', false);
+                            ssmButton.set('disabled', false);
+                        } else if (l7.Util.hasClass(newRow, 'l7-SSGNode')) {
+                            destroyButton.set('disabled', false);
+                        } else if (l7.Util.hasClass(newRow, 'l7-folder')) {
+                            addFolderButton.set('disabled', false);
+                            moveButton.set('disabled', false);
+                            deleteButton.set('disabled', false);
+                        }
+                    }
+                }
+                enterpriseTable.onRowSelectionChange(null, enterpriseTable.getSelectedRow());
+
+                setNumDashboardsPerRow(1);
+            }
+        </script>
+    </wicket:head>
 </head>
 <body class="yui-skin-sam" onload="init();">
 <table width="100%">

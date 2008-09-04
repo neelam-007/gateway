@@ -19,12 +19,14 @@ import java.io.Serializable;
 import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.server.audit.AuditRecordManager;
+import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions;
 
 /**
  * 
  */
+@NavigationPage(page="Audits",section="Tools",sectionIndex=100,pageUrl="Audits.html")
 public class Audits extends EmsPage {
     
     //- PUBLIC    

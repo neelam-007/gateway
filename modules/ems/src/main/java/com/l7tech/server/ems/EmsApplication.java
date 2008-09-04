@@ -151,29 +151,23 @@ public class EmsApplication extends WebApplication {
             }
         } );
 
-        // mount pages
-        mountBookmarkablePage("/Audits.html", Audits.class);
-        mountTemplate("/Backup.html");
-        mountTemplate("/EnterpriseGateways.html");
-        mountBookmarkablePage("/EnterpriseUsers.html", EnterpriseUsers.class);
-        mountTemplate("/ExternalReports.html");
+        // mount navigation pages
+        NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.pages");
+        for ( String page : navigationModel.getNavigationPages() ) {
+            mountBookmarkablePage( "/" + navigationModel.getPageUrlForPage(page), navigationModel.getPageClassForPage(page) );
+        }
+
+        // mount other pages / templates
         mountTemplate("/Help.html");
         mountBookmarkablePage("/Login.html", Login.class);
-        mountTemplate("/Logs.html");
-        mountTemplate("/Messages.html");
         mountTemplate("/SSGClusterSelector.html");
-        mountTemplate("/PolicyApproval.html");
-        mountTemplate("/PolicyMapping.html");
-        mountTemplate("/PolicyMigration.html");
-        mountTemplate("/PolicySubmission.html");
-        mountTemplate("/Restore.html");
-        mountTemplate("/Setup.html");
-        mountTemplate("/StandardReports.html");
-        mountTemplate("/SubmissionReceived.html");
-        mountBookmarkablePage("/SystemSettings.html", SystemSettings.class);
-        mountTemplate("/TestWebService.html");
         mountTemplate("/UserSelector.html");
-        mountBookmarkablePage("/UserSettings.html", UserSettings.class);
+
+        // mount other pages that will not be shown in navigation for now
+        mountTemplate("/Messages.html");
+        mountTemplate("/PolicyApproval.html");
+        mountTemplate("/PolicySubmission.html");
+        mountTemplate("/SubmissionReceived.html");
     }
 
     public static List<String> getDateFormatkeys() {

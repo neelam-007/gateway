@@ -18,6 +18,7 @@ import com.l7tech.util.TextUtils;
 import com.l7tech.util.DateUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.UpdatableLicenseManager;
+import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.InvalidLicenseException;
@@ -33,6 +34,7 @@ import java.io.IOException;
 /**
  * Page for system settings
  */
+@NavigationPage(page="SystemSettings",section="Settings",sectionIndex=200,pageUrl="SystemSettings.html")
 public class SystemSettings extends EmsPage {
 
     private static final int MAX_LICENSE_FILE_UPLOAD_BYTES = SyspropUtil.getInteger("com.l7tech.ems.licenseFile.maxBytes", 1024 * 500);

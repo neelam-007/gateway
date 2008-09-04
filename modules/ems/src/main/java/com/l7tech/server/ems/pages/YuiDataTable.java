@@ -311,7 +311,11 @@ public class YuiDataTable extends Panel {
 
             for ( PropertyColumn column : columns ) {
                 Object object = new PropertyModel(data.getObject(), column.getPropertyExpression()).getObject();
-                output.add( column.getPropertyExpression(), getConverter(object.getClass()).convertToString(object, null));
+                if ( object == null ) {
+                    output.add( column.getPropertyExpression(), null);
+                } else {
+                    output.add( column.getPropertyExpression(), getConverter(object.getClass()).convertToString(object, null));
+                }
             }
         }
 
