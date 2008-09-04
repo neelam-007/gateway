@@ -55,17 +55,17 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
      * @param newMappings: the mappings to be processed.
      */
     private void processMappingsInMCA(PolicyEnforcementContext context, List<MessageContextMapping> newMappings) {
-        // Step 1: remove those overidden mappings.
-        if (newMappings != null && !newMappings.isEmpty()) {
-            removeOverriddenMappings(newMappings);
-        }
-
-        // Step 2: evaluate mapping values
+        // Step 1: evaluate the values of these mappings in the current MCA.
         for (MessageContextMapping mapping: newMappings) {
             processMappingValues(mapping, context);
         }
 
-        // Step 3: check if there exists other MessageContextAssertions before this MessageContextAssertion.
+        // Step 2: remove those overidden mappings in the current MCA.
+        if (newMappings != null && !newMappings.isEmpty()) {
+            removeOverriddenMappings(newMappings);
+        }
+
+        // Step 3: check if there exists multiple MessageContextAssertions, which would cause TOO-MANY or OVERRIDDEN problems.
         // Case 1: this assertion is the first MessageContextAssertion in the policy.
         List<MessageContextMapping> prevMappings = context.getMappings();
         if (prevMappings == null || prevMappings.isEmpty()) {
@@ -78,7 +78,7 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
         for (MessageContextMapping newMapping: newMappings) {
             boolean foundDuplicates = false;
             for (MessageContextMapping prevMapping: prevMappings) {
-                if (newMapping.hasEqualTypeAndKeyDifferentValue(prevMapping)) {
+                if (newMapping.hasEqualTypeAndKeyExcludingValue(prevMapping)) {
                     foundDuplicates = true;
                     prevMappings.remove(prevMapping);
                     auditor.logAndAudit(AssertionMessages.MCM_MAPPING_OVERRIDDEN, prevMapping.getKey());
@@ -105,10 +105,9 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
     private void removeOverriddenMappings(List<MessageContextMapping> mappings) {
         for (int i = mappings.size() - 1; i >= 0; i--) {
             for (int j = i - 1; j >= 0; j--) {
-                if (mappings.get(i).hasEqualTypeAndKeyDifferentValue(mappings.get(j))) {
+                if (mappings.get(i).hasEqualTypeAndKeyExcludingValue(mappings.get(j))) {
                     MessageContextMapping overriddenMapping = mappings.remove(j);
                     auditor.logAndAudit(AssertionMessages.MCM_MAPPING_OVERRIDDEN, overriddenMapping.getKey());
-                    j--;
                     i--;
                 }
             }

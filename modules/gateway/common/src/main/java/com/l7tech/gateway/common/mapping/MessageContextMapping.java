@@ -77,7 +77,12 @@ public class MessageContextMapping implements Serializable, Comparable<MessageCo
         this.value = value;
     }
 
-    public boolean hasEqualTypeAndKeyDifferentValue(MessageContextMapping other) {
+    /**
+     * Check if two mappings have the same mapping type and key.  But, don't care about if the values are the same or not.
+     * @param other: the second mapping to compare.
+     * @return true if two mappings have the same mapping type and key.
+     */
+    public boolean hasEqualTypeAndKeyExcludingValue(MessageContextMapping other) {
         boolean continueChecking;
 
         // Check if the mapping types are the same.
@@ -90,17 +95,11 @@ public class MessageContextMapping implements Serializable, Comparable<MessageCo
 
         // Check if the keys are the same.
         if (key == null) {
-           continueChecking = other.getKey() == null;
+           return (other.getKey() == null);
+        } else if (other.getKey() == null) {
+           return (key == null);
         } else {
-            continueChecking = key.equals(other.getKey());
-        }
-        if (! continueChecking) return false;
-
-        // Check if the values are the same.
-        if (value == null) {
-           return other.getValue() != null;
-        } else {
-            return !value.equals(other.getValue());
+            return key.toLowerCase().equals(other.getKey().toLowerCase());
         }
     }
 

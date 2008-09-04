@@ -142,9 +142,8 @@ public class MessageContextAssertion extends Assertion implements UsesVariables 
         private void removeOverriddenMappings(List<MessageContextMapping> mappings) {
             for (int i = mappings.size() - 1; i >= 0; i--) {
                 for (int j = i - 1; j >= 0; j--) {
-                    if (mappings.get(i).hasEqualTypeAndKeyDifferentValue(mappings.get(j))) {
+                    if (mappings.get(i).hasEqualTypeAndKeyExcludingValue(mappings.get(j))) {
                         mappings.remove(j);
-                        j--;
                         i--;
                     }
                 }
