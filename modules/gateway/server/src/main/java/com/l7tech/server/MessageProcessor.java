@@ -199,8 +199,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 }
             }
 
-            metrics = serviceMetricsManager.getServiceMetrics(service.getOid());
-
             if (service.isDisabled()) {
                 auditor.logAndAudit(MessageProcessingMessages.SERVICE_DISABLED);
                 status = AssertionStatus.SERVICE_NOT_FOUND;
@@ -285,8 +283,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             status = serverPolicy.checkRequest(context);
 
-            if (metrics != null) metrics.addMessageContextMappings(context);
-
+            metrics = serviceMetricsManager.getServiceMetrics(service.getOid(), context.getMappings());
+            
             // Execute deferred actions for request, then response
             if (status == AssertionStatus.NONE) {
                 status = AssertionStatus.UNDEFINED;

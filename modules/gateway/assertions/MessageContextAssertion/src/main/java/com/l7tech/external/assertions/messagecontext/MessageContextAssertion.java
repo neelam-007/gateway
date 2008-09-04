@@ -109,31 +109,43 @@ public class MessageContextAssertion extends Assertion implements UsesVariables 
         }
 
         public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
-            //System.out.println("### module assertion validation");
+            // Get all MCAs from the current MCA to the last MCA.
             Assertion[] assertions = path.getPath();
             List<MessageContextAssertion> checkedAssertions = new ArrayList<MessageContextAssertion>();
-            for (Assertion assertion: assertions) {
-                if (assertion instanceof MessageContextAssertion) {
-                    checkedAssertions.add((MessageContextAssertion)assertion);
-                    if (assertion == this.assertion) {
+            for (int i = assertions.length - 1; i >= 0; i--) {
+                Assertion anAssertion = assertions[i];
+                if (anAssertion instanceof MessageContextAssertion) {
+                    MessageContextAssertion mca = (MessageContextAssertion)anAssertion;
+                    checkedAssertions.add(0, mca);
+                    if (mca == this.assertion) {
                         break;
                     }
                 }
             }
 
-            if (checkedAssertions.size() <= 1) return;
-
+            // Add all mappings to be checked into the list, distinctMappings.
             List<MessageContextMapping> distinctMappings = new ArrayList<MessageContextMapping>();
             for (MessageContextAssertion mca: checkedAssertions) {
                 MessageContextMapping[] mappings = mca.getMappings();
-                for (MessageContextMapping mapping: mappings) {
-                    if (! distinctMappings.contains(mapping)) {
-                        distinctMappings.add(mapping);
-                        if (distinctMappings.size() > 5) {
-                            result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
-                                "More than five distinct message context mappings have been created.  Only last five distinct mappings will be evaluated.", null));
-                            break;
-                        }
+                for (MessageContextMapping mapping: mappings) distinctMappings.add(mapping);
+            }
+
+            // Remove all overridden mappings, where each such mapping has the same mapping type and key as other mapping's.
+            removeOverriddenMappings(distinctMappings);
+
+            if (distinctMappings.size() > 5) {
+                result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
+                    "Some mappings in this assertion will be dropped due to too many distinct mappings in this policy.", null));
+            }
+        }
+
+        private void removeOverriddenMappings(List<MessageContextMapping> mappings) {
+            for (int i = mappings.size() - 1; i >= 0; i--) {
+                for (int j = i - 1; j >= 0; j--) {
+                    if (mappings.get(i).hasEqualTypeAndKeyDifferentValue(mappings.get(j))) {
+                        mappings.remove(j);
+                        j--;
+                        i--;
                     }
                 }
             }

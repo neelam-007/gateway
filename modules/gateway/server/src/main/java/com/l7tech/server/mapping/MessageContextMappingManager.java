@@ -15,12 +15,36 @@ public interface MessageContextMappingManager {
 
     /**
      * Retrieve the keys of the current message context mapping from the database.
-     * @return the keys of the current message context mapping.
+     * @param oid: the object id of a set of keys
+     * @return the mapping keys entity
      * @throws FindException
      */
     MessageContextMappingKeys getMessageContextMappingKeys(long oid) throws FindException;
+
+    /**
+     * Retrieve the values of the current message context mapping from the database.
+     * @param oid: the object id of a set of values
+     * @return
+     * @throws FindException
+     */
     MessageContextMappingValues getMessageContextMappingValues(long oid) throws FindException;
 
+    /**
+     * Save a set of keys into the database.
+     * @param mappingKeysEntity: the mapping keys entity to save.
+     * @return the object id after the mapping key entity is successfully saved.
+     * @throws SaveException
+     * @throws FindException
+     * @throws UpdateException
+     */
     long saveMessageContextMappingKeys(MessageContextMappingKeys mappingKeysEntity) throws SaveException, FindException, UpdateException;
-    long saveMessageContextMappingValues(MessageContextMappingValues mappingValuesEntity) throws SaveException;
+
+    /**
+     * Save a set of values into the database.
+     * @param mappingValuesEntity: the mapping values entity to save.
+     * @return the object id after the mapping value entity is successfully saved.
+     * @throws SaveException
+     * @throws FindException
+     */
+    long saveMessageContextMappingValues(MessageContextMappingValues mappingValuesEntity) throws SaveException, FindException;
 }

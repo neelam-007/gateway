@@ -3,6 +3,7 @@ package com.l7tech.server.wsdm;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceMetricsManager;
@@ -186,7 +187,7 @@ public class Aggregator implements ServiceStateMonitor {
         // Ensure manager tracks metrics for this service
         // If this is not done then service status changes are not tracked
         // until the service is consumed.
-        metricsManager.getServiceMetrics( serviceoid );
+        metricsManager.getServiceMetrics( serviceoid, new ArrayList<MessageContextMapping>(){});
     }
     
     public MetricsSummaryBin getMetricsForService(long serviceOid) {

@@ -17,7 +17,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * Server side implementation of the MessageContextAssertion.
@@ -30,7 +29,6 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
     private final MessageContextAssertion assertion;
     private final Auditor auditor;
     private final String[] variablesUsed;
-    private ApplicationContext applicationContext;
 
     public ServerMessageContextAssertion(MessageContextAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
@@ -38,40 +36,51 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
         this.assertion = assertion;
         this.auditor = context != null ? new Auditor(this, context, logger) : new LogOnlyAuditor(logger);
         this.variablesUsed = assertion.getVariablesUsed();
-        for (String var : variablesUsed) System.out.println("In ServerMCA constructor, c.v. = " + var);
-        applicationContext = context;
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         List<MessageContextMapping> mappings = new ArrayList<MessageContextMapping>(5);
-        mappings.addAll(Arrays.asList(assertion.getMappings()));
-        updateMappingsInPolicyEnforcementContext(context, mappings);
+        for (MessageContextMapping mapping: assertion.getMappings()) {
+            mappings.add(mapping.asCopy());
+        }
+
+        processMappingsInMCA(context, mappings);
 
         return AssertionStatus.NONE;
     }
 
-    private void updateMappingsInPolicyEnforcementContext(PolicyEnforcementContext context, List<MessageContextMapping> newMappings) {
+    /**
+     * Process the mappings in this MessageContextAssertion (MCA) by validating these mappings and giving warning audits.
+     * @param context: the PolicyEnforcementContext
+     * @param newMappings: the mappings to be processed.
+     */
+    private void processMappingsInMCA(PolicyEnforcementContext context, List<MessageContextMapping> newMappings) {
+        // Step 1: remove those overidden mappings.
         if (newMappings != null && !newMappings.isEmpty()) {
             removeOverriddenMappings(newMappings);
         }
 
+        // Step 2: evaluate mapping values
         for (MessageContextMapping mapping: newMappings) {
-            processMappingValue(mapping, context);
+            processMappingValues(mapping, context);
         }
 
+        // Step 3: check if there exists other MessageContextAssertions before this MessageContextAssertion.
+        // Case 1: this assertion is the first MessageContextAssertion in the policy.
         List<MessageContextMapping> prevMappings = context.getMappings();
         if (prevMappings == null || prevMappings.isEmpty()) {
             context.setMappings(newMappings);
             return;
         }
 
+        // Case 2: there exists some other MessageContextAssertions before this asssertion, so need to check if there
+        // exist overridden mappings and check if there are more than five distinct mappings.
         for (MessageContextMapping newMapping: newMappings) {
             boolean foundDuplicates = false;
             for (MessageContextMapping prevMapping: prevMappings) {
                 if (newMapping.hasEqualTypeAndKeyDifferentValue(prevMapping)) {
                     foundDuplicates = true;
                     prevMappings.remove(prevMapping);
-                    System.out.println("### mapping overridden - key = " + prevMapping.getKey());
                     auditor.logAndAudit(AssertionMessages.MCM_MAPPING_OVERRIDDEN, prevMapping.getKey());
                     break;
                 }
@@ -79,16 +88,20 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
             if (! foundDuplicates) {
                 if (prevMappings.size() >= 5) {
                     MessageContextMapping droppedMapping = prevMappings.remove(0);
-                    System.out.println("### mapping dropped - key = " + droppedMapping.getKey());
                     auditor.logAndAudit(AssertionMessages.MCM_TOO_MANY_MAPPINGS, droppedMapping.getKey());
                 }
             }
             prevMappings.add(newMapping);
         }
-        
+
+        // Step 4: update the mappings in the PolicyEnforcementContext.
         context.setMappings(prevMappings);
     }
 
+    /**
+     * Remove duplicate mappings in the assertion.
+     * @param mappings
+     */
     private void removeOverriddenMappings(List<MessageContextMapping> mappings) {
         for (int i = mappings.size() - 1; i >= 0; i--) {
             for (int j = i - 1; j >= 0; j--) {
@@ -102,7 +115,12 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
         }
     }
 
-    private void processMappingValue(MessageContextMapping checkedMapping, PolicyEnforcementContext context) {
+    /**
+     * Evaluate the mapping value for each mapping.
+     * @param checkedMapping
+     * @param context
+     */
+    private void processMappingValues(MessageContextMapping checkedMapping, PolicyEnforcementContext context) {
         String value = checkedMapping.getValue();
         if (value == null || value.trim().equals("")) return;
 

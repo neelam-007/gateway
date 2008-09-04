@@ -54,7 +54,15 @@
             <bean class="com.l7tech.server.util.LazyPropertyChangeDispatcher">
                 <constructor-arg>
                     <map>
-                        <entry key="serviceMetricsManager"><list><value>serviceMetricsEnabled</value></list></entry>
+                        <entry key="serviceMetricsManager">
+                            <list>
+                                <value>serviceMetricsEnabled</value>
+                                <value>customerMapping.addToServiceMetrics</value>
+                            </list>
+                        </entry>
+
+                        <entry key="messageSummaryAuditFactory"><list><value>customerMapping.addToGatewayAuditEvents</value></list></entry>
+
                         <entry key="certValidationProcessor"><list><value>pkixTrust.useDefaultAnchors</value></list></entry>
                         <entry key="jmsBootProcess">
                             <list>
@@ -491,6 +499,7 @@
     <!-- server side audit message factory -->
     <bean id="messageSummaryAuditFactory" class="com.l7tech.server.audit.MessageSummaryAuditFactory">
         <constructor-arg ref="clusterNodeId"/>
+        <property name="messageContextMappingManager" ref="messageContextMappingManager"/>
     </bean>
 
     <!-- keystore root cert and ssl config  -->
@@ -713,6 +722,7 @@
 
         <property name="serviceManager" ref ="serviceManager"/>
         <property name="roleManager" ref="roleManager"/>
+        <property name="messageContextMappingManager" ref="messageContextMappingManager"/>
     </bean>
 
     <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker" depends-on="ssgBoot">

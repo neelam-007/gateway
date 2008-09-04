@@ -1,11 +1,8 @@
 package com.l7tech.external.assertions.messagecontext.console;
 
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
-import com.l7tech.console.panels.PermissionFlags;
-import com.l7tech.console.panels.ConfigureMessageContextMappingDialog;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.messagecontext.MessageContextAssertion;
-import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -29,7 +26,6 @@ import java.util.Arrays;
  */
 public class MessageContextAssertionPropertiesDialog extends AssertionPropertiesEditorSupport<MessageContextAssertion> {
     private static final String DIALOG_TITLE = "Message Context Assertion Properties";
-    private final PermissionFlags flags;
 
     private static final int MAX_NUM_OF_TABLE_COLUMNS = 3;
     private JPanel mainPanel;
@@ -42,29 +38,25 @@ public class MessageContextAssertionPropertiesDialog extends AssertionProperties
 
     private MessageContextMappingTableModel messageContextMappingTableModel;
     private MessageContextAssertion assertion;
-    private List<MessageContextMapping> mappings = new ArrayList();
+    private List<MessageContextMapping> mappings = new ArrayList<MessageContextMapping>();
     private int updatedRowPosition = 0;
     private boolean ok = false;
 
     public MessageContextAssertionPropertiesDialog(Frame owner, MessageContextAssertion assertion) {
-        //todo: check readonly
         super(owner, DIALOG_TITLE, true);
         this.assertion = assertion;
         mappings.addAll(Arrays.asList(assertion.getMappings()));
-        flags = PermissionFlags.get(EntityType.MESSAGE_CONTEXT_MAPPING_KEYS);
-        initialize(true);
+        initialize();
     }
 
     public MessageContextAssertionPropertiesDialog(Dialog owner, MessageContextAssertion assertion) {
-        //todo: check readonly
         super(owner, DIALOG_TITLE, true);
         this.assertion = assertion;
         mappings.addAll(Arrays.asList(assertion.getMappings()));
-        flags = PermissionFlags.get(EntityType.MESSAGE_CONTEXT_MAPPING_KEYS);
-        initialize(true);
+        initialize();
     }
 
-    private void initialize(boolean readOnly) {
+    private void initialize() {
         initMessageContextMappingTable();
 
         okButton.addActionListener(new ActionListener() {
@@ -203,10 +195,10 @@ public class MessageContextAssertionPropertiesDialog extends AssertionProperties
         boolean removeEnabled = mappingTable.getSelectedRow() >= 0 && getMessageContextMappingTableModel().getRowCount() > 1;
         boolean editEnable = mappingTable.getSelectedRow() >= 0;
 
-        //enable/disable taking into account the permissions that this user has.
-        addButton.setEnabled(flags.canCreateSome() && addEnable);
-        propertiesButton.setEnabled(flags.canCreateSome() && editEnable);
-        removeButton.setEnabled(flags.canDeleteSome() && removeEnabled);
+        // Enable or disable taking into account the permissions that this user has.
+        addButton.setEnabled(addEnable);
+        propertiesButton.setEnabled(editEnable);
+        removeButton.setEnabled(removeEnabled);
     }
 
     private void ok() {

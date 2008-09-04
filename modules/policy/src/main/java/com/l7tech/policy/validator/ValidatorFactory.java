@@ -74,7 +74,10 @@ class ValidatorFactory {
         Constructor<AssertionValidator> ctor = ctorCache.get(assclass);
         if (ctor != null) {
             try {
-                return ctor.newInstance(assertion);
+                // In some cases where an assertion has its own validator and also needs to validate context variables,
+                // so it is safe to call addValidationAspects(...) to create a sequence validator.  It won't hurt if the
+                // assertion doesn't need to validate context variables.
+                return addValidationAspects(assertion, ctor.newInstance(assertion));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

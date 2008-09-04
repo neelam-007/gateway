@@ -32,7 +32,6 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.folder.Folder;
 import static com.l7tech.objectmodel.EntityType.UNDEFINED;
 import com.l7tech.gateway.common.service.*;
-import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 
 import java.util.Comparator;
 
@@ -80,8 +79,6 @@ public enum EntityType {
     SSG_CONNECTOR("Listen Port", SsgConnector.class, com.l7tech.objectmodel.EntityType.CONNECTOR, true),
 
     LOG_SINK("Log Sink", SinkConfiguration.class, UNDEFINED, true),
-
-    MESSAGE_CONTEXT_MAPPING_KEYS("Message Context Mapping Keys", MessageContextMappingKeys.class, UNDEFINED, true),
 
     SERVICE_TEMPLATE("Service Template", ServiceTemplate.class, UNDEFINED, true),
     ;

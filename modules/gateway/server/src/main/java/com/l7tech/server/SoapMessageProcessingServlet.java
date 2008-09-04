@@ -27,7 +27,6 @@ import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.FaultProcessed;
-import com.l7tech.server.mapping.MessageContextMappingManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.service.ServiceCache;
@@ -76,7 +75,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private AuditContext auditContext;
     private SoapFaultManager soapFaultManager;
     private ClusterPropertyManager clusterPropertyManager;
-    private MessageContextMappingManager messageContextMappingManager;
     private LicenseManager licenseManager;
     private StashManagerFactory stashManagerFactory;
     private ServiceCache serviceCache;
@@ -96,7 +94,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         stashManagerFactory = (StashManagerFactory)applicationContext.getBean("stashManagerFactory");
         serviceCache = (ServiceCache)applicationContext.getBean("serviceCache");
         auditor = new Auditor(this, applicationContext, logger);
-        messageContextMappingManager = (MessageContextMappingManager)applicationContext.getBean("messageContextMappingManager");
     }
 
     /**
@@ -124,7 +121,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 logger.log(Level.SEVERE, "Unexpected problem checking for catch all service resolution", e);
             }
         }
-        
+
         try {
             licenseManager.requireFeature(SERVICE_HTTP_MESSAGE_INPUT);
             HttpTransportModule.requireEndpoint(hrequest, SsgConnector.Endpoint.MESSAGE_INPUT);
@@ -160,7 +157,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             context.setAuditContext(auditContext);
             context.setSoapFaultManager(soapFaultManager);
             context.setClusterPropertyManager(clusterPropertyManager);
-            context.setMessageContextMappingManager(messageContextMappingManager);
 
             request.initialize(stashManager, ctype, hrequest.getInputStream());
 

@@ -31,6 +31,8 @@ public class MessageContextMappingValueManagerImpl
     private final Logger logger = Logger.getLogger(MessageContextMappingKeyManagerImpl.class.getName());
     private final String HQL_GET_MAPPING_VALUES = "FROM " + getTableName() +
         " IN CLASS " + getImpClass().getName() + " WHERE objectid = ?";
+    private final String HQL_GET_MAPPING_VALUES_BY_GUID = "FROM " + getTableName() +
+        " IN CLASS " + getImpClass().getName() + " WHERE guid = ?";
 
     private ApplicationContext applicationContext;
 
@@ -46,6 +48,22 @@ public class MessageContextMappingValueManagerImpl
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error when retrieving the values of this message context mapping.", e);
             throw new FindException("Cannot retrieve the values of this message context mapping.");
+        }
+    }
+
+    public MessageContextMappingValues getMessageContextMappingValues(final String guid) throws FindException {
+        try {
+            return (MessageContextMappingValues)getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    Query q = session.createQuery(HQL_GET_MAPPING_VALUES_BY_GUID);
+                    q.setString(0, guid);
+                    return q.uniqueResult();
+                }
+            });
+        } catch (Exception e) {
+            String errorMsg = "Cannot retrieve the values of a message context mapping with guid = " + guid + ".";
+            logger.log(Level.WARNING, errorMsg, e);
+            throw new FindException(errorMsg);
         }
     }
 

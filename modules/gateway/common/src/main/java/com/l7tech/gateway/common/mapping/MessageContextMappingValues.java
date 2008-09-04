@@ -3,6 +3,7 @@ package com.l7tech.gateway.common.mapping;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import javax.persistence.*;
+import java.util.UUID;
 
 /**
  * @Copyright: Layer 7 Tech. Inc.
@@ -14,6 +15,7 @@ import javax.persistence.*;
 public class MessageContextMappingValues extends PersistentEntityImp {
     private long mappingKeysOid;
     private long createTime;
+    private String guid;
     private String mapping1_value;
     private String mapping2_value;
     private String mapping3_value;
@@ -21,6 +23,15 @@ public class MessageContextMappingValues extends PersistentEntityImp {
     private String mapping5_value;
 
     private MessageContextMappingKeys mappingKeysEntity;
+
+    @Column(name="guid")
+    public String getGuid() {
+        return guid;
+    }
+
+    public void setGuid(String guid) {
+        this.guid = guid;
+    }
 
     @Column(name="mapping_keys_oid")
     public long getMappingKeysOid() {
@@ -130,5 +141,20 @@ public class MessageContextMappingValues extends PersistentEntityImp {
 
     public void setMappingKeysEntity(MessageContextMappingKeys mappingKeysEntity) {
         this.mappingKeysEntity = mappingKeysEntity;
+    }
+
+    public String generateGuid() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(mappingKeysOid).append("#");
+        sb.append(mapping1_value).append("#");
+        sb.append(mapping2_value).append("#");
+        sb.append(mapping3_value).append("#");
+        sb.append(mapping4_value).append("#");
+        sb.append(mapping5_value).append("#");
+
+        String uuidName = sb.toString();
+        UUID guid = UUID.nameUUIDFromBytes(uuidName.getBytes());
+        this.guid = guid.toString();
+        return this.guid;
     }
 }

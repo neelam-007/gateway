@@ -75,6 +75,7 @@ CREATE TABLE message_context_mapping_keys (
 DROP TABLE IF EXISTS message_context_mapping_values;
 CREATE TABLE message_context_mapping_values (
   objectid bigint(20) NOT NULL,
+  guid char(36) NOT NULL,
   mapping_keys_oid bigint(20) NOT NULL,
   mapping1_value varchar(255),
   mapping2_value varchar(255),
@@ -84,7 +85,8 @@ CREATE TABLE message_context_mapping_values (
   create_time bigint(20),
   PRIMARY KEY  (objectid),
   FOREIGN KEY (mapping_keys_oid) REFERENCES message_context_mapping_keys (objectid),
-  INDEX (mapping_keys_oid)
+  UNIQUE KEY (guid),
+  INDEX (guid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --

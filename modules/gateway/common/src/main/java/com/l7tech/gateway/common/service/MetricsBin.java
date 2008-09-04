@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.util.Functions;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -47,6 +48,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
     /** Object ID of the {@link PublishedService} for which this bin collects data. */
     private long _serviceOid;
     private Long _mappingValuesOid = null;
+    private transient Functions.Nullary<Long> _mappingValuesOidResolver;
 
     /**
      * Resolution of this bin.
@@ -312,13 +314,13 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
      *                                  but <code>fineInterval</code> <= 0
      */
     public MetricsBin(final long startTime, int fineInterval, int resolution,
-                      String clusterNodeId, long serviceOid, Long mappingValuesOid)
+                      String clusterNodeId, long serviceOid, Functions.Nullary<Long> mappingOidResolver)
     {
         checkResolutionType(resolution);
 
         _clusterNodeId = clusterNodeId;
         _serviceOid = serviceOid;
-        _mappingValuesOid = mappingValuesOid;
+        _mappingValuesOidResolver = mappingOidResolver;
         _resolution = resolution;
         _periodStart = periodStartFor(resolution, fineInterval, startTime);
         if (resolution == RES_FINE) {
@@ -341,6 +343,12 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
 
     /** To be used only for serialization and persistence */
     public MetricsBin() {
+    }
+
+    public void resolve() {
+        if (_mappingValuesOidResolver != null) {
+            _mappingValuesOid = _mappingValuesOidResolver.call();
+        }
     }
 
     public String getClusterNodeId() {

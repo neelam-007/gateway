@@ -36,13 +36,17 @@ public class MessageContextMappingManagerImpl implements MessageContextMappingMa
         if (anEntity == null) {
             return mappingKeyManager.save(mappingKeysEntity);
         } else {
-            anEntity.setCreateTime(mappingKeysEntity.getCreateTime());
-            mappingKeyManager.update(anEntity);
             return anEntity.getOid();
         }
     }
 
-    public long saveMessageContextMappingValues(MessageContextMappingValues mappingValuesEntity) throws SaveException {
-        return mappingValueManager.save(mappingValuesEntity);
+    public long saveMessageContextMappingValues(MessageContextMappingValues mappingValuesEntity) throws SaveException, FindException {
+        String newGuid = mappingValuesEntity.generateGuid();
+        MessageContextMappingValues anEntity = mappingValueManager.getMessageContextMappingValues(newGuid);
+        if (anEntity == null) {
+            return mappingValueManager.save(mappingValuesEntity);
+        } else {
+            return anEntity.getOid();
+        }
     }
 }

@@ -8,6 +8,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.mapping.MessageContextMappingManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.ManagedTimer;
@@ -17,6 +18,10 @@ import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceState;
+import com.l7tech.gateway.common.mapping.MessageContextMapping;
+import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
+import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
+import com.l7tech.util.Functions;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
@@ -61,8 +66,6 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     private static final Logger logger = Logger.getLogger(ServiceMetricsManager.class.getName());
 
     //- PUBLIC
-    public static boolean _clusterPropEnabledToAddMappings;
-    
     public ServiceMetricsManager(String clusterNodeId, ManagedTimer timer) {
         _clusterNodeId = clusterNodeId;
 
@@ -82,6 +85,10 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         _roleManager = roleManager;
     }
 
+    public void setMessageContextMappingManager(MessageContextMappingManager messageContextMappingManager) {
+        this.messageContextMappingManager = messageContextMappingManager;
+    }
+
     public void destroy() throws Exception {
         disable();
     }
@@ -99,19 +106,27 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      * @param serviceOid    OID of published service
      * @return null if service metrics processing is disabled
      */
-    public ServiceMetrics getServiceMetrics(final long serviceOid) {
+    public ServiceMetrics getServiceMetrics(final long serviceOid, final List<MessageContextMapping> mappings) {
         if (_enabled) {
-            final Long oid = new Long(serviceOid);
             ServiceMetrics serviceMetrics;
             String clusterNodeId = _clusterNodeId;
             int fineBinInterval = _fineBinInterval;
             synchronized (_serviceMetricsMapLock) {
-                serviceMetrics = _serviceMetricsMap.get(oid);
-                if (serviceMetrics == null) {
-                    // Set mappingValuesOid = null, because the policy hasn't been processed when the method gets called,
-                    // so the mappings haven't been ready.
-                    serviceMetrics = new ServiceMetrics(serviceOid, clusterNodeId, fineBinInterval, _flusherQueue, null);
-                    _serviceMetricsMap.put(oid, serviceMetrics);
+                MetricsKey metricsKey = new MetricsKey(serviceOid, new TreeSet(mappings));
+                if (! _serviceMetricsMap.containsKey(metricsKey)) {
+                    serviceMetrics = new ServiceMetrics(serviceOid, clusterNodeId, fineBinInterval, _flusherQueue, new Functions.Nullary<Long>() {
+                        public Long call() {
+                            Long mapping_values_oid = null;
+                            if (_addMappingsIntoServiceMetrics) {
+                                mapping_values_oid = saveMessageContextMapping(mappings);
+                            }
+                            return mapping_values_oid;
+                        }
+                    });
+
+                    _serviceMetricsMap.put(metricsKey, serviceMetrics);
+                } else {
+                    serviceMetrics = _serviceMetricsMap.get(metricsKey);
                 }
             }
             return serviceMetrics;
@@ -333,11 +348,11 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             }
         }
 
-        if (CLUSTER_PROP_ADD_MAPPINGS.equals(event.getPropertyName())) {
+        if (ServerConfig.PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS.equals(event.getPropertyName())) {
             if (Boolean.valueOf((String)event.getNewValue())) {
-                _clusterPropEnabledToAddMappings = true;
+                _addMappingsIntoServiceMetrics = true;
             } else {
-                _clusterPropEnabledToAddMappings = false;
+                _addMappingsIntoServiceMetrics = false;
                 _logger.info("Adding message context mappings to Service Metrics is currently disabled.");
             }
         }
@@ -356,10 +371,10 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             _logger.info("Service metrics collection is currently disabled.");
         }
 
-        if (Boolean.valueOf(ServerConfig.getInstance().getProperty(CLUSTER_PROP_ADD_MAPPINGS))) {
-            _clusterPropEnabledToAddMappings = true;
+        if (Boolean.valueOf(ServerConfig.getInstance().getProperty(ServerConfig.PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS))) {
+            _addMappingsIntoServiceMetrics = true;
         } else {
-            _clusterPropEnabledToAddMappings = false;
+            _addMappingsIntoServiceMetrics = false;
             _logger.info("Adding message context mappings to Service Metrics is currently disabled.");
         }
     }
@@ -368,7 +383,6 @@ public class ServiceMetricsManager extends HibernateDaoSupport
 
     /** Name of cluster property that enables/disables service metrics collection. */
     private static final String CLUSTER_PROP_ENABLED = "serviceMetricsEnabled";
-    private static final String CLUSTER_PROP_ADD_MAPPINGS = "customerMapping.addToServiceMetrics";
 
     private static final String HQL_DELETE = "DELETE FROM " + MetricsBin.class.getName() + " WHERE periodStart < ? AND resolution = ?";
     private static final int MINUTE = 60 * 1000;
@@ -431,7 +445,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     private Thread _flusherThread;
     private static final BoundedPriorityQueue _flusherQueue = new BoundedPriorityQueue(500);
 
-    private final Map<Long /* service OID */, ServiceMetrics> _serviceMetricsMap = new HashMap<Long, ServiceMetrics>();
+    private final Map<MetricsKey, ServiceMetrics> _serviceMetricsMap = new HashMap<MetricsKey, ServiceMetrics>();
     private final Object _serviceMetricsMapLock = new Object();
 
     private PlatformTransactionManager _transactionManager;
@@ -441,6 +455,10 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     private Map<Long, ServiceState> serviceStates = new ConcurrentHashMap<Long, ServiceState>();
 
     private RoleManager _roleManager;
+
+    private MessageContextMappingManager messageContextMappingManager;
+
+    private boolean _addMappingsIntoServiceMetrics;
 
     /** Turns on service metrics collection. */
     private void enable() {
@@ -486,8 +504,13 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                     Collection<ServiceHeader> serviceHeaders = _serviceManager.findAllHeaders();
                     for ( ServiceHeader service : serviceHeaders) {
                         final Long oid = new Long(service.getOid());
-                        ServiceMetrics serviceMetrics = new ServiceMetrics(service.getOid(), _clusterNodeId, _fineBinInterval, _flusherQueue, null);
-                         _serviceMetricsMap.put(oid, serviceMetrics);
+                        ServiceMetrics serviceMetrics = new ServiceMetrics(service.getOid(), _clusterNodeId, _fineBinInterval, _flusherQueue, new Functions.Nullary<Long>() {
+                            public Long call() {
+                                return null;
+                            }
+                        });
+                        MetricsKey metricsKey = new MetricsKey(oid, new TreeSet());
+                         _serviceMetricsMap.put(metricsKey, serviceMetrics);
                         // There won't be any deleted services on startup
                         serviceStates.put(oid, service.isDisabled() ? ServiceState.DISABLED : ServiceState.ENABLED);
                     }
@@ -704,7 +727,11 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             // 2. to keep Dashboard moving chart advancing when no request is going through a service
             final long periodEnd = MetricsBin.periodStartFor(MetricsBin.RES_FINE, _fineBinInterval, System.currentTimeMillis());
             final long periodStart = periodEnd - _fineBinInterval;
-            final MetricsBin emptyBin = new MetricsBin(periodStart, _fineBinInterval, MetricsBin.RES_FINE, _clusterNodeId, -1L, null);
+            final MetricsBin emptyBin = new MetricsBin(periodStart, _fineBinInterval, MetricsBin.RES_FINE, _clusterNodeId, -1L, new Functions.Nullary<Long>() {
+                            public Long call() {
+                                return null;
+                            }
+                        });
             emptyBin.setEndTime(periodEnd);
             try {
                 _flusherQueue.put(emptyBin);
@@ -821,6 +848,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                     try {
                         getHibernateTemplate().execute(new HibernateCallback(){
                             public Object doInHibernate(Session session) throws HibernateException {
+                                head.resolve();
+
                                 Criteria criteria = session.createCriteria(MetricsBin.class);
                                 criteria.add(Restrictions.eq("clusterNodeId", head.getClusterNodeId()));
                                 criteria.add(Restrictions.eq("serviceOid", head.getServiceOid()));
@@ -935,5 +964,76 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         }
 
         return filteredOids;
+    }
+
+    private Long saveMessageContextMapping(List<MessageContextMapping> mappings) {
+        if (messageContextMappingManager == null) return null;
+        
+        MessageContextMappingKeys keysEntity = new MessageContextMappingKeys();
+        keysEntity.setCreateTime(System.currentTimeMillis());
+        MessageContextMappingValues valuesEntity = new MessageContextMappingValues();
+        valuesEntity.setCreateTime(System.currentTimeMillis());
+
+        for (int i = 0; i < mappings.size(); i++) {
+            MessageContextMapping mapping = mappings.get(i);
+            keysEntity.setTypeAndKey(i, mapping.getMappingType(), mapping.getKey());
+            valuesEntity.setValue(i, mapping.getValue());
+        }
+
+        try {
+            long mapping_keys_oid = messageContextMappingManager.saveMessageContextMappingKeys(keysEntity);
+            valuesEntity.setMappingKeysOid(mapping_keys_oid);
+
+            long mapping_values_oid = messageContextMappingManager.saveMessageContextMappingValues(valuesEntity);
+            return mapping_values_oid;
+        } catch (Exception e) {
+            _logger.warning("Faied to save the keys or values of the message context mapping.");
+            return null;
+        }
+    }
+
+    private class MetricsKey {
+        private long serviceOid;
+        private Set<MessageContextMapping> mappings;
+
+        private MetricsKey(long serviceOid, Set<MessageContextMapping> mappings) {
+            this.serviceOid = serviceOid;
+            this.mappings = mappings;
+        }
+
+        public long getServiceOid() {
+            return serviceOid;
+        }
+
+        public void setServiceOid(long serviceOid) {
+            this.serviceOid = serviceOid;
+        }
+
+        public Set<MessageContextMapping> getMappings() {
+            return mappings;
+        }
+
+        public void setMappings(Set<MessageContextMapping> mappings) {
+            this.mappings = mappings;
+        }
+
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            MetricsKey that = (MetricsKey) o;
+
+            if (serviceOid != that.serviceOid) return false;
+            if (mappings != null ? !mappings.equals(that.mappings) : that.mappings != null) return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            int result;
+            result = (int) (serviceOid ^ (serviceOid >>> 32));
+            result = 31 * result + (mappings != null ? mappings.hashCode() : 0);
+            return result;
+        }
     }
 }

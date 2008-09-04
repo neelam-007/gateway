@@ -7,7 +7,7 @@ import java.io.Serializable;
  * @Author: ghuang
  * @Date: Aug 21, 2008
  */
-public class MessageContextMapping implements Serializable {
+public class MessageContextMapping implements Serializable, Comparable<MessageContextMapping> {
     public static final String MAPPING_TYPES[] = new String[] {
         "IP Address",
         "Authenticated User",
@@ -32,7 +32,19 @@ public class MessageContextMapping implements Serializable {
     private String value;
 
     public MessageContextMapping() {
-        
+
+    }
+
+    /**
+     * Make a copy of the message context mapping
+     * @return
+     */
+    public MessageContextMapping asCopy() {
+        MessageContextMapping newCopy = new MessageContextMapping();
+        newCopy.setMappingType(mappingType);
+        newCopy.setKey(key);
+        newCopy.setValue(value);
+        return newCopy;
     }
 
     public MessageContextMapping(String mappingType, String key, String value) {
@@ -92,34 +104,53 @@ public class MessageContextMapping implements Serializable {
         }
     }
 
-    public boolean equals(Object obj) {
-        if (! (obj instanceof MessageContextMapping)) return false;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        MessageContextMapping other = (MessageContextMapping)obj;
-        boolean continueChecking;
+        MessageContextMapping that = (MessageContextMapping) o;
 
-        // Check if the mapping types are the same.
-        if (mappingType == null) {
-           continueChecking = other.getMappingType() == null;
-        } else {
-            continueChecking = mappingType.equals(other.getMappingType());
-        }
-        if (! continueChecking) return false;
+        if (mappingType != null ? !mappingType.equals(that.mappingType) : that.mappingType != null) return false;
+        if (key != null ? !key.equals(that.key) : that.key != null) return false;
+        if (value != null ? !value.equals(that.value) : that.value != null) return false;
 
-        // Check if the keys are the same.
-        if (key == null) {
-           continueChecking = other.getKey() == null;
-        } else {
-            continueChecking = key.equals(other.getKey());
-        }
-        if (! continueChecking) return false;
+        return true;
+    }
 
-        // Check if the values are the same.
-        if (value == null) {
-           return other.getValue() == null;
-        } else {
-            return value.equals(other.getValue());
-        }
+    public int hashCode() {
+        int result;
+        result = (mappingType != null ? mappingType.hashCode() : 0);
+        result = 31 * result + (key != null ? key.hashCode() : 0);
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        return result;
+    }
+
+    public int compareTo(MessageContextMapping mcm) {
+        // Step 1: check type
+        String type1 = getMappingType();
+        String type2 = mcm.getMappingType();
+        if (type1 == null && type2 == null) return 0;
+        else if (type1 == null)             return -1;
+        else if (type2 == null)             return 1;
+        else if (! type1.equals(type2))     return type1.toLowerCase().compareTo(type2.toLowerCase());
+
+        // Step 2: check key
+        String key1 = getMappingType();
+        String key2 = mcm.getMappingType();
+        if (key1 == null && key2 == null) return 0;
+        else if (key1 == null)             return -1;
+        else if (key2 == null)             return 1;
+        else if (! key1.equals(key2))      return key1.toLowerCase().compareTo(key2.toLowerCase());
+
+        // Step 3: check value
+        String value1 = getMappingType();
+        String value2 = mcm.getMappingType();
+        if (value1 == null && value2 == null) return 0;
+        else if (value1 == null)              return -1;
+        else if (value2 == null)              return 1;
+        else if (! value1.equals(value2))     return value1.toLowerCase().compareTo(value2.toLowerCase());
+
+        return 0;
     }
 
     public String toString() {

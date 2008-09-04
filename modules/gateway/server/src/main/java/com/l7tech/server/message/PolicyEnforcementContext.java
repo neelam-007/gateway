@@ -29,7 +29,6 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.mapping.MessageContextMappingManager;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
@@ -78,7 +77,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private boolean operationAttempted = false;
     private Operation cachedOperation = null;
     private ClusterPropertyManager clusterPropertyManager = null;
-    private MessageContextMappingManager messageContextMappingManager;
 
     private RoutingStatus routingStatus = RoutingStatus.NONE;
     private URL routedServiceUrl;
@@ -89,7 +87,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private Long hardwiredService = null;
     private static ThreadLocal<PolicyEnforcementContext> instanceHolder = new ThreadLocal<PolicyEnforcementContext>();
     private List<MessageContextMapping> mappings = new ArrayList<MessageContextMapping>(5);
-    private long mapping_values_oid;
 
     public PolicyEnforcementContext(Message request, Message response) {
         super(request, response);
@@ -157,14 +154,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public void setClusterPropertyManager(ClusterPropertyManager clusterPropertyManager) {
         this.clusterPropertyManager = clusterPropertyManager;
-    }
-
-    public MessageContextMappingManager getMessageContextMappingManager() {
-        return messageContextMappingManager;
-    }
-
-    public void setMessageContextMappingManager(MessageContextMappingManager messageContextMappingManager) {
-        this.messageContextMappingManager = messageContextMappingManager;
     }
 
     public void setAuditContext(AuditContext auditContext) {
@@ -624,17 +613,5 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public void setMappings(List<MessageContextMapping> mappings) {
         this.mappings = mappings;
-    }
-
-    public long getMapping_values_oid() {
-        return mapping_values_oid;
-    }
-
-    public void setMapping_values_oid(long mapping_values_oid) {
-        this.mapping_values_oid = mapping_values_oid;
-    }
-
-    public boolean haveMappingsSaved() {
-        return getMapping_values_oid() > 0;
     }
 }

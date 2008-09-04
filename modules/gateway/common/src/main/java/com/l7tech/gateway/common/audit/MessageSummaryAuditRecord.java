@@ -218,7 +218,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         return mapping_values_oid;
     }
 
-    public void setMapping_values_oid(long mapping_values_oid) {
+    public void setMapping_values_oid(Long mapping_values_oid) {
         this.mapping_values_oid = mapping_values_oid;
     }
 

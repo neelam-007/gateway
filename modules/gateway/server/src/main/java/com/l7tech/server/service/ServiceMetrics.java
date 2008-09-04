@@ -6,15 +6,10 @@ import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.ReaderPreferenceReadWriteLock;
 import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.ServiceState;
-import com.l7tech.gateway.common.mapping.MessageContextMapping;
-import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
-import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.mapping.MessageContextMappingManager;
+import com.l7tech.util.Functions;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.List;
 
 /**
  * A ServiceMetrics accumulates request statistics (for one single published
@@ -73,7 +68,7 @@ public class ServiceMetrics {
      */
     private final long _serviceOid;
 
-    private Long _mappingValuesOid = null;
+    private Functions.Nullary<Long> _mappingValuesOidResolver = null;
 
     /**
      * The fine resolution bin that is currently collecting statistics.
@@ -111,7 +106,7 @@ public class ServiceMetrics {
      * @param fineInterval the interval currently being used for buckets of {@link MetricsBin#RES_FINE} resolution
      * @param queue the ServiceMetricsManager queue to which archived bins should be added
      */
-    public ServiceMetrics(long serviceOid, String nodeId, int fineInterval, BoundedChannel queue, Long mappingValuesOid) {
+    public ServiceMetrics(long serviceOid, String nodeId, int fineInterval, BoundedChannel queue, Functions.Nullary<Long> mappingResolver) {
         if (serviceOid < 0) throw new IllegalArgumentException("serviceOid must be positive");
         if (nodeId == null || nodeId.length() == 0) throw new IllegalArgumentException("nodeId must not be null or empty");
         if (fineInterval < 0) throw new IllegalArgumentException("fineInterval must be positive");
@@ -119,26 +114,18 @@ public class ServiceMetrics {
 
         _queue = queue;
         _serviceOid = serviceOid;
-        _mappingValuesOid = mappingValuesOid;
+        _mappingValuesOidResolver = mappingResolver;
         _clusterNodeId = nodeId;
         _fineInterval = fineInterval;
 
         final long now = System.currentTimeMillis();
-        _currentFineBin = new MetricsBin(now, fineInterval, MetricsBin.RES_FINE, nodeId, serviceOid, mappingValuesOid);
-        _currentHourlyBin = new MetricsBin(now, 0, MetricsBin.RES_HOURLY, nodeId, serviceOid, mappingValuesOid);
-        _currentDailyBin = new MetricsBin(now, 0, MetricsBin.RES_DAILY, nodeId, serviceOid, mappingValuesOid);
+        _currentFineBin = new MetricsBin(now, fineInterval, MetricsBin.RES_FINE, nodeId, serviceOid, mappingResolver);
+        _currentHourlyBin = new MetricsBin(now, 0, MetricsBin.RES_HOURLY, nodeId, serviceOid, mappingResolver);
+        _currentDailyBin = new MetricsBin(now, 0, MetricsBin.RES_DAILY, nodeId, serviceOid, mappingResolver);
     }
 
     public long getServiceOid() {
         return _serviceOid;
-    }
-
-    public long getMappingValuesOid() {
-        return _mappingValuesOid;
-    }
-
-    public void setMappingValuesOid(long mappingValuesOid) {
-        _mappingValuesOid = mappingValuesOid;
     }
 
     public String getClusterNodeId() {
@@ -165,17 +152,6 @@ public class ServiceMetrics {
             }
         } finally {
             unlockCurrentBins();
-        }
-    }
-
-    public void addMessageContextMappings(PolicyEnforcementContext context) {
-        if (ServiceMetricsManager._clusterPropEnabledToAddMappings && !context.haveMappingsSaved()) {
-            saveMessageContextMapping(context);
-            _mappingValuesOid = context.getMapping_values_oid();
-
-            _currentFineBin.setMappingValuesOid(_mappingValuesOid);
-            _currentHourlyBin.setMappingValuesOid(_mappingValuesOid);
-            _currentDailyBin.setMappingValuesOid(_mappingValuesOid);
         }
     }
 
@@ -206,7 +182,7 @@ public class ServiceMetrics {
                 Thread.currentThread().interrupt();
             }
 
-            _currentFineBin = new MetricsBin(now, _fineInterval, MetricsBin.RES_FINE, _clusterNodeId, _serviceOid, _mappingValuesOid);
+            _currentFineBin = new MetricsBin(now, _fineInterval, MetricsBin.RES_FINE, _clusterNodeId, _serviceOid, _mappingValuesOidResolver);
         } catch (InterruptedException e) {
             _logger.warning("Interrupted waiting for fine bin write lock");
             Thread.currentThread().interrupt();
@@ -234,7 +210,7 @@ public class ServiceMetrics {
                 _logger.log(Level.WARNING, "Interrupted waiting for queue", e);
                 Thread.currentThread().interrupt();
             }
-            _currentHourlyBin = new MetricsBin(now, 0, MetricsBin.RES_HOURLY, _clusterNodeId, _serviceOid, _mappingValuesOid);
+            _currentHourlyBin = new MetricsBin(now, 0, MetricsBin.RES_HOURLY, _clusterNodeId, _serviceOid, _mappingValuesOidResolver);
         } catch (InterruptedException e) {
             _logger.warning("Interrupted waiting for hourly bin write lock");
             Thread.currentThread().interrupt();
@@ -260,7 +236,7 @@ public class ServiceMetrics {
                 _logger.log(Level.WARNING, "Interrupted waiting for queue", e);
                 Thread.currentThread().interrupt();
             }
-            _currentDailyBin = new MetricsBin(now, 0, MetricsBin.RES_DAILY, _clusterNodeId, _serviceOid, _mappingValuesOid);
+            _currentDailyBin = new MetricsBin(now, 0, MetricsBin.RES_DAILY, _clusterNodeId, _serviceOid, _mappingValuesOidResolver);
         } catch (InterruptedException e) {
             _logger.warning("Interrupted waiting for daily bin write lock");
             Thread.currentThread().interrupt();
@@ -335,30 +311,5 @@ private void addAttemptedRequest(final int frontendResponseTime) {
         _currentFineBin.addCompletedRequest(backendResponseTime);
         _currentHourlyBin.addCompletedRequest(backendResponseTime);
         _currentDailyBin.addCompletedRequest(backendResponseTime);
-    }
-
-    private void saveMessageContextMapping(PolicyEnforcementContext context) {
-        MessageContextMappingKeys keysEntity = new MessageContextMappingKeys();
-        keysEntity.setCreateTime(System.currentTimeMillis());
-        MessageContextMappingValues valuesEntity = new MessageContextMappingValues();
-        valuesEntity.setCreateTime(System.currentTimeMillis());
-
-        List<MessageContextMapping> mappings = context.getMappings();
-        for (int i = 0; i < mappings.size(); i++) {
-            MessageContextMapping mapping = mappings.get(i);
-            keysEntity.setTypeAndKey(i, mapping.getMappingType(), mapping.getKey());
-            valuesEntity.setValue(i, mapping.getValue());
-        }
-
-        MessageContextMappingManager messageContextMappingManager = context.getMessageContextMappingManager();
-        try {
-            long mapping_keys_oid = messageContextMappingManager.saveMessageContextMappingKeys(keysEntity);
-            valuesEntity.setMappingKeysOid(mapping_keys_oid);
-
-            long mapping_values_oid = messageContextMappingManager.saveMessageContextMappingValues(valuesEntity);
-            context.setMapping_values_oid(mapping_values_oid);
-        } catch (Exception e) {
-            _logger.warning("Faied to save the keys or values of the message context mapping.");
-        }
     }
 }

@@ -23,6 +23,8 @@ import com.l7tech.gateway.common.audit.AdminAuditRecord;
 import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
+import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
+import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
 import com.l7tech.policy.PolicyVersion;
 import org.hibernate.CallbackException;
 import org.hibernate.EntityMode;
@@ -67,6 +69,9 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         ignoredClassNames.add(AttributePredicate.class.getName());
         ignoredClassNames.add(ServiceUsage.class.getName());
         ignoredClassNames.add(Subscription.class.getName());
+
+        ignoredClassNames.add(MessageContextMappingKeys.class.getName());
+        ignoredClassNames.add(MessageContextMappingValues.class.getName());
     }
 
     private final Set<String> ignoredClassNames;
