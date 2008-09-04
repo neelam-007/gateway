@@ -27,6 +27,8 @@ import javax.security.auth.Subject;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,7 +39,9 @@ import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.server.util.FirewallUtils;
 
 /**
  * An embedded servlet container that the EMS uses to host itself.
@@ -69,10 +73,12 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
 
     private void initializeServletEngine() throws Exception {
         server = new Server(httpPort);
+
+        File temp = new File("/tmp");
         final Context root = new Context(server, "/", Context.SESSIONS);
         root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/ems/resources")); //TODO [steve] map root elsewhere and add other mappings for css/images/etc
         root.setDisplayName("Layer 7 Enterprise Service Manager Server");
-        root.setAttribute("javax.servlet.context.tempdir", new File("/tmp")); //TODO [steve] temp directory ?
+        root.setAttribute("javax.servlet.context.tempdir", temp); //TODO [steve] temp directory ?
         root.addEventListener(new EmsContextLoaderListener());
         root.setClassLoader(Thread.currentThread().getContextClassLoader());
 
@@ -153,11 +159,18 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         root.addServlet(defaultHolder, "/");
 
         server.start();
+
+        List<SsgConnector> connectors = new ArrayList<SsgConnector>();
+        SsgConnector rc = new SsgConnector();
+        rc.setPort(httpPort);
+        connectors.add(rc);
+        FirewallUtils.openFirewallForConnectors( temp, connectors );  // TODO use conf/var directory for rules?
     }
 
     private void shutdownServletEngine() throws Exception {
         server.stop();
         server.destroy();
+        FirewallUtils.closeFirewallForConnectors( new File("/tmp") );  // TODO use conf/var directory for rules?
     }
 
     public void afterPropertiesSet() throws Exception {

@@ -42,8 +42,7 @@ rm -fr %{buildroot}
 /opt/SecureSpan/EnterpriseManager/lib
 
 # Runtime files
-%dir /opt/SecureSpan/EnterpriseManager/logs
-%dir /opt/SecureSpan/EnterpriseManager/var
+/opt/SecureSpan/EnterpriseManager/var
 
 %post
 /sbin/chkconfig --list ssem &>/dev/null

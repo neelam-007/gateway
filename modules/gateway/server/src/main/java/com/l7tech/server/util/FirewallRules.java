@@ -22,14 +22,13 @@ public class FirewallRules {
      * Write the firewall rules to the specified path using the specified source data.
      *
      * @param pathToWrite  the path to the firewall_rules file to create or overwrite. Required.
-     * @param clusterRmiPort  the cluster RMI port to include in the written-out firewall rules.
      * @param connectors  all SsgConnector instances to include in the written-out firewall rules.  May be empty but mustn't be null.
      * @throws java.io.IOException if there is a problem writing out the firewall rules file.
      */
-    public static void writeFirewallDropfile(String pathToWrite, final int clusterRmiPort, final Collection<SsgConnector> connectors) throws IOException {
+    public static void writeFirewallDropfile(String pathToWrite, final Collection<SsgConnector> connectors) throws IOException {
         FileUtils.saveFileSafely(pathToWrite,  new FileUtils.Saver() {
             public void doSave(FileOutputStream fos) throws IOException {
-                writeFirewallRules(fos, clusterRmiPort, connectors);
+                writeFirewallRules(fos, connectors);
             }
         });
     }
@@ -37,16 +36,11 @@ public class FirewallRules {
     /**
      * [0:0] -A INPUT -i INTERFACE -p tcp -m tcp --dport 22:23 -j ACCEPT
      */
-    static void writeFirewallRules(OutputStream fos, int clusterRmiPort, Collection<SsgConnector> connectors) throws IOException
+    static void writeFirewallRules(OutputStream fos, Collection<SsgConnector> connectors) throws IOException
     {
         PrintStream ps = new PrintStream(fos);
         try {
             final ArrayList<SsgConnector> list = new ArrayList<SsgConnector>(connectors);
-
-            // Add a pseudo-connector for the inter-node communication port
-            SsgConnector rc = new SsgConnector();
-            rc.setPort(clusterRmiPort);
-            list.add(rc);
 
             for (SsgConnector connector : list) {
                 String device = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);

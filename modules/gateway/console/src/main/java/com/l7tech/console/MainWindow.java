@@ -202,7 +202,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     private AuditAlertChecker auditAlertChecker;
     private X509Certificate serverSslCert;
     private RootNode rootNode;
-    public static final String FILTER_STATUS_LABEL = "FILTER_STATUS_LABEL";
     public final static String FILTER_STATUS_NONE = "Filter: None";
     public final static String FILTER_STATUS_SERVICES = "Filter: Services";
     public final static String FILTER_STATUS_POLICY_FRAGMENTS = "Filter: Policy Fragments";
@@ -739,9 +738,9 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         menu.addSeparator();
 
-        menu.add(new AlterFilterAction(AlterFilterAction.FilterType.ALL));
-        menu.add(new AlterFilterAction(AlterFilterAction.FilterType.SERVICES));
-        menu.add(new AlterFilterAction(AlterFilterAction.FilterType.POLICY_FRAGMENT));
+        menu.add(new AlterFilterAction(AlterFilterAction.FilterType.ALL, getFilterStatusLabel()));
+        menu.add(new AlterFilterAction(AlterFilterAction.FilterType.SERVICES, getFilterStatusLabel()));
+        menu.add(new AlterFilterAction(AlterFilterAction.FilterType.POLICY_FRAGMENT, getFilterStatusLabel()));
         
         int mnemonic = menu.getText().toCharArray()[0];
         menu.setMnemonic(mnemonic);
@@ -1050,6 +1049,10 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     public void refreshPoliciesFolderNode() {
         servicesAndPoliciesTree.refresh(rootNode);
+    }
+
+    public void clearFilter() {
+        AlterFilterAction.applyfilter(AlterFilterAction.FilterType.ALL, getFilterStatusLabel());    
     }
 
     /**
@@ -1413,7 +1416,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         identitiesTree.setModel(treeModel);
 
         final String url = preferences.getString(SsmPreferences.SERVICE_URL);
-        rootNode = new RootNode(url);
+        rootNode = new RootNode(url, getFilterStatusLabel());
 
         DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);
         servicesTreeModel.setRoot(rootNode);
@@ -2023,7 +2026,6 @@ public class MainWindow extends JFrame implements SheetHolder {
             return filterStatusLabel;
         }
         filterStatusLabel = new JLabel();
-        TopComponents.getInstance().registerComponent(MainWindow.FILTER_STATUS_LABEL, filterStatusLabel);
         return filterStatusLabel;
     }
 

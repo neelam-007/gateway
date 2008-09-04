@@ -102,7 +102,7 @@ public class LdapConfigTemplateManager {
 
         Collection<URL> resourceUrls = Collections.emptyList();
         try {
-            resourceUrls = ClassUtils.listResources( LdapConfigTemplateManager.class, "ldapTemplates/" );
+            resourceUrls = ClassUtils.listResources( LdapConfigTemplateManager.class, "ldapTemplates/templates.index" );
         } catch (IOException e) {
             logger.log(Level.WARNING, "Could not list UDDI template resources.", e);
         }

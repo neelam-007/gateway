@@ -68,14 +68,17 @@ public class AdminRemotingProvider implements RemotingProvider {
         if (!connector.offersEndpoint(SsgConnector.Endpoint.ADMIN_APPLET) && !connector.offersEndpoint( SsgConnector.Endpoint.ADMIN_REMOTE))
             throw new AccessControlException("Request not permitted on this port");
 
-        // populate principal information
+        // populate principal information if available
         Subject subject = JaasUtils.getCurrentSubject();
         if(subject != null){
             try {
-                String cookie = subject.getPublicCredentials(String.class).iterator().next();
-                Set<Principal> principals = adminSessionManager.getPrincipalsAndResumeSession(cookie);
-                if(principals != null){
-                    subject.getPrincipals().addAll(principals);
+                Set<String> credentials = subject.getPublicCredentials(String.class);
+                if ( !credentials.isEmpty() ) {
+                    String cookie = credentials.iterator().next();
+                    Set<Principal> principals = adminSessionManager.getPrincipalsAndResumeSession(cookie);
+                    if(principals != null){
+                        subject.getPrincipals().addAll(principals);
+                    }
                 }
             } catch (ValidationException ve) {
                 logger.log(Level.INFO, "Validation failed for administrative user session '"+ExceptionUtils.getMessage(ve)+"'.", ExceptionUtils.getDebugException(ve));

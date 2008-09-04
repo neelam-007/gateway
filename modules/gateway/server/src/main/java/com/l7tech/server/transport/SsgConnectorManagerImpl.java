@@ -3,12 +3,11 @@ package com.l7tech.server.transport;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.SsgConnector.Endpoint;
 import com.l7tech.util.*;
-import com.l7tech.common.io.ProcUtils;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.server.util.FirewallRules;
+import com.l7tech.server.util.FirewallUtils;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.DisposableBean;
@@ -29,29 +28,15 @@ public class SsgConnectorManagerImpl
 {
     protected static final Logger logger = Logger.getLogger(SsgConnectorManagerImpl.class.getName());
 
-    public static final String SYSPROP_FIREWALL_RULES_FILENAME = "com.l7tech.server.firewall.rules.filename";
-    public static final String SYSPROP_FIREWALL_UPDATE_PROGRAM = "com.l7tech.server.firewall.update.program";
-    private static final String DEFAULT_FIREWALL_UPDATE_PROGRAM = "/opt/SecureSpan/Appliance/libexec/update_firewall";
-    private static final String FIREWALL_RULES_FILENAME = SyspropUtil.getString(SYSPROP_FIREWALL_RULES_FILENAME,
-                                                                                "firewall_rules");
-
     private final ServerConfig serverConfig;
     @SuppressWarnings( { "FieldCanBeLocal" } )
     private final ApplicationListener applicationListener; // need reference to prevent listener gc
     private final Map<Long, SsgConnector> knownConnectors = new LinkedHashMap<Long, SsgConnector>();
     private final Map<Endpoint, SsgConnector> httpConnectorsByService = Collections.synchronizedMap(new HashMap<Endpoint, SsgConnector>());
     private final Map<Endpoint, SsgConnector> httpsConnectorsByService = Collections.synchronizedMap(new HashMap<Endpoint, SsgConnector>());
-    private final File sudo;
 
     public SsgConnectorManagerImpl(ServerConfig serverConfig, ApplicationEventProxy eventProxy) {
         this.serverConfig = serverConfig;
-        File sudo = null;
-        try {
-            sudo = SudoUtils.findSudo();
-        } catch (IOException e) {
-            /* FALLTHROUGH and do without */
-        }
-        this.sudo = sudo;
         this.applicationListener = new ApplicationListener() {
             public void onApplicationEvent( ApplicationEvent event ) {
                 handleEvent(event);
@@ -155,9 +140,6 @@ public class SsgConnectorManagerImpl
 
         updateDefaultPorts();
 
-        File program = getFirewallUpdater();
-        if (program != null && sudo != null)
-            logger.log(Level.INFO, "Using firewall rules updater program: sudo " + program);
         openFirewallForConnectors();
     }
 
@@ -166,65 +148,22 @@ public class SsgConnectorManagerImpl
     }
 
     private void openFirewallForConnectors() {
-        try {
-            File conf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_CONFIG_DIRECTORY, "/opt/SecureSpan/Gateway/Nodes/default/etc/conf", true);
-            String firewallRules = new File(conf, FIREWALL_RULES_FILENAME).getPath();
+        File conf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_CONFIG_DIRECTORY, "/opt/SecureSpan/Gateway/Nodes/default/etc/conf", true);
+        int rmiPort = serverConfig.getIntProperty(ServerConfig.PARAM_CLUSTER_PORT, 2124);
 
-            int rmiPort = serverConfig.getIntProperty(ServerConfig.PARAM_CLUSTER_PORT, 2124);
+        List<SsgConnector> connectors = new ArrayList<SsgConnector>(knownConnectors.values());
 
-            FirewallRules.writeFirewallDropfile(firewallRules, rmiPort, knownConnectors.values());
+        // Add a pseudo-connector for the inter-node communication port
+        SsgConnector rc = new SsgConnector();
+        rc.setPort(rmiPort);
+        connectors.add(rc);
 
-            runFirewallUpdater(firewallRules);
-
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Unable to update port list dropfile " + FIREWALL_RULES_FILENAME + ": " + ExceptionUtils.getMessage(e), e);
-        }
+        FirewallUtils.openFirewallForConnectors( conf, connectors );
     }
 
     private void closeFirewallForConnectors() {
-        if (sudo == null)
-            return;
-        File program = getFirewallUpdater();
-        if (program == null)
-            return;
-
-        File conf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_CONFIG_DIRECTORY, "/ssg/etc/conf", true);
-        String rulesFile = new File(conf, FIREWALL_RULES_FILENAME).getPath();
-
-        try {
-            ProcUtils.exec(null, sudo, new String[] { program.getAbsolutePath(), rulesFile, "stop" }, null, false);
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Unable to execute firewall rules program: " + program + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
-        }
-    }
-
-    /**
-     * Passes the specified firewall rules file to the firewall updater program, if one is configured.
-     *
-     * @param rulesFile the rules file.  Required.
-     */
-    private void runFirewallUpdater(String rulesFile) {
-        if (sudo == null)
-            return;
-        File program = getFirewallUpdater();
-        if (program == null)
-            return;
-
-        try {
-            ProcUtils.exec(null, sudo, new String[] { program.getAbsolutePath(), rulesFile, "start" }, null, false);
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Unable to execute firewall rules program: " + program + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
-        }
-    }
-
-    /** @return the program to be run whenever the firewall rules change, or null to take no such action. */
-    private File getFirewallUpdater() {
-        File defaultProgram = new File(DEFAULT_FIREWALL_UPDATE_PROGRAM);
-        String program = SyspropUtil.getString(SYSPROP_FIREWALL_UPDATE_PROGRAM, defaultProgram.getAbsolutePath());
-        if (program == null || program.length() < 1)
-            return null;
-        File file = new File(program);
-        return file.exists() && file.canExecute() ? file : null;
+        File conf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_CONFIG_DIRECTORY, "/opt/SecureSpan/Gateway/Nodes/default/etc/conf", true);
+        FirewallUtils.closeFirewallForConnectors( conf );
     }
 
     private void handleEvent(ApplicationEvent event) {

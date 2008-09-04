@@ -1,7 +1,5 @@
 package com.l7tech.console.tree.servicesAndPolicies;
 
-import org.apache.log4j.Logger;
-
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
@@ -24,12 +22,11 @@ import com.l7tech.console.MainWindow;
  * Filters the entities in the Services and Policies tree
  */
 public class AlterFilterAction extends BaseAction {
-    static Logger log = Logger.getLogger(AlterDefaultSortAction.class.getName());
+    private static final ServiceNodeFilter serviceNodeFilter = new ServiceNodeFilter();
+    private static final PolicyNodeFilter policyNodeFilter = new PolicyNodeFilter();
 
     private final FilterType filterType;
-    private final ServiceNodeFilter serviceNodeFilter = new ServiceNodeFilter();
-    private final PolicyNodeFilter policyNodeFilter = new PolicyNodeFilter();
-
+    private final JLabel filterLabel;
     public static enum FilterType {
         ALL("All"),
         SERVICES("Services"),
@@ -61,9 +58,10 @@ public class AlterFilterAction extends BaseAction {
     }
 
 
-    public AlterFilterAction(FilterType filterType) {
+    public AlterFilterAction(FilterType filterType, JLabel filterLabel) {
         super(true);
         this.filterType = filterType;
+        this.filterLabel = filterLabel;
         setActionValues();
     }
 
@@ -81,20 +79,7 @@ public class AlterFilterAction extends BaseAction {
         return getName();
     }
 
-    /**
-     * specify the resource name for this action
-     */
-    protected String iconResource() {
-        if(filterType.equals(FilterType.SERVICES)){
-            return "com/l7tech/console/resources/services16.png";    
-        }else if (filterType.equals(FilterType.POLICY_FRAGMENT)){
-            return "com/l7tech/console/resources/include_soap16.png";
-        }
-
-        return null;
-    }
-
-    protected void performAction() {
+    public static void applyfilter( final FilterType filterType, final JLabel filterStatusLabel) {
         final ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
 
@@ -102,7 +87,6 @@ public class AlterFilterAction extends BaseAction {
 
         FilteredTreeModel ftm = (FilteredTreeModel) model;
 
-        final JLabel filterStatusLabel = (JLabel) TopComponents.getInstance().getComponent(MainWindow.FILTER_STATUS_LABEL);
         if(filterStatusLabel == null) return;
 
         NodeFilter nodeFilter = ftm.getFilter();
@@ -137,5 +121,22 @@ public class AlterFilterAction extends BaseAction {
                 }
             }
         });
+    }
+
+    /**
+     * specify the resource name for this action
+     */
+    protected String iconResource() {
+        if(filterType.equals(FilterType.SERVICES)){
+            return "com/l7tech/console/resources/services16.png";    
+        }else if (filterType.equals(FilterType.POLICY_FRAGMENT)){
+            return "com/l7tech/console/resources/include_soap16.png";
+        }
+
+        return null;
+    }
+
+    protected void performAction() {
+        applyfilter( filterType, filterLabel );
     }
 }

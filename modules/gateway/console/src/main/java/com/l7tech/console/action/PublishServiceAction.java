@@ -16,13 +16,12 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
-import com.l7tech.console.tree.servicesAndPolicies.AlterFilterAction;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.MainWindow;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.util.logging.Level;
@@ -84,11 +83,10 @@ public class PublishServiceAction extends SecureAction {
             JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
             if (tree != null) {
                 AbstractTreeNode root = TopComponents.getInstance().getServicesFolderNode();
-                TreeNode[] nodes = root.getPath();
                 DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                 //Remove any filter before insert
-                AlterFilterAction afa = new AlterFilterAction(AlterFilterAction.FilterType.ALL);
-                afa.invoke();
+                MainWindow mainWindow = (MainWindow)TopComponents.getInstance().getComponent(MainWindow.NAME);
+                mainWindow.clearFilter();
                 
                 final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh, RootNode.getComparator());
                 model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));

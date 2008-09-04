@@ -105,10 +105,10 @@ public class ClassUtils {
      * List the resources contained in the path.
      *
      * <p>WARNING: This should work for JAR / file resources, but will not work
-     * in all scenarios.</p>
+     * in all scenarios unless you use an index.</p>
      *
      * @param baseClass The base class for resource resolution
-     * @param resourcePath The path to the resource directory (must be a directory, use a "/")
+     * @param resourcePath The path to the resource directory / listing file (must be a directory, use a "/")
      * @return The collection of resources (never null)
      */
     public static Collection<URL> listResources( final Class baseClass,

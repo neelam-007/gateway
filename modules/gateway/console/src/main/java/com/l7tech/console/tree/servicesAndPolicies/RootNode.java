@@ -127,18 +127,20 @@ public final class RootNode extends FolderNode{
     private final ServiceAdmin serviceManager;
     private final PolicyAdmin policyAdmin;
     private final String title;
+    private final JLabel filterLabel;
 
     /**
      * construct the <CODE>ServicesFolderNode</CODE> instance for
      * a given service manager with the name.
      */
-    public RootNode(String name) {
+    public RootNode(String name, JLabel filterLabel) {
         super(new FolderHeader(OID, name, null));
-        serviceManager = Registry.getDefault().getServiceManager();
-        policyAdmin = Registry.getDefault().getPolicyAdmin();
-        title = name;
-        nameSort = new AlterDefaultSortAction(this, AlterDefaultSortAction.SortType.NAME);
-        typeSort = new AlterDefaultSortAction(this, AlterDefaultSortAction.SortType.TYPE);
+        this.serviceManager = Registry.getDefault().getServiceManager();
+        this.policyAdmin = Registry.getDefault().getPolicyAdmin();
+        this.title = name;
+        this.filterLabel = filterLabel;
+        this.nameSort = new AlterDefaultSortAction(this, AlterDefaultSortAction.SortType.NAME);
+        this.typeSort = new AlterDefaultSortAction(this, AlterDefaultSortAction.SortType.TYPE);
     }
 
     /**
@@ -168,9 +170,9 @@ public final class RootNode extends FolderNode{
 
     protected JMenu getFilterMenu(){
         JMenu returnMenu = new JMenu("Filter");
-        returnMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.ALL));
-        returnMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.SERVICES));
-        returnMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.POLICY_FRAGMENT));
+        returnMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.ALL, filterLabel));
+        returnMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.SERVICES, filterLabel));
+        returnMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.POLICY_FRAGMENT, filterLabel));
         return returnMenu;                
     }
 

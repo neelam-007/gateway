@@ -112,7 +112,7 @@ public class UDDITemplateManager {
 
         Collection<URL> resourceUrls = Collections.emptyList();
         try {
-            resourceUrls = ClassUtils.listResources( UDDITemplateManager.class, "uddiTemplates/" );
+            resourceUrls = ClassUtils.listResources( UDDITemplateManager.class, "uddiTemplates/templates.index" );
         } catch (IOException e) {
             logger.log(Level.WARNING, "Could not list UDDI template resources.", e);
         }

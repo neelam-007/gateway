@@ -841,6 +841,7 @@ public class LogonDialog extends JDialog {
      */
     public static boolean isValidSessionID() {
         if (preconfiguredSessionId == null) {
+            log.warning("Session ID not present.");
             return false;
         }
 
@@ -850,10 +851,14 @@ public class LogonDialog extends JDialog {
         if (preconfiguredGatewayHostname != null) {
             try {
                 authProv.login(preconfiguredSessionId, preconfiguredGatewayHostname);
-            } catch (Exception e) {
+            } catch (LoginException e) {
+                return false;
+            } catch (VersionException e) {
+                log.warning("Login failed due to software version mismatch.");
                 return false;
             }
         } else {
+            log.warning("Session ID not valid due to missing hostname.");
             return false;
         }
 

@@ -1498,7 +1498,7 @@
         <echo level="info">Copying gateway files</echo>
         <echo level="info">Copying web files</echo>
         <copy file="${src.root}/web/index.html" todir="${deploy.dir}/web/ssg" preservelastmodified="true"/>
-        <copy file="${build.dir}/ManagerApplet.jar" todir="${deploy.dir}/web/ssg/webadmin/applet/" preservelastmodified="true"/>
+        <copy file="${build.dir}/layer7-gateway-console-applet.jar" todir="${deploy.dir}/web/ssg/webadmin/applet/" preservelastmodified="true"/>
         <delete>
             <fileset dir="${deploy.dir}/web/ssg/webadmin/applet/lib" includes="layer7-*"/>
         </delete>
@@ -1536,7 +1536,7 @@
     </macrodef>
 
     <target name="pack.manager.compress" depends="package.manager" if="pack200">
-        <pack-mac jarfile="${build.dir}/ManagerApplet.jar"/>
+        <pack-mac jarfile="${build.dir}/layer7-gateway-console-applet.jar"/>
 
         <!--
           Note that the build does not fail if any of these are missing, but a
@@ -1749,7 +1749,7 @@
             </fileset>
         </copy>
         <copy file="modules/gateway/console/build/layer7-gateway-console.jar" tofile="${build.dir}/Manager.jar"/>
-        <copy file="modules/gateway/console-applet/build/layer7-gateway-console-applet.jar" tofile="${build.dir}/ManagerApplet.jar"/>
+        <copy file="modules/gateway/console-applet/build/layer7-gateway-console-applet.jar" todir="${build.dir}"/>
     </target>
 
     <target name="package.manager" depends="package.manager.jar" unless="manager.notrequired">
@@ -2793,7 +2793,7 @@
         </copy>
 
         <copy todir="${install.src.ssg.applet}">
-            <fileset dir="${build.dir}" includes="ManagerApplet.jar*"/>
+            <fileset dir="${build.dir}" includes="layer7-gateway-console-applet.jar*"/>
         </copy>
 
         <unzip src="${src.root}/webhelp/ssm/help.zip" dest="${install.src.ssg.help}"/>
@@ -2933,7 +2933,7 @@
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager"/>
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/bin"/>
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/lib"/>
-        <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/logs"/>
+        <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/var/logs"/>
         <mkdir dir="${install.src.em}/opt/SecureSpan/EnterpriseManager/var/db"/>
 
         <!-- copy files to install locations -->

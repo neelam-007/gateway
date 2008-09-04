@@ -25,7 +25,7 @@ start() {
         [ -x "${EM_SCRIPT}" ] || exit 5
 
         echo -n $"Starting Enterprise Manager: "
-        daemon --user "${EM_USER}" "${EM_SCRIPT}" "/var/run/${PID_FILE}.pid"
+        daemon --check "${PID_FILE}" "${EM_SCRIPT}" "${EM_USER}" "/var/run/${PID_FILE}.pid"
         RETVAL=$?
         echo
         [ $RETVAL -eq 0 ] && touch /var/lock/subsys/ssemd
