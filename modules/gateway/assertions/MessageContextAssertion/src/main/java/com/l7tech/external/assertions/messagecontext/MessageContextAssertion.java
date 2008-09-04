@@ -114,7 +114,7 @@ public class MessageContextAssertion extends Assertion implements UsesVariables 
             List<MessageContextAssertion> checkedAssertions = new ArrayList<MessageContextAssertion>();
             for (int i = assertions.length - 1; i >= 0; i--) {
                 Assertion anAssertion = assertions[i];
-                if (anAssertion instanceof MessageContextAssertion) {
+                if (anAssertion.isEnabled() && anAssertion instanceof MessageContextAssertion) {
                     MessageContextAssertion mca = (MessageContextAssertion)anAssertion;
                     checkedAssertions.add(0, mca);
                     if (mca == this.assertion) {
