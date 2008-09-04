@@ -728,7 +728,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
                 Properties properties = new Properties();
                 InputStream in = null;
                 try {
-                    properties.load( new FileInputStream(configProps) );
+                    properties.load( in = new FileInputStream(configProps) );
                     nodeid = properties.getProperty( NODE_ID_PROPERTY );
                 } catch ( IOException ioe ) {
                     logger.log( Level.WARNING, "Error loading node properties.", ioe);

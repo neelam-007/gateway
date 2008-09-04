@@ -55,7 +55,7 @@ public class WSMFService implements ApplicationContextAware {
     private ServiceManager serviceManager;
     private ApplicationContext applicationContext;
     private long bogusPushEventNr = 0;
-    public static Pattern serviceoidPattern = Pattern.compile(".*/service/(\\d*).*");
+    static final Pattern serviceoidPattern = Pattern.compile(".*/service/(\\d*).*");
 
     public static boolean isEnabled() {
         return Boolean.valueOf(ServerConfig.getInstance().getProperty(HPSOAM_ENABLED));

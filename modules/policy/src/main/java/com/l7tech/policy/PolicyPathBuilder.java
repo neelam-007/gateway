@@ -59,9 +59,7 @@ public abstract class PolicyPathBuilder {
      * @param assertion The assertion to process for Include fragments
      * @return  Returns a list of PolicyAssertionException, if any.  Will never return NULL.
      */
-    public List<PolicyAssertionException> preProcessIncludeFragments( Assertion assertion ) {
-        return preProcessIncludeFragments( assertion );
-    }
+    public abstract List<PolicyAssertionException> preProcessIncludeFragments( Assertion assertion );
 
     /**
      * Generate the policy path result (policy assertion paths for
