@@ -215,8 +215,12 @@ public class MessageContextMappingKeys extends PersistentEntityImp {
         List<MessageContextMapping> mappings = obtainMappingsWithEmptyValues();
         StringBuilder sb = new StringBuilder();
 
+        String type, key;
         for (MessageContextMapping mapping: mappings) {
-            sb.append(mapping.getMappingType()).append("#").append(mapping.getKey()).append("#");
+            type = mapping.getMappingType();
+            key = mapping.getKey();
+            if (key != null) key = key.toLowerCase();
+            sb.append(type).append("#").append(key).append("#");
         }
         String uuidName = sb.toString();
         UUID guid = UUID.nameUUIDFromBytes(uuidName.getBytes());
