@@ -5,7 +5,6 @@ import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.gateway.config.manager.LicenseChecker;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import org.apache.commons.lang.StringUtils;
@@ -76,6 +75,7 @@ public class DBActions {
     private CheckSSGDatabase ssgDbChecker;
 
     private DbVersionChecker[] dbCheckers = new DbVersionChecker[] {
+        new DbVersion50Checker(),
         new DbVersion45Checker(),
         new DbVersion44Checker(),
         new DbVersion43Checker(),

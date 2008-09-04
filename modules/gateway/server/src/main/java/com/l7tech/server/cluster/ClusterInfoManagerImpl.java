@@ -243,7 +243,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
 
                 // no existing row for us. create one
                 if (anymac != null) {
-                    return selfPopulateClusterDB(generateNodeId(), anymac);
+                    return selfPopulateClusterDB(generateNodeId(propertiesNodeId), anymac);
                 }
 
                 logger.severe("Should not get here. this server has no mac?");
@@ -303,8 +303,11 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
 
     private ServerConfig serverConfig;
 
-    private static String generateNodeId() {
-        return UUID.randomUUID().toString().replace("-","");
+    /**
+     * Generate a new nodeid if the passed one is null 
+     */
+    private static String generateNodeId( final String nodeid ) {
+        return nodeid==null ? UUID.randomUUID().toString().replace("-","") : nodeid;
     }
 
     private static String toNodeId(String mac) {

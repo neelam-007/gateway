@@ -1,16 +1,18 @@
 package com.l7tech.gateway.config.manager;
 
-import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.DefaultMasterPasswordFinder;
+import com.l7tech.util.MasterPasswordManager;
+import com.l7tech.util.ResourceUtils;
 import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
 import java.io.Console;
+import java.io.InputStream;
+import java.io.FileInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -18,13 +20,10 @@ import java.util.regex.Pattern;
 
 /**
  * Prompts the user to change the master passphrase.
- *
- * TODO [steve] fix changing master passphrase
  */
 public class MasterPassphraseChanger {
-    protected static final Logger logger = Logger.getLogger(MasterPassphraseChanger.class.getName());
+    private static final Logger logger = Logger.getLogger(MasterPassphraseChanger.class.getName());
     private static final String DEFAULT_MASTER_PASSPHRASE = "7layer";
-    private static final String EOL = System.getProperty("line.separator");
     private static final int MIN_LENGTH = 6;
     private static final int MAX_LENGTH = 128;
 
@@ -40,26 +39,25 @@ public class MasterPassphraseChanger {
         }
     }
 
-//    private boolean isMatchingMasterPassphrase(String currentObfuscated, String candidatePlaintext) throws IOException {
-//        long currentSalt = DefaultMasterPasswordFinder.getSalt(currentObfuscated);
-//        String candidateObfuscated = DefaultMasterPasswordFinder.obfuscate(candidatePlaintext, currentSalt);
-//        return currentObfuscated.equals(candidateObfuscated);
-//    }
+    private boolean isMatchingMasterPassphrase(String currentObfuscated, String candidatePlaintext) throws IOException {
+        long currentSalt = DefaultMasterPasswordFinder.getSalt(currentObfuscated);
+        String candidateObfuscated = DefaultMasterPasswordFinder.obfuscate(candidatePlaintext, currentSalt);
+        return currentObfuscated.equals(candidateObfuscated);
+    }
 
     private void run( String configurationDirPath, String[] passwordProperties ) throws IOException, SAXException {
         File configDirectory = new File(configurationDirPath);
         File ompCurFile= new File( configDirectory, "omp.dat" );
         if (ompCurFile.exists()) {
-//            String ompCurStr = new String( IOUtils.slurpFile(ompCurFile), "UTF-8").trim();
-//            if (!isMatchingMasterPassphrase(ompCurStr, DEFAULT_MASTER_PASSPHRASE)) {
-//                String curMasterPass = promptForPassword("Enter the existing master passphrase ('quit' to quit): ");
-//                if (!isMatchingMasterPassphrase(ompCurStr, curMasterPass)) {
-//                    System.out.println("Entered passphrase does not match the current master passphrase.");
-//                    System.exit(3);
-//                }
-//            }
+            String ompCurStr = loadFileText(ompCurFile);
+            if (!isMatchingMasterPassphrase(ompCurStr, DEFAULT_MASTER_PASSPHRASE)) {
+                String curMasterPass = promptForPassword("Enter the existing master passphrase ('quit' to quit): ");
+                if (!isMatchingMasterPassphrase(ompCurStr, curMasterPass)) {
+                    System.out.println("Entered passphrase does not match the current master passphrase.");
+                    System.exit(3);
+                }
+            }
         }
-
 
         String newMasterPass;
         String confirm;
@@ -87,18 +85,18 @@ public class MasterPassphraseChanger {
         FileUtils.touch(ompNewFile);
 
         // Save new password so admin can manually recover if we go haywire during the operation
-//        new DefaultMasterPasswordFinder(ompNewFile).saveMasterPassword(newMasterPass.toCharArray());
-//
-//        final MasterPasswordManager decryptor = ompCurFile.exists() ? new MasterPasswordManager(new DefaultMasterPasswordFinder(ompOldFile).findMasterPassword()) : null;
-//        final MasterPasswordManager encryptor = new MasterPasswordManager(newMasterPass.toCharArray());
-//
-//        PasswordPropertyCrypto passwordCrypto = new PasswordPropertyCrypto(encryptor, decryptor);
-//        passwordCrypto.setPasswordProperties( passwordProperties );
-//
-//        findPropertiesFilesAndReencryptPasswords(configDirectory, passwordCrypto);
-//
-//        // Commit the new master password
-//        new DefaultMasterPasswordFinder(ompCurFile).saveMasterPassword(newMasterPass.toCharArray());
+        new DefaultMasterPasswordFinder(ompNewFile).saveMasterPassword(newMasterPass.toCharArray());
+
+        final MasterPasswordManager decryptor = ompCurFile.exists() ? new MasterPasswordManager(new DefaultMasterPasswordFinder(ompOldFile).findMasterPassword()) : null;
+        final MasterPasswordManager encryptor = new MasterPasswordManager(newMasterPass.toCharArray());
+
+        PasswordPropertyCrypto passwordCrypto = new PasswordPropertyCrypto(encryptor, decryptor);
+        passwordCrypto.setPasswordProperties( passwordProperties );
+
+        findPropertiesFilesAndReencryptPasswords(configDirectory, passwordCrypto);
+
+        // Commit the new master password
+        new DefaultMasterPasswordFinder(ompCurFile).saveMasterPassword(newMasterPass.toCharArray());
 
         // Clean up
         deleteLockFiles(ompCurFile, ompOldFile, ompNewFile);
@@ -161,4 +159,19 @@ public class MasterPassphraseChanger {
 
         return password;
     }
+
+    private String loadFileText(File ompfile) throws IOException {
+        InputStream in = null;
+        try {
+            in = new FileInputStream( ompfile );
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            int read;
+            while ( (read = in.read()) != -1 ) {
+                baos.write( read );
+            }
+            return new String(baos.toByteArray(), "UTF-8").trim();
+        } finally {
+            ResourceUtils.closeQuietly(in);
+        }
+    }    
 }

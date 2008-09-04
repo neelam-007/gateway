@@ -100,36 +100,13 @@ public class FirewallRulesTest extends TestCase {
         assertEquals(TEST_CONNECTOR_RULES, got);
     }
 
-    public void testParseRules() throws Exception {
-        List<PortRange> ranges = FirewallRules.parseFirewallRules(new ByteArrayInputStream(SAMPLE_FILE.getBytes()));
-        assertNotNull(ranges);
-        assertFalse(ranges.isEmpty());
-        assertEquals(ranges.toString(), "[[PortRange TCP 8080-8080], [PortRange TCP 8443-8443], [PortRange TCP 9443-9443], [PortRange TCP /192.168.217.1 9889-9889], [PortRange TCP /192.168.217.1 5666-5720], [PortRange TCP 2122-2122]]");
-
-        FirewallRules.PartitionPortInfo ppi = new FirewallRules.PartitionPortInfo("testpartition", ranges);
-        assertFalse(ppi.isPortUsed(8080, true, null));
-        assertFalse(ppi.isPortUsed(9889, false, InetAddress.getByName("2.3.4.5")));
-        assertFalse(ppi.isPortUsed(9889, false, InetAddress.getLocalHost()));
-        assertTrue(ppi.isPortUsed(8080, false, null));
-        assertTrue(ppi.isPortUsed(5668, false, null));
-        assertTrue(ppi.isPortUsed(5668, false, InetAddress.getByName("192.168.217.1")));
-    }
-
-    public static final String SAMPLE_FILE
-            = "[0:0] -I INPUT $Rule_Insert_Point  -p tcp -m tcp --dport 8080 -j ACCEPT\n" +
-              "[0:0] -I INPUT $Rule_Insert_Point  -p tcp -m tcp --dport 8443 -j ACCEPT\n" +
-              "[0:0] -I INPUT $Rule_Insert_Point  -p tcp -m tcp --dport 9443 -j ACCEPT\n" +
-              "[0:0] -I INPUT $Rule_Insert_Point  -d 192.168.217.1 -p tcp -m tcp --dport 9889 -j ACCEPT\n" +
-              "[0:0] -I INPUT $Rule_Insert_Point  -d 192.168.217.1 -p tcp -m tcp --dport 5666:5720 -j ACCEPT\n" +
-              "[0:0] -I INPUT $Rule_Insert_Point  -p tcp -m tcp --dport 2122 -j ACCEPT";
-
     public static final String TEST_CONNECTOR_RULES
-            = "[0:0] -I INPUT $Rule_Insert_Point  -p tcp -m tcp --dport 8080 -j ACCEPT\n" +
-              "[0:0] -I INPUT $Rule_Insert_Point  -p tcp -m tcp --dport 8443 -j ACCEPT\n" +
-              "[0:0] -I INPUT $Rule_Insert_Point  -p tcp -m tcp --dport 9443 -j ACCEPT\n" +
-              "[0:0] -I INPUT $Rule_Insert_Point  -p tcp -m tcp --dport 4747 -j ACCEPT\n" +
-              "[0:0] -I INPUT $Rule_Insert_Point  -p tcp -m tcp --dport 4800:4815 -j ACCEPT\n" +
-              "[0:0] -I INPUT $Rule_Insert_Point  -p tcp -m tcp --dport 4547 -j ACCEPT\n" +
-              "[0:0] -I INPUT $Rule_Insert_Point  -p tcp -m tcp --dport 4550:4565 -j ACCEPT\n" +
-              "[0:0] -I INPUT $Rule_Insert_Point  -p tcp -m tcp --dport 2124 -j ACCEPT\n";
+          = "[0:0] -A INPUT  -p tcp -m tcp --dport 8080 -j ACCEPT\n" +
+            "[0:0] -A INPUT  -p tcp -m tcp --dport 8443 -j ACCEPT\n" +
+            "[0:0] -A INPUT  -p tcp -m tcp --dport 9443 -j ACCEPT\n" +
+            "[0:0] -A INPUT  -p tcp -m tcp --dport 4747 -j ACCEPT\n" +
+            "[0:0] -A INPUT  -p tcp -m tcp --dport 4800:4815 -j ACCEPT\n" +
+            "[0:0] -A INPUT  -p tcp -m tcp --dport 4547 -j ACCEPT\n" +
+            "[0:0] -A INPUT  -p tcp -m tcp --dport 4550:4565 -j ACCEPT\n" +
+            "[0:0] -A INPUT  -p tcp -m tcp --dport 2124 -j ACCEPT\n";
 }

@@ -1,67 +1,22 @@
 package com.l7tech.server.util;
 
-import com.l7tech.common.io.PortOwner;
 import com.l7tech.common.io.PortRange;
 import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.util.*;
 import com.l7tech.gateway.common.transport.SsgConnector;
 
 import java.io.*;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.logging.Level;
+import java.net.NetworkInterface;
+import java.net.InetAddress;
 
 /**
  * Gathers information from firewall_rules files to build a map of ports in use cluster-wide.
  */
 public class FirewallRules {
     protected static final Logger logger = Logger.getLogger(FirewallRules.class.getName());
-    private static final String FIREWALL_RULES_FILENAME = "/appliance/firewall_rules";
-
-    /**
-     * Read the specified firewall rules and parse them into a list of port ranges.
-     *
-     * @param is the firewall rules to examine. Required.
-     * @return a List of PortRange objects.  May be empty but never null.
-     * @throws java.io.IOException if there is a problem reading or parsing the port range information.
-     */
-    static List<PortRange> parseFirewallRules(InputStream is) throws IOException {
-        List<PortRange> ranges = new ArrayList<PortRange>();
-        Pattern p = Pattern.compile(" -I INPUT \\$Rule_Insert_Point\\s*(?:-d (\\d+.\\d+.\\d+.\\d+))?\\s*-p tcp -m tcp --dport\\s*(\\d+)(?:\\:(\\d+))?\\s*-j ACCEPT");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            Matcher m = p.matcher(line);
-            if (m.find()) {
-                String device = m.group(1);
-                int portStart = parseInt(m.group(2));
-                String portEndStr = m.group(3);
-                int portEnd = portEndStr == null ? portStart : parseInt(portEndStr);
-                try {
-                    PortRange range = new PortRange(portStart, portEnd, false, device == null ? null : InetAddress.getByName(device));
-                    ranges.add(range);
-                } catch (UnknownHostException uhe) {
-                    logger.log(Level.WARNING, "Unable to resolve hostname in firewall rule: " + device + ": " + ExceptionUtils.getMessage(uhe), uhe);
-                    // Add it as INADDR_ANY
-                    PortRange range = new PortRange(portStart, portEnd, false);
-                    ranges.add(range);
-                }
-            }
-        }
-        return ranges;
-    }
-
-    private static int parseInt(String s) throws IOException {
-        try {
-            return Integer.parseInt(s);
-        } catch (NumberFormatException nfe) {
-            throw new IOException("Invalid number in config file", nfe);
-        }
-    }
 
     /**
      * Write the firewall rules to the specified path using the specified source data.
@@ -79,6 +34,9 @@ public class FirewallRules {
         });
     }
 
+    /**
+     * [0:0] -A INPUT -i INTERFACE -p tcp -m tcp --dport 22:23 -j ACCEPT
+     */
     static void writeFirewallRules(OutputStream fos, int clusterRmiPort, Collection<SsgConnector> connectors) throws IOException
     {
         PrintStream ps = new PrintStream(fos);
@@ -92,16 +50,24 @@ public class FirewallRules {
 
             for (SsgConnector connector : list) {
                 String device = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
+                String interfaceName = null;
+                if ( InetAddressUtil.isValidIpAddress(device) ) {
+                    interfaceName = getInterfaceForIP(device);
+                    if ( interfaceName == null ) {
+                        logger.log( Level.WARNING, "Could not determine interface for IP address ''{0}'', this connector will be inaccessible.", device);
+                        continue; // fail closed
+                    }
+                }
 
                 List<PortRange> ranges = connector.getTcpPortsUsed();
                 for (PortRange range : ranges) {
                     int portStart = range.getPortStart();
                     int portEnd = range.getPortEnd();
 
-                    ps.print("[0:0] -I INPUT $Rule_Insert_Point ");
-                    if (InetAddressUtil.isValidIpAddress(device)) {
-                        ps.print(" -d ");
-                        ps.print(device);
+                    ps.print("[0:0] -A INPUT ");
+                    if ( interfaceName != null ) {
+                        ps.print(" -i ");
+                        ps.print(interfaceName);
                     }
                     ps.print(" -p tcp -m tcp --dport ");
                     if (portStart == portEnd)
@@ -120,105 +86,26 @@ public class FirewallRules {
         }
     }
 
-    /**
-     * Represents the ports in use on a single partition.
-     */
-    public static class PartitionPortInfo implements PortOwner {
-        private final String partitionName;
-        private final List<PortRange> portRanges;
+    private static String getInterfaceForIP( final String address ) {
+        String name = null;
 
-        PartitionPortInfo(String partitionName, List<PortRange> portRanges) {
-            this.partitionName = partitionName;
-            this.portRanges = Collections.unmodifiableList(portRanges);
-        }
-
-        /** @return the partition name */
-        public String getPartitionName() {
-            return partitionName;
-        }
-
-        public boolean isPortUsed(int port, boolean udp, InetAddress device) {
-            for (PortRange range : portRanges) {
-                if (range.isPortUsed(port, udp, device))
-                    return true;
+        try {
+            NetworkInterface ni;
+            if ( InetAddress.getByName(address).isLoopbackAddress() ) {
+                ni = NetworkInterface.getByInetAddress(InetAddress.getLocalHost());
+            } else {
+                ni = NetworkInterface.getByInetAddress(InetAddress.getByName(address));
             }
-            return false;
-        }
 
-        public boolean isOverlapping(PortRange otherRange) {
-            for (PortRange range : portRanges) {
-                if (range.isOverlapping(otherRange))
-                    return true;
+            while ( ni.isVirtual() ) {
+                ni = ni.getParent();
             }
-            return false;
+
+            name = ni.getName();
+        } catch ( IOException ioe ) {
+            logger.log( Level.FINE, "Unable to determine network interface for ip '"+address+"'." , ExceptionUtils.getDebugException(ioe));
         }
 
-        public List<PortRange> getUsedPorts() {
-            return portRanges;
-        }
-
-        public String toString() {
-            return "[PartitionPortInfo part=" + getPartitionName() + " usedPorts=" + getUsedPorts() + "]";
-        }
-    }
-
-    /**
-     * Represents all ports in use by every partition found on the system.
-     */
-    public static class PortInfo implements PortOwner {
-        private final List<PartitionPortInfo> parts;
-
-        PortInfo(List<PartitionPortInfo> parts) {
-            this.parts = Collections.unmodifiableList(parts);
-        }
-
-        public boolean isPortUsed(int port, boolean udp, InetAddress device) {
-            return PortRange.isPortUsed(parts, port, udp, device);
-        }
-
-        public boolean isOverlapping(PortRange range) {
-            return PortRange.isOverlapping(parts, Arrays.asList(range));
-        }
-
-        public List<PortRange> getUsedPorts() {
-            List<PortRange> ret = new ArrayList<PortRange>();
-            for (PartitionPortInfo part : parts) {
-                ret.addAll(part.getUsedPorts());
-            }
-            return ret;
-        }
-
-        /**
-         * Get the name of the first partition found that has a known port assignment that conflicts with
-         * any of the specified port ranges.
-         *
-         * @param ranges the port ranges to check.  Required.
-         * @param partitionNameToIgnore  name of a partition to ignore when checking for conflicts, or null to check every partition
-         * @return a Pair of (name of a conflicting partition, PortRange that conflicted), or null if no conflict was detected.
-         */
-        public Pair<PortRange, String> findFirstConflict(Collection<? extends PortRange> ranges, String partitionNameToIgnore) {
-            for (PartitionPortInfo part : parts) {
-                if (part.getPartitionName().equals(partitionNameToIgnore))
-                    continue;
-                for (PortRange range : ranges) {
-                    if (part.isOverlapping(range))
-                        return new Pair<PortRange, String>(range, part.getPartitionName());
-                }
-            }
-            return null;
-        }
-
-        /**
-         * Get individual information about all partitions.
-         *
-         * @return a List of all PartitionPortInfo we have.  May be empty but never null.
-         */
-        public List<PartitionPortInfo> getAllPartitionInfo() {
-            return parts;
-        }
-
-        public String toString() {
-            return "[PortInfo: \n   " + TextUtils.join("\n   ", parts) + "\n]";
-        }
+        return name;
     }
 }

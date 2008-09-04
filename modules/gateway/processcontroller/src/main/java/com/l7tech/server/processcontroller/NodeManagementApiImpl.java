@@ -73,7 +73,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         }
 
         try {
-            NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), databaseConfig );
+            NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), null, "surprise!", databaseConfig );
         } catch ( IOException ioe ) {
             throw new SaveException( "Error during node configuration.", ioe);
         }

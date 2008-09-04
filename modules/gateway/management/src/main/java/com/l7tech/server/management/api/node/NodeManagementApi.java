@@ -38,7 +38,7 @@ public interface NodeManagementApi {
      * @param newNodeName the name of the new node; must be unique within this host
      * @param version     the software version that the Node should be initialized for, or null to use the most recent
      *                    version available.
-     * @param databaseConfigMap the database configuration to use for the new node.  If null is passed, the PC will
+     * @param databaseConfigs   the database configuration to use for the new node.  If null is passed, the PC will
      *                          attempt to create new, standalone database(s) with the default {@link DatabaseType type(s)}
      *                          and {@link DatabaseConfig.Vendor vendor(s)}
      *                          on the default database server(s) with the default username(s) and randomly generated

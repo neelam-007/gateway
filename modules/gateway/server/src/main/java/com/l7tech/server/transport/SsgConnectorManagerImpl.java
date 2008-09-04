@@ -31,7 +31,7 @@ public class SsgConnectorManagerImpl
 
     public static final String SYSPROP_FIREWALL_RULES_FILENAME = "com.l7tech.server.firewall.rules.filename";
     public static final String SYSPROP_FIREWALL_UPDATE_PROGRAM = "com.l7tech.server.firewall.update.program";
-    private static final String DEFAULT_FIREWALL_UPDATE_PROGRAM = "appliance/libexec/update_firewall";
+    private static final String DEFAULT_FIREWALL_UPDATE_PROGRAM = "/opt/SecureSpan/Appliance/libexec/update_firewall";
     private static final String FIREWALL_RULES_FILENAME = SyspropUtil.getString(SYSPROP_FIREWALL_RULES_FILENAME,
                                                                                 "firewall_rules");
 
@@ -167,7 +167,7 @@ public class SsgConnectorManagerImpl
 
     private void openFirewallForConnectors() {
         try {
-            File conf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_CONFIG_DIRECTORY, "/ssg/etc/conf", true);
+            File conf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_CONFIG_DIRECTORY, "/opt/SecureSpan/Gateway/Nodes/default/etc/conf", true);
             String firewallRules = new File(conf, FIREWALL_RULES_FILENAME).getPath();
 
             int rmiPort = serverConfig.getIntProperty(ServerConfig.PARAM_CLUSTER_PORT, 2124);
@@ -219,9 +219,8 @@ public class SsgConnectorManagerImpl
 
     /** @return the program to be run whenever the firewall rules change, or null to take no such action. */
     private File getFirewallUpdater() {
-        File ssgHome = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_SSG_HOME_DIRECTORY, "/ssg", false);
-        File defaultProgram = new File(ssgHome, DEFAULT_FIREWALL_UPDATE_PROGRAM);
-        String program = SyspropUtil.getString(SYSPROP_FIREWALL_UPDATE_PROGRAM, defaultProgram.getPath());
+        File defaultProgram = new File(DEFAULT_FIREWALL_UPDATE_PROGRAM);
+        String program = SyspropUtil.getString(SYSPROP_FIREWALL_UPDATE_PROGRAM, defaultProgram.getAbsolutePath());
         if (program == null || program.length() < 1)
             return null;
         File file = new File(program);

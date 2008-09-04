@@ -56,8 +56,7 @@ public class ConfigServiceImpl implements ConfigService {
                     reverseEngineerIps(g);
                     reverseEngineerNodes(g);
 
-                    entityManager.merge(g);
-                    host = g;
+                    host = entityManager.merge(g);
                     break;
                 case 1:
                     logger.info("Found Gateway in database");
@@ -150,7 +149,7 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     public void addServiceNode(NodeConfig node) {
-        entityManager.persist(node);
+        entityManager.merge(node);
         final PCHostConfig host = (PCHostConfig)getHost();
         host.getNodes().put(node.getName(), node);
         this.host = entityManager.merge(host);

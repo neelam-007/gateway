@@ -3,6 +3,8 @@ package com.l7tech.gateway.config.manager;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.MasterPasswordManager;
+import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.gateway.config.manager.db.DBActions;
 
 import java.util.logging.Logger;
@@ -27,12 +29,27 @@ public class NodeConfigurationManager {
     private static final String sqlPath = "../Nodes/{0}/etc/sql/ssg.sql";
 
     //only these files will be copied. Anything else left in SSG_ROOT/etc/conf is likley custom, like a custom assertion
-    private static String[] configFileWhitelist = new String[] {
-        "ssglog.properties",
-        "system.properties",
-    };
+//    private static String[] configFileWhitelist = new String[] {
+//        "ssglog.properties",
+//        "system.properties",
+//    };
 
-    public static void configureGatewayNode( final String name, final String nodeid, final DatabaseConfig databaseConfig ) throws IOException {
+    /**
+     * Configure a gateway node properties and create database if required..
+     *
+     * @param name The name of the node to configure ("default")
+     * @param nodeid The unique identifier to use for the node.
+     * @param defaultClusterHostname The cluster hostname to use by default (may be null).
+     * @param clusterPassword The cluster password
+     * @param databaseConfig The database configuration to use.
+     * @throws IOException If an error occurs
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public static void configureGatewayNode( final String name,
+                                             final String nodeid,                                              
+                                             final String defaultClusterHostname,
+                                             final String clusterPassword,
+                                             final DatabaseConfig databaseConfig ) throws IOException {
         String nodeName = name;
         if ( nodeName == null ) {
             nodeName = "default";    
@@ -81,14 +98,20 @@ public class NodeConfigurationManager {
             }
         }
 
+        MasterPasswordManager mpm = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(configDirectory, "omp.dat") ) );
+        String encDatabasePassword = mpm.encryptPassword( databaseConfig.getNodePassword().toCharArray() );
+        String encClusterPassword = mpm.encryptPassword( clusterPassword.toCharArray() );
+
         props.setProperty( "node.id", nodeid );
         props.setProperty( "node.enabled", "true" );
-        props.setProperty( "node.cluster.pass", "surprise!" ); //TODO [steve] this should be passed in ...
+        props.setProperty( "node.cluster.pass", encClusterPassword );
         props.setProperty( "node.db.host", databaseConfig.getHost() );
         props.setProperty( "node.db.port", Integer.toString(databaseConfig.getPort()) );
         props.setProperty( "node.db.name", databaseConfig.getName() );
         props.setProperty( "node.db.user", databaseConfig.getNodeUsername() );
-        props.setProperty( "node.db.pass", databaseConfig.getNodePassword() );
+        props.setProperty( "node.db.pass", encDatabasePassword );
+
+
 
         FileOutputStream origFos = null;
         try {
@@ -103,7 +126,7 @@ public class NodeConfigurationManager {
         }
     }
 
-    private static void updateJavaSecurity(File destinationPartition) throws IOException {
+//    private static void updateJavaSecurity(File destinationPartition) throws IOException {
 //        OSSpecificFunctions osf = OSDetector.getOSSpecificFunctions(destinationPartition.getName());
 //        String keystoreFile = osf.getKeyStorePropertiesFile();
 //        Properties props = new Properties();
@@ -128,5 +151,5 @@ public class NodeConfigurationManager {
 //        String javaSecurity = osf.getPathToJavaSecurityFile();
 //        if (providerList != null)
 //            KeystoreActions.updateJavaSecurity(new File(javaSecurity), new File(javaSecurity + ".backup"), providerList);
-    }
+//    }
 }

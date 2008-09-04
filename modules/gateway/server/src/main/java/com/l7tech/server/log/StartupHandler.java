@@ -150,8 +150,7 @@ public class StartupHandler extends Handler {
 
     private File getStartupLogFile() {
         String path = System.getProperty("com.l7tech.server.home", "/opt/SecureSpan/Gateway/Nodes/default");
-        String name = "default_";
 
-        return new File(new File(new File(path), "logs"), name + "_startup_%g_%u.log");
+        return new File(new File(new File(path), "var/logs"), "startup_%g_%u.log");
     }
 }

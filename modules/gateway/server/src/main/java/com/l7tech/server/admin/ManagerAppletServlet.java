@@ -51,7 +51,7 @@ public class ManagerAppletServlet extends HttpServlet {
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
 
-        defaultKey = (DefaultKey) getBean("keystore", null);
+        defaultKey = (DefaultKey) getBean("defaultKey", null);
     }
 
     private WebApplicationContext getContext() throws ServletException {
