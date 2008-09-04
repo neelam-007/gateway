@@ -91,7 +91,7 @@ public class FirewallRulesTest extends TestCase {
         List<SsgConnector> lc = createTestConnectors();
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        FirewallRules.writeFirewallRules(os, 2124, lc);
+        FirewallRules.writeFirewallRules(os, lc);
 
         String got = os.toString();
         got = got.replaceAll("\r\n", "\n");
@@ -107,6 +107,5 @@ public class FirewallRulesTest extends TestCase {
             "[0:0] -A INPUT  -p tcp -m tcp --dport 4747 -j ACCEPT\n" +
             "[0:0] -A INPUT  -p tcp -m tcp --dport 4800:4815 -j ACCEPT\n" +
             "[0:0] -A INPUT  -p tcp -m tcp --dport 4547 -j ACCEPT\n" +
-            "[0:0] -A INPUT  -p tcp -m tcp --dport 4550:4565 -j ACCEPT\n" +
-            "[0:0] -A INPUT  -p tcp -m tcp --dport 2124 -j ACCEPT\n";
+            "[0:0] -A INPUT  -p tcp -m tcp --dport 4550:4565 -j ACCEPT\n";
 }
