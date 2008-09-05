@@ -1,20 +1,21 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.GuiCertUtil;
-import com.l7tech.gui.util.GuiPasswordCallbackHandler;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.gateway.common.security.rbac.EntityType;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.console.MainWindow;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.AsyncAdminMethods;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -27,6 +28,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.security.*;
 import java.security.cert.*;
 import java.security.interfaces.RSAPrivateKey;
@@ -38,13 +40,17 @@ import java.util.List;
 import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.ConnectException;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
  * Window for managing private key entries (certificate chains with private keys) in the Gateway.
  */
 public class PrivateKeyManagerWindow extends JDialog {
     protected static final Logger logger = Logger.getLogger(PrivateKeyManagerWindow.class.getName());
+
+    public static final String CLUSTER_PROP_DEFAULT_SSL = "keyStore.defaultSsl.alias";
+    public static final String CLUSTER_PROP_DEFAULT_CA = "keyStore.defaultCa.alias";
 
     private JPanel mainPanel;
     private JScrollPane keyTableScrollPane;
@@ -95,6 +101,8 @@ public class PrivateKeyManagerWindow extends JDialog {
     private PermissionFlags flags;
     private KeyTable keyTable = null;
     private Component showingInScrollPane = null;
+    private String defaultSslAlias = null;
+    private String defaultCaAlias = null;
 
     public PrivateKeyManagerWindow(JDialog owner) {
         super(owner, resources.getString("keydialog.title"), true);
@@ -340,7 +348,11 @@ public class PrivateKeyManagerWindow extends JDialog {
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
-                if (dlg.isDeleted()) {
+                if (dlg.isDefaultKeyChanged()) {
+                    defaultSslAlias = null;
+                    defaultCaAlias = null;
+                    loadPrivateKeys();
+                } else if (dlg.isDeleted()) {
                     doRemove(data);
                 }
             }
@@ -433,7 +445,7 @@ public class PrivateKeyManagerWindow extends JDialog {
             for (TrustedCertAdmin.KeystoreInfo keystore : getTrustedCertAdmin().findAllKeystores(true)) {
                 if (mutableKeystore == null && !keystore.readonly) mutableKeystore = keystore;
                 for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.id)) {
-                    keyList.add(new KeyTableRow(keystore, entry));
+                    keyList.add(new KeyTableRow(keystore, entry, isDefaultSslCert(entry), isDefaultCaCert(entry)));
                 }
             }
 
@@ -536,16 +548,61 @@ public class PrivateKeyManagerWindow extends JDialog {
         }
     }
 
+    private static final Pattern KEYSTORE_ID_AND_ALIAS_PATTERN = Pattern.compile("^(-?\\d+):(.*)$");
+
+    private String getAlias(String clusterPropertyName, String defaultVal) throws FindException {
+        final ClusterStatusAdmin csa = Registry.getDefault().getClusterStatusAdmin();
+        ClusterProperty prop = csa.findPropertyByName(clusterPropertyName);
+        if (prop == null)
+            return defaultVal;
+        String value = prop.getValue();
+        if (value == null)
+            return defaultVal;
+        Matcher matcher = KEYSTORE_ID_AND_ALIAS_PATTERN.matcher(value);
+        if (!matcher.matches())
+            return value;
+        return matcher.group(2);
+    }
+
+    private void updateDefaultAliases() {
+        try {
+            defaultSslAlias = getAlias(CLUSTER_PROP_DEFAULT_SSL, "SSL");
+        } catch (FindException e) {
+            showErrorMessage("Default SSL Keys", "Unable to determine default SSL alias: " + ExceptionUtils.getMessage(e), e);
+        }
+        try {
+            defaultCaAlias = getAlias(CLUSTER_PROP_DEFAULT_CA, null);
+        } catch (FindException e) {
+            showErrorMessage("Default SSL Keys", "Unable to determine default CA alias: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    public boolean isDefaultSslCert(SsgKeyEntry entry) {
+        if (defaultSslAlias == null) updateDefaultAliases();
+        String alias = entry.getAlias();
+        return alias != null && alias.equals(defaultSslAlias);
+    }
+
+    public boolean isDefaultCaCert(SsgKeyEntry entry) {
+        if (defaultSslAlias == null) updateDefaultAliases();
+        String alias = entry.getAlias();
+        return alias != null && alias.equals(defaultCaAlias);
+    }
+
     /** Represents a row in the Manage Private Keys table. */
     public static class KeyTableRow {
         private final TrustedCertAdmin.KeystoreInfo keystoreInfo;
         private SsgKeyEntry keyEntry;
         private String keyType = null;
         private String expiry = null;
+        private boolean defaultSsl;
+        private boolean defaultCa;
 
-        public KeyTableRow(TrustedCertAdmin.KeystoreInfo keystoreInfo, SsgKeyEntry keyEntry) {
+        public KeyTableRow(TrustedCertAdmin.KeystoreInfo keystoreInfo, SsgKeyEntry keyEntry, boolean defaultSsl, boolean defaultCa) {
             this.keystoreInfo = keystoreInfo;
             this.keyEntry = keyEntry;
+            this.defaultSsl = defaultSsl;
+            this.defaultCa = defaultCa;
         }
 
         public TrustedCertAdmin.KeystoreInfo getKeystore() {
@@ -592,9 +649,21 @@ public class PrivateKeyManagerWindow extends JDialog {
                 expiry = DateFormat.getDateInstance().format(getCertificate().getNotAfter());
             return expiry;
         }
+
+        public boolean isDefaultSsl() {
+            return defaultSsl;
+        }
+
+        public boolean isDefaultCa() {
+            return defaultCa;
+        }
     }
 
     private static class KeyTable extends JTable {
+        private static final String PATH_SSL = MainWindow.RESOURCE_PATH + "/cert_flag_ssl_16.png";
+        private static final String PATH_CA = MainWindow.RESOURCE_PATH + "/cert_flag_ca_16.png";
+        private static final String PATH_SSLCA = MainWindow.RESOURCE_PATH + "/cert_flag_sslca_16.png";
+
         private final KeyTableModel model = new KeyTableModel();
 
         public KeyTable() {
@@ -609,6 +678,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                 col.setPreferredWidth(model.getColumnPrefWidth(i));
                 col.setMaxWidth(model.getColumnMaxWidth(i));
             }
+            getColumnModel().getColumn(0).setCellRenderer(new JTable().getDefaultRenderer(ImageIcon.class));
         }
 
         public KeyTableRow getRowAt(int row) {
@@ -646,6 +716,25 @@ public class PrivateKeyManagerWindow extends JDialog {
             }
 
             public static final Col[] columns = new Col[] {
+                    new Col(" ", 16, 16, 16) {
+                        Object getValueForRow(KeyTableRow row) {
+                            int val = row.isDefaultSsl() ? 1 : 0;
+                            if (row.isDefaultCa()) val += 2;
+                            switch (val) {
+                                case 0:
+                                    return "";
+                                case 1:
+                                    return ImageCache.getInstance().getIconAsIcon(PATH_SSL);
+                                case 2:
+                                    return ImageCache.getInstance().getIconAsIcon(PATH_CA);
+                                case 3:
+                                    return ImageCache.getInstance().getIconAsIcon(PATH_SSLCA);
+                            }
+                            /* NOTREACHED */
+                            return "";
+                        }
+                    },
+
                     new Col("Location", 60, 90, 90) {
                         Object getValueForRow(KeyTableRow row) {
                             return row.getKeystore().name;

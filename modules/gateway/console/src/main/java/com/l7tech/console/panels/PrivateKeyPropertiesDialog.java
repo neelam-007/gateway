@@ -7,6 +7,8 @@ import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
@@ -16,8 +18,12 @@ import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 
 import javax.security.auth.x500.X500Principal;
@@ -48,10 +54,15 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     private JTextField locationField;
     private JTextField aliasField;
     private JTextField typeField;
+    private JButton makeDefaultSSLButton;
+    private JButton makeDefaultCAButton;
+    private JLabel defaultSslLabel;
+    private JLabel defaultCaLabel;
     private PrivateKeyManagerWindow.KeyTableRow subject;
 
     private Logger logger = Logger.getLogger(PrivateKeyPropertiesDialog.class.getName());
     private boolean deleted = false;
+    private boolean defaultKeyChanged = false;
     private final PermissionFlags flags;
 
     public PrivateKeyPropertiesDialog(JDialog owner, PrivateKeyManagerWindow.KeyTableRow subject, PermissionFlags flags) {
@@ -98,6 +109,18 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             }
         });
 
+        makeDefaultSSLButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                makeDefaultSsl();
+            }
+        });
+
+        makeDefaultCAButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                makeDefaultCa();
+            }
+        });
+
         Utilities.setEnterAction(this, new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 close();
@@ -115,6 +138,12 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         locationField.setText(location);
         typeField.setText(subject.getKeyType().toString());
         populateList();
+
+        defaultSslLabel.setVisible(subject.isDefaultSsl());
+        defaultCaLabel.setVisible(subject.isDefaultCa());
+
+        makeDefaultCAButton.setEnabled(!subject.isDefaultCa());
+        makeDefaultSSLButton.setEnabled(!subject.isDefaultSsl());
 
         certList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent listSelectionEvent) {
@@ -134,24 +163,29 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             destroyPrivateKeyButton.setEnabled(false);
             replaceCertificateChainButton.setEnabled(false);
             generateCSRButton.setEnabled(false);
-        } else if (isDefaultSslKey(subject) || isDefaultCaKey(subject)) {
-            destroyPrivateKeyButton.setEnabled(false); // Bug #3830
         }
 
         if (!flags.canDeleteSome())
             destroyPrivateKeyButton.setEnabled(false);
         if (!flags.canUpdateSome())
             replaceCertificateChainButton.setEnabled(false);
+
+        Utilities.equalizeButtonSizes(new JButton[] {
+                makeDefaultCAButton,
+                makeDefaultSSLButton,
+                generateCSRButton,
+                replaceCertificateChainButton,
+        });
     }
 
-    private boolean isDefaultCaKey(PrivateKeyManagerWindow.KeyTableRow subject) {
-        // TODO
-        return false;
+    private boolean isKeyCACapable(PrivateKeyManagerWindow.KeyTableRow subject) {
+        X509Certificate cert = subject.getCertificate();
+        boolean[] usages = cert.getKeyUsage();
+        return usages != null && usages[CertUtils.KeyUsage.keyCertSign] && cert.getBasicConstraints() > 0;
     }
 
-    private boolean isDefaultSslKey(PrivateKeyManagerWindow.KeyTableRow subject) {
-        // TODO
-        return false;
+    public boolean isDefaultKeyChanged() {
+        return defaultKeyChanged;
     }
 
     class ListEntry {
@@ -197,6 +231,81 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
         return Registry.getDefault().getTrustedCertManager();
+    }
+
+    private void makeDefaultSsl() {
+        confirmPutClusterProperty(makeDefaultSSLButton, "SSL", PrivateKeyManagerWindow.CLUSTER_PROP_DEFAULT_SSL, subject);
+    }
+
+    private void makeDefaultCa() {
+        if (!isKeyCACapable(subject)) {
+            DialogDisplayer.showConfirmDialog(
+                    makeDefaultCAButton,
+                    "This private key's certificate does not assert the \"cA\" basic constraint and the \"keyCertSign\" key usage." +
+                    "\n\nAre you sure you want the cluster to use this as the default CA private key?",
+                    "Unsuitable CA Certificate",
+                    JOptionPane.YES_NO_CANCEL_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    new DialogDisplayer.OptionListener() {
+                        public void reportResult(int option) {
+                            if (option == JOptionPane.YES_OPTION)
+                                doMakeDefaultCa();
+                        }
+                    });
+            return;
+        }
+        doMakeDefaultCa();
+    }
+
+    private void doMakeDefaultCa() {
+        confirmPutClusterProperty(makeDefaultCAButton, "CA", PrivateKeyManagerWindow.CLUSTER_PROP_DEFAULT_CA, subject);
+    }
+
+    private void confirmPutClusterProperty(final JButton triggerButton, final String what, final String clusterProp, final PrivateKeyManagerWindow.KeyTableRow subject) {
+        DialogDisplayer.showConfirmDialog(
+                makeDefaultCAButton,
+                "Are you sure you wish to change the cluster default " + what + " private key?\n\n" +
+                "ALl cluster nodes will need to be restarted before the change will fully take effect.",
+                "Confirm New Cluster " + what + " Key",
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                new DialogDisplayer.OptionListener() {
+                    public void reportResult(int option) {
+                        if (option == JOptionPane.YES_OPTION)
+                            doPutClusterProperty(triggerButton, what, clusterProp, subject);
+                    }
+                }
+        );
+    }
+
+    private void doPutClusterProperty(final JButton triggerButton, String what, String clusterProp, PrivateKeyManagerWindow.KeyTableRow subject) {
+        String value = subject.getKeyEntry().getKeystoreId() + ":" + subject.getAlias();
+        String failmess = "Failed to change default " + what + " key: ";
+        try {
+            ClusterStatusAdmin csa = Registry.getDefault().getClusterStatusAdmin();
+            ClusterProperty property = csa.findPropertyByName(clusterProp);
+            if (property == null)
+                property = new ClusterProperty(clusterProp, value);
+            else
+                property.setValue(value);
+            csa.saveProperty(property);
+
+            triggerButton.setEnabled(false);
+            DialogDisplayer.showMessageDialog(this,
+                    "The " + what + " key has been changed.\n\nThe change will not fully take effect until all cluster nodes have been restarted.",
+                    "Default " + what + " Key Updated",
+                    JOptionPane.INFORMATION_MESSAGE, null);
+            defaultKeyChanged = true;
+            close();
+        } catch (SaveException e) {
+            showErrorMessage("Update Failed", failmess + ExceptionUtils.getMessage(e), e);
+        } catch (UpdateException e) {
+            showErrorMessage("Update Failed", failmess + ExceptionUtils.getMessage(e), e);
+        } catch (DeleteException e) {
+            showErrorMessage("Update Failed", failmess + ExceptionUtils.getMessage(e), e);
+        } catch (FindException e) {
+            showErrorMessage("Update Failed", failmess + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     private void getCSR() {
@@ -333,16 +442,17 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             JOptionPane.showMessageDialog(this, "This keystore is read-only.", "Unable to Remove Key", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        final String cancel = "Cancel";
+        final String cancel = "   Cancel   ";
         int option = JOptionPane.showOptionDialog(
                 this,
                 "Really delete private key " + subject.getAlias() + " (" + subject.getKeyEntry().getSubjectDN() + ")?\n\n" +
-                "This will irrevocably destory this key, and cannot be undone.",
+                "This will irrevocably destroy this key, and cannot be undone.\n\n" +
+                "The change will not fully take effect until all cluster nodes have been restarted.",
                 "Confirm deletion",
-                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.YES_NO_CANCEL_OPTION,
                 JOptionPane.WARNING_MESSAGE,
                 null,
-                new Object[] { "Destroy Private Key", cancel },
+                new Object[] { "Destroy", cancel },
                 cancel);
         if (option != 0)
             return;
@@ -353,5 +463,10 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
     public boolean isDeleted() {
         return deleted;
+    }
+
+    private void showErrorMessage(String title, String msg, Throwable e) {
+        logger.log(Level.WARNING, msg, e);
+        DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, null);
     }
 }

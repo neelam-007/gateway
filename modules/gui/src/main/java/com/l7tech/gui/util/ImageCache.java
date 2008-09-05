@@ -1,7 +1,7 @@
 package com.l7tech.gui.util;
 
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,7 +11,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
-import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,11 +29,10 @@ public final class ImageCache {
     /** singleton instance */
     protected static final ImageCache iconManager = new ImageCache();
 
-    /** a value that indicates that the icon does not exists */
-    private static final Object NO_ICON = new Object();
-
     /** map of resource name to loaded icon (String, SoftRefrence (Image)) or (String, NO_ICON) */
-    private final HashMap map = new HashMap();
+    private final Map<String, Reference<Image>> imageMap = new ConcurrentHashMap<String, Reference<Image>>();
+
+    private final Map<String, Reference<ImageIcon>> iconMap = new ConcurrentHashMap<String, Reference<ImageIcon>>();
 
     /** this instance classloader */
     private final ClassLoader loader = ImageCache.class.getClassLoader();
@@ -54,83 +54,89 @@ public final class ImageCache {
      */
     public Image getIcon(String name) {
         if (name == null) return null;
-        
-        Object img = map.get(name);
-
-        // no icon for this name (already tested)
-        if (img == NO_ICON) return null;
-
-        if (img != null) {
-            img = ((Reference)img).get();
-        }
-        if (img != null) return (Image)img;
-
         return getIcon(name, loader);
     }
 
     /**
-     * Finds the Image as a resource with the given name usinf
-     * specified classloader.
+     * Same as getIcon but returns the cached image as a cached ImageIcon instance.
      *
      * @param name   the image resource name
      *
+     * @return the <code>Icon</code> or <b>null</b> if the resource
+     *         cannot be found
+     */
+    public ImageIcon getIconAsIcon(String name) {
+        if (name == null) return null;
+        return getIconAsIcon(name, loader);
+    }
+
+    /**
+     * Find the Image as an Icon looking for a resource with the given name
+     * in the specified classloader.
+     *
+     * @param name    name of the resource
+     * @param loader  classloader to load from.  required
+     * @return the Icon or null if not found
+     */
+    public ImageIcon getIconAsIcon(String name, ClassLoader loader) {
+        if (name == null) return null;
+
+        Reference<ImageIcon> iconref = iconMap.get(name);
+        if (iconref != null) {
+            ImageIcon icon = iconref.get();
+            if (icon != null)
+                return icon;
+        }
+
+        // Have to create it
+        Image image = getIcon(name, loader);
+        if (image == null) return null;
+
+        ImageIcon icon = new ImageIcon(image);
+        iconMap.put(name, new SoftReference<ImageIcon>(icon));
+        return icon;
+    }
+
+    /**
+     * Finds the Image as a resource with the given name using
+     * specified classloader.
+     *
+     * @param name   the image resource name
+     * @param loader  a specific classloader to use for the image.  Required.
      * @return the <code>Image</code> or <b>null</b> if the resource
      *         cannot be found
      */
     public Image getIcon(String name, ClassLoader loader) {
         if (name == null) return null;
 
-        Object img = map.get(name);
+        Reference<Image> imgref = imageMap.get(name);
 
-        // no icon for this name (already tested)
-        if (img == NO_ICON) return null;
-
-        if (img != null) {
-            // then it is SoftRefrence
-            img = ((Reference)img).get();
+        if (imgref != null) {
+            Image image = imgref.get();
+            if (image != null)
+                return image;
         }
 
-        // icon found
-        if (img != null) return (Image)img;
-
-        synchronized(map) {
-            // again under the lock
-            img = map.get(name);
-
-            // no icon for this name (already tested)
-            if (img == NO_ICON) return null;
-
-            if (img != null) {
-                img = ((Reference)img).get();
+        // we have to load it
+        InputStream stream = loader.getResourceAsStream(name);
+        byte[] imageBytes = null;
+        if (stream != null) {
+            try {
+                imageBytes = IOUtils.slurpStream(stream);
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Unable to load image resource: " + ExceptionUtils.getMessage(e), e);
             }
+        }
 
-            if (img != null)
-            // cannot be NO_ICON, since it never disappears from the map.
-                return (Image) img;
+        Image img = imageBytes == null ? null : Toolkit.getDefaultToolkit().createImage(imageBytes);
+        if (img != null) {
+            Image img2 = toBufferedImage(img);
 
-            // we have to load it
-            InputStream stream = loader.getResourceAsStream(name);
-            byte[] imageBytes = null;
-            if (stream != null) {
-                try {
-                    imageBytes = IOUtils.slurpStream(stream);
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "Unable to load image resource: " + ExceptionUtils.getMessage(e), e);
-                }
-            }
-
-            img = imageBytes == null ? null : Toolkit.getDefaultToolkit().createImage(imageBytes);
-            if (img != null) {
-                Image img2 = toBufferedImage((Image)img);
-
-                Reference r = new SoftReference(img2);
-                map.put(name, r);
-                return img2;
-            } else {
-                // no icon found
-                map.put(name, NO_ICON);
-                return null;
-            }
+            Reference<Image> r = new SoftReference<Image>(img2);
+            imageMap.put(name, r);
+            return img2;
+        } else {
+            return null;
         }
     }
 
