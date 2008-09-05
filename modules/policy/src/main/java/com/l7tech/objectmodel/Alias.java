@@ -8,7 +8,7 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
  * User: darmstrong
  * Date: Aug 25, 2008
  * Time: 2:14:03 PM
- * AliasEntity was created as a means of referring to any class which can be aliases generically.
+ * Alias was created as a means of referring to any class which can be aliases generically.
  * @param <HT> represents the entity being aliased, we need it's oid only
  */
 public abstract class Alias<HT extends NamedEntityImp> extends PersistentEntityImp implements EntityAlias {

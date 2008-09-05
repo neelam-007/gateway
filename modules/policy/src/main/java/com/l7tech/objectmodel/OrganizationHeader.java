@@ -10,7 +10,7 @@ import com.l7tech.objectmodel.folder.HasFolder;
  * When dealing with Services and Policies they have a lot in common - they can be put into folders and they
  * can be aliased. It is therefore convenint to write code that applies to both entities together instead of having
  * to write it twice for each entity. In order to facilitate this we need policy and service to have a common
- * super type which implements the require interfaces required. See AliasManagerImpl for where this abstract
+ * super type which implements the interfaces required. See AliasManagerImpl for where this abstract
  * class is used
  *
  */
@@ -28,7 +28,7 @@ public abstract class OrganizationHeader extends EntityHeader implements Aliasab
         return folderOid;
     }
 
-    public void setFolderOid(long folderOid) {
+    public void setFolderOid(Long folderOid) {
         this.folderOid = folderOid;
     }
 

@@ -4,7 +4,8 @@
 package com.l7tech.policy;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.objectmodel.Organizable;
+import com.l7tech.objectmodel.Aliasable;
+import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.assertion.FalseAssertion;
@@ -22,7 +23,7 @@ import java.util.logging.Logger;
  * @author alex
  */
 @XmlRootElement
-public class Policy extends NamedEntityImp  implements Organizable {
+public class Policy extends NamedEntityImp  implements HasFolder, Aliasable {
     private static final Logger logger = Logger.getLogger(Policy.class.getName());
 
     private String guid;
@@ -238,10 +239,18 @@ public class Policy extends NamedEntityImp  implements Organizable {
         this.internalTag = internalTag;
     }
 
+    /*
+    * @return Long can be null as not all policies are associated with a folder, only policies of type
+    * INCLUDE_FRAGMENT or INTERNAL are. 
+    * */
     public Long getFolderOid() {
         return folderOid;
     }
 
+    /*
+    * @param folderOid, can be null as not all policies are associated with a folder, only policies of type
+    * INCLUDE_FRAGMENT or INTERNAL are.
+    * */
     public void setFolderOid(Long folderOid) {
         this.folderOid = folderOid;
     }

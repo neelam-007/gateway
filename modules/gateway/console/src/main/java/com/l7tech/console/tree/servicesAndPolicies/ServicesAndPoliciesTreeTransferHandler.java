@@ -6,6 +6,7 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -147,7 +148,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                             }
 
                             Entity entity = childTransferNode.getEntity();
-                            if(!(entity instanceof Organizable)) return false;
+                            if(!(entity instanceof HasFolder)) return false;
 
                             if(childTransferNode.isAlias()){
                                 //With the entity oid and the old folder oid we can find the actual alias
@@ -180,7 +181,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                                 OrganizationHeader header = (OrganizationHeader) childTransferNode.getUserObject();
                                 header.setFolderOid(newParent.getOid());
                             }else{
-                                Organizable o = (Organizable) entity;
+                                HasFolder o = (HasFolder) entity;
                                 o.setFolderOid(newParent.getOid());
                                 if(childTransferNode instanceof ServiceNode){
                                     Registry.getDefault().getServiceManager().savePublishedService((PublishedService) entity);

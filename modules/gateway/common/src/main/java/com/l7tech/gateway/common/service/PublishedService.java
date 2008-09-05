@@ -10,7 +10,8 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.objectmodel.Organizable;
+import com.l7tech.objectmodel.Aliasable;
+import com.l7tech.objectmodel.folder.HasFolder;
 import org.xml.sax.InputSource;
 
 import javax.wsdl.Port;
@@ -34,7 +35,7 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings( { "NonJaxWsWebServices" } )
 @XmlRootElement
-public class PublishedService extends NamedEntityImp implements Organizable
+public class PublishedService extends NamedEntityImp implements HasFolder, Aliasable
 {
     //private static final long serialVersionUID = 8711916262379377867L;
     private static final Logger logger = Logger.getLogger(PublishedService.class.getName());
