@@ -77,13 +77,7 @@ public class Permission extends PersistentEntityImp implements Cloneable {
         } else {
             eclass = entity.getClass();
         }
-        if(entity instanceof Aliasable){
-            Aliasable aliasable = (Aliasable) entity;
-            if(aliasable.isAlias()){
-                //todo [Donal] until the behaviour of aliases is defined for rbac return false
-                return false;
-            }
-        }
+
         if (!entityType.getEntityClass().isAssignableFrom(eclass)) return false;
         for (ScopePredicate predicate : scope) {
             if (!predicate.matches(entity, eclass)) return false;

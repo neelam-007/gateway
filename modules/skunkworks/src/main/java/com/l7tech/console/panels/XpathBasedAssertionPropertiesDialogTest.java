@@ -50,7 +50,7 @@ public class XpathBasedAssertionPropertiesDialogTest {
         ServiceHeader sh = new ServiceHeader(svc);
         ServiceNode sn = new ServiceNode(sh);
 
-        PublishedService ps = sn.getPublishedService();
+        PublishedService ps = sn.getEntity();
 //        ps.setWsdlXml(TestDocuments.getTestDocumentAsXml(TestDocuments.WSDL));
 
         ActionListener okListener = new AbstractAction() {

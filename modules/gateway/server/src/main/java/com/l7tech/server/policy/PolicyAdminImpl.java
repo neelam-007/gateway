@@ -185,24 +185,6 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
                 policyManager.addManagePolicyRole(policy);
                 return new PolicyCheckpointState(oid, checkpoint.getOrdinal(), checkpoint.isActive());
             } else {
-                if(policy.isAlias()){
-                    //when an alias, we need to save the original policy, we don't want to overwrite the orignal
-                    //policies folder oid with the alias we have here
-                    //so get the original and take out it's folder property and set it on this copy
-                    try {
-                        Policy p = this.findPolicyByPrimaryKey(policy.getOid());
-                        //Get the folder id from the original but nothing else as this will change the state
-                        //of the policy we are saving. folder is all that should be different to the original
-                        if(!p.getName().equals(policy.getName())){
-                            throw new SaveException("Cannot change the policy name on an alias");
-                        }
-
-                        policy.setFolderOid(p.getFolderOid());
-                    } catch (FindException e) {
-                        throw new SaveException("Could not update original policy");
-                    }
-                }
-
                 policyManager.update(policy);
                 final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(policy, true, false);
                 long versionOrdinal = checkpoint.getOrdinal();

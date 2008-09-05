@@ -68,7 +68,7 @@ public class EditServiceNameAction extends ServiceNodeAction {
                   try {
                       TopComponents wm =
                         TopComponents.getInstance();
-                      PublishedService svc = ((ServiceNode)node).getPublishedService();
+                      PublishedService svc = ((ServiceNode)node).getEntity();
                       lastServiceName = svc.getName();
                       EditServiceNameDialog d =
                         new EditServiceNameDialog(wm.getTopParent(), svc, nameChangeListener);
@@ -98,7 +98,7 @@ public class EditServiceNameAction extends ServiceNodeAction {
                           DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                           model.nodeChanged(node);
                           try {
-                              PublishedService svc = ((ServiceNode)node).getPublishedService();
+                              PublishedService svc = ((ServiceNode)node).getEntity();
                               node.firePropertyChange(this, PolicyEditorPanel.POLICYNAME_PROPERTY,
                                                       lastServiceName, svc.getName());
                           } catch (Exception e) {

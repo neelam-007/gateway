@@ -602,7 +602,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
             throw new IllegalStateException();
         }
         try {
-            ObjectPermission op = new ObjectPermission(serviceNodeCookie.getPublishedService(), ObjectPermission.WRITE);
+            ObjectPermission op = new ObjectPermission(serviceNodeCookie.getEntity(), ObjectPermission.WRITE);
             return Registry.getDefault().getSecurityProvider().hasPermission(s, op);
         } catch (Exception e) {
             log.log(Level.WARNING, "Error performing permisison check", e);

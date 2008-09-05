@@ -71,7 +71,7 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
                     final Wsdl wsdl;
                     ServiceNode snc = getServiceNodeCookie();
                     if (snc != null) {
-                        PublishedService svc = snc.getPublishedService();
+                        PublishedService svc = snc.getEntity();
                         policy = svc.getPolicy();
                         wsdl = svc.parsedWsdl();
                     } else {

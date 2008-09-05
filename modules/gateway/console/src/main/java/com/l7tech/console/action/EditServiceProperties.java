@@ -58,7 +58,7 @@ public class EditServiceProperties extends ServiceNodeAction {
         boolean hasUpdatePermission;
         PublishedService svc;
         try {
-            svc = serviceNode.getPublishedService();
+            svc = serviceNode.getEntity();
             hasUpdatePermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdate(EntityType.SERVICE, svc));
         } catch (FindException e) {
             logger.log(Level.WARNING, "Cannot get service", e);
@@ -95,9 +95,9 @@ public class EditServiceProperties extends ServiceNodeAction {
                         final EntityWithPolicyNode pn = pe.getPolicyNode();
 
                         if (pn instanceof ServiceNode) {
-                            PublishedService editedSvc = ((ServiceNode) pn).getPublishedService();
+                            PublishedService editedSvc = ((ServiceNode) pn).getEntity();
                             // if currently edited service was deleted
-                            if (serviceNode.getPublishedService().getOid() == editedSvc.getOid()) {
+                            if (serviceNode.getEntity().getOid() == editedSvc.getOid()) {
                                 // update name on top of editor
                                 pe.changeSubjectName(serviceNode.getName());
                                 pe.updateHeadings();

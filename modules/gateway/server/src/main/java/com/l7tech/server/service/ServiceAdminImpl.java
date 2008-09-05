@@ -332,25 +332,6 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         try {
             if (service.getOid() > 0) {
                 // UPDATING EXISTING SERVICE
-                if(service.isAlias()){
-                    //when an alias, we need to save the original policy, we don't want to overwrite the orignal
-                    //policies folder oid with the alias we have here
-                    //so get the original and take out it's folder property and set it on this copy
-                    try {
-                        PublishedService ps = this.findServiceByID(service.getId());
-                        //Get the folder id from the original but nothing else as this will change the state
-                        //of the service we are saving. folder is all that should be different to the original
-                        if(!ps.getName().equals(service.getName())){
-                            throw new SaveException("Cannot change the service name on an alias");
-                        }else if(!ps.getRoutingUri().equals(service.getRoutingUri())){
-                            throw new SaveException("Cannot change the routing uri on an alias");                            
-                        }
-
-                        service.setFolderOid(ps.getFolderOid());
-                    } catch (FindException e) {
-                        throw new SaveException("Could not update original service");
-                    }
-                }
                 oid = service.getOid();
                 logger.fine("Updating PublishedService: " + oid);
                 serviceManager.update(service);

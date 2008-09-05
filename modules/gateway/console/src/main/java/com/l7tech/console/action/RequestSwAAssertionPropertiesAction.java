@@ -73,7 +73,7 @@ public class RequestSwAAssertionPropertiesAction extends NodeAction {
                     if (pn instanceof ServiceNode) {
                         ServiceNode sn = (ServiceNode) pn;
                         try {
-                            if (!(sn.getPublishedService().isSoap())) {
+                            if (!(sn.getEntity().isSoap())) {
                                 JOptionPane.showMessageDialog(null, "This assertion is not supported by non-soap services.");
                             } else {
                                 RequestSwAAssertionDialog d = new RequestSwAAssertionDialog(f, (RequestSwAAssertion)node.asAssertion());

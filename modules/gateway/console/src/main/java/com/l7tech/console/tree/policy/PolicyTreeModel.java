@@ -196,7 +196,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
             ServiceNode sn = assertionTreeNode.getServiceNodeCookie();
             PublishedService service = null;
             if (sn != null) {
-                service = sn.getPublishedService();
+                service = sn.getEntity();
             }
             Assertion policy = assertionTreeNode.asAssertion();
             PolicyTreeModelChange pc = new PolicyTreeModelChange(policy,
@@ -267,7 +267,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
             ServiceNode sn = assertionTreeNode.getServiceNodeCookie();
             PublishedService service = null;
             if (sn != null) {
-                service = sn.getPublishedService();
+                service = sn.getEntity();
             }
             Assertion policy = assertionTreeNode.asAssertion();
             PolicyTreeModelChange pc = new PolicyTreeModelChange(
@@ -364,7 +364,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
         PublishedService service = null;
         if (sn != null) {
             try {
-                service = sn.getPublishedService();
+                service = sn.getEntity();
             } catch (FindException e) {
                 throw new RuntimeException(e);
             }

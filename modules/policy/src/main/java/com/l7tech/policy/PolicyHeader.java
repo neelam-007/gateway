@@ -17,7 +17,7 @@ public class PolicyHeader extends OrganizationHeader {
              policy.getInternalTag(),
              policy.getGuid(),
              policy.getFolderOid(),
-             policy.isAlias());
+             false);
     }
 
     public PolicyHeader(final PolicyHeader policyHeader){

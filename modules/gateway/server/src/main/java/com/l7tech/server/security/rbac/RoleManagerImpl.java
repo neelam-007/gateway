@@ -325,16 +325,6 @@ public class RoleManagerImpl
                 continue;
             }
 
-            //check for alias
-            if(header.isAlias()){
-                if(!(entity instanceof Aliasable)){
-                    //As T is an OrganizationHeader this implies that any entity found implements Alisable
-                    throw new IllegalStateException("Any organizable entity must be alisable");
-                }
-                Aliasable a = (Aliasable) entity;
-                a.setAlias(true);
-            }
-
             if (isPermitted(userRoles, entity, requiredOperation, null))
                 result.add(header);
         }

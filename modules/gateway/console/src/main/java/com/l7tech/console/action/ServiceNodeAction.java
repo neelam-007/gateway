@@ -32,7 +32,7 @@ public abstract class ServiceNodeAction extends NodeAction {
         AttemptedOperation ao;
         PublishedService service;
         try {
-            service = sn.getPublishedService();
+            service = sn.getEntity();
         } catch (Exception e) {
             logger.warning("Couldn't resolve service");
             return false;

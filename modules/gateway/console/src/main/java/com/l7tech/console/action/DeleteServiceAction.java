@@ -108,9 +108,9 @@ public class DeleteServiceAction extends ServiceNodeAction {
                             PolicyEditorPanel pe = (PolicyEditorPanel)jc;
                             EntityWithPolicyNode pn = pe.getPolicyNode();
                             if (pn instanceof ServiceNode) {
-                                PublishedService svc = ((ServiceNode) pn).getPublishedService();
+                                PublishedService svc = ((ServiceNode) pn).getEntity();
                                 // if currently edited service was deleted
-                                if (serviceNode.getPublishedService().getOid() == svc.getOid()) {
+                                if (serviceNode.getEntity().getOid() == svc.getOid()) {
                                 cws.setComponent(new HomePagePanel());
                                 }
                             }

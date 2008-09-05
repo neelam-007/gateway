@@ -123,7 +123,7 @@ public class SavePolicyAction extends PolicyNodeAction {
             final long policyOid;
             final int policyVersion;
             if (policyNode instanceof ServiceNode) {
-                final PublishedService svc = ((ServiceNode) policyNode).getPublishedService();
+                final PublishedService svc = ((ServiceNode) policyNode).getEntity();
                 name = svc.getName();
                 policyOid = svc.getPolicy().getOid();
                 policyVersion = svc.getPolicy().getVersion();

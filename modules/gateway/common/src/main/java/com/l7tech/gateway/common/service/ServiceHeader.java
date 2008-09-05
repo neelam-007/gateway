@@ -20,7 +20,7 @@ public class ServiceHeader extends OrganizationHeader {
               svc.getName(),
               svc.getName(),
               svc.getFolderOid(),
-              svc.isAlias());
+              false);
     }
 
     public ServiceHeader(final ServiceHeader serviceHeader){

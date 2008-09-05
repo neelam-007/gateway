@@ -51,10 +51,11 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
     @Override
     public void updateUserObject() throws FindException{
         svc = null;
-        getPublishedService();
+        getEntity();
     }
 
-    public PublishedService getPublishedService() throws FindException {
+    @Override
+    public PublishedService getEntity() throws FindException {
         if (svc != null) return svc;
 
         ServiceHeader serviceHeader = getEntityHeader();
@@ -66,15 +67,11 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
             return null; // Unreached; method always throws
         }
 
-        svc.setAlias(serviceHeader.isAlias());
-        if(serviceHeader.isAlias()){
-            //Adjust it's folder property
-            svc.setFolderOid(serviceHeader.getFolderOid());
-        }
-
         this.svc = svc;
 
         ServiceHeader newEh = new ServiceHeader(svc);
+        newEh.setAlias(serviceHeader.isAlias());
+        newEh.setFolderOid(serviceHeader.getFolderOid());
         setUserObject(newEh);
         firePropertyChange(this, "UserObject", serviceHeader, newEh);
         return svc;
@@ -82,17 +79,12 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
 
     @Override
     public Policy getPolicy() throws FindException {
-        return getPublishedService().getPolicy();
+        return getEntity().getPolicy();
     }
 
     public boolean isAlias() {
         ServiceHeader sH = (ServiceHeader) this.getUserObject();
         return sH.isAlias();
-    }
-
-    @Override
-    public PublishedService getEntity() throws FindException {
-        return getPublishedService();
     }
 
     /**
@@ -145,7 +137,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
     @Override
     protected void loadChildren() {
         try {
-            PublishedService s = getPublishedService();
+            PublishedService s = getEntity();
             if (s != null && s.isSoap()) {
                 Wsdl wsdl = svc.parsedWsdl();
 //                Wsdl wsdl = Wsdl.newInstance(Wsdl.extractBaseURI(s.getWsdlUrl()), new StringReader(svc.getWsdlXml()));

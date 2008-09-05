@@ -71,7 +71,7 @@ public class BridgeRoutingAssertionPropertiesAction extends NodeAction {
                     final Wsdl wsdl;
                     final ServiceNode snc = getServiceNodeCookie();
                     if (snc != null) {
-                        PublishedService svc = snc.getPublishedService();
+                        PublishedService svc = snc.getEntity();
                         policy = svc.getPolicy();
                         wsdl = svc.parsedWsdl();
                     } else {

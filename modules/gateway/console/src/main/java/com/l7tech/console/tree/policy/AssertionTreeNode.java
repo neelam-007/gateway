@@ -456,7 +456,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
     public PublishedService getService() throws FindException {
         ServiceNode sn = getServiceNodeCookie();
         if (sn == null) return null;
-        return sn.getPublishedService();
+        return sn.getEntity();
     }
 
     public Policy getPolicy() throws FindException {

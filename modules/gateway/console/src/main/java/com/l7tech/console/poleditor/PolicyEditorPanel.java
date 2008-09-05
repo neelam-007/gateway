@@ -208,7 +208,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         EntityWithPolicyNode pn = subject.getPolicyNode();
         if (pn instanceof ServiceNode) {
             try {
-                service = ((ServiceNode)pn).getPublishedService();
+                service = ((ServiceNode)pn).getEntity();
             } catch (FindException e) {
                 log.log(Level.SEVERE, "cannot get service", e);
             }

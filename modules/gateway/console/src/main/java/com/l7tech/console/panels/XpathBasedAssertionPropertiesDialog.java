@@ -248,7 +248,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         signatureResponseConfigPanel.setVisible(assertion instanceof ResponseWssIntegrity);
         if (serviceNode != null) {
             try {
-                serviceWsdl = serviceNode.getPublishedService().parsedWsdl();
+                serviceWsdl = serviceNode.getEntity().parsedWsdl();
                 if (serviceWsdl != null) {
                     serviceWsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
                     SoapMessageGenerator sg = new SoapMessageGenerator(null, new Wsdl.UrlGetter() {
@@ -313,7 +313,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                         log.log(Level.WARNING, "Invalid XML", e1);
                     }
                     String name = currentOperation == null ? null : currentOperation.getName();
-                    long objectId = (serviceNode == null)? -1 : serviceNode.getPublishedService().getOid();
+                    long objectId = (serviceNode == null)? -1 : serviceNode.getEntity().getOid();
                     sm = new SampleMessage(objectId, name, name, xml);
                 } catch (Exception ex) {
                     throw new RuntimeException("Couldn't find PublishedService", ex);
@@ -428,7 +428,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         SampleMessageComboEntry whichEntryToSelect = null;
         try {
             ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
-            long objectId = (serviceNode == null)? -1 : serviceNode.getPublishedService().getOid();
+            long objectId = (serviceNode == null)? -1 : serviceNode.getEntity().getOid();
             sampleMessages = serviceManager.findSampleMessageHeaders(objectId, operationName);
             for (EntityHeader sampleMessage : sampleMessages) {
                 long thisOid = sampleMessage.getOid();
@@ -572,7 +572,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             final DefaultTreeModel operationsTreeModel = new DefaultTreeModel(root);
 
             if (serviceNode != null) {
-                final Wsdl wsdl = serviceNode.getPublishedService().parsedWsdl();
+                final Wsdl wsdl = serviceNode.getEntity().parsedWsdl();
                 if (wsdl != null) {
                     populateOperations(wsdl, operationsTreeModel, root);
                 } else {

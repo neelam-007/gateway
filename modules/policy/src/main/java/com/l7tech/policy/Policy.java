@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * @author alex
  */
 @XmlRootElement
-public class Policy extends NamedEntityImp  implements HasFolder, Aliasable {
+public class Policy extends NamedEntityImp  implements HasFolder{
     private static final Logger logger = Logger.getLogger(Policy.class.getName());
 
     private String guid;
@@ -35,8 +35,6 @@ public class Policy extends NamedEntityImp  implements HasFolder, Aliasable {
 
     private long versionOrdinal;   // Not persisted -- filled in by admin layer
     private boolean versionActive; // Not persisted -- filled in by admin layer
-
-    private boolean isAlias;
 
     private transient Assertion assertion;
     private static final AllAssertion DISABLED_POLICY = new AllAssertion(Arrays.asList(new CommentAssertion("Policy disabled"), new FalseAssertion()));
@@ -254,14 +252,6 @@ public class Policy extends NamedEntityImp  implements HasFolder, Aliasable {
     public void setFolderOid(Long folderOid) {
         this.folderOid = folderOid;
     }
-
-    public void setAlias(boolean isAlias) {
-        this.isAlias = isAlias;
-    }
-
-    public boolean isAlias() {
-        return isAlias;
-    }    
 
     @SuppressWarnings({ "RedundantIfStatement" })
     public boolean equals(Object o) {

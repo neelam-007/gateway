@@ -34,7 +34,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
     @Override
     public void updateUserObject() throws FindException{
         policy = null;
-        getPolicy();
+        getEntity();
     }
     
     public Policy getPolicy() throws FindException {
@@ -49,14 +49,9 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
             return null; // Unreached; method always throws
         }
 
-        updatedPolicy.setAlias(eh.isAlias());
-        if(eh.isAlias()){
-            //Adjust it's folder property
-            updatedPolicy.setFolderOid(eh.getFolderOid());
-        }
-
-
         PolicyHeader newEh = new PolicyHeader(updatedPolicy);
+        newEh.setAlias(eh.isAlias());
+        newEh.setFolderOid(eh.getFolderOid());
         setUserObject(newEh);
         firePropertyChange(this, "UserObject", eh, newEh);
 

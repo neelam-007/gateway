@@ -47,7 +47,7 @@ public class SchemaValidationPropertiesDialogTest {
         ServiceHeader sh = new ServiceHeader(svc);
         ServiceNode sn = new ServiceNode(sh);
 
-        PublishedService ps = sn.getPublishedService();
+        PublishedService ps = sn.getEntity();
         ps.setWsdlXml( null);//TestDocuments.getTestDocumentAsXml(TestDocuments.WSDL_DOC_LITERAL));
         SchemaValidation sass = new SchemaValidation();
         AssertionTreeNode tn = AssertionTreeNodeFactory.asTreeNode(sass);

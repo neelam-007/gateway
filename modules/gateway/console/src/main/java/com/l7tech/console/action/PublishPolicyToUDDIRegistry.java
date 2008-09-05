@@ -45,7 +45,7 @@ public class PublishPolicyToUDDIRegistry extends NodeAction {
         final ServiceNode serviceNode = ((ServiceNode)node);
         PublishedService svc;
         try {
-            svc = serviceNode.getPublishedService();
+            svc = serviceNode.getEntity();
         } catch (FindException e) {
             throw new RuntimeException("Cannot get service", e);
         }
