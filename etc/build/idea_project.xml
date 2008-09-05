@@ -30,6 +30,7 @@
             <entry name="?*.db"/>
             <entry name="?*.ks"/>
             <entry name="?*.pfx"/>
+            <entry name="?*.index"/>
         </wildcardResourcePatterns>
     </component>
     <component name="JavacSettings">
