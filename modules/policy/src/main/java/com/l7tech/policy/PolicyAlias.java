@@ -8,7 +8,7 @@ import com.l7tech.objectmodel.Alias;
  * Date: Aug 25, 2008
  * Time: 9:14:36 AM
  */
-public class PolicyAlias<PolicyAlias> extends Alias {
+public class PolicyAlias extends Alias<Policy> {
 
     @Deprecated // For Serialization and persistence only
     public PolicyAlias(){

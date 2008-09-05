@@ -31,7 +31,7 @@ public abstract class AliasManagerImpl<ET extends Alias, HT extends Organization
 
     public ET findAliasByEntityAndFolder(final Long serviceOid, final Long folderOid) throws FindException {
         if (serviceOid == null || folderOid == null) throw new NullPointerException();
-        if (!(NamedEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not NamedEntities!");
+        if (!(PersistentEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not PersistentEntity!");
 
         try {
             //noinspection unchecked
@@ -51,7 +51,7 @@ public abstract class AliasManagerImpl<ET extends Alias, HT extends Organization
 
     public Collection<ET> findAllAliasesForEntity(final Long serviceOid) throws FindException {
         if (serviceOid == null) throw new NullPointerException();
-        if (!(NamedEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not NamedEntities!");
+        if (!(PersistentEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not PersistentEntity!");
 
         try {
             //noinspection unchecked

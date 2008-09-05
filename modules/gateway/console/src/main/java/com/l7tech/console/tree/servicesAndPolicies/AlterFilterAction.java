@@ -10,7 +10,6 @@ import com.l7tech.console.util.TopComponents;
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
-import java.util.EnumSet;
 import java.util.Enumeration;
 
 /**
@@ -45,7 +44,6 @@ public class AlterFilterAction extends BaseAction {
             return filterName;
         }
 
-        public static final EnumSet<FilterType> ALL_FILTER_TYPEs = EnumSet.of(ALL, SERVICES, POLICY_FRAGMENT);
         private final String filterName;
 
     }

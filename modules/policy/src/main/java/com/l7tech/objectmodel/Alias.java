@@ -1,6 +1,7 @@
 package com.l7tech.objectmodel;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 /**
  * Created by IntelliJ IDEA.
@@ -8,12 +9,9 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
  * Date: Aug 25, 2008
  * Time: 2:14:03 PM
  * AliasEntity was created as a means of referring to any class which can be aliases generically.
- * @param <HT> represents the concrete subclass. This is a bit strange however it allows for classes which want to
- * deal with concrete classes of AliasEntity generically to do so. As AliasEntity is paramatarized, if you have a
- * method which can return any of a selection of subtypes and we want type information to be available, by giving this
- * abstract class this information in HT we can make use of this elsewhere. See the Manager impl's which use AliasEntity
+ * @param <HT> represents the entity being aliased, we need it's oid only
  */
-public abstract class Alias<HT extends NamedEntityImp> extends NamedEntityImp implements EntityAlias {
+public abstract class Alias<HT extends NamedEntityImp> extends PersistentEntityImp implements EntityAlias {
 
     private long entityOid;
     private long folderOid;
@@ -23,7 +21,6 @@ public abstract class Alias<HT extends NamedEntityImp> extends NamedEntityImp im
     }
 
     public Alias(HT entity, long folderOid) {
-        super(entity);
         this.folderOid = folderOid;
         this.entityOid = entity.getOid();
     }

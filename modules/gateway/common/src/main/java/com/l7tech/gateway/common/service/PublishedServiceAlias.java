@@ -8,7 +8,7 @@ import com.l7tech.objectmodel.Alias;
  * Date: Aug 6, 2008
  * Time: 9:06:59 AM
  */
-public class PublishedServiceAlias<PublishedServiceAlias> extends Alias {
+public class PublishedServiceAlias extends Alias<PublishedService> {
 
     @Deprecated // For Serialization and persistence only
     public PublishedServiceAlias(){
