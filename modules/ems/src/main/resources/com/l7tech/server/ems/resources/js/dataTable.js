@@ -159,7 +159,7 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, so
 
         // Subscribes to row select changes for enabling/disabling toolbar buttons.
         var enableOrDisableControls = function (event, target) {
-            var selectedRows = this.getSelectedRows();
+            var selectedRows = myDataTable.getSelectedRows();
             var hasSelectedRows = (selectedRows != null) && (selectedRows.length != 0);
 
             var controlId;

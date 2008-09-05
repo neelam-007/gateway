@@ -58,8 +58,7 @@ public class EnterpriseUsers extends EmsPage {
         pageForm.add( hidden.setOutputMarkupId(true) );
 
         List<PropertyColumn> columns = new ArrayList<PropertyColumn>();
-        PropertyColumn loginPropertyColumn = new PropertyColumn(new StringResourceModel("usertable.column.login", this, null), "login", "login");
-        columns.add(loginPropertyColumn);
+        columns.add(new PropertyColumn(new StringResourceModel("usertable.column.login", this, null), "login", "login"));
         columns.add(new PropertyColumn(new StringResourceModel("usertable.column.lastName", this, null), "lastName", "lastName"));
         columns.add(new PropertyColumn(new StringResourceModel("usertable.column.firstName", this, null), "firstName", "firstName"));
 

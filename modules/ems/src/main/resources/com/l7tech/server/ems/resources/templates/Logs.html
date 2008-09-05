@@ -121,7 +121,22 @@
             </div>
             <div class="content">
                 <wicket:extend>
-                    <span style="font-size: 1in;">X</span>
+                    <form wicket:id="form" action="">
+                        <div class="panel">
+                            <div class="panelToolbar">
+                               <button id="viewLogButton" type="button" wicket:id="viewLogButton"><wicket:message key="label.view">View</wicket:message></button>
+                               <button id="downloadLogButton" type="button" wicket:id="downloadLogButton"><wicket:message key="label.download">Download</wicket:message></button>
+                               <input name="logId" type="hidden" value="" wicket:id="logId"/>
+                            </div>
+                            <div wicket:id="logtable"/>
+                        </div>
+                    </form>
+
+                    <div wicket:id="log.modal"></div>
+                    <div wicket:id="log.details">
+                        <div wicket:id="details"></div>
+                    </div>
+
                 </wicket:extend>
             </div>
             <div class="statusBar">

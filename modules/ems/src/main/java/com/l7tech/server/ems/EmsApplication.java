@@ -101,6 +101,7 @@ public class EmsApplication extends WebApplication {
             }
 
         });
+        getSharedResources().add("logResource", new LogResource());
 
         IMarkupSettings markupSettings = getMarkupSettings();
         markupSettings.setStripWicketTags(true);
