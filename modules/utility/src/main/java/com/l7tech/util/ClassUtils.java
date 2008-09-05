@@ -115,15 +115,18 @@ public class ClassUtils {
                                                  final String resourcePath ) throws IOException {
         URL resourceBaseUrl = baseClass.getResource( resourcePath );
         List<URL> resourceUrls = new ArrayList<URL>();
-        BufferedReader reader = null;
-        try {
-            reader = new BufferedReader( new InputStreamReader(resourceBaseUrl.openStream()) );
-            String name;
-            while( (name = reader.readLine()) != null ) {
-                resourceUrls.add( new URL(resourceBaseUrl, name) );
+
+        if ( resourceBaseUrl != null ) {
+            BufferedReader reader = null;
+            try {
+                reader = new BufferedReader( new InputStreamReader(resourceBaseUrl.openStream()) );
+                String name;
+                while( (name = reader.readLine()) != null ) {
+                    resourceUrls.add( new URL(resourceBaseUrl, name) );
+                }
+            } finally {
+                ResourceUtils.closeQuietly( reader );
             }
-        } finally {
-            ResourceUtils.closeQuietly( reader );
         }
 
         return resourceUrls;
