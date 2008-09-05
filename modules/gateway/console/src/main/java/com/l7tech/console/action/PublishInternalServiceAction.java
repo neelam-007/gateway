@@ -1,9 +1,5 @@
 package com.l7tech.console.action;
 
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityListenerAdapter;
@@ -14,9 +10,13 @@ import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
+import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceTemplate;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -83,9 +83,15 @@ public class PublishInternalServiceAction extends SecureAction{
                 TreeNode[] nodes = root.getPath();
                 TreePath nPath = new TreePath(nodes);
                 if (tree.hasBeenExpanded(nPath)) {
+                    //Remove any filter before insert
+                    TopComponents.getInstance().clearFilter();
+
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh, null);
                     model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));
+                    RootNode rootNode = (RootNode) model.getRoot();
+                    rootNode.addEntity(eh.getOid(), sn);
+                    tree.setSelectionPath(new TreePath(sn.getPath()));
 
                     tree.setSelectionPath(new TreePath(sn.getPath()));
                     SwingUtilities.invokeLater(new Runnable() {

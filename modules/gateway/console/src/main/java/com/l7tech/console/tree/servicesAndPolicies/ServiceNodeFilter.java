@@ -2,6 +2,7 @@ package com.l7tech.console.tree.servicesAndPolicies;
 
 import com.l7tech.console.tree.NodeFilter;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.gateway.common.service.ServiceHeader;
 
 import javax.swing.tree.TreeNode;
@@ -17,6 +18,9 @@ public class ServiceNodeFilter implements NodeFilter {
     public boolean accept(TreeNode node) {
 
         if(node instanceof FolderNode) return true;
+
+        //All children of a ServiceNode are WsdlTreeNode
+        if(node instanceof WsdlTreeNode) return true;
         
         if(!(node instanceof ServiceNode)) return false;
 

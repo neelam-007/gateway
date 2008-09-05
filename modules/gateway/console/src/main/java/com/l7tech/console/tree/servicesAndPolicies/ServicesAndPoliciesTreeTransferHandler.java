@@ -11,7 +11,6 @@ import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.admin.AliasAdmin;
 import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyHeader;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gui.util.DialogDisplayer;
 
@@ -162,8 +161,8 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                                 }else if(childTransferNode instanceof PolicyEntityNode){
                                     aliasAdmin = Registry.getDefault().getPolicyAdmin();
                                 }
-                                AliasEntity aliasEntity = aliasAdmin.findAliasByEntityAndFolder(Long.valueOf(entity.getId()), fh.getOid());
-                                if(aliasEntity == null){
+                                Alias alias = aliasAdmin.findAliasByEntityAndFolder(Long.valueOf(entity.getId()), fh.getOid());
+                                if(alias == null){
                                     DialogDisplayer.showMessageDialog(tree,
                                       "Cannot find alias",
                                       "Find Error",
@@ -171,8 +170,8 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                                     return false;
                                 }
                                 //now update the alias
-                                aliasEntity.setFolderOid(newParent.getOid());
-                                aliasAdmin.saveAlias(aliasEntity);
+                                alias.setFolderOid(newParent.getOid());
+                                aliasAdmin.saveAlias(alias);
 
                                 //Update the OrganizationHeader representing the alias
                                 //this is enough to update the entity correctly. Below when updateUserObject is called

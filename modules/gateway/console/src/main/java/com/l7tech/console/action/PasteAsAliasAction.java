@@ -128,6 +128,7 @@ public class PasteAsAliasAction extends SecureAction {
             }
 
             header.setAlias(true);
+            header.setFolderOid(parentFolderOid);
             EntityWithPolicyNode childNode = (EntityWithPolicyNode) TreeNodeFactory.asTreeNode(header, RootNode.getComparator());
 
             int insertPosition = parentNode.getInsertPosition(childNode, RootNode.getComparator());

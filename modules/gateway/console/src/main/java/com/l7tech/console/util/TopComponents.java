@@ -90,6 +90,9 @@ public class TopComponents {
         getMainWindow().addPermissionRefreshListener(listener);
     }
 
+    public void clearFilter() {
+        getMainWindow().clearFilter();
+    }
     public void firePermissionRefresh() {
         getMainWindow().firePermissionRefresh();
     }

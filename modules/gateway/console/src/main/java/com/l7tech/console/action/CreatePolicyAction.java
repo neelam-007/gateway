@@ -4,11 +4,13 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.PolicyPropertiesPanel;
-import com.l7tech.console.tree.*;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.PolicyEntityNode;
+import com.l7tech.console.tree.ServicesAndPoliciesTree;
+import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.MainWindow;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -103,8 +105,7 @@ public class CreatePolicyAction extends SecureAction {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
 
                     //Remove any filter before insert
-                    MainWindow mainWindow = (MainWindow)TopComponents.getInstance().getComponent(MainWindow.NAME);
-                    mainWindow.clearFilter();
+                    TopComponents.getInstance().clearFilter();
 
                     PolicyHeader ph = new PolicyHeader(policy);
                     final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(new PolicyHeader(policy), null);

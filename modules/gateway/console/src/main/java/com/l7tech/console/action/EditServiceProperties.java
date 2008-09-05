@@ -70,29 +70,30 @@ public class EditServiceProperties extends ServiceNodeAction {
                 if (changed) {
                     serviceNode.clearCachedEntities();
                     serviceNode.reloadChildren();
-                    ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+
+                    final ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                     if (tree != null) {
                         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                         model.nodeChanged(node);
                         model.reload(node); // WSDL may have changed
-                    }
-                    //if this is an original entity, update any aliases it may have, in case it's name, uri or
-                    //something else show to the user in the tree changes
-                    if(!serviceNode.isAlias()){
-                        if (tree !=null) {
+
+                        //if this is an original entity, update any aliases it may have, in case it's name, uri or
+                        //something else show to the user in the tree changes
+                        if(!serviceNode.isAlias()){
                             ServiceHeader sH = (ServiceHeader) serviceNode.getUserObject();
                             tree.updateAllAliases(sH.getOid());
                         }
                     }
+
                     // update name on top of editor if that service is being edited
                     final WorkSpacePanel cws = TopComponents.getInstance().getCurrentWorkspace();
                     JComponent jc = cws.getComponent();
-                    if (jc == null || !(jc instanceof PolicyEditorPanel)) {
-                        return;
-                    }
+                    if (jc == null || !(jc instanceof PolicyEditorPanel)) return;
+
                     PolicyEditorPanel pe = (PolicyEditorPanel)jc;
                     try {
                         final EntityWithPolicyNode pn = pe.getPolicyNode();
+
                         if (pn instanceof ServiceNode) {
                             PublishedService editedSvc = ((ServiceNode) pn).getPublishedService();
                             // if currently edited service was deleted

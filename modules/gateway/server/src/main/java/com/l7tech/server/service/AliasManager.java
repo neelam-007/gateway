@@ -18,7 +18,7 @@ import java.util.Collection;
  * AT represents the actual Alias persisted object that we are finding. Currently this is either
  * {@link com.l7tech.gateway.common.service.PublishedServiceAlias} or {@link com.l7tech.policy.PolicyAlias}
  */
-public interface AliasManager<ET extends AliasEntity, HT extends OrganizationHeader>
+public interface AliasManager<ET extends Alias, HT extends OrganizationHeader>
         extends EntityManager<ET, HT> {
 
     /**

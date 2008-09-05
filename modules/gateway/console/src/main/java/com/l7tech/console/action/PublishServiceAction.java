@@ -3,10 +3,6 @@
  */
 package com.l7tech.console.action;
 
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityListenerAdapter;
@@ -17,7 +13,10 @@ import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.MainWindow;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
+import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
@@ -85,9 +84,8 @@ public class PublishServiceAction extends SecureAction {
                 AbstractTreeNode root = TopComponents.getInstance().getServicesFolderNode();
                 DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                 //Remove any filter before insert
-                MainWindow mainWindow = (MainWindow)TopComponents.getInstance().getComponent(MainWindow.NAME);
-                mainWindow.clearFilter();
-                
+                TopComponents.getInstance().clearFilter();
+
                 final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh, RootNode.getComparator());
                 model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));
                 RootNode rootNode = (RootNode) model.getRoot();

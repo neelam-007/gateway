@@ -1,17 +1,10 @@
 package com.l7tech.console.action;
 
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import static com.l7tech.gateway.common.security.rbac.EntityType.SERVICE;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.console.util.WsdlComposer;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
@@ -19,17 +12,24 @@ import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.WsdlComposer;
 import com.l7tech.console.util.WsdlUtils;
-import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
+import static com.l7tech.gateway.common.security.rbac.EntityType.SERVICE;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.wsdl.Wsdl;
 import org.w3c.dom.Document;
 
 import javax.swing.*;
@@ -47,11 +47,11 @@ import javax.wsdl.xml.WSDLWriter;
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
+import java.net.ConnectException;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.ConnectException;
 
 /**
  * The <code>PublishServiceAction</code> action invokes the pubish
@@ -268,13 +268,14 @@ public class CreateServiceWsdlAction extends SecureAction {
                         AbstractTreeNode root = TopComponents.getInstance().getServicesFolderNode();
                         TreeNode[] nodes = root.getPath();
                         TreePath nPath = new TreePath(nodes);
-                        if (tree.hasBeenExpanded(nPath)) {
-                            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                            AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh, null);
-                            model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));
-                            RootNode rootNode = (RootNode) model.getRoot();
-                            rootNode.addEntity(eh.getOid(), sn);
-                        }
+                        //Remove any filter before insert
+                        TopComponents.getInstance().clearFilter();
+
+                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                        AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh, null);
+                        model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));
+                        RootNode rootNode = (RootNode) model.getRoot();
+                        rootNode.addEntity(eh.getOid(), sn);
                     } else {
                         log.log(Level.WARNING, "Service tree unreachable.");
                     }

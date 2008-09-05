@@ -5,18 +5,16 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
 import com.l7tech.wsdl.Wsdl;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
-import javax.swing.tree.TreeNode;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,27 +59,17 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
 
         ServiceHeader serviceHeader = getEntityHeader();
         PublishedService svc = Registry.getDefault().getServiceManager().findServiceByID(serviceHeader.getStrId());
+
+        // throw something if null, the service may have been deleted
+        if (svc == null) {
+            orphanMe();
+            return null; // Unreached; method always throws
+        }
+
         svc.setAlias(serviceHeader.isAlias());
         if(serviceHeader.isAlias()){
             //Adjust it's folder property
             svc.setFolderOid(serviceHeader.getFolderOid());
-        }
-        // throw something if null, the service may have been deleted
-        if (svc == null) {
-            TopComponents creg = TopComponents.getInstance();
-            JTree tree = (JTree)creg.getComponent(ServicesAndPoliciesTree.NAME);
-            if (tree !=null) {
-                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                Enumeration kids = this.getParent().children();
-                while (kids.hasMoreElements()) {
-                    TreeNode node = (TreeNode) kids.nextElement();
-                    if (node == this) {
-                        model.removeNodeFromParent(this);
-                        break;
-                    }
-                }
-            }
-            throw new FindException("The service '"+serviceHeader.getName()+"' does not exist any more.");
         }
 
         this.svc = svc;

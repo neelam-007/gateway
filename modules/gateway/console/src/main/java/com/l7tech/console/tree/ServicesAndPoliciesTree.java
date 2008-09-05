@@ -1,26 +1,27 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.*;
+import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
+import com.l7tech.console.tree.servicesAndPolicies.ServicesAndPoliciesTreeTransferHandler;
 import com.l7tech.console.util.Refreshable;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.console.tree.servicesAndPolicies.ServicesAndPoliciesTreeTransferHandler;
-import com.l7tech.console.tree.servicesAndPolicies.RootNode;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.ClipboardActions;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.objectmodel.*;
+import com.l7tech.gui.util.ClipboardActions;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.policy.PolicyHeader;
+
 import javax.swing.*;
 import javax.swing.tree.*;
 import java.awt.event.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Class ServiceTree is the specialized <code>JTree</code> that
@@ -254,7 +255,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
     }
 
     /**
-     * Get the standard global cut action, but only if the current user has permissions to carry out
+     * Get the standard global cut or paste action, but only if the current user has permissions to carry out
      * the supplied operationType on the supplied entityType.
      * Currently only supports FOLDER and UPDATE
      * Use this method when you need a secured Action which is not part of the SecureAction hierarchy
@@ -270,28 +271,23 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
                                           OperationType operationType,
                                           ClipboardActionType clipboardActionType
     ) {
+        if (!entityType.equals(EntityType.FOLDER) || !operationType.equals(OperationType.UPDATE)) return null;
+        if (!ClipboardActions.isSystemClipboardAvailable()) return null;
+        if (!Registry.getDefault().isAdminContextPresent()) return null;
 
-        if(entityType.equals(EntityType.FOLDER) && operationType.equals(OperationType.UPDATE)){
-            if(!ClipboardActionType.ALL_ACTIONS.contains(clipboardActionType)) return null;
+        AttemptedUpdateAny attemptedUpdate = new AttemptedUpdateAny(EntityType.FOLDER);
 
-            if(ClipboardActions.isSystemClipboardAvailable()) {
-                //use an AttemptedUpdate, which represents an Update attempty on a Folder to determine
-                //whether cut should be available for this node
-                final Folder folder = new Folder("TestFolder", null);
-                AttemptedUpdate attemptedUpdate = new AttemptedUpdate(EntityType.FOLDER, folder);
-                if (Registry.getDefault().isAdminContextPresent()){
-                    SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
-                    if(securityProvider.hasPermission(attemptedUpdate)){
-                        if(clipboardActionType.equals(ClipboardActionType.CUT)){
-                            return ClipboardActions.getGlobalCutAction();
-                        }else if(clipboardActionType.equals(ClipboardActionType.PASTE)){
-                            return ClipboardActions.getGlobalPasteAction();
-                        }
-                    }
-                }
-            }
+        SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
+        if (!securityProvider.hasPermission(attemptedUpdate)) return null;
+
+        switch(clipboardActionType) {
+            case CUT:
+                return ClipboardActions.getGlobalCutAction();
+            case PASTE:
+                return ClipboardActions.getGlobalPasteAction();
+            default:
+                throw new IllegalArgumentException();
         }
-        return null;
     }
 
     public void setIgnoreCurrentClipboard(boolean set){

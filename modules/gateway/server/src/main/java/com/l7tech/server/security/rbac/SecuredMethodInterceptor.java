@@ -408,6 +408,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor, ApplicationL
         for(EntityType type: check.types){
             try {
                 check.entity = entityFinder.find(type.getEntityClass(), id);
+                if(check.entity != null) break;
             } catch (FindException e) {
                 //we are only going to remember the last FindException, if one is thrown
                 findException = e;

@@ -21,7 +21,7 @@ import java.util.*;
  * Note the abstract method getNewEntityHeader, when we want to create a new EntityHeader we need to get this
  * from the subclass as we can't create a new instance from the paramaratized type alone.
  */
-public abstract class AliasManagerImpl<ET extends AliasEntity, HT extends OrganizationHeader>
+public abstract class AliasManagerImpl<ET extends Alias, HT extends OrganizationHeader>
         extends HibernateEntityManager<ET, HT> implements AliasManager<ET, HT>{
 
     @Override

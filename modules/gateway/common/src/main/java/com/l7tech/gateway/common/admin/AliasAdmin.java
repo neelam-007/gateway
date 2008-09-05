@@ -22,10 +22,10 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types= {EntityType.SERVICE_ALIAS, EntityType.POLICY_ALIAS})
-public interface AliasAdmin<HT extends AliasEntity> {
+public interface AliasAdmin<HT extends Alias> {
 
     /**
-     * Store the specified new or existing alias. If the specified {@link AliasEntity} contains a
+     * Store the specified new or existing alias. If the specified {@link com.l7tech.objectmodel.Alias} contains a
      * unique object ID that already exists, this will replace the objects current configuration with the new configuration.
      * Otherwise, a new object will be created.
      * The only reason to save an alias is if you have changed it's folder attribute.
@@ -55,9 +55,9 @@ public interface AliasAdmin<HT extends AliasEntity> {
     public HT findAliasByEntityAndFolder(final Long entityOid, final Long folderOid) throws FindException;
 
     /**
-     * Delete an {@link AliasEntity} by its unique identifier.
+     * Delete an {@link com.l7tech.objectmodel.Alias} by its unique identifier.
 
-     * @param oid the unique identifier of the {@link AliasEntity} to delete.
+     * @param oid the unique identifier of the {@link com.l7tech.objectmodel.Alias} to delete.
      * @throws com.l7tech.objectmodel.DeleteException if the requested alias could not be deleted
      */
     @Secured(stereotype= DELETE_BY_ID, types= {EntityType.SERVICE_ALIAS, EntityType.POLICY_ALIAS})

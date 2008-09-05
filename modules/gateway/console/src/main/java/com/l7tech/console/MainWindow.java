@@ -172,7 +172,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JTabbedPane paletteTabbedPane;
 
     public static final String TITLE = "SSG Management Console";
-    public static final String NAME = "main.window"; // registered
     private EventListenerList listenerList = new WeakEventListenerList();
     @SuppressWarnings({"FieldCanBeLocal"})
     private LogonListener closeWindowListener;

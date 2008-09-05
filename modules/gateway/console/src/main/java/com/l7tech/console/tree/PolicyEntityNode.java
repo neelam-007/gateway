@@ -6,25 +6,21 @@ package com.l7tech.console.tree;
 import com.l7tech.console.action.*;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.EntityType;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.Comparator;
 import java.util.logging.Level;
 
 /** @author alex */
-public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>{
+public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader> {
     protected volatile Policy policy;
 
     public PolicyEntityNode(PolicyHeader e) {
@@ -46,29 +42,19 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
 
         PolicyHeader eh = getEntityHeader();
         Policy updatedPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(eh.getGuid());
+
+        // throw something if null, the service may have been deleted
+        if (updatedPolicy == null) {
+            orphanMe();
+            return null; // Unreached; method always throws
+        }
+
         updatedPolicy.setAlias(eh.isAlias());
         if(eh.isAlias()){
             //Adjust it's folder property
             updatedPolicy.setFolderOid(eh.getFolderOid());
         }
 
-        // throw something if null, the service may have been deleted
-        if (updatedPolicy == null) {
-            TopComponents creg = TopComponents.getInstance();
-            JTree tree = (JTree)creg.getComponent(ServicesAndPoliciesTree.NAME);
-            if (tree !=null) {
-                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                Enumeration kids = this.getParent().children();
-                while (kids.hasMoreElements()) {
-                    TreeNode node = (TreeNode) kids.nextElement();
-                    if (node == this) {
-                        model.removeNodeFromParent(this);
-                        break;
-                    }
-                }
-            }
-            throw new FindException("The policy for '"+eh.getName()+"' does not exist any more.");
-        }
 
         PolicyHeader newEh = new PolicyHeader(updatedPolicy);
         setUserObject(newEh);
@@ -97,7 +83,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         if(!isAlias()) actions.add(sa);
         actions.add(new PolicyRevisionsAction(this));
         actions.add(new RefreshTreeNodeAction(this));
-        
+
         Action secureCut = ServicesAndPoliciesTree.getSecuredAction(EntityType.FOLDER,
                                                                 OperationType.UPDATE,
                                                                 ServicesAndPoliciesTree.ClipboardActionType.CUT);
