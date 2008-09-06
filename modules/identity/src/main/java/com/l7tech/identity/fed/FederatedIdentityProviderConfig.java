@@ -11,6 +11,9 @@ import com.l7tech.identity.IdentityProviderType;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Entity;
+import javax.persistence.Transient;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -19,15 +22,19 @@ import java.util.Set;
  * @version $Revision$
  */
 @XmlRootElement
+@Entity
+@DiscriminatorValue("3")
 public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
     public FederatedIdentityProviderConfig() {
         super(IdentityProviderType.FEDERATED);
     }
 
+    @Transient
     public boolean isWritable() {
         return true;
     }
 
+    @Transient
     public boolean isSamlSupported() {
         return getBooleanProperty(PROP_SAML_SUPPORTED, false);
     }
@@ -36,6 +43,7 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
         setProperty(PROP_SAML_SUPPORTED,Boolean.valueOf(saml));
     }
 
+    @Transient
     public boolean isX509Supported() {
         return getBooleanProperty(PROP_X509_SUPPORTED, true);
     }
@@ -44,6 +52,7 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
         setProperty(PROP_X509_SUPPORTED,Boolean.valueOf(x509));
     }
 
+    @Transient
     public X509Config getX509Config() {
         X509Config config = (X509Config)getProperty(PROP_X509_CONFIG);
         if ( config == null ) {
@@ -53,6 +62,7 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
         return config;
     }
 
+    @Transient
     public long[] getTrustedCertOids() {
         long[] oids = (long[])getProperty(PROP_CERT_OIDS);
         if ( oids == null ) {
@@ -66,6 +76,7 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
         setProperty(PROP_CERT_OIDS, oids);
     }
 
+    @Transient
     public HashMap<String, FederatedGroup> getImportedGroups() {
         return importedGroups;
     }
@@ -74,6 +85,7 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
         this.importedGroups = importedGroups;
     }
 
+    @Transient
     public HashMap<String, FederatedUser> getImportedUsers() {
         return importedUsers;
     }
@@ -83,6 +95,7 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
     }
 
     @XmlTransient
+    @Transient
     public HashMap<String, Set<String>> getImportedGroupMembership() {
         return importedGroupMembership;
     }

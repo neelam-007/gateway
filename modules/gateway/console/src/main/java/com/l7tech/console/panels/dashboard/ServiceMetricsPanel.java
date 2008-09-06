@@ -454,7 +454,7 @@ public class ServiceMetricsPanel extends JPanel {
             if (_clusterNodesComboModel.getSelectedItem() != prevNode) {
                 for (int i = 1; i < _clusterNodesComboModel.getSize(); ++i) {
                     final ClusterNodeInfo node = (ClusterNodeInfo)_clusterNodesComboModel.getElementAt(i);
-                    if (node.getOid() == prevNode.getOid()) {
+                    if ( node.getId().equals(prevNode.getId()) ) {
                         _clusterNodesComboModel.setSelectedItem(node);
                         break;
                     }

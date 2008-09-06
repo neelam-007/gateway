@@ -69,6 +69,24 @@
         </property>
         <property name="annotatedClasses">
             <list>
+                <!-- Transports -->
+                <value>com.l7tech.gateway.common.transport.SsgConnector</value>
+                <value>com.l7tech.gateway.common.transport.SsgConnectorProperty</value>
+                <value>com.l7tech.gateway.common.transport.jms.JmsConnection</value>
+                <value>com.l7tech.gateway.common.transport.jms.JmsEndpoint</value>
+
+                <!-- Identity Provider Entities -->
+                <value>com.l7tech.identity.IdentityProviderConfig</value>
+                <value>com.l7tech.identity.internal.InternalGroup</value>
+                <value>com.l7tech.identity.internal.InternalUser</value>
+                <value>com.l7tech.identity.internal.InternalGroupMembership</value>
+                <value>com.l7tech.identity.ldap.LdapIdentityProviderConfig</value>
+                <value>com.l7tech.identity.fed.FederatedIdentityProviderConfig</value>
+                <value>com.l7tech.identity.fed.FederatedUser</value>
+                <value>com.l7tech.identity.fed.FederatedGroup</value>
+                <value>com.l7tech.identity.fed.FederatedGroupMembership</value>
+                <value>com.l7tech.identity.fed.VirtualGroup</value>
+
                 <!-- WSDM Entities -->
                 <value>com.l7tech.server.wsdm.subscription.Subscription</value>
 
@@ -90,6 +108,20 @@
 
                 <value>com.l7tech.gateway.common.mapping.MessageContextMappingKeys</value>
                 <value>com.l7tech.gateway.common.mapping.MessageContextMappingValues</value>
+
+                <!-- General -->
+                <value>com.l7tech.gateway.common.cluster.ClusterNodeInfo</value>
+                <value>com.l7tech.gateway.common.cluster.ClusterProperty</value>
+                <value>com.l7tech.gateway.common.log.SinkConfiguration</value>
+                <value>com.l7tech.gateway.common.schema.SchemaEntry</value>
+                <value>com.l7tech.gateway.common.security.RevocationCheckPolicy</value>
+                <value>com.l7tech.security.cert.TrustedCert</value>
+                <value>com.l7tech.server.identity.cert.CertEntryRow</value>
+                <value>com.l7tech.server.security.keystore.KeystoreFile</value>
+                <value>com.l7tech.server.security.sharedkey.SharedKeyRecord</value>
+
+                <!-- Policy Assertion Related Entities -->
+                <value>com.l7tech.server.sla.CounterIDRecord</value>
             </list>
         </property>
         <property name="dataSource" ref="switchedDataSource"/>

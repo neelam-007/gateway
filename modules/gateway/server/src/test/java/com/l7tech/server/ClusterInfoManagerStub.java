@@ -14,9 +14,9 @@ import java.util.Collections;
  *
  */
 public class ClusterInfoManagerStub implements ClusterInfoManager {
+
     final ClusterNodeInfo cnf = new ClusterNodeInfo();
     {
-        cnf.setPartitionName("default_");
         cnf.setNodeIdentifier("TestNode-main");
         cnf.setMac("00:0c:11:f0:43:01");
         cnf.setName("SSG1");

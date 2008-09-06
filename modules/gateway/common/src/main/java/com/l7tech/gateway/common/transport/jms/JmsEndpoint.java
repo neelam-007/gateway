@@ -11,6 +11,13 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+import javax.persistence.Column;
+import javax.persistence.Basic;
+import javax.persistence.Enumerated;
+import javax.persistence.EnumType;
 import java.io.Serializable;
 import java.net.PasswordAuthentication;
 
@@ -20,6 +27,8 @@ import java.net.PasswordAuthentication;
  * Persistent.
   */
 @XmlRootElement
+@Entity
+@Table(name="jms_endpoint")
 public class JmsEndpoint extends NamedEntityImp implements Serializable, Comparable {
     public static final int DEFAULT_MAX_CONCURRENT_REQUESTS = 1;
 
@@ -59,6 +68,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     /**
      * May be null.
      */
+    @Transient
     public PasswordAuthentication getPasswordAuthentication() {
         return _username != null && _password != null
                ? new PasswordAuthentication( _username, _password.toCharArray() )
@@ -69,6 +79,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         return new EntityHeader(getOid(), EntityType.JMS_ENDPOINT, getName(), getDestinationName());
     }
 
+    @Column(name="username",length=32)
     public String getUsername() {
         return _username;
     }
@@ -77,6 +88,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         _username = username;
     }
 
+    @Column(name="password",length=32)
     public String getPassword() {
         return _password;
     }
@@ -85,6 +97,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         _password = password;
     }
 
+    @Column(name="max_concurrent_requests")
     public int getMaxConcurrentRequests() {
         return _maxConcurrentRequests;
     }
@@ -93,6 +106,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
      * @return true if the endpoint is outbound (that is the gateway routes messages to the
      * queue). false means inbound (that is the ssg gets messages from the queue)
      */
+    @Column(name="is_message_source")
     public boolean isMessageSource() {
         return _messageSource;
     }
@@ -113,10 +127,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         _maxConcurrentRequests = maxConcurrentRequests;
     }
 
-    public String toString() {
-        return "<JmsEndpoint connectionOid=\"" + _connectionOid + "\" name=\"" + _name + "\"/>";
-    }
-
+    @Column(name="connection_oid", nullable=false)
     public long getConnectionOid() {
         return _connectionOid;
     }
@@ -125,6 +136,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         _connectionOid = conn;
     }
 
+    @Column(name="destination_name", nullable=false, length=128)
     public String getDestinationName() {
         return _destinationName;
     }
@@ -133,6 +145,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         _destinationName = name;
     }
 
+    @Column(name="failure_destination_name", length=128)
     public String getFailureDestinationName() {
         return _failureDestinationName;
     }
@@ -141,6 +154,8 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         _failureDestinationName = name;
     }
 
+    @Enumerated(EnumType.STRING)
+    @Column(name="acknowledgement_type")
     public JmsAcknowledgementType getAcknowledgementType() {
         return _acknowledgementType;
     }
@@ -149,6 +164,8 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         _acknowledgementType = acknowledgementType;
     }
 
+    @Enumerated
+    @Column(name="reply_type")
     public JmsReplyType getReplyType() {
         if (_replyType == null)
             return JmsReplyType.AUTOMATIC;
@@ -159,6 +176,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         _replyType = replyType;
     }
 
+    @Column(name="reply_to_queue_name", length=128)
     public String getReplyToQueueName() {
         return replyToQueueName;
     }
@@ -168,6 +186,8 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         replyToQueueName = replyTo;
     }
 
+    @Enumerated(EnumType.STRING)
+    @Column(name="outbound_message_type")
     public JmsOutboundMessageType getOutboundMessageType() {
         return outboundMessageType;
     }
@@ -177,6 +197,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         this.outboundMessageType = outboundMessageType;
     }
 
+    @Column(name="disabled")
     public boolean isDisabled() {
         return disabled;
     }
@@ -192,12 +213,17 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
      * JMSCorrelationID value will be generated for the request, and the receiver will be expected to copy it into the
      * response's JMSCorrelationID field.
      */
+    @Column(name="use_message_id_for_correlation")
     public boolean isUseMessageIdForCorrelation() {
         return useMessageIdForCorrelation;
     }
 
     public void setUseMessageIdForCorrelation(boolean useMessageIdForCorrelation) {
         this.useMessageIdForCorrelation = useMessageIdForCorrelation;
+    }
+
+    public String toString() {
+        return "<JmsEndpoint connectionOid=\"" + _connectionOid + "\" name=\"" + _name + "\"/>";
     }
 
     public int compareTo(Object o) {

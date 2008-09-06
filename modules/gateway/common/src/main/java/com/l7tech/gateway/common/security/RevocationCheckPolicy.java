@@ -3,24 +3,28 @@ package com.l7tech.gateway.common.security;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
-import java.io.InputStream;
-import java.io.IOException;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
-import java.net.URL;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.NonCloseableOutputStream;
+
+import javax.persistence.Table;
+import javax.persistence.Entity;
+import javax.persistence.Column;
+import javax.persistence.Transient;
+import javax.persistence.Lob;
 
 /**
  * A Policy for Certificate Revocation Checking.
  *
  * @author Steve Jones
  */
+@Entity
+@Table(name="revocation_check_policy")
 public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
 
     //- PUBLIC
@@ -37,6 +41,7 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
      *
      * @return true if default
      */
+    @Column(name="default_policy")
     public boolean isDefaultPolicy() {
         return defaultPolicy;
     }
@@ -55,6 +60,7 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
      *
      * @return true to succeed on unknown certificate status.
      */
+    @Column(name="default_success")
     public boolean isDefaultSuccess() {
         return defaultSuccess;
     }
@@ -68,6 +74,7 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
         this.defaultSuccess = defaultSuccess;
     }
 
+    @Column(name="continue_server_unavailable")
     public boolean isContinueOnServerUnavailable() {
         return continueOnServerUnavailable;
     }
@@ -76,6 +83,7 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
         this.continueOnServerUnavailable = continueOnServerUnavailable;
     }
 
+    @Transient
     public List<RevocationCheckPolicyItem> getRevocationCheckItems() {
         return revocationCheckItems;
     }
@@ -144,6 +152,8 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
 
     //- PROTECTED
 
+    @Column(name="revocation_policy_xml", length=Integer.MAX_VALUE)
+    @Lob
     protected String getRevocationCheckPolicyXml() {
         if ( revocationCheckPolicyXml == null ) {
             List<RevocationCheckPolicyItem> policyItems = this.revocationCheckItems;

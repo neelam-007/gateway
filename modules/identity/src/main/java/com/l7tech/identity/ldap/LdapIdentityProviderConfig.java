@@ -4,6 +4,9 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Entity;
+import javax.persistence.Transient;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
@@ -22,6 +25,8 @@ import java.util.Iterator;
  *
  */
 @XmlRootElement
+@Entity
+@DiscriminatorValue("2")
 public class LdapIdentityProviderConfig extends IdentityProviderConfig implements Serializable {
     public LdapIdentityProviderConfig(IdentityProviderConfig toto) {
         super(IdentityProviderType.LDAP);
@@ -34,6 +39,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
         super(IdentityProviderType.LDAP);
     }
 
+    @Transient
     public boolean isWritable() {
         return false;
     }
@@ -41,6 +47,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     /**
      * the ldap url for connecting to the directory.
      */
+    @Transient
     public String[] getLdapUrl() {
         Object prop = getProperty(URL);
         // Backward compatibility
@@ -61,6 +68,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     /**
      * the search base for users and groups
      */
+    @Transient
     public String getSearchBase() {
         return (String)getProperty(SEARCH_BASE);
     }
@@ -76,6 +84,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
      * overrides the search filter for group objects
      * currently unused
      */
+    @Transient
     public String getCustomGrpFilter() {
         return (String)getProperty(CUSTOM_GROUP_SEARCH_FILTER);
     }
@@ -100,6 +109,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
      * overrides the search filter for user objects
      * currently unused
      */
+    @Transient
     public String getCustomUsrFilter() {
         return (String)getProperty(CUSTOM_USER_SEARCH_FILTER);
     }
@@ -117,6 +127,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     /**
      * @return all existing group mappings
      */
+    @Transient
     public GroupMappingConfig[] getGroupMappings() {
         HashMap grpMap = (HashMap)getProperty(GROUP_MAPPINGS);
         if (grpMap == null) return new GroupMappingConfig[0];
@@ -172,6 +183,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     /**
      * @return all existing user mappings
      */
+    @Transient
     public UserMappingConfig[] getUserMappings() {
         HashMap usrMap = (HashMap)getProperty(USER_MAPPINGS);
         if (usrMap == null) return new UserMappingConfig[0];
@@ -217,6 +229,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     /**
      * the bind dn for searching
      */
+    @Transient
     public String getBindDN() {
         return (String)getProperty(BIND_DN);
     }
@@ -231,6 +244,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     /**
      * the bind passwd for searching
      */
+    @Transient
     public String getBindPasswd() {
         return (String)getProperty(BIND_PASS);
     }
@@ -245,6 +259,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     /**
      * set by the template manager. dont override this value.
      */
+    @Transient
     public String getTemplateName() {
         return (String)getProperty(BASE_TEMPLATE);
     }

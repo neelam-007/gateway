@@ -4,6 +4,13 @@ import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.AttributeOverride;
+import javax.persistence.Column;
+import javax.persistence.Lob;
+import javax.persistence.Enumerated;
+import javax.persistence.EnumType;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
@@ -17,7 +24,11 @@ import java.util.LinkedHashSet;
 /**
  * Describes the configuration of a logging sink.
  */
+@Entity
+@Table(name="sink_config")
+@AttributeOverride(name="name", column=@Column(name="name", nullable=false, length=32))
 public class SinkConfiguration extends NamedEntityImp {
+
     /** The character encoding to use for encoding the properties to XML */
     public static final String PROPERTIES_ENCODING = "UTF-8";
 
@@ -154,6 +165,8 @@ public class SinkConfiguration extends NamedEntityImp {
      *
      * @return An XML string that contains the current list of properties.
      */
+    @Column(name="properties", length=Integer.MAX_VALUE)
+    @Lob
     public String getXmlProperties() {
         if ( xmlProperties == null ) {
             Map<String, String> properties = this.properties;
@@ -179,6 +192,8 @@ public class SinkConfiguration extends NamedEntityImp {
      *
      * @return the description
      */
+    @Column(name="description", length=Integer.MAX_VALUE)
+    @Lob
     public String getDescription() {
         return description;
     }
@@ -197,6 +212,8 @@ public class SinkConfiguration extends NamedEntityImp {
      *
      * @return An instance of SinkType
      */
+    @Enumerated(EnumType.STRING)
+    @Column(name="type", length=32)
     public SinkType getType() {
         return type;
     }
@@ -226,6 +243,7 @@ public class SinkConfiguration extends NamedEntityImp {
      *
      * @return <code>true</code> if this log sink is enabled.
      */
+    @Column(name="enabled")
     public boolean isEnabled() {
         return enabled;
     }
@@ -244,6 +262,8 @@ public class SinkConfiguration extends NamedEntityImp {
      *
      * @return the severity threshold
      */
+    @Enumerated(EnumType.STRING)
+    @Column(name="severity", length=32)
     public SeverityThreshold getSeverity() {
         return severity;
     }
@@ -262,6 +282,8 @@ public class SinkConfiguration extends NamedEntityImp {
      *
      * @return A comma deliminated list of categories
      */
+    @Column(name="categories", length=Integer.MAX_VALUE)
+    @Lob
     public String getCategories() {
         return categories;
     }

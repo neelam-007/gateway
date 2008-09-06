@@ -1,11 +1,13 @@
 package com.l7tech.identity;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.objectmodel.PersistentEntity;
+
+import java.io.Serializable;
 
 /**
  * Abstract superclass of all group memberships.
  */
-public abstract class GroupMembership extends PersistentEntityImp {
+public abstract class GroupMembership implements PersistentEntity, Serializable {
     protected long thisGroupProviderOid;
     protected String memberUserId;
 
@@ -51,6 +53,7 @@ public abstract class GroupMembership extends PersistentEntityImp {
         this.thisGroupProviderOid = thisGroupProviderOid;
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

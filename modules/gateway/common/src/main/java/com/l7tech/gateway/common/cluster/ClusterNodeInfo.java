@@ -1,6 +1,13 @@
 package com.l7tech.gateway.common.cluster;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.NamedEntity;
+
+import javax.persistence.Column;
+import javax.persistence.Transient;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Id;
+import java.io.Serializable;
 
 /**
  * Bean representation of a row in the cluster_info table.
@@ -15,14 +22,18 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
  * $Id$
  * 
  */
-public class ClusterNodeInfo extends NamedEntityImp implements Comparable<ClusterNodeInfo> {
+@Entity
+@Table(name="cluster_info")
+public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NamedEntity, Serializable {
 
     /**
      * Identifier for the node.
      *
-     * <p>This is an opaque id generated from the unique mac address / partition
-     * name combination.</p>
+     * <p>This is an opaque id that may have been generated from the unique mac address / partition
+     * name combination or.</p>
      */
+    @Id
+    @Column(name="nodeid",nullable=false,length=32)
     public String getNodeIdentifier() {
         return nodeId;
     }
@@ -35,8 +46,21 @@ public class ClusterNodeInfo extends NamedEntityImp implements Comparable<Cluste
     }
 
     /**
+     * Name for the node
+     */
+    @Column(name="name", nullable=false, length=128)
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    /**
      * mac address of the node
      */
+    @Column(name="mac",nullable=false,length=18)
     public String getMac() {
         return mac;
     }
@@ -49,26 +73,9 @@ public class ClusterNodeInfo extends NamedEntityImp implements Comparable<Cluste
     }
 
     /**
-     * Get the name of the partition.
-     *
-     * @return The partition name.
-     */
-    public String getPartitionName() {
-        return partitionName;
-    }
-
-    /**
-     * Set the name of the partition.
-     *
-     * @param partitionName The partition name.
-     */
-    public void setPartitionName(String partitionName) {
-        this.partitionName = partitionName;
-    }
-
-    /**
      * direct ip address of this node
      */
+    @Column(name="address",nullable=false,length=16)
     public String getAddress() {
         return address;
     }
@@ -85,6 +92,7 @@ public class ClusterNodeInfo extends NamedEntityImp implements Comparable<Cluste
      *
      * @return The cluster rmi port.
      */
+    @Column(name="cluster_port",nullable=false)
     public int getClusterPort() {
         return clusterPort;
     }
@@ -101,6 +109,7 @@ public class ClusterNodeInfo extends NamedEntityImp implements Comparable<Cluste
     /**
      * how long has this been running (in ms). this is always calculated at server side.
      */
+    @Transient
     public long getUptime() {
         return uptime;
     }
@@ -115,6 +124,7 @@ public class ClusterNodeInfo extends NamedEntityImp implements Comparable<Cluste
     /**
      * the timestamp of when this node last booted
      */
+    @Column(name="uptime",nullable=false) // This is not a bug, it does map to uptime
     public long getBootTime() {
         return boottime;
     }
@@ -132,6 +142,7 @@ public class ClusterNodeInfo extends NamedEntityImp implements Comparable<Cluste
     /**
      * the avg load of this node for the last minute
      */
+    @Column(name="avgload",nullable=false)
     public double getAvgLoad() {
         return avgLoad;
     }
@@ -146,6 +157,7 @@ public class ClusterNodeInfo extends NamedEntityImp implements Comparable<Cluste
     /**
      * the timestamp of when the avg load was last updated
      */
+    @Column(name="statustimestamp",nullable=false)
     public long getLastUpdateTimeStamp() {
         return lastUpdateTimeStamp;
     }
@@ -160,6 +172,7 @@ public class ClusterNodeInfo extends NamedEntityImp implements Comparable<Cluste
     /**
      * A multicast address for use in the DistributedMessageIdManager.
      */
+    @Column(name="multicast_address",length=16)
     public String getMulticastAddress() {
         return multicastAddress;
     }
@@ -171,10 +184,16 @@ public class ClusterNodeInfo extends NamedEntityImp implements Comparable<Cluste
         this.multicastAddress = multicastAddress;
     }
 
-    public String toString() {
-        return _name + " [" + address + "]";
+    @Transient
+    public String getId() {
+        return getNodeIdentifier();
     }
 
+    public String toString() {
+        return name + " [" + address + "]";
+    }
+
+    @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -185,7 +204,7 @@ public class ClusterNodeInfo extends NamedEntityImp implements Comparable<Cluste
         if (mac != null ? !mac.equals(that.mac) : that.mac != null) return false;
         if (multicastAddress != null ? !multicastAddress.equals(that.multicastAddress) : that.multicastAddress != null)
             return false;
-        if (_name != null ? !_name.equals(that._name) : that._name != null) return false;
+        if (name != null ? !name.equals(that.name) : that.name != null) return false;
 
         return true;
     }
@@ -194,13 +213,13 @@ public class ClusterNodeInfo extends NamedEntityImp implements Comparable<Cluste
         int result;
         result = (mac != null ? mac.hashCode() : 0);
         result = 29 * result + (address != null ? address.hashCode() : 0);
-        result = 29 * result + (_name != null ? _name.hashCode() : 0);
+        result = 29 * result + (name != null ? name.hashCode() : 0);
         result = 29 * result + (multicastAddress != null ? multicastAddress.hashCode() : 0);
         return result;
     }
 
     public int compareTo(ClusterNodeInfo cni) {
-        int result = 0;
+        int result;
 
         String name1 = getName();
         String name2 = cni.getName();
@@ -224,8 +243,8 @@ public class ClusterNodeInfo extends NamedEntityImp implements Comparable<Cluste
     private static final long serialVersionUID = 3387085760350960428L;
 
     private String nodeId;
+    private String name;
     private String mac;
-    private String partitionName;
     private String address;
     private String multicastAddress;
     private int clusterPort;

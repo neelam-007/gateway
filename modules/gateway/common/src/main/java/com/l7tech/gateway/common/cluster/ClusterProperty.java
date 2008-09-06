@@ -21,14 +21,14 @@ import java.util.regex.Pattern;
  */
 @XmlRootElement
 @Entity
-@Table(name="cluster_property")
+@Table(name="cluster_properties")
 @AttributeOverride(name="name", column=@Column(name="propKey", nullable=false, unique=true))
 public class ClusterProperty extends NamedEntityImp {
     private static final long serialVersionUID = 1L;
+    public static final Pattern PATTERN_MID_DOTS = Pattern.compile("\\.([a-zA-Z0-9_])");
 
     private String value;
     private String description;
-    public static final Pattern PATTERN_MID_DOTS = Pattern.compile("\\.([a-zA-Z0-9_])");
 
     public ClusterProperty() { }
 

@@ -60,10 +60,12 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
     /**
      * this is not persisted, it is set at run time by the provider who creates the object
      */
+    @Transient
     public long getProviderId() {
         return providerOid;
     }
 
+    @Column(name="login", nullable=false, length=255)
     public String getLogin() {
         return login;
     }
@@ -78,7 +80,7 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
         return lastName;
     }
 
-    @Column(length=128)
+    @Column(name="email", length=128)
     public String getEmail() {
         return email;
     }
@@ -119,6 +121,7 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
 
     public abstract void copyFrom(User user);
 
+    @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

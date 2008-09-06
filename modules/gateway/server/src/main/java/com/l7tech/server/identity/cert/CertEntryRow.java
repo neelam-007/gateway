@@ -2,6 +2,12 @@ package com.l7tech.server.identity.cert;
 
 import com.l7tech.security.cert.X509Entity;
 
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.AttributeOverrides;
+import javax.persistence.AttributeOverride;
+
 /**
  * Bean representation of a row in the client_cert table. This bean class is meant to be used by hibernate only.
  *
@@ -12,7 +18,12 @@ import com.l7tech.security.cert.X509Entity;
  * Date: Oct 23, 2003<br/>
  * $Id$
  */
+@Entity
+@Table(name="client_cert")
+@AttributeOverride(name="certBase64",column=@Column(name="cert"))
 public class CertEntryRow extends X509Entity {
+
+    @Column(name="provider",nullable=false)
     public long getProvider() {
         return provider;
     }
@@ -22,6 +33,7 @@ public class CertEntryRow extends X509Entity {
         this.provider = providerId;
     }
 
+    @Column(name="login", length=255)
     public String getLogin() {
         return login;
     }
@@ -31,6 +43,7 @@ public class CertEntryRow extends X509Entity {
         this.login = userLogin;
     }
 
+    @Column(name="reset_counter", nullable=false)
     public int getResetCounter() {
         return resetCounter;
     }
@@ -40,6 +53,7 @@ public class CertEntryRow extends X509Entity {
         this.resetCounter = resetCounter;
     }
 
+    @Column(name="user_id",length=255)
     public String getUserId() {
         return userId;
     }

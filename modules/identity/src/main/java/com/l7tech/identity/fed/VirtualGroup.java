@@ -7,6 +7,13 @@ package com.l7tech.identity.fed;
 import com.l7tech.identity.IdentityProviderConfig;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.AttributeOverrides;
+import javax.persistence.AttributeOverride;
+import javax.persistence.Transient;
+import javax.persistence.Lob;
 
 /**
  * A "virtual" federated group.
@@ -20,6 +27,8 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 
 @XmlRootElement
+@Entity
+@Table(name="fed_group_virtual")
 public class VirtualGroup extends FederatedGroup {
     public VirtualGroup() {
         this(IdentityProviderConfig.DEFAULT_OID, null);
@@ -29,7 +38,8 @@ public class VirtualGroup extends FederatedGroup {
         super(providerOid, name);
     }
 
-    public String getSamlEmailPattern() { 
+    @Column(name="saml_email_pattern",length=128)
+    public String getSamlEmailPattern() {
         return getProperty(PROP_SAML_EMAIL_PATTERN);
     }
 
@@ -37,6 +47,7 @@ public class VirtualGroup extends FederatedGroup {
         setProperty(PROP_SAML_EMAIL_PATTERN, samlEmailPattern);
     }
 
+    @Column(name="x509_subject_dn_pattern",length=255)
     public String getX509SubjectDnPattern() {
         return getProperty(PROP_X509_DN_PATTERN);
     }
@@ -45,6 +56,14 @@ public class VirtualGroup extends FederatedGroup {
         setProperty(PROP_X509_DN_PATTERN, x509SubjectDnPattern);
     }
 
+    @Override
+    @Column(name="properties",length=Integer.MAX_VALUE)
+    @Lob
+    public synchronized String getXmlProperties() {
+        return super.getXmlProperties();
+    }
+
+    @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

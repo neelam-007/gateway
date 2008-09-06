@@ -8,6 +8,9 @@ import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.persistence.MappedSuperclass;
+import javax.persistence.Column;
+import javax.persistence.Transient;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
@@ -20,6 +23,7 @@ import java.util.HashMap;
  *
  * @author alex
  */
+@MappedSuperclass
 public abstract class PersistentGroup extends NamedEntityImp implements Group {
     public static final String PROPERTIES_ENCODING = "UTF-8";
 
@@ -58,6 +62,7 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         }
     }
 
+    @Transient
     public synchronized String getXmlProperties() {
         if ( xmlProperties == null ) {
             Map<String, String> properties = this.properties;
@@ -77,6 +82,7 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         return xmlProperties;
     }
 
+    @Column(name="description", length=4096)
     public String getDescription() {
         return description;
     }
@@ -85,6 +91,7 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         this.description = description;
     }
 
+    @Transient
     public long getProviderId() {
         return providerOid;
     }

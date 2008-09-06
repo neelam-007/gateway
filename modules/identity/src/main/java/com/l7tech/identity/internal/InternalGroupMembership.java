@@ -7,6 +7,17 @@ package com.l7tech.identity.internal;
 import com.l7tech.identity.GroupMembership;
 import com.l7tech.identity.IdentityProviderConfigManager;
 
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.Version;
+import javax.persistence.Id;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Transient;
+
+import org.hibernate.annotations.GenericGenerator;
+
 /**
  * A row in a user-group intersect table.
  *
@@ -17,18 +28,40 @@ import com.l7tech.identity.IdentityProviderConfigManager;
  *
  * @author alex
  */
+@Entity
+@Table(name="internal_user_group")
 public class InternalGroupMembership extends GroupMembership {
-    /**
-     * The OID of the {@link InternalGroup} to which this membership belongs
-     */
-    private long thisGroupOid;
+
+    private long _oid;
+    private int _version;
+    private long thisGroupOid; // The OID of the {@link InternalGroup} to which this membership belongs
     private long memberProviderOid;
     private String memberSubgroupId;
 
-    /** Use the factory methods! */
-    public InternalGroupMembership() {
+    @Id
+    @Column(name="objectid", nullable=false, updatable=false)
+    @GenericGenerator( name="generator", strategy = "hilo" )
+    @GeneratedValue(strategy= GenerationType.SEQUENCE, generator = "generator")
+    public long getOid() {
+        return _oid;
     }
 
+    @Transient
+    public String getId() {
+        return Long.toString(_oid);
+    }
+
+    public void setOid( long oid ) {
+        _oid = oid;
+    }
+
+    @Override
+    @Column(name="user_id", length=255)
+    public String getMemberUserId() {
+        return super.getMemberUserId();
+    }
+
+    @Column(name="internal_group")
     public String getThisGroupId() {
         return Long.toString(thisGroupOid);
     }
@@ -37,6 +70,7 @@ public class InternalGroupMembership extends GroupMembership {
         this.thisGroupOid = Long.parseLong(thisGroupId);
     }
 
+    @Column(name="provider_oid", nullable=false)
     public long getMemberProviderOid() {
         return memberProviderOid;
     }
@@ -100,6 +134,7 @@ public class InternalGroupMembership extends GroupMembership {
         return mem;
     }
 
+    @Column(name="subgroup_id", length=255)
     public String getMemberSubgroupId() {
         return memberSubgroupId;
     }
@@ -108,7 +143,17 @@ public class InternalGroupMembership extends GroupMembership {
         this.memberSubgroupId = memberSubgroupId;
     }
 
+    @Version
+    @Column(name="version")
+    public int getVersion() {
+        return _version;
+    }
 
+    public void setVersion(int version) {
+        this._version = version;
+    }
+
+    @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

@@ -9,11 +9,16 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProviderConfig;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Column;
 
 /**
  * @author alex
  */
 @XmlRootElement
+@Entity
+@Table(name="fed_user")
 public class FederatedUser extends PersistentUser {
     public FederatedUser() {
         this(IdentityProviderConfig.DEFAULT_OID, null);
@@ -21,6 +26,18 @@ public class FederatedUser extends PersistentUser {
 
     public FederatedUser(long providerOid, String login) {
         super(providerOid, login);
+    }
+
+    @Override
+    @Column(name="provider_oid")
+    public long getProviderId() {
+        return super.getProviderId();
+    }
+
+    @Override
+    @Column(name="subject_dn", length=255)
+    public String getSubjectDn() {
+        return super.getSubjectDn();
     }
 
     public void copyFrom( User objToCopy ) {

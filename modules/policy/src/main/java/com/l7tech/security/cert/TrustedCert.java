@@ -1,11 +1,18 @@
 /*
  * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
  */
-
 package com.l7tech.security.cert;
 
+import com.l7tech.objectmodel.NamedEntity;
+
 import javax.xml.bind.annotation.XmlRootElement;
-import java.io.Serializable;
+import javax.persistence.Transient;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.Enumerated;
+import javax.persistence.EnumType;
+import javax.persistence.Version;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.util.Date;
@@ -22,11 +29,13 @@ import java.util.Set;
  */
 
 @XmlRootElement
-public class TrustedCert extends X509Entity implements Serializable, Cloneable {
+@Entity
+@Table(name="trusted_cert")
+public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
     public void copyFrom(TrustedCert cert) {
         mutate();
         super.copyFrom(cert);
-        this._name = cert._name;
+        this.name = cert.name;
         this.trustedFor.clear();
         this.trustedFor.addAll(cert.trustedFor);
         this.verifyHostname = cert.verifyHostname;
@@ -73,11 +82,21 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
         }
     }
 
+    @Column(name="name", nullable=false, length=128)
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     /**
      * Returns a textual description of this cert's usage. Don't parse it; use the boolean flags instead!
      *
      * @return a textual description of this cert's usage
      */
+    @Transient
     public String getUsageDescription() {
         StringBuffer buf = new StringBuffer();
         if (EnumSet.allOf(TrustedFor.class).equals(trustedFor)) {
@@ -108,14 +127,11 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
         return super.clone();
     }
 
-    public void setName(String name) {
-        super.setName(name);
-    }
-
     /**
      * Is this cert is trusted as an SSL server cert? (probably self-signed)
      * @return <code>true</code> if this cert is trusted as an SSL server cert (probably self-signed), <code>false</code> otherwise.
      */
+    @Column(name="trusted_for_ssl")
     public boolean isTrustedForSsl() {
         return isTrustedFor(TrustedFor.SSL);
     }
@@ -132,6 +148,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * Is this cert is trusted as a CA that signs SSL client certs?
      * @return <code>true</code> if this cert is trusted as a CA cert for signing client certs, <code>false</code> otherwise.
      */
+    @Column(name="trusted_for_client")
     public boolean isTrustedForSigningClientCerts() {
         return isTrustedFor(TrustedFor.SIGNING_CLIENT_CERTS);
     }
@@ -150,6 +167,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * @return <code>true</code> if this cert is trusted as a CA cert for signing server certs,
      * <code>false</code> otherwise.
      */
+    @Column(name="trusted_for_server")
     public boolean isTrustedForSigningServerCerts() {
         return isTrustedFor(TrustedFor.SIGNING_SERVER_CERTS);
     }
@@ -167,6 +185,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * Is this cert is trusted to sign SAML tokens?
      * @return <code>true</code> if this cert is trusted to sign SAML tokens, <code>false</code> otherwise.
      */
+    @Column(name="trusted_for_saml")
     public boolean isTrustedAsSamlIssuer() {
         return isTrustedFor(TrustedFor.SAML_ISSUER);
     }
@@ -183,6 +202,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * Is this cert trusted as a SAML attesting entity? This applies to sender-vouches only.
      * @return <code>true</code> if this cert is trusted as SAML attesting entity, <code>false</code> otherwise.
      */
+    @Column(name="trusted_as_saml_attesting_entity")
     public boolean isTrustedAsSamlAttestingEntity() {
         return isTrustedFor(TrustedFor.SAML_ATTESTING_ENTITY);
     }
@@ -200,6 +220,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      *
      * @return The hostname verification flag
      */
+    @Column(name="verify_hostname")
     public boolean isVerifyHostname() {
         return verifyHostname;
     }
@@ -217,6 +238,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * Gets the cert subject's DN (distinguished name)
      * @return the cert subject's DN (distinguished name)
      */
+    @Column(name="subject_dn", length=255)
     public String getSubjectDn() {
         return super.getSubjectDn();
     }
@@ -232,6 +254,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
     /**
      * @return true if this certificate is a trust anchor, i.e. path validation doesn't need to proceed any higher
      */
+    @Column(name="trust_anchor")
     public boolean isTrustAnchor() {
         return trustAnchor;
     }
@@ -244,6 +267,8 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
         this.trustAnchor = trustAnchor;
     }
 
+    @Column(name="revocation_type",nullable=false,length=128)
+    @Enumerated(EnumType.STRING)
     public PolicyUsageType getRevocationCheckPolicyType() {
         return revocationCheckPolicyType;
     }
@@ -253,6 +278,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
         this.revocationCheckPolicyType = revocationCheckPolicyType;
     }
 
+    @Column(name="revocation_policy_oid")
     public Long getRevocationCheckPolicyOid() {
         return revocationCheckPolicyOid;
     }
@@ -267,6 +293,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
      * @return true if the cert is expired.
      * @throws java.security.cert.CertificateException if the cert cannot be deserialized.
      */
+    @Transient
     public boolean isExpiredCert() throws CertificateException {
         Date expiryDate = this.getCertificate().getNotAfter();
         Date today = new Date(System.currentTimeMillis());
@@ -308,6 +335,13 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
             trustedFor.remove(flag);
     }
 
+    @Override
+    @Version
+    @Column(name="version")
+    public int getVersion() {
+        return super.getVersion();
+    }
+
     @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -333,6 +367,7 @@ public class TrustedCert extends X509Entity implements Serializable, Cloneable {
         return result;
     }
 
+    private String name;
     private final Set<TrustedFor> trustedFor = EnumSet.noneOf(TrustedFor.class);
     private boolean verifyHostname;
     private boolean trustAnchor;

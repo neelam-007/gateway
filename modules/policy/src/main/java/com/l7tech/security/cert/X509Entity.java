@@ -1,11 +1,15 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import javax.persistence.Column;
+import javax.persistence.Lob;
+import javax.persistence.Transient;
+import javax.persistence.MappedSuperclass;
 import java.io.IOException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
@@ -18,7 +22,8 @@ import java.util.logging.Logger;
  * Abstract superclass of entities that have certs.  Similar to CertEntryRow
  * and {@link TrustedCert}.
  */
-public abstract class X509Entity extends NamedEntityImp {
+@MappedSuperclass
+public abstract class X509Entity extends PersistentEntityImp {
     private static final Logger logger = Logger.getLogger(X509Entity.class.getName());
 
     private X509Certificate cachedCert;
@@ -33,6 +38,7 @@ public abstract class X509Entity extends NamedEntityImp {
      * Gets the {@link java.security.cert.X509Certificate} based on the saved {@link #certBase64}
      * @return an {@link java.security.cert.X509Certificate}
      */
+    @Transient
     @XmlJavaTypeAdapter(X509CertificateAdapter.class)
     public X509Certificate getCertificate() {
         return cachedCert;
@@ -104,6 +110,7 @@ public abstract class X509Entity extends NamedEntityImp {
     /**
      * @return the SHA-1 thumbprint of the certificate (base64-encoded), or null if there is no cert.
      */
+    @Column(name="thumbprint_sha1",length=64)
     public String getThumbprintSha1() {
         return thumbprintSha1;
     }
@@ -112,6 +119,7 @@ public abstract class X509Entity extends NamedEntityImp {
      * @return the SKI of the certificate (base64-encoded), or null either if there is no cert,
      * or the cert has no SKI
      */
+    @Column(name="ski",length=64)
     public String getSki() {
         return ski;
     }
@@ -137,6 +145,7 @@ public abstract class X509Entity extends NamedEntityImp {
     /**
      * @return the subjectDn from the cert, or null.
      */
+    @Transient
     public String getSubjectDn() {
         return subjectDn;
     }
@@ -153,6 +162,8 @@ public abstract class X509Entity extends NamedEntityImp {
      * Gets the Base64 DER-encoded certificate
      * @return the Base64 DER-encoded certificate
      */
+    @Column(name="cert_base64", length=Integer.MAX_VALUE)
+    @Lob
     public String getCertBase64() {
         return certBase64;
     }
@@ -217,7 +228,6 @@ public abstract class X509Entity extends NamedEntityImp {
 
     protected void copyFrom(X509Entity that) {
         mutate();
-        this._name = that._name;
         this.certBase64 = that.certBase64;
         this.cachedCert = that.cachedCert;
         this.thumbprintSha1 = that.thumbprintSha1;

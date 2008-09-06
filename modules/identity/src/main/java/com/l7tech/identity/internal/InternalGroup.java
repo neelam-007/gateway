@@ -4,8 +4,12 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.PersistentGroup;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
 @XmlRootElement
+@Entity
+@Table(name="internal_group")
 public class InternalGroup extends PersistentGroup {
     public InternalGroup() {
         this(null);

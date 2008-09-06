@@ -336,7 +336,6 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         ClusterNodeInfo newClusterInfo = new ClusterNodeInfo();
         newClusterInfo.setAddress(getIPAddress());
         newClusterInfo.setNodeIdentifier(nodeid);
-        newClusterInfo.setPartitionName("default");
         newClusterInfo.setClusterPort(getClusterPort());
         newClusterInfo.setMac(macid);
         // choose first available name

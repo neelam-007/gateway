@@ -12,6 +12,12 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.Column;
 import javax.persistence.Transient;
+import javax.persistence.InheritanceType;
+import javax.persistence.Inheritance;
+import javax.persistence.DiscriminatorType;
+import javax.persistence.DiscriminatorColumn;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Lob;
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +37,12 @@ import java.util.Map;
 @XmlRootElement
 @Entity
 @Table(name="identity_provider")
+@Inheritance(strategy=InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(
+    name="type",
+    discriminatorType=DiscriminatorType.INTEGER
+)
+@DiscriminatorValue("1")
 public class IdentityProviderConfig extends NamedEntityImp {
 
     public IdentityProviderConfig(IdentityProviderType type) {
@@ -54,7 +66,8 @@ public class IdentityProviderConfig extends NamedEntityImp {
         return true; // Internal is writable and there's no InternalIdentityProviderConfig
     }
 
-    @Column(name="description", nullable=false, length=4096)
+    @Column(name="description", length=Integer.MAX_VALUE)
+    @Lob
     public String getDescription() {
         return description;
     }
@@ -75,7 +88,8 @@ public class IdentityProviderConfig extends NamedEntityImp {
      * for serialization by axis and hibernate only.
      * to get the properties, call getProperty
      */
-    @Column(name="serializedProps")
+    @Column(name="properties", length=Integer.MAX_VALUE)
+    @Lob
     public String getSerializedProps() throws java.io.IOException {
         if (propsXml == null) {
             // if no props, return empty string
@@ -128,7 +142,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
     /**
      * for serialization by axis and hibernate only.
      */
-    @Column(name="type")
+    @Column(name="type", insertable=false, updatable=false)
     public int getTypeVal() {
         return type.toVal();
     }
@@ -140,6 +154,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
         type = IdentityProviderType.fromVal(val);
     }
 
+    @Transient
     public boolean isAdminEnabled() {
         Boolean b = (Boolean) getProperty(ADMIN_ENABLED);
         return b != null && b.booleanValue();
@@ -150,6 +165,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
         setProperty(ADMIN_ENABLED, adminEnabled);
     }
 
+    @Transient
     public CertificateValidationType getCertificateValidationType() {
         return (CertificateValidationType) props.get(PROP_CERTIFICATE_VALIDATION_TYPE);
     }

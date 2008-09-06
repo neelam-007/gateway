@@ -10,6 +10,11 @@ import com.l7tech.identity.PersistentGroup;
 import com.l7tech.identity.IdentityProviderConfig;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.persistence.Table;
+import javax.persistence.Entity;
+import javax.persistence.Column;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
 
 /**
  * A "physical" federated group.
@@ -22,6 +27,9 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @see VirtualGroup
  */
 @XmlRootElement
+@Entity
+@Table(name="fed_group")
+@Inheritance(strategy=InheritanceType.TABLE_PER_CLASS)
 public class FederatedGroup extends PersistentGroup {
     public FederatedGroup() {
         this(IdentityProviderConfig.DEFAULT_OID, null);
@@ -33,6 +41,12 @@ public class FederatedGroup extends PersistentGroup {
 
     public FederatedGroup(long providerOid, String name, Map<String, String> properties) {
         super(providerOid, name, properties);
+    }
+
+    @Override
+    @Column(name="provider_oid", nullable=false)
+    public long getProviderId() {
+        return super.getProviderId();
     }
 
     public String toString() {

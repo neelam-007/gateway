@@ -8,6 +8,11 @@ import com.l7tech.util.ExceptionUtils;
 
 import javax.persistence.Entity;
 import javax.persistence.Transient;
+import javax.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.OneToMany;
+import javax.persistence.CascadeType;
+import javax.persistence.FetchType;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import java.lang.reflect.InvocationTargetException;
@@ -18,11 +23,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+
 /**
  * Describes a port on which the Gateway will listen for incoming requests.
  * TODO promote port range and bind address from properties to fields (they can still be persisted as properties)
  */
 @Entity
+@Table(name="connector")
 @XmlRootElement
 public class SsgConnector extends NamedEntityImp implements PortOwner {
     protected static final Logger logger = Logger.getLogger(SsgConnector.class.getName());
@@ -189,6 +199,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         this.keyAlias = keyAlias;
     }
 
+    @Column(name="enabled")
     public boolean isEnabled() {
         return enabled;
     }
@@ -202,6 +213,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return a TCP port from 1-65535.
      */
+    @Column(name="port")
     public int getPort() {
         return port;
     }
@@ -220,6 +232,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return a scheme; current one of "http" or "https".
      */
+    @Column(name="scheme", length=128, nullable=false)
     public String getScheme() {
         return scheme;
     }
@@ -240,6 +253,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return the secure flag.
      */
+    @Column(name="secure")
     public boolean isSecure() {
         return secure;
     }
@@ -261,6 +275,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @return the current client auth setting, typically one of {@link #CLIENT_AUTH_NEVER},
                {@link #CLIENT_AUTH_ALWAYS}, or {@link #CLIENT_AUTH_OPTIONAL}.
      */
+    @Column(name="client_auth")
     public int getClientAuth() {
         return clientAuth;
     }
@@ -287,6 +302,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @return the OID of the KeystoreFile instance that provides this connector's SSL server cert and private key,
      *         or null if one isn't set.
      */
+    @Column(name="keystore_oid")
     public Long getKeystoreOid() {
         return keystoreOid;
     }
@@ -309,6 +325,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return the private key alias, or null if one is not configured.
      */
+    @Column(name="key_alias", length=255)
     public String getKeyAlias() {
         return keyAlias;
     }
@@ -406,6 +423,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return endpoint names, ie "MESSAGE_INPUT,ADMIN_APPLET,STS".  If null, the connector should be treated as disabled.
      */
+    @Column(name="endpoints", length=255, nullable=false)
     public String getEndpoints() {
         return endpoints;
     }
@@ -495,7 +513,9 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return a Set containing the extra connector properties.  May be empty but never null.
      */
-    @Transient
+    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="connector")
+    @Fetch(FetchMode.SUBSELECT)
+    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
     protected Set<SsgConnectorProperty> getProperties() {
         //noinspection ReturnOfCollectionOrArrayField
         return properties;

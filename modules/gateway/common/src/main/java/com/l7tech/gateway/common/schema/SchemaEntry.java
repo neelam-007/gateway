@@ -9,6 +9,10 @@ package com.l7tech.gateway.common.schema;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.Lob;
 
 /**
  * A row in the communityschema table. These xml schemas are meant to define additional
@@ -17,10 +21,14 @@ import javax.xml.bind.annotation.XmlRootElement;
  *
  * @author flascelles@layer7-tech.com
  */
+@Entity
+@Table(name="community_schemas")
 @XmlRootElement
 public class SchemaEntry extends NamedEntityImp {
 
     /** @return the schema text, which may be empty or null. */
+    @Column(name="schema_xml", length=Integer.MAX_VALUE)
+    @Lob
     public String getSchema() {
         // Protect legacy code now that this field is nullable
         return schema != null ? schema : "";
@@ -30,6 +38,7 @@ public class SchemaEntry extends NamedEntityImp {
         this.schema = schema;
     }
 
+    @Column(name="tns", length=128)
     public String getTns() {
         return tns;
     }
@@ -38,6 +47,7 @@ public class SchemaEntry extends NamedEntityImp {
         this.tns = tns;
     }
 
+    @Column(name="system")
     public boolean isSystem() {
         return system;
     }

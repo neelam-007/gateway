@@ -2,6 +2,12 @@ package com.l7tech.server.security.keystore;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Column;
+import javax.persistence.Basic;
+import javax.persistence.FetchType;
+import javax.persistence.Lob;
 import java.util.Arrays;
 
 /**
@@ -13,9 +19,12 @@ import java.util.Arrays;
  * as {@link com.l7tech.server.security.keystore.software.DatabasePkcs12SsgKeyStore} or
  * {@link com.l7tech.server.security.keystore.sca.ScaSsgKeyStore}.
  */
+@Entity
+@Table(name="keystore_file")
 public class KeystoreFile extends NamedEntityImp {
     private static final long serialVersionUID = 7293792837442132345L;
 
+    @Column(name="format", nullable=false, length=128)
     private String format;
     private byte[] databytes;
 
@@ -28,6 +37,9 @@ public class KeystoreFile extends NamedEntityImp {
         this.format = format;
     }
 
+    @Basic(fetch=FetchType.LAZY)
+    @Column(name="databytes",length=Integer.MAX_VALUE)
+    @Lob
     public byte[] getDatabytes() {
         return databytes;
     }

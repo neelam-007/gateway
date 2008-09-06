@@ -275,7 +275,6 @@ DROP TABLE IF EXISTS cluster_info;
 CREATE TABLE cluster_info (
   nodeid varchar(32) NOT NULL,
   mac varchar(18) NOT NULL,
-  partition_name varchar(128) NOT NULL,
   name varchar(128) NOT NULL,
   address varchar(16) NOT NULL,
   multicast_address varchar(16),

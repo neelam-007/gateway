@@ -8,116 +8,13 @@
 -->
 
 <hibernate-mapping>
-    <typedef class="com.l7tech.server.util.GenericEnumUserType" name="trustedcert_revocationtype">
-        <param name="enumClass">com.l7tech.security.cert.TrustedCert$PolicyUsageType</param>
-    </typedef>
-
-    <typedef class="com.l7tech.server.util.GenericEnumUserType" name="jms_reply_type">
-        <param name="enumClass">com.l7tech.gateway.common.transport.jms.JmsReplyType</param>
-        <param name="identifierMethod">getNum</param>
-        <param name="valueOfMethod">getByNum</param>
-    </typedef>
-
-    <typedef class="com.l7tech.server.util.GenericEnumUserType" name="jms_message_type">
-        <param name="enumClass">com.l7tech.gateway.common.transport.jms.JmsOutboundMessageType</param>
-    </typedef>
-    
-    <typedef class="com.l7tech.server.util.GenericEnumUserType" name="jms_acknowledgement_type">
-        <param name="enumClass">com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType</param>
-    </typedef>
-
     <typedef class="com.l7tech.server.util.GenericEnumUserType" name="policy_type">
         <param name="enumClass">com.l7tech.policy.PolicyType</param>
-    </typedef>
-
-    <typedef class="com.l7tech.server.util.GenericEnumUserType" name="sinkconfiguration_type">
-        <param name="enumClass">com.l7tech.gateway.common.log.SinkConfiguration$SinkType</param>
-    </typedef>
-
-    <typedef class="com.l7tech.server.util.GenericEnumUserType" name="sinkconfiguration_severityThreshold">
-        <param name="enumClass">com.l7tech.gateway.common.log.SinkConfiguration$SeverityThreshold</param>
     </typedef>
 
     <typedef class="com.l7tech.server.util.GenericEnumUserType" name="service_state_type">
         <param name="enumClass">com.l7tech.gateway.common.service.ServiceState</param>
     </typedef>
-
-    <class name="com.l7tech.identity.IdentityProviderConfig" table="identity_provider" lazy="false" discriminator-value="1">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-
-        <!-- For subclasses -->
-        <discriminator column="type" type="int"/>
-
-        <version name="version" column="version" type="integer"/>
-
-        <property name="description" type="string"/>
-        <property name="name" type="string"/>
-
-        <!-- insert="false" and update="false" because column is defined twice. discriminator is updated instead -->
-        <property name="typeVal" type="int" column="type" insert="false" update="false"/>
-
-        <property name="serializedProps" type="text" column="properties" />
-    </class>
-
-    <subclass name="com.l7tech.identity.ldap.LdapIdentityProviderConfig"
-              extends="com.l7tech.identity.IdentityProviderConfig"
-              discriminator-value="2" lazy="false"/>
-
-    <class name="com.l7tech.identity.internal.InternalGroup" table="internal_group" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-
-        <version name="version" column="version" type="integer"/>
-
-        <property name="description" type="string"/>
-        <property name="name" type="string"/>
-
-        <!--
-        <set role="members" lazy="false" table="internal_user_group">
-            <key column="internal_group"/>
-            <many-to-many class="com.l7tech.identity.User" column="internal_user"/>
-        </set>
-        -->
-    </class>
-
-    <class name="com.l7tech.identity.internal.InternalUser" table="internal_user" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-
-        <version name="version" column="version" type="integer"/>
-
-        <property name="name" type="string" column="name" />
-        <property name="login" type="string" column="login" />
-        <property name="hashedPassword" column="password" type="string"/>
-        <property name="firstName" column="first_name"  type="string"/>
-        <property name="lastName" column="last_name" type="string"/>
-        <property name="email" type="string"/>
-        <property name="expiration" type="long"/>
-
-        <!--
-        <set role="groups" lazy="false" table="internal_user_group">
-            <key column="internal_user"/>
-            <many-to-many class="com.l7tech.identity.Group" column="internal_group"/>
-        </set>
-        -->
-    </class>
-
-    <class name="com.l7tech.identity.internal.InternalGroupMembership" table="internal_user_group" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-
-        <version name="version" column="version" type="integer"/>
-
-        <property name="thisGroupId" column="internal_group" type="string"/>
-        <property name="memberUserId" column="user_id" type="string"/>
-        <property name="memberSubgroupId" column="subgroup_id" type="string"/>
-        <property name="memberProviderOid" column="provider_oid" type="long"/>
-    </class>
 
     <class name="com.l7tech.gateway.common.service.PublishedService" table="published_service" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
@@ -198,19 +95,6 @@
 
     </class>
 
-    <class name="com.l7tech.server.identity.cert.CertEntryRow" table="client_cert" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-        <property name="provider" column="provider" type="long"/>
-        <property name="userId" column="user_id" type="string"/>
-        <property name="login" column="login" type="string"/>
-        <property name="certBase64" column="cert" type="string"/>
-        <property name="resetCounter" column="reset_counter" type="int"/>
-        <property name="thumbprintSha1" column="thumbprint_sha1" type="string"/>
-        <property name="ski" type="string"/>
-    </class>
-
     <class name="com.l7tech.server.service.resolution.ResolutionParameters" table="service_resolution" lazy="false">
         <id name="oid" column="objectid" type="long">
             <generator class="hilo"/>
@@ -221,22 +105,7 @@
         <property name="serviceid" column="serviceid" type="long"/>
         <property name="digested" column="digested" type="string"/>
     </class>
-
-    <class name="com.l7tech.gateway.common.cluster.ClusterNodeInfo" table="cluster_info" lazy="false">
-        <id name="nodeIdentifier" column="nodeid" type="string" unsaved-value="none">
-            <generator class="assigned"/>
-        </id>
-        <property name="mac" column="mac" type="string"/>
-        <property name="partitionName" column="partition_name" type="string"/>
-        <property name="name" column="name" type="string"/>
-        <property name="address" column="address" type="string"/>
-        <property name="multicastAddress" column="multicast_address" type="string"/>
-        <property name="clusterPort" column="cluster_port" type="integer"/>
-        <property name="bootTime" column="uptime" type="long"/>
-        <property name="avgLoad" column="avgload" type="double"/>
-        <property name="lastUpdateTimeStamp" column="statustimestamp" type="long"/>
-    </class>
-
+  
     <class name="com.l7tech.gateway.common.cluster.ServiceUsage" table="service_usage" lazy="false">
         <composite-id>
             <key-property name="serviceid" column="serviceid" type="long"/>
@@ -247,210 +116,6 @@
         <property name="completed" column="completedreqnr" type="long"/>
     </class>
 
-    <class name="com.l7tech.gateway.common.transport.jms.JmsConnection" table="jms_connection" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-        <version name="version" column="version" type="integer"/>
-
-        <property name="name" column="name" type="string"/>
-        <property name="jndiUrl" column="jndi_url" type="string"/>
-        <property name="initialContextFactoryClassname" column="factory_classname" type="string"/>
-        <property name="destinationFactoryUrl" column="destination_factory_url" type="string"/>
-        <property name="queueFactoryUrl" column="queue_factory_url" type="string"/>
-        <property name="topicFactoryUrl" column="topic_factory_url" type="string"/>
-        <property name="username" column="username" type="string"/>
-        <property name="password" column="password" type="string"/>
-        <property name="properties" column="properties" type="string"/>
-
-        <!--
-        <set name="endpoints" cascade="all" inverse="true">
-            <key column="connection_oid"/>
-            <one-to-many class="com.l7tech.common.transport.jms.JmsEndpoint"/>
-        </set>
-        -->
-    </class>
-
-    <class name="com.l7tech.gateway.common.transport.jms.JmsEndpoint" table="jms_endpoint" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-        <version name="version" column="version" type="integer"/>
-
-        <property name="connectionOid" column="connection_oid"/>
-        <!--
-        <many-to-one name="connection" class="com.l7tech.common.transport.jms.JmsConnection" column="connection_oid"/>
-        -->
-
-        <property name="name" column="name" type="string"/>
-        <property name="destinationName" column="destination_name" type="string"/>
-        <property name="failureDestinationName" column="failure_destination_name" type="string"/>
-        <property name="acknowledgementType" column="acknowledgement_type" type="jms_acknowledgement_type"/>        
-        <property name="replyType" column="reply_type" type="jms_reply_type"/>
-        <property name="replyToQueueName" column="reply_to_queue_name"/>
-        <property name="disabled" column="disabled" type="boolean"/>
-        <property name="username"/>
-        <property name="password"/>
-        <property name="maxConcurrentRequests" column="max_concurrent_requests"/>
-        <property name="messageSource" column="is_message_source"/>
-        <property name="outboundMessageType" column="outbound_message_type" type="jms_message_type"/>
-        <property name="useMessageIdForCorrelation" column="use_message_id_for_correlation" type="boolean"/>
-    </class>
-
-    <class name="com.l7tech.security.cert.TrustedCert" table="trusted_cert" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-        <version name="version" column="version" type="integer"/>
-
-        <property name="name" type="string"/>
-        <property name="subjectDn" column="subject_dn" type="string" />
-        <property name="certBase64" column="cert_base64" type="text"/>
-        <property name="trustedForSsl" column="trusted_for_ssl" type="boolean"/>
-        <property name="trustedForSigningClientCerts" column="trusted_for_client" type="boolean"/>
-        <property name="trustedForSigningServerCerts" column="trusted_for_server" type="boolean"/>
-        <property name="trustedAsSamlIssuer" column="trusted_for_saml" type="boolean"/>
-        <property name="trustedAsSamlAttestingEntity" column="trusted_as_saml_attesting_entity" type="boolean"/>
-        <property name="verifyHostname" column="verify_hostname" type="boolean"/>
-        <property name="thumbprintSha1" column="thumbprint_sha1" type="string" unique="true"/>
-        <property name="ski" type="string"/>
-        <property name="trustAnchor" column="trust_anchor" type="boolean"/>
-        <property name="revocationCheckPolicyType" column="revocation_type" type="trustedcert_revocationtype"/>
-        <property name="revocationCheckPolicyOid" column="revocation_policy_oid" type="long"/>
-    </class>
-
-    <subclass name="com.l7tech.identity.fed.FederatedIdentityProviderConfig"
-              extends="com.l7tech.identity.IdentityProviderConfig"
-              discriminator-value="3" lazy="false"/>
-
-    <class name="com.l7tech.identity.fed.FederatedUser" table="fed_user" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-
-        <version name="version" column="version" type="integer"/>
-
-        <property name="providerId" type="long" column="provider_oid"/>
-
-        <property name="name" type="string" column="name" />
-        <property name="login" type="string" column="login" />
-        <property name="email" type="string"/>
-        <property name="subjectDn" column="subject_dn" type="string"/>
-
-        <property name="firstName" column="first_name"  type="string"/>
-        <property name="lastName" column="last_name" type="string"/>
-    </class>
-
-    <class name="com.l7tech.identity.fed.FederatedGroup" table="fed_group" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-
-        <version name="version" column="version" type="integer"/>
-
-        <property name="providerId" type="long" column="provider_oid"/>
-
-        <property name="description" type="string"/>
-        <property name="name" type="string"/>
-    </class>
-
-    <class name="com.l7tech.identity.fed.FederatedGroupMembership" table="fed_user_group" lazy="false">
-        <composite-id>
-            <key-property name="thisGroupProviderOid" column="provider_oid" type="long"/>
-            <key-property name="thisGroupId" column="fed_group_oid" type="string"/>
-            <key-property name="memberUserId" column="fed_user_oid" type="string"/>
-        </composite-id>
-    </class>
-
-    <class name="com.l7tech.identity.fed.VirtualGroup" table="fed_group_virtual" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-
-        <version name="version" column="version" type="integer"/>
-
-        <property name="description" type="string"/>
-        <property name="providerId" column="provider_oid" type="long"/>
-        <property name="name" type="string"/>
-
-        <property name="samlEmailPattern" column="saml_email_pattern" type="string"/>
-        <property name="x509SubjectDnPattern" column="x509_subject_dn_pattern" type="string"/>
-        <property name="xmlProperties" column="properties" type="text"/>
-    </class>
-
-    <class name="com.l7tech.server.sla.CounterIDRecord" table="counters" lazy="false">
-        <id name="counterId" column="counterid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-        <property name="userId" column="userid" type="string"/>
-        <property name="providerId" column="providerid" type="long"/>
-        <property name="counterName" column="countername" type="string"/>
-    </class>
-
-    <class name="com.l7tech.gateway.common.schema.SchemaEntry" table="community_schemas" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-
-        <version name="version" column="version" type="integer"/>
-
-        <property name="schema" column="schema_xml" type="string"/>
-        <property name="name" column="name" type="string"/>
-        <property name="tns" column="tns" type="string"/>
-        <property name="system" column="system" type="boolean"/>
-    </class>
-
-    <class name="com.l7tech.gateway.common.cluster.ClusterProperty" table="cluster_properties" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-        <version name="version"/> 
-        <property name="name" column="propkey" type="string" unique="true"/>
-        <property name="value" column="propvalue" type="string"/>
-    </class>
-
-    <class name="com.l7tech.server.security.keystore.KeystoreFile" table="keystore_file" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-        <version name="version"/>
-        <property name="name" column="name" type="string"/>
-        <property name="format" column="format" type="string"/>
-        <property name="databytes" column="databytes" type="binary" lazy="true"/>
-    </class>
-
-    <class name="com.l7tech.gateway.common.transport.SsgConnector" table="connector" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-        <version name="version"/>
-
-        <property name="enabled" column="enabled" type="boolean"/>
-        <property name="name" column="name" type="string"/>
-        <property name="port" column="port" type="int"/>
-        <property name="scheme" column="scheme" type="string"/>
-        <property name="secure" column="secure" type="boolean"/>
-        <property name="endpoints" column="endpoints" type="string"/>
-        <property name="clientAuth" column="client_auth" type="int"/>
-        <property name="keystoreOid" column="keystore_oid" type="long"/>
-        <property name="keyAlias" column="key_alias" type="string"/>
-        <set name="properties" inverse="true" cascade="all-delete-orphan" lazy="false">
-            <key column="connector_oid" not-null="true"/>
-            <one-to-many class="com.l7tech.gateway.common.transport.SsgConnectorProperty"/>
-        </set>
-    </class>
-
-    <class name="com.l7tech.gateway.common.transport.SsgConnectorProperty" table="connector_property" lazy="false">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-        <version name="version"/>
-
-        <many-to-one name="connector" column="connector_oid" not-null="true" lazy="false"/>
-        <property name="name" column="name" type="string"/>
-        <property name="value" column="value" type="string"/>
-    </class>
-    
     <class name="com.l7tech.gateway.common.service.SampleMessage" table="sample_messages" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
@@ -503,41 +168,6 @@
         <property name="type" column="type" type="string"/>
         <property name="contentType" column="content_type" type="string"/>
         <property name="contents" column="content" type="string"/>
-    </class>
-
-    <class name="com.l7tech.server.security.sharedkey.SharedKeyRecord" table="shared_keys">
-        <id name="encodingID" column="encodingid" type="string" unsaved-value="null"/>
-        <property name="b64edKey" column="b64edval" type="string"/>
-    </class>
-
-    <class name="com.l7tech.gateway.common.security.RevocationCheckPolicy" table="revocation_check_policy">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-
-        <version name="version" column="version" type="integer"/>
-
-        <property name="name" type="string"/>
-        <property name="revocationCheckPolicyXml" column="revocation_policy_xml" type="string"/>
-        <property name="defaultPolicy" column="default_policy" type="boolean"/>
-        <property name="defaultSuccess" column="default_success" type="boolean"/>
-        <property name="continueOnServerUnavailable" column="continue_server_unavailable" type="boolean"/>
-    </class>
-
-    <class name="com.l7tech.gateway.common.log.SinkConfiguration" table="sink_config">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-
-        <version name="version" column="version" type="integer"/>
-
-        <property name="name" column="name" type="string"/>
-        <property name="description" column="description" type="string"/>
-        <property name="type" column="type" type="sinkconfiguration_type"/>
-        <property name="enabled" column="enabled" type="boolean"/>
-        <property name="severity" column="severity" type="sinkconfiguration_severityThreshold"/>
-        <property name="categories" column="categories" type="string"/>
-        <property name="xmlProperties" column="properties" type="text"/>
     </class>
 
 </hibernate-mapping>

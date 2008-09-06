@@ -1,5 +1,9 @@
 package com.l7tech.server.security.sharedkey;
 
+import javax.persistence.Table;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Column;
 import java.io.Serializable;
 
 /**
@@ -11,16 +15,27 @@ import java.io.Serializable;
  * User: flascell<br/>
  * Date: May 18, 2007<br/>
  */
+@Entity
+@Table(name="shared_keys")
 public class SharedKeyRecord implements Serializable {
     private String encodingID;
     private String b64edKey;
 
+    public SharedKeyRecord() {
+    }
+
+    public SharedKeyRecord(String encodingID, String b64edKey) {
+        this.encodingID = encodingID;
+        this.b64edKey = b64edKey;
+    }
 
     /**
      * A unique ID for the public key used to encrypt this shared key
      * @see com.l7tech.util.EncryptionUtil
      * @return the id
      */
+    @Id
+    @Column(name="encodingid", nullable=false, length=32)
     public String getEncodingID() {
         return encodingID;
     }
@@ -33,14 +48,7 @@ public class SharedKeyRecord implements Serializable {
         this.encodingID = encodingID;
     }
 
-    public SharedKeyRecord() {
-    }
-
-    public SharedKeyRecord(String encodingID, String b64edKey) {
-        this.encodingID = encodingID;
-        this.b64edKey = b64edKey;
-    }
-
+    @Column(name="b64edval", nullable=false, length=255)
     public String getB64edKey() {
         return b64edKey;
     }
