@@ -5,24 +5,25 @@ package com.l7tech.console.panels;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.gateway.common.admin.IdentityAdmin;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.console.event.*;
+import com.l7tech.console.event.WizardAdapter;
+import com.l7tech.console.event.WizardEvent;
+import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.cert.TrustedCert;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.IOException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 /**
@@ -195,27 +196,15 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
         public boolean addTrustedCert( final TrustedCert tc ) {
             boolean addOk = true;
             try {
-                if (isCertRelatedToSSG(tc)) {
+                if (isCertTrustedByAnotherProvider(tc)) {
                     addOk = false;
                     JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
-                                                  "This cert cannot be used as a trusted cert in this " +
-                                                  "federated identity\nprovider because it is related to the " +
-                                                  "SecureSpan Gateway's root cert.",
-                                                  "Cannot add this cert",
-                                                  JOptionPane.ERROR_MESSAGE);
-                } else if (isCertTrustedByAnotherProvider(tc)) {
-                    addOk = false;
-                    JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
-                                                  "This cert cannot be used as a trusted cert in this " +
-                                                  "federated identity\nprovider because it is already " +
-                                                  "trusted by another identity provider.",
-                                                  "Cannot add this cert",
-                                                  JOptionPane.ERROR_MESSAGE);
+                            "This cert cannot be used as a trusted cert in this " +
+                                    "federated identity\nprovider because it is already " +
+                                    "trusted by another identity provider.",
+                            "Cannot add this cert",
+                            JOptionPane.ERROR_MESSAGE);
                 }
-            } catch (IOException e1) {
-                throw new RuntimeException(e1); //  not expected to happen
-            } catch (CertificateException e1) {
-                throw new RuntimeException(e1); //  not expected to happen
             } catch (FindException e1) {
                 throw new RuntimeException(e1); //  not expected to happen
             }
@@ -254,28 +243,6 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
             }
         }
         return false;
-    }
-
-    /**
-     * Check whether or not the passed cert is related somehow to the ssg's root cert.
-     * See Bug #1019
-     * @return true if it is
-     */
-    private boolean isCertRelatedToSSG(TrustedCert trustedCert) throws IOException, CertificateException {
-        if (ssgcert == null) {
-            ssgcert = getTrustedCertAdmin().getSSGRootCert();
-        }
-        byte[] certbytes = HexUtils.decodeBase64(trustedCert.getCertBase64());
-        X509Certificate[] chainToVerify = CertUtils.decodeCertChain(certbytes);
-        try {
-            CertUtils.verifyCertificateChain(chainToVerify, ssgcert, chainToVerify.length);
-        } catch (CertUtils.CertificateUntrustedException e) {
-            // this is what we were hoping for
-            logger.finest("the cert is not related.");
-            return false;
-        }
-        logger.finest("The cert appears to be related!");
-        return true;
     }
 
     private WizardListener wizardListener = new WizardAdapter() {
