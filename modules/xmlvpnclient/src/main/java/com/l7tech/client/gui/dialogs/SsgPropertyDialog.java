@@ -1,25 +1,27 @@
 package com.l7tech.client.gui.dialogs;
 
+import com.l7tech.client.ClientProxy;
+import com.l7tech.client.gui.Gui;
+import com.l7tech.common.io.AliasNotFoundException;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.widgets.CertificatePanel;
 import com.l7tech.gui.widgets.ContextMenuTextField;
-import com.l7tech.gui.widgets.WrappingLabel;
 import com.l7tech.gui.widgets.SquigglyTextField;
-import com.l7tech.kerberos.KerberosUtils;
+import com.l7tech.gui.widgets.WrappingLabel;
 import com.l7tech.kerberos.KerberosClient;
+import com.l7tech.kerberos.KerberosUtils;
+import com.l7tech.proxy.Constants;
+import com.l7tech.proxy.datamodel.*;
+import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.ValidationUtils;
 import com.l7tech.xml.WsTrustRequestType;
-import com.l7tech.client.ClientProxy;
-import com.l7tech.proxy.Constants;
-import com.l7tech.proxy.datamodel.*;
-import com.l7tech.proxy.datamodel.exceptions.*;
-import com.l7tech.client.gui.Gui;
-import com.l7tech.proxy.ssl.CurrentSslPeer;
 
 import javax.crypto.BadPaddingException;
 import javax.net.ssl.SSLException;
@@ -31,9 +33,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
-import java.net.MalformedURLException;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
@@ -348,7 +350,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         if (!(ssgIdentityPane instanceof TrustedSsgIdentityPanel) || ssg.isFederatedGateway())
             throw new IllegalStateException("Not supported for Federated Gateway");
 
-        PasswordAuthentication creds = null;
+        final PasswordAuthentication creds;
         try {
             creds = Managers.getCredentialManager().getCredentials(ssg);
         } catch (HttpChallengeRequiredException e) {
@@ -630,20 +632,20 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         }
     }
 
-    class CertAliasPicker extends JDialog implements SsgKeyStoreManager.AliasPicker {
+    class CertAliasPicker extends JDialog implements CertUtils.AliasPicker {
 
         public CertAliasPicker(Dialog parent) {
             super(parent);
         }
 
-        public String selectAlias(String[] options) throws SsgKeyStoreManager.AliasNotFoundException {
+        public String selectAlias(String[] options) throws AliasNotFoundException {
             Object selectedOption = JOptionPane.showInputDialog(this, "Select the alias for the certificate you want to import.",
                     "Select an Alias.", JOptionPane.QUESTION_MESSAGE,
-				  null,options , null);
+                    null,options , null);
             return (String)selectedOption;
 
-          }
         }
+    }
 
     /** Get the Server URL text field. */
     private JTextField getFieldServerAddress() {
@@ -979,12 +981,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         return ssg.isGeneric() ? "<New Web Service>" : "<New Gateway>";
     }
 
-    /**
-     * This event is fired when a policy is attached to an Ssg with a PolicyAttachmentKey, either new
-     * or updated.
-     *
-     * @param evt
-     */
     public void policyAttached(SsgEvent evt) {
         getPoliciesPane().updatePolicyPanel();
     }

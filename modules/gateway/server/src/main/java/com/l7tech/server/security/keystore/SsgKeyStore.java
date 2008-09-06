@@ -1,14 +1,15 @@
 package com.l7tech.server.security.keystore;
 
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.security.auth.x500.X500Principal;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.Future;
-
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
 
 /**
  * Interface implemented by SSG components that own and manage certificates with private keys on a particular
@@ -23,11 +24,13 @@ public interface SsgKeyStore extends SsgKeyFinder {
      * @param dn      the DN for the new self-signed certificate.  Required.
      * @param keybits the number of bits the new RSA key should contain, ie 512, 768, 1024 or 2048.  Required.
      * @param expiryDays  the number of days before the new self-signed certificate will expire.  Required.
+     * @param makeCaCert    true if the new certificate is intended to be used to sign other certs.  Normally false.
+     *                      If this is true, the new certificate will have the "cA" basic constraint and the "keyCertSign" key usage.
      * @return immediately returns a Future which returns the new self-signed certificate, already added to this key store.  Never null.
      * @throws GeneralSecurityException if there is a problem generating, signing, or saving the new certificate or key pair
      */
     @Transactional(propagation=Propagation.REQUIRED)
-    public Future<X509Certificate> generateKeyPair(String alias, X500Principal dn, int keybits, int expiryDays) throws GeneralSecurityException;
+    public Future<X509Certificate> generateKeyPair(String alias, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert) throws GeneralSecurityException;
 
     /**
      * Replace the certificate for the specified alias with a new certificate based on the same key pair.

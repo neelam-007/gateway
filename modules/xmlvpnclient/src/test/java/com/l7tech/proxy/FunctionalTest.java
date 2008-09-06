@@ -1,15 +1,13 @@
 package com.l7tech.proxy;
 
+import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.GenericHttpException;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
-import com.l7tech.util.*;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.xml.soap.SoapFaultUtils;
-import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.TestDocuments;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
@@ -18,6 +16,11 @@ import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.xml.soap.SoapFaultUtils;
+import com.l7tech.xml.soap.SoapUtil;
 import org.junit.After;
 import static org.junit.Assert.*;
 import org.junit.Before;
@@ -278,7 +281,7 @@ public class FunctionalTest {
             throw new UnsupportedOperationException();
         }
 
-        public void importClientCertificate(File certFile, char[] pass, AliasPicker aliasPicker,
+        public void importClientCertificate(File certFile, char[] pass, CertUtils.AliasPicker aliasPicker,
                                             char[] ssgPassword) throws IOException, GeneralSecurityException,
             KeyStoreCorruptException, AliasNotFoundException {
             throw new UnsupportedOperationException();

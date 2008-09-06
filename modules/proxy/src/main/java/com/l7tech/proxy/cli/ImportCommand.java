@@ -5,14 +5,15 @@
 
 package com.l7tech.proxy.cli;
 
+import com.l7tech.common.io.AliasNotFoundException;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 
-import java.io.PrintStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.PasswordAuthentication;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
@@ -101,8 +102,8 @@ class ImportCommand extends Command {
                                        "The newly-created keys file will be encrypted with this password.");
         }
 
-        SsgKeyStoreManager.AliasPicker picker = new SsgKeyStoreManager.AliasPicker() {
-            public String selectAlias(String[] options) throws SsgKeyStoreManager.AliasNotFoundException {
+        CertUtils.AliasPicker picker = new CertUtils.AliasPicker() {
+            public String selectAlias(String[] options) throws AliasNotFoundException {
                 for (int i = 0; i < options.length; i++) {
                     String option = options[i];
                     if (option != null && option.equalsIgnoreCase(alias))
@@ -120,7 +121,7 @@ class ImportCommand extends Command {
                     String option = options[i];
                     sb.append("  ").append(option).append("\n");
                 }
-                throw new SsgKeyStoreManager.AliasNotFoundException(sb.toString());
+                throw new AliasNotFoundException(sb.toString());
             }
         };
 
@@ -135,7 +136,7 @@ class ImportCommand extends Command {
             throw new CommandException("Unable to import client certificate: " + ExceptionUtils.getMessage(e), e);
         } catch (KeyStoreCorruptException e) {
             throw new CommandException("Unable to import client certificate: " + ExceptionUtils.getMessage(e), e);
-        } catch (SsgKeyStoreManager.AliasNotFoundException e) {
+        } catch (AliasNotFoundException e) {
             throw new CommandException("Unable to import client certificate: " + ExceptionUtils.getMessage(e), e);
         }
     }

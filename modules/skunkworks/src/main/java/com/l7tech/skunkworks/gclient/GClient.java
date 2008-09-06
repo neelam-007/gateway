@@ -1,23 +1,17 @@
 package com.l7tech.skunkworks.gclient;
 
-import com.l7tech.gui.util.GuiCertUtil;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.GuiPasswordCallbackHandler;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.message.Message;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.util.*;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.xml.soap.SoapMessageGenerator;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gui.util.GuiCertUtil;
+import com.l7tech.gui.util.GuiPasswordCallbackHandler;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.wsp.WspReader;
@@ -29,6 +23,14 @@ import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.ClientPolicyFactory;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.wsdl.Wsdl;
+import com.l7tech.xml.soap.SoapMessageGenerator;
+import com.l7tech.xml.soap.SoapUtil;
 import org.apache.commons.httpclient.SimpleHttpConnectionManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -54,9 +56,9 @@ import java.io.*;
 import java.math.BigInteger;
 import java.net.*;
 import java.security.*;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.cert.CertificateEncodingException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateKeySpec;
@@ -1112,7 +1114,7 @@ public class GClient {
             throw new UnsupportedOperationException();
         }
 
-        public void importClientCertificate(File certFile, char[] pass, AliasPicker aliasPicker, char[] ssgPassword) throws IOException, GeneralSecurityException, KeyStoreCorruptException, AliasNotFoundException {
+        public void importClientCertificate(File certFile, char[] pass, CertUtils.AliasPicker aliasPicker, char[] ssgPassword) throws IOException, GeneralSecurityException, KeyStoreCorruptException, AliasNotFoundException {
             throw new UnsupportedOperationException();
         }
     }

@@ -1042,24 +1042,6 @@ public class CertUtils {
         return new BigInteger[]{modulus, exponent};
     }
 
-    /** Exception thrown if the desired alias is not found in a keystore file. */
-    public static class AliasNotFoundException extends Exception {
-        public AliasNotFoundException() {
-        }
-
-        public AliasNotFoundException(String message) {
-            super(message);
-        }
-
-        public AliasNotFoundException(Throwable cause) {
-            super(cause);
-        }
-
-        public AliasNotFoundException(String message, Throwable cause) {
-            super(message, cause);
-        }
-    }
-
     /**
      * Caller passes an instance of this to importClientCertificate if they wish to present the user with a list of aliases in a file.
      */
@@ -1141,7 +1123,7 @@ public class CertUtils {
      *                   this should be the same as the ksPass.  Required.
      * @return the PrivateKeyEntry loaded from the target keystore.  Never null.
      * @throws java.io.IOException if there is a problem reading from the InputStream
-     * @throws CertUtils.AliasNotFoundException if the expected alias is not found in the keystore
+     * @throws AliasNotFoundException if the expected alias is not found in the keystore
      * @throws java.security.KeyStoreException if there is a problem reading the keystore
      * @throws java.security.NoSuchAlgorithmException if a cryptographic algorithm needed to read this keystore
      *                                                can't be found

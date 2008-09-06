@@ -239,7 +239,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         }
     }
 
-    public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays) throws FindException, GeneralSecurityException {
+    public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays, boolean makeCaCert) throws FindException, GeneralSecurityException {
         checkLicenseKeyStore();
         if (alias == null) throw new NullPointerException("alias is null");
         if (alias.length() < 1) throw new IllegalArgumentException("alias is empty");
@@ -263,7 +263,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         if (expiryDays < 1)
             throw new IllegalArgumentException("expiryDays must be positive");
 
-        return registerJob(keystore.generateKeyPair(alias, new X500Principal(dn), keybits, expiryDays), X509Certificate.class);
+        return registerJob(keystore.generateKeyPair(alias, new X500Principal(dn), keybits, expiryDays, makeCaCert), X509Certificate.class);
     }
 
     public byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException {

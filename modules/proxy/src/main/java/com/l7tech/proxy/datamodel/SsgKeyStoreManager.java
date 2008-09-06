@@ -6,8 +6,9 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.proxy.util.CertificateDownloader;
+import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.util.CertificateDownloader;
 
 import java.io.File;
 import java.io.IOException;
@@ -228,27 +229,6 @@ public abstract class SsgKeyStoreManager {
     protected abstract KeyStore getTrustStore() throws KeyStoreCorruptException;
 
     /**
-     * Exception thrown if the desired alias is not found in a keystore file.
-     * TODO this pointless intermediate class is only here to reduce the patch size/merge risk for the Bug #4933 fix and should be removed as soon as the fix is merged to rel4_5
-     */
-    public static class AliasNotFoundException extends CertUtils.AliasNotFoundException {
-        public AliasNotFoundException() {
-        }
-
-        public AliasNotFoundException(String message) {
-            super(message);
-        }
-
-        public AliasNotFoundException(Throwable cause) {
-            super(cause);
-        }
-
-        public AliasNotFoundException(String message, Throwable cause) {
-            super(message, cause);
-        }
-    }
-
-    /**
      * Manually import the server certificate for the specified Ssg from the specified file.
      * If this method returns, the certificate was imported successfully.
      * @param file the File from which to import the cert.  May be in PEM or DER format.  Must not be null.
@@ -260,18 +240,6 @@ public abstract class SsgKeyStoreManager {
     public abstract void importServerCertificate(File file) throws IOException, CertificateException, KeyStoreCorruptException, KeyStoreException;
 
     /**
-     * Caller passes an instance of this to importClientCertificate if they wish to present the user with a list of aliases in a file.
-     * TODO this pointless intermediate class is only here to reduce the patch size/merge risk for the Bug #4933 fix and should be removed as soon as the fix is merged to rel4_5
-     */
-    public static interface AliasPicker extends CertUtils.AliasPicker {
-        /**
-         * @return the preferred alias.  May not be null.
-         * @throws AliasNotFoundException if none of the available aliases look good.
-         */
-        String selectAlias(String[] options) throws AliasNotFoundException;
-    }
-    
-    /**
      * Import the client certificate for the specified Ssg from the specified file, using the specified pass phrase.
      * If this method returns, the certificate was imported successfully.
      *
@@ -282,11 +250,11 @@ public abstract class SsgKeyStoreManager {
      * @throws KeyStoreCorruptException if the Ssg keystore is damaged or could not be writted using ssgPassword
      * @throws IOException if there is a problem reading the file or the file does not contain any private keys
      * @throws GeneralSecurityException if the file can't be decrypted or the imported certificate can't be saved
-     * @throws AliasNotFoundException if the specified alias was not found or did not contain both a cert chain and a private key
+     * @throws com.l7tech.common.io.AliasNotFoundException if the specified alias was not found or did not contain both a cert chain and a private key
      */
     public abstract void importClientCertificate(File certFile,
                                  char[] pass,
-                                 AliasPicker aliasPicker,
+                                 CertUtils.AliasPicker aliasPicker,
                                  char[] ssgPassword)
             throws IOException, GeneralSecurityException, KeyStoreCorruptException, AliasNotFoundException;
 }

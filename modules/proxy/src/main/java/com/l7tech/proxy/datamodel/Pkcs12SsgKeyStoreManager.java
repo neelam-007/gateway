@@ -3,16 +3,17 @@
  */
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.security.prov.CertificateRequest;
-import com.l7tech.security.prov.JceProvider;
+import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.IOUtils;
-import com.l7tech.util.FileUtils;
-import com.l7tech.util.HexUtils;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.ssl.CertLoader;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.util.SslUtils;
+import com.l7tech.security.prov.CertificateRequest;
+import com.l7tech.security.prov.JceProvider;
+import com.l7tech.util.FileUtils;
+import com.l7tech.util.HexUtils;
 
 import java.io.*;
 import java.net.PasswordAuthentication;
@@ -594,7 +595,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
 
     public void importClientCertificate(File certFile,
                                         char[] pass,
-                                        AliasPicker aliasPicker,
+                                        CertUtils.AliasPicker aliasPicker,
                                         char[] ssgPassword)
             throws IOException, GeneralSecurityException, KeyStoreCorruptException, AliasNotFoundException
     {
@@ -603,7 +604,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
         KeyStore.PrivateKeyEntry entry = null;
         try {
             entry = CertUtils.loadPrivateKey(new CertUtils.FileInputStreamFactory(certFile), IMPORT_KEYSTORE_TYPE, pass, aliasPicker, pass);
-        } catch (CertUtils.AliasNotFoundException e) {
+        } catch (AliasNotFoundException e) {
             // TODO remove this along with the intermediate class
             throw new AliasNotFoundException(e);
         }

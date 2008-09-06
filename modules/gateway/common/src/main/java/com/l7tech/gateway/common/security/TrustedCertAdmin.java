@@ -121,6 +121,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @param oid the oid of the {@link RevocationCheckPolicy} to be deleted
      * @throws FindException if the {@link RevocationCheckPolicy} cannot be found
      * @throws DeleteException if the {@link RevocationCheckPolicy} cannot be deleted
+     * @throws ConstraintViolationException if the {@link RevocationCheckPolicy} cannot be deleted
      */
     @Secured(types=REVOCATION_CHECK_POLICY,stereotype= DELETE_BY_ID)
     public void deleteRevocationCheckPolicy(long oid) throws FindException, DeleteException, ConstraintViolationException;
@@ -239,6 +240,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @param dn the DN to use in the new self-signed cert.  Required.
      * @param keybits number of bits for the new RSA key, ie 512, 768, 1024 or 2048.  Required.
      * @param expiryDays number of days the self-signed cert should be valid.  Required.
+     * @param makeCaCert    true if the new certificate is intended to be used to sign other certs.  Normally false.
+     *                      If this is true, the new certificate will have the "cA" basic constraint and the "keyCertSign" key usage.
      * @return the job identifier of the key generation job.  Call {@link #getJobStatus(com.l7tech.gateway.common.AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
      *         and {@link #getJobResult(JobId)} to pick up the result in the form of a self-signed X509Certificate.
      * @throws FindException if there is a problem getting info from the database
@@ -247,7 +250,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype= SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
-    JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays) throws FindException, GeneralSecurityException;
+    JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays, boolean makeCaCert) throws FindException, GeneralSecurityException;
 
     /**
      * Generate a new PKCS#10 Certification Request (aka Certificate Signing Request) using the specified private key,

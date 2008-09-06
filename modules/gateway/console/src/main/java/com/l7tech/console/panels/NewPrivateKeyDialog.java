@@ -70,6 +70,7 @@ public class NewPrivateKeyDialog extends JDialog {
     private JButton createButton;
     private JButton cancelButton;
     private JTextField expiryDaysField;
+    private JCheckBox caCheckBox;
 
     private String defaultDn;
     private String lastDefaultDn;
@@ -211,6 +212,7 @@ public class NewPrivateKeyDialog extends JDialog {
         final String dn = dnField.getText();
         final int expiryDays = Integer.parseInt(expiryDaysField.getText());
         final int keybits = getKeyBits();
+        final boolean makeCaCert = caCheckBox.isSelected();
         //noinspection UnusedAssignment
         Throwable ouch = null;
         try {
@@ -223,7 +225,7 @@ public class NewPrivateKeyDialog extends JDialog {
 
             Callable<Object> callable = new Callable<Object>() {
                 public Object call() throws Exception {
-                    keypairJobId = getCertAdmin().generateKeyPair(keystoreInfo.id, alias, dn, keybits, expiryDays);
+                    keypairJobId = getCertAdmin().generateKeyPair(keystoreInfo.id, alias, dn, keybits, expiryDays, makeCaCert);
                     newAlias = alias;
                     return null;
                 }

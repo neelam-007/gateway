@@ -5,16 +5,13 @@
 
 package com.l7tech.proxy;
 
+import com.l7tech.common.io.AliasNotFoundException;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.security.xml.processor.BadSecurityContextException;
-import com.l7tech.security.xml.processor.ProcessorException;
-import com.l7tech.util.*;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
@@ -24,6 +21,10 @@ import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.ssl.SslPeer;
+import com.l7tech.security.xml.processor.BadSecurityContextException;
+import com.l7tech.security.xml.processor.ProcessorException;
+import com.l7tech.util.*;
+import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -465,7 +466,7 @@ public class SecureSpanBridgeFactory {
                 if (pw == null)
                     throw new CausedIOException("Unable to import a client certificate -- no credentials were set for this Bridge instance.");
                 synchronized (ssg) {
-                    SsgKeyStoreManager.AliasPicker aliasPicker = new SsgKeyStoreManager.AliasPicker() {
+                    CertUtils.AliasPicker aliasPicker = new CertUtils.AliasPicker() {
                         public String selectAlias(String[] options) {
                             if (alias != null)
                                 return alias;
@@ -479,7 +480,7 @@ public class SecureSpanBridgeFactory {
                 }
             } catch (GeneralSecurityException e) {
                 throw new CausedIOException(e);
-            } catch (SsgKeyStoreManager.AliasNotFoundException e) {
+            } catch (AliasNotFoundException e) {
                 throw new CausedIOException(e);
             } catch (KeyStoreCorruptException e) {
                 throw new CausedIOException(e);

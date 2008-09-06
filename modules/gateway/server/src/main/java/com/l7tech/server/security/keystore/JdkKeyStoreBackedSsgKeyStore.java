@@ -1,16 +1,17 @@
 package com.l7tech.server.security.keystore;
 
+import com.l7tech.common.io.AliasNotFoundException;
+import com.l7tech.common.io.DuplicateAliasException;
 import com.l7tech.gateway.common.security.BouncyCastleCertUtils;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
@@ -155,60 +156,38 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         }
 
         return mutateKeystore(new Callable<Boolean>() {
-            public Boolean call() {
-                try {
-                    storePrivateKeyEntryImpl(entry, overwriteExisting);
-                    return Boolean.TRUE;
-                } catch (KeyStoreException e) {
-                    throw new RuntimeException(e);
-                }
+            public Boolean call() throws KeyStoreException {
+                storePrivateKeyEntryImpl(entry, overwriteExisting);
+                return Boolean.TRUE;
             }
         });
     }
 
     public synchronized Future<Boolean> deletePrivateKeyEntry(final String keyAlias) throws KeyStoreException {
         return mutateKeystore(new Callable<Boolean>() {
-            public Boolean call() {
-                try {
-                    keyStore().deleteEntry(keyAlias);
-                    return Boolean.TRUE;
-                } catch (KeyStoreException e) {
-                    throw new RuntimeException(e);
-                }
+            public Boolean call() throws KeyStoreException {
+                keyStore().deleteEntry(keyAlias);
+                return Boolean.TRUE;
             }
         });
     }
 
-    public synchronized Future<X509Certificate> generateKeyPair(final String alias, final X500Principal dn, final int keybits, final int expiryDays)
+    public synchronized Future<X509Certificate> generateKeyPair(final String alias, final X500Principal dn, final int keybits, final int expiryDays, final boolean makeCaCert)
             throws GeneralSecurityException
     {
         return mutateKeystore(new Callable<X509Certificate>() {
-            public X509Certificate call() {
-                try {
-                    KeyStore keystore = keyStore();
-                    if (keystore.containsAlias(alias))
-                        throw new RuntimeException("Keystore already contains alias " + alias);
+            public X509Certificate call() throws GeneralSecurityException, DuplicateAliasException {
+                KeyStore keystore = keyStore();
+                if (keystore.containsAlias(alias))
+                    throw new DuplicateAliasException("Keystore already contains alias " + alias);
 
-                    // Requires that current crypto engine already by the correct one for this keystore type
-                    KeyPair keyPair = JceProvider.generateRsaKeyPair(keybits);
-                    X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(dn, expiryDays, keyPair);
+                // Requires that current crypto engine already by the correct one for this keystore type
+                KeyPair keyPair = JceProvider.generateRsaKeyPair(keybits);
+                X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(dn, expiryDays, keyPair, makeCaCert);
 
-                    keystore.setKeyEntry(alias, keyPair.getPrivate(), getEntryPassword(), new Certificate[] { cert });
+                keystore.setKeyEntry(alias, keyPair.getPrivate(), getEntryPassword(), new Certificate[] { cert });
 
-                    return cert;
-                } catch (CertificateEncodingException e) {
-                    throw new RuntimeException(e);
-                } catch (NoSuchAlgorithmException e) {
-                    throw new RuntimeException(e);
-                } catch (SignatureException e) {
-                    throw new RuntimeException(e);
-                } catch (InvalidKeyException e) {
-                    throw new RuntimeException(e);
-                } catch (KeyStoreException e) {
-                    throw new RuntimeException(e);
-                } catch (NoSuchProviderException e) {
-                    throw new RuntimeException(e);
-                }
+                return cert;
             }
         });
     }
@@ -217,52 +196,44 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         if (chain == null || chain.length < 1 || chain[0] == null)
             throw new IllegalArgumentException("Cert chain must contain at least one cert.");
         return mutateKeystore(new Callable<Boolean>() {
-            public Boolean call() {
-                try {
-                    KeyStore keystore = keyStore();
-                    if (!keystore.isKeyEntry(alias))
-                        throw new RuntimeException("Keystore does not contain a key with alias " + alias);
-                    Key key = keystore.getKey(alias, getEntryPassword());
-                    Certificate[] oldChain = keystore.getCertificateChain(alias);
-                    if (oldChain == null || oldChain.length < 1)
-                        throw new RuntimeException("Existing certificate chain for alias " + alias + " is empty");
-                    if (!(oldChain[0] instanceof X509Certificate))
-                        throw new RuntimeException("Existing certificate for alias " + alias + " is not an X.509 certificate");
-                    X509Certificate oldCert = (X509Certificate)oldChain[0];
-                    PublicKey oldPublicKey = oldCert.getPublicKey();
-                    if (!(oldPublicKey instanceof RSAPublicKey))
-                        throw new RuntimeException("Existing certificate public key is not an RSA public key");
-                    RSAPublicKey oldRsaPublicKey = (RSAPublicKey)oldPublicKey;
-                    if (!(key instanceof PrivateKey) || !"RSA".equals(key.getAlgorithm()))
-                        throw new RuntimeException("Keystore contains a key with alias " + alias + " but it is not an RSA private key: " + key);
+            public Boolean call() throws GeneralSecurityException, AliasNotFoundException {
+                KeyStore keystore = keyStore();
+                if (!keystore.isKeyEntry(alias))
+                    throw new AliasNotFoundException("Keystore does not contain a key with alias " + alias);
+                Key key = keystore.getKey(alias, getEntryPassword());
+                Certificate[] oldChain = keystore.getCertificateChain(alias);
+                if (oldChain == null || oldChain.length < 1)
+                    throw new KeyStoreException("Existing certificate chain for alias " + alias + " is empty");
+                if (!(oldChain[0] instanceof X509Certificate))
+                    throw new KeyStoreException("Existing certificate for alias " + alias + " is not an X.509 certificate");
+                X509Certificate oldCert = (X509Certificate)oldChain[0];
+                PublicKey oldPublicKey = oldCert.getPublicKey();
+                if (!(oldPublicKey instanceof RSAPublicKey))
+                    throw new KeyStoreException("Existing certificate public key is not an RSA public key");
+                RSAPublicKey oldRsaPublicKey = (RSAPublicKey)oldPublicKey;
+                if (!(key instanceof PrivateKey) || !"RSA".equals(key.getAlgorithm()))
+                    throw new KeyStoreException("Keystore contains a key with alias " + alias + " but it is not an RSA private key: " + key);
 
-                    PublicKey newPublicKey = chain[0].getPublicKey();
-                    if (!(newPublicKey instanceof RSAPublicKey)) {
-                        throw new RuntimeException("New certificate public key is not an RSA public key");
-                    }
-                    RSAPublicKey newRsaPublicKey = (RSAPublicKey)newPublicKey;
-
-                    BigInteger newModulus = newRsaPublicKey.getModulus();
-                    BigInteger oldModulus = oldRsaPublicKey.getModulus();
-                    BigInteger newExponent = newRsaPublicKey.getPublicExponent();
-                    BigInteger oldExponent = oldRsaPublicKey.getPublicExponent();
-
-                    if (!newExponent.equals(oldExponent))
-                        throw new RuntimeException("New certificate public key's RSA public exponent is not the same as the old certificate's public key");
-
-                    if (!newModulus.equals(oldModulus))
-                        throw new RuntimeException("New certificate public key's RSA modulus is not the same as the old certificate's public key");
-
-                    keystore.setKeyEntry(alias, key, getEntryPassword(), chain);
-
-                    return Boolean.TRUE;
-                } catch (NoSuchAlgorithmException e) {
-                    throw new RuntimeException(e);
-                } catch (KeyStoreException e) {
-                    throw new RuntimeException(e);
-                } catch (UnrecoverableKeyException e) {
-                    throw new RuntimeException(e);
+                PublicKey newPublicKey = chain[0].getPublicKey();
+                if (!(newPublicKey instanceof RSAPublicKey)) {
+                    throw new KeyStoreException("New certificate public key is not an RSA public key");
                 }
+                RSAPublicKey newRsaPublicKey = (RSAPublicKey)newPublicKey;
+
+                BigInteger newModulus = newRsaPublicKey.getModulus();
+                BigInteger oldModulus = oldRsaPublicKey.getModulus();
+                BigInteger newExponent = newRsaPublicKey.getPublicExponent();
+                BigInteger oldExponent = oldRsaPublicKey.getPublicExponent();
+
+                if (!newExponent.equals(oldExponent))
+                    throw new KeyStoreException("New certificate public key's RSA public exponent is not the same as the old certificate's public key");
+
+                if (!newModulus.equals(oldModulus))
+                    throw new KeyStoreException("New certificate public key's RSA modulus is not the same as the old certificate's public key");
+
+                keystore.setKeyEntry(alias, key, getEntryPassword(), chain);
+
+                return Boolean.TRUE;
             }
         });
     }
@@ -277,13 +248,13 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
             PrivateKey rsaPrivate = (PrivateKey)key;
             Certificate[] chain = keystore.getCertificateChain(alias);
             if (chain == null || chain.length < 1)
-                throw new RuntimeException("Existing certificate chain for alias " + alias + " is empty");
+                throw new KeyStoreException("Existing certificate chain for alias " + alias + " is empty");
             if (!(chain[0] instanceof X509Certificate))
-                throw new RuntimeException("Existing certificate for alias " + alias + " is not an X.509 certificate");
+                throw new KeyStoreException("Existing certificate for alias " + alias + " is not an X.509 certificate");
             X509Certificate cert = (X509Certificate)chain[0];
             PublicKey publicKey = cert.getPublicKey();
             if (!(publicKey instanceof RSAPublicKey))
-                throw new RuntimeException("Existing certificate public key is not an RSA public key");
+                throw new KeyStoreException("Existing certificate public key is not an RSA public key");
             RSAPublicKey rsaPublic = (RSAPublicKey)publicKey;
             KeyPair keyPair = new KeyPair(rsaPublic, rsaPrivate);
             return BouncyCastleCertUtils.makeCertificateRequest(dnObj, keyPair);

@@ -8,6 +8,7 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.http.prov.apache.StaleCheckingHttpConnectionManager;
+import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.IOUtils;
@@ -808,7 +809,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             throw new UnsupportedOperationException("Gateway is unable to import a server certificate");
         }
 
-        public void importClientCertificate(File certFile, char[] pass, AliasPicker aliasPicker, char[] ssgPassword) throws IOException, GeneralSecurityException, KeyStoreCorruptException, AliasNotFoundException {
+        public void importClientCertificate(File certFile, char[] pass, CertUtils.AliasPicker aliasPicker, char[] ssgPassword) throws IOException, GeneralSecurityException, KeyStoreCorruptException, AliasNotFoundException {
             throw new UnsupportedOperationException("Gateway is unable to import a client certificate");
         }
 
