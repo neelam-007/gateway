@@ -956,6 +956,7 @@
 
     <bean id="kerberosConfig" class="com.l7tech.server.security.kerberos.ServerKerberosConfig">
         <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="dbPasswordEncryption"/>
     </bean>
 
     <bean id="messageContextMappingKeyManager" class="com.l7tech.server.mapping.MessageContextMappingKeyManagerImpl" parent="hibernateBean"/>

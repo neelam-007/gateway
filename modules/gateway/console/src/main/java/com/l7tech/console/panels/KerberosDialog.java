@@ -47,7 +47,7 @@ public class KerberosDialog extends JDialog {
 
     @Override
     public void setVisible( final boolean visible ) {
-        if ( visible ) {
+        if ( visible && validKeytab ) {
             testConfiguration();
         }
 
@@ -240,7 +240,7 @@ public class KerberosDialog extends JDialog {
             SwingUtilities.invokeLater( new Runnable() {
                 public void run() {
                     initData();
-                    testConfiguration();
+                    if (validKeytab) testConfiguration();
                 }
             });
         } catch ( IOException ioe ) {

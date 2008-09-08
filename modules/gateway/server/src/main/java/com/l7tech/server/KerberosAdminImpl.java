@@ -2,7 +2,10 @@ package com.l7tech.server;
 
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.kerberos.*;
 import com.l7tech.gateway.common.admin.KerberosAdmin;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
@@ -26,8 +29,10 @@ public class KerberosAdminImpl implements KerberosAdmin {
 
     //- PUBLIC
 
-    public KerberosAdminImpl( final ClusterPropertyManager clusterPropertyManager ) {
+    public KerberosAdminImpl( final ClusterPropertyManager clusterPropertyManager,
+                              final MasterPasswordManager clusterEncryptionManager ) {
         this.clusterPropertyManager = clusterPropertyManager;
+        this.clusterEncryptionManager = clusterEncryptionManager;
     }
 
     public Keytab getKeytab() throws KerberosException {
@@ -91,6 +96,7 @@ public class KerberosAdminImpl implements KerberosAdmin {
         return Collections.unmodifiableMap(configMap);
     }
 
+    @Secured(types=EntityType.CLUSTER_PROPERTY,stereotype=MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE)
     public void installKeytab(byte[] data) throws KerberosException {
         try {
             ClusterProperty property = clusterPropertyManager.findByUniqueName(KEYTAB_PROPERTY);
@@ -98,7 +104,7 @@ public class KerberosAdminImpl implements KerberosAdmin {
                 property = new ClusterProperty();
                 property.setName(KEYTAB_PROPERTY);
             }
-            property.setValue( HexUtils.encodeBase64(data) );
+            property.setValue( clusterEncryptionManager.encryptPassword(HexUtils.encodeBase64(data).toCharArray()) );
 
             long oid = property.getOid();
             if ( oid == ClusterProperty.DEFAULT_OID ) {
@@ -117,4 +123,5 @@ public class KerberosAdminImpl implements KerberosAdmin {
     private static final String KEYTAB_PROPERTY = "krb5.keytab";
 
     private final ClusterPropertyManager clusterPropertyManager;
+    private final MasterPasswordManager clusterEncryptionManager;
 }
