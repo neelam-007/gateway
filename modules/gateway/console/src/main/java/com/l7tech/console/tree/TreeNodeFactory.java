@@ -44,9 +44,17 @@ public class TreeNodeFactory {
         } else if (EntityType.USER.equals(entity.getType())) {
             return new UserNode(entity);
         } else if (EntityType.SERVICE.equals(entity.getType())) {
-            return new ServiceNode((ServiceHeader)entity, comparator);
+            ServiceHeader sh = (ServiceHeader) entity;
+            if(sh.isAlias()){
+                return new ServiceNodeAlias(sh, comparator);
+            }
+            return new ServiceNode(sh, comparator);
         } else if (EntityType.POLICY.equals(entity.getType())) {
-            return new PolicyEntityNode((PolicyHeader)entity, comparator);
+            PolicyHeader pH = (PolicyHeader) entity;
+            if(pH.isAlias()){
+                return new PolicyEntityNodeAlias(pH, comparator);
+            }
+            return new PolicyEntityNode(pH, comparator);
         }
 
         throw new IllegalArgumentException("Unknown entity type " + entity.getType());

@@ -4,27 +4,37 @@
 package com.l7tech.console.action;
 
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.util.Functions;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.panels.HomePagePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.policy.PolicyHeader;
+import com.l7tech.policy.PolicyDeletionForbiddenException;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.Set;
 
 /**
  * The <code>DeletePolicyAction</code> action deletes a {@link com.l7tech.policy.Policy}.
  */
-public class DeletePolicyAction extends PolicyNodeAction {
+public final class DeletePolicyAction extends DeleteEntityNodeAction<PolicyEntityNode> {
     static final Logger log = Logger.getLogger(DeletePolicyAction.class.getName());
 
     /**
@@ -45,7 +55,7 @@ public class DeletePolicyAction extends PolicyNodeAction {
      */
     @Override
     public String getName() {
-        return "Delete";
+        return "Delete Policy";
     }
 
     /**
@@ -64,62 +74,41 @@ public class DeletePolicyAction extends PolicyNodeAction {
         return "com/l7tech/console/resources/delete.gif";
     }
 
-    /**
-     * Actually perform the action.
-     * This is the method which should be called programmatically.
-     * note on threading usage: do not access GUI components
-     * without explicitly asking for the AWT event thread!
-     */
-    protected void performAction() {
-        Actions.deletePolicy((PolicyEntityNode)policyNode, new Functions.UnaryVoid<Boolean>() {
-            public void call(Boolean confirmed) {
-                if (!confirmed) return;
+    public boolean deleteEntity(){
+        final PolicyAdmin policyAdmin = Registry.getDefault().getPolicyAdmin();
+        Object userObj = node.getUserObject();
+        if(!(userObj instanceof PolicyHeader)) return false;
 
-                Registry.getDefault().getSecurityProvider().refreshPermissionCache();
-
-                Runnable runnable = new Runnable() {
-                    public void run() {
-                        final TopComponents creg = TopComponents.getInstance();
-                        ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree)creg.getComponent(ServicesAndPoliciesTree.NAME);
-                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                        model.removeNodeFromParent(node);
-
-                        //Remove an aliases if they exist
-                        PolicyHeader pH = (PolicyHeader) node.getUserObject();
-                        long oldPolicyOid = pH.getOid();
-                        Object root = model.getRoot();
-                        RootNode rootNode = (RootNode) root;
-                        if(!pH.isAlias()){
-                            Set<AbstractTreeNode> foundNodes = rootNode.getAliasesForEntity(oldPolicyOid);
-                            if(!foundNodes.isEmpty()){
-                                for(AbstractTreeNode atn: foundNodes){
-                                    model.removeNodeFromParent(atn);
-                                }
-                                rootNode.removeEntity(oldPolicyOid);
-                            }
-                        }else{
-                            rootNode.removeAlias(oldPolicyOid, node);
-                        }
-                        
-                        try {
-                            final WorkSpacePanel cws = creg.getCurrentWorkspace();
-                            JComponent jc = cws.getComponent();
-                            if (jc == null || !(jc instanceof PolicyEditorPanel)) {
-                                return;
-                            }
-                            PolicyEditorPanel pe = (PolicyEditorPanel)jc;
-                            // if currently edited service was deleted
-                            if (policyNode.getPolicy().getOid() == pe.getPolicyNode().getPolicy().getOid()) {
-                                cws.setComponent(new HomePagePanel());
-                            }
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                };
-                SwingUtilities.invokeLater(runnable);
+        PolicyHeader pH = (PolicyHeader) userObj;
+        try {
+            policyAdmin.deletePolicy(pH.getOid());
+            return true;
+        }catch (ObjectModelException ome) {
+            PolicyDeletionForbiddenException pdfe = ExceptionUtils.getCauseIfCausedBy(ome, PolicyDeletionForbiddenException.class);
+            String msg;
+            if (pdfe != null) {
+                msg = node.getName() + " cannot be deleted at this time; it is still in use by another policy";
+            } else {
+                msg = "Error encountered while deleting " +
+                        node.getName() +
+                        ". Please try again later.";
             }
-        });
+            log.log(Level.WARNING, "Error deleting policy", ome);
+            DialogDisplayer.showMessageDialog(Actions.getTopParent(),
+                    msg,
+                    "Delete Policy",
+                    JOptionPane.ERROR_MESSAGE, null);
+        } catch (Throwable throwable) {
+            ErrorManager.getDefault().notify(Level.WARNING, throwable, "Error deleting policy");
+        }
+        return false;
     }
 
+    public String getUserConfirmationMessage() {
+        return "Are you sure you want to delete the " + node.getName() + " policy?";
+    }
+
+    public String getUserConfirmationTitle() {
+        return "Delete Policy";
+    }
 }

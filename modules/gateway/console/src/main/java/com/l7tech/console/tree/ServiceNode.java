@@ -82,11 +82,6 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         return getEntity().getPolicy();
     }
 
-    public boolean isAlias() {
-        ServiceHeader sH = (ServiceHeader) this.getUserObject();
-        return sH.isAlias();
-    }
-
     /**
      * Nullify service,  will cause service reload next time.
      */
@@ -109,7 +104,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         actions.add(new EditServiceProperties(this));
         if (getEntityHeader().isSoap() && !TopComponents.getInstance().isApplet()) actions.add(new PublishPolicyToUDDIRegistry(this));
         actions.add(new DeleteServiceAction(this));
-        if(!isAlias()) actions.add(new MarkEntityToAliasAction(this));
+        actions.add(new MarkEntityToAliasAction(this));
         actions.add(new PolicyRevisionsAction(this));
         actions.add(new RefreshTreeNodeAction(this));
         Action secureCut = ServicesAndPoliciesTree.getSecuredAction(EntityType.FOLDER,
@@ -166,9 +161,6 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
      */
     @Override
     public String getName() {
-        if(isAlias()){
-            return getEntityHeader().getDisplayName()+" alias"; 
-        }
         return getEntityHeader().getDisplayName();
     }
 

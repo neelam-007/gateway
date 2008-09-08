@@ -9,6 +9,7 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
+import com.l7tech.console.tree.ServiceNodeAlias;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
@@ -32,7 +33,7 @@ import java.util.logging.Level;
 /**
  * Action to edit the published service properties
  */
-public class EditServiceProperties extends ServiceNodeAction {
+public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNode> {
     public EditServiceProperties(ServiceNode node) {
         super(node);
     }
@@ -79,7 +80,7 @@ public class EditServiceProperties extends ServiceNodeAction {
 
                         //if this is an original entity, update any aliases it may have, in case it's name, uri or
                         //something else show to the user in the tree changes
-                        if(!serviceNode.isAlias()){
+                        if(!(serviceNode instanceof ServiceNodeAlias)){
                             ServiceHeader sH = (ServiceHeader) serviceNode.getUserObject();
                             tree.updateAllAliases(sH.getOid());
                         }

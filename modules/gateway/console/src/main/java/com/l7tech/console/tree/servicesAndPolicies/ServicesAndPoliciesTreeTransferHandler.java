@@ -150,7 +150,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                             Entity entity = childTransferNode.getEntity();
                             if(!(entity instanceof HasFolder)) return false;
 
-                            if(childTransferNode.isAlias()){
+                            if(childTransferNode instanceof ServiceNodeAlias || childTransferNode instanceof PolicyEntityNodeAlias){
                                 //With the entity oid and the old folder oid we can find the actual alias
                                 //which we need to update
                                 Object userObj = oldParent.getUserObject();

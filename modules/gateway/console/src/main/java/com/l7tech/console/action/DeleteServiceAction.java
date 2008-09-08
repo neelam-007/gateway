@@ -10,21 +10,29 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.util.Functions;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.OrganizationHeader;
+import com.l7tech.objectmodel.DeleteException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.Set;
 
 
 /**
  * The <code>DeleteServiceAction</code> action deletes the service
  */
-public class DeleteServiceAction extends ServiceNodeAction {
+public final class DeleteServiceAction extends DeleteEntityNodeAction<ServiceNode> {
     static final Logger log = Logger.getLogger(DeleteServiceAction.class.getName());
 
     /**
@@ -36,15 +44,11 @@ public class DeleteServiceAction extends ServiceNodeAction {
         super(en);
     }
 
-    protected OperationType getOperation() {
-        return OperationType.DELETE;
-    }
-
     /**
      * @return the action name
      */
     public String getName() {
-        return "Delete";
+        return "Delete Service";
     }
 
     /**
@@ -54,74 +58,35 @@ public class DeleteServiceAction extends ServiceNodeAction {
         return "Delete the Web service";
     }
 
-    /**
-     * subclasses override this method specifying the resource name
-     */
-    protected String iconResource() {
-        return "com/l7tech/console/resources/delete.gif";
+    public String getUserConfirmationMessage() {
+        return "Are you sure you want to delete the " + node.getName() + " service?";
     }
 
-    /**
-     * Actually perform the action.
-     * This is the method which should be called programmatically.
-     * note on threading usage: do not access GUI components
-     * without explicitly asking for the AWT event thread!
-     */
-    protected void performAction() {
-        Actions.deleteService(serviceNode, new Functions.UnaryVoid<Boolean>() {
-            public void call(Boolean confirmed) {
-                if (!confirmed) return;
-
-                Registry.getDefault().getSecurityProvider().refreshPermissionCache();
-
-                Runnable runnable = new Runnable() {
-                    public void run() {
-                        final TopComponents creg = TopComponents.getInstance();
-                        ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree)creg.getComponent(ServicesAndPoliciesTree.NAME);
-                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                        model.removeNodeFromParent(node);
-
-                        //Remove an aliases if they exist
-                        ServiceHeader sH = (ServiceHeader) node.getUserObject();
-                        long oldServiceOid = sH.getOid();
-                        Object root = model.getRoot();
-                        RootNode rootNode = (RootNode) root;
-                        
-                        if(!sH.isAlias()){
-                            Set<AbstractTreeNode> foundNodes = rootNode.getAliasesForEntity(oldServiceOid);
-                            if(!foundNodes.isEmpty()){
-                                for(AbstractTreeNode atn: foundNodes){
-                                    model.removeNodeFromParent(atn);
-                                }
-                                rootNode.removeEntity(oldServiceOid);                                
-                            }
-                        }else{
-                            rootNode.removeAlias(oldServiceOid, node);
-                        }
-
-                        try {
-                            final WorkSpacePanel cws = creg.getCurrentWorkspace();
-                            JComponent jc = cws.getComponent();
-                            if (jc == null || !(jc instanceof PolicyEditorPanel)) {
-                                return;
-                            }
-                            PolicyEditorPanel pe = (PolicyEditorPanel)jc;
-                            EntityWithPolicyNode pn = pe.getPolicyNode();
-                            if (pn instanceof ServiceNode) {
-                                PublishedService svc = ((ServiceNode) pn).getEntity();
-                                // if currently edited service was deleted
-                                if (serviceNode.getEntity().getOid() == svc.getOid()) {
-                                cws.setComponent(new HomePagePanel());
-                                }
-                            }
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                };
-                SwingUtilities.invokeLater(runnable);
-            }
-        });
+    public String getUserConfirmationTitle() {
+        return "Delete Service";
     }
 
+    public boolean deleteEntity(){
+        final ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
+        Object userObj = node.getUserObject();
+
+        if(!(userObj instanceof ServiceHeader)) return false;
+        try{
+            ServiceHeader sH = (ServiceHeader) userObj;
+            serviceManager.deletePublishedService(Long.toString(sH.getOid()));
+            return true;
+        }
+        catch (ObjectModelException ome) {
+            log.log(Level.WARNING, "Error deleting service", ome);
+            DialogDisplayer.showMessageDialog(Actions.getTopParent(),
+              "Error encountered while deleting " +
+              node.getName() +
+              ". Please try again later.",
+              "Delete Service",
+              JOptionPane.ERROR_MESSAGE, null);
+        } catch (Throwable throwable) {
+            ErrorManager.getDefault().notify(Level.WARNING, throwable, "Error deleting service");
+        }
+        return false;
+    }
 }

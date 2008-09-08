@@ -445,7 +445,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
         AssertionTreeNode newRootAssertion = (AssertionTreeNode)policyTreeModel.getRoot();
         ((AbstractTreeNode) newRootAssertion.getRoot()).addCookie(new AbstractTreeNode.NodeCookie(subject.getPolicyNode()));
-        //rootAssertion.addCookie(new AbstractTreeNode.NodeCookie(subject.getServiceNode()));
+        //rootAssertion.addCookie(new AbstractTreeNode.NodeCookie(subject.getEntityWithPolicyNode()));
 
         policyTree.setModel(policyTreeModel);
         rootAssertion = newRootAssertion;

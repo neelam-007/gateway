@@ -7,6 +7,7 @@ import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -30,7 +31,7 @@ import java.util.HashMap;
  * The <code>SavePolicyAction</code> action saves the policy and it's
  * assertion tree.
  */
-public class SavePolicyAction extends PolicyNodeAction {
+public class SavePolicyAction extends EntityWithPolicyNodeAction<PolicyEntityNode> {
     protected AssertionTreeNode node;
     private final boolean activateAsWell;
     private HashMap<String, String> fragmentNameGuidMap;
@@ -116,7 +117,7 @@ public class SavePolicyAction extends PolicyNodeAction {
         }
         String name = null;
         try {
-            EntityWithPolicyNode policyNode = getPolicyNode();
+            EntityWithPolicyNode policyNode = getEntityWithPolicyNode();
             if (policyNode == null) {
                 throw new IllegalArgumentException("No edited policy or service specified");
             }

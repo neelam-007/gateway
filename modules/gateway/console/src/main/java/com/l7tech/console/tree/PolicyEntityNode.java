@@ -59,11 +59,6 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         return this.policy;
     }
 
-    public boolean isAlias() {
-        PolicyHeader policyHeader = (PolicyHeader) this.getUserObject();
-        return policyHeader.isAlias();
-    }
-
     public Policy getEntity() throws FindException {
         return getPolicy();
     }
@@ -74,8 +69,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         actions.add(new EditPolicyAction(this));
         actions.add(new EditPolicyProperties(this));
         actions.add(new DeletePolicyAction(this));
-        SecureAction sa = new MarkEntityToAliasAction(this);
-        if(!isAlias()) actions.add(sa);
+        actions.add(new MarkEntityToAliasAction(this));
         actions.add(new PolicyRevisionsAction(this));
         actions.add(new RefreshTreeNodeAction(this));
 
@@ -100,9 +94,6 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
 
     @Override
     public String getName() {
-        if(isAlias()){
-            return getEntityHeader().getName()+" alias";
-        }
         return getEntityHeader().getName();
     }
 

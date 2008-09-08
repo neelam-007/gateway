@@ -185,126 +185,26 @@ public class Actions {
         });
     }
 
-    // Deletes the given policy
-    static void deletePolicy(final PolicyEntityNode node, final Functions.UnaryVoid<Boolean> result) {
-
-        // Make sure
+    /**
+     * Ask the user to confirm an action, if confirmed call the call back function result
+     * @param message Message to ask the user to confirm
+     * @param title Title of the dialog shown to the user
+     * @param result call back function to call if dialog confirmed by user. true will be supplied if confirmed
+     */
+    public static void getUserConfirmationAndCallBack(final String message, final String title, final Functions.UnaryVoid<Boolean> result){
         DialogDisplayer.showConfirmDialog(getTopParent(),
-          "Are you sure you want to delete the " + node.getName() + " policy?",
-          "Delete Policy",
+          message,
+          title,
           JOptionPane.YES_NO_OPTION, new DialogDisplayer.OptionListener() {
             public void reportResult(int opresult) {
                 if (opresult != JOptionPane.YES_OPTION) {
                     result.call(false);
                     return;
                 }
-
-                // Delete the  node and update the tree
-                try {
-                    final PolicyAdmin policyAdmin = Registry.getDefault().getPolicyAdmin();
-                    Object userObj = node.getUserObject();
-                    if(userObj instanceof PolicyHeader){
-                        PolicyHeader pH = (PolicyHeader) userObj;
-                        if(pH.isAlias()){
-                            //delete the alias, leaving the original service alone
-                            //what alias does this node represent? Need it's policy id and folder id to find out
-                            //pH's folder id has been modified to point at the folder containing the alias
-                            PolicyAlias pa = policyAdmin.findAliasByEntityAndFolder(pH.getOid(), pH.getFolderOid());
-                            if(pa != null){
-                                policyAdmin.deleteEntityAlias((Long.toString(pa.getOid())));
-                            }else{
-                                DialogDisplayer.showMessageDialog(getTopParent(),
-                                  "Cannot find alias to delete",
-                                  "Delete Policy Alias",
-                                  JOptionPane.ERROR_MESSAGE, null);
-                            }
-                        }else{
-                            policyAdmin.deletePolicy(pH.getOid());
-                        }
-                    }
-
-                    result.call(true);
-                    return;
-                } catch (ObjectModelException ome) {
-                    PolicyDeletionForbiddenException pdfe = ExceptionUtils.getCauseIfCausedBy(ome, PolicyDeletionForbiddenException.class);
-                    String msg;
-                    if (pdfe != null) {
-                        msg = node.getName() + " cannot be deleted at this time; it is still in use by another policy";
-                    } else {
-                        msg = "Error encountered while deleting " +
-                                node.getName() +
-                                ". Please try again later.";
-                    }
-                    log.log(Level.WARNING, "Error deleting policy", ome);
-                    DialogDisplayer.showMessageDialog(getTopParent(),
-                            msg,
-                            "Delete Policy",
-                            JOptionPane.ERROR_MESSAGE, null);
-                } catch (Throwable throwable) {
-                    ErrorManager.getDefault().notify(Level.WARNING, throwable, "Error deleting service");
-                }
-                result.call(false);
+                result.call(true);
             }
         });
     }
-
-
-    // Deletes the given saervice
-    static void deleteService(final ServiceNode node, final Functions.UnaryVoid<Boolean> result) {
-
-        // Make sure
-        DialogDisplayer.showConfirmDialog(getTopParent(),
-          "Are you sure you want to delete the " + node.getName() + " service?",
-          "Delete Service",
-          JOptionPane.YES_NO_OPTION, new DialogDisplayer.OptionListener() {
-            public void reportResult(int opresult) {
-                if (opresult != JOptionPane.YES_OPTION) {
-                    result.call(false);
-                    return;
-                }
-
-                // Delete the  node and update the tree
-                try {
-                    final ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
-                    Object userObj = node.getUserObject();
-                    if(userObj instanceof ServiceHeader){
-                        ServiceHeader sH = (ServiceHeader) userObj;
-                        if(sH.isAlias()){
-                            //delete the alias, leaving the original service alone
-                            //what alias does this node represent? Need it's service id and folder id to find out
-                            //this service's folder id has been modified to point at the folder containing the alias
-                            PublishedServiceAlias psa = serviceManager.findAliasByEntityAndFolder(sH.getOid(), sH.getFolderOid());
-                            if(psa != null){
-                                serviceManager.deleteEntityAlias((Long.toString(psa.getOid())));
-                            }else{
-                                DialogDisplayer.showMessageDialog(getTopParent(),
-                                  "Cannot find alias to delete",
-                                  "Delete Service Alias",
-                                  JOptionPane.ERROR_MESSAGE, null);
-                            }
-                        }else{
-                            serviceManager.deletePublishedService(Long.toString(sH.getOid()));
-                        }
-                    }
-                    result.call(true);
-                    return;
-                } catch (ObjectModelException ome) {
-                    log.log(Level.WARNING, "Error deleting service", ome);
-                    DialogDisplayer.showMessageDialog(getTopParent(),
-                      "Error encountered while deleting " +
-                      node.getName() +
-                      ". Please try again later.",
-                      "Delete Service",
-                      JOptionPane.ERROR_MESSAGE, null);
-                } catch (Throwable throwable) {
-                    ErrorManager.getDefault().notify(Level.WARNING, throwable, "Error deleting service");
-                }
-                result.call(false);
-            }
-        });
-    }
-
-
 
     static void deleteAssertion(AssertionTreeNode node, final Functions.UnaryVoid<Boolean> result) {
         String nodeName = node.getName();
@@ -321,7 +221,7 @@ public class Actions {
         });
     }
 
-    private static Frame getTopParent() {
+    protected static Frame getTopParent() {
         return TopComponents.getInstance().getTopParent();
     }
 

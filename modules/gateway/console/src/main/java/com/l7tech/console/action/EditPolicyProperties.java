@@ -18,6 +18,7 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.EntityWithPolicyNode;
+import com.l7tech.console.tree.PolicyEntityNodeAlias;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
@@ -33,7 +34,7 @@ import java.util.logging.Level;
 /**
  * Action to edit the policy properties
  */
-public class EditPolicyProperties extends PolicyNodeAction {
+public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntityNode> {
     public EditPolicyProperties(PolicyEntityNode node) {
         super(node);
     }
@@ -84,7 +85,7 @@ public class EditPolicyProperties extends PolicyNodeAction {
 
                     //if this is an original entity, update any aliases it may have, in case it's name or 
                     //something else show to the user in the tree changes
-                    if(!policyNode.isAlias()){
+                    if(!(policyNode instanceof PolicyEntityNodeAlias)){
                         if (tree !=null) {
                             PolicyHeader pH = (PolicyHeader) policyNode.getUserObject();
                             tree.updateAllAliases(pH.getOid());

@@ -75,7 +75,7 @@ public class BridgeRoutingAssertionPropertiesAction extends NodeAction {
                         policy = svc.getPolicy();
                         wsdl = svc.parsedWsdl();
                     } else {
-                        policy = getPolicyNodeCookie().getPolicy();
+                        policy = getEntityWithPolicyNodeCookie().getPolicy();
                         wsdl = null;
                     }
                     d = new BridgeRoutingAssertionPropertiesDialog(f, (BridgeRoutingAssertion)node.asAssertion(), policy, wsdl, !node.canEdit());

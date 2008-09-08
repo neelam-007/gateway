@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  * The <code>EditServiceNameAction</code> invokes the service name
  * edit dialog.
  */
-public class EditServiceNameAction extends ServiceNodeAction {
+public class EditServiceNameAction extends EntityWithPolicyNodeAction<ServiceNode> {
     static final Logger log = Logger.getLogger(EditServiceNameAction.class.getName());
     private String lastServiceName; // remeber old name fro for rename property event
 

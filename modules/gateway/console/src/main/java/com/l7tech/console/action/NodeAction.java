@@ -78,7 +78,7 @@ public abstract class NodeAction extends SecureAction {
     /**
      * @return the policy cookie or null if not founds
      */
-    protected EntityWithPolicyNode getPolicyNodeCookie() {
+    protected EntityWithPolicyNode getEntityWithPolicyNodeCookie() {
         for (Iterator i = ((AbstractTreeNode)node.getRoot()).cookies(); i.hasNext(); ) {
             Object value = ((Cookie)i.next()).getValue();
             if (value instanceof EntityWithPolicyNode) return (EntityWithPolicyNode)value;

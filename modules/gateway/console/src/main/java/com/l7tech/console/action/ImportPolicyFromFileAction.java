@@ -9,6 +9,8 @@ import com.l7tech.policy.Policy;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.policy.exporter.PolicyImporter;
 import com.l7tech.console.tree.PolicyTemplatesFolderNode;
+import com.l7tech.console.tree.EntityWithPolicyNode;
+import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
@@ -30,7 +32,7 @@ import java.util.Iterator;
 /**
  * The SSM action type that imports a policy from a file.
  */
-public abstract class ImportPolicyFromFileAction extends PolicyNodeAction {
+public abstract class ImportPolicyFromFileAction extends EntityWithPolicyNodeAction<PolicyEntityNode> {
     private static final Logger log = Logger.getLogger(ImportPolicyFromFileAction.class.getName());
     private final String homePath;
 

@@ -75,7 +75,7 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
                         policy = svc.getPolicy();
                         wsdl = svc.parsedWsdl();
                     } else {
-                        policy = getPolicyNodeCookie().getPolicy();
+                        policy = getEntityWithPolicyNodeCookie().getPolicy();
                         wsdl = null;
                     }
                     d = new HttpRoutingAssertionDialog(f, (HttpRoutingAssertion)node.asAssertion(), policy, wsdl, !node.canEdit());

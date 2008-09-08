@@ -64,7 +64,6 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
         Object rootObj = model.getRoot();
         if(rootObj instanceof DefaultMutableTreeNode){
             DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) rootObj;
-            //rootNode has two children
             for(int i = 0; i < rootNode.getChildCount(); i++){
                 TreeNode childNode = rootNode.getChildAt(i);
                 if(childNode instanceof AbstractTreeNode){
@@ -135,8 +134,6 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
     public void focusLost(FocusEvent e) {
         //let user see that all cut nodes have been undone
         setAllChildrenUnCut();
-        //Set no nodes as being selected
-        this.clearSelection();
         setIgnoreCurrentClipboard(true);
     }
 
