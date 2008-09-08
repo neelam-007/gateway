@@ -139,8 +139,8 @@ public final class RootNode extends FolderNode{
         this.policyAdmin = Registry.getDefault().getPolicyAdmin();
         this.title = name;
         this.filterLabel = filterLabel;
-        this.nameSort = new AlterDefaultSortAction(this, AlterDefaultSortAction.SortType.NAME);
-        this.typeSort = new AlterDefaultSortAction(this, AlterDefaultSortAction.SortType.TYPE);
+        this.nameSort = AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.NAME);
+        this.typeSort = AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.TYPE);
     }
 
     /**

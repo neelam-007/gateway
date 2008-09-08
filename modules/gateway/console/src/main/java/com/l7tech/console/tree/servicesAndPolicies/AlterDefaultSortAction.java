@@ -24,7 +24,6 @@ import java.util.logging.Logger;
 public class AlterDefaultSortAction extends BaseAction {
     static Logger log = Logger.getLogger(AlterDefaultSortAction.class.getName());
 
-    private RootNode rootNode;
     /**
      * Default order represents the default order for the specified SortType
      * For name this means asc, for type it means desc
@@ -36,8 +35,6 @@ public class AlterDefaultSortAction extends BaseAction {
         NAME("Name"),
         TYPE("Type"),
         ;
-
-        public static final EnumSet<SortType> ALL_SORT_TYPES = EnumSet.of(NAME, TYPE);
 
         private SortType(String name) {
             this.sortName = name;
@@ -55,9 +52,29 @@ public class AlterDefaultSortAction extends BaseAction {
     }
 
 
-    public AlterDefaultSortAction(RootNode rootNode, SortType sortType) {
+    private static AlterDefaultSortAction nameSort = new AlterDefaultSortAction(AlterDefaultSortAction.SortType.NAME);
+    private static AlterDefaultSortAction typeSort = new AlterDefaultSortAction(AlterDefaultSortAction.SortType.TYPE);
+
+    public static AlterDefaultSortAction getSortAction(SortType sortType){
+        switch(sortType){
+            case NAME:
+                return nameSort;
+            case TYPE:
+                return typeSort;
+            default:
+                log.log(Level.INFO,"Unexpected SortType found");
+                throw new IllegalArgumentException("Illegal SortType");
+        }
+    }
+
+    /**
+     * An instance of AlterDefaultSortAction maintains state regarding what the current sort is for it's type.
+     * Across the SSM for each sort type we only want one instance of each sort type. As a result the constructor is
+     * private. Use the getSortAction static method to get an instance
+     * @param sortType
+     */
+    private AlterDefaultSortAction(SortType sortType) {
         super(true);
-        this.rootNode = rootNode;
         this.sortType = sortType;
         //Calling as not using the default constructor
         setActionValues();
@@ -67,21 +84,24 @@ public class AlterDefaultSortAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        if(sortType == SortType.NAME){
-           if(defaultOrder){
-               return "Sort " + sortType+ " desc";
-           }else{
-                return "Sort " + sortType+ " asc";               
-           }
-        }else if(sortType == SortType.TYPE){
-            if(defaultOrder){
-                return "Sort " + sortType+ " asc";
-            }else{
-                 return "Sort " + sortType+ " desc";
-            }
+
+        switch(sortType){
+            case NAME:
+                if(defaultOrder){
+                    return "Sort " + sortType+ " desc";
+                }else{
+                     return "Sort " + sortType+ " asc";
+                }
+            case TYPE:
+                if(defaultOrder){
+                    return "Sort " + sortType+ " asc";
+                }else{
+                     return "Sort " + sortType+ " desc";
+                }
+            default:
+                log.log(Level.INFO,"Unexpected SortType found");
+                throw new IllegalArgumentException("Illegal SortType");
         }
-        log.log(Level.INFO,"Unexpected SortType found");
-        throw new IllegalStateException("Unexpected SortType found");
     }
 
     /**
@@ -105,22 +125,29 @@ public class AlterDefaultSortAction extends BaseAction {
     protected void performAction() {
         RootNode.ServicesAndPoliciesNodeComparator comparator =  RootNode.getComparator();
 
-        if(sortType.toString().equals(SortType.NAME.toString())){
-           if(defaultOrder){
-               comparator.setNameAscending(false);
-               defaultOrder = false;
-           }else{
-                comparator.setNameAscending(true);
-               defaultOrder = true;
-           }
-        }else if(sortType.toString().equals(SortType.TYPE.toString())){
-            if(defaultOrder){
-                comparator.setTypeDescending(false);
-                defaultOrder = false;
-            }else{
-                comparator.setTypeDescending(true);
-                defaultOrder = true;
-            }
+        switch (sortType){
+            case NAME:
+                if(defaultOrder){
+                    comparator.setNameAscending(false);
+                    defaultOrder = false;
+                }else{
+                     comparator.setNameAscending(true);
+                    defaultOrder = true;
+                }
+                break;
+            case TYPE:
+                if(defaultOrder){
+                    comparator.setTypeDescending(false);
+                    defaultOrder = false;
+                }else{
+                    comparator.setTypeDescending(true);
+                    defaultOrder = true;
+                }
+                break;
+            default:
+                log.log(Level.INFO,"Unexpected SortType found");
+                throw new IllegalArgumentException("Illegal SortType");
+
         }
 
         final JTree tree = (JTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
@@ -129,6 +156,7 @@ public class AlterDefaultSortAction extends BaseAction {
         TreePath rootPath = tree.getPathForRow(0);
         final Enumeration pathEnum = tree.getExpandedDescendants(rootPath);
 
+        RootNode rootNode = (RootNode) model.getRoot();
         sortChildren(rootNode);
         model.nodeStructureChanged(rootNode);
 
@@ -163,7 +191,7 @@ public class AlterDefaultSortAction extends BaseAction {
         //Detach all children
         node.removeAllChildren();
         for(AbstractTreeNode atn: childNodes){
-            node.insert(atn, node.getInsertPosition(atn, rootNode.getComparator()));
+            node.insert(atn, node.getInsertPosition(atn, RootNode.getComparator()));
         }
     }
 }

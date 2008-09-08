@@ -27,6 +27,7 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.tree.servicesAndPolicies.AlterFilterAction;
+import com.l7tech.console.tree.servicesAndPolicies.AlterDefaultSortAction;
 import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.tree.policy.PolicyToolBar;
@@ -735,12 +736,17 @@ public class MainWindow extends JFrame implements SheetHolder {
         menu.add(getAuditMenuItem());
         menu.add(getFromFileMenuItem());
 
+        //Add tree filter menu items
         menu.addSeparator();
-
         menu.add(new AlterFilterAction(AlterFilterAction.FilterType.ALL, getFilterStatusLabel()));
         menu.add(new AlterFilterAction(AlterFilterAction.FilterType.SERVICES, getFilterStatusLabel()));
         menu.add(new AlterFilterAction(AlterFilterAction.FilterType.POLICY_FRAGMENT, getFilterStatusLabel()));
-        
+
+        //Add tree sort filter menu items
+        menu.addSeparator();
+        menu.add(AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.NAME));
+        menu.add(AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.TYPE));
+
         int mnemonic = menu.getText().toCharArray()[0];
         menu.setMnemonic(mnemonic);
 

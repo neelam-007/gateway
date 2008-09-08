@@ -37,14 +37,14 @@ public class MarkEntityToAliasAction extends SecureAction {
      * @return the action name
      */
     public String getName() {
-        return "Create Alias";
+        return "Copy as Alias";
     }
 
     /**
      * @return the action description
      */
     public String getDescription() {
-        return "Create Alias";
+        return "Copy as Alias";
     }
 
     /**
