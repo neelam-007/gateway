@@ -1,8 +1,5 @@
 package com.l7tech.console.util.registry;
 
-import com.l7tech.gateway.common.admin.AdminContext;
-import com.l7tech.gateway.common.admin.PolicyAdmin;
-import com.l7tech.gateway.common.admin.KerberosAdmin;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.LogonEvent;
@@ -16,7 +13,7 @@ import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.admin.*;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.policy.PolicyPathBuilderFactory;
@@ -47,6 +44,7 @@ public final class RegistryImpl extends Registry
     private AdminContext adminContext = null;
     private IdentityAdmin identityAdmin;
     private ServiceAdmin serviceAdmin;
+    private FolderAdmin folderAdmin;
     private JmsAdmin jmsAdmin;
     private FtpAdmin ftpAdmin;
     private TrustedCertAdmin trustedCertAdmin;
@@ -101,6 +99,15 @@ public final class RegistryImpl extends Registry
         }
         serviceAdmin = adminContext.getServiceAdmin();
         return serviceAdmin;
+    }
+
+    public FolderAdmin getFolderAdmin() {
+        checkAdminContext();
+        if (folderAdmin != null) {
+            return folderAdmin;
+        }
+        folderAdmin = adminContext.getFolderAdmin();
+        return folderAdmin;
     }
 
     /**

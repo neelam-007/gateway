@@ -39,17 +39,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
     protected Transferable createTransferable(JComponent c) {
         if(c instanceof ServicesAndPoliciesTree) {
             //Can only drag and drop if the user is admin or has 'Manage Webservices' role
-            //use an AttemptedUpdate, which represents an Update attempty on a Policy_Folder to determine
-            //whether drag and drop is enabled for this user
-            //todo [Donal] create utility method for this check
-            final Folder folder = new Folder("TestFolder", null);
-            AttemptedUpdate attemptedUpdate = new AttemptedUpdate(EntityType.FOLDER, folder);
-            if (Registry.getDefault().isAdminContextPresent()){
-                SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
-                if(!securityProvider.hasPermission(attemptedUpdate)){
-                    return null;
-                }
-            }
+            if(!ServicesAndPoliciesTree.isUserAuthorizedToMoveFolders()) return null;
 
             ServicesAndPoliciesTree servicesAndPoliciesTree = (ServicesAndPoliciesTree) c;            
             List<AbstractTreeNode> transferNodes = servicesAndPoliciesTree.getSmartSelectedNodes();
@@ -125,8 +115,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                             FolderNode child = (FolderNode) transferNode;
                             Folder folder = new Folder(child.getName(), newParent.getOid());
                             folder.setOid(child.getOid());
-                            //todo [Donal] get this to use the FolderManager
-                            Registry.getDefault().getServiceManager().saveFolder(folder);
+                            Registry.getDefault().getFolderAdmin().saveFolder(folder);
                         }else if(transferNode instanceof EntityWithPolicyNode){
                             EntityWithPolicyNode childTransferNode = (EntityWithPolicyNode) transferNode;
                             Object childObj = childTransferNode.getUserObject();

@@ -272,10 +272,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
         if (!ClipboardActions.isSystemClipboardAvailable()) return null;
         if (!Registry.getDefault().isAdminContextPresent()) return null;
 
-        AttemptedUpdateAny attemptedUpdate = new AttemptedUpdateAny(EntityType.FOLDER);
-
-        SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
-        if (!securityProvider.hasPermission(attemptedUpdate)) return null;
+        if(!isUserAuthorizedToMoveFolders()) return null;
 
         switch(clipboardActionType) {
             case CUT:
@@ -285,6 +282,19 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
             default:
                 throw new IllegalArgumentException();
         }
+    }
+
+    /**
+     * The user can move folders if they have the permission to update any entity of type folder
+     * @return true if authorized, false otherwise
+     */
+    public static boolean isUserAuthorizedToMoveFolders(){
+        AttemptedUpdateAny attemptedUpdate = new AttemptedUpdateAny(EntityType.FOLDER);
+
+        SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
+        if (!securityProvider.hasPermission(attemptedUpdate)) return false;
+
+        return true;
     }
 
     public void setIgnoreCurrentClipboard(boolean set){

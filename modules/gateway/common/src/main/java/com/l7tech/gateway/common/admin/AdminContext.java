@@ -38,11 +38,16 @@ public interface AdminContext {
     IdentityAdmin getIdentityAdmin() throws SecurityException;
 
     /**
-     * @return the service managerr
+     * @return the service manager
      * @throws SecurityException on security error accessing the interface
      */
     ServiceAdmin getServiceAdmin() throws SecurityException;
 
+    /**
+     * @return the {@link FolderAdmin} implementation
+     * @throws SecurityException on security error accessing the interface
+     */
+    FolderAdmin getFolderAdmin() throws SecurityException;
     /**
      * @return the jms provider manager
      * @throws SecurityException on security error accessing the interface

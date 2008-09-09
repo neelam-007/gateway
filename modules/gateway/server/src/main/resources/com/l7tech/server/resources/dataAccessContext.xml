@@ -192,7 +192,7 @@
                 <idref bean="esmSubscriptionManager"/>
                 <idref bean="messageContextMappingKeyManager"/>
                 <idref bean="messageContextMappingValueManager"/>
-                <idref bean="policyFolderManager" />
+                <idref bean="folderManager" />
             </list>
         </property>
     </bean>

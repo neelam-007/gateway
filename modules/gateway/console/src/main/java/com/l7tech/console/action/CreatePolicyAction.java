@@ -107,9 +107,8 @@ public class CreatePolicyAction extends SecureAction {
                     //Remove any filter before insert
                     TopComponents.getInstance().clearFilter();
 
-                    //todo [Donal] remove duplicate header being created here
                     PolicyHeader ph = new PolicyHeader(policy);
-                    final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(new PolicyHeader(policy), null);
+                    final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(ph, null);
                     model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));
                     RootNode rootNode = (RootNode) model.getRoot();
                     rootNode.addEntity(ph.getOid(), sn);

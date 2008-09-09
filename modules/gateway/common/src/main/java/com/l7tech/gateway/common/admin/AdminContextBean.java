@@ -44,6 +44,7 @@ public class AdminContextBean implements AdminContext, Serializable {
     private final LogSinkAdmin logSinkAdmin;
     private final String version;
     private final String softwareVersion;
+    private final FolderAdmin folderAdmin;
 
     public AdminContextBean(IdentityAdmin identityAdmin,
                             AuditAdmin auditAdmin,
@@ -59,6 +60,7 @@ public class AdminContextBean implements AdminContext, Serializable {
                             TransportAdmin transportAdmin,
 							PolicyAdmin policyAdmin,
                             LogSinkAdmin logSinkAdmin,
+                            FolderAdmin folderAdmin,
                             String version,
                             String softwareVersion) {
         this.identityAdmin = identityAdmin;
@@ -77,6 +79,7 @@ public class AdminContextBean implements AdminContext, Serializable {
         this.logSinkAdmin = logSinkAdmin;
         this.version = version;
         this.softwareVersion = softwareVersion;
+        this.folderAdmin = folderAdmin;
     }
 
     public String getVersion() {
@@ -98,6 +101,10 @@ public class AdminContextBean implements AdminContext, Serializable {
 
     public ServiceAdmin getServiceAdmin() throws SecurityException {
         return serviceAdmin;
+    }
+
+    public FolderAdmin getFolderAdmin() throws SecurityException {
+        return folderAdmin;
     }
 
     public JmsAdmin getJmsAdmin() throws SecurityException {

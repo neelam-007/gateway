@@ -33,7 +33,7 @@ import java.util.Set;
  * @see ServiceHeader
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-public interface ServiceAdmin extends ServiceAdminPublic, FolderAdmin, AsyncAdminMethods, AliasAdmin<PublishedServiceAlias> {
+public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, AliasAdmin<PublishedServiceAlias> {
     String ROLE_NAME_TYPE_SUFFIX = "Service";
     String ROLE_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
 

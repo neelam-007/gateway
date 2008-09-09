@@ -901,10 +901,7 @@
     <!--service side policy alias manager-->
     <bean id="policyAliasManager" class="com.l7tech.server.policy.PolicyAliasManagerImpl" parent="hibernateBean" />
 
-    <bean id="policyFolderManager" class="com.l7tech.server.folder.FolderManagerImpl" parent="hibernateBean">
-        <constructor-arg ref="roleManager" />
-        <constructor-arg ref="cachingEntityFinder"/>
-    </bean>
+    <bean id="folderManager" class="com.l7tech.server.folder.FolderManagerImpl" parent="hibernateBean" />
 
     <bean id="cachingEntityFinder" class="com.l7tech.server.util.EntityCachingFactoryBean">
         <constructor-arg><null/></constructor-arg>

@@ -4,6 +4,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.SAVE_OR_UPDATE;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.FIND_HEADERS;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_BY_ID;
@@ -50,7 +51,7 @@ public interface AliasAdmin<HT extends Alias> {
      * @throws com.l7tech.objectmodel.FindException
      */
     @Transactional(readOnly=true)
-    @Secured(stereotype=FIND_HEADERS)
+    @Secured(stereotype= MethodStereotype.FIND_ENTITY_BY_ATTRIBUTE)
     @Administrative(licensed=false)
     public HT findAliasByEntityAndFolder(final Long entityOid, final Long folderOid) throws FindException;
 

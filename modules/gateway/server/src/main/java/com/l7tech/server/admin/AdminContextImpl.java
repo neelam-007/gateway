@@ -3,9 +3,6 @@
  */
 package com.l7tech.server.admin;
 
-import com.l7tech.gateway.common.admin.AdminContext;
-import com.l7tech.gateway.common.admin.PolicyAdmin;
-import com.l7tech.gateway.common.admin.KerberosAdmin;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.gateway.common.audit.AuditAdmin;
@@ -18,7 +15,7 @@ import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
-import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.admin.*;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
@@ -43,6 +40,7 @@ public class AdminContextImpl
     private final TransportAdmin transportAdmin;
     private final PolicyAdmin policyAdmin;
     private final LogSinkAdmin logSinkAdmin;
+    private final FolderAdmin folderAdmin;
 
     public AdminContextImpl(IdentityAdmin identityAdmin,
                             AuditAdmin auditAdmin,
@@ -57,7 +55,8 @@ public class AdminContextImpl
                             RbacAdmin rbacAdmin,
 							TransportAdmin transportAdmin,
 							PolicyAdmin policyAdmin,
-                            LogSinkAdmin logSinkAdmin)
+                            LogSinkAdmin logSinkAdmin,
+                            FolderAdmin folderAdmin)
     {
         this.identityAdmin = identityAdmin;
         this.auditAdmin = auditAdmin;
@@ -73,6 +72,7 @@ public class AdminContextImpl
         this.transportAdmin = transportAdmin;
         this.policyAdmin = policyAdmin;
         this.logSinkAdmin = logSinkAdmin;
+        this.folderAdmin = folderAdmin;
     }
 
     public String getVersion() {
@@ -89,6 +89,10 @@ public class AdminContextImpl
 
     public ServiceAdmin getServiceAdmin() throws SecurityException {
         return serviceAdmin;
+    }
+
+    public FolderAdmin getFolderAdmin() throws SecurityException{
+        return folderAdmin;
     }
 
     public JmsAdmin getJmsAdmin() throws SecurityException {
@@ -144,6 +148,7 @@ public class AdminContextImpl
         check(auditAdmin, "Audit Admin is required");
         check(customAssertionsRegistrar, "Custom Assertions Registrar is required");
         check(serviceAdmin, "Service Admin is required");
+        check(folderAdmin, "Folder Admin is required");
         check(jmsAdmin, "Jms Admin is required");
         check(ftpAdmin, "FTP Admin is required");
         check(trustedCertAdmin, "Trusted Cert Admin is required");

@@ -113,4 +113,10 @@
     </bean>
 
     <bean id="defaultAliasTracker" class="com.l7tech.console.util.DefaultAliasTracker"/>
+
+    <bean id="folderAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/FolderAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.admin.FolderAdmin"/>
+    </bean>
+
 </beans>

@@ -30,6 +30,11 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.service.ServiceAdmin"/>
     </bean>
 
+    <bean name="/FolderAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+        <property name="service" ref="folderAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.admin.FolderAdmin"/>
+    </bean>
+
     <bean name="/SchemaAdmin" parent="httpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
         <property name="service" ref="schemaAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.schema.SchemaAdmin"/>

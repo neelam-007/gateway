@@ -1,8 +1,6 @@
 package com.l7tech.console.policy;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.*;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
@@ -138,15 +136,4 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
         }
     }
 
-    public Collection<FolderHeader> findAllFolders() throws FindException {
-        return delegate.findAllFolders();
-}
-
-    public long saveFolder(Folder folder) throws UpdateException, SaveException {
-        return delegate.saveFolder(folder);
-    }
-
-    public void deleteFolder(long oid) throws FindException, DeleteException {
-        delegate.deleteFolder(oid);
-    }
 }

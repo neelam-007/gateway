@@ -204,6 +204,11 @@
         <property name="proxyInterfaces" value="com.l7tech.gateway.common.service.ServiceAdmin"/>
     </bean>
 
+    <bean id="folderAdmin" parent="adminIntercepted">
+        <property name="target" ref="folderAdmin_UNSECURED"/>
+        <property name="proxyInterfaces" value="com.l7tech.gateway.common.admin.FolderAdmin"/>
+    </bean>
+
     <bean id="auditAdmin" parent="adminIntercepted">
         <property name="target" ref="auditAdmin_UNSECURED"/>
         <property name="proxyInterfaces" value="com.l7tech.gateway.common.audit.AuditAdmin"/>
@@ -319,7 +324,10 @@
         <constructor-arg ref="policyVersionManager"/>
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="serviceTemplateManager"/>
-        <constructor-arg ref="policyFolderManager"/>
+    </bean>
+
+    <bean id="folderAdmin_UNSECURED" class="com.l7tech.server.folder.FolderAdminImpl">
+        <constructor-arg ref="folderManager" />
     </bean>
 
     <!-- schema admin servant -->
@@ -390,7 +398,6 @@
         <constructor-arg ref="policyCache"/>
         <constructor-arg ref="policyVersionManager"/>
         <constructor-arg ref="roleManager"/>
-        <constructor-arg ref="policyFolderManager"/>
     </bean>
 
     <bean id="logSinkAdmin_UNSECURED" class="com.l7tech.server.log.LogSinkAdminImpl">

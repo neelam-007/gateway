@@ -3,12 +3,6 @@
  */
 package com.l7tech.console.security;
 
-import com.l7tech.gateway.common.admin.AdminContext;
-import com.l7tech.gateway.common.admin.AdminContextBean;
-import com.l7tech.gateway.common.admin.AdminLogin;
-import com.l7tech.gateway.common.admin.AdminLoginResult;
-import com.l7tech.gateway.common.admin.PolicyAdmin;
-import com.l7tech.gateway.common.admin.KerberosAdmin;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.gateway.common.VersionException;
@@ -30,7 +24,7 @@ import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.identity.AuthenticationException;
-import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.admin.*;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.gateway.common.service.ServiceAdmin;
@@ -224,7 +218,9 @@ public class SecurityProviderImpl extends SecurityProvider
                         (TransportAdmin) applicationContext.getBean("transportAdmin"),
                         (PolicyAdmin) applicationContext.getBean("policyAdmin"),
                         (LogSinkAdmin) applicationContext.getBean("logSinkAdmin"),
-                        "", "");
+                        (FolderAdmin) applicationContext.getBean("folderAdmin"),
+                        "",
+                        "");
 
         synchronized (this) {
             this.user = user;

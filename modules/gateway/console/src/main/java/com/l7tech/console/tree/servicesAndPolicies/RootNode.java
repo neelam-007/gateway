@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
+import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyHeader;
@@ -182,7 +183,7 @@ public final class RootNode extends FolderNode{
         new PublishNonSoapServiceAction(),
         new PublishInternalServiceAction(),
         new CreatePolicyAction(),
-        new CreateFolderAction(OID, this, Registry.getDefault().getServiceManager()),
+        new CreateFolderAction(OID, this, Registry.getDefault().getFolderAdmin()),
         new PasteAsAliasAction(this),
         new RefreshTreeNodeAction(this)
     };
@@ -277,9 +278,9 @@ public final class RootNode extends FolderNode{
     @Override
     protected void loadChildren() {
         try {
-            List<OrganizationHeader> allFolderEntities = new ArrayList<OrganizationHeader>();
-            Set<FolderHeader> allFolderHeaders = new HashSet<FolderHeader>();
 
+            //download all servics and policies the user can view
+            List<OrganizationHeader> allFolderEntities = new ArrayList<OrganizationHeader>();
             ServiceHeader[] serviceHeaders = serviceManager.findAllPublishedServices(true);
             List<ServiceHeader> serviceHeadersList = Arrays.asList(serviceHeaders);
             Collection<PolicyHeader> policyHeaders = policyAdmin.findPolicyHeadersWithTypes(EnumSet.of(PolicyType.INCLUDE_FRAGMENT, PolicyType.INTERNAL), true);
@@ -287,12 +288,12 @@ public final class RootNode extends FolderNode{
             allFolderEntities.addAll(serviceHeadersList);
             allFolderEntities.addAll(policyHeaders);
 
-            Collection<FolderHeader> policyFolderHeaders = policyAdmin.findAllFolders();
-            allFolderHeaders.addAll(policyFolderHeaders);
+            //download all folders the user can view
+            FolderAdmin folderAdmin = Registry.getDefault().getFolderAdmin();
+            Collection<FolderHeader> allFolders = folderAdmin.findAllFolders();
+            Set<FolderHeader> allFolderHeaders = new HashSet<FolderHeader>(allFolders);
 
-            Collection<FolderHeader> serviceFolderHeaders = serviceManager.findAllFolders();
-            allFolderHeaders.addAll(serviceFolderHeaders);
-
+            //process the entities into folders and create the tree
             children = null;
             oidToAliases.clear();
             oidToEntity.clear();
@@ -303,6 +304,9 @@ public final class RootNode extends FolderNode{
                     root = folder;
                 }
             }
+
+            //if this user has no permission to view any folders they will see an empty tree
+            if(root == null) return;
 
             for(Iterator<OrganizationHeader> it = allFolderEntities.iterator();it.hasNext();) {
                 OrganizationHeader header = it.next();

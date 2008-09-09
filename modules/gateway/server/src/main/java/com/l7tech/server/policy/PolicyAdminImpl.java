@@ -4,18 +4,13 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
-import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
 import static com.l7tech.util.Functions.map;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.folder.FolderManager;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -45,7 +40,6 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
     private final PolicyVersionManager policyVersionManager;
     private final RoleManager roleManager;
     private Auditor auditor;
-    private final FolderManager folderManager;
 
     private static final Set<PropertyDescriptor> OMIT_VERSION_AND_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "version", "xml");
     private static final Set<PropertyDescriptor> OMIT_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "xml");
@@ -55,15 +49,13 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
                            PolicyAliasManager policyAliasManager,
                            PolicyCache policyCache,
                            PolicyVersionManager policyVersionManager,
-                           RoleManager roleManager,
-                           FolderManager folderManager)
+                           RoleManager roleManager)
     {
         this.policyManager = policyManager;
         this.policyAliasManager = policyAliasManager;
         this.policyCache = policyCache;
         this.policyVersionManager = policyVersionManager;
         this.roleManager = roleManager;
-        this.folderManager = folderManager;
     }
 
     public Collection<PolicyHeader> findPolicyHeadersWithTypes(EnumSet<PolicyType> types) throws FindException{
@@ -114,12 +106,6 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
 
     public Collection<PolicyHeader> findPolicyHeadersByType( PolicyType type) throws FindException {
         return policyManager.findHeadersByType(type);
-    }
-
-    public Collection<FolderHeader> findAllFolders() throws FindException {
-        Collection<PolicyHeader> policyHeaders = findPolicyHeadersWithTypes(
-                EnumSet.of(PolicyType.INCLUDE_FRAGMENT, PolicyType.INTERNAL), true);
-        return folderManager.findFolderHeaders(policyHeaders);
     }
 
     public void deletePolicy(long oid) throws PolicyDeletionForbiddenException, DeleteException, FindException {
@@ -400,7 +386,6 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
         }
     }
 
-    @Secured(stereotype=MethodStereotype.FIND_ENTITIES)
     public Set<Policy> findUsages(long oid) throws FindException {
         return policyCache.findUsages(oid);
     }
@@ -463,47 +448,4 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
         this.auditor = new Auditor(this, applicationContext, logger);
     }
 
-    public long saveFolder(Folder folder) throws UpdateException, SaveException {
-        int maxDepth = ServerConfig.getInstance().getIntProperty("policyorganization.maxFolderDepth",8);
-
-        Long parentFolderId = folder.getParentFolderOid();
-        long folderId = folder.getOid();
-        if(parentFolderId == folderId){
-            throw new UpdateException("Parent folder cannot be the same as folder id");
-        }
-        if(parentFolderId != null){
-            try {
-                Folder parentFolder = folderManager.findByPrimaryKey(parentFolderId);
-                //This will load all the folders parents
-                int levels = 0;
-                while(parentFolder != null){
-                    levels++;
-                    parentFolder = parentFolder.getParentFolder();
-                }
-                if(levels > maxDepth){
-                    String msg = "Folder hierarchy can only be {0} levels deep";
-                    logger.log(Level.INFO, msg, maxDepth);
-                    if(folder.getOid() == Folder.DEFAULT_OID) {
-                        throw new SaveException(MessageFormat.format(msg, maxDepth));
-                    }else{
-                        throw new UpdateException(MessageFormat.format(msg, maxDepth));
-                    }
-                }
-            } catch (FindException e) {
-                throw new SaveException("Could not find parent folder");
-            }
-        }
-
-
-        if(folder.getOid() == Folder.DEFAULT_OID) {
-            return folderManager.save(folder);
-        } else {
-            folderManager.update(folder);
-            return folder.getOid();
-        }
-    }
-
-    public void deleteFolder(long folderOid) throws FindException, DeleteException {
-        folderManager.delete(folderOid);
-    }
 }

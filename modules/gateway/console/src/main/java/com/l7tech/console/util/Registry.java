@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.admin.KerberosAdmin;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
@@ -80,6 +81,7 @@ public abstract class Registry {
      */
     abstract public ServiceAdmin getServiceManager();
 
+    abstract public FolderAdmin getFolderAdmin();
     /**
      * @return the jms provider manager
      */
@@ -169,6 +171,10 @@ public abstract class Registry {
          * @return the service managerr
          */
         public ServiceAdmin getServiceManager() {
+            return null;
+        }
+
+        public FolderAdmin getFolderAdmin() {
             return null;
         }
 

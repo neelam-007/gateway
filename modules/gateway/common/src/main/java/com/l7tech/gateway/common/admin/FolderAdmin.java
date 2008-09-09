@@ -27,13 +27,12 @@ public interface FolderAdmin {
      * This method is currently not Secured as there is no RBAC set up in 4.6 for access to entities of type
      * FOLDER. Anybody can call this method, but only users who have permissions on some entities in a folder
      * will get folders returned to them.
-     * //todo [Donal] secure in 5.0
      *
      * @return Collection of {@link com.l7tech.objectmodel.folder.FolderHeader}s for services
      * @throws com.l7tech.objectmodel.FindException   if there was a problem accessing the requested information.
      */
     @Transactional(readOnly=true)
-    //Secured(stereotype=MethodStereotype.FIND_HEADERS)
+    @Secured(stereotype=MethodStereotype.FIND_HEADERS)
     @Administrative(licensed=false)
     Collection<FolderHeader> findAllFolders() throws FindException;
 
