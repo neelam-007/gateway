@@ -1,6 +1,7 @@
 package com.l7tech.server.processcontroller;
 
 import org.apache.cxf.transport.servlet.CXFServlet;
+import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.DefaultServlet;
@@ -28,6 +29,7 @@ import java.util.logging.Logger;
 public class PCServletContainer implements ApplicationContextAware, InitializingBean, DisposableBean {
     public static final String INIT_PARAM_INSTANCE_ID = "httpTransportModuleInstanceId";
 
+    @SuppressWarnings({ "UnusedDeclaration" })
     private static final Logger logger = Logger.getLogger(PCServletContainer.class.getName());
 
     private static final AtomicLong nextInstanceId = new AtomicLong(1);
@@ -69,6 +71,10 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         final DefaultServlet defaultServlet = new DefaultServlet();
         final ServletHolder defaultHolder = new ServletHolder(defaultServlet);
         root.addServlet(defaultHolder, "/");
+
+        for (Connector c : server.getConnectors()) {
+            c.setHost("localhost"); // TODO make this configurable in case of EM
+        }
 
         server.start();
     }

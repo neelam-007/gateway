@@ -4,6 +4,7 @@
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.server.management.NodeStateType;
+import static com.l7tech.server.management.NodeStateType.*;
 import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.api.node.NodeApi;
 import com.l7tech.server.management.config.Feature;
@@ -24,6 +25,7 @@ import javax.annotation.Resource;
 import javax.xml.ws.soap.SOAPFaultException;
 import java.io.*;
 import java.net.ConnectException;
+import java.net.SocketException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,7 +51,7 @@ public class ProcessController {
     /** The amount of time the PC should wait after a node has died before beginning to attempt to restart it */
     private static final int DEAD_NODE_RETRY_INTERVAL = 60 * 1000; // one minute
     /** The amount of time the PC should wait after a supposedly running node has stopped responding to pings before killing and restarting it */
-    private static final int NODE_CRASH_DETECTION_TIME = 60000;
+    private static final int NODE_CRASH_DETECTION_TIME = 15000;
     /** The amount of time the PC should wait after asking a node to shutdown before killing it */
     private static final int DEFAULT_STOP_TIMEOUT = 10000;
 
@@ -58,23 +60,26 @@ public class ProcessController {
 
     private static final String LOG_TIMEOUT = "{0} still hasn''t started after {1}ms.  Killing it dead.";
 
-    private static final String nodeBaseDir = System.getProperty("com.l7tech.server.processcontroller.nodeBaseDirectory");
-
     public void stopNode(final String nodeName, final int timeout) {
         logger.info("Stopping " + nodeName);
         final NodeState state = nodeStates.get(nodeName);
-        final NodeApi api = state instanceof HasApi ? ((HasApi)state).getApi() : null;
         final Process process = state instanceof HasProcess ? ((HasProcess)state).getProcess() : null;
 
+        NodeApi api = state instanceof HasApi ? ((HasApi)state).getApi() : null;
+        if (api == null) api = getNodeApi(state.node);
+
         try {
-            if (api != null) {
-                api.shutdown();
-            } else {
-                logger.warning(nodeName + " is supposed to be shut down, we don't have an API handle to it");
-                // TODO kill it now or wait until the timeout?
-            }
-        } finally {
+            api.shutdown();
             nodeStates.put(nodeName, new StoppingNodeState(state.node, process, api, timeout));
+        } catch (Exception e) {
+            if (ExceptionUtils.causedBy(e, SocketException.class)) {
+                logger.warning("Unable to contact node; assuming it crashed. Will restart.");
+                nodeStates.put(nodeName, new SimpleNodeState(state.node, CRASHED));
+            } else {
+                logger.log(Level.WARNING, "Unable to contact node, but not for any expected reason. Assuming it's crashed.", e);
+                nodeStates.put(nodeName, new SimpleNodeState(state.node, CRASHED));
+                osKill(state.node);
+            }
         }
     }
 
@@ -87,7 +92,7 @@ public class ProcessController {
 
     public NodeStateType getNodeState(String nodeName) {
         final NodeState state = nodeStates.get(nodeName);
-        return state == null ? NodeStateType.UNKNOWN : state.type;
+        return state == null ? UNKNOWN : state.type;
     }
 
     public void startNode(PCNodeConfig node) throws IOException {
@@ -95,7 +100,7 @@ public class ProcessController {
     }
 
     public List<SoftwareVersion> getAvailableNodeVersions() {
-        return Collections.singletonList(SoftwareVersion.fromString("5.0")); //TODO 
+        return Collections.singletonList(SoftwareVersion.fromString("5.0")); //TODO
     }
 
     private static abstract class NodeState {
@@ -131,7 +136,7 @@ public class ProcessController {
         private final NodeApi api;
 
         public RunningNodeState(PCNodeConfig node, Process proc, NodeApi api) {
-            super(node, NodeStateType.RUNNING);
+            super(node, RUNNING);
             this.process = proc;
             this.api = api;
         }
@@ -153,7 +158,7 @@ public class ProcessController {
         private final int timeout;
 
         public StoppingNodeState(PCNodeConfig node, Process proc, NodeApi api, int timeout) {
-            super(node, NodeStateType.STOPPING);
+            super(node, STOPPING);
             this.process = proc;
             this.api = api;
             this.timeout = timeout;
@@ -170,18 +175,31 @@ public class ProcessController {
 
     private class StoppedNodeState extends NodeState {
         public StoppedNodeState(PCNodeConfig node) {
-            super(node, NodeStateType.STOPPED);
+            super(node, STOPPED);
         }
     }
 
     @PostConstruct
     public void start() {
         logger.info("Starting");
-
-        loop();
+        visitNodes();
     }
 
     void loop() {
+        synchronized (this) {
+            try {
+                wait(ProcessControllerMain.SHUTDOWN_POLL_INTERVAL);
+            } catch (InterruptedException e) {
+                logger.info("Interrupted; cancelling this poll");
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+
+        visitNodes();
+    }
+
+    private synchronized void visitNodes() {
         final Collection<NodeConfig> nodeConfigs = configService.getHost().getNodes().values();
         if (nodeConfigs.isEmpty()) return;
 
@@ -190,7 +208,7 @@ public class ProcessController {
         for (NodeConfig _node : nodeConfigs) {
             final PCNodeConfig node = (PCNodeConfig)_node;
             final NodeState state = nodeStates.get(node.getName());
-            final NodeStateType stateType = state == null ? NodeStateType.UNKNOWN : state.type;
+            final NodeStateType stateType = state == null ? UNKNOWN : state.type;
             switch (stateType) {
                 case UNKNOWN:
                     handleUnknownState(node);
@@ -199,13 +217,20 @@ public class ProcessController {
                     handleStartingState(node, (StartingNodeState)state);
                     break;
                 case WONT_START:
-                    // TODO
-                    break;
+                    if (System.currentTimeMillis() - state.sinceWhen > DEAD_NODE_RETRY_INTERVAL) {
+                        logger.info(node.getName() + " wouldn't start; restarting...");
+                        startItUp(node);
+                        break;
+                    } else {
+                        logger.fine(node.getName() + " wouldn't start; waiting " + DEAD_NODE_RETRY_INTERVAL + "ms before attempting to restart");
+                        break;
+                    }
                 case RUNNING:
                     handleRunningState(node, (RunningNodeState)state);
                     break;
                 case CRASHED:
-                    // TODO attempt to restart
+                    logger.info(node.getName() + " crashed; restarting...");
+                    startItUp(node);
                     break;
                 case STOPPING:
                     // TODO wait for shutdown of the process... Kill the process if it hasn't died after the timeout
@@ -217,6 +242,14 @@ public class ProcessController {
             }
 
 
+        }
+    }
+
+    private void startItUp(PCNodeConfig node) {
+        try {
+            nodeStates.put(node.getName(), new StartingNodeState(this, node));
+        } catch (IOException e) {
+            logger.log(Level.WARNING, node.getName() + " could not be started; will retry on next loop", e);
         }
     }
 
@@ -269,7 +302,7 @@ public class ProcessController {
             try {
                 int errorlevel = state.process.exitValue();
                 logger.log(Level.WARNING, "{0} crashed with exit code {1}!  Will restart.", new Object[] { node.getName(), errorlevel });
-                nodeStates.put(node.getName(), new SimpleNodeState(node, NodeStateType.CRASHED));
+                nodeStates.put(node.getName(), new SimpleNodeState(node, CRASHED));
             } catch (IllegalThreadStateException e) {
                 logger.fine(node.getName() + " is still alive");
             }
@@ -288,13 +321,15 @@ public class ProcessController {
                     osKill(node);
                 }
 
-                nodeStates.put(node.getName(), new SimpleNodeState(node, NodeStateType.CRASHED));
+                nodeStates.put(node.getName(), new SimpleNodeState(node, CRASHED));
+            } else {
+                logger.log(Level.WARNING, MessageFormat.format("{0} is supposedly running but has not responded to a ping in {1}ms.  Will keep retrying up to {2} ms.", node.getName(), howLong, NODE_CRASH_DETECTION_TIME), e);
             }
         }
     }
 
     /**
-     * Retry pings, counting retries and waiting for either successful startup or a timeout, whichever comes first. 
+     * Retry pings, counting retries and waiting for either successful startup or a timeout, whichever comes first.
      */
     private void handleStartingState(PCNodeConfig node, StartingNodeState state) {
         final StartingNodeState.StartStatus status = state.getStatus();
@@ -322,7 +357,7 @@ public class ProcessController {
             spew("STDERR", byteses.left);
             spew("STDOUT", byteses.right);
 
-            nodeStates.put(node.getName(), new SimpleNodeState(node, NodeStateType.WONT_START));
+            nodeStates.put(node.getName(), new SimpleNodeState(node, WONT_START));
         } else if (status instanceof StartingNodeState.Died) {
             final StartingNodeState.Died died = (StartingNodeState.Died)status;
             logger.warning(node.getName() + " crashed on startup with exit code " + died.exitValue);
@@ -331,10 +366,10 @@ public class ProcessController {
             spew("STDERR", died.stderr);
             spew("STDOUT", died.stdout);
 
-            nodeStates.put(node.getName(), new SimpleNodeState(node, NodeStateType.WONT_START));
+            nodeStates.put(node.getName(), new SimpleNodeState(node, WONT_START));
         } else {
             logger.warning("Unexpected StartStatus: " + status);
-            nodeStates.put(node.getName(), new SimpleNodeState(node, NodeStateType.WONT_START));
+            nodeStates.put(node.getName(), new SimpleNodeState(node, WONT_START));
         }
     }
 
@@ -355,7 +390,7 @@ public class ProcessController {
                 SOAPFaultException sfe = (SOAPFaultException)e;
                 if (NodeApi.NODE_NOT_CONFIGURED_FOR_PC.equals(sfe.getFault().getFaultString())) {
                     logger.warning(node.getName() + " is already running but has not been configured for use with the PC; will try again later");
-                    nodeStates.put(node.getName(), new SimpleNodeState(node, NodeStateType.WONT_START));
+                    nodeStates.put(node.getName(), new SimpleNodeState(node, WONT_START));
                     return;
                 }
             }
@@ -383,11 +418,7 @@ public class ProcessController {
         // TODO use info from the host profile
         switch(osType) {
             case RHEL:
-                String base = nodeBaseDir;
-                final File nodesDir;
-                nodesDir = base == null ?
-                        new File(new File(System.getProperty("user.dir")).getParentFile(), "Nodes") :
-                        new File(nodeBaseDir);
+                final File nodesDir = configService.getNodeBaseDirectory();
                 if (!(nodesDir.exists() && nodesDir.isDirectory())) throw new IllegalStateException("Couldn't find node directory " + nodesDir.getAbsolutePath());
 
                 ssgPwd = new File(nodesDir, node.getName());
@@ -397,8 +428,8 @@ public class ProcessController {
                     cmds = new LinkedList<String>(Arrays.asList(
                         "java",
                         "-Dcom.l7tech.server.home=\"" + ssgPwd.getCanonicalPath() + "\"",
-                        "-Dcom.l7tech.server.processControllerPresent=true",
-                        "-Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig"
+                        "-Dcom.l7tech.server.processControllerPresent=true"
+//                        "-Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig"
                     ));
 
                     for (HostFeature hf : node.getHost().getFeatures()) {  // TODO needs more scala.Seq#filter
@@ -436,7 +467,7 @@ public class ProcessController {
         final JaxWsProxyFactoryBean pfb = new JaxWsProxyFactoryBean();
         pfb.setServiceClass(NodeApi.class);
         final String url = node.getProcessControllerApiUrl();
-        pfb.setAddress(url == null ? "http://localhost:8080/ssg/services/processControllerNodeApi" : url);
+        pfb.setAddress(url == null ? "http://localhost:8766/ssg/services/processControllerNodeApi" : url);
         return (NodeApi)pfb.create();
     }
 
@@ -452,13 +483,24 @@ public class ProcessController {
         }
     }
 
-    /**
-     * Note that this method actually does get invoked, but for some reason the log message doesn't get flushed in time
-     * to survive shutdown.
-     */
     @PreDestroy
-    public void stop() {
-        logger.info("Stopping");
+    public synchronized void stop() {
+        logger.info("Stopping Process Controller");
+
+        // Reset any running node states to STOPPING
+        for (Map.Entry<String, NodeState> entry : nodeStates.entrySet()) {
+            final String name = entry.getKey();
+            final NodeState state = entry.getValue();
+            if (EnumSet.of(RUNNING, UNKNOWN, STARTING).contains(state.type)) {
+                logger.info("Stopping node " + name);
+                final Process proc = state instanceof HasProcess ? ((HasProcess)state).getProcess() : null;
+                final NodeApi api = state instanceof HasApi ? ((HasApi)state).getApi() : null;
+                nodeStates.put(name, new StoppingNodeState(state.node, proc, api, DEFAULT_STOP_TIMEOUT));
+            }
+        }
+
+        // Kick the loop
+        notifyAll();
     }
 
 }

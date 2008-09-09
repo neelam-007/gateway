@@ -33,6 +33,8 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
         super(node, NodeStateType.STARTING);
         this.processController = processController;
 
+        logger.info(node.getName() + " starting");
+
         final Process proc = processController.spawnProcess(node);
         proc.getOutputStream().close(); // We don't need no steenkin' stdin
         this.outputDoneSignal = new AtomicBoolean(false);
@@ -67,6 +69,7 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
             api.ping();
             this.api = api;
             outputDoneSignal.set(true); // We're live
+            logger.info(node.getName() + " started successfully");
             return STARTED;
         } catch (Exception e) {
             if (e instanceof SOAPFaultException) {
@@ -157,7 +160,7 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
             byte[] buf = new byte[4096];
             int len;
             try {
-                logger.info(node + " " + what + " reader starting");
+                logger.fine(node + " " + what + " reader starting");
                 while (true) {
                     if (is.available() == 0) {
                         try {

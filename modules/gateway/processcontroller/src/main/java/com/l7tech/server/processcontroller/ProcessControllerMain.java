@@ -3,21 +3,20 @@
  */
 package com.l7tech.server.processcontroller;
 
+import com.l7tech.server.util.UncaughtExceptionLogger;
+import com.l7tech.util.JdkLoggerConfigurator;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.File;
-
-import com.l7tech.util.JdkLoggerConfigurator;
-import com.l7tech.server.util.UncaughtExceptionLogger;
 
 /** @author alex */
 public final class ProcessControllerMain {
     private static final Logger logger = Logger.getLogger(ProcessControllerMain.class.getName());
     private ClassPathXmlApplicationContext ctx;
     private volatile boolean shutdown = false;
-    private static final int SHUTDOWN_POLL_INTERVAL = 5000;
+    static final int SHUTDOWN_POLL_INTERVAL = 5000;
     private ProcessController processController;
 
     private ProcessControllerMain() { }
@@ -31,13 +30,7 @@ public final class ProcessControllerMain {
         init();
         start();
         do {
-            try {
-                Thread.sleep(SHUTDOWN_POLL_INTERVAL);
-                processController.loop();
-            } catch (InterruptedException e) {
-                logger.info("Thread interrupted - treating as shutdown request");
-                break;
-            }
+            processController.loop();
         } while (!shutdown);
         stop(0);
     }

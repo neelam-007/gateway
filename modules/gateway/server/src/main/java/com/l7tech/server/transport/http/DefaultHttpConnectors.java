@@ -51,6 +51,15 @@ public class DefaultHttpConnectors {
         httpsNocc.setEnabled(true);
         ret.add(httpsNocc);
 
+        // TODO assign this port from configuration
+        SsgConnector pcApi = new SsgConnector();
+        pcApi.setName("Process Controller API (8766)");
+        pcApi.setScheme(SsgConnector.SCHEME_HTTP);
+        pcApi.setEndpoints(SsgConnector.Endpoint.PC_NODE_API.name());
+        pcApi.setPort(8766);
+        pcApi.setEnabled(true);
+        ret.add(pcApi);
+
         return ret;
     }
 }

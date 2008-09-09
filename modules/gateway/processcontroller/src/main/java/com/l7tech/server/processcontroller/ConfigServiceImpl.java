@@ -3,71 +3,133 @@
  */
 package com.l7tech.server.processcontroller;
 
+import com.l7tech.server.config.OSDetector;
+import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.config.host.HostConfig;
 import com.l7tech.server.management.config.host.IpAddressConfig;
 import com.l7tech.server.management.config.host.PCHostConfig;
-import com.l7tech.server.management.config.node.*;
-import com.l7tech.server.management.SoftwareVersion;
+import com.l7tech.server.management.config.node.NodeConfig;
+import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.util.ResourceUtils;
 
 import javax.ejb.TransactionAttribute;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Enumeration;
-import java.util.List;
-import java.util.Set;
 import java.util.Properties;
-import java.util.logging.Logger;
+import java.util.Set;
 import java.util.logging.Level;
-import java.io.File;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import java.util.logging.Logger;
 
 /**
  * Top-level (possibly only) DAO for management of Process Controller configuration entities
  * @author alex
  */
-@SuppressWarnings({ "JpaQlInspection" })
 @TransactionAttribute
 public class ConfigServiceImpl implements ConfigService {
     private static final Logger logger = Logger.getLogger(ConfigServiceImpl.class.getName());
 
-    @PersistenceContext(properties = {})
-    private EntityManager entityManager;
+    private final File processControllerHomeDirectory;
+    private final File nodeBaseDirectory;
+    private final HostConfig host;
 
-    private volatile HostConfig host;
-
-    @SuppressWarnings({"unchecked"})
-    public HostConfig getHost() {
-        if (host == null) {
-            Query q = entityManager.createQuery("select g FROM PCHostConfig g");
-            List<PCHostConfig> gs = q.getResultList();
-            switch (gs.size()) {
-                case 0:
-                    logger.info("Creating new Gateway for localhost");
-                    PCHostConfig g = new PCHostConfig();
-                    g.setName("localhost");
-                    g.setOsType(PCHostConfig.OSType.RHEL);
-                    reverseEngineerIps(g);
-                    reverseEngineerNodes(g);
-
-                    host = entityManager.merge(g);
-                    break;
-                case 1:
-                    logger.info("Found Gateway in database");
-                    host = gs.get(0);
-                    break;
-                default:
-                    throw new IllegalStateException("Multiple Gateways found in the database");
+    public ConfigServiceImpl() {
+        String s = System.getProperty("com.l7tech.server.processcontroller.homeDirectory");
+        if (s == null) {
+            processControllerHomeDirectory = new File(System.getProperty("user.dir"));
+            try {
+                logger.info("Assuming Process Controller home directory is " + processControllerHomeDirectory.getCanonicalPath());
+            } catch (IOException e) {
+                throw new RuntimeException(e); // Can't happen
             }
+        } else {
+            processControllerHomeDirectory = new File(s);
         }
 
+        s = System.getProperty("com.l7tech.server.processcontroller.nodeBaseDirectory");
+        if (s == null) {
+            File parent = processControllerHomeDirectory.getParentFile();
+            nodeBaseDirectory = new File(parent, "Nodes");
+        } else {
+            nodeBaseDirectory = new File(s);
+        }
+
+        final File hostPropsFile = new File(getProcessControllerHomeDirectory(), "etc/host.properties");
+        if (!hostPropsFile.exists())
+            throw new IllegalStateException("Couldn't find " + hostPropsFile.getAbsolutePath());
+
+        final FileInputStream is;
+        final Properties hostProps;
+        try {
+            is = new FileInputStream(hostPropsFile);
+            hostProps = new Properties();
+            hostProps.load(is);
+        } catch (IOException e) {
+            throw new RuntimeException("Couldn't load " + hostPropsFile.getAbsolutePath(), e);
+        }
+
+        PCHostConfig config = new PCHostConfig();
+        config.setGuid(getHostId(hostProps));
+        config.setLocalHostname(getLocalHostname(hostProps));
+        config.setHostType(getHostType(hostProps));
+        if (OSDetector.isLinux()) {
+            config.setOsType(HostConfig.OSType.RHEL);
+        } else if (OSDetector.isSolaris()) {
+            config.setOsType(HostConfig.OSType.SOLARIS);
+        } else if (OSDetector.isWindows()) {
+            config.setOsType(HostConfig.OSType.WINDOWS);
+        } else {
+            throw new IllegalStateException("Unsupported operating system"); // TODO muddle through?
+        }
+
+        reverseEngineerIps(config);
+        reverseEngineerNodes(config);
+        this.host = config;
+    }
+
+    public HostConfig getHost() {
         return host;
+    }
+
+    private HostConfig.HostType getHostType(Properties props) {
+        String type = (String)props.get("host.type");
+        if (type == null) {
+            logger.info("host.type not set; assuming appliance");
+            return HostConfig.HostType.APPLIANCE;
+        } else try {
+            return HostConfig.HostType.valueOf(type.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            logger.warning("Unsupported host.type " + type + "; assuming \"software\"");
+            return HostConfig.HostType.SOFTWARE;
+        }
+    }
+
+    private String getHostId(Properties props) {
+        String id = (String)props.get("host.id");
+        if (id == null) throw new IllegalStateException("host.id not found");
+        return id;
+    }
+
+    private String getLocalHostname(Properties hostProps) {
+        String hostname = (String)hostProps.get("host.hostname");
+        if (hostname != null) {
+            logger.info("hostname is " + hostname);
+            return hostname;
+        }
+
+        try {
+            hostname = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            logger.log(Level.WARNING, "Unable to get local hostname; using localhost", e);
+            hostname = "localhost";
+        }
+        return hostname;
     }
 
     private void reverseEngineerNodes(PCHostConfig g) {
@@ -144,19 +206,19 @@ public class ConfigServiceImpl implements ConfigService {
         }
     }
 
-    public void updateGateway(final PCHostConfig host) {
-        this.host = entityManager.merge(host);
-    }
-
     public void addServiceNode(NodeConfig node) {
-        entityManager.merge(node);
-        final PCHostConfig host = (PCHostConfig)getHost();
         host.getNodes().put(node.getName(), node);
-        this.host = entityManager.merge(host);
     }
 
     public void updateServiceNode(NodeConfig node) {
-        // TODO implement
+        host.getNodes().put(node.getName(), node);
     }
 
+    public File getNodeBaseDirectory() {
+        return nodeBaseDirectory;
+    }
+
+    public File getProcessControllerHomeDirectory() {
+        return processControllerHomeDirectory;
+    }
 }
