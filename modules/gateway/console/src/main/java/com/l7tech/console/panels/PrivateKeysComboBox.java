@@ -1,8 +1,8 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -35,6 +35,12 @@ public class PrivateKeysComboBox extends JComboBox {
         }
     }
 
+    private static final PrivateKeyItem ITEM_DEFAULT_SSL = new PrivateKeyItem(-1, null, null) {
+        public String toString() {
+            return "<Default SSL Key>";
+        }
+    };
+
     private boolean _includeHardwareKeystore;
 
     /**
@@ -48,6 +54,7 @@ public class PrivateKeysComboBox extends JComboBox {
     /**
      * Creates a combo box prepopulated with a list of private keys from specified SSG
      * keystores; and with none selected initially.
+     * @param includeHardwareKeystore  if true, hardware keystores should be included in the list.
      */
     public PrivateKeysComboBox(final boolean includeHardwareKeystore) {
         _includeHardwareKeystore = includeHardwareKeystore;
@@ -63,6 +70,7 @@ public class PrivateKeysComboBox extends JComboBox {
         try {
             final java.util.List<TrustedCertAdmin.KeystoreInfo> keystores = getTrustedCertAdmin().findAllKeystores(_includeHardwareKeystore);
             final List<PrivateKeyItem> items = new ArrayList<PrivateKeyItem>();
+            items.add(ITEM_DEFAULT_SSL);
             for (TrustedCertAdmin.KeystoreInfo keystore : keystores) {
                 for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.id)) {
                     items.add(new PrivateKeyItem(keystore.id, keystore.name, entry.getAlias()));
@@ -102,6 +110,11 @@ public class PrivateKeysComboBox extends JComboBox {
      * @return index of selected key; or -1 if no match
      */
     public int select(final long keystoreId, final String keyAlias) {
+        if (keystoreId == -1 || keyAlias == null) {
+            setSelectedIndex(0);
+            return 0;
+        }
+
         for (int i = 0; i < getItemCount(); ++ i) {
             final PrivateKeyItem item = (PrivateKeyItem)getItemAt(i);
             if (item.keystoreId == keystoreId && item.keyAlias.equals(keyAlias)) {
@@ -132,17 +145,14 @@ public class PrivateKeysComboBox extends JComboBox {
     }
 
     /**
-     * Check if the given alias corresponds to the default SSL key.
-     *
-     * @param alias the alias to check.  required
-     * @return true if the specified alias appears to be the default SSL private key.
+     * @return true if the current selection is set to the Default SSL Key.
      */
-    public boolean isDefaultSslKey(String alias) {
-        // TODO find a way to make this not hardcoded;
-        //      or better yet, remove this method completely once there is no longer any meaningful difference
-        //      between the "default SSL key" and any other private key in the system
-        return "SSL".equals(alias);
+    public boolean isSelectedDefaultSsl() {
+        final PrivateKeyItem item = (PrivateKeyItem)getSelectedItem();
+        return item != null && (item == ITEM_DEFAULT_SSL || item.keyAlias == null || item.keystoreId == -1);
     }
 
-
+    public void selectDefaultSsl() {
+        setSelectedIndex(0);
+    }
 }

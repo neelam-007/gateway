@@ -9,12 +9,15 @@ import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
@@ -24,7 +27,9 @@ import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.ExceptionUtils;
@@ -36,16 +41,18 @@ import org.springframework.context.support.ApplicationObjectSupport;
 import javax.security.auth.Subject;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.rmi.server.ServerNotActiveException;
 import java.security.AccessControlException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
+import java.security.KeyStoreException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
 
 public class AdminLoginImpl
         extends ApplicationObjectSupport
@@ -57,14 +64,16 @@ public class AdminLoginImpl
     private AdminSessionManager sessionManager;
 
     private final DefaultKey defaultKey;
+    private final SsgKeyStoreManager ssgKeyStoreManager;
     private IdentityProviderConfigManager identityProviderConfigManager;
     private IdentityProviderFactory identityProviderFactory;
     private final Object providerSync = new Object();
     private Set<IdentityProvider> adminProviders;
     private RoleManager roleManager;
 
-    public AdminLoginImpl(DefaultKey defaultKey) {
+    public AdminLoginImpl(DefaultKey defaultKey, SsgKeyStoreManager ssgKeyStoreManager) {
         this.defaultKey = defaultKey;
+        this.ssgKeyStoreManager = ssgKeyStoreManager;
     }
 
     public GroupPrincipalCache getGroupPrincipalCache() {
@@ -301,7 +310,8 @@ public class AdminLoginImpl
                 digestWith = Integer.toString(AdminLoginImpl.class.hashCode() * 17) + username;
             }
 
-            return getDigest(digestWith, defaultKey.getSslInfo().getCertificate());
+            X509Certificate certificate = getCurrentConnectorCertificate();
+            return getDigest(digestWith, certificate);
         } catch (InvalidIdProviderCfgException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication provider error").initCause(e);
@@ -312,6 +322,15 @@ public class AdminLoginImpl
             logger.log(Level.WARNING, "Server error", e);
             throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
         } catch (IOException e) {
+            logger.log(Level.WARNING, "Server error", e);
+            throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
+        } catch (ObjectNotFoundException e) {
+            logger.log(Level.WARNING, "Server error", e);
+            throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Server error", e);
+            throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
+        } catch (KeyStoreException e) {
             logger.log(Level.WARNING, "Server error", e);
             throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
         }
@@ -416,6 +435,28 @@ public class AdminLoginImpl
         }
 
         throw new ValidationException("Identity provider '"+pId+"' not found for user '"+u.getId()+"'.");
+    }
+
+    private X509Certificate getDefaultSslCertificate() throws IOException {
+        return defaultKey.getSslInfo().getCertificate();
+    }
+
+    private X509Certificate getCurrentConnectorCertificate() throws IOException, ObjectNotFoundException, FindException, KeyStoreException {
+        HttpServletRequest hreq = RemoteUtils.getHttpServletRequest();
+        if (hreq == null)
+            throw new AccessControlException("Admin request disallowed: No request context available");
+
+        SsgConnector connector = HttpTransportModule.getConnector(hreq);
+        if (connector == null)
+            throw new AccessControlException("Admin request disallowed: Unable to determine which connector this request came in on");
+
+        Long keystoreId = connector.getKeystoreOid();
+        String keyAlias = connector.getKeyAlias();
+        if (keystoreId == null || keyAlias == null)
+            return getDefaultSslCertificate();
+
+        SsgKeyEntry entry = ssgKeyStoreManager.lookupKeyByKeyAlias(keyAlias, keystoreId);
+        return entry == null ? getDefaultSslCertificate() : entry.getCertificate();
     }
 
     /**

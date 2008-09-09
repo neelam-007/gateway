@@ -57,7 +57,13 @@ public class CertUtils {
     public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
     public static final String X509_OID_AUTHORITYKEYID = "2.5.29.35";
     public static final String X509_OID_AUTHORITY_INFORMATION_ACCESS = "1.3.6.1.5.5.7.1.1";
-    
+
+    public static boolean isCertCaCapable(X509Certificate cert) {
+        if (cert == null) return false;
+        boolean[] usages = cert.getKeyUsage();
+        return usages != null && usages[KeyUsage.keyCertSign] && cert.getBasicConstraints() > 0;
+    }
+
     public interface DnParser {
         Map<String, List<String>> dnToAttributeMap(String dn);
     }
@@ -623,6 +629,7 @@ public class CertUtils {
             throw new RuntimeException(e); // misconfigured VM
         }
 
+        l.add(new Pair<String, String>("Basic constraints", basicConstraintsToString(cert.getBasicConstraints())));
         l.add(new Pair<String, String>("Key usage", keyUsageToString(cert.getKeyUsage())));
 
         PublicKey publicKey = cert.getPublicKey();
@@ -645,6 +652,12 @@ public class CertUtils {
         }
 
         return l;
+    }
+
+    private static String basicConstraintsToString(int basicConstraints) {
+        if (basicConstraints == -1) return "<Not present>";
+        if (basicConstraints == Integer.MAX_VALUE) return "CA capable; unlimited path length";
+        return "CA capable; maximum path length=" + basicConstraints;        
     }
 
     /**

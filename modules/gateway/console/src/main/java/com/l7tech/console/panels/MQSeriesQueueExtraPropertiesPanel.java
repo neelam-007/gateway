@@ -41,7 +41,7 @@ public class MQSeriesQueueExtraPropertiesPanel extends JmsExtraPropertiesPanel {
         sslCheckbox.addActionListener(enableDisableListener);
         clientAuthCheckbox.addActionListener(enableDisableListener);
         keystoreComboBox.addActionListener(enableDisableListener);
-        keystoreComboBox.select(0, "SSL");
+        keystoreComboBox.selectDefaultSsl();
 
         setProperties(properties);
     }

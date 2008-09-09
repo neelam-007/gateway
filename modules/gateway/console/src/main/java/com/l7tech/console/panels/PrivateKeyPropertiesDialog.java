@@ -5,6 +5,7 @@ import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
+import com.l7tech.console.util.DefaultAliasTracker;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
@@ -58,6 +59,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     private JButton makeDefaultCAButton;
     private JLabel defaultSslLabel;
     private JLabel defaultCaLabel;
+    private JLabel caCapableLabel;
     private PrivateKeyManagerWindow.KeyTableRow subject;
 
     private Logger logger = Logger.getLogger(PrivateKeyPropertiesDialog.class.getName());
@@ -141,6 +143,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
         defaultSslLabel.setVisible(subject.isDefaultSsl());
         defaultCaLabel.setVisible(subject.isDefaultCa());
+        caCapableLabel.setVisible(isCertChainCaCapable(subject));
 
         makeDefaultCAButton.setEnabled(!subject.isDefaultCa());
         makeDefaultSSLButton.setEnabled(!subject.isDefaultSsl());
@@ -178,10 +181,17 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         });
     }
 
-    private boolean isKeyCACapable(PrivateKeyManagerWindow.KeyTableRow subject) {
-        X509Certificate cert = subject.getCertificate();
-        boolean[] usages = cert.getKeyUsage();
-        return usages != null && usages[CertUtils.KeyUsage.keyCertSign] && cert.getBasicConstraints() > 0;
+    private boolean isCertChainCaCapable(PrivateKeyManagerWindow.KeyTableRow subject) {
+        X509Certificate[] chain = subject.getKeyEntry().getCertificateChain();
+        int pathLen = chain.length;
+        for (X509Certificate cert : chain) {
+            if (!CertUtils.isCertCaCapable(cert))
+                return false;
+            if (pathLen > cert.getBasicConstraints())
+                return false;
+            pathLen--;
+        }
+        return true;
     }
 
     public boolean isDefaultKeyChanged() {
@@ -234,14 +244,15 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     private void makeDefaultSsl() {
-        confirmPutClusterProperty(makeDefaultSSLButton, "SSL", PrivateKeyManagerWindow.CLUSTER_PROP_DEFAULT_SSL, subject);
+        confirmPutClusterProperty(makeDefaultSSLButton, "SSL", DefaultAliasTracker.CLUSTER_PROP_DEFAULT_SSL, subject);
     }
 
     private void makeDefaultCa() {
-        if (!isKeyCACapable(subject)) {
+        if (!isCertChainCaCapable(subject)) {
             DialogDisplayer.showConfirmDialog(
                     makeDefaultCAButton,
-                    "This private key's certificate does not assert the \"cA\" basic constraint and the \"keyCertSign\" key usage." +
+                    "This certificate chain does not specifically enable use as a CA cert.\n" +
+                    "Some software will reject client certificates signed by this key." +
                     "\n\nAre you sure you want the cluster to use this as the default CA private key?",
                     "Unsuitable CA Certificate",
                     JOptionPane.YES_NO_CANCEL_OPTION,
@@ -258,14 +269,14 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     private void doMakeDefaultCa() {
-        confirmPutClusterProperty(makeDefaultCAButton, "CA", PrivateKeyManagerWindow.CLUSTER_PROP_DEFAULT_CA, subject);
+        confirmPutClusterProperty(makeDefaultCAButton, "CA", DefaultAliasTracker.CLUSTER_PROP_DEFAULT_CA, subject);
     }
 
     private void confirmPutClusterProperty(final JButton triggerButton, final String what, final String clusterProp, final PrivateKeyManagerWindow.KeyTableRow subject) {
         DialogDisplayer.showConfirmDialog(
                 makeDefaultCAButton,
                 "Are you sure you wish to change the cluster default " + what + " private key?\n\n" +
-                "ALl cluster nodes will need to be restarted before the change will fully take effect.",
+                "All cluster nodes will need to be restarted before the change will fully take effect.",
                 "Confirm New Cluster " + what + " Key",
                 JOptionPane.YES_NO_CANCEL_OPTION,
                 JOptionPane.WARNING_MESSAGE,
@@ -289,6 +300,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             else
                 property.setValue(value);
             csa.saveProperty(property);
+            TopComponents.getInstance().getBean("defaultAliasTracker", DefaultAliasTracker.class).invalidate();                    
 
             triggerButton.setEnabled(false);
             DialogDisplayer.showMessageDialog(this,

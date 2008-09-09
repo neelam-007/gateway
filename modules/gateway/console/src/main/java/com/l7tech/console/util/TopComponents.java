@@ -1,24 +1,26 @@
 package com.l7tech.console.util;
 
-import com.l7tech.gui.util.SheetHolder;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.policy.ConsoleAssertionRegistry;
 import com.l7tech.console.security.PermissionRefreshListener;
+import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.tree.policy.PolicyTree;
-import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.gui.util.SheetHolder;
 import com.l7tech.policy.AssertionRegistry;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextException;
 
 import javax.swing.*;
 import java.awt.*;
 import java.lang.ref.WeakReference;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
-import java.security.cert.X509Certificate;
 
 /**
  * The class is Central UI component registry in the SSM.
@@ -121,6 +123,24 @@ public class TopComponents {
 
     public X509Certificate[] getSsgCert() {
         return getMainWindow().getServerSslCertChain();
+    }
+
+    /**
+     * Get a bean from the application context.
+     *
+     * @param beanName the name of the bean to get.  Required.
+     * @param desiredClass interface the bean is expected to implement.  Required.
+     * @return the requested bean.  Never null.
+     */
+    public <T> T getBean(String beanName, Class<T> desiredClass) {
+        ApplicationContext context = getApplicationContext();
+        if (context == null)
+            throw new ApplicationContextException("No ApplicationContext");
+        //noinspection unchecked
+        T ret = (T) context.getBean(beanName, desiredClass);
+        if (ret == null)
+            throw new NoSuchBeanDefinitionException("No bean found named \"" + beanName + "\" of class " + desiredClass);
+        return ret;
     }
 
     /** Interface implemented by lazy component finders. */

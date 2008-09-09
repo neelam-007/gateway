@@ -3,17 +3,15 @@ package com.l7tech.console.panels;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.util.DefaultAliasTracker;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.AsyncAdminMethods;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.ExceptionUtils;
 
@@ -40,8 +38,6 @@ import java.util.List;
 import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 /**
  * Window for managing private key entries (certificate chains with private keys) in the Gateway.
@@ -49,15 +45,13 @@ import java.util.regex.Matcher;
 public class PrivateKeyManagerWindow extends JDialog {
     protected static final Logger logger = Logger.getLogger(PrivateKeyManagerWindow.class.getName());
 
-    public static final String CLUSTER_PROP_DEFAULT_SSL = "keyStore.defaultSsl.alias";
-    public static final String CLUSTER_PROP_DEFAULT_CA = "keyStore.defaultCa.alias";
-
     private JPanel mainPanel;
     private JScrollPane keyTableScrollPane;
     private JButton propertiesButton;
     private JButton closeButton;
     private JButton createButton;
     private JButton importButton;
+    private DefaultAliasTracker defaultAliasTracker;
 
     private static final Timer jobStatusTimer = new Timer("PrivateKeyManagerWindow job status timer");
     private static final Map<PrivateKeyManagerWindow, Object> timerClients = new WeakHashMap<PrivateKeyManagerWindow, Object>();
@@ -101,8 +95,6 @@ public class PrivateKeyManagerWindow extends JDialog {
     private PermissionFlags flags;
     private KeyTable keyTable = null;
     private Component showingInScrollPane = null;
-    private String defaultSslAlias = null;
-    private String defaultCaAlias = null;
 
     public PrivateKeyManagerWindow(JDialog owner) {
         super(owner, resources.getString("keydialog.title"), true);
@@ -124,6 +116,8 @@ public class PrivateKeyManagerWindow extends JDialog {
         }
 
         setContentPane(mainPanel);
+
+        defaultAliasTracker = TopComponents.getInstance().getBean("defaultAliasTracker", DefaultAliasTracker.class);
 
         keyTable = new KeyTable();
 
@@ -349,8 +343,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (dlg.isDefaultKeyChanged()) {
-                    defaultSslAlias = null;
-                    defaultCaAlias = null;
+                    defaultAliasTracker.invalidate();
                     loadPrivateKeys();
                 } else if (dlg.isDeleted()) {
                     doRemove(data);
@@ -548,45 +541,15 @@ public class PrivateKeyManagerWindow extends JDialog {
         }
     }
 
-    private static final Pattern KEYSTORE_ID_AND_ALIAS_PATTERN = Pattern.compile("^(-?\\d+):(.*)$");
-
-    private String getAlias(String clusterPropertyName, String defaultVal) throws FindException {
-        final ClusterStatusAdmin csa = Registry.getDefault().getClusterStatusAdmin();
-        ClusterProperty prop = csa.findPropertyByName(clusterPropertyName);
-        if (prop == null)
-            return defaultVal;
-        String value = prop.getValue();
-        if (value == null)
-            return defaultVal;
-        Matcher matcher = KEYSTORE_ID_AND_ALIAS_PATTERN.matcher(value);
-        if (!matcher.matches())
-            return value;
-        return matcher.group(2);
-    }
-
-    private void updateDefaultAliases() {
-        try {
-            defaultSslAlias = getAlias(CLUSTER_PROP_DEFAULT_SSL, "SSL");
-        } catch (FindException e) {
-            showErrorMessage("Default SSL Keys", "Unable to determine default SSL alias: " + ExceptionUtils.getMessage(e), e);
-        }
-        try {
-            defaultCaAlias = getAlias(CLUSTER_PROP_DEFAULT_CA, null);
-        } catch (FindException e) {
-            showErrorMessage("Default SSL Keys", "Unable to determine default CA alias: " + ExceptionUtils.getMessage(e), e);
-        }
-    }
 
     public boolean isDefaultSslCert(SsgKeyEntry entry) {
-        if (defaultSslAlias == null) updateDefaultAliases();
         String alias = entry.getAlias();
-        return alias != null && alias.equals(defaultSslAlias);
+        return alias != null && alias.equals(defaultAliasTracker.getDefaultSslAlias());
     }
 
     public boolean isDefaultCaCert(SsgKeyEntry entry) {
-        if (defaultSslAlias == null) updateDefaultAliases();
         String alias = entry.getAlias();
-        return alias != null && alias.equals(defaultCaAlias);
+        return alias != null && alias.equals(defaultAliasTracker.getDefaultCaAlias());
     }
 
     /** Represents a row in the Manage Private Keys table. */
@@ -597,12 +560,14 @@ public class PrivateKeyManagerWindow extends JDialog {
         private String expiry = null;
         private boolean defaultSsl;
         private boolean defaultCa;
+        private boolean certCaCapable;
 
         public KeyTableRow(TrustedCertAdmin.KeystoreInfo keystoreInfo, SsgKeyEntry keyEntry, boolean defaultSsl, boolean defaultCa) {
             this.keystoreInfo = keystoreInfo;
             this.keyEntry = keyEntry;
             this.defaultSsl = defaultSsl;
             this.defaultCa = defaultCa;
+            this.certCaCapable = keyEntry != null && CertUtils.isCertCaCapable(keyEntry.getCertificate());
         }
 
         public TrustedCertAdmin.KeystoreInfo getKeystore() {
@@ -657,12 +622,19 @@ public class PrivateKeyManagerWindow extends JDialog {
         public boolean isDefaultCa() {
             return defaultCa;
         }
+
+        public boolean isCertCaCapable() {
+            return certCaCapable;
+        }
     }
 
     private static class KeyTable extends JTable {
-        private static final String PATH_SSL = MainWindow.RESOURCE_PATH + "/cert_flag_ssl_16.png";
-        private static final String PATH_CA = MainWindow.RESOURCE_PATH + "/cert_flag_ca_16.png";
-        private static final String PATH_SSLCA = MainWindow.RESOURCE_PATH + "/cert_flag_sslca_16.png";
+        private static final String RESDIR = MainWindow.RESOURCE_PATH;
+        private static final String PATH_SSL = RESDIR + "/cert_flag_ssl_16.png";
+        private static final String PATH_CA = RESDIR + "/cert_flag_ca_16.png";
+        private static final String PATH_SSLCA = RESDIR + "/cert_flag_sslca_16.png";
+        private static final String PATH_CERT_SSL = RESDIR + "/cert_ssl_16.gif";
+        private static final String PATH_CERT_CA = RESDIR + "/cert_ca_16.gif";
 
         private final KeyTableModel model = new KeyTableModel();
 
@@ -677,8 +649,9 @@ public class PrivateKeyManagerWindow extends JDialog {
                 col.setMinWidth(model.getColumnMinWidth(i));
                 col.setPreferredWidth(model.getColumnPrefWidth(i));
                 col.setMaxWidth(model.getColumnMaxWidth(i));
+                if (model.isColumnImage(i)) col.setCellRenderer(new JTable().getDefaultRenderer(ImageIcon.class)); 
             }
-            getColumnModel().getColumn(0).setCellRenderer(new JTable().getDefaultRenderer(ImageIcon.class));
+            setRowHeight(19);
         }
 
         public KeyTableRow getRowAt(int row) {
@@ -705,6 +678,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                 final int minWidth;
                 final int prefWidth;
                 final int maxWidth;
+                boolean isImage;
 
                 protected Col(String name, int minWidth, int prefWidth, int maxWidth) {
                     this.name = name;
@@ -716,29 +690,13 @@ public class PrivateKeyManagerWindow extends JDialog {
             }
 
             public static final Col[] columns = new Col[] {
-                    new Col(" ", 16, 16, 16) {
+                    new Col(" ", 19, 19, 19) {
                         Object getValueForRow(KeyTableRow row) {
-                            int val = row.isDefaultSsl() ? 1 : 0;
-                            if (row.isDefaultCa()) val += 2;
-                            switch (val) {
-                                case 0:
-                                    return "";
-                                case 1:
-                                    return ImageCache.getInstance().getIconAsIcon(PATH_SSL);
-                                case 2:
-                                    return ImageCache.getInstance().getIconAsIcon(PATH_CA);
-                                case 3:
-                                    return ImageCache.getInstance().getIconAsIcon(PATH_SSLCA);
-                            }
-                            /* NOTREACHED */
-                            return "";
+                            return row.isCertCaCapable()
+                                    ? ImageCache.getInstance().getIconAsIcon(PATH_CERT_CA)
+                                    : ImageCache.getInstance().getIconAsIcon(PATH_CERT_SSL);
                         }
-                    },
-
-                    new Col("Location", 60, 90, 90) {
-                        Object getValueForRow(KeyTableRow row) {
-                            return row.getKeystore().name;
-                        }
+                        { isImage = true; }
                     },
 
                     new Col("Alias", 60, 90, 300) {
@@ -763,7 +721,33 @@ public class PrivateKeyManagerWindow extends JDialog {
                         Object getValueForRow(KeyTableRow row) {
                             return row.getExpiry();
                         }
-                    }
+                    },
+
+                    new Col("Location", 60, 90, 90) {
+                        Object getValueForRow(KeyTableRow row) {
+                            return row.getKeystore().name;
+                        }
+                    },
+
+                    new Col(" ", 19, 19, 19) {
+                        Object getValueForRow(KeyTableRow row) {
+                            int val = row.isDefaultSsl() ? 1 : 0;
+                            if (row.isDefaultCa()) val += 2;
+                            switch (val) {
+                                case 0:
+                                    return "";
+                                case 1:
+                                    return ImageCache.getInstance().getIconAsIcon(PATH_SSL);
+                                case 2:
+                                    return ImageCache.getInstance().getIconAsIcon(PATH_CA);
+                                case 3:
+                                    return ImageCache.getInstance().getIconAsIcon(PATH_SSLCA);
+                            }
+                            /* NOTREACHED */
+                            return "";
+                        }
+                        { isImage = true; }
+                    },
             };
 
             private final List<KeyTableRow> rows = new ArrayList<KeyTableRow>();
@@ -787,6 +771,10 @@ public class PrivateKeyManagerWindow extends JDialog {
                 return columns[column].name;
             }
 
+            public boolean isColumnImage(int column) {
+                return columns[column].isImage;
+            }
+
             public void setData(List<KeyTableRow> rows) {
                 this.rows.clear();
                 this.rows.addAll(rows);
@@ -799,7 +787,7 @@ public class PrivateKeyManagerWindow extends JDialog {
              * @return index of row with the specified keystore ID and alias, or -1 if not found.
              */
             public int findRowIndex(long keystoreId, String newAlias) {
-                KeyTableRow[] rowsArray = rows.toArray(new KeyTableRow[0]);
+                KeyTableRow[] rowsArray = rows.toArray(new KeyTableRow[rows.size()]);
                 for (int i = 0; i < rowsArray.length; i++) {
                     KeyTableRow row = rowsArray[i];
                     if (row.getKeystore().id == keystoreId && row.getAlias().equals(newAlias))

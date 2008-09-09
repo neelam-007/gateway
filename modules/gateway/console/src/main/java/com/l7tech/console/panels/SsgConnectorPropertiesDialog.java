@@ -685,18 +685,10 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         } else {
             enableAndRestore(cbEnableMessageInput, cbEnableBuiltinServices);
             if (ssl) {
-                // Disallow admin endpoint when private key other than SSL is selected (Bug #4270)
-                String alias = privateKeyComboBox.getSelectedKeyAlias();
-                // TODO fix this hack when we have a more reliable way to detect the default SSL cert,
-                //      OR when it no longer matters what cert you pick once the SSM and Applet can work with any cert
-                if (privateKeyComboBox.isDefaultSslKey(alias) || alias == null) {
-                    if (CA_REQUIRED.equals(clientAuthComboBox.getSelectedItem())) {
-                        setEnableAndSelect(false, false, "Disabled because client certificate authentication is set to 'Required'", cbEnableSsmApplet, cbEnableSsmRemote);
-                    } else {
-                        enableAndRestore(cbEnableSsmApplet, cbEnableSsmRemote);
-                    }
+                if (CA_REQUIRED.equals(clientAuthComboBox.getSelectedItem())) {
+                    setEnableAndSelect(false, false, "Disabled because client certificate authentication is set to 'Required'", cbEnableSsmApplet, cbEnableSsmRemote);
                 } else {
-                    setEnableAndSelect(false, false, "Disabled because it requires the 'SSL' private key alias", cbEnableSsmApplet, cbEnableSsmRemote);
+                    enableAndRestore(cbEnableSsmApplet, cbEnableSsmRemote);
                 }
             } else {
                 setEnableAndSelect(false, false, "Disabled because it requires HTTPS", cbEnableSsmApplet, cbEnableSsmRemote);
@@ -865,7 +857,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         connector.setKeyAlias(null);
         if (isSsl) {
             final String alias = privateKeyComboBox.getSelectedKeyAlias();
-            if (!privateKeyComboBox.isDefaultSslKey(alias)) {
+            if (!privateKeyComboBox.isSelectedDefaultSsl()) {
                 connector.setKeystoreOid(privateKeyComboBox.getSelectedKeystoreId());
                 connector.setKeyAlias(alias);
             }

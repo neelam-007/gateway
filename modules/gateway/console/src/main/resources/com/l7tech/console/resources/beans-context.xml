@@ -111,4 +111,6 @@
             </bean>
         </constructor-arg>
     </bean>
+
+    <bean id="defaultAliasTracker" class="com.l7tech.console.util.DefaultAliasTracker"/>
 </beans>
