@@ -62,11 +62,13 @@ public class ClusterProperty extends NamedEntityImp {
      *  @return true if this property should be hidden from users */
     @Transient
     public boolean isHiddenProperty() {
-        // Currently, there's only 1 hidden property, so for now we'll just hardcode it rather than
-        // add a whole new DB column and support code
+        // Currently, there's only a few hidden properties, so for now we'll just hardcode it rather than
+        // add new metadata and support code
         return "license".equals(_name)
             || "audit.acknowledge.highestTime".equals(_name)
-            || "krb5.keytab".equals(_name);
+            || "krb5.keytab".equals(_name)
+            || "keyStore.defaultSsl.alias".equals(_name)
+            || "keyStore.defaultCa.alias".equals(_name);
     }
 
     public boolean equals(Object other) {
