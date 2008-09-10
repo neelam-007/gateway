@@ -1572,7 +1572,6 @@
         <pack-mac jarfile="${build.dir}/managerappletlibs/log4j-1.2.14.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/looks-1.1.3.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/mail-1.4.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerappletlibs/nachocalendar-0.23.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/nekohtml-0.9.5.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/persistence-api-3.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerappletlibs/policy-1.0.jar"/>

@@ -17,6 +17,7 @@ import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.jcalendar.JDateTimeChooser;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
@@ -24,24 +25,21 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.ObjectNotFoundException;
-import net.sf.nachocalendar.components.DateField;
-import net.sf.nachocalendar.components.DefaultDayRenderer;
-import net.sf.nachocalendar.components.DefaultHeaderRenderer;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.text.DateFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
-import java.text.DateFormat;
 import java.util.Date;
 import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 /**
  * GenericUserPanel - edits the <CODE>Generic User/CODE> instances. This includes internal users, LDAP users.
@@ -88,7 +86,7 @@ public class GenericUserPanel extends UserPanel {
     private final String USER_DOES_NOT_EXIST_MSG = "This user no longer exists";
 
     private JCheckBox accountNeverExpiresCheckbox;
-    private DateField expireDateField;
+    private JDateTimeChooser expireTimeChooser = new JDateTimeChooser();
     private JPanel expirationPanel;
     private boolean canUpdate;
 
@@ -568,7 +566,7 @@ public class GenericUserPanel extends UserPanel {
             accountNeverExpiresCheckbox.addChangeListener(new ChangeListener() {
                 public void stateChanged(ChangeEvent e) {
                     final boolean enable = !accountNeverExpiresCheckbox.isSelected();
-                    expireDateField.setEnabled(enable);
+                    expireTimeChooser.setEnabled(enable);
                     expiresLabel.setEnabled(enable);
                 }
             });
@@ -576,27 +574,28 @@ public class GenericUserPanel extends UserPanel {
             topPanel.add(accountNeverExpiresCheckbox);
             botPanel.add(expiresLabel);
             botPanel.add(Box.createHorizontalStrut(8));
-            expireDateField = new DateField(new DateFormatter(DateFormat.getDateInstance(DateFormat.MEDIUM)));
-            expireDateField.setRenderer(new DefaultDayRenderer());
-            expireDateField.setHeaderRenderer(new DefaultHeaderRenderer());
+            expireTimeChooser.getJCalendar().setDecorationBackgroundVisible(true);
+            expireTimeChooser.getJCalendar().setDecorationBordersVisible(false);
+            expireTimeChooser.getJCalendar().setWeekOfYearVisible(false);
+            expireTimeChooser.setPreferredSize(new Dimension(170, 20));
+            expireTimeChooser.addPropertyChangeListener(new PropertyChangeListener() {
+                public void propertyChange(PropertyChangeEvent evt) {
+                    setModified(true);
+                }
+            });
+
             JPanel datePanel = new JPanel();
             datePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-            datePanel.add(expireDateField);
+            datePanel.add(expireTimeChooser);
             botPanel.add(datePanel);
             final boolean neverExpires = iu.getExpiration() == -1;
             if (!neverExpires) {
-                expireDateField.setValue(new Date(iu.getExpiration()));
+                expireTimeChooser.setDate(new Date(iu.getExpiration()));
             }
             accountNeverExpiresCheckbox.setSelected(neverExpires);
 
             accountNeverExpiresCheckbox.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    setModified(true);
-                }
-            });
-
-            expireDateField.addChangeListener(new ChangeListener() {
-                public void stateChanged(ChangeEvent e) {
                     setModified(true);
                 }
             });
@@ -687,10 +686,10 @@ public class GenericUserPanel extends UserPanel {
             iu.setLastName(this.getLastNameTextField().getText());
             iu.setFirstName(this.getFirstNameTextField().getText());
             iu.setEmail(getEmailTextField().getText());
-            if (!expireDateField.isEnabled()) {
+            if (!expireTimeChooser.isEnabled()) {
                 iu.setExpiration(-1);
             } else {
-                iu.setExpiration(((Date)expireDateField.getValue()).getTime());
+                iu.setExpiration(expireTimeChooser.getDate().getTime());
             }
         } else if (user instanceof LdapUser) {
             LdapUser lu = (LdapUser)user;
