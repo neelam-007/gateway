@@ -1222,15 +1222,18 @@ public class Utilities {
      *
      * @param table The table to be sorted.
      * @param model The model for the table.
-     * @param cols The columns to be sorted.
-     * @param order The ascending (true) or descending (false) sorts for the columns.
+     * @param cols The columns to be sorted. Cannot be null.
+     * @param order The ascending (true) or descending (false) sorts for the columns. Cannot be null. Index matches
+     * the index of cols array. Length must be the same.
      * @param comparators The comparator to use for sorting the cols in the param cols. The comparator in comparators
      * at index i matches the column at index i in cols. Null values are allowed if a column does not need a comparator.
      * Must supply an array the length of cols
-     * @throws IllegalArgumentException if the length of the comparators array does not match the length of the cols array 
+     * @throws IllegalArgumentException if the length of the comparators array, if specified, and the order array
+     * does not match the length of the cols array
+     * @throws NullPointerException if cols or order arrays are null 
      */
     public static void setRowSorter( JTable table, TableModel model, int[] cols, boolean[] order,
-                                     Comparator [] comparators ) throws IllegalArgumentException{
+                                     Comparator [] comparators ) throws IllegalArgumentException, NullPointerException{
         Utilties16Holder.utils.setRowSorter( table, model, cols, order, comparators );
     }
 
