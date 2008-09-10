@@ -27,7 +27,7 @@ public class AlterFilterAction extends BaseAction {
     private final FilterType filterType;
     private final JLabel filterLabel;
     public static enum FilterType {
-        ALL("Services & Policies"),
+        ALL("Show All"),
         SERVICES("Services"),
         POLICY_FRAGMENT("Policy Fragment"),
         ;

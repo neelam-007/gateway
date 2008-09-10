@@ -738,15 +738,19 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         //Add tree filter menu items
         menu.addSeparator();
-        menu.add(new AlterFilterAction(AlterFilterAction.FilterType.ALL, getFilterStatusLabel()));
-        menu.add(new AlterFilterAction(AlterFilterAction.FilterType.SERVICES, getFilterStatusLabel()));
-        menu.add(new AlterFilterAction(AlterFilterAction.FilterType.POLICY_FRAGMENT, getFilterStatusLabel()));
+        JMenu filterMenu = new JMenu("Filter tree");
+        filterMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.ALL, getFilterStatusLabel()));
+        filterMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.SERVICES, getFilterStatusLabel()));
+        filterMenu.add(new AlterFilterAction(AlterFilterAction.FilterType.POLICY_FRAGMENT, getFilterStatusLabel()));
 
+        menu.add(filterMenu);
         //Add tree sort filter menu items
         menu.addSeparator();
-        menu.add(AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.NAME));
-        menu.add(AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.TYPE));
-
+        JMenu sortMenu = new JMenu("Sort tree");
+        sortMenu.add(AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.NAME));
+        sortMenu.add(AlterDefaultSortAction.getSortAction(AlterDefaultSortAction.SortType.TYPE));
+        menu.add(sortMenu);
+        
         int mnemonic = menu.getText().toCharArray()[0];
         menu.setMnemonic(mnemonic);
 
