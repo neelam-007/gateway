@@ -6,12 +6,14 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.DataType;
 
 /**
  * @author emil
  * @version Mar 21, 2005
  */
-public class Regex extends Assertion implements UsesVariables {
+public class Regex extends Assertion implements UsesVariables, SetsVariables {
     private String regex;
     private String replacement;
     private boolean caseInsensitive;
@@ -24,6 +26,7 @@ public class Regex extends Assertion implements UsesVariables {
     private boolean proceedIfPatternMatches = true;
     private String encoding;
     private String regexName;
+    private String captureVar = "regex.group";
 
     /**
      * Test whether the assertion is a credential source. The <code>RegexAssertion</code>
@@ -141,10 +144,25 @@ public class Regex extends Assertion implements UsesVariables {
     /**
      * Set the name for this regular expression
      *
-     * @param regexName the name or null for none 
+     * @param regexName the name or null for none
      */
     public void setRegexName(String regexName) {
         this.regexName = regexName;
+    }
+
+    public String getCaptureVar() {
+        return captureVar;
+    }
+
+    /**
+     * Set the variable prefix to be used for capture groups caught by the regex.
+     *
+     * @param captureVar the prefix for captures, or null or empty string to disable capturing the result of capture groups.
+     */
+    public void setCaptureVar(String captureVar) {
+        if (captureVar != null && captureVar.trim().length() < 1)
+            captureVar = null;
+        this.captureVar = captureVar;
     }
 
     public String[] getVariablesUsed() {
@@ -152,5 +170,12 @@ public class Regex extends Assertion implements UsesVariables {
             return new String[0];
 
         return Syntax.getReferencedNames(replacement);
+    }
+
+    public VariableMetadata[] getVariablesSet() {
+        if (captureVar == null) return new VariableMetadata[0];
+        return new VariableMetadata[] {
+                new VariableMetadata(captureVar, false, true, captureVar, true, DataType.STRING),
+        };
     }
 }

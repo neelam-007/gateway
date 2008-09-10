@@ -3,18 +3,19 @@
  */
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
-import com.l7tech.util.BufferPool;
 import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.BufferPool;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Regex;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -23,6 +24,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * The Server side Regex Assertion
@@ -127,6 +130,18 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
                 assertionStatus = AssertionStatus.NONE;
             } else {
                 final boolean matched = matcher.find();
+
+                final String capvar = regexAssertion.getCaptureVar();
+                if (matched && capvar != null) {
+                    List<String> captured = new ArrayList<String>();
+                    captured.add(matcher.group(0));
+                    int groupCount = matcher.groupCount();
+                    for (int i = 1; i <= groupCount; ++i) { // note 1-based
+                        captured.add(matcher.group(i));
+                    }
+                    context.setVariable(capvar, captured);
+                }
+
                 if (matched && regexAssertion.isProceedIfPatternMatches()) {
                     logger.fine("Proceeding : Matched " + regexAssertion.getRegex());
                     assertionStatus = AssertionStatus.NONE;
