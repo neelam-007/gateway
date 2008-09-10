@@ -1254,6 +1254,9 @@ public class Utilities {
             } catch ( Exception e ) {
                 logger.info( "Using JDK 1.5 utilities." );
                 utils = new Utils15();
+            } catch ( NoClassDefFoundError e ) {
+                logger.info( "Using JDK 1.5 utilities." );
+                utils = new Utils15();
             }
         }
     }
