@@ -234,6 +234,7 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
 
     public static final String SERSEP = ":";
 
+    // NOTE: AuditExporterImpl must use the same columns and ordering as this method
     public final void serializeSignableProperties(OutputStream out) throws IOException {
         // previous format:
         // objectid:nodeid:time:audit_level:name:message:ip_address:user_name:user_id:provider_oid:

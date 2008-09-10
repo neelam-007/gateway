@@ -121,8 +121,18 @@
             </div>
             <div class="content">
                 <wicket:extend>
-                    <div class="panel">
-                        <div wicket:id="audittable"/>
+                    <form wicket:id="form" action="">
+                        <div class="panel">
+                            <div class="panelToolbar">
+                                <button id="downloadAuditsButton" type="button" wicket:id="downloadAuditsButton"><wicket:message key="label.download">Download</wicket:message></button>
+                               <input name="auditId" type="hidden" value="" wicket:id="auditId"/>
+                            </div>
+                            <div wicket:id="audittable"/>
+                        </div>
+                    </form>
+                    <div wicket:id="audit.modal"></div>
+                    <div wicket:id="audit.details">
+                        <div wicket:id="details"/>
                     </div>
                 </wicket:extend>
             </div>

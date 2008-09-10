@@ -295,9 +295,9 @@
 
     <!-- audit admin servant -->
     <bean id="auditAdmin_UNSECURED" class="com.l7tech.server.audit.AuditAdminImpl">
+        <property name="auditDownloadManager" ref="auditDownloadManager"/>
         <property name="auditRecordManager" ref="auditRecordManager"/>
         <property name="logRecordManager" ref="logRecordManager"/>
-        <property name="keystore" ref="defaultKey"/>
         <property name="serverConfig" ref="serverConfig"/>
         <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
     </bean>

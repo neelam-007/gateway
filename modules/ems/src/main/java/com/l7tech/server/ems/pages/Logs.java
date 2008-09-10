@@ -83,7 +83,7 @@ public class Logs extends EmsPage {
         columns.add(new PropertyColumn(new StringResourceModel("logtable.column.date", this, null), "date", "date"));
         columns.add(new PropertyColumn(new StringResourceModel("logtable.column.size", this, null), "size", "size"));
 
-        YuiDataTable table = new YuiDataTable("logtable", columns, "name", true,  new LogDataProvider(), hidden, "name", new Button[]{ viewButton, downloadButton });
+        YuiDataTable table = new YuiDataTable("logtable", columns, "name", true,  new LogDataProvider(), hidden, "name", false, new Button[]{ viewButton, downloadButton });
         pageForm.add( table );
 
         final WebMarkupContainer detailsContainer = new WebMarkupContainer("log.details");

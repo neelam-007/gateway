@@ -4,6 +4,8 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
+import com.l7tech.server.util.JaasUtils;
+import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
@@ -13,6 +15,10 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
+import com.l7tech.gateway.common.Authorizer;
+import com.l7tech.gateway.common.security.rbac.Permission;
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.UpdateException;
@@ -22,6 +28,9 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Date;
+import java.util.Collection;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Manages which pages are secure and performs authentication
@@ -30,8 +39,10 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
 
     //- PUBLIC
 
-    public EmsSecurityManagerImpl( final IdentityProviderFactory identityProviderFactory ) {
+    public EmsSecurityManagerImpl( final IdentityProviderFactory identityProviderFactory,
+                                   final RoleManager roleManager ) {
         this.identityProviderFactory = identityProviderFactory;
+        this.roleManager = roleManager;
     }
 
     /**
@@ -172,6 +183,16 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
                 request.getRequestURI().startsWith("/yui");
     }
 
+    /**
+     * Check if the user of the current session is permitted to perform an operation.
+     *
+     * @param ao The attempted operation
+     * @return true if permitted
+     */
+    public boolean hasPermission( final AttemptedOperation ao ) {
+        return authorizer.hasPermission( ao );
+    }
+
     public LoginInfo getLoginInfo( final HttpSession session ) {
         final User user = (User) session.getAttribute(ATTR_ID);
         final Date date = (Date) session.getAttribute(ATTR_DATE);
@@ -189,4 +210,30 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
     private static final String ATTR_DATE = "com.l7tech.logindate";
 
     private final IdentityProviderFactory identityProviderFactory;
+    private final RoleManager roleManager;
+    private final SessionAuthorizer authorizer = new SessionAuthorizer();
+
+    private final class SessionAuthorizer extends Authorizer {
+        public Collection<Permission> getUserPermissions() {
+            Set<Permission> perms = new HashSet<Permission>();
+
+            User u = JaasUtils.getCurrentUser();
+
+            if (u != null) {
+                try {
+                    final Collection<Role> assignedRoles = roleManager.getAssignedRoles(u);
+                    for (Role role : assignedRoles) {
+                        for (final Permission perm : role.getPermissions()) {
+                            Permission perm2 = perm.getAnonymousClone();
+                            perms.add(perm2);
+                        }
+                    }
+                } catch ( FindException fe ) {
+                    logger.log( Level.WARNING, "Error accessing roles for user '"+u.getId()+"'.", fe );                
+                }
+            }
+            
+            return perms;
+        }
+    }
 }

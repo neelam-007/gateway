@@ -40,8 +40,11 @@ import java.security.PrivilegedActionException;
 
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.util.FirewallUtils;
+import com.l7tech.server.audit.Auditor;
 
 /**
  * An embedded servlet container that the EMS uses to host itself.
@@ -62,6 +65,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
     private final int httpPort;
     private ApplicationContext applicationContext;
     private Server server;
+    private Audit audit;
 
     public EmsServletContainer(int httpPort) {
         this.instanceId = nextInstanceId.getAndIncrement();
@@ -159,6 +163,9 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
         root.addServlet(defaultHolder, "/");
 
         server.start();
+        if ( audit != null ) {
+            audit.logAndAudit( SystemMessages.HTTPSERVER_START, "HTTPS Port: " + httpPort);
+        }
 
         List<SsgConnector> connectors = new ArrayList<SsgConnector>();
         SsgConnector rc = new SsgConnector();
@@ -170,6 +177,11 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
     private void shutdownServletEngine() throws Exception {
         server.stop();
         server.destroy();
+
+        if ( audit != null ) {
+            audit.logAndAudit( SystemMessages.HTTPSERVER_STOP, "HTTPS Port: " + httpPort);            
+        }
+
         FirewallUtils.closeFirewallForConnectors( new File("/tmp") );  // TODO use conf/var directory for rules?
     }
 
@@ -187,6 +199,7 @@ public class EmsServletContainer implements ApplicationContextAware, Initializin
 
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
+        this.audit = new Auditor(this, applicationContext, logger);
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.logging;
 
 import com.l7tech.gateway.common.RequestId;
+import com.l7tech.objectmodel.Entity;
 
 import java.io.Serializable;
 import java.text.MessageFormat;
@@ -179,6 +180,8 @@ public class SSGLogRecord extends LogRecord implements Serializable {
     public long getOid() {
         return getSequenceNumber();
     }
+
+    public static abstract class LogEntity implements Entity {}
 
     private static final long serialVersionUID = -2234601153074484000L;
 

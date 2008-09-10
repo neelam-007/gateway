@@ -23,15 +23,15 @@
                               <td>
                                   <table>
                                       <tr>
-                                          <td>Name:</td>
+                                          <td><wicket:message key="label.name">Name</wicket:message>:</td>
                                           <td><span wicket:id="log.name">file1.log</span></td>
                                       </tr>
                                       <tr>
-                                          <td>Size:</td>
+                                          <td><wicket:message key="label.size">Size</wicket:message>:</td>
                                           <td><span wicket:id="log.size">1MB</span></td>
                                       </tr>
                                       <tr>
-                                          <td>Date</td>
+                                          <td><wicket:message key="label.date">Date</wicket:message>:</td>
                                           <td><span wicket:id="log.date">09/01/08</span></td>
                                       </tr>
                                   </table>
@@ -47,8 +47,8 @@
                 </tr>
                 <tr>
                     <td valign="bottom" align="right">
-                        <button type="submit" wicket:id="button.ok">Ok</button>
-                        <button type="submit" wicket:id="button.cancel">Cancel</button>
+                        <button type="submit" wicket:id="button.ok"><wicket:message key="label.ok">Ok</wicket:message></button>
+                        <button type="submit" wicket:id="button.cancel"><wicket:message key="label.cancel">Cancel</wicket:message></button>
                     </td>
                 </tr>
             </table>

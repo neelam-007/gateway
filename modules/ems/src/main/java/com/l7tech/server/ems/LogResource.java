@@ -4,7 +4,6 @@ import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.StringResourceStream;
 import org.apache.wicket.util.resource.FileResourceStream;
 import org.apache.wicket.util.value.ValueMap;
-import org.apache.wicket.markup.html.WebResource;
 import org.apache.wicket.protocol.http.WebResponse;
 
 import java.io.File;
@@ -15,15 +14,54 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
+import com.l7tech.gateway.common.security.rbac.EntityType;
+
 /**
  * Web resource for log files. 
  */
-public class LogResource extends WebResource {
+public class LogResource extends SecureResource {
 
     //- PUBLIC
 
+    /**
+     *
+     */
+    public LogResource() {
+        super( new AttemptedReadAll(EntityType.LOG_RECORD) );
+    }
+
+    /**
+     * Get file if it is a valid log file.
+     *
+     * @param name The name of the file.
+     * @return The file or null
+     */
+    public static File getLogFileIfValid( final String name ) {
+        File files = getLogDirectory();
+        File logFile = new File(files, name);
+
+        // ensure file exists and is in the expected location
+        return logFile.isFile() && files.equals(logFile.getParentFile()) ? logFile : null;
+    }
+
+    /**
+     * List the available log files.
+     *
+     * @return The list of files (may be empty but not null)
+     */
+    public static List<File> listLogFiles() {
+        List<File> files = new ArrayList<File>();
+
+        files.addAll(Arrays.asList(getLogDirectory().listFiles(getLogFilter())));
+
+        return files;
+    }
+
+    //- PROTECTED
+
     @Override
-    public IResourceStream getResourceStream() {
+    protected IResourceStream getSecureResourceStream() {
         IResourceStream resource = null;
         ValueMap parameters = getParameters();
 
@@ -45,24 +83,6 @@ public class LogResource extends WebResource {
 
         return resource;
     }
-
-    public static File getLogFileIfValid( final String name ) {
-        File files = getLogDirectory();
-        File logFile = new File(files, name);
-
-        // ensure file exists and is in the expected location
-        return logFile.isFile() && files.equals(logFile.getParentFile()) ? logFile : null;
-    }
-
-    public static List<File> listLogFiles() {
-        List<File> files = new ArrayList<File>();
-
-        files.addAll(Arrays.asList(getLogDirectory().listFiles(getLogFilter())));
-
-        return files;
-    }
-
-    //- PROTECTED
 
     @Override
     protected void setHeaders(WebResponse webResponse) {

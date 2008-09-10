@@ -8,6 +8,7 @@ import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.markup.html.WicketEventReference;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.behavior.AbstractAjaxBehavior;
@@ -17,6 +18,9 @@ import org.apache.wicket.RequestCycle;
 import org.apache.wicket.IRequestTarget;
 import org.apache.wicket.Page;
 import org.apache.wicket.ResourceReference;
+import org.apache.wicket.protocol.http.WebApplication;
+import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.ajax.WicketAjaxReference;
 import org.mortbay.util.ajax.JSON;
 
 import java.util.List;
@@ -37,7 +41,7 @@ public class YuiDataTable extends Panel {
                          final String sortProperty,
                          final boolean sortAscending,
                          final ISortableDataProvider sortableDataProvider ) {
-        this( id, columns, sortProperty, sortAscending, sortableDataProvider, null, null, null );
+        this( id, columns, sortProperty, sortAscending, sortableDataProvider, null, null, false, null );
     }
 
     public YuiDataTable( final String id,
@@ -47,6 +51,7 @@ public class YuiDataTable extends Panel {
                          final ISortableDataProvider sortableDataProvider,
                          final HiddenField selectionComponent,
                          final String idProperty,
+                         final boolean hideIdColumn,
                          final Button[] selectionSensitiveComponents ) {
         super(id);
 
@@ -76,7 +81,7 @@ public class YuiDataTable extends Panel {
         add( HeaderContributor.forJavaScript( new ResourceReference( YuiDataTable.class, "../resources/js/dataTable.js" ) ) );
 
         JSON json = new JSON();
-        json.addConvertor( PropertyColumn.class, new PropertyColumnConvertor() );
+        json.addConvertor( PropertyColumn.class, new PropertyColumnConvertor( hideIdColumn ? idProperty : null ) );
 
         final StringBuffer columnBuffer = new StringBuffer();
         json.append(columnBuffer, columns);
@@ -106,12 +111,23 @@ public class YuiDataTable extends Panel {
         final String tableId = tableContainer.getMarkupId();
         final String pagingId = pagingContainer.getMarkupId();
         final String selectionId = selectionComponent == null ? "null" : selectionComponent.getMarkupId();
+
         Label jsContainer = new Label("script", "initDataTable"+tableId+"();");
         add( jsContainer );
 
         add( new AbstractAjaxBehavior(){
             public void renderHead( final IHeaderResponse iHeaderResponse ) {
+                super.renderHead( iHeaderResponse );
+
+                iHeaderResponse.renderJavascriptReference(WicketEventReference.INSTANCE);
+                iHeaderResponse.renderJavascriptReference(WicketAjaxReference.INSTANCE);
+
                 StringBuilder scriptBuilder = new StringBuilder(1024);
+
+                scriptBuilder.append( "function dataTableSelectionCallback").append(tableId).append("( id ) {\n");
+                scriptBuilder.append( " wicketAjaxGet('").append(getCallbackUrl(true)).append("&selection=true&id=' + id, function() { }, function() { });\n");
+                scriptBuilder.append( "}\n" );
+
                 scriptBuilder.append( "function initDataTable" );
                 scriptBuilder.append( tableId );
                 scriptBuilder.append( "(){ initDataTable( '" );
@@ -122,7 +138,7 @@ public class YuiDataTable extends Panel {
                 scriptBuilder.append( pagingId );
                 scriptBuilder.append( "', '" );
                 scriptBuilder.append( getCallbackUrl(true) );
-                scriptBuilder.append( "&', " );
+                scriptBuilder.append( "&data=true&', " );
                 scriptBuilder.append( fieldsBuffer );
                 scriptBuilder.append( ", '" );
                 scriptBuilder.append( sortProperty );
@@ -132,7 +148,9 @@ public class YuiDataTable extends Panel {
                 scriptBuilder.append( buttons );
                 scriptBuilder.append( ", '" );
                 scriptBuilder.append( selectionId );
-                scriptBuilder.append( "', '" );
+                scriptBuilder.append( "', " );
+                scriptBuilder.append( "dataTableSelectionCallback" ).append( tableId );
+                scriptBuilder.append( ", '" );
                 scriptBuilder.append( idProperty );
                 scriptBuilder.append( "')}" );
 
@@ -151,36 +169,44 @@ public class YuiDataTable extends Panel {
                         public void detach(RequestCycle requestCycle) {}
 
                         public void respond(RequestCycle requestCycle) {
-                            int startIndex = Integer.parseInt(requestCycle.getRequest().getParameter("startIndex"));
-                            int results = Integer.parseInt(requestCycle.getRequest().getParameter("results"));
-                            if ( results > 100 ) results = 100;
+                            if ( requestCycle.getRequest().getParameter("selection") != null ) {
+                                WebApplication app = (WebApplication)getComponent().getApplication();
+                                AjaxRequestTarget target = app.newAjaxRequestTarget(getComponent().getPage());
+                                RequestCycle.get().setRequestTarget(target);
+                                onSelect( target, requestCycle.getRequest().getParameter("id") );        
+                            } else {
 
-                            String sortRaw = requestCycle.getRequest().getParameter("sort");
-                            boolean dir = !"desc".equals(requestCycle.getRequest().getParameter("dir"));
-                            String sort = columnToSortProperty( sortRaw );
+                                int startIndex = Integer.parseInt(requestCycle.getRequest().getParameter("startIndex"));
+                                int results = Integer.parseInt(requestCycle.getRequest().getParameter("results"));
+                                if ( results > 100 ) results = 100;
 
-                            // Get data
-                            if ( sort != null ) {
-                                provider.getSortState().setPropertySortOrder( sort, dir ? ISortState.ASCENDING : ISortState.DESCENDING );
+                                String sortRaw = requestCycle.getRequest().getParameter("sort");
+                                boolean dir = !"desc".equals(requestCycle.getRequest().getParameter("dir"));
+                                String sort = columnToSortProperty( sortRaw );
+
+                                // Get data
+                                if ( sort != null ) {
+                                    provider.getSortState().setPropertySortOrder( sort, dir ? ISortState.ASCENDING : ISortState.DESCENDING );
+                                }
+                                List<Model> data = new ArrayList<Model>(results);
+                                Iterator iter = provider.iterator( startIndex, results );
+                                while ( iter.hasNext() ) {
+                                    data.add(new Model((Serializable)iter.next()));
+                                }
+
+                                JSONPage page = new JSONPage( data, provider.size(), startIndex, sortRaw, dir );
+
+                                // Add JSON script to the response
+                                JSON json = new JSON();
+                                json.addConvertor( JSONPage.class, new PageConvertor() );
+                                json.addConvertor( Model.class, new PropertyModelConvertor() );
+
+                                StringBuffer dataBuffer = new StringBuffer(2048);
+                                json.append(dataBuffer, page);
+
+                                requestCycle.getResponse().setContentType("application/json");
+                                requestCycle.getResponse().write(dataBuffer);
                             }
-                            List<Model> data = new ArrayList<Model>(results);
-                            Iterator iter = provider.iterator( startIndex, results );
-                            while ( iter.hasNext() ) {
-                                data.add(new Model((Serializable)iter.next()));
-                            }
-
-                            JSONPage page = new JSONPage( data, provider.size(), startIndex, sortRaw, dir );
-
-                            // Add JSON script to the response
-                            JSON json = new JSON();
-                            json.addConvertor( JSONPage.class, new PageConvertor() );
-                            json.addConvertor( Model.class, new PropertyModelConvertor() );
-
-                            StringBuffer dataBuffer = new StringBuffer(2048);
-                            json.append(dataBuffer, page);
-
-                            requestCycle.getResponse().setContentType("application/json");
-                            requestCycle.getResponse().write(dataBuffer);
                         }
                 });
                 } finally {
@@ -193,6 +219,17 @@ public class YuiDataTable extends Panel {
     public void detachModels() {
         super.detachModels();
         provider.detach();            
+    }
+
+    //- PROTECTED
+
+    /**
+     * Override to perform an action on selection.
+     *
+     * @param value The selected value
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    protected void onSelect( final AjaxRequestTarget ajaxRequestTarget, final String value ) {        
     }
 
     //- PRIVATE
@@ -273,12 +310,21 @@ public class YuiDataTable extends Panel {
      * {key:'userId', label:'User ID', sortable:true, resizeable:true}
      */
     private static final class PropertyColumnConvertor implements JSON.Convertor {
+        private final String hiddenColumn;
+
+        public PropertyColumnConvertor( final String hiddenColumnName ) {
+            this.hiddenColumn = hiddenColumnName;    
+        }
+
         public void toJSON(Object o, JSON.Output output) {
             PropertyColumn column = (PropertyColumn) o;
             output.add( "key", column.getPropertyExpression() );
             output.add( "label", column.getDisplayModel().getObject() );
             output.add( "sortable", column.isSortable() );
             output.add( "resizeable", true );
+            if ( hiddenColumn != null && hiddenColumn.equals(column.getPropertyExpression()) ) {
+                output.add( "hidden", true );
+            }
         }
 
         public Object fromJSON(Map map) {

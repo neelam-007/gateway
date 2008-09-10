@@ -32,6 +32,7 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.folder.Folder;
 import static com.l7tech.objectmodel.EntityType.UNDEFINED;
 import com.l7tech.gateway.common.service.*;
+import com.l7tech.gateway.common.logging.SSGLogRecord;
 
 import java.util.Comparator;
 
@@ -75,6 +76,8 @@ public enum EntityType {
     AUDIT_ADMIN("Audit Record (Admin)", AdminAuditRecord.class, UNDEFINED, true),
     AUDIT_SYSTEM("Audit Record (System)", SystemAuditRecord.class, UNDEFINED, true),
     AUDIT_RECORD("Audit Record <any type>", AuditRecord.class, UNDEFINED, true),
+
+    LOG_RECORD("Log Record", SSGLogRecord.LogEntity.class, UNDEFINED, true),
 
     SSG_CONNECTOR("Listen Port", SsgConnector.class, com.l7tech.objectmodel.EntityType.CONNECTOR, true),
 

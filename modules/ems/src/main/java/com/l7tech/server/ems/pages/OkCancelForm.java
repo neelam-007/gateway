@@ -59,7 +59,7 @@ public abstract class OkCancelForm extends Form {
                     ajaxRequestTarget.addComponent( feedback );
                 }
 
-                OkCancelForm.this.onSubmit( ajaxRequestTarget, window );
+                OkCancelForm.this.onSubmit( ajaxRequestTarget, form, window );
             }
 
             @Override
@@ -73,7 +73,7 @@ public abstract class OkCancelForm extends Form {
         AjaxFallbackButton cancelButton = new AjaxFallbackButton( cancelId, this ) {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                OkCancelForm.this.onCancel( ajaxRequestTarget, window );
+                OkCancelForm.this.onCancel( ajaxRequestTarget, form, window );
             }
 	};
         cancelButton.setDefaultFormProcessing(false);
@@ -91,9 +91,11 @@ public abstract class OkCancelForm extends Form {
      * <p>The default action is to close the modal window.</p>
      *
      * @param ajaxRequestTarget The AJAX request target (may be null)
+     * @param form the Form being cancelled
      * @param window The containing modal window (may be null)
      */
-    protected void onCancel( final AjaxRequestTarget ajaxRequestTarget, final ModalWindow window ) {
+    @SuppressWarnings({"UnusedDeclaration"})
+    protected void onCancel( final AjaxRequestTarget ajaxRequestTarget, final Form form, final ModalWindow window ) {
         if ( window != null && ajaxRequestTarget != null ) {
             window.close( ajaxRequestTarget );
         }
@@ -105,9 +107,11 @@ public abstract class OkCancelForm extends Form {
      * <p>The default action is to close the modal window.</p>
      *
      * @param ajaxRequestTarget The AJAX request target (may be null)
+     * @param form the Form being submitted
      * @param window The containing modal window (may be null)
      */
-    protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final ModalWindow window ) {
+    @SuppressWarnings({"UnusedDeclaration"})
+    protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form, final ModalWindow window ) {
         if ( window != null && ajaxRequestTarget != null ) {
             window.close( ajaxRequestTarget );
         }

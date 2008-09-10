@@ -14,9 +14,10 @@
  * @param sortDir initial sort direction 'asc' or 'desc'
  * @param selectionControlIds DOM ids for components to be enabled on selection
  * @param selectionId DOM id of form field to set value of on selection
+ * @param selectionCallback function to call on selection (passing identifier)
  * @param idProperty the property name to set on selection
  */
-function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, sortBy, sortDir, selectionControlIds, selectionId, idProperty  ) {
+function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, sortBy, sortDir, selectionControlIds, selectionId, selectionCallback, idProperty  ) {
     var myPaginator,  // to hold the Paginator instance
         myDataSource, // to hold the DataSource instance
         myDataTable;  // to hold the DataTable instance
@@ -151,7 +152,7 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, so
     // Override the DataTable's sortColumn method with our intercept handler
     myDataTable.sortColumn = handleSorting;
 
-    if ( selectionControlIds ) {    
+    if ( selectionControlIds || selectionCallback ) {
         // Subscribes to events for row selection.
         myDataTable.subscribe("rowMouseoverEvent", myDataTable.onEventHighlightRow);
         myDataTable.subscribe("rowMouseoutEvent", myDataTable.onEventUnhighlightRow);
@@ -162,17 +163,25 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, so
             var selectedRows = myDataTable.getSelectedRows();
             var hasSelectedRows = (selectedRows != null) && (selectedRows.length != 0);
 
-            var controlId;
-            for ( controlId in selectionControlIds ) {
-                var control = document.getElementById( controlId );
-                if ( control ) control.disabled = !hasSelectedRows;
+            if ( selectionControlIds ) {
+                var controlId;
+                for ( controlId in selectionControlIds ) {
+                    var control = document.getElementById( controlId );
+                    if ( control ) control.disabled = !hasSelectedRows;
+                }
             }
 
             var selectionControl = document.getElementById( selectionId );
-            if ( hasSelectedRows && selectionControl ) {
-                selectionControl.value = this.getRecord( selectedRows[0] ).getData(idProperty);
-            } else {
-                selectionControl.value = "-1";
+            if ( selectionControl ) {
+                if ( hasSelectedRows ) {
+                    selectionControl.value = this.getRecord( selectedRows[0] ).getData(idProperty);
+                } else {
+                    selectionControl.value = "-1";
+                }
+
+                if( selectionCallback ) {
+                    selectionCallback( selectionControl.value );
+                }
             }
         }
         

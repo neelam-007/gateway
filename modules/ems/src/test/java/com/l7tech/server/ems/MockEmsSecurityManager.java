@@ -1,5 +1,7 @@
 package com.l7tech.server.ems;
 
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
+
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
@@ -23,6 +25,10 @@ public class MockEmsSecurityManager implements EmsSecurityManager {
     }
 
     public boolean changePassword(HttpSession session, String password, String newPassword) {
+        return true;
+    }
+
+    public boolean hasPermission(AttemptedOperation ao) {
         return true;
     }
 

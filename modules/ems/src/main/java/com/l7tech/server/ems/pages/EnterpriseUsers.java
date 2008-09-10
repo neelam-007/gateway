@@ -62,7 +62,7 @@ public class EnterpriseUsers extends EmsPage {
         columns.add(new PropertyColumn(new StringResourceModel("usertable.column.lastName", this, null), "lastName", "lastName"));
         columns.add(new PropertyColumn(new StringResourceModel("usertable.column.firstName", this, null), "firstName", "firstName"));
 
-        YuiDataTable table = new YuiDataTable("usertable", columns, "login", true, new UserDataProvider("login", true), hidden, "login", new Button[]{ editButton });
+        YuiDataTable table = new YuiDataTable("usertable", columns, "login", true, new UserDataProvider("login", true), hidden, "login", false, new Button[]{ editButton });
         pageForm.add( table );        
     }
 

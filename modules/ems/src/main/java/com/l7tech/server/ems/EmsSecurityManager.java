@@ -1,6 +1,7 @@
 package com.l7tech.server.ems;
 
 import com.l7tech.identity.User;
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpServletRequest;
@@ -38,6 +39,14 @@ public interface EmsSecurityManager {
      * @return True if access is permitted
      */
     boolean canAccess(  HttpSession session, HttpServletRequest request );
+
+    /**
+     * Check if the user of the current session is permitted to perform an operation.
+     *
+     * @param ao The attempted operation
+     * @return true if permitted
+     */
+    boolean hasPermission( AttemptedOperation ao );
 
     /**
      * Change password for the current user.

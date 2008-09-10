@@ -492,6 +492,10 @@
     <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerImpl" parent="hibernateBean">
         <property name="serverConfig" ref="serverConfig"/>
     </bean>
+    <!-- server side audit download manager -->
+    <bean id="auditDownloadManager" class="com.l7tech.server.audit.AuditDownloadManager">
+        <constructor-arg ref="defaultKey"/>
+    </bean>
     <!-- server side audit exporter -->
     <bean id="auditExporter" class="com.l7tech.server.audit.AuditExporterImpl" singleton="false">
         <property name="sessionFactory" ref="sessionFactory"/>

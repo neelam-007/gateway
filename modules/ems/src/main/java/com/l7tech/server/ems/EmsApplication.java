@@ -99,8 +99,8 @@ public class EmsApplication extends WebApplication {
 
                 return accept;
             }
-
         });
+        getSharedResources().add("auditResource", new AuditResource());
         getSharedResources().add("logResource", new LogResource());
 
         IMarkupSettings markupSettings = getMarkupSettings();

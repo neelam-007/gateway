@@ -8,7 +8,8 @@ package com.l7tech.gateway.common.audit;
 import java.util.logging.Level;
 
 /**
- * Message catalog for system componenets such as {@link com.l7tech.server.GatewayLicenseManager}.
+ * Message catalog for system componenets.
+ *
  * The ID range 2000-2999 (inclusive) is reserved for these messages.
  */
 public class SystemMessages extends Messages {
@@ -31,6 +32,10 @@ public class SystemMessages extends Messages {
     public static final M FTPSERVER_STOP                = m(2022, Level.INFO, "Stopping FTP server: ''{0}''");
     public static final M FTPSERVER_ERROR               = m(2023, Level.WARNING, "FTP server error ''{0}''");
 
+    public static final M HTTPSERVER_START              = m(2026, Level.INFO, "Starting HTTP server: ''{0}''");
+    public static final M HTTPSERVER_STOP               = m(2027, Level.INFO, "Stopping HTTP server: ''{0}''");
+    public static final M HTTPSERVER_ERROR              = m(2028, Level.WARNING, "HTTP server error ''{0}''");
+    
     // Used by certificate validation
     public static final M CERTVAL_CANT_FIND_ISSUER      = m(2030, Level.WARNING, "Unable to locate Trusted Cert Entry for issuer with DN \"{0}\" of certificate with DN \"{1}\"");
     public static final M CERTVAL_CHECKED               = m(2031, Level.FINE, "Certificate validated and verified");
