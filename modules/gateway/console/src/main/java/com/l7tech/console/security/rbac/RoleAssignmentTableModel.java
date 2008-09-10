@@ -4,6 +4,9 @@ import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.identity.Identity;
+import com.l7tech.identity.User;
+import com.l7tech.identity.Group;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.*;
@@ -26,6 +29,24 @@ public class RoleAssignmentTableModel  extends AbstractTableModel {
     public final static String USER_GROUPS = "User / Groups";
     
     private String columnNames [] = new String[]{IDENTITY_PROVIDER, USER_GROUPS};
+
+    /**
+     * Comparator used to compare users and groups in the USER_GROUPS column in a role assignee table
+     */
+    public final static Comparator USER_GROUP_COMPARATOR = new Comparator(){
+            public int compare(Object o1, Object o2) {
+                Identity i1 = (Identity) o1;
+                Identity i2 = (Identity) o2;
+                if(i1.getProviderId() != i2.getProviderId()){
+                    return (i1.getProviderId() < i2.getProviderId())? -1:(i1.getProviderId() > i2.getProviderId())? 1: 0;
+                }
+
+                if(i1 instanceof User && i2 instanceof Group) return -1;
+                if(i1 instanceof Group && i2 instanceof User) return 1;
+
+                return i1.getName().compareToIgnoreCase(i2.getName());
+            }
+        };
 
     public RoleAssignmentTableModel(Role role) throws FindException, DuplicateObjectException{
         if(role == null) return;//can function without any roles - to show an empty table

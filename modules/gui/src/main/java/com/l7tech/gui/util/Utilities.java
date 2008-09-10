@@ -16,6 +16,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.logging.Logger;
 import java.util.concurrent.Callable;
+import java.util.Comparator;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -1223,10 +1224,14 @@ public class Utilities {
      * @param model The model for the table.
      * @param cols The columns to be sorted.
      * @param order The ascending (true) or descending (false) sorts for the columns.
-     * @param converter The string converter for the table (may be null)
+     * @param comparators The comparator to use for sorting the cols in the param cols. The comparator in comparators
+     * at index i matches the column at index i in cols. Null values are allowed if a column does not need a comparator.
+     * Must supply an array the length of cols
+     * @throws IllegalArgumentException if the length of the comparators array does not match the length of the cols array 
      */
-    public static void setRowSorter( JTable table, TableModel model, int[] cols, boolean[] order, TableStringConverter converter ) {
-        Utilties16Holder.utils.setRowSorter( table, model, cols, order, converter );
+    public static void setRowSorter( JTable table, TableModel model, int[] cols, boolean[] order,
+                                     Comparator [] comparators ) throws IllegalArgumentException{
+        Utilties16Holder.utils.setRowSorter( table, model, cols, order, comparators );
     }
 
     /**
@@ -1255,11 +1260,11 @@ public class Utilities {
 
     static abstract class Utils {
         public abstract int convertRowIndexToModel( JTable table, int row );
-        public abstract void setRowSorter( JTable table, TableModel model, int[] cols, boolean[] order, TableStringConverter converter );
+        public abstract void setRowSorter( JTable table, TableModel model, int[] cols, boolean[] order, Comparator [] comparators );
     }
 
     static class Utils15 extends Utils {
         public int convertRowIndexToModel( JTable table, int row ){ return row; }
-        public void setRowSorter(JTable table, TableModel model, int[] cols, boolean[] order, TableStringConverter converter) { } // not supported in 1.5
+        public void setRowSorter(JTable table, TableModel model, int[] cols, boolean[] order, Comparator [] comparators) { } // not supported in 1.5
     }
 }

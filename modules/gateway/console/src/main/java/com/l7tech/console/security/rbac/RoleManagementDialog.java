@@ -203,8 +203,8 @@ public class RoleManagementDialog extends JDialog {
         //don't allow the user to be able to reorder columns in the table
         this.roleAssigneeTable.getTableHeader().setReorderingAllowed(false);
 
-        RoleAssignmentTableStringConverter roleTableSringConvertor = new RoleAssignmentTableStringConverter();
-        Utilities.setRowSorter(roleAssigneeTable, roleAssignmentTableModel, new int[]{0,1}, new boolean[]{true, false}, roleTableSringConvertor);
+        Utilities.setRowSorter(roleAssigneeTable, roleAssignmentTableModel, new int[]{0,1}, new boolean[]{true, true},
+                new Comparator[]{null, RoleAssignmentTableModel.USER_GROUP_COMPARATOR});
         TableColumn tC = roleAssigneeTable.getColumn(RoleAssignmentTableModel.USER_GROUPS);
         tC.setCellRenderer(new UserGroupTableCellRenderer(roleAssigneeTable));
     }
