@@ -13,6 +13,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 /**
  * @author alex
@@ -40,6 +42,8 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
     private JTextField wsaOtherTextField;
     private JPanel targetMessagePanelHolder;
     private TargetMessagePanel targetMessagePanel = new TargetMessagePanel();
+    
+    private boolean validOtherMessageVariable= true;
 
     private final RunOnChangeListener enableDisableListener = new RunOnChangeListener(new Runnable() {
         public void run() {
@@ -76,7 +80,9 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
 
         addEnableListener(samlInternalRadioButton, samlTemplateRadioButton, samlNoneRadioButton,
                           wsa10RadioButton, wsa200403RadioButton, wsa200408RadioButton, wsaOtherRadioButton);
-
+        wsaOtherTextField.getDocument().addDocumentListener(enableDisableListener);
+        samlTemplateField.getDocument().addDocumentListener(enableDisableListener);
+        
         uuidUriPrefixTextField.setText(assertion.getMessageIdUriPrefix());
         final String wsaNs = assertion.getWsaNamespaceUri();
         if ( SoapConstants.WSA_NAMESPACE.equals(wsaNs)) {
@@ -90,6 +96,12 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
             wsaOtherTextField.setText(wsaNs);
         }
 
+        targetMessagePanel.addPropertyChangeListener("valid", new PropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent evt) {
+                validOtherMessageVariable = (Boolean)evt.getNewValue();
+                enableDisable();
+            }
+        });
         targetMessagePanelHolder.add( targetMessagePanel );
         targetMessagePanel.setTitle("Apply NCES Decoration To");
         targetMessagePanel.setModel(assertion);
@@ -170,8 +182,9 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
         samlWsuIdRadioButton.setEnabled(someSamlSelected);
 
         boolean canOk = true;
-        if (wsaOtherRadioButton.isSelected() && wsaOtherTextField.getText().isEmpty()) canOk = false;
-        if (samlTemplateRadioButton.isSelected() && samlTemplateField.getText().isEmpty()) canOk = false;
+        if (wsaOtherRadioButton.isSelected() && wsaOtherTextField.getText().trim().isEmpty()) canOk = false;
+        if (samlTemplateRadioButton.isSelected() && samlTemplateField.getText().trim().isEmpty()) canOk = false;
+        if (! validOtherMessageVariable) canOk = false;
 
         okButton.setEnabled(canOk);
     }
