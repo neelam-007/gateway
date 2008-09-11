@@ -510,9 +510,8 @@ public class PrivateKeyManagerWindow extends JDialog {
                 activeKeypairJob = null;
                 if (result.throwableClassname != null) {
                     final String mess;
-                    if (result.throwableMessage.indexOf("Keystore already contains alias ") >= 0) {
+                    if (result.throwableMessage.indexOf("com.l7tech.common.io.DuplicateAliasException") >= 0) {
                         // More friendly error message for one common, foreseeable problem (Bug #3923)
-                        // TODO replace this string match hack with a proper checked exception class in HEAD after 4.0 is branched
                         mess = "Unable to generate key pair: the specified alias is already in use.";
                     } else {
                         mess = "Key generation failed: " + result.throwableClassname + ": " + result.throwableMessage;
