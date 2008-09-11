@@ -37,19 +37,29 @@ public class PasswordDoubleEntryDialog extends JDialog {
     private JLabel capsMessage = new JLabel();
     private boolean singleInputOnly;
 
-    public PasswordDoubleEntryDialog(Window owner, String title, boolean singleInputOnly) {
-        super(owner, title, ModalityType.DOCUMENT_MODAL);
-        this.singleInputOnly = singleInputOnly;
+    public PasswordDoubleEntryDialog(Frame owner, String title, boolean singleInputOnly) {
+        super(owner, title, true);
+        init(singleInputOnly);
+    }
+
+    public PasswordDoubleEntryDialog(Frame owner, String title) {
+        super(owner, title, true);
+        init(false);
+    }
+
+    public PasswordDoubleEntryDialog(Dialog owner, String title, boolean singleInputOnly) {
+        super(owner, title, true);
+        init(singleInputOnly);
+    }
+
+    public PasswordDoubleEntryDialog(Dialog owner, String title) {
+        super(owner, title, true);
+        init(false);
+    }
+
+    private void init(boolean singleInputOnly) {
         setContentPane(getMainPanel());
-        init();
-    }
-
-    public PasswordDoubleEntryDialog(Window owner, String title) {
-        this(owner, title, false);
-        init();
-    }
-
-    private void init() {
+        this.singleInputOnly = singleInputOnly;
         Utilities.equalizeButtonSizes(new JButton[] { getButtonOk(), getButtonCancel() });
         getRootPane().setDefaultButton(getButtonOk());
         Utilities.setEscKeyStrokeDisposes(this);
