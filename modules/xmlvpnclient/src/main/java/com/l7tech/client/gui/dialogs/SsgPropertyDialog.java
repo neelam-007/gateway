@@ -7,10 +7,7 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.widgets.CertificatePanel;
-import com.l7tech.gui.widgets.ContextMenuTextField;
-import com.l7tech.gui.widgets.SquigglyTextField;
-import com.l7tech.gui.widgets.WrappingLabel;
+import com.l7tech.gui.widgets.*;
 import com.l7tech.kerberos.KerberosClient;
 import com.l7tech.kerberos.KerberosUtils;
 import com.l7tech.proxy.Constants;
@@ -421,13 +418,13 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         File certFile = fc.getSelectedFile();
         if (certFile == null)
             return;
-        char[] pass = PasswordDialog.getPassword(Gui.getInstance().getFrame(),
+        char[] pass = PasswordDoubleEntryDialog.getPassword(Gui.getInstance().getFrame(),
                                                  "Enter pass phrase for this PKCS#12 file",
                                                  true);
 
         char[] ssgPass = trustPane.getUserPasswordField().getPassword();
         if (ssgPass == null || ssgPass.length < 1) {
-            ssgPass = PasswordDialog.getPassword(Gui.getInstance().getFrame(),
+            ssgPass = PasswordDoubleEntryDialog.getPassword(Gui.getInstance().getFrame(),
                                                  "Enter new password for " + serverName());
             if (ssgPass == null)
                 return;

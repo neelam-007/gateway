@@ -3,33 +3,36 @@
  */
 package com.l7tech.server;
 
-import com.l7tech.gateway.common.admin.LicenseRuntimeException;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.security.prov.CertificateRequest;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.security.cert.TrustedCertManager;
+import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SslCertificateSniffer;
 import com.l7tech.objectmodel.*;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.cert.TrustedCertManager;
+import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SslCertificateSniffer;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.security.*;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
@@ -372,6 +375,37 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
             throw new SaveException("Error setting new cert: " + ExceptionUtils.getMessage(e), e);
         } catch (InterruptedException e) {
             throw new SaveException("Error setting new cert: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    public byte[] exportKey(long keystoreId, String alias, String p12alias, char[] p12passphrase) throws ObjectNotFoundException, FindException, KeyStoreException, UnrecoverableKeyException {
+        checkLicenseKeyStore();
+
+        SsgKeyEntry entry = ssgKeyStoreManager.lookupKeyByKeyAlias(alias, keystoreId);
+        if (!entry.isPrivateKeyAvailable())
+            throw new UnrecoverableKeyException("Private Key for alias " + alias + " cannot be exported.");
+
+        if (p12alias == null)
+            p12alias = alias;
+
+        PrivateKey privateKey = entry.getPrivateKey();
+        Certificate[] certChain = entry.getCertificateChain();        
+
+        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+        KeyStore keystore = KeyStore.getInstance("PKCS12", new BouncyCastleProvider());
+        try {
+            keystore.load(null, p12passphrase);
+            keystore.setKeyEntry(p12alias, privateKey, p12passphrase, certChain);
+            keystore.store(baos, p12passphrase);
+            return baos.toByteArray();
+        } catch (IOException e) {
+            throw new KeyStoreException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new KeyStoreException(e);
+        } catch (CertificateException e) {
+            throw new KeyStoreException(e);
+        } finally {
+            baos.close();
         }
     }
 

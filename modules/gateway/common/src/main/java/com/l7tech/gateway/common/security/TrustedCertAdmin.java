@@ -18,10 +18,11 @@ import java.io.Serializable;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.List;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Remote interface to get/save/delete certs trusted by the gateway.
@@ -263,6 +264,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws FindException if there is a problem getting info from the database
      */
     @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITIES, types=SSG_KEY_ENTRY)
     byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException;
 
     /**
@@ -312,4 +314,23 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype= SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
     void importKey(long keystoreId, String alias, String[] pemChain, final byte[] privateKeyPkcs8) throws CertificateException, SaveException, InvalidKeyException;
+
+    /**
+     * Export a private key and certificate chain as a PKCS#12 file, if the private key is available to be exported.
+     *
+     * @param keystoreId the ID of the key store of the private key to be exported. Required.
+     * @param alias      the alias of the key entry to export.  Required.
+     * @param p12alias   the alias to use for the entry in the newly-generated PKCS#12 file, or null to just use the same alias.
+     * @param p12passphrase the passphrase to use to encrypt the newly-generated PKCS#12 file.  Required.
+     * @return the bytes of a new PKCS#12 file containing the private key and certificate chain, with the alias set to alias,
+     *         encrypted with p12passphrase.  Never null.
+     * @throws com.l7tech.objectmodel.ObjectNotFoundException if the specified keystore ID does not exist, or if
+     *                                                        the specified alias cannot be found
+     * @throws FindException if there is a problem getting info from the database
+     * @throws KeyStoreException if there is a problem reading the keystore
+     * @throws java.security.UnrecoverableKeyException  if the private key for this keystore cannot be exported
+     */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITIES, types=SSG_KEY_ENTRY)
+    byte[] exportKey(long keystoreId, String alias, String p12alias, char[] p12passphrase) throws ObjectNotFoundException, FindException, KeyStoreException, UnrecoverableKeyException;
 }

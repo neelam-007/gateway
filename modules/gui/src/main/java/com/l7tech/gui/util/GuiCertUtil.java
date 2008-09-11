@@ -1,37 +1,29 @@
 package com.l7tech.gui.util;
 
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.Certificate;
-import java.security.*;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.FileInputStream;
-import java.io.ByteArrayInputStream;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.Collections;
-import java.util.List;
-import java.util.ArrayList;
-import java.awt.Dialog;
-import java.awt.Frame;
-import java.awt.Window;
-import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.IOUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
+
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import java.awt.*;
+import java.io.*;
+import java.security.*;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * GUI certificate related utils.
@@ -62,12 +54,7 @@ public class GuiCertUtil {
         X509Certificate[] certificateChain = null;
         PrivateKey privateKey = null;
 
-        if (parent !=null) {
-            if (!(parent instanceof Dialog) &&
-                !(parent instanceof Frame)) {
-                throw new IllegalArgumentException("parent must be a Dialog or Frame.");
-            }
-        }
+        assertParentIsFrameOrDialog(parent);
 
         final JFileChooser fc = FileChooserUtil.createJFileChooser();
         FileFilter pemFilter = buildFilter(".pem", "(*.pem) PEM/BASE64 X.509 certificates.");
@@ -302,12 +289,7 @@ public class GuiCertUtil {
      *                                appears to prevent use of JFileChooser
      */
     public static void exportCertificate(Window parent, X509Certificate certificate) {
-        if (parent !=null) {
-            if (!(parent instanceof Dialog) &&
-                !(parent instanceof Frame)) {
-                throw new IllegalArgumentException("parent must be a Dialog or Frame.");
-            }
-        }
+        assertParentIsFrameOrDialog(parent);
 
         final JFileChooser fc = FileChooserUtil.createJFileChooser();
         fc.setDialogTitle("Save certificate as ...");
@@ -409,5 +391,14 @@ public class GuiCertUtil {
                 return description;
             }
         };
+    }
+
+    private static void assertParentIsFrameOrDialog(Window parent) {
+        if (parent !=null) {
+            if (!(parent instanceof Dialog) &&
+                !(parent instanceof Frame)) {
+                throw new IllegalArgumentException("parent must be a Dialog or Frame.");
+            }
+        }
     }
 }

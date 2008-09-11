@@ -19,12 +19,14 @@ import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.PasswordDoubleEntryDialog;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.FileUtils;
 import com.l7tech.util.HexUtils;
 
 import javax.security.auth.x500.X500Principal;
@@ -34,9 +36,11 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.FileOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
+import java.security.UnrecoverableKeyException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,6 +64,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     private JLabel defaultSslLabel;
     private JLabel defaultCaLabel;
     private JLabel caCapableLabel;
+    private JButton exportKeyButton;
     private PrivateKeyManagerWindow.KeyTableRow subject;
 
     private Logger logger = Logger.getLogger(PrivateKeyPropertiesDialog.class.getName());
@@ -123,6 +128,12 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             }
         });
 
+        exportKeyButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                exportKey();
+            }
+        });
+
         Utilities.setEnterAction(this, new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 close();
@@ -178,6 +189,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 makeDefaultSSLButton,
                 generateCSRButton,
                 replaceCertificateChainButton,
+                exportKeyButton,
         });
     }
 
@@ -367,15 +379,17 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                                     name = name + ".p10";
                                 }
                             }
+
+                            byte[] bytes;
+                            if (chooser.getFileFilter() == pemFilter) {
+                                bytes = HexUtils.encodeBase64(csr).getBytes();
+                            } else {
+                                bytes = csr;
+                            }
+
                             // save the file
                             try {
-                                FileOutputStream fos = new FileOutputStream(name);
-                                if (chooser.getFileFilter() == pemFilter) {
-                                    fos.write(HexUtils.encodeBase64(csr).getBytes());
-                                } else {
-                                    fos.write(csr);
-                                }
-                                fos.close();
+                                FileUtils.save(new ByteArrayInputStream(bytes), new File(name));
                             } catch (IOException e) {
                                 logger.log(Level.WARNING, "error saving CSR", e);
                                 DialogDisplayer.showMessageDialog(generateCSRButton, "Error Saving CSR " + e.getMessage(),
@@ -429,11 +443,10 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     }
                     populateList();
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, "error assigning cert", e);
-                    DialogDisplayer.showMessageDialog(generateCSRButton, "Error Assigning new Cert. Make sure the " +
-                                                                         "cert you choose is related to the public " +
-                                                                         "key it is being assigned for.",
-                                                      "Error", JOptionPane.ERROR_MESSAGE, null);
+                    showErrorMessage("Error Assigning Certificate",
+                            "Error Assigning new Cert. Make sure the " +
+                            "cert you choose is related to the public " +
+                            "key it is being assigned for.", e);
                 }
             }
         });
@@ -441,6 +454,55 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         w.pack();
         Utilities.centerOnScreen(w);
         DialogDisplayer.display(w);
+    }
+
+    private void exportKey() {
+        final SsgKeyEntry entry = subject.getKeyEntry();
+        final boolean hardwareHint = "PKCS11_HARDWARE".equals(subject.getKeystore().type);
+
+        final PasswordDoubleEntryDialog passDlg = new PasswordDoubleEntryDialog(this, "Enter Export Passphrase");
+        DialogDisplayer.display(passDlg, new Runnable() {
+            public void run() {
+                if (!passDlg.isConfirmed())
+                    return;
+
+                char[] passphrase = passDlg.getPassword();
+
+                try {
+                    byte[] p12bytes = getTrustedCertAdmin().exportKey(entry.getKeystoreId(), entry.getAlias(), entry.getAlias(), passphrase);
+                    saveKeystoreBytes(p12bytes);
+                } catch (UnrecoverableKeyException e) {
+                    String hardwaremsg = hardwareHint ? " because it is stored in a hardware keystore" : "";
+                    showErrorMessage("Unable to Export Key", "This private key cannot be exported" + hardwaremsg + ".", e);
+                } catch (Exception e) {
+                    showErrorMessage("Unable to Export Key", "Unable to export key: " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+        });
+    }
+
+    private void saveKeystoreBytes(final byte[] p12bytes) {
+        FileChooserUtil.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+            public void useFileChooser(JFileChooser chooser) {
+                chooser.setDialogTitle("Save As PKCS#12 File");
+                chooser.setMultiSelectionEnabled(false);
+                FileFilter p12Fil = FileChooserUtil.buildFilter(".p12", "(*.p12) PKCS #12 (PFX) Keystore Files");
+                chooser.setFileFilter(p12Fil);
+
+                int ret = chooser.showSaveDialog(TopComponents.getInstance().getTopParent());
+                if (JFileChooser.APPROVE_OPTION == ret) {
+                    try {
+                        String name = chooser.getSelectedFile().getPath();
+                        if (name.indexOf('.') < 0)
+                            name = name + ".p12";
+
+                        FileUtils.save(new ByteArrayInputStream(p12bytes), new File(name));
+                    } catch (IOException e) {
+                        showErrorMessage("Unable to Save", "Unable to save PKCS#12 file: " + ExceptionUtils.getMessage(e), e);
+                    }
+                }
+            }
+        });
     }
 
     private void close() {

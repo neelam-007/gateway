@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.client.gui.dialogs;
+package com.l7tech.gui.widgets;
 
 import com.l7tech.gui.util.Utilities;
 
@@ -23,7 +23,7 @@ import java.util.Arrays;
  * Doesn't ask about usernames, and so not to be confused with LogonDialog, which does.
  * Interaction design is intended to be error-dialog-free.
  */
-public class PasswordDialog extends JDialog {
+public class PasswordDoubleEntryDialog extends JDialog {
     private static final String DFG = "defaultForeground";
     private JPanel mainPanel;
     private JPanel widgetPanel;
@@ -37,14 +37,14 @@ public class PasswordDialog extends JDialog {
     private JLabel capsMessage = new JLabel();
     private boolean singleInputOnly;
 
-    public PasswordDialog(Frame owner, String title, boolean singleInputOnly) {
-        super(owner, title, true);
+    public PasswordDoubleEntryDialog(Window owner, String title, boolean singleInputOnly) {
+        super(owner, title, ModalityType.DOCUMENT_MODAL);
         this.singleInputOnly = singleInputOnly;
         setContentPane(getMainPanel());
         init();
     }
 
-    public PasswordDialog(Frame owner, String title) {
+    public PasswordDoubleEntryDialog(Window owner, String title) {
         this(owner, title, false);
         init();
     }
@@ -53,6 +53,9 @@ public class PasswordDialog extends JDialog {
         Utilities.equalizeButtonSizes(new JButton[] { getButtonOk(), getButtonCancel() });
         getRootPane().setDefaultButton(getButtonOk());
         Utilities.setEscKeyStrokeDisposes(this);
+        Utilities.centerOnParentWindow(this);
+        pack();
+        fieldPassword.requestFocusInWindow();
     }
 
     private JPanel getMainPanel() {
@@ -63,7 +66,7 @@ public class PasswordDialog extends JDialog {
             mainPanel.add(capsMessage);
             mainPanel.add(getWidgetPanel());
             mainPanel.add(getButtonPanel());
-            PasswordDialog.this.addKeyListener(new CapslockKeyListener());
+            PasswordDoubleEntryDialog.this.addKeyListener(new CapslockKeyListener());
             checkPasswords();
         }
         return mainPanel;
@@ -84,13 +87,13 @@ public class PasswordDialog extends JDialog {
             buttonCancel.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     passwordValid = false;
-                    setVisible(false);
+                    dispose();
                 }
             });
             Utilities.runActionOnEscapeKey(getRootPane(), new AbstractAction() {
                 public void actionPerformed(ActionEvent e) {
                     passwordValid = false;
-                    setVisible(false);
+                    dispose();
                 }
             });
         }
@@ -105,12 +108,19 @@ public class PasswordDialog extends JDialog {
                 public void actionPerformed(ActionEvent e) {
                     if (isPasswordValid()) {
                         passwordValid = true;
-                        setVisible(false);
+                        dispose();
                     }
                 }
             });
         }
         return buttonOk;
+    }
+
+    public void setVisible(boolean b) {
+        boolean wasVisible = isVisible();
+        super.setVisible(b);
+        if (b && !wasVisible)
+            fieldPassword.requestFocusInWindow();
     }
 
     private boolean isPasswordValid() {
@@ -217,6 +227,16 @@ public class PasswordDialog extends JDialog {
         }
     }
 
+    /** @return true if this dialog was closed with the Ok button. */
+    public boolean isConfirmed() {
+        return passwordValid;
+    }
+
+    /** @return the password that was entered. */
+    public char[] getPassword() {
+        return fieldPassword.getPassword();
+    }
+
     private char[] runPasswordPrompt() {
         pack();
         setResizable(true);
@@ -232,7 +252,7 @@ public class PasswordDialog extends JDialog {
      * @return The password the user typed, or null if the dialog was canceled.
      */
     public static char[] getPassword(Frame parent, String title, boolean singleInputOnly) {
-        PasswordDialog pd = new PasswordDialog(parent, title, singleInputOnly);
+        PasswordDoubleEntryDialog pd = new PasswordDoubleEntryDialog(parent, title, singleInputOnly);
         char[] word = pd.runPasswordPrompt();
         pd.dispose();
         return word;
@@ -245,9 +265,9 @@ public class PasswordDialog extends JDialog {
     public static void main(String[] argv) {
         JFrame frame = new JFrame("test");
         frame.setVisible(true);
-        char[] word = PasswordDialog.getPassword(frame,
+        char[] word = PasswordDoubleEntryDialog.getPassword(frame,
                                              "Enter new password for Gateway <My gateway with a long long very extremely longish long name>");
-//        char[] word = PasswordDialog.getPassword(null, "Get Password", true);
+//        char[] word = PasswordDoubleEntryDialog.getPassword(null, "Get Password", true);
         System.out.println("Got password: \"" + (word == null ? "<none>" : new String(word)) + "\"");
         System.exit(0);
     }
