@@ -20,9 +20,12 @@ import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.event.admin.KeyExportedEvent;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SslCertificateSniffer;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.springframework.context.ApplicationEventPublisherAware;
+import org.springframework.context.ApplicationEventPublisher;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
@@ -38,10 +41,11 @@ import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements TrustedCertAdmin {
+public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements ApplicationEventPublisherAware, TrustedCertAdmin {
     private final DefaultKey defaultKey;
     private final LicenseManager licenseManager;
     private final SsgKeyStoreManager ssgKeyStoreManager;
+    private ApplicationEventPublisher applicationEventPublisher;
 
     public TrustedCertAdminImpl(TrustedCertManager trustedCertManager,
                                 RevocationCheckPolicyManager revocationCheckPolicyManager,
@@ -397,6 +401,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
             keystore.load(null, p12passphrase);
             keystore.setKeyEntry(p12alias, privateKey, p12passphrase, certChain);
             keystore.store(baos, p12passphrase);
+            applicationEventPublisher.publishEvent(new KeyExportedEvent(this, entry.getKeystoreId(), entry.getAlias(), getSubjectDN(entry)));
             return baos.toByteArray();
         } catch (IOException e) {
             throw new KeyStoreException(e);
@@ -407,6 +412,12 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
         } finally {
             baos.close();
         }
+    }
+
+    private String getSubjectDN(SsgKeyEntry entry) {
+        X509Certificate cert = entry.getCertificate();
+        if (cert == null) return null;
+        return cert.getSubjectDN().getName();
     }
 
     private TrustedCertManager getManager() {
@@ -421,4 +432,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Trust
     private final TrustedCertManager trustedCertManager;
     private final RevocationCheckPolicyManager revocationCheckPolicyManager;
 
+    public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
+        this.applicationEventPublisher = applicationEventPublisher;
+    }
 }

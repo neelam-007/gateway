@@ -330,7 +330,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws KeyStoreException if there is a problem reading the keystore
      * @throws java.security.UnrecoverableKeyException  if the private key for this keystore cannot be exported
      */
-    @Transactional(readOnly=true)
+    @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype=FIND_ENTITIES, types=SSG_KEY_ENTRY)
     byte[] exportKey(long keystoreId, String alias, String p12alias, char[] p12passphrase) throws ObjectNotFoundException, FindException, KeyStoreException, UnrecoverableKeyException;
 }
