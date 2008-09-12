@@ -97,10 +97,6 @@ public class WspReader {
         if (childElements.size() != 1)
             throw new InvalidPolicyStreamException("Policy does not have exactly zero or one immediate child");
         final WspWriter wspWriter = new WspWriter();
-        if (WspConstants.L7_POLICY_NS.equals(DomUtils.getNamespaceMap(policyElement).get(""))) {
-            // L7 is default namespace -- we'll treat this as a hint to wrap UnknownAssertions using pre32 format
-            wspWriter.setPre32Compat(true);
-        }
         WspWriter.setCurrent(wspWriter);
         try {
             Object target = TypeMappingUtils.thawElement((Element) childElements.get(0), visitor).target;
@@ -128,10 +124,6 @@ public class WspReader {
             if (!WspConstants.isRecognizedPolicyNsUri(rootNs))
                 throw new InvalidPolicyStreamException("Document element is not in a recognized namespace");
             final WspWriter wspWriter = new WspWriter();
-            if (WspConstants.L7_POLICY_NS.equals(DomUtils.getNamespaceMap(root).get(""))) {
-                // L7 is default namespace -- we'll treat this as a hint to wrap UnknownAssertions using pre32 format
-                wspWriter.setPre32Compat(true);
-            }
             WspWriter.setCurrent(wspWriter);
             return parse(root, visitor);
         } catch (Exception e) {

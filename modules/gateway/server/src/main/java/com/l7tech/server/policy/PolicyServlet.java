@@ -88,9 +88,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private PolicyPathBuilder policyPathBuilder;
     private PolicyCache policyCache;
 
-    /** A serviceoid request that comes in via this URI should be served a compatibility-mode policy. */
-    private static final String PRE32_DISCO_URI = "disco.modulator";
-
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -138,12 +135,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 return;
             }
 
-            boolean pre32PolicyCompat = false;
-            if (servletRequest.getRequestURI().indexOf(PRE32_DISCO_URI) >= 0) {
-                // Emit policies in pre-3.2 compatibility mode
-                pre32PolicyCompat = true;
-            }
-
             Message request = new Message();
             request.initialize(new ByteArrayStashManager(),
                                ContentTypeHeader.parseValue(servletRequest.getContentType()),
@@ -164,7 +155,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 PolicyService service = getPolicyService();
 
                 try {
-                    service.respondToPolicyDownloadRequest(context, true, normalPolicyGetter(true), pre32PolicyCompat);
+                    service.respondToPolicyDownloadRequest(context, true, normalPolicyGetter(true));
                 }
                 catch (IllegalStateException ise) { // throw by policy getter on policy not found
                     sendExceptionFault(context, ise, servletResponse);
@@ -283,12 +274,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             return;
         }
 
-        boolean pre32PolicyCompat = false;
-        if (req.getRequestURI().indexOf(PRE32_DISCO_URI) >= 0) {
-            // Emit policies in pre-3.2 compatibility mode
-            pre32PolicyCompat = true;
-        }
-
         // get credentials and check that they are valid for this policy
         AuthenticationResult[] results;
         try {
@@ -324,10 +309,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         try {
             switch (results.length) {
                 case 0:
-                    response = service.respondToPolicyDownloadRequest(str_oid, null, this.normalPolicyGetter(!isFullDoc), pre32PolicyCompat, isFullDoc);
+                    response = service.respondToPolicyDownloadRequest(str_oid, null, this.normalPolicyGetter(!isFullDoc), isFullDoc);
                     break;
                 case 1:
-                    response = service.respondToPolicyDownloadRequest(str_oid, results[0].getUser(), this.normalPolicyGetter(!isFullDoc), pre32PolicyCompat, isFullDoc);
+                    response = service.respondToPolicyDownloadRequest(str_oid, results[0].getUser(), this.normalPolicyGetter(!isFullDoc), isFullDoc);
                     break;
                 default:
                     // todo use the best response (?)

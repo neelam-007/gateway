@@ -16,7 +16,6 @@ import java.util.ArrayList;
  */
 public class WspWriter {
     private Document document = null;
-    private boolean pre32Compat = false;
     private List<TypeMappingFinder> typeMappingFinders = new ArrayList<TypeMappingFinder>();
     private TypeMappingFinder metaTmf = new TypeMappingFinderWrapper(typeMappingFinders);
 
@@ -47,8 +46,6 @@ public class WspWriter {
     Document createSkeleton() {
         try {
             String l7p = ":L7p";
-            if (isPre32Compat())
-                l7p = "";
             return XmlUtil.stringToDocument("<wsp:Policy " +
                                             "xmlns:wsp=\"" + WspConstants.WSP_POLICY_NS + "\" " +
                                             "xmlns" + l7p + "=\"" + WspConstants.L7_POLICY_NS + "\" " +
@@ -162,14 +159,6 @@ public class WspWriter {
         } catch (IOException e) {
             throw new RuntimeException("Unexpected IOException while serializing policy XML", e); // shouldn't ever happen
         }
-    }
-
-    public boolean isPre32Compat() {
-        return pre32Compat;
-    }
-
-    public void setPre32Compat(boolean pre32Compat) {
-        this.pre32Compat = pre32Compat;
     }
 
     public void addTypeMappingFinder(TypeMappingFinder typeMappingFinder) {

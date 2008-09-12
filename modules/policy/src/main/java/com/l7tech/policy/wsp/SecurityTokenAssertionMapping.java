@@ -56,8 +56,6 @@ class SecurityTokenAssertionMapping extends BeanTypeMapping {
     public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
         if (tokenType == null)
             throw new InvalidPolicyTreeException("Unable to freeze object of type " + getMappedClass());
-        if (wspWriter.isPre32Compat())
-            return super.freeze(wspWriter, object, container);
 
         // Create a SecurityToken element representing this RequestWssX509Cert
         final String wsseNs = SoapConstants.SECURITY_NAMESPACE;
@@ -67,7 +65,7 @@ class SecurityTokenAssertionMapping extends BeanTypeMapping {
 
         if ("SecurityToken".equals(st.getLocalName())) {
             // Extra SAML params have not yet been saved
-            String pfx = getNsPrefix(wspWriter);
+            String pfx = getNsPrefix();
             if (pfx.endsWith(":")) pfx = pfx.substring(0, pfx.length() - 1);
             if (pfx.length() < 1) pfx = "L7p";
             Element params = DomUtils.createAndAppendElementNS(st,

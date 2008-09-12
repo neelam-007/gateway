@@ -33,7 +33,7 @@ class SerializedJavaClassMapping extends BeanTypeMapping {
         }
         try {
             Serializable se = (Serializable)object.target;
-            Element entryElement = element.getOwnerDocument().createElementNS(getNsUri(), getNsPrefix(wspWriter) + ELEMENT_NAME);
+            Element entryElement = element.getOwnerDocument().createElementNS(getNsUri(), getNsPrefix() + ELEMENT_NAME);
             element.appendChild(entryElement);
             entryElement.appendChild(DomUtils.createTextNode(element, objectToBase64(se)));
         } catch (IOException e) {

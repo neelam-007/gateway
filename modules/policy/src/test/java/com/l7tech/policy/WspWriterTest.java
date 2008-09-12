@@ -1,11 +1,6 @@
 package com.l7tech.policy;
 
-import com.l7tech.wsdl.BindingInfo;
-import com.l7tech.wsdl.BindingOperationInfo;
-import com.l7tech.wsdl.MimePartInfo;
-import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.test.BugNumber;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
@@ -18,25 +13,31 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml2;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.policy.wsp.pre32.Pre32WspReader;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.LSInputImpl;
+import com.l7tech.wsdl.BindingInfo;
+import com.l7tech.wsdl.BindingOperationInfo;
+import com.l7tech.wsdl.MimePartInfo;
+import com.l7tech.xml.xpath.XpathExpression;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
-import org.w3c.dom.ls.LSResourceResolver;
 import org.w3c.dom.ls.LSInput;
+import org.w3c.dom.ls.LSResourceResolver;
 
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Schema;
 import javax.xml.XMLConstants;
 import javax.xml.transform.dom.DOMSource;
-import java.io.*;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
-import java.net.URL;
 
 /**
  * Test serializing policy tree to XML.
@@ -284,26 +285,6 @@ public class WspWriterTest extends TestCase {
         if (!"foo bar baz".equals(tca.getString1()))
             throw new IllegalArgumentException("TestCustomAssertion has invalid string1");
         return tca.getMap1();
-    }
-
-    /** Verify that WspWriter can, when so directed, produce a policy comprehensible to a 3.1 WspReader. */
-    public void testWspWriterCompatibilityMode() throws IOException {
-        // Create our usual complex test policy
-        Assertion policy = makeTestPolicy();
-
-        // Serialize in compatibility mode
-        WspWriter cww = new WspWriter();
-        cww.setPre32Compat(true);
-        cww.setPolicy(policy);
-        String written = cww.getPolicyXmlAsString();
-
-        log.info("Produced compatibility policy: " + written);
-
-        // Feed it to the old parser
-        Assertion out = Pre32WspReader.parsePermissively(written);
-        log.info("Old policy reader returned the following: " + out);
-        assertNotNull(out);
-        assertEquals(policy.getClass(), out.getClass());
     }
 
     public void testBraServerCertOid() throws Exception {

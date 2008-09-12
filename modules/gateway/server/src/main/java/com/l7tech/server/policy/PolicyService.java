@@ -153,8 +153,6 @@ public class PolicyService extends ApplicationObjectSupport {
      * @param policyId                 the ID of the policy to download.
      * @param preAuthenticatedUser     the already-authenticated User that wishes to download this policy.
      * @param policyGetter             a PolicyGetter implementation that can be used to look up the policy.
-     * @param pre32PolicyCompat        true if the returned policy document should be in a format readable by
-     *                                 versions of the SecureSpan Bridge before the 3.2 release.
      * @param isFullDoc                if true, we will not filter out any non-client-visible assertions from the policy
      *                                 before returning it.
      * @return the filtered policy or null if the target policy does not exist or the requestor should not see it
@@ -168,12 +166,10 @@ public class PolicyService extends ApplicationObjectSupport {
     public Document respondToPolicyDownloadRequest(String policyId,
                                                    User preAuthenticatedUser,
                                                    PolicyGetter policyGetter,
-                                                   boolean pre32PolicyCompat,
                                                    boolean isFullDoc)
             throws FilteringException, IOException, SAXException, PolicyAssertionException {
         // prepare writer, get policy
         WspWriter wspWriter = new WspWriter();
-        wspWriter.setPre32Compat(pre32PolicyCompat);
         final ServiceInfo gotPolicy = policyGetter.getPolicy(policyId);
         Assertion targetPolicy = gotPolicy != null ? gotPolicy.getPolicy() : null;
         if (targetPolicy == null) {
@@ -218,8 +214,7 @@ public class PolicyService extends ApplicationObjectSupport {
      */
     public void respondToPolicyDownloadRequest(PolicyEnforcementContext context,
                                                boolean signResponse,
-                                               PolicyGetter policyGetter,
-                                               boolean pre32PolicyCompat)
+                                               PolicyGetter policyGetter)
             throws IOException, SAXException, PolicyAssertionException {
         final XmlKnob reqXml = context.getRequest().getXmlKnob();
         final SecurityKnob reqSec = context.getRequest().getSecurityKnob();
@@ -315,7 +310,7 @@ public class PolicyService extends ApplicationObjectSupport {
         if (canSkipMetaPolicyStep || status == AssertionStatus.NONE) {
             try {
                 User user = context.getLastAuthenticatedUser();
-                policyDoc = respondToPolicyDownloadRequest(policyId, user, policyGetter, pre32PolicyCompat, false);
+                policyDoc = respondToPolicyDownloadRequest(policyId, user, policyGetter, false);
             } catch (FilteringException e) {
                 response.initialize(exceptionToFault(e));
                 logger.log(Level.WARNING, "problem preparing response", e);

@@ -17,19 +17,15 @@ import org.w3c.dom.Element;
  * that requires no further configuration beyond its XpathExpression.
  */
 class MessagePredicateMapping extends AssertionMapping {
-    private final AssertionMapping oldMapper;
     private final XpathExpressionMapping xpathMapper;
     private static final String VAR_PREFIX_ATTR = "variablePrefix";
 
-    MessagePredicateMapping(Assertion a, String externalName, String oldExternalName) {
+    MessagePredicateMapping(Assertion a, String externalName) {
         super(a, externalName);
-        this.oldMapper = new AssertionMapping(a, oldExternalName);
         this.xpathMapper = new XpathExpressionMapping("MessagePredicate", WspConstants.WSP_POLICY_NS, "wsp");
     }
 
     public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
-        if (wspWriter.isPre32Compat())
-            return oldMapper.freeze(wspWriter, object, container);
 
         XpathBasedAssertion xba = (XpathBasedAssertion)object.target;
         final XpathExpression xpathExpression = xba.getXpathExpression();
@@ -60,7 +56,7 @@ class MessagePredicateMapping extends AssertionMapping {
         if (target == null) throw new InvalidPolicyStreamException("Unable to extract XpathExpression from element " + source.getLocalName()); // can't happen
 
         try {
-            XpathBasedAssertion ass = (XpathBasedAssertion)(this.constructor.newInstance(new Object[0]));
+            XpathBasedAssertion ass = (XpathBasedAssertion)(this.constructor.newInstance());
             ass.setXpathExpression((XpathExpression)target); // Save the parsed expression (Bug #1894)
             String prefix = source.getAttributeNS(WspConstants.L7_POLICY_NS, VAR_PREFIX_ATTR);
             if (prefix != null && prefix.length() > 0 && ass instanceof SimpleXpathAssertion) {

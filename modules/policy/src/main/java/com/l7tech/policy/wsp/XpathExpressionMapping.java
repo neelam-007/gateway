@@ -39,8 +39,6 @@ class XpathExpressionMapping implements TypeMapping {
     }
 
     public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
-        if (wspWriter.isPre32Compat())
-            throw new InvalidPolicyTreeException("XpathExpressionMapping cannot be used in pre32 compat mode");
         if (object.target == null)
             throw new InvalidPolicyTreeException("XpathExpressionMapping can't freeze null object");
         if (!(object.target instanceof XpathExpression))

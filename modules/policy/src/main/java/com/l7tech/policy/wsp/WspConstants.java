@@ -192,7 +192,7 @@ public class WspConstants {
                                           SecurityTokenType.SAML_ASSERTION),
         new SecurityTokenAssertionMapping(new RequestWssSaml2(), "RequestWssSaml",
                                           SecurityTokenType.SAML2_ASSERTION),
-        new MessagePredicateMapping(new RequestXpathAssertion(), "MessagePredicate", "RequestXpathAssertion"), // freeze RequestXpathAssertion as MessagePredicate or pre32 form; thaw MessagePredicate
+        new MessagePredicateMapping(new RequestXpathAssertion(), "MessagePredicate"), // freeze RequestXpathAssertion as MessagePredicate or pre32 form; thaw MessagePredicate
         new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion") { // thaw pre32 form
             // Compatibility with old 2.1 instances of this assertion
             public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {

@@ -71,7 +71,7 @@ public class BasicTypeMapping implements TypeMapping {
      * Return the new element, without appending it to the container yet.
      */
     protected Element freezeNamed(WspWriter wspWriter, TypedReference object, Element container) {
-        Element elm = container.getOwnerDocument().createElementNS(getNsUri(), getNsPrefix(wspWriter) + object.name);
+        Element elm = container.getOwnerDocument().createElementNS(getNsUri(), getNsPrefix() + object.name);
         if (object.target == null) {
             if (!isNullable)  // sanity check
                 throw new InvalidPolicyTreeException("Assertion has property \"" + object.name + "\" which mustn't be null yet is");
@@ -119,10 +119,6 @@ public class BasicTypeMapping implements TypeMapping {
      */
     protected String getNsPrefix() {
         return nsPrefix;
-    }
-
-    protected String getNsPrefix(WspWriter wspWriter) {
-        return wspWriter.isPre32Compat() && WspConstants.L7_POLICY_NS.equals(getNsUri()) ? "" : getNsPrefix();
     }
 
     /** @return the namespace URI to use for serialized elements created by this type mapping, ie WspConstants.L7_POLICY_NS_31. */

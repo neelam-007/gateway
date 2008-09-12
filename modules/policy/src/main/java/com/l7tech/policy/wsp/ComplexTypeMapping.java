@@ -34,7 +34,7 @@ public class ComplexTypeMapping extends BasicTypeMapping {
     }
 
     protected Element freezeAnonymous(WspWriter wspWriter, TypedReference object, Element container) {
-        Element elm = container.getOwnerDocument().createElementNS(getNsUri(), getNsPrefix(wspWriter) + externalName);
+        Element elm = container.getOwnerDocument().createElementNS(getNsUri(), getNsPrefix() + externalName);
         if (object.target == null)
             throw new InvalidPolicyTreeException("Null objects may not be serialized in Anonymous format");
         populateElement(wspWriter, elm, object);

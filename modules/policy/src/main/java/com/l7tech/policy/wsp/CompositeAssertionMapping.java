@@ -71,16 +71,12 @@ class CompositeAssertionMapping implements TypeMapping {
 
     public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
         Element element;
-        if (wspWriter.isPre32Compat()) {
-            element = DomUtils.createAndAppendElementNS(container, externalName, WspConstants.L7_POLICY_NS, "wsp");
-        } else {
-            element = DomUtils.createAndAppendElementNS(container, externalName, WspConstants.WSP_POLICY_NS, "wsp");
-            element.setAttributeNS(WspConstants.WSP_POLICY_NS, "wsp:Usage", "Required");
+        element = DomUtils.createAndAppendElementNS(container, externalName, WspConstants.WSP_POLICY_NS, "wsp");
+        element.setAttributeNS(WspConstants.WSP_POLICY_NS, "wsp:Usage", "Required");
 
-            // Add an assertion-disable attribute into the composite-assertion element.
-            boolean enabled = ((Assertion)object.target).isEnabled();
-            if (!enabled) element.setAttributeNS(WspConstants.WSP_POLICY_NS, WspConstants.WSP_ATTRIBUTE_ENABLED, "" + enabled);
-        }
+        // Add an assertion-disable attribute into the composite-assertion element.
+        boolean enabled = ((Assertion)object.target).isEnabled();
+        if (!enabled) element.setAttributeNS(WspConstants.WSP_POLICY_NS, WspConstants.WSP_ATTRIBUTE_ENABLED, "" + enabled);
         populateElement(wspWriter, element, object);
         return element;
     }

@@ -45,7 +45,7 @@ class MapTypeMapping extends ComplexTypeMapping {
             Object value = entry.getValue();
             //if (value != null && !(value instanceof String))
             //    throw new InvalidPolicyTreeException("Maps with non-string values are not currently permitted within a policy");
-            Element entryElement = newElement.getOwnerDocument().createElementNS(getNsUri(), getNsPrefix(wspWriter) + "entry");
+            Element entryElement = newElement.getOwnerDocument().createElementNS(getNsUri(), getNsPrefix() + "entry");
             newElement.appendChild(entryElement);
             WspConstants.typeMappingString.freeze(wspWriter, new TypedReference(String.class, key, "key"), entryElement);
             WspConstants.typeMappingObject.freeze(wspWriter, new TypedReference(value.getClass(), value, "value"), entryElement);

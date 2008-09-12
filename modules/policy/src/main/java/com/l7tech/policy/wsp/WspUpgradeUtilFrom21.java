@@ -221,7 +221,6 @@ public class WspUpgradeUtilFrom21 {
         root.addChild(enforcement);
 
         WspWriter writer = new WspWriter();
-        writer.setPre32Compat(false);
         return writer.toElement(root);
     }
 

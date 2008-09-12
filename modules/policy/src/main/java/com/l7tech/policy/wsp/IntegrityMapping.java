@@ -31,8 +31,6 @@ class IntegrityMapping extends AssertionMapping {
     }
 
     public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
-        if (wspWriter.isPre32Compat())
-            return super.freeze(wspWriter, object, container);
 
         if (object.target == null)
             return super.freeze(wspWriter, object, container);
