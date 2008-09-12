@@ -12,19 +12,24 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.FileUtils;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.security.*;
@@ -51,6 +56,7 @@ public class PrivateKeyManagerWindow extends JDialog {
     private JButton closeButton;
     private JButton createButton;
     private JButton importButton;
+    private JButton signCsrButton;
     private DefaultAliasTracker defaultAliasTracker;
 
     private static final Timer jobStatusTimer = new Timer("PrivateKeyManagerWindow job status timer");
@@ -151,6 +157,12 @@ public class PrivateKeyManagerWindow extends JDialog {
             }
         });
 
+        signCsrButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                signCsr();
+            }
+        });
+
         pack();
         enableOrDisableButtons();
 
@@ -209,6 +221,114 @@ public class PrivateKeyManagerWindow extends JDialog {
     private void showErrorMessage(String title, String msg, Throwable e) {
         logger.log(Level.WARNING, msg, e);
         DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, null);
+    }
+
+    private void signCsr() {
+        final KeyTableRow subject = getSelectedObject();
+        if (subject == null)
+            return;
+
+        if (subject.isCertCaCapable()) {
+            signCsrNoConfirm(subject);
+            return;
+        }
+
+        DialogDisplayer.showConfirmDialog(this,
+                "This selected key's certificate does not specifically enable use as a CA cert.\n" +
+                "Some software will reject certificates signed by this key." +
+                "\n\nAre you sure you want to sign a certificate request using this key?",
+                "Unsuitable CA Certificate",
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                new DialogDisplayer.OptionListener() {
+                    public void reportResult(int option) {
+                        if (option == JOptionPane.YES_OPTION)
+                            signCsrNoConfirm(subject);
+                    }
+                });
+    }
+
+    private void signCsrNoConfirm(final KeyTableRow subject) {
+        final byte[][] csrBytes = { null };
+        FileChooserUtil.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+            public void useFileChooser(JFileChooser fc) {
+                csrBytes[0] = readCsrFile(fc);
+            }
+        });
+
+        if (csrBytes[0] == null)
+            return;
+
+        final String[] pemCertChain;
+        try {
+            pemCertChain = getTrustedCertAdmin().signCSR(subject.getKeyEntry().getKeystoreId(), subject.getKeyEntry().getAlias(), csrBytes[0]);
+        } catch (CertificateException e) {
+            showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
+            return;
+        } catch (FindException e) {
+            showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
+            return;
+        } catch (GeneralSecurityException e) {
+            showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
+            return;
+        }
+
+        FileChooserUtil.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+            public void useFileChooser(JFileChooser fc) {
+                savePemCertChain(fc, pemCertChain);
+            }
+        });
+    }
+
+    private void savePemCertChain(JFileChooser fc, final String[] pemCertChain) {
+        fc.setDialogTitle("Save Signed Certificate Chain");
+        fc.setDialogType(JFileChooser.SAVE_DIALOG);
+        fc.setMultiSelectionEnabled(false);
+        FileFilter pemFilter = FileChooserUtil.buildFilter(".pem", "(*.pem) BASE64 PEM Certificate Chain");
+        fc.setFileFilter(pemFilter);
+
+        int result = fc.showOpenDialog(this);
+        if (JFileChooser.APPROVE_OPTION != result)
+            return;
+
+        File file = fc.getSelectedFile();
+        if (file == null)
+            return;
+
+        try {
+            FileUtils.save(file, new FileUtils.Saver() {
+                public void doSave(FileOutputStream fos) throws IOException {
+                    for (String msg : pemCertChain) {
+                        fos.write(msg.getBytes("ASCII")); // it's PEM
+                    }
+                }
+            });
+        } catch (IOException e) {
+            showErrorMessage("Unable to Save Certificate Chain", "Unable to save certificate chain: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    private byte[] readCsrFile(JFileChooser fc) {
+        fc.setDialogTitle("Open Certificate Signing Request");
+        fc.setDialogType(JFileChooser.OPEN_DIALOG);
+        fc.setMultiSelectionEnabled(false);
+        FileFilter pemFilter = FileChooserUtil.buildFilter(".pem", "(*.pem) BASE64 PEM PKCS#10 Ceriticate Signing Request");
+        fc.setFileFilter(pemFilter);
+
+        int result = fc.showOpenDialog(this);
+        if (JFileChooser.APPROVE_OPTION != result)
+            return null;
+
+        File file = fc.getSelectedFile();
+        if (file == null)
+            return null;
+
+        try {
+            return FileUtils.load(file);
+        } catch (IOException e) {
+            showErrorMessage("Unable to Open CSR", "Unable to read CSR file: " + ExceptionUtils.getMessage(e), e);
+            return null;
+        }
     }
 
     private void doImport() {

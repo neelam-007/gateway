@@ -16,16 +16,18 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.prov.CertificateRequest;
+import com.l7tech.security.prov.JceProvider;
+import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
+import com.l7tech.server.event.admin.KeyExportedEvent;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
-import com.l7tech.server.event.admin.KeyExportedEvent;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SslCertificateSniffer;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationEventPublisherAware;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
@@ -297,6 +299,56 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         } catch (Exception e) {
             logger.log(Level.WARNING, "error getting keystore", e);
             throw new FindException("error making CSR", e);
+        }
+    }
+
+    public String[] signCSR(long keystoreId, String alias, byte[] csrBytes) throws FindException, GeneralSecurityException {
+        checkLicenseKeyStore();
+        SsgKeyFinder keyFinder;
+        try {
+            keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
+        } catch (KeyStoreException e) {
+            logger.log(Level.WARNING, "error getting keystore", e);
+            throw new FindException("error getting keystore", e);
+        } catch (ObjectNotFoundException e) {
+            throw new FindException("error getting keystore", e);
+        }
+        SsgKeyStore keystore;
+        if (keyFinder != null) {
+            keystore = keyFinder.getKeyStore();
+        } else {
+            logger.log(Level.WARNING, "error getting keystore");
+            throw new FindException("cannot find keystore");
+        }
+
+        SsgKeyEntry entry = keystore.getCertificateChain(alias);
+
+        BouncyCastleRsaSignerEngine signer =
+                new BouncyCastleRsaSignerEngine(entry.getPrivateKey(), entry.getCertificate(), JceProvider.getAsymmetricJceProvider().getName());
+
+        X509Certificate cert;
+        try {
+            cert = (X509Certificate) signer.createCertificate(csrBytes, null);
+        } catch (GeneralSecurityException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new SignatureException("Unable to sign certificate: " + ExceptionUtils.getMessage(e), e);
+        }
+
+        X509Certificate[] caChain = entry.getCertificateChain();
+        X509Certificate[] retChain = new X509Certificate[caChain.length + 1];
+        System.arraycopy(caChain, 0, retChain, 1, caChain.length);
+        retChain[0] = cert;
+
+        try {
+            String[] pemChain = new String[retChain.length];
+            for (int i = 0; i < retChain.length; i++)
+                pemChain[i] = CertUtils.encodeAsPEM(retChain[i]);
+            return pemChain;
+
+        } catch (IOException e) {
+            // Shouldn't be possible
+            throw new SignatureException("Unable to sign certificate: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

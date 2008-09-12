@@ -6,18 +6,20 @@
 
 package com.l7tech.util;
 
+import com.l7tech.common.io.IOUtils;
+
 import javax.swing.filechooser.FileSystemView;
 import java.io.*;
-import java.nio.channels.FileChannel;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.FileLock;
-import java.nio.channels.Channels;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.List;
-import java.util.ArrayList;
-import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.ReadableByteChannel;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Utility methods to approximate Unix-style transactional file replacement in Java.
@@ -250,6 +252,10 @@ public class FileUtils {
      * Saves the inputstream into the given output file.
      *
      * Caller is responsible for closing the input stream.
+     * <p/>
+     * This save utility can leave a partially-written file if there is a system crash during the save.
+     * See {@link #saveFileSafely(String, com.l7tech.util.FileUtils.Saver)} for a slightly safer way
+     * to save files (at the cost of possibly leaving behind .NEW and .OLD and .LCK files).
      *
      * @param in  the input file
      * @param out the output file
@@ -269,6 +275,47 @@ public class FileUtils {
         finally {
             ResourceUtils.closeQuietly(destinationChannel);
         }
+    }
+
+    /**
+     * Saves information into the given output file
+     * using the specified Saver.
+     * <p/>
+     * This save utility can leave a partially-written file if there is a system crash during the save.
+     * See {@link #saveFileSafely(String, com.l7tech.util.FileUtils.Saver)} for a slightly safer way
+     * to save files (at the cost of possibly leaving behind .NEW and .OLD and .LCK files).
+     *
+     * @param out a File to which the information is to be saved.  The file will be overwritten
+     *            without any confirmation or atomicity safeguards.
+     * @param saver a Saver that will save information to the file.
+     * @throws IOException if there is a problem saving the file.
+     */
+    public static void save(File out, Saver saver) throws IOException {
+        if (saver == null || out == null) {
+            throw new IllegalArgumentException();
+        }
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(out);
+            saver.doSave(fos);
+        } finally {
+            ResourceUtils.closeQuietly(fos);
+        }
+    }
+
+    /**
+     * Read an entire file into memory.
+     * <p/>
+     * This method simply reads the specified file.  If you want to notice and recover from an incomplete
+     * previous call to {@link #saveFileSafely(String, com.l7tech.util.FileUtils.Saver)}, use
+     * {@link #loadFileSafely(String)} instead of this method.
+     *
+     * @param file  the file to read.  Required.
+     * @return the content of the file.  May be empty but never null.
+     * @throws java.io.IOException if the file wasn't found or couldn't be read.
+     */
+    public static byte[] load(File file) throws IOException {
+        return IOUtils.slurpFile(file);
     }
 
     /**

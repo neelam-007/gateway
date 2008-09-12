@@ -268,6 +268,24 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException;
 
     /**
+     * Process a PKCS#10 Certificate Signing Request, producing a new signed certificate from it
+     * and returning the newly-signed certificate along with the rest of its certificate chain
+     * in PEM format.
+     * <p/>
+     * Caller is responsible for ensuring that the specified CSR ought to be signed.
+     *
+     * @param keystoreId the ID of the key store in which the CA private key can be found.  Required.
+     * @param alias the alias of the private key to use the CA key for processing this CSR.  Required.
+     * @param csrBytes binary or PEM encoded PKCS#10 certificate signing request.
+     * @return a PEM-encoded certificate chain including the newly-signed cert.  Never null.
+     * @throws FindException if there is a problem getting info from the database
+     * @throws java.security.GeneralSecurityException if there is a problem signing the specified certificate.
+     */
+    @Transactional(propagation=Propagation.REQUIRED)
+    @Secured(stereotype=FIND_ENTITIES, types=SSG_KEY_ENTRY)
+    String[] signCSR(long keystoreId, String alias, byte[] csrBytes) throws FindException, GeneralSecurityException;
+
+    /**
      * Replace the certificate chain for the specified private key with a new one whose subject cert
      * uses the same public key.  This can be used to replace a placeholder self-signed cert with the real
      * cert when it arrives back from the certificate authority.
