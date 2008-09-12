@@ -46,7 +46,7 @@ public class JmsTaskBag extends JmsBag {
 
     public void close() {
         try {
-            if ( getSession() != null ) {
+            if ( !isClosed() && getSession() != null ) {
                 try {
                     getSession().close();
                 } catch ( Exception e ) {
