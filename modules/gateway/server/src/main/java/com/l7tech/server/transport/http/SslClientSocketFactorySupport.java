@@ -19,7 +19,7 @@ import java.io.IOException;
  *
  * <p>DO NOT modify this class to add (for example) client certificate selection.</p>
  */
-abstract class SslClientSocketFactorySupport extends SSLSocketFactory implements Comparator {
+public abstract class SslClientSocketFactorySupport extends SSLSocketFactory implements Comparator {
 
     //- PUBLIC
 
