@@ -76,7 +76,6 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
                 try {
                     Object output = null;
                     Connection conn = session.connection();
-                    conn.setAutoCommit(false);
                     Counter dbcnt = getLockedCounter(conn, counterId);
                     if (dbcnt == null) {
                         throw new RuntimeException("the counter could not be fetched from db table"); // not supposed to happen
@@ -169,7 +168,6 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
                 try {
                     Object output = null;
                     Connection conn = session.connection();
-                    conn.setAutoCommit(false);
                     Counter dbcnt = getLockedCounter(conn, counterId);
                     if (dbcnt == null) {
                         throw new RuntimeException("the counter could not be fetched from db table"); // not supposed to happen
@@ -242,7 +240,6 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
                     }
 
                     Connection conn = session.connection();
-                    conn.setAutoCommit(false);
                     PreparedStatement ps = conn.prepareStatement("SELECT " + fieldstr +
                                                                  " FROM counters WHERE counterid=" + counterId);
                     ResultSet rs = ps.executeQuery();
@@ -282,7 +279,6 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
             public Object doInHibernate(Session session) {
                 try {
                     Connection conn = session.connection();
-                    conn.setAutoCommit(false);
                     Counter dbcnt = getLockedCounter(conn, counterId);
                     if (dbcnt == null) {
                         throw new RuntimeException("the counter could not be fetched from db table"); // not supposed to happen
@@ -381,9 +377,6 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
     }
 
     private boolean inSameMinute(Calendar last, Calendar now) {
-        if (last.get(Calendar.HOUR_OF_DAY) != now.get(Calendar.HOUR_OF_DAY)) {
-            return false;
-        }
         if (last.get(Calendar.MINUTE) != now.get(Calendar.MINUTE)) {
             return false;
         }
