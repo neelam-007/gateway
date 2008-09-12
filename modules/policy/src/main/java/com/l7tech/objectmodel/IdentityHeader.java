@@ -43,4 +43,14 @@ public class IdentityHeader extends EntityHeader {
         result = 29 * result + (int)(providerOid ^ (providerOid >>> 32));
         return result;
     }
+
+    @Override
+    public int compareTo(Object o) {
+        int compareResult = super.compareTo(o);
+        if ( compareResult == 0 ) {
+            final IdentityHeader that = (IdentityHeader)o;
+            compareResult = Long.valueOf( providerOid ).compareTo( that.providerOid );          
+        }
+        return compareResult;
+    }
 }

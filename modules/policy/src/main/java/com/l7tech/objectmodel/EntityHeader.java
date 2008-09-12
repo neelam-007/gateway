@@ -141,6 +141,9 @@ public class EntityHeader implements Serializable, Comparable {
         if (strId != null && other.strId != null) {
             if (strId.equals(other.strId)) return 0;
         }
+        if ( name.equals(((EntityHeader)o).name) ) {
+            return Integer.valueOf(type.getVal()).compareTo(((EntityHeader)o).type.getVal());    
+        }
         return name.compareTo(((EntityHeader)o).name);
     }
 }
