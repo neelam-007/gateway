@@ -77,6 +77,7 @@ public class EntityHeader implements Serializable, Comparable {
     public boolean equals(Object obj) {
         if (!(obj instanceof EntityHeader)) return false;
         EntityHeader theotherone = (EntityHeader)obj;
+        if (theotherone.type != this.type) return false;
         if (getStrId() == null) {
             return theotherone.getStrId() == null;
         }
@@ -91,13 +92,6 @@ public class EntityHeader implements Serializable, Comparable {
     public String toString() {
         return name;
     }
-
-/*
-    public int hashCode() {
-        if (strId == null) return 0;
-        return strId.hashCode();
-    }
-*/
 
     public int hashCode() {
         int result;
