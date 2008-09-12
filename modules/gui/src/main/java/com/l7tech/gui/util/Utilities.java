@@ -14,12 +14,14 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.logging.Logger;
-import java.util.concurrent.Callable;
-import java.util.Comparator;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 /**
  * This class is a bag of utilites shared by panels.
@@ -598,6 +600,23 @@ public class Utilities {
         }
     }
 
+    private static final ThreadLocal<Boolean> doingWithDelayedCancelDialog = new ThreadLocal<Boolean>() {
+        protected Boolean initialValue() {
+            return false;
+        }
+    };
+
+    private static final Map<Long, Boolean> threadsCanceledByCancelDialog = new ConcurrentHashMap<Long, Boolean>();
+
+    /**
+     * Check if the current thread is executing via {@link #doWithDelayedCancelDialog}.
+     *
+     * @return true iff. the current thread has a doWithDelayedCancelDialog call active.
+     */
+    public static boolean isCurrentThreadDoingWithDelayedCancelDialog() {
+        return doingWithDelayedCancelDialog.get();
+    }
+
     /**
      * Synchronously run the specified callable in a background thread, putting up a modal Cancel... dialog and returning
      * control to the user if the thread runs for longer than msBeforeDlg milliseconds.
@@ -627,6 +646,7 @@ public class Utilities {
     {
         if (callable == null || cancelDlg == null) throw new IllegalArgumentException();
 
+        final Thread[] workerThread = { null };
         final boolean[] finished = { false };
         final Object cancelSentinel = new Object();
         final Object semaphore = new Object();
@@ -634,12 +654,19 @@ public class Utilities {
         SwingWorker worker = new SwingWorker() {
             public Object construct() {
                 try {
-                    return callable.call();
+                    Thread thisThread = Thread.currentThread();
+                    workerThread[0] = thisThread;
+                    doingWithDelayedCancelDialog.set(true);
+                    threadsCanceledByCancelDialog.put(thisThread.getId(), false);
+                    T t = callable.call(); // blocks until job complete or thread interrupted or throws
+                    Boolean b = threadsCanceledByCancelDialog.get(thisThread.getId());
+                    return (b == null ? false : b) ? cancelSentinel : t;
                 } catch (InterruptedException e) {
                     return cancelSentinel;
                 } catch (Throwable t) {
                     return new ThrowableHolder(t);
                 } finally {
+                    doingWithDelayedCancelDialog.set(false);
                     synchronized (semaphore) {
                         finished[0] = true;
                         semaphore.notifyAll();
@@ -653,19 +680,32 @@ public class Utilities {
         };
 
         worker.start();
-        final boolean done;
+        boolean done;
         synchronized (semaphore) {
-            semaphore.wait(msBeforeDlg);
+            semaphore.wait(msBeforeDlg);  // blocks until job complete or msBeforeDialog elapsed
             done = finished[0];
         }
 
+        boolean wasCanceled = false;
         if (!done) {
-            cancelDlg.setVisible(true);
-            worker.interrupt();
+            cancelDlg.setVisible(true); // blocks until job complete or canceled
+
+            // Cancel dialog returned.  Did job succeed or was it canceled?
+            Thread wt;
+            synchronized (semaphore) {
+                done = finished[0];
+                wt = workerThread[0];
+            }
+            if (!done) {
+                // User hit cancel button
+                if (wt != null) threadsCanceledByCancelDialog.put(wt.getId(), true);
+                worker.interrupt();
+                wasCanceled = true;
+            }
         }
 
-        // At this point Cancel dialog is either canceled, torn down by SwingWorker finishing, or was never displayed
-        Object result = worker.get();
+        // At this point Cancel dialog is either canceled, torn down by SwingWorker finishing, or was never displayed.
+        Object result = wasCanceled ? cancelSentinel : worker.get(); // get may block until job complete
 
         if (result == cancelSentinel) {
             throw new InterruptedException("operation canceled by user");

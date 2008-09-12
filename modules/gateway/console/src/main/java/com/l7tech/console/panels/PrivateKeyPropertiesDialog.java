@@ -20,10 +20,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.PasswordDoubleEntryDialog;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
@@ -39,8 +36,9 @@ import java.awt.event.ActionListener;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.security.cert.X509Certificate;
+import java.security.GeneralSecurityException;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -442,7 +440,17 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                         }
                     }
                     populateList();
-                } catch (Exception e) {
+                } catch (GeneralSecurityException e) {
+                    showErrorMessage("Error Assigning Certificate",
+                            "Error Assigning new Cert. Make sure the " +
+                            "cert you choose is related to the public " +
+                            "key it is being assigned for.", e);
+                } catch (ObjectModelException e) {
+                    showErrorMessage("Error Assigning Certificate",
+                            "Error Assigning new Cert. Make sure the " +
+                            "cert you choose is related to the public " +
+                            "key it is being assigned for.", e);
+                } catch (IOException e) {
                     showErrorMessage("Error Assigning Certificate",
                             "Error Assigning new Cert. Make sure the " +
                             "cert you choose is related to the public " +
@@ -474,7 +482,9 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 } catch (UnrecoverableKeyException e) {
                     String hardwaremsg = hardwareHint ? " because it is stored in a hardware keystore" : "";
                     showErrorMessage("Unable to Export Key", "This private key cannot be exported" + hardwaremsg + ".", e);
-                } catch (Exception e) {
+                } catch (GeneralSecurityException e) {
+                    showErrorMessage("Unable to Export Key", "Unable to export key: " + ExceptionUtils.getMessage(e), e);
+                } catch (ObjectModelException e) {
                     showErrorMessage("Unable to Export Key", "Unable to export key: " + ExceptionUtils.getMessage(e), e);
                 }
             }
