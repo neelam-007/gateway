@@ -15,6 +15,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.ItemEvent;
 import java.util.logging.Logger;
+import java.util.ResourceBundle;
+import java.text.MessageFormat;
 
 
 /**
@@ -23,6 +25,7 @@ import java.util.logging.Logger;
  * @Date: Aug 7, 2008
  */
 public class ConfigureMessageContextMappingDialog extends JDialog {
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.messagecontext.console.resources.messageContextAssertion");
     private static final Logger logger = Logger.getLogger(ConfigureMessageContextMappingDialog.class.getName());
     private static final String charsAllowedForKey = ValidationUtils.ALPHA_NUMERIC + ",.'!()_-;:\"?/\\";
     private JPanel mainPanel;
@@ -38,13 +41,13 @@ public class ConfigureMessageContextMappingDialog extends JDialog {
     private boolean wasOKed;
 
     public ConfigureMessageContextMappingDialog(Frame parent, MessageContextMapping mapping) {
-        super(parent, "Configure Message Context Mapping", true);
+        super(parent, resources.getString("configure.mapping.dialog.title"), true);
         this.mapping = mapping;
         init();
     }
 
     public ConfigureMessageContextMappingDialog(Dialog parent, MessageContextMapping mapping) {
-        super(parent, "Configure Message Context Mapping", true);
+        super(parent, resources.getString("configure.mapping.dialog.title"), true);
         this.mapping = mapping;
         init();
     }
@@ -58,10 +61,10 @@ public class ConfigureMessageContextMappingDialog extends JDialog {
     }
 
     private void init() {
-        typeComboBox.addItem("Select One of Mapping Types:");
-        for (String item: MessageContextMapping.MAPPING_TYPES) {
-            typeComboBox.addItem(item);
-        }
+        typeComboBox.addItem(resources.getString("type.combox.first.item"));
+        typeComboBox.addItem(MessageContextMapping.MappingType.IP_ADDRESS.getName());
+        typeComboBox.addItem(MessageContextMapping.MappingType.AUTH_USER.getName());
+        typeComboBox.addItem(MessageContextMapping.MappingType.CUSTOM_MAPPING.getName());
         typeComboBox.addItemListener(new MappingItemListener());
 
         keyTextField.setDocument(new MaxLengthDocument(128));
@@ -88,7 +91,7 @@ public class ConfigureMessageContextMappingDialog extends JDialog {
             keyStatusLabel.setVisible(false);
         } else {
             // Case 2: Edit an existing mapping
-            if (mapping.getMappingType().equals(MessageContextMapping.MAPPING_TYPES[MessageContextMapping.CUSTOM_MAPPING_TYPE_IDX])) {
+            if (mapping.getMappingType().equals(MessageContextMapping.MappingType.CUSTOM_MAPPING.getName())) {
                 keyTextField.setEditable(true);
                 valueTextField.setEditable(true);
             } else {
@@ -137,7 +140,7 @@ public class ConfigureMessageContextMappingDialog extends JDialog {
 
             // Case 2: the user choosed one of mapping types from the combo box.
             String mappingTypeCurrentlyChosen = (String)typeComboBox.getSelectedItem();
-            String customMappingType = MessageContextMapping.MAPPING_TYPES[MessageContextMapping.CUSTOM_MAPPING_TYPE_IDX];
+            String customMappingType = MessageContextMapping.MappingType.CUSTOM_MAPPING.getName();
 
             if (mappingTypeCurrentlyChosen.equals(customMappingType)) {
                 keyTextField.setEditable(true);
@@ -154,12 +157,21 @@ public class ConfigureMessageContextMappingDialog extends JDialog {
                 keyTextField.setEditable(false);
                 valueTextField.setEditable(false);
 
-                if (idx > MessageContextMapping.DEFAULT_KEYS.length) {
-                    logger.warning("Invalid standard message context mapping type: " + mappingTypeCurrentlyChosen);
+                if (idx > 2) {
+                    logger.warning(MessageFormat.format(resources.getString("warning.invalid.mapping.type"), mappingTypeCurrentlyChosen));
                     return;
                 }
-                keyTextField.setText(MessageContextMapping.DEFAULT_KEYS[idx-1]);
-                valueTextField.setText(MessageContextMapping.DEFAULT_VALUE);
+                String key = null;
+                String value = null;
+                if (idx == 1) {
+                    key = MessageContextMapping.getDefaultIPAddressMapping().getKey();
+                    value = MessageContextMapping.getDefaultIPAddressMapping().getValue();
+                } else if (idx == 2) {
+                    key = MessageContextMapping.getDefaultAuthUserMapping().getKey();
+                    value = MessageContextMapping.getDefaultAuthUserMapping().getValue();
+                }
+                keyTextField.setText(key);
+                valueTextField.setText(value);
             }
 
             enableOrDisableOkButton();
@@ -176,6 +188,9 @@ public class ConfigureMessageContextMappingDialog extends JDialog {
         wasOKed = true;
     }
 
+    /**
+     * Check if the OK button is enabled or disabled.
+     */
     private void enableOrDisableOkButton() {
         boolean okButtonEnabled;
         boolean keyStatusLabelVisible;
@@ -185,11 +200,11 @@ public class ConfigureMessageContextMappingDialog extends JDialog {
         String[] varables = Syntax.getReferencedNames(valueStr!=null?valueStr:"");
 
         if (keyStr == null || keyStr.trim().equals("")) {
-            keyStatusLabel.setText("This key is empty.");
+            keyStatusLabel.setText(resources.getString("warning.empty.key"));
             keyStatusLabelVisible = true;
             okButtonEnabled = false;
         } else if (! ValidationUtils.isValidCharacters(keyStr, charsAllowedForKey)) {
-            keyStatusLabel.setText("This key has invalid characters.");
+            keyStatusLabel.setText(resources.getString("warning.key.with.invalid.chars"));
             keyStatusLabelVisible = true;
             okButtonEnabled = false;
         } else {

@@ -195,6 +195,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         }
 
         try {
+            //noinspection UnnecessaryLocalVariable
             List bins = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 public Object doInHibernateReadOnly(Session session) throws HibernateException {
                     Criteria crit = session.createCriteria(MetricsBin.class);
@@ -308,9 +309,9 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                         else
                             criteria.add(Restrictions.in("serviceOid", filteredOids));
                     }
-                    criteria.add(Restrictions.eq("resolution", new Integer(resolution)));
-                    criteria.add(Restrictions.ge("periodStart", new Long(summaryPeriodStart)));
-                    criteria.add(Restrictions.lt("periodStart", new Long(summaryPeriodEnd)));
+                    criteria.add(Restrictions.eq("resolution", resolution));
+                    criteria.add(Restrictions.ge("periodStart", summaryPeriodStart));
+                    criteria.add(Restrictions.lt("periodStart", summaryPeriodEnd));
                     criteria.addOrder(Order.asc("periodStart"));
                     return criteria.list();
                 }
@@ -503,7 +504,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                 synchronized (_serviceMetricsMapLock) {
                     Collection<ServiceHeader> serviceHeaders = _serviceManager.findAllHeaders();
                     for ( ServiceHeader service : serviceHeaders) {
-                        final Long oid = new Long(service.getOid());
+                        final Long oid = service.getOid();
                         ServiceMetrics serviceMetrics = new ServiceMetrics(service.getOid(), _clusterNodeId, _fineBinInterval, _flusherQueue, new Functions.Nullary<Long>() {
                             public Long call() {
                                 return null;
@@ -855,6 +856,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                                 criteria.add(Restrictions.eq("serviceOid", head.getServiceOid()));
                                 criteria.add(Restrictions.eq("resolution", head.getResolution()));
                                 criteria.add(Restrictions.eq("periodStart", head.getPeriodStart()));
+                                criteria.add(Restrictions.eq("mappingValuesOid", head.getMappingValuesOid()));
                                 MetricsBin existing = (MetricsBin) criteria.uniqueResult();
                                 if (existing == null) {
                                     session.save(head);
@@ -899,7 +901,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                                 Query query = session.createQuery(HQL_DELETE);
                                 query.setLong(0, oldestSurvivor);
                                 query.setInteger(1, _resolution);
-                                return new Integer(query.executeUpdate());
+                                return query.executeUpdate();
                             }
                         });
                     }
@@ -984,6 +986,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             long mapping_keys_oid = messageContextMappingManager.saveMessageContextMappingKeys(keysEntity);
             valuesEntity.setMappingKeysOid(mapping_keys_oid);
 
+            //noinspection UnnecessaryLocalVariable
             long mapping_values_oid = messageContextMappingManager.saveMessageContextMappingValues(valuesEntity);
             return mapping_values_oid;
         } catch (Exception e) {

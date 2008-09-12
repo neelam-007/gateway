@@ -151,6 +151,10 @@ public class MessageContextMappingKeys extends PersistentEntityImp {
         this.mapping5_key = mapping5_key;
     }
 
+    /**
+     * A utility method creates five mappings using the given types, keys, and emtpy values.
+     * @return a list of mappings with five elements.
+     */
     public List<MessageContextMapping> obtainMappingsWithEmptyValues() {
         String[] types = new String[] {
             mapping1_type,
@@ -184,6 +188,13 @@ public class MessageContextMappingKeys extends PersistentEntityImp {
         return mappings;
     }
 
+    /**
+     * A utility method sets the type and the key of a particaulr mapping.
+     * @param idx: an index to identity which mapping will be set.  For example, 0 refers the first mapping,
+     *             1 refers the second mappings, etc.
+     * @param type: the type of a mapping to change.
+     * @param key: the key of a mapping to change.
+     */
     public void setTypeAndKey(int idx, String type, String key) {
         switch (idx) {
             case 0:
@@ -211,6 +222,11 @@ public class MessageContextMappingKeys extends PersistentEntityImp {
         }
     }
 
+    /**
+     * Create a guid for the set of ordered keys.  The guid is to identify whether the database
+     * has had the same set of ordered keys already.
+     * @return a guid.
+     */
     public String generateGuid() {
         List<MessageContextMapping> mappings = obtainMappingsWithEmptyValues();
         StringBuilder sb = new StringBuilder();

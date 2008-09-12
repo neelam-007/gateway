@@ -8,32 +8,27 @@ import java.io.Serializable;
  * @Date: Aug 21, 2008
  */
 public class MessageContextMapping implements Serializable, Comparable<MessageContextMapping> {
-    public static final String MAPPING_TYPES[] = new String[] {
-        "IP Address",
-        "Authenticated User",
-        "Custom Mapping"
-    };
-    public static final int CUSTOM_MAPPING_TYPE_IDX = 2;
+    public static enum MappingType {
+        IP_ADDRESS("IP Address"),
+        AUTH_USER("Authenticated User"),
+        CUSTOM_MAPPING("Custom Mapping");
 
-    public static final String DEFAULT_MAPPING_TYPES[] = new String[] {
-            MAPPING_TYPES[0],
-            MAPPING_TYPES[1],
-    };
+        private final String name;
 
-    public static final String DEFAULT_KEYS[] = new String[] {
-        "IP_ADDRESS",
-        "AUTH_USER"
-    };
+        private MappingType( String name ) {
+            this.name = name;
+        }
 
-    public static final String DEFAULT_VALUE = "(SYSTEM DEFINED)";
+        public String getName() {
+            return name;
+        }
+    }
 
     private String mappingType;
     private String key;
     private String value;
 
-    public MessageContextMapping() {
-
-    }
+    public MessageContextMapping() {}
 
     /**
      * Make a copy of the message context mapping
@@ -47,6 +42,12 @@ public class MessageContextMapping implements Serializable, Comparable<MessageCo
         return newCopy;
     }
 
+    /**
+     * The mapping constructor.
+     * @param mappingType: the type of a mapping.
+     * @param key: the key of a mapping.
+     * @param value: the value of a mapping.
+     */
     public MessageContextMapping(String mappingType, String key, String value) {
         this.mappingType = mappingType;
         this.key = key;
@@ -110,7 +111,11 @@ public class MessageContextMapping implements Serializable, Comparable<MessageCo
         MessageContextMapping that = (MessageContextMapping) o;
 
         if (mappingType != null ? !mappingType.equals(that.mappingType) : that.mappingType != null) return false;
-        if (key != null ? !key.equals(that.key) : that.key != null) return false;
+
+        if (key == null && that.getKey() != null) return false;
+        else if (key != null && that.getKey() == null) return false;
+        else if (key != null && that.getKey() != null && !key.equalsIgnoreCase(that.getKey())) return false;
+
         if (value != null ? !value.equals(that.value) : that.value != null) return false;
 
         return true;
@@ -119,7 +124,7 @@ public class MessageContextMapping implements Serializable, Comparable<MessageCo
     public int hashCode() {
         int result;
         result = (mappingType != null ? mappingType.hashCode() : 0);
-        result = 31 * result + (key != null ? key.hashCode() : 0);
+        result = 31 * result + (key != null ? key.toLowerCase().hashCode() : 0);
         result = 31 * result + (value != null ? value.hashCode() : 0);
         return result;
     }
@@ -131,7 +136,7 @@ public class MessageContextMapping implements Serializable, Comparable<MessageCo
         if (type1 == null && type2 == null) return 0;
         else if (type1 == null)             return -1;
         else if (type2 == null)             return 1;
-        else if (! type1.equals(type2))     return type1.toLowerCase().compareTo(type2.toLowerCase());
+        else if (! type1.equals(type2))     return type1.compareTo(type2);
 
         // Step 2: check key
         String key1 = getMappingType();
@@ -147,15 +152,31 @@ public class MessageContextMapping implements Serializable, Comparable<MessageCo
         if (value1 == null && value2 == null) return 0;
         else if (value1 == null)              return -1;
         else if (value2 == null)              return 1;
-        else if (! value1.equals(value2))     return value1.toLowerCase().compareTo(value2.toLowerCase());
+        else if (! value1.equals(value2))     return value1.compareTo(value2);
 
         return 0;
     }
 
     public String toString() {
         return
-            "Mapping Type :" + this.getMappingType() + "\n" +
-            "Mapping Key  :" + this.getKey() + "\n" +
-            "Mapping Value:" + this.getValue() + "\n";
+            "Mapping Type :" + getMappingType() + "\n" +
+            "Mapping Key  :" + getKey() + "\n" +
+            "Mapping Value:" + getValue() + "\n";
+    }
+
+    /**
+     * IP Address mapping is one of two default message context mappings.
+     * @return a default IP address mapping.
+     */
+    public static MessageContextMapping getDefaultIPAddressMapping() {
+        return new MessageContextMapping(MappingType.IP_ADDRESS.getName(), "IP_ADDRESS", "(SYSTEM DEFINED)");
+    }
+
+    /**
+     * Authenticated user mapping is one of two default message context mappings.
+     * @return a default AUTH User mapping.
+     */
+    public static MessageContextMapping getDefaultAuthUserMapping() {
+        return new MessageContextMapping(MappingType.AUTH_USER.getName(), "AUTH_USER", "(SYSTEM DEFINED)");
     }
 }

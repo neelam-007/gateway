@@ -626,7 +626,7 @@ public class LogPanel extends JPanel {
                         StringBuilder sb = new StringBuilder("\nMessage Context Mappings\n");
                         boolean foundCustomMapping = false;
                         for (MessageContextMapping mapping: mappings) {
-                            String customMappingType = MessageContextMapping.MAPPING_TYPES[MessageContextMapping.CUSTOM_MAPPING_TYPE_IDX];
+                            String customMappingType = MessageContextMapping.MappingType.CUSTOM_MAPPING.getName();
                             if (mapping.getMappingType().equals(customMappingType)) {
                                 sb.append("Mapping Key  : ").append(mapping.getKey()).append("\n");
                                 sb.append("Mapping Value: ").append(mapping.getValue()).append("\n");

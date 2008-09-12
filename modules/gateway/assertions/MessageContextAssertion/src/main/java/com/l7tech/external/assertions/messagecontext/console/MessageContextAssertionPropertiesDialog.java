@@ -18,6 +18,8 @@ import java.awt.*;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ResourceBundle;
+import java.text.MessageFormat;
 
 /**
  * @Copyright: Layer 7 Tech. Inc.
@@ -25,7 +27,7 @@ import java.util.Arrays;
  * @Date: Aug 5, 2008
  */
 public class MessageContextAssertionPropertiesDialog extends AssertionPropertiesEditorSupport<MessageContextAssertion> {
-    private static final String DIALOG_TITLE = "Message Context Assertion Properties";
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.messagecontext.console.resources.messageContextAssertion");
 
     private static final int MAX_NUM_OF_TABLE_COLUMNS = 3;
     private JPanel mainPanel;
@@ -43,14 +45,14 @@ public class MessageContextAssertionPropertiesDialog extends AssertionProperties
     private boolean ok = false;
 
     public MessageContextAssertionPropertiesDialog(Frame owner, MessageContextAssertion assertion) {
-        super(owner, DIALOG_TITLE, true);
+        super(owner, resources.getString("mca.properties.dialog.title"), true);
         this.assertion = assertion;
         mappings.addAll(Arrays.asList(assertion.getMappings()));
         initialize();
     }
 
     public MessageContextAssertionPropertiesDialog(Dialog owner, MessageContextAssertion assertion) {
-        super(owner, DIALOG_TITLE, true);
+        super(owner, resources.getString("mca.properties.dialog.title"), true);
         this.assertion = assertion;
         mappings.addAll(Arrays.asList(assertion.getMappings()));
         initialize();
@@ -91,10 +93,10 @@ public class MessageContextAssertionPropertiesDialog extends AssertionProperties
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 int idx = mappingTable.getSelectedRow();
-                Object[] options = {"Remove", "Cancel"};
+                Object[] options = {resources.getString("button.remove"), resources.getString("button.cancel")};
                 int result = JOptionPane.showOptionDialog(null,
-                    "Are you sure you want to remove this mapping " + mappings.get(idx).getKey() + "?",
-                    "Remove Message Context Mapping?", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+                    MessageFormat.format(resources.getString("remove.mapping.confirmation"), mappings.get(idx).getKey()),
+                    resources.getString("remove.mapping.dialog.title"), 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
                 if (result == 0) {
                     mappings.remove(idx);
                     updatedRowPosition = (idx == mappings.size())? (idx - 1) : idx;
@@ -162,11 +164,11 @@ public class MessageContextAssertionPropertiesDialog extends AssertionProperties
         public String getColumnName(int col) {
             switch (col) {
                 case 0:
-                    return "Type";
+                    return resources.getString("mapping.table.column.type");
                 case 1:
-                    return "Key";
+                    return resources.getString("mapping.table.column.key");
                 case 2:
-                    return "Value";
+                    return resources.getString("mapping.table.column.value");
                 default:
                     return "?";
             }

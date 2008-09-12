@@ -10,6 +10,9 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Message;
+import com.l7tech.message.TcpKnob;
+import com.l7tech.identity.User;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -44,7 +47,7 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
             mappings.add(mapping.asCopy());
         }
 
-        processMappingsInMCA(context, mappings);
+        processMappings(context, mappings);
 
         return AssertionStatus.NONE;
     }
@@ -54,7 +57,7 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
      * @param context: the PolicyEnforcementContext
      * @param newMappings: the mappings to be processed.
      */
-    private void processMappingsInMCA(PolicyEnforcementContext context, List<MessageContextMapping> newMappings) {
+    private void processMappings(PolicyEnforcementContext context, List<MessageContextMapping> newMappings) {
         // Step 1: evaluate the values of these mappings in the current MCA.
         for (MessageContextMapping mapping: newMappings) {
             processMappingValues(mapping, context);
@@ -123,11 +126,21 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
         String value = checkedMapping.getValue();
         if (value == null || value.trim().equals("")) return;
 
-        // Check if the varaibles are set.
-        value = ExpandVariables.process(value, context.getVariableMap(variablesUsed, auditor), auditor);
+        String mappingType = checkedMapping.getMappingType();
+        if (mappingType.equals(MessageContextMapping.MappingType.IP_ADDRESS.getName())) {
+            Message request = context.getRequest();
+            TcpKnob reqTcp = (TcpKnob)request.getKnob(TcpKnob.class);
+            value = (reqTcp != null)? reqTcp.getRemoteAddress() : null;
+        } else if (mappingType.equals(MessageContextMapping.MappingType.AUTH_USER.getName())) {
+            User user = context.getLastAuthenticatedUser();
+            value = (user != null)? user.getName() : null;
+        } else {
+            // Check if the varaibles are set.
+            value = ExpandVariables.process(value, context.getVariableMap(variablesUsed, auditor), auditor);
+        }
 
         // Check if the value is extreme long.
-        if (value.length() > 255) {
+        if (value != null && value.length() > 255) {
             value = value.substring(0, 255);
             auditor.logAndAudit(AssertionMessages.MCM_TOO_LONG_VALUE, checkedMapping.getKey());
         }

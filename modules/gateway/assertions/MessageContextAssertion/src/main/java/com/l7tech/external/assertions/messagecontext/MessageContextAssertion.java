@@ -30,9 +30,10 @@ public class MessageContextAssertion extends Assertion implements UsesVariables 
     private MessageContextMapping[] mappings = new MessageContextMapping[0];
 
     public MessageContextAssertion() {
+        // Initalize the mapping array using two default mappings.
         mappings = new MessageContextMapping[] {
-            new MessageContextMapping(MessageContextMapping.DEFAULT_MAPPING_TYPES[0], MessageContextMapping.DEFAULT_KEYS[0], MessageContextMapping.DEFAULT_VALUE),
-            new MessageContextMapping(MessageContextMapping.DEFAULT_MAPPING_TYPES[1], MessageContextMapping.DEFAULT_KEYS[1], MessageContextMapping.DEFAULT_VALUE)
+            MessageContextMapping.getDefaultIPAddressMapping(),
+            MessageContextMapping.getDefaultAuthUserMapping(),
         };
     }
 
