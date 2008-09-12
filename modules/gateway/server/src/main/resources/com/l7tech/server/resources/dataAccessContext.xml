@@ -37,6 +37,30 @@
         </property>
     </bean>
 
+    <!--
+      Allow use of properties for isolation level and autocommit
+    -->
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="ignoreResourceNotFound" value="true"/>
+        <property name="locations">
+            <list>
+                <value>classpath:com/l7tech/server/resources/hibernate_default.properties</value>
+                <value>file:${com.l7tech.server.configDirectory}${file.separator}node.properties</value>
+                <value>file:${com.l7tech.server.configDirectory}${file.separator}hibernate.properties</value>
+            </list>
+        </property>
+    </bean>
+    <bean id="configureConnectionIsolation"
+          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod" value="com.l7tech.server.util.StandardConnectionCustomizer.setTransactionIsolation"/>
+        <property name="arguments" value="${hibernate.connection.isolation}"/>
+    </bean>
+    <bean id="configureConnectionAutoCommit"
+          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod" value="com.l7tech.server.util.StandardConnectionCustomizer.setAutoCommit"/>
+        <property name="arguments" value="${hibernate.connection.autocommit}"/>
+    </bean>
+    
     <!-- General purpose pooled data source -->
     <bean id="c3p0DataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
         <constructor-arg value="c3p0DataSource"/> <!-- Name used for identification only, does not affect configuration -->
