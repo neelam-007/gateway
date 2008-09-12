@@ -40,6 +40,10 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
     private static final long CACHE_ID_EXTRA_TIME_MILLIS = 1000L * 60 * 5; // cache IDs for at least 5 min extra
     private static final long DEFAULT_EXPIRY_TIME = 1000L * 60 * 10; // if no Expires, assume expiry after 10 min
 
+    private static final String ID_PREFIX_WSA_HASHED = "uuid:wsa:digest:";
+    private static final int MAX_WSA_MESSAGEID_HASHTHRESHOLD = SyspropUtil.getInteger("com.l7tech.server.messageIDHashThrehold" , 255); // 255 is the max we allow in the DB
+    private static final int MAX_WSA_MESSAGEID_MAXLENGTH = SyspropUtil.getInteger("com.l7tech.server.messageIDMaxLength" , 8192); // 8k limit
+
     private final Auditor auditor;
     private final MessageIdManager messageIdManager;
     private final SecurityTokenResolver securityTokenResolver;
@@ -151,8 +155,18 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
         }
 
         final String messageIdStr;
-        if (wsaMessageId != null) {
-            messageIdStr = wsaMessageId;
+        if ( wsaMessageId != null ) {
+            if ( wsaMessageId.length() > MAX_WSA_MESSAGEID_MAXLENGTH ) {
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_MESSAGE_ID_TOO_LARGE, Integer.toString(wsaMessageId.length()));
+                return AssertionStatus.BAD_REQUEST;
+            }
+
+            // hash if id is too large to store natively
+            if ( wsaMessageId.length() > MAX_WSA_MESSAGEID_HASHTHRESHOLD ) {
+                messageIdStr = ID_PREFIX_WSA_HASHED + HexUtils.encodeBase64( HexUtils.getSha512Digest( HexUtils.encodeUtf8(wsaMessageId) ), true );
+            } else {
+                messageIdStr = wsaMessageId;
+            }
         } else {
             try {
                 String senderId = getSenderId(wssResults.getSigningTokens(timestamp.asElement()), createdIsoString, null);
