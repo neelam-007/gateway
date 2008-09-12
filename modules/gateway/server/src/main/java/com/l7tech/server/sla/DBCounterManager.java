@@ -31,7 +31,7 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
     private final Logger logger = Logger.getLogger(DBCounterManager.class.getName());
 
     private Counter getLockedCounter(Connection conn, long counterId) throws SQLException {
-        PreparedStatement ps = conn.prepareStatement("SELECT cnt_sec, cnt_hr, cnt_day, cnt_mnt, last_update" +
+        PreparedStatement ps = conn.prepareStatement("SELECT cnt_sec, cnt_min, cnt_hr, cnt_day, cnt_mnt, last_update" +
                                                                  " FROM counters WHERE counterid=" + counterId +
                                                                  " FOR UPDATE");
         ResultSet rs = ps.executeQuery();
@@ -39,10 +39,11 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
         while (rs.next()) {
             output = new Counter();
             output.setCurrentSecondCounter(rs.getLong(1));
-            output.setCurrentHourCounter(rs.getLong(2));
-            output.setCurrentDayCounter(rs.getLong(3));
-            output.setCurrentMonthCounter(rs.getLong(4));
-            output.setLastUpdate(rs.getLong(5));
+            output.setCurrentMinuteCounter(rs.getLong(2));
+            output.setCurrentHourCounter(rs.getLong(3));
+            output.setCurrentDayCounter(rs.getLong(4));
+            output.setCurrentMonthCounter(rs.getLong(5));
+            output.setLastUpdate(rs.getLong(6));
             break;
         }
         rs.close();
@@ -52,15 +53,16 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
 
     private void recordNewCounterValue(Connection conn, long counterId, Counter newValues) throws SQLException {
         PreparedStatement ps = conn.prepareStatement("UPDATE counters " +
-                                                     "SET cnt_sec=?, cnt_hr=?, cnt_day=?, cnt_mnt=?, last_update=? " +
+                                                     "SET cnt_sec=?, cnt_min=?, cnt_hr=?, cnt_day=?, cnt_mnt=?, last_update=? " +
                                                      "WHERE counterid=?");
         ps.clearParameters();
         ps.setLong(1, newValues.getCurrentSecondCounter());
-        ps.setLong(2, newValues.getCurrentHourCounter());
-        ps.setLong(3, newValues.getCurrentDayCounter());
-        ps.setLong(4, newValues.getCurrentMonthCounter());
-        ps.setLong(5, newValues.getLastUpdate());
-        ps.setLong(6, counterId);
+        ps.setLong(2, newValues.getCurrentMinuteCounter());
+        ps.setLong(3, newValues.getCurrentHourCounter());
+        ps.setLong(4, newValues.getCurrentDayCounter());
+        ps.setLong(5, newValues.getCurrentMonthCounter());
+        ps.setLong(6, newValues.getLastUpdate());
+        ps.setLong(7, counterId);
         ps.executeUpdate();
         ps.close();
     }
@@ -74,6 +76,7 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
                 try {
                     Object output = null;
                     Connection conn = session.connection();
+                    conn.setAutoCommit(false);
                     Counter dbcnt = getLockedCounter(conn, counterId);
                     if (dbcnt == null) {
                         throw new RuntimeException("the counter could not be fetched from db table"); // not supposed to happen
@@ -86,6 +89,11 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
                     switch (fieldOfInterest) {
                         case ThroughputQuota.PER_SECOND:
                             if (dbcnt.getCurrentSecondCounter() > limit) {
+                                limitViolated = true;
+                            }
+                            break;
+                        case ThroughputQuota.PER_MINUTE:
+                            if (dbcnt.getCurrentMinuteCounter() > limit) {
                                 limitViolated = true;
                             }
                             break;
@@ -119,16 +127,19 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
                         // return the fieldOfInterest
                         switch (fieldOfInterest) {
                             case ThroughputQuota.PER_SECOND:
-                                output = new Long(dbcnt.getCurrentSecondCounter());
+                                output = dbcnt.getCurrentSecondCounter();
+                                break;
+                            case ThroughputQuota.PER_MINUTE:
+                                output = dbcnt.getCurrentMinuteCounter();
                                 break;
                             case ThroughputQuota.PER_HOUR:
-                                output = new Long(dbcnt.getCurrentHourCounter());
+                                output = dbcnt.getCurrentHourCounter();
                                 break;
                             case ThroughputQuota.PER_DAY:
-                                output = new Long(dbcnt.getCurrentDayCounter());
+                                output = dbcnt.getCurrentDayCounter();
                                 break;
                             case ThroughputQuota.PER_MONTH:
-                                output = new Long(dbcnt.getCurrentMonthCounter());
+                                output = dbcnt.getCurrentMonthCounter();
                                 break;
                         }
                     }
@@ -144,7 +155,7 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
         });
 
         if (result instanceof Long) {
-            return ((Long)result).longValue();
+            return (Long) result;
         } else if (result instanceof LimitAlreadyReachedException) {
             throw (LimitAlreadyReachedException)result;
         }
@@ -158,6 +169,7 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
                 try {
                     Object output = null;
                     Connection conn = session.connection();
+                    conn.setAutoCommit(false);
                     Counter dbcnt = getLockedCounter(conn, counterId);
                     if (dbcnt == null) {
                         throw new RuntimeException("the counter could not be fetched from db table"); // not supposed to happen
@@ -172,16 +184,19 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
                     // return the fieldOfInterest
                     switch (fieldOfInterest) {
                         case ThroughputQuota.PER_SECOND:
-                            output = new Long(dbcnt.getCurrentSecondCounter());
+                            output = dbcnt.getCurrentSecondCounter();
+                            break;
+                        case ThroughputQuota.PER_MINUTE:
+                            output = dbcnt.getCurrentMinuteCounter();
                             break;
                         case ThroughputQuota.PER_HOUR:
-                            output = new Long(dbcnt.getCurrentHourCounter());
+                            output = dbcnt.getCurrentHourCounter();
                             break;
                         case ThroughputQuota.PER_DAY:
-                            output = new Long(dbcnt.getCurrentDayCounter());
+                            output = dbcnt.getCurrentDayCounter();
                             break;
                         case ThroughputQuota.PER_MONTH:
-                            output = new Long(dbcnt.getCurrentMonthCounter());
+                            output = dbcnt.getCurrentMonthCounter();
                             break;
                     }
 
@@ -197,7 +212,7 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
         });
 
         if (result instanceof Long) {
-            return ((Long)result).longValue();
+            return (Long) result;
         }
 
         throw new RuntimeException("unexpected result type " + result);
@@ -212,6 +227,9 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
                         case ThroughputQuota.PER_SECOND:
                             fieldstr = "cnt_sec";
                             break;
+                        case ThroughputQuota.PER_MINUTE:
+                            fieldstr = "cnt_min";
+                            break;
                         case ThroughputQuota.PER_HOUR:
                             fieldstr = "cnt_hr";
                             break;
@@ -224,6 +242,7 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
                     }
 
                     Connection conn = session.connection();
+                    conn.setAutoCommit(false);
                     PreparedStatement ps = conn.prepareStatement("SELECT " + fieldstr +
                                                                  " FROM counters WHERE counterid=" + counterId);
                     ResultSet rs = ps.executeQuery();
@@ -239,7 +258,7 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
                     if (desiredval < 0) {
                         return null;
                     }
-                    return new Long(desiredval);
+                    return desiredval;
                 } catch (SQLException e) {
                     logger.log(Level.SEVERE, "SQLException getting counter from db", e);
                     throw new RuntimeException(e);
@@ -253,7 +272,7 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
             throw new RuntimeException("could not find value in db (?)"); // should not happen
         }
         if (result instanceof Long) {
-            return ((Long)result).longValue();
+            return (Long) result;
         }
         throw new RuntimeException("unexpected result type " + result);
     }
@@ -263,12 +282,14 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
             public Object doInHibernate(Session session) {
                 try {
                     Connection conn = session.connection();
+                    conn.setAutoCommit(false);
                     Counter dbcnt = getLockedCounter(conn, counterId);
                     if (dbcnt == null) {
                         throw new RuntimeException("the counter could not be fetched from db table"); // not supposed to happen
                     }
 
                     dbcnt.setCurrentSecondCounter(dbcnt.getCurrentSecondCounter()-1);
+                    dbcnt.setCurrentMinuteCounter(dbcnt.getCurrentMinuteCounter()-1);
                     dbcnt.setCurrentHourCounter(dbcnt.getCurrentHourCounter()-1);
                     dbcnt.setCurrentDayCounter(dbcnt.getCurrentDayCounter()-1);
                     dbcnt.setCurrentMonthCounter(dbcnt.getCurrentMonthCounter()-1);
@@ -303,24 +324,33 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
                 cntr.setCurrentDayCounter(cntr.getCurrentDayCounter()+1);
                 if (inSameHour(last, now)) {
                     cntr.setCurrentHourCounter(cntr.getCurrentHourCounter()+1);
-                    if (inSameSecond(last, now)) {
-                        cntr.setCurrentSecondCounter(cntr.getCurrentSecondCounter()+1);
+                    if (inSameMinute(last, now)) {
+                        cntr.setCurrentMinuteCounter(cntr.getCurrentMinuteCounter()+1);
+                        if (inSameSecond(last, now)) {
+                            cntr.setCurrentSecondCounter(cntr.getCurrentSecondCounter()+1);
+                        } else {
+                            cntr.setCurrentSecondCounter(1);
+                        }
                     } else {
+                        cntr.setCurrentMinuteCounter(1);
                         cntr.setCurrentSecondCounter(1);
                     }
                 } else {
                     cntr.setCurrentHourCounter(1);
+                    cntr.setCurrentMinuteCounter(1);
                     cntr.setCurrentSecondCounter(1);
                 }
             } else {
                 cntr.setCurrentDayCounter(1);
                 cntr.setCurrentHourCounter(1);
+                cntr.setCurrentMinuteCounter(1);
                 cntr.setCurrentSecondCounter(1);
             }
         } else {
             cntr.setCurrentMonthCounter(1);
             cntr.setCurrentDayCounter(1);
             cntr.setCurrentHourCounter(1);
+            cntr.setCurrentMinuteCounter(1);
             cntr.setCurrentSecondCounter(1);
         }
         cntr.setLastUpdate(timestamp);
@@ -345,6 +375,16 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
 
     private boolean inSameHour(Calendar last, Calendar now) {
         if (last.get(Calendar.HOUR_OF_DAY) != now.get(Calendar.HOUR_OF_DAY)) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean inSameMinute(Calendar last, Calendar now) {
+        if (last.get(Calendar.HOUR_OF_DAY) != now.get(Calendar.HOUR_OF_DAY)) {
+            return false;
+        }
+        if (last.get(Calendar.MINUTE) != now.get(Calendar.MINUTE)) {
             return false;
         }
         return true;

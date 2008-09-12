@@ -34,10 +34,11 @@ public class ThroughputQuotaTreeNode extends LeafAssertionTreeNode<ThroughputQuo
 
     private String timeUnitStr(int timeUnit) {
         switch (timeUnit) {
-            case ThroughputQuota.PER_DAY: return "day";
-            case ThroughputQuota.PER_HOUR: return "hour";
-            case ThroughputQuota.PER_MONTH: return "month";
             case ThroughputQuota.PER_SECOND: return "second";
+            case ThroughputQuota.PER_MINUTE: return "minute";
+            case ThroughputQuota.PER_HOUR: return "hour";
+            case ThroughputQuota.PER_DAY: return "day";
+            case ThroughputQuota.PER_MONTH: return "month";
             default: return "something";
         }
     }

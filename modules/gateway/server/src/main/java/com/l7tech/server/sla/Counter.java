@@ -18,6 +18,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 public class Counter {
     private long lastUpdate;
     private long currentSecondCounter;
+    private long currentMinuteCounter;
     private long currentHourCounter;
     private long currentDayCounter;
     private long currentMonthCounter;
@@ -32,6 +33,7 @@ public class Counter {
     public void copyFrom(Counter other) {
         this.lastUpdate = other.lastUpdate;
         this.currentSecondCounter = other.currentSecondCounter;
+        this.currentMinuteCounter = other.currentMinuteCounter;
         this.currentHourCounter = other.currentHourCounter;
         this.currentDayCounter = other.currentDayCounter;
         this.currentMonthCounter = other.currentMonthCounter;
@@ -51,6 +53,14 @@ public class Counter {
 
     public void setCurrentSecondCounter(long currentSecondCounter) {
         this.currentSecondCounter = currentSecondCounter;
+    }
+
+    public long getCurrentMinuteCounter() {
+        return currentMinuteCounter;
+    }
+
+    public void setCurrentMinuteCounter(long currentMinuteCounter) {
+        this.currentMinuteCounter = currentMinuteCounter;
     }
 
     public long getCurrentHourCounter() {
@@ -80,6 +90,7 @@ public class Counter {
     public String toString() {
         return "com.l7tech.server.sla.Counter" +
                     " this sec:" + currentSecondCounter +
+                    " this min:" + currentMinuteCounter +
                     " this hr:" + currentHourCounter +
                     " this day:" + currentDayCounter +
                     " this month:" + currentMonthCounter;

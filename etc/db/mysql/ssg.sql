@@ -609,6 +609,7 @@ CREATE TABLE counters (
   providerid bigint(20) NOT NULL,
   countername varchar(128) NOT NULL,
   cnt_sec bigint(20) default 0,
+  cnt_min bigint(20) default 0,
   cnt_hr bigint(20) default 0,
   cnt_day bigint(20) default 0,
   cnt_mnt bigint(20) default 0,

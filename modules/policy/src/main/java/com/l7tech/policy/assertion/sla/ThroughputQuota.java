@@ -25,9 +25,10 @@ import com.l7tech.policy.variable.Syntax;
 public class ThroughputQuota extends Assertion implements UsesVariables, SetsVariables {
     public static final int TIME_UNIT_UNDEFINED = 0;
     public static final int PER_SECOND = 1;
-    public static final int PER_HOUR = 2;
-    public static final int PER_DAY = 3;
-    public static final int PER_MONTH = 4;
+    public static final int PER_MINUTE = 2;
+    public static final int PER_HOUR = 3;
+    public static final int PER_DAY = 4;
+    public static final int PER_MONTH = 5;
     public static final String DEFAULT_VAR_PREFIX = "counter";
     public static final String VAR_SUFFIX_ID = "id";
     public static final String VAR_SUFFIX_VALUE = "value";
@@ -143,7 +144,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
 
     /**
      * The time unit applicable to the quota.
-     * @return TIME_UNIT_UNDEFINED, PER_SECOND, PER_HOUR, PER_DAY or PER_MONTH
+     * @return TIME_UNIT_UNDEFINED, PER_SECOND, PER_MINUTE, PER_HOUR, PER_DAY or PER_MONTH
      */
     public int getTimeUnit() {
         return timeUnit;
@@ -151,7 +152,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
 
     /**
      * The time unit applicable to the quota.
-     * @param timeUnit TIME_UNIT_UNDEFINED, PER_SECOND, PER_HOUR, PER_DAY or PER_MONTH
+     * @param timeUnit TIME_UNIT_UNDEFINED, PER_SECOND, PER_MINUTE, PER_HOUR, PER_DAY or PER_MONTH
      */
     public void setTimeUnit(int timeUnit) {
         this.timeUnit = timeUnit;

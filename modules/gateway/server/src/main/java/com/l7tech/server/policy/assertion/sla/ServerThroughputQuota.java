@@ -34,7 +34,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
     private ApplicationContext  applicationContext;
-    private final String[] TIME_UNITS = {"second", "hour", "day", "month"};
+    private final String[] TIME_UNITS = {"second", "minute", "hour", "day", "month"};
     private final String[] varsUsed;
     private final String idVariable;
     private final String valueVariable;

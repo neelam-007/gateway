@@ -138,6 +138,10 @@ CREATE TABLE policy_alias (
   FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+---
+--- Now Throughput Quota Assertion allows a max value per minute.
+---
+ALTER TABLE counters ADD COLUMN cnt_min bigint(20) default 0;
 
 --
 -- Reenable FK at very end of script

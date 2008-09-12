@@ -44,7 +44,7 @@ public class ThroughputQuotaForm extends JDialog {
     private JRadioButton perRequestorRadio;
     private JRadioButton globalRadio;
 
-    private static final String[] TIME_UNITS = {"second", "hour", "day", "month"};
+    private static final String[] TIME_UNITS = {"second", "minute", "hour", "day", "month"};
     private static final ArrayList counterNameInSessionOnly = new ArrayList();
 
     private ThroughputQuota subject;
