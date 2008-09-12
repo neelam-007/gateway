@@ -127,12 +127,6 @@ public abstract class PropertyDialog extends JDialog {
                     PropertyDialog.this.dispose();
                 }
             });
-            // TODO we probably shouldn't disable Ok buttons ever.  But we can't remove this until we add code
-            // to switch to the tab that contains the problematic component whenever a validation rule fails
-            // and the error message is displayed.  Disabling the button on invalid keeps the error dialog
-            // from ever being displayed in the first place, albeit at the cost of concealing the reason why
-            // button is disabled. :/
-            validator.disableButtonWhenInvalid(okButton);
         }
         return okButton;
     }

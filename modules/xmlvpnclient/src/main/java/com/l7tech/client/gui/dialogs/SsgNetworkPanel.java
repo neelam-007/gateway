@@ -6,30 +6,30 @@
 package com.l7tech.client.gui.dialogs;
 
 import com.intellij.uiDesigner.core.GridConstraints;
+import com.l7tech.gui.FilterDocument;
 import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.ContextMenuTextField;
 import com.l7tech.gui.widgets.IpListPanel;
-import com.l7tech.gui.widgets.WrappingLabel;
 import com.l7tech.gui.widgets.SquigglyTextField;
-import com.l7tech.gui.FilterDocument;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.gui.widgets.WrappingLabel;
+import com.l7tech.proxy.Constants;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
-import com.l7tech.proxy.Constants;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
-import java.util.regex.Pattern;
+import java.awt.event.KeyEvent;
 import java.util.Collection;
+import java.util.regex.Pattern;
 
 /**
  * The Network panel for the SSG Property Dialog.
@@ -163,19 +163,45 @@ class SsgNetworkPanel extends JPanel {
 
                 if (ret == null) {
                     // Check for duplicate label
-                    //noinspection unchecked
-                    Collection<Ssg> ssgs = ssgFinder.getSsgList();
-                    for (Ssg thatSsg : ssgs) {
-                        if ((!ssg.equals(thatSsg)) && text.equals(thatSsg.getLocalEndpoint())) {
-                            ret = "Custom label is duplicate of label for Gateway Account \"" + thatSsg + "\"";
-                            break;
-                        }
-                    }
+                    ret = checkForDuplicateLabel(text);
                 }
 
                 return ret;
             }
         });
+
+        validator.addRule(new InputValidator.ComponentValidationRule(customLabelCb) {
+            public String getValidationError() {
+                String ret = checkForDuplicateLabel(defaultEndpoint);
+                if (ret == null) {
+                    // No problem
+                    return null;
+                }
+                if (customLabelCb.isSelected()) {
+                    // Let the custom label validator deal with it
+                    return null;
+                }
+
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        if (!customLabelCb.isSelected()) {
+                            customLabelCb.setSelected(true);
+                            customLabelField.setEnabled(true);
+                            customLabelField.setEditable(true);
+                            if (customLabelField.getText().trim().length() < 1) {
+                                customLabelField.setText(defaultEndpoint);
+                                customLabelField.selectAll();
+                            }
+                            fieldLocalEndpoint.setText(getLocalEndpointUrl());
+                            fieldWsdlEndpoint.setText(getLocalEndpointUrl() + wsdlEndpointSuffix);
+                        }
+                    }
+                });
+
+                return ret + "\nPlease enter a unique label.";
+            }
+        });
+
         customLabelField.addKeyListener(new KeyAdapter() {
             public void keyTyped(KeyEvent e) {
                 if (e.getKeyChar() == ' ')
@@ -263,6 +289,17 @@ class SsgNetworkPanel extends JPanel {
 
 
         updateCustomPortsEnableState();
+    }
+
+    private String checkForDuplicateLabel(String text) {
+        if (text == null) return null;
+        Collection<Ssg> ssgs = ssgFinder.getSsgList();
+        for (Ssg thatSsg : ssgs) {
+            if ((!ssg.equals(thatSsg)) && text.equals(thatSsg.getLocalEndpoint())) {
+                return "Label is duplicate of label for Gateway Account \"" + thatSsg + "\"";
+            }
+        }
+        return null;
     }
 
     private static void hideDeselectAndDisable(JComponent... comps) {
