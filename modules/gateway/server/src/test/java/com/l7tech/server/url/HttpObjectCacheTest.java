@@ -7,36 +7,31 @@ package com.l7tech.server.url;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.util.TestTimeSource;
+import com.l7tech.security.MockGenericHttpClient;
 import static com.l7tech.server.url.AbstractUrlObjectCache.WAIT_LATEST;
 import static com.l7tech.server.url.AbstractUrlObjectCache.WAIT_NEVER;
-import com.l7tech.security.MockGenericHttpClient;
-
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.logging.Logger;
 
 /**
  * Simple tests for HttpObjectCache.
  */
-public class HttpObjectCacheTest extends TestCase {
+public class HttpObjectCacheTest {
     private static Logger log = Logger.getLogger(HttpObjectCacheTest.class.getName());
 
     private static final long TEST_POLL_AGE = 500; // in ms
     private static final long SHORT_DELAY = TEST_POLL_AGE / 5; // sleep that should give things time to happen, but avoid triggering poll_age
     private static final long POLL_DELAY = TEST_POLL_AGE * 2; // sleep that should cause POLL_AGE to expire
 
-    public HttpObjectCacheTest(String name) {
-        super(name);
-    }
+    private TestTimeSource clock = new TestTimeSource();
 
-    public static Test suite() {
-        return new TestSuite(HttpObjectCacheTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
+    @Before
+    public void setUp() throws Exception {
+        clock = new TestTimeSource();
     }
 
     private static class UserObj {
@@ -60,6 +55,7 @@ public class HttpObjectCacheTest extends TestCase {
         }
     }
 
+    @Test
     public void testSingleThreaded() throws Exception {
         final String userObjStr = "Howza!";
         final UserObj userObj = new UserObj(userObjStr);
@@ -88,6 +84,7 @@ public class HttpObjectCacheTest extends TestCase {
         // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
         HttpObjectCache<UserObj> httpObjectCache =
                 new HttpObjectCache<UserObj>(500, TEST_POLL_AGE, clientFactory, factory, WAIT_NEVER);
+        httpObjectCache.clock = clock;
 
         final String url = "http://blat/";
 
@@ -113,7 +110,7 @@ public class HttpObjectCacheTest extends TestCase {
         assertTrue(result.getUserObject() == firstUo);
 
         // Wait long enough to trigger a poll, then try a third request, and ensure that if-modified-since worked.
-        Thread.sleep(POLL_DELAY);
+        clock.sleep(POLL_DELAY, 0);
         hc.setResponseStatus(HttpConstants.STATUS_NOT_MODIFIED);
         result = httpObjectCache.fetchCached(url, WAIT_LATEST);
         assertTrue(hc.getResponseCount() == 2);
@@ -131,7 +128,7 @@ public class HttpObjectCacheTest extends TestCase {
         assertTrue(result.getUserObject() == firstUo); // must not have replaced the object
 
         // Wait long enough to trigger another poll, then try a fifth request, which should do a new download
-        Thread.sleep(POLL_DELAY);
+        clock.sleep(POLL_DELAY, 0);
         hc.setResponseStatus(200);
         result = httpObjectCache.fetchCached(url, WAIT_LATEST);
         assertTrue(hc.getResponseCount() == 3);
@@ -168,6 +165,7 @@ public class HttpObjectCacheTest extends TestCase {
         /**
          * Start a test request issuing in a newly-created thread.   Must call in main thread.
          * Does not return until test thread has started running.
+         * @throws InterruptedException if thread interrupted
          */
         public synchronized void startRequest() throws InterruptedException {
             started = running = false;
@@ -190,10 +188,11 @@ public class HttpObjectCacheTest extends TestCase {
                 log.info("Thread " + Thread.currentThread().getName() + " entering fetchCached()");
                 HttpObjectCache.FetchResult result =
                         httpObjectCache.fetchCached(url, waitForNewestResult);
-                log.info("Thread " + Thread.currentThread().getName() + " leaving fetchCached()");
+                int result1 = result.getResult();
+                log.info("Thread " + Thread.currentThread().getName() + " leaving fetchCached() with result=" + result1);
 
                 synchronized (this) {
-                    numRequestsFinished[result.getResult()]++;
+                    numRequestsFinished[result1]++;
                     lastFetchResult = result;
                     lastException = null;
                     running = false;
@@ -214,8 +213,7 @@ public class HttpObjectCacheTest extends TestCase {
             synchronized (this) {
                 t = thread;
             }
-            if (t != null)
-                t.join();
+            t.join();
         }
 
         public void close() {
@@ -262,6 +260,7 @@ public class HttpObjectCacheTest extends TestCase {
         }
     }
 
+    @Test
     public void testMultiThreaded() throws Exception {
 
         final String userObjStr = "Howza!";
@@ -295,7 +294,7 @@ public class HttpObjectCacheTest extends TestCase {
         // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
         HttpObjectCache<UserObj> httpObjectCache =
                 new HttpObjectCache<UserObj>(500, TEST_POLL_AGE, clientFactory, factory, WAIT_NEVER);
-
+        httpObjectCache.clock = clock;
 
         // Make two test threads
         TestThread t1 = new TestThread(httpObjectCache, url, WAIT_NEVER);
@@ -317,7 +316,8 @@ public class HttpObjectCacheTest extends TestCase {
 
         // Thread 1 should begin downloading the URL
         t1.startRequest();
-        Thread.sleep(SHORT_DELAY);
+        Thread.sleep(POLL_DELAY); // this is to give the thread plenty of time to start
+        clock.sleep(SHORT_DELAY, 0);  // this is to simulate time actually advancing by a smaller amount
         assertNull(t1.getLastException());
         assertTrue(t1.getNumRequestsStarted() == 1);
         assertTrue(t1.isWaiting());
@@ -340,7 +340,8 @@ public class HttpObjectCacheTest extends TestCase {
         // Now tell thread 2 to wait for complete info
         t2.setWaitForNewestResult(WAIT_LATEST);
         t2.startRequest();
-        Thread.sleep(SHORT_DELAY);
+        Thread.sleep(POLL_DELAY); // this is to give the thread plenty of time to start
+        clock.sleep(SHORT_DELAY, 0);  // this is to simulate time actually advancing by a smaller amount
         assertNull(t2.getLastException());
         assertTrue(t2.getNumRequestsStarted() == 2);
         assertTrue(t2.isWaiting());
@@ -355,10 +356,10 @@ public class HttpObjectCacheTest extends TestCase {
         assertNull(t2.getLastException());
         assertFalse(t1.isWaiting());
         assertFalse(t2.isWaiting());
-        assertTrue(t1.getNumRequestsFinished() == 1);
-        assertTrue(t1.getNumRequestsSuccess() == 1);
-        assertTrue(t2.getNumRequestsFinished() == 2);
-        assertTrue(t2.getNumRequestsSuccess() == 1);
+        assertEquals(1, t1.getNumRequestsFinished());
+        assertEquals(1, t1.getNumRequestsSuccess());
+        assertEquals(2, t2.getNumRequestsFinished());
+        assertEquals(1, t2.getNumRequestsSuccess());
         assertTrue(t2.getNumRequestsAsync() == 1);
         HttpObjectCache.FetchResult t1fr = t1.getLastFetchResult();
         assertNotNull(t1fr);

@@ -4,6 +4,7 @@
 package com.l7tech.server.url;
 
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.TimeSource;
 import com.l7tech.common.mime.ContentTypeHeader;
 
 import java.io.IOException;
@@ -46,6 +47,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
     public static final WaitMode WAIT_LATEST = new WaitMode();
 
     // -- Instance fields --
+    protected TimeSource clock = new TimeSource();
     protected final long maxCacheAge;
     protected final WaitMode defaultWaitMode;
 
@@ -169,7 +171,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
                     // Prevent deadlock due to recursive fetch of same URL on the same thread
                     entry = newCacheEntry();
                     entry.exception = new IOException("Recursive or circular fetch of URL: " + urlStr);
-                    entry.exceptionCreated = System.currentTimeMillis();
+                    entry.exceptionCreated = clock.currentTimeMillis();
                     return new FetchResult<UT>(500, entry);
                 }
             }
@@ -304,7 +306,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
             // Don't have anything yet; must poll
             return true;
         }
-        long now = System.currentTimeMillis();
+        long now = clock.currentTimeMillis();
         final boolean staleOrMissingUserObject = (!haveObject) || (now - entry.userObjectCreated) >= maxCacheAge;
         final boolean staleOrMissingException = (!haveException) || (now - entry.exceptionCreated) >= maxCacheAge;
 
@@ -327,7 +329,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
     {
         // We are the only thread permitted to write to the cache entry, but we'll still need to synchronize writes
         // so readers will be guaranteed to pick them up.
-        long requestStart = System.currentTimeMillis();
+        long requestStart = clock.currentTimeMillis();
 
         boolean reported = false;
         try {
@@ -389,7 +391,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
     private FetchResult<UT> doFailedDownload(AbstractCacheEntry<UT> entry, IOException exception) {
         synchronized (entry) {
             entry.exception = exception;
-            entry.exceptionCreated = System.currentTimeMillis();
+            entry.exceptionCreated = clock.currentTimeMillis();
             entry.downloadingThread = 0;
             entry.notifyAll();
             return new FetchResult<UT>(RESULT_DOWNLOAD_FAILED, entry);
@@ -401,7 +403,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
         synchronized (entry) {
             if (entry.exception == null) {
                 entry.exception = new IOException("Unexpected internal error while attempting to download external resource: " + urlStr);
-                entry.exceptionCreated = System.currentTimeMillis();
+                entry.exceptionCreated = clock.currentTimeMillis();
             }
             entry.downloadingThread = 0;
             entry.notifyAll();
