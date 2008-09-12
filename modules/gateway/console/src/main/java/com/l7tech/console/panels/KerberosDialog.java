@@ -76,6 +76,7 @@ public class KerberosDialog extends JDialog {
     private void init() {
         setTitle("Kerberos Configuration");
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        Utilities.setEscKeyStrokeDisposes(this);
         Utilities.setAlwaysOnTop(this, true);
         setResizable(false);
         add(mainPanel);
