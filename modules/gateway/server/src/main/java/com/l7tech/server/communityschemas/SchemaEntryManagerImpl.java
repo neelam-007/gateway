@@ -330,7 +330,7 @@ public class SchemaEntryManagerImpl
 
     @Override
     protected UniqueType getUniqueType() {
-        return UniqueType.NONE;
+        return UniqueType.NAME;
     }
 
     private static final String TABLE_NAME = "community_schemas";

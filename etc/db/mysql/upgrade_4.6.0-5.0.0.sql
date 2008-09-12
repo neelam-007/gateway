@@ -147,3 +147,8 @@ ALTER TABLE counters ADD COLUMN cnt_min bigint(20) default 0;
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;
+
+--
+-- Global schemas names must be unique
+--
+ALTER TABLE community_schemas ADD CONSTRAINT UNIQUE KEY csnm_idx (name);
