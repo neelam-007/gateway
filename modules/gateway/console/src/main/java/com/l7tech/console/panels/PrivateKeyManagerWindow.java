@@ -592,7 +592,9 @@ public class PrivateKeyManagerWindow extends JDialog {
      */
     private void enableOrDisableButtons() {
         KeyTableRow row = getSelectedObject();
-        propertiesButton.setEnabled(row != null && activeKeypairJob == null);
+        boolean certSelected = row != null && activeKeypairJob == null;
+        propertiesButton.setEnabled(certSelected);
+        signCsrButton.setEnabled(certSelected);
     }
 
     /**
