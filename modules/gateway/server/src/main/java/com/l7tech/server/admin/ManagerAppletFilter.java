@@ -258,6 +258,16 @@ public class ManagerAppletFilter implements Filter {
             return AuthResult.OK;
         }
 
+        // clear cookie and return to filter
+        if ( hreq.getParameter("logout") != null ) {
+            Cookie sessionCookie = new Cookie(ManagerAppletFilter.SESSION_ID_COOKIE_NAME, "");
+            sessionCookie.setSecure(true);
+            sessionCookie.setMaxAge(0);
+            hresp.addCookie(sessionCookie);
+            hresp.sendRedirect(hreq.getRequestURI());
+            return AuthResult.CHALLENGED;
+        }
+
         // Check for provided session ID and, if its valid and arrived over SSL, bypass authentication
         Cookie[] cookies = hreq.getCookies();
         if (cookies != null) for (Cookie cookie : cookies) {

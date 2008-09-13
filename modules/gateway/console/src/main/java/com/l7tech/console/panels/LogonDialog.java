@@ -43,11 +43,6 @@ import java.util.logging.Logger;
 public class LogonDialog extends JDialog {
     private static final Logger log = Logger.getLogger(LogonDialog.class.getName());
 
-    /** Preconfigured credentials for applet. */
-    private static String preconfiguredGatewayHostname;
-    private static String preconfiguredSessionId;
-    private static String previousSessionId;
-
     /* the PasswordAuthentication instance with user supplied credentials */
     private PasswordAuthentication authenticationCredentials = null;
 
@@ -75,8 +70,6 @@ public class LogonDialog extends JDialog {
 
 
     private JButton loginButton = null;
-
-    private JLabel serverLabel;
 
     /**
      * username text field
@@ -309,7 +302,7 @@ public class LogonDialog extends JDialog {
 
 
         //url label
-        serverLabel = new JLabel();
+        JLabel serverLabel = new JLabel();
         serverLabel.setDisplayedMnemonic(resources.getString("serverField.mnemonic").charAt(0));
         serverLabel.setToolTipText(resources.getString("serverField.tooltip"));
         serverLabel.setText(resources.getString("serverField.label"));
@@ -346,8 +339,9 @@ public class LogonDialog extends JDialog {
             try{
                 serverUrlHistory.setMaxSize((new Integer(sMaxSize)));
             }catch(NumberFormatException nfe){
-                ;//Swallow - incorrectly set property
+                //Swallow - incorrectly set property
                 //don't need to set, it's has an internal default value
+                log.log( Level.FINE, "Ignoring invalid url history size ''{0}''.", sMaxSize);
             }
         }
 
@@ -495,11 +489,7 @@ public class LogonDialog extends JDialog {
                   public Object construct() {
                       try {
                           AuthenticationProvider authProv = securityProvider.getAuthenticationProvider();
-                          if (preconfiguredSessionId != null) {
-                                authProv.login(preconfiguredSessionId, sHost);
-                          } else {
-                                authProv.login(authenticationCredentials, sHost, !acceptedInvalidHosts.contains(sHost));
-                          }
+                          authProv.login(authenticationCredentials, sHost, !acceptedInvalidHosts.contains(sHost));
                       } catch (Throwable e) {
                           if (!progressDialog1.isCancelled()) {
                               memoException = e;
@@ -532,7 +522,7 @@ public class LogonDialog extends JDialog {
                           preferences.updateSystemProperties();
                           // invoke the listener
                           if (logonListener != null) {
-                              logonListener.onAuthSuccess(authenticationCredentials.getUserName(), sHost);
+                              logonListener.onAuthSuccess(authenticationCredentials.getUserName());
                           }
                       } else {
                           if (!progressDialog1.isCancelled()) {
@@ -565,27 +555,6 @@ public class LogonDialog extends JDialog {
                 if (progressDialog != null) progressDialog.dispose();
             }
         }
-    }
-
-    /**
-     * Set a preconfigured Gateway hostname.  If one of these is specified, the Gateway drop-down will
-     * not be displayed on the logon form.  Used only by the Applet version of the Manager.
-     *
-     * @param gatewayHostname  the hostname to use, or null to display the drop-down.
-     */
-    public static void setPreconfiguredGatewayHostname(String gatewayHostname) {
-        preconfiguredGatewayHostname = gatewayHostname;
-    }
-
-    /**
-     * Set preconfigured session ID to use instead of popping up the logon dialog.  This will be cleared
-     * if there is a logon failure.  Used only by the Applet version of the manager.
-     *
-     * @param sessionId  the preconfigured session ID, or null to display the login dialog normally.
-     */
-    public static void setPreconfiguredSessionId(String sessionId) {
-        previousSessionId = preconfiguredSessionId;
-        preconfiguredSessionId = sessionId;
     }
 
     /**
@@ -624,18 +593,6 @@ public class LogonDialog extends JDialog {
      * Before displaying dialog, ensure that correct fields are selected.
      */
     public void setVisible(boolean visible) {
-        if (visible && preconfiguredGatewayHostname != null) {
-            serverComboBox.setSelectedItem(preconfiguredGatewayHostname);
-            serverComboBox.setEnabled(false);
-            serverComboBox.setVisible(false);
-            serverLabel.setVisible(false);
-            if (preconfiguredSessionId != null) {
-                // Skip the dialog and just try logging in
-                doLogon();
-                return;
-            }
-        }
-
         if(visible) {
             if (rememberUser) {
                 passwordField.requestFocus();
@@ -752,7 +709,6 @@ public class LogonDialog extends JDialog {
      * @param host  the host we were trying to connect to
      */
     private void handleLogonThrowable(Throwable e, String host) {
-        preconfiguredSessionId = null;
         Throwable cause = ExceptionUtils.unnestToRoot(e);
         if (cause instanceof VersionException) {
             VersionException versionex = (VersionException)cause;
@@ -820,48 +776,12 @@ public class LogonDialog extends JDialog {
          * invoked on successful authentication
          *
          * @param id the id of the authenticated user
-         * @param serverURL  the server URL we connected to
          */
-        void onAuthSuccess(String id, String serverURL);
+        void onAuthSuccess(String id);
 
         /**
          * invoked on authentication failure
          */
         void onAuthFailure();
-    }
-
-    public static boolean isSameApplet() {
-        return (preconfiguredSessionId != null) &&
-                (preconfiguredSessionId.equals(previousSessionId));
-    }
-
-    /**
-     * Check if the current session id is still valid or not.
-     * @return true if the session id is valid.
-     */
-    public static boolean isValidSessionID() {
-        if (preconfiguredSessionId == null) {
-            log.warning("Session ID not present.");
-            return false;
-        }
-
-        final SecurityProvider securityProvider = getCredentialManager();
-
-        AuthenticationProvider authProv = securityProvider.getAuthenticationProvider();
-        if (preconfiguredGatewayHostname != null) {
-            try {
-                authProv.login(preconfiguredSessionId, preconfiguredGatewayHostname);
-            } catch (LoginException e) {
-                return false;
-            } catch (VersionException e) {
-                log.warning("Login failed due to software version mismatch.");
-                return false;
-            }
-        } else {
-            log.warning("Session ID not valid due to missing hostname.");
-            return false;
-        }
-
-        return true;
     }
 }

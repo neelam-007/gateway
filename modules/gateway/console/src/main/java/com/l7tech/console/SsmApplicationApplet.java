@@ -22,8 +22,6 @@ public class SsmApplicationApplet extends SsmApplication {
     }
 
     public synchronized void run() {
-        // It's OK to call run() more than one time for an Applet, since it can get init() called multiple times
-        if (LogonDialog.isSameApplet()) return;
         mainWindow = new MainWindow(this);
         TopComponents.getInstance().registerComponent("mainWindow", mainWindow);
     }

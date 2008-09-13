@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.Authorizer;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
+import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gui.util.*;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
@@ -24,6 +25,7 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.security.PermissionRefreshListener;
 import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.security.AuthenticationProvider;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.tree.servicesAndPolicies.AlterFilterAction;
@@ -49,6 +51,7 @@ import javax.swing.text.html.StyleSheet;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
+import javax.security.auth.login.LoginException;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
@@ -805,19 +808,31 @@ public class MainWindow extends JFrame implements SheetHolder {
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/connect2.gif"));
         String aDesc = resapplication.getString("ConnectMenuItem.desc");
         connectAction =
-          new AbstractAction(atext, icon) {
+            new AbstractAction(atext, icon) {
               /**
                * Invoked when an action occurs.
                *
                * @param event the event that occured
                */
-              public void actionPerformed(ActionEvent event) {
-
-                  SwingUtilities.invokeLater(new Runnable() { public void run() {
-                      if (isApplet() && !LogonDialog.isValidSessionID()) { // due to click "Disconnect" or reload browser tabs
-                          AppletMain applet = (AppletMain)TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
-                          applet.redirectToServlet();
-                      } else {
+                public void actionPerformed(ActionEvent event) {
+                    SwingUtilities.invokeLater(new Runnable() { public void run() {
+                        if ( isApplet() ) {
+                            AppletMain applet = (AppletMain)TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
+                            String sessionId = applet.getSessionID();
+                            String host = applet.getHostAndPort();
+                            if ( sessionId == null || host == null ) {
+                                DialogDisplayer.showMessageDialog( TopComponents.getInstance().getTopParent(),
+                                        "Session Error",
+                                        "An error occurred connecting to the Gateway,\n please disconnect and try again.",
+                                        JOptionPane.ERROR_MESSAGE,
+                                        null,
+                                        null);
+                            } else if ( !applet.isValidSessionID( sessionId ) ||
+                                        !isValidSessionID( sessionId, host ) ) {
+                                applet.invalidateSessionID();
+                                applet.redirectToServlet();
+                            }
+                        } else {
                           LogonDialog.logon(TopComponents.getInstance().getTopParent(), logonListenr);
                       }
                   }});
@@ -825,6 +840,32 @@ public class MainWindow extends JFrame implements SheetHolder {
           };
         connectAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
         return connectAction;
+    }
+
+    /**
+     * Check if the current session id is still valid or not.
+     *
+     * @return true if the session id is valid.
+     */
+    public boolean isValidSessionID( final String sessionId, final String host ) {
+        boolean validId = false;
+
+        final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
+        final AuthenticationProvider authProv = securityProvider.getAuthenticationProvider();
+        try {
+            authProv.login( sessionId, host );
+            validId = true;
+        } catch ( LoginException e ) {
+            log.log( Level.FINE, "Login failed.",  ExceptionUtils.getDebugException(e) );
+        } catch ( VersionException ve ) {
+            log.log( Level.WARNING, "Login failed due to software version mismatch.", ExceptionUtils.getDebugException(ve) );
+        }
+
+        if ( validId ) {
+            logonListenr.onAuthSuccess( sessionId );
+        }
+
+        return validId;
     }
 
     /**
@@ -854,7 +895,11 @@ public class MainWindow extends JFrame implements SheetHolder {
 
                       SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
                       if (securityProvider != null) securityProvider.logoff();
-                      LogonDialog.setPreconfiguredSessionId(null);
+
+                      if ( isApplet() ) {
+                          AppletMain applet = (AppletMain)TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
+                          applet.invalidateSessionID();
+                      }
                   } catch (ActionVetoException e) {
                       // action vetoed
                   }
@@ -2622,8 +2667,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     LogonDialog.LogonListener logonListenr =
       new LogonDialog.LogonListener() {
           /* invoked on authentication success */
-          public void onAuthSuccess(String id, String serverURL) {
-              ssgURL = serverURL;
+          public void onAuthSuccess(String id) {
               connectionID = id;
               String statusMessage = connectionID;
               connectionContext = "";

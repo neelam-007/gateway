@@ -7,7 +7,6 @@ package com.l7tech.console;
 
 import com.l7tech.console.logging.CascadingErrorHandler;
 import com.l7tech.console.panels.AppletContentStolenPanel;
-import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.WsdlUtils;
 import com.l7tech.console.util.Registry;
@@ -46,12 +45,16 @@ public class AppletMain extends JApplet implements SheetHolder {
     /** Url we try to use for help topics if we aren't given an override as an applet param. */
     private static final String DEFAULT_HELP_ROOT_RELATIVE_URL = "/ssg/webadmin/help/_start.htm";
 
+    private static final String SESSION_ID_LOG_OFF = "LOGGED OFF";
+    private String otherSessionId;
+    private String sessionId;
+    private String hostAndPort;
+
     private static boolean errorHandlerInstalled = false;
     private static ApplicationContext applicationContext = null;
     private static SsmApplication application = null;
     private static JRootPane appletRootPane = null;
-    private static AppletMain currentRootPaneOwner = null;
-    private static WeakSet instances = new WeakSet();
+    private static final WeakSet instances = new WeakSet();
 
     private String helpRootUrl = DEFAULT_HELP_ROOT_RELATIVE_URL;
     private String helpTarget = "managerAppletHelp";
@@ -75,36 +78,46 @@ public class AppletMain extends JApplet implements SheetHolder {
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unable to set system look and feel: " + ExceptionUtils.getMessage(e), e);
         }
-        getApplication().run();
 
-        initMainWindowContent();
-        AppletMain oldRootPaneOwner = currentRootPaneOwner;
-        currentRootPaneOwner = this;
-        if (oldRootPaneOwner != null && oldRootPaneOwner != this) {
-            notifyContentPaneStolen();
+        SsmApplication application = getApplication();
+        synchronized( application ) {
+            // Get existing applet instance (if any)
+            AppletMain otherMain = (AppletMain) TopComponents.getInstance().getComponent( COMPONENT_NAME );
+
+            if ( appletRootPane == null ) {
+                application.run();
+                initMainWindowContent();
+            }
+
+            if ( otherMain != null && otherMain != this ) {
+                notifyContentPaneStolen();
+                otherSessionId = otherMain.getSessionID();
+            }
+
+            setRootPane(appletRootPane);
+            placeholderRootPane = null;
+
+            final Frame appletContainer = findAppletContainerFrame();
+            if (appletContainer != null) {
+                TopComponents.getInstance().unregisterComponent("topLevelParent");
+                TopComponents.getInstance().registerComponent("topLevelParent", appletContainer);
+            }
+
+            TopComponents.getInstance().unregisterComponent(COMPONENT_NAME);
+            TopComponents.getInstance().registerComponent(COMPONENT_NAME, AppletMain.this);
+
+            // Help DialogDisplayer find the right applet instance
+            DialogDisplayer.putDefaultSheetHolder(appletContainer, this);
+
+            getLayeredPane().updateUI();
+            validate();
+
+            initHelpKeyBinding();
+            initBrowserSaveErrorStrategy();
+            
+            // Install WSDL Factory that is safe for Applet use
+            Wsdl.setWSDLFactoryBuilder( WsdlUtils.getWSDLFactoryBuilder() );
         }
-        setRootPane(appletRootPane);
-        placeholderRootPane = null;
-
-        final Frame appletContainer = findAppletContainerFrame();
-        if (appletContainer != null) {
-            TopComponents.getInstance().unregisterComponent("topLevelParent");
-            TopComponents.getInstance().registerComponent("topLevelParent", appletContainer);
-        }
-
-        TopComponents.getInstance().unregisterComponent(COMPONENT_NAME);
-        TopComponents.getInstance().registerComponent(COMPONENT_NAME, AppletMain.this);
-
-        // Help DialogDisplayer find the right applet instance
-        DialogDisplayer.putDefaultSheetHolder(appletContainer, this);
-
-        getLayeredPane().updateUI();
-        validate();
-
-        initHelpKeyBinding();
-        initBrowserSaveErrorStrategy();
-        // Install WSDL Factory that is safe for Applet use
-        Wsdl.setWSDLFactoryBuilder( WsdlUtils.getWSDLFactoryBuilder() );
     }
 
     /**
@@ -163,21 +176,48 @@ public class AppletMain extends JApplet implements SheetHolder {
 
     public void start() {
         setFocusable(true);
-        if (! LogonDialog.isSameApplet()) {
-            getApplication().getMainWindow().disconnectFromGateway();
-            getApplication().getMainWindow().activateLogonDialog();
+        if ( otherSessionId == null || !otherSessionId.equals(sessionId) ) {
+            MainWindow mainWindow =  getApplication().getMainWindow();
+
+            // reconnect with the new session id, ensure that the session id
+            // is not invalidated when disconnecting the workspace
+            if ( mainWindow.isConnected() ) {
+                String sessionId = this.sessionId;
+                mainWindow.disconnectFromGateway();
+                this.sessionId = sessionId;
+            }
+
+            mainWindow.activateLogonDialog();
         }
     }
 
     public void redirectToServlet() {
         try {
             // In the url adding a time is for solving the problem in IE (since IE caches applet page).
-            URL url = new URL(getDocumentBase().toString() + "?" + System.currentTimeMillis());
+            URL url = new URL(new URL(getDocumentBase().toString()), "?logout=true&" + System.currentTimeMillis());
             getAppletContext().showDocument(url, "_self");
         } catch (MalformedURLException e) {
             DialogDisplayer.showMessageDialog(findAppletContainerFrame(), null,
                     "The SecureSpan Manager internal error: invalid servlet URL.  Please contact your administrator.", e);
         }
+    }
+
+    public boolean isValidSessionID( final String sessionID ) {
+        logger.info("Validating session id: " + sessionID);
+        return sessionID != null && !SESSION_ID_LOG_OFF.equals( sessionID );
+    }
+
+    public void invalidateSessionID() {
+        logger.info("Invalidating session id.");
+        sessionId = SESSION_ID_LOG_OFF;
+    }
+
+    public String getSessionID() {
+        return sessionId;        
+    }
+
+    public String getHostAndPort() {
+        return hostAndPort;
     }
 
     private ApplicationContext getApplicationContext() {
@@ -192,6 +232,7 @@ public class AppletMain extends JApplet implements SheetHolder {
         return application;
     }
 
+
     public void destroy() {
         instances.remove(this);
 
@@ -199,16 +240,15 @@ public class AppletMain extends JApplet implements SheetHolder {
         if (instances.isEmpty()) {
             getApplication().getMainWindow().getDisconnectAction().actionPerformed(null);
             getApplication().getMainWindow().unregisterComponents();
+            TopComponents.getInstance().unregisterComponent( COMPONENT_NAME );
             errorHandlerInstalled = false;
-            appletRootPane = null;
-            currentRootPaneOwner = null;
         }
     }
 
-    private static void notifyContentPaneStolen() {
+    private void notifyContentPaneStolen() {
         for (Object instance : instances) {
-            AppletMain applet = (AppletMain)instance;
-            if (applet != null && currentRootPaneOwner != applet) {
+            final AppletMain applet = (AppletMain) instance;
+            if (applet != null && this != applet) {
                 applet.replaceContentPaneWithPlaceholder();
             }
         }
@@ -219,9 +259,6 @@ public class AppletMain extends JApplet implements SheetHolder {
 
         placeholderRootPane = new JRootPane();
         setRootPane(placeholderRootPane);
-        setLayeredPane(getLayeredPane());
-        setJMenuBar(null);
-        setContentPane(getContentPane());
         getContentPane().add(new AppletContentStolenPanel(), BorderLayout.CENTER);
 
         Window window = SwingUtilities.getWindowAncestor(this);
@@ -246,31 +283,29 @@ public class AppletMain extends JApplet implements SheetHolder {
     }
 
     private void gatherAppletParameters() {
-        if (LogonDialog.isSameApplet()) return;
+        String hostname = getParameter("hostname");
+        if ( hostname != null && hostname.length() > 0 ) {
+            logger.info("Preconfigured server hostname '" + hostname + "'.");
+        } else {
+            URL codebase = getCodeBase();
+            if (codebase != null) {
+                hostname = codebase.getHost();
+            } else {
+                hostname = "";
+            }
+        }
 
         String port = getParameter("port");
-
         if (port == null || port.length() < 1) {
             URL codebase = getCodeBase();
             if (codebase != null) port = Integer.toString(codebase.getPort());
         }
-
-        String hostname = getParameter("hostname");
-
-        if (hostname == null || hostname.length() < 1) {
-            URL codebase = getCodeBase();
-            if (codebase != null) hostname = codebase.getHost();
+        if ( port != null && port.length() > 0 && isInt(port )) {
+            hostname = hostname.trim() + ":" + port;
         }
 
-        if (hostname != null && hostname.length() > 0) {
-            if (port != null && port.length() > 0 && isInt(port)) {
-                hostname = hostname.trim() + ":" + port;
-            }
-
-            LogonDialog.setPreconfiguredGatewayHostname(hostname);
-            helpTarget = "managerAppletHelp_" + hostname;
-            logger.info("Preconfigured server hostname: " + hostname);
-        }
+        this.hostAndPort = hostname;
+        this.helpTarget = "managerAppletHelp_" + hostname;
 
         String helpRootUrl = getParameter("helpRootUrl");
         if (helpRootUrl != null && helpRootUrl.trim().length() > 0) {
@@ -280,9 +315,9 @@ public class AppletMain extends JApplet implements SheetHolder {
             logger.info("Using default help root URL: " + this.helpRootUrl);
 
         String sessionId = getParameter("sessionId");
-        if (sessionId != null && sessionId.length() > 0) {
+        if ( sessionId != null && sessionId.length() > 0 ) {
             try {
-                LogonDialog.setPreconfiguredSessionId(URLDecoder.decode(sessionId, "UTF-8"));
+                this.sessionId = URLDecoder.decode(sessionId, "UTF-8");
             } catch (UnsupportedEncodingException e) {
                 logger.log(Level.WARNING, "Unable to decode preconfigured session ID: " + ExceptionUtils.getMessage(e), e);
             }
@@ -344,13 +379,17 @@ public class AppletMain extends JApplet implements SheetHolder {
         Runnable shutdownTask = new Runnable() {
             public void run() {
                 // Remove applet content
+                AppletMain otherMain = (AppletMain) TopComponents.getInstance().getComponent( COMPONENT_NAME );
                 getApplication().getMainWindow().disconnectFromGateway();
+
+                sessionId = null;
+                hostAndPort = null;
+
                 setRootPane(new JRootPane());
                 setGlassPane(getGlassPane());
                 setLayeredPane(getLayeredPane());
                 setContentPane(getContentPane());
-                setJMenuBar(null);
-                if (currentRootPaneOwner == AppletMain.this) {
+                if ( otherMain == AppletMain.this ) {
                     AppletMain.this.destroy();
                 }
 
