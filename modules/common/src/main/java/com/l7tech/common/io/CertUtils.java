@@ -40,6 +40,8 @@ public class CertUtils {
     public static final String PEM_DSAKEY_END_MARKER = "-----END DSA PRIVATE KEY-----";
     public static final String PEM_CRL_BEGIN_MARKER = "-----BEGIN X509 CRL-----";
     public static final String PEM_CRL_END_MARKER = "-----END X509 CRL-----";
+    private static final String PEM_CSR_BEGIN_MARKER = "-----BEGIN NEW CERTIFICATE REQUEST-----";
+    private static final String PEM_CSR_END_MARKER = "-----END NEW CERTIFICATE REQUEST-----";
 
     private static final Logger logger = Logger.getLogger(CertUtils.class.getName());
     private static final String PROPBASE = CertUtils.class.getName();
@@ -57,6 +59,10 @@ public class CertUtils {
     public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
     public static final String X509_OID_AUTHORITYKEYID = "2.5.29.35";
     public static final String X509_OID_AUTHORITY_INFORMATION_ACCESS = "1.3.6.1.5.5.7.1.1";
+
+    private static final String REGEX_BASE64 = "\\s*([a-zA-Z0-9+/\\s]+=*)\\s*";
+    private static final Pattern PATTERN_BASE64 = Pattern.compile(REGEX_BASE64);
+    private static final Pattern PATTERN_CRL = Pattern.compile(PEM_CSR_BEGIN_MARKER + REGEX_BASE64 + PEM_CSR_END_MARKER);
 
     public static boolean isCertCaCapable(X509Certificate cert) {
         if (cert == null) return false;
@@ -239,6 +245,31 @@ public class CertUtils {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e); // can't happen
         }
+    }
+
+    /**
+     * Convert a PEM CSR to binary (but without attempting to parse the ASN.1).
+     * The surrounding BEGIN and END markers are optional.
+     * If PEM decoding cannot be done, this method will return the original bytes unchanged.
+     *
+     * @param contents a base64 value with optional begin and end markers.  Required.
+     * @return the decoded binary for this CSR.
+     * @throws IOException if the base64 cannot be decoded.
+     */
+    public static byte[] csrPemToBinary(byte[] contents) throws IOException {
+        String str = new String(contents, "UTF-8").trim();
+        String b64 = null;
+        Matcher matcher = PATTERN_CRL.matcher(str);
+        if (matcher.find()) {
+            b64 = matcher.group(1);
+        } else {
+            matcher = PATTERN_BASE64.matcher(str);
+            if (matcher.matches())
+                b64 = matcher.group(1);
+        }
+        if (b64 == null)
+            throw new IOException("CSR does not appear to be PEM encoded");
+        return HexUtils.decodeBase64(b64, true);
     }
 
     /**

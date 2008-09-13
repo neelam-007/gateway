@@ -1,6 +1,7 @@
 package com.l7tech.server.identity.cert;
 
 import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.BadCredentialsException;
@@ -17,7 +18,6 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.transport.TransportModule;
-import com.l7tech.util.HexUtils;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -173,21 +173,12 @@ public class CSRHandler extends AuthenticatableHttpServlet {
     private byte[] readCSRFromRequest(HttpServletRequest request) throws IOException {
         // csr request might be based64 or not, we need to see what format we are getting
         byte[] contents = IOUtils.slurpStreamLocalBuffer(request.getInputStream());
-        String tmpStr = new String(contents);
-        String beginKey = "-----BEGIN NEW CERTIFICATE REQUEST-----";
-        int beggining = tmpStr.indexOf(beginKey);
-        // the contents is not base64ed and contains the actual bytes
-        if (beggining == -1) return contents;
-        // otherwise, we need to extract section and unbase64
-        beggining += beginKey.length();
-        String endKey = "-----END NEW CERTIFICATE REQUEST-----";
-        int end = tmpStr.indexOf(endKey);
-        if (end == -1) {
-            logger.log(Level.SEVERE, "Cannot read csr request (bad format?)");
-            return new byte[0];
+        try {
+            return CertUtils.csrPemToBinary(contents);
+        } catch (IOException e) {
+            // PEM decoding failed -- assume it was already binary
+            return contents;
         }
-        String b64str = tmpStr.substring(beggining, end);
-        return HexUtils.decodeBase64(b64str);
     }
 
     private RsaSignerEngine getSigner() throws SignatureException {
