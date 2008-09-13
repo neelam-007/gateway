@@ -5,6 +5,8 @@
     <bean id="httpInvokerParent" abstract="true">
         <property name="remoteInvocationExecutor">
             <bean class="com.l7tech.gateway.common.spring.remoting.http.SecureRemoteInvocationExecutor">
+                <constructor-arg value="ADMIN"/>
+                <constructor-arg value="com.l7tech.gateway.common.admin.Administrative"/>
                 <constructor-arg ref="remotingProvider"/>
             </bean>
         </property>

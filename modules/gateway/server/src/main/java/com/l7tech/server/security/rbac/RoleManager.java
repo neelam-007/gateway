@@ -114,4 +114,12 @@ public interface RoleManager extends EntityManager<Role, EntityHeader> {
                                                                 Iterable<T> headers,
                                                                 EntityFinder entityFinder)
             throws FindException;
+
+
+    /**
+     * Ensure that the assignment of a users to roles is acceptable.
+     *
+     * @throws UpdateException If there is not an acceptable role assignment.
+     */
+    void validateRoleAssignments() throws UpdateException;
 }

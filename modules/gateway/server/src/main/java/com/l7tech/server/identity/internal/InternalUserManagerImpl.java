@@ -1,7 +1,6 @@
 package com.l7tech.server.identity.internal;
 
 import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.gateway.common.security.rbac.RoleAssignment;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -10,10 +9,10 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.PersistentUserManagerImpl;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
 import java.util.logging.Logger;
 
 /**
@@ -31,9 +30,12 @@ public class InternalUserManagerImpl
         extends PersistentUserManagerImpl<InternalUser, InternalGroup, InternalUserManager, InternalGroupManager>
         implements InternalUserManager 
 {
+    private final RoleManager roleManager;
+
     public InternalUserManagerImpl(final RoleManager roleManager,
                                    final ClientCertManager clientCertManager) {
-        super(roleManager, clientCertManager);
+        super( clientCertManager );
+        this.roleManager = roleManager;
     }
 
     public void configure(InternalIdentityProvider provider) {
@@ -114,27 +116,12 @@ public class InternalUserManagerImpl
      *
      * @throws DeleteException if the proposed deletion would remove the last user assigned to the "Administrator" role.
      */
-    protected void preDelete(InternalUser user) throws DeleteException {
+    @Override
+    protected void postDelete( final InternalUser user ) throws DeleteException {
         try {
-            Collection<Role> roles = getAssignedRoles(user);
-            for (Role role : roles) {
-                if (role.getOid() == Role.ADMIN_ROLE_OID) {
-                    boolean anybodyElse = false;
-                    for (RoleAssignment assignment : role.getRoleAssignments()) {
-                        long assignedProvider = assignment.getProviderId();
-                        if (assignedProvider == identityProvider.getConfig().getOid()) {
-                            User existingUser = findByPrimaryKey(assignment.getIdentityId());
-                            if (existingUser == null) continue;
-                            if ((!user.getId().equals(assignment.getIdentityId()) || user.getProviderId() != assignment.getProviderId())) {
-                                anybodyElse = true;
-                            }
-                        }
-                    }
-                    if (!anybodyElse) throw new DeleteException(RoleManager.ADMIN_REQUIRED);
-                }
-            }
-        } catch (FindException e) {
-            throw new DeleteException("Couldn't find out if user is the last administrator", e);
+            roleManager.validateRoleAssignments();
+        } catch ( UpdateException ue ) {
+            throw new DeleteException( ExceptionUtils.getMessage(ue), ue );
         }
     }
 

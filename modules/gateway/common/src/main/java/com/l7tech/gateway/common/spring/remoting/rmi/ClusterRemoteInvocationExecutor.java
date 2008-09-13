@@ -8,6 +8,7 @@ import org.springframework.remoting.support.RemoteInvocationExecutor;
 
 import javax.security.auth.Subject;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.annotation.Annotation;
 
 /**
  * Cluster invoker.
@@ -20,15 +21,16 @@ import java.lang.reflect.InvocationTargetException;
  *
  * @author $Author$
  */
-public final class ClusterRemoteInvocationExecutor implements RemoteInvocationExecutor {
+public final class ClusterRemoteInvocationExecutor<T extends Annotation> implements RemoteInvocationExecutor {
 
     //- PUBLIC
 
     /**
      *
      */
-    public ClusterRemoteInvocationExecutor( final RemotingProvider remotingProvider ) {
-        this.remotingProvider = remotingProvider;
+    public ClusterRemoteInvocationExecutor( final String facility, final RemotingProvider<T> remotingProvider ) {
+        this.facility = facility;
+        this.remotingProvider = remotingProvider;                                     
     }
 
     /**
@@ -39,7 +41,7 @@ public final class ClusterRemoteInvocationExecutor implements RemoteInvocationEx
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
         // Enforce cluster permission
-        remotingProvider.enforceClusterEnabled();
+        remotingProvider.checkPermitted(null, facility,  invocation.getClass().getName() + "#" + invocation.getMethodName());
 
         // Ensure invocation subject is set for node to node invocation.
         if(invocation instanceof AdminSessionRemoteInvocation) {
@@ -69,5 +71,6 @@ public final class ClusterRemoteInvocationExecutor implements RemoteInvocationEx
 
     //- PRIVATE
 
-    private final RemotingProvider remotingProvider;
+    private final String facility;
+    private final RemotingProvider<T> remotingProvider;
 }

@@ -137,12 +137,13 @@
         </property>
     </bean>
 
+    <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean">
+    </bean>
+
     <!-- server side identity provider factory -->
     <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">
         <constructor-arg ref="identityProviderConfigManager"/>
     </bean>
-
-    <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean" />
 
     <!-- server side identity configuration manager -->
     <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.IdProvConfManagerServer" parent="hibernateBean">
@@ -171,7 +172,9 @@
         <constructor-arg ref="roleManager"/>
         <constructor-arg ref="clientCertManager"/>
     </bean>
-    <bean name="internalGroupManager" class="com.l7tech.server.identity.internal.InternalGroupManagerImpl" singleton="false" parent="hibernateBean"/>
+    <bean name="internalGroupManager" class="com.l7tech.server.identity.internal.InternalGroupManagerImpl" singleton="false" parent="hibernateBean">
+        <constructor-arg ref="roleManager"/>
+    </bean>
 
     <!-- Federated Identity Provider, UserManager and GroupManager factories -->
     <bean id="federatedIdentityProviderFactory" class="com.l7tech.server.identity.GenericIdentityProviderFactorySpi">
@@ -188,7 +191,6 @@
         <property name="groupManager" ref="federatedGroupManager"/>
     </bean>
     <bean name="federatedUserManager" class="com.l7tech.server.identity.fed.FederatedUserManagerImpl" singleton="false" parent="hibernateBean">
-        <constructor-arg ref="roleManager"/>
         <constructor-arg ref="clientCertManager"/>
     </bean>
     <bean name="federatedGroupManager" class="com.l7tech.server.identity.fed.FederatedGroupManagerImpl" singleton="false" parent="hibernateBean"/>
@@ -285,6 +287,15 @@
         </constructor-arg>
     </bean>
 
+    <bean id="roleManagerHelper" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.security.rbac.RoleManagerImpl"/>
+        <property name="targetMethod" value="setIdentitySource"/>
+        <property name="arguments">
+            <list>
+                <ref bean="adminSessionManager"/>
+            </list>
+        </property>
+    </bean>
 
     <!-- Initialize the client-side SSLSocketFactory with the trust manager -->
     <bean id="anonClientSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">

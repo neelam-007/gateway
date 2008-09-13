@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.util.ExceptionUtils;
 import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
@@ -161,7 +162,6 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     @Override
     public void delete(GT group) throws DeleteException {
         try {
-            // it is not allowed to delete the admin group
             GT pgroup = cast(group);
             preDelete(pgroup);
             Set<IdentityHeader> userHeaders = getUserHeaders(pgroup);
@@ -169,7 +169,8 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
                 UT u = identityProvider.getUserManager().headerToUser((IdentityHeader) userHeader);
                 deleteMembership(pgroup, u);
             }
-            getHibernateTemplate().delete(group);
+            getHibernateTemplate().delete(pgroup);
+            postDelete( pgroup );
         } catch (ObjectModelException e) {
             throw new DeleteException(e.toString(), e);
         } catch (HibernateException e) {
@@ -183,6 +184,9 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
 
     @SuppressWarnings({"UnusedDeclaration"})
     protected void preDelete(GT group) throws DeleteException { }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    protected void postDelete(GT group) throws DeleteException { }
 
     @SuppressWarnings({"UnusedDeclaration"})
     protected void preUpdate(GT group) throws FindException, UpdateException { }
@@ -239,6 +243,8 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new DeleteException(e.getMessage(), e);
         }
+        
+        postDelete( null );
     }
 
     /**
@@ -401,6 +407,12 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
         } catch (HibernateException e) {
             throw new FindException(e.getMessage(), e);
         }
+
+        try {
+            postDelete( null );
+        } catch ( DeleteException de ) {
+            throw new UpdateException( ExceptionUtils.getMessage(de), de );
+        }
     }
 
     public void deleteMembership(final GT group, final UT user) throws HibernateException {
@@ -452,6 +464,12 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
         } catch (HibernateException e) {
             throw new FindException(e.getMessage(), e);
         }
+
+        try {
+            postDelete( null );
+        } catch ( DeleteException de ) {
+            throw new UpdateException( ExceptionUtils.getMessage(de), de );
+        }
     }
 
     public void addUser(UT user, GT group) throws FindException, UpdateException {
@@ -471,6 +489,12 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             deleteMembership(groupImp, userImp);
         } catch (HibernateException e) {
             throw new FindException(e.getMessage(), e);
+        }
+
+        try {
+            postDelete( null );
+        } catch ( DeleteException de ) {
+            throw new UpdateException( ExceptionUtils.getMessage(de), de );
         }
     }
 
@@ -520,6 +544,11 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             throw new UpdateException(he.toString(), he);
         }
 
+        try {
+            postDelete( null );
+        } catch ( DeleteException de ) {
+            throw new UpdateException( ExceptionUtils.getMessage(de), de );
+        }
     }
 
     public Set<IdentityHeader> getUserHeaders(GT group) throws FindException {
@@ -610,6 +639,11 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             throw new UpdateException(he.toString(), he);
         }
 
+        try {
+            postDelete( null );
+        } catch ( DeleteException de ) {
+            throw new UpdateException( ExceptionUtils.getMessage(de), de );
+        }
     }
 
     @Override

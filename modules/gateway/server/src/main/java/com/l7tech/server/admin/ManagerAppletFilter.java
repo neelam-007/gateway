@@ -21,6 +21,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ClassUtils;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -39,6 +40,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
+import com.l7tech.objectmodel.ObjectModelException;
 import org.springframework.beans.BeansException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -50,7 +52,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.security.Principal;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.regex.Pattern;
@@ -266,9 +267,16 @@ public class ManagerAppletFilter implements Filter {
                     Object sessionInfo = adminSessionManager.getSessionInfo(sessionId);
                     if ((sessionInfo instanceof AdditionalSessionInfo) &&
                             (hreq.getServerPort() == ((AdditionalSessionInfo)sessionInfo).port)) {
-                        Principal userObj = adminSessionManager.resumeSession(sessionId);
-                        if (userObj instanceof User) {
-                            User user = (User) userObj;
+                        User user = null;
+                        try {
+                            user = adminSessionManager.resumeSession(sessionId);
+                        } catch ( AuthenticationException ae ) {
+                            logger.log( Level.WARNING, "Session resume failed, user has insufficient permissions.", ExceptionUtils.getDebugException(ae) );    
+                        } catch ( ObjectModelException fe ) {
+                            logger.log( Level.WARNING, "Error resuming session.", fe );
+                        }
+
+                        if ( user != null ) {
                             LoginCredentials creds = new LoginCredentials(user.getLogin(),
                                     sessionId.toCharArray(),
                                     CredentialFormat.OPAQUETOKEN,

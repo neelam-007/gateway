@@ -8,12 +8,16 @@ import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
+import com.l7tech.gateway.common.admin.AdminSessionValidationRuntimeException;
+import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.identity.ValidationException;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.User;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -23,7 +27,6 @@ import java.util.logging.Level;
 import java.util.Collection;
 import java.util.Set;
 import java.security.AccessControlException;
-import java.security.Principal;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -32,7 +35,7 @@ import java.net.UnknownHostException;
  *
  * @author steve
  */
-public class AdminRemotingProvider implements RemotingProvider {
+public class AdminRemotingProvider implements RemotingProvider<Administrative> {
 
     //- PUBLIC
 
@@ -44,11 +47,35 @@ public class AdminRemotingProvider implements RemotingProvider {
         this.clusterInfoManager = clusterInfoManager;
     }
 
-    public void enforceLicensed( final String className, final String methodName ) {
+    public void checkPermitted( final Administrative adminAnno,
+                                final String facility,
+                                final String activity ) {
+        if ( "CLUSTER".equals(facility) ) {
+            enforceClusterEnabled();
+        } else if ( "ADMIN".equals(facility) ) {
+            if (adminAnno == null || adminAnno.licensed()) {
+                enforceLicensed( activity );
+            }
+
+            enforceAdminEnabled( adminAnno == null || adminAnno.authenticated() );
+        } else {
+            throw new IllegalArgumentException( "Unknown facility " + facility );
+        }
+    }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger( AdminRemotingProvider.class.getName() );
+
+    private final LicenseManager licenseManager;
+    private final AdminSessionManager adminSessionManager;
+    private final ClusterInfoManager clusterInfoManager;
+
+    private void enforceLicensed( String action ) {
         try {
-            licenseManager.requireFeature( GatewayFeatureSets.SERVICE_ADMIN);
+            licenseManager.requireFeature( GatewayFeatureSets.SERVICE_ADMIN );
         } catch ( LicenseException e) {
-            logger.log( Level.WARNING, "License checking failed when invoking the method, " + methodName);
+            logger.log( Level.WARNING, "License checking failed when invoking the method, " + action);
             throw new LicenseRuntimeException(e);
         }
     }
@@ -56,7 +83,7 @@ public class AdminRemotingProvider implements RemotingProvider {
     /**
      * Assert that this request arrived over a port that enables either ADMIN_APPLET or ADMIN_REMOTE.
      */
-    public void enforceAdminEnabled() {
+    private void enforceAdminEnabled( boolean checkAuthenticated ) {
         HttpServletRequest hreq = RemoteUtils.getHttpServletRequest();
         if (hreq == null)
             throw new AccessControlException("Admin request disallowed: No request context available");
@@ -68,25 +95,35 @@ public class AdminRemotingProvider implements RemotingProvider {
         if (!connector.offersEndpoint(SsgConnector.Endpoint.ADMIN_APPLET) && !connector.offersEndpoint( SsgConnector.Endpoint.ADMIN_REMOTE))
             throw new AccessControlException("Request not permitted on this port");
 
-        // populate principal information if available
-        Subject subject = JaasUtils.getCurrentSubject();
-        if(subject != null){
+        if ( checkAuthenticated ) {
+            // populate principal information if available
+            Subject subject = JaasUtils.getCurrentSubject();
+            if (subject == null) {
+                throw new AccessControlException("No subject passed, authentication failed.");
+            }
+
             try {
                 Set<String> credentials = subject.getPublicCredentials(String.class);
-                if ( !credentials.isEmpty() ) {
+                if ( credentials.isEmpty() ) {
+                    throw new AccessControlException("Admin request disallowed: no credentials.");                        
+                } else {
                     String cookie = credentials.iterator().next();
-                    Set<Principal> principals = adminSessionManager.getPrincipalsAndResumeSession(cookie);
-                    if(principals != null){
-                        subject.getPrincipals().addAll(principals);
+                    User user = adminSessionManager.resumeSession(cookie);
+                    if( user != null ){
+                        subject.getPrincipals().add(user);
+                    } else {
+                        throw new AccessControlException("Admin request disallowed: session not found.");                        
                     }
                 }
-            } catch (ValidationException ve) {
-                logger.log(Level.INFO, "Validation failed for administrative user session '"+ExceptionUtils.getMessage(ve)+"'.", ExceptionUtils.getDebugException(ve));
+            } catch (ObjectModelException fe) {
+                logger.log(Level.WARNING, "Error resuming administrative user session '"+ExceptionUtils.getMessage(fe)+"'.",fe);
+            } catch (AuthenticationException ve) {
+                throw new AdminSessionValidationRuntimeException("Permission denied.");
             }
         }
     }
 
-    public void enforceClusterEnabled() {
+    private void enforceClusterEnabled() {
         // If we don't have any info then just reject the invocation
         if( clusterInfoManager == null ) {
             throw new AccessControlException("Cluster invocations not permitted.");
@@ -124,24 +161,4 @@ public class AdminRemotingProvider implements RemotingProvider {
         }
     }
 
-    /*
-    * client uses this method instead of getPrincipalforCookie when the only purpose
-    * of calling getPrincipalForCookie is to add the returned Principal to a Subject
-    * setPrincipalsForSubject will add the user Principal aswell as any other Principals defined
-    * */
-    public void setPrincipalsForSubject(String cookie, Subject subject) {
-        subject.getPublicCredentials().add(cookie);
-    }
-
-    public Principal getPrincipalForCookie( String cookie ) {
-        return adminSessionManager.resumeSession( cookie );
-    }
-
-    //- PRIVATE
-
-    private static final Logger logger = Logger.getLogger( AdminRemotingProvider.class.getName() );
-
-    private final LicenseManager licenseManager;
-    private final AdminSessionManager adminSessionManager;
-    private final ClusterInfoManager clusterInfoManager;
 }

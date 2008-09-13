@@ -1,7 +1,6 @@
 package com.l7tech.gateway.common.spring.remoting.http;
 
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
-import com.l7tech.gateway.common.spring.remoting.RemotingProvider;
 
 import javax.security.auth.Subject;
 import javax.servlet.*;
@@ -42,11 +41,6 @@ public class SecureHttpFilter implements Filter {
      *
      */
     public void init( final FilterConfig filterConfig ) throws ServletException {
-        String remotingProviderName = filterConfig.getInitParameter( PARAM_PROV_NAME );
-        if ( remotingProviderName == null ) {
-            remotingProviderName = DEFAULT_PROV_NAME;
-        }
-        remotingProvider = (RemotingProvider) filterConfig.getServletContext().getAttribute( remotingProviderName );
     }
 
     /**
@@ -76,8 +70,8 @@ public class SecureHttpFilter implements Filter {
         if (cookie == null) { // check for pre 3.6.5 URL parameter sessionId
             cookie = servletRequest.getParameter( SESSION_ID_PARAM );
         }
-        if (cookie != null && remotingProvider != null) {
-            remotingProvider.setPrincipalsForSubject(cookie, subject);
+        if (cookie != null) {
+            subject.getPublicCredentials().add(cookie);
         }
 
         // Pass on down the chain with the auth'd user and remote host set(if any)
@@ -121,11 +115,6 @@ public class SecureHttpFilter implements Filter {
 
     private static final Logger logger = Logger.getLogger(SecureHttpFilter.class.getName());
 
-    private static final String PARAM_PROV_NAME = "remotingProviderName";
-    private static final String DEFAULT_PROV_NAME = "remotingProvider";
-
     private static final String SESSION_ID_HEADER = "X-Layer7-SessionId";
     private static final String SESSION_ID_PARAM = "sessionId";
-
-    private RemotingProvider remotingProvider;
 }

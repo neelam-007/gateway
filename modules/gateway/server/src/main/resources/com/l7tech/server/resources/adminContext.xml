@@ -102,6 +102,7 @@
         <property name="stubRemoteInvocationFactory" ref="adminSessionInvocationFactory"/>
         <property name="remoteInvocationExecutor">
             <bean class="com.l7tech.gateway.common.spring.remoting.rmi.ClusterRemoteInvocationExecutor">
+                <constructor-arg value="CLUSTER"/>
                 <constructor-arg ref="remotingProvider"/>
             </bean>
         </property>
@@ -143,10 +144,10 @@
 
     <!-- admin session tracker -->
     <bean id="adminSessionManager" class="com.l7tech.server.admin.AdminSessionManager" singleton="true">
-        <property name="sessionValidator" ref="adminLogin_UNSECURED"/>
+        <constructor-arg index="0" ref="serverConfig"/>
+        <property name="identityProviderFactory" ref="identityProviderFactory"/>
+        <property name="roleManager" ref="roleManager"/>        
     </bean>
-
-    <bean id="groupPrincipalCache" class="com.l7tech.server.admin.GroupPrincipalCache" singleton="true" factory-method="getInstance" />
 
     <!--==============================================================-
     RBAC Enforcement and other interceptors
@@ -280,8 +281,6 @@
         <property name="identityProviderConfigManager" ref="identityProviderConfigManager"/>
         <property name="identityProviderFactory" ref='identityProviderFactory'/>
         <property name="adminSessionManager" ref="adminSessionManager"/>
-        <property name="roleManager" ref="roleManager"/>
-        <property name="groupPrincipalCache" ref="groupPrincipalCache"/>
     </bean>
 
     <!-- identity admin servant -->

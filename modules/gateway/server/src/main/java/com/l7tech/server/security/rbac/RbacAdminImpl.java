@@ -100,7 +100,7 @@ public class RbacAdminImpl implements RbacAdmin {
             try {
                 roleManager.update(role);
             } catch (UpdateException e) {
-                throw new SaveException(e);
+                throw new SaveException(e.getMessage(), e);
             }
             return oid;
         }

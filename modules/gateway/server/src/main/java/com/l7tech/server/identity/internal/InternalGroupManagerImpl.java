@@ -8,6 +8,10 @@ import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalGroupMembership;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.server.identity.PersistentGroupManagerImpl;
+import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.util.ExceptionUtils;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.transaction.annotation.Propagation;
@@ -26,7 +30,10 @@ public class InternalGroupManagerImpl
         extends PersistentGroupManagerImpl<InternalUser, InternalGroup, InternalUserManager, InternalGroupManager>
         implements InternalGroupManager
 {
-    public InternalGroupManagerImpl() {
+    private final RoleManager roleManager;
+
+    public InternalGroupManagerImpl( final RoleManager roleManager ) {
+        this.roleManager = roleManager;
     }
 
     public void configure(InternalIdentityProvider provider) {
@@ -73,5 +80,14 @@ public class InternalGroupManagerImpl
 
     protected void addMembershipCriteria(Criteria crit, Group group, Identity identity) {
         crit.add(Restrictions.eq("memberProviderOid", identity.getProviderId()));
+    }
+
+    @Override
+    protected void postDelete(InternalGroup group) throws DeleteException {
+        try {
+            roleManager.validateRoleAssignments();
+        } catch ( UpdateException ue ) {
+            throw new DeleteException( ExceptionUtils.getMessage(ue), ue );
+        }
     }
 }

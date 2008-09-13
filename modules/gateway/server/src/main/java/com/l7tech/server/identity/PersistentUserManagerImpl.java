@@ -7,15 +7,12 @@
 package com.l7tech.server.identity;
 
 import com.l7tech.identity.*;
-import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.HibernateEntityManager;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
@@ -47,11 +44,8 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
 
     protected PersistentIdentityProvider<UT, GT, UMT, GMT> identityProvider;
     private final ClientCertManager clientCertManager;
-    private final RoleManager roleManager;
 
-    protected PersistentUserManagerImpl(final RoleManager roleManager,
-                                        final ClientCertManager clientCertManager) {
-        this.roleManager = roleManager;
+    protected PersistentUserManagerImpl( final ClientCertManager clientCertManager ) {
         this.clientCertManager = clientCertManager;
     }
 
@@ -137,13 +131,6 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         return identityProvider.getConfig().getOid();
     }
 
-    protected Collection<Role> getAssignedRoles(InternalUser user) throws FindException {
-        if (roleManager == null)
-            return Collections.emptyList();
-        else
-            return roleManager.getAssignedRoles(user);
-    }
-
     @Secured(operation=OperationType.DELETE)
     @Override
     public void delete( long oid ) throws DeleteException, FindException {
@@ -176,6 +163,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
             // Revoke cert before deleting user (Bug #2963)
             revokeCert(userImp);
             getHibernateTemplate().delete(userImp);
+            postDelete( user );
         } catch (DeleteException e) {
             throw e;
         } catch (ObjectModelException e) {
@@ -212,6 +200,8 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new DeleteException(e.getMessage(), e);
         }
+
+        postDelete( null );
     }
 
     @Secured(operation=OperationType.DELETE)
@@ -231,6 +221,8 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new DeleteException(e.getMessage(), e);
         }
+
+        postDelete( null );
     }
 
     @Secured(operation=OperationType.CREATE)
@@ -366,7 +358,17 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
      *
      * @throws DeleteException to veto the deletion
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     protected void preDelete(UT user) throws DeleteException {
+    }
+
+    /**
+     * Override this method to check whether a user can be deleted
+     *
+     * @throws DeleteException to veto the deletion
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    protected void postDelete( UT user ) throws DeleteException {
     }
 
     protected void revokeCert(UT originalUser) throws ObjectNotFoundException {

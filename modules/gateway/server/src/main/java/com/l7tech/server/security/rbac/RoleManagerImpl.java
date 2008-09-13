@@ -11,7 +11,6 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.EntityFinder;
 import org.hibernate.Criteria;
@@ -39,6 +38,17 @@ public class RoleManagerImpl
 {
     private static final Logger logger = Logger.getLogger(RoleManagerImpl.class.getName());
 
+    private static RoleManagerIdentitySource groupProvider = new RoleManagerIdentitySource(){
+        public void validateRoleAssignments() throws UpdateException {}
+        public Set<IdentityHeader> getGroups(User user) throws FindException {
+            return Collections.emptySet();
+        }
+    };
+
+    public static void setIdentitySource(RoleManagerIdentitySource groupProvider) {
+        RoleManagerImpl.groupProvider = groupProvider;
+    }
+
     public Class<Role> getImpClass() {
         return Role.class;
     }
@@ -53,6 +63,8 @@ public class RoleManagerImpl
 
     @Transactional(readOnly=true)
     public Collection<Role> getAssignedRoles(final User user) throws FindException {
+        final Set<IdentityHeader> groupHeaders = groupProvider.getGroups(user);
+
         //noinspection unchecked
         return (Collection<Role>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
             public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
@@ -71,10 +83,11 @@ public class RoleManagerImpl
                 }
 
                 //Now get the Roles the user can access via it's group membership
-                Set<IdentityHeader> iHeaders = JaasUtils.getCurrentUserGroupInfo();
                 List<String> groupNames = new ArrayList<String>();
-                for(IdentityHeader iH: iHeaders){
-                    groupNames.add(iH.getStrId());                
+                for( IdentityHeader groupHeader : groupHeaders ){
+                    if ( groupHeader != null && groupHeader.getProviderOid()==user.getProviderId() ) {
+                        groupNames.add( groupHeader.getStrId() );
+                    }
                 }
                 if(groupNames.size() == 0) return roles;
                 
@@ -147,9 +160,9 @@ public class RoleManagerImpl
         return false;
     }
 
-    // TODO check whether any of the assigned users is internal?
     @Override
     public void update(Role role) throws UpdateException {
+        // Quick pre-check for admin role assignment
         if (role.getOid() == Role.ADMIN_ROLE_OID && role.getRoleAssignments().isEmpty())
             throw new UpdateException(RoleManager.ADMIN_REQUIRED);
 
@@ -179,6 +192,18 @@ public class RoleManagerImpl
         }
 
         super.update(role);
+
+        // full role check (will ensure there is a non-expired user in group, etc)
+        validateRoleAssignments();
+    }
+
+    @Transactional(readOnly=true)
+    public void validateRoleAssignments() throws UpdateException {
+        try {
+            groupProvider.validateRoleAssignments();
+        } catch ( UpdateException ue ) {
+            throw new UpdateException(ADMIN_REQUIRED, ue);            
+        }
     }
 
     @Transactional(readOnly=true)

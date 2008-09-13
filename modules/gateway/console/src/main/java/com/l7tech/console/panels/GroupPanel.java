@@ -19,6 +19,7 @@ import com.l7tech.identity.PersistentGroup;
 import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.identity.ldap.LdapGroup;
 import com.l7tech.objectmodel.*;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -473,10 +474,10 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
         } catch (ObjectNotFoundException e) {
             JOptionPane.showMessageDialog(topParent, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
             result = true;
-        } catch (Exception e) {  // todo rethrow as runtime and handle with ErrorHandler em
+        } catch (ObjectModelException e) { 
             StringBuffer msg = new StringBuffer();
             msg.append("There was an error updating ");
-            msg.append("Group ").append(groupHeader.getName()).append(".\n");
+            msg.append("Group ").append(groupHeader.getName()).append(".\n").append(ExceptionUtils.getMessage(e)).append("\n");
             JOptionPane.showMessageDialog(topParent, msg.toString(), "Error", JOptionPane.ERROR_MESSAGE);
             log.log(Level.SEVERE, "Error updating Group: " + e.toString(), e);
             result = false;

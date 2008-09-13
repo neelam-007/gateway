@@ -1,63 +1,22 @@
 package com.l7tech.gateway.common.spring.remoting;
 
-import javax.security.auth.Subject;
-import java.security.Principal;
+import java.lang.annotation.Annotation;
 
 /**
  * The remoting provider interface implemented for the server side of remoting.
  *
  * @author steve
  */
-public interface RemotingProvider {
-
-    //TODO [steve] most of this interface is backwards, we should suport checking of facility (from config?) and annotations, not specifics like licensing, cluster vs admin, etc.
+public interface RemotingProvider<T extends Annotation> {
 
     /**
-     * Enforce licensing for the given invocation.
+     * Check that the activity is permitted for the facility.
      *
-     * <p>A runtime exception is thrown if not licensed.</p>
+     * <p>A runtime exception should be thrown on denial.</p>
      *
-     * @param className The name of the class
-     * @param methodName The name of the method
+     * @param facility The facility being accessed
+     * @param annotation The annotation for the access (may be null)
+     * @param activty A description of the activty
      */
-    void enforceLicensed( String className, String methodName );
-
-    /**
-     * Enforce administration permission for the given invocation.
-     *
-     * <p>A runtime exception is thrown if not permitted.</p>
-     *
-     * @see com.l7tech.gateway.common.spring.remoting.RemoteUtils#getHttpServletRequest()
-     */
-    void enforceAdminEnabled();
-
-    /**
-     * Enforce cluster permission for the given invocation.
-     *
-     * <p>A runtime exception is thrown if not permitted.</p>
-     *
-     * @see com.l7tech.gateway.common.spring.remoting.RemoteUtils#getHttpServletRequest()
-     */
-    void enforceClusterEnabled();
-
-    /**
-     * Get the Principal that is associated with the given cookie.
-     *
-     * <p>If the cookie is not related to any principal then NULL is returned.</p>
-     *
-     * @param cookie The cookie
-     * @return The associated Principal or null.
-     */
-    Principal getPrincipalForCookie( String cookie );
-
-    /**
-     * Call getPrincipalForCookie when you just want the User associated with
-     * the session. Use setPrincipalsForSubject when you want to retrieve the User Principal
-     * and all other principals that we want to associate with the supplied Subject.
-     *
-     * @param cookie The cookie
-     * @param subject The subject to associate all Principals with. The minimum is the User Prinipal
-     *
-    * */
-    void setPrincipalsForSubject( String cookie, Subject subject);
+    void checkPermitted( T annotation, String facility, String activty );
 }

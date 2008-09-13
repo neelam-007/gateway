@@ -8,8 +8,6 @@ import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.identity.IdentityProviderFactorySpi;
 
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -17,7 +15,7 @@ import java.util.*;
 /**
  * @author mike
  */
-public class TestIdentityProvider implements AuthenticatingIdentityProvider {
+public class TestIdentityProvider implements AuthenticatingIdentityProvider<User,Group,UserManager<User>,GroupManager<User,Group>> {
     public static long PROVIDER_ID = 9898;
     public static int PROVIDER_VERSION = 1;
 
@@ -86,11 +84,11 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider {
         return config;
     }
 
-    public UserManager getUserManager() {
+    public UserManager<User> getUserManager() {
         return userman;
     }
 
-    public GroupManager getGroupManager() {
+    public GroupManager<User,Group> getGroupManager() {
         return groupman;
     }
 
@@ -311,6 +309,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 
+        @SuppressWarnings({"unchecked"})
         public Class getImpClass() {
             return getClass();
         }

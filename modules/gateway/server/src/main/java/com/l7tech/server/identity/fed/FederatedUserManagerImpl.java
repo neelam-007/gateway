@@ -13,7 +13,6 @@ import com.l7tech.identity.fed.FederatedGroup;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.PersistentUserManagerImpl;
-import com.l7tech.server.security.rbac.RoleManager;
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
@@ -35,9 +34,8 @@ public class FederatedUserManagerImpl
         extends PersistentUserManagerImpl<FederatedUser, FederatedGroup, FederatedUserManager, FederatedGroupManager>
         implements FederatedUserManager
 {
-    public FederatedUserManagerImpl(final RoleManager roleManager,
-                                    final ClientCertManager clientCertManager) {
-        super(roleManager, clientCertManager);
+    public FederatedUserManagerImpl( final ClientCertManager clientCertManager ) {
+        super(clientCertManager);
     }
 
     public void configure(FederatedIdentityProvider provider) {
