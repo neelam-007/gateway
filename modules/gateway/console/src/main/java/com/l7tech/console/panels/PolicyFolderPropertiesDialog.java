@@ -2,8 +2,12 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.DialogDisplayer;
 
 import javax.swing.*;
+import javax.swing.text.PlainDocument;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.AttributeSet;
 import java.util.ResourceBundle;
 import java.util.Locale;
 import java.awt.*;
@@ -26,7 +30,9 @@ public class PolicyFolderPropertiesDialog extends JDialog {
 
     private InputValidator inputValidator;
     private boolean confirmed = false;
+    private final JDialog dialog;
 
+    private static final int MAX_FOLDER_NAME_LENGTH = 128;
     /**
      * Creates a new instance of PolicyFolderPropertiesDialog. The name field in the dialog
      * will be set from the provided value.
@@ -37,6 +43,7 @@ public class PolicyFolderPropertiesDialog extends JDialog {
     public PolicyFolderPropertiesDialog(Dialog owner, String folderName) throws HeadlessException {
         super(owner, TITLE, true);
         initialize(folderName);
+        dialog = this;
     }
 
     /**
@@ -49,6 +56,7 @@ public class PolicyFolderPropertiesDialog extends JDialog {
     public PolicyFolderPropertiesDialog(Frame owner, String folderName) throws HeadlessException {
         super(owner, TITLE, true);
         initialize(folderName);
+        dialog = this;
     }
 
     /**
@@ -67,6 +75,20 @@ public class PolicyFolderPropertiesDialog extends JDialog {
         setContentPane(contentPanel);
 
         initResources();
+
+        nameField.setDocument(new PlainDocument(){
+
+            public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
+                if(getLength() >= MAX_FOLDER_NAME_LENGTH){
+                     DialogDisplayer.showMessageDialog(dialog,
+                                                      "Folder name cannot exceed "+MAX_FOLDER_NAME_LENGTH+" characters",
+                                                      "Folder name too long",
+                                                      JOptionPane.ERROR_MESSAGE, null);
+                    return;
+                }
+                super.insertString(offs, str, a);
+            }
+        });
 
         nameField.setText(folderName);
 

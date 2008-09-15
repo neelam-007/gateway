@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gui.util.DialogDisplayer;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -78,8 +79,17 @@ public class EditFolderAction extends SecureAction {
                     model.nodeChanged(folderToRename);
                 }
             } catch(UpdateException e) {
+                DialogDisplayer.showMessageDialog(dialog,
+                                                 e.getMessage(),
+                                                 "Failed Folder Update",
+                                                 JOptionPane.ERROR_MESSAGE, null);
+
                 log.log(Level.WARNING, "Failed to update policy folder", e);
             } catch(SaveException e) {
+                DialogDisplayer.showMessageDialog(dialog,
+                                                 e.getMessage(),
+                                                 "Failed Folder Save",
+                                                 JOptionPane.ERROR_MESSAGE, null);
                 log.log(Level.WARNING, "Failed to save policy folder", e);
             }
         }

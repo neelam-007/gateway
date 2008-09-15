@@ -28,7 +28,8 @@ public class FolderAdminImpl implements FolderAdmin {
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     private final FolderManager folderManager;
-
+    private static final int MAX_FOLDER_NAME_LENGTH = 128;
+    
     public FolderAdminImpl(FolderManager folderManager) {
         this.folderManager = folderManager;
     }
@@ -42,6 +43,18 @@ public class FolderAdminImpl implements FolderAdmin {
     }
 
     public long saveFolder(Folder folder) throws UpdateException, SaveException {
+        String name = folder.getName();
+        if( name != null){
+            if(name.length() > MAX_FOLDER_NAME_LENGTH){
+                String msg = "Folder name cannot exceed {0} characters";
+                if(folder.getOid() == Folder.DEFAULT_OID) {
+                    throw new SaveException(MessageFormat.format(msg, MAX_FOLDER_NAME_LENGTH));
+                }else{
+                    throw new UpdateException(MessageFormat.format(msg, MAX_FOLDER_NAME_LENGTH));
+                }
+            }
+        }
+        
         int maxDepth = ServerConfig.getInstance().getIntProperty("policyorganization.maxFolderDepth",8);
 
         Long parentFolderId = folder.getParentFolderOid();

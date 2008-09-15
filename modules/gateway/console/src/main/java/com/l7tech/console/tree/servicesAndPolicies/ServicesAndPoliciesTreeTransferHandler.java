@@ -127,7 +127,12 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                                 FolderNode fn = (FolderNode) parentNode;
                                 if(fn.isEntityAChildNode(oH.getOid())){
                                     if(tree != null){
-                                        JOptionPane.showMessageDialog(tree, "Cannot move an entity with another entity (alias or original) in the same folder", "Move Error", JOptionPane.ERROR_MESSAGE);
+                                        DialogDisplayer.showMessageDialog(tree,
+                                                                         "Cannot move an entity with another entity (alias or original) in the same folder",
+                                                                         "Move Error",
+                                                                         JOptionPane.ERROR_MESSAGE, null);
+
+
                                     }
                                     RootNode rootNode = (RootNode) model.getRoot();
                                     rootNode.setCut(false);
