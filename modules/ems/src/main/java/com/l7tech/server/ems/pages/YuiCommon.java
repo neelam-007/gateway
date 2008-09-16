@@ -12,9 +12,11 @@ public class YuiCommon {
     static final ResourceReference RES_CSS_SAM_MENU = new CompressedResourceReference(YuiCommon.class, "../resources/yui/menu/assets/skins/sam/menu.css" );
     static final ResourceReference RES_CSS_SAM_DATATABLE = new CompressedResourceReference(YuiCommon.class, "../resources/yui/datatable/assets/skins/sam/datatable.css" );
     static final ResourceReference RES_CSS_SKIN = new CompressedResourceReference(YuiCommon.class, "../resources/css/l7-yui-skin.css" );
+    static final ResourceReference RES_CSS_SAM_CALENDAR = new CompressedResourceReference(YuiCommon.class, "../resources/yui/calendar/assets/skins/sam/calendar.css" );
+    static final ResourceReference RES_CSS_SAM_CONTAINER = new CompressedResourceReference(YuiCommon.class, "../resources/yui/container/assets/skins/sam/container.css" );
 
     static final ResourceReference RES_JS_DOM_EVENT = new CompressedResourceReference(YuiCommon.class, "../resources/yui/yahoo-dom-event/yahoo-dom-event.js" );
-    static final ResourceReference RES_JS_CONTAINER = new CompressedResourceReference(YuiCommon.class, "../resources/yui/container/container_core-min.js" );
+    static final ResourceReference RES_JS_CONTAINER = new CompressedResourceReference(YuiCommon.class, "../resources/yui/container/container-min.js" );
     static final ResourceReference RES_JS_ELEMENT = new CompressedResourceReference(YuiCommon.class, "../resources/yui/element/element-beta-min.js" );
     static final ResourceReference RES_JS_BUTTON = new CompressedResourceReference(YuiCommon.class, "../resources/yui/button/button-min.js" );
     static final ResourceReference RES_JS_MENU = new CompressedResourceReference(YuiCommon.class, "../resources/yui/menu/menu-min.js" );
@@ -25,5 +27,6 @@ public class YuiCommon {
     static final ResourceReference RES_JS_CONNECTION = new CompressedResourceReference(YuiCommon.class, "../resources/yui/connection/connection-min.js" );
     static final ResourceReference RES_JS_JSON = new CompressedResourceReference(YuiCommon.class, "../resources/yui/json/json-min.js" );
     static final ResourceReference RES_JS_DOM = new CompressedResourceReference(YuiCommon.class, "../resources/yui/dom/dom-min.js" );
+    static final ResourceReference RES_JS_CALENDAR = new CompressedResourceReference(YuiCommon.class, "../resources/yui/calendar/calendar-min.js" );
 
 }

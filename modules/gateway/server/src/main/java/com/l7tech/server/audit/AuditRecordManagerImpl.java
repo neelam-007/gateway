@@ -157,6 +157,7 @@ public class AuditRecordManagerImpl
     private static final String PROP_LEVEL = "strLvl";
     private static final String PROP_OID = "oid";
     private static final String PROP_NODEID = "nodeId";
+    private static final String PROP_CLASS = "class";
 
     private static final Logger logger = Logger.getLogger(AuditRecordManagerImpl.class.getName());
     private ServerConfig serverConfig;
@@ -194,6 +195,8 @@ public class AuditRecordManagerImpl
             }
             criterion.add(Restrictions.in(PROP_LEVEL, levels));
         }
+
+        if (criteria.recordClass != null) criterion.add(Restrictions.eq(PROP_CLASS, criteria.recordClass));
 
         if (criteria.startMessageNumber > 0) criterion.add(Restrictions.ge(PROP_OID, criteria.startMessageNumber));
         if (criteria.endMessageNumber > 0) criterion.add(Restrictions.lt(PROP_OID, criteria.endMessageNumber));

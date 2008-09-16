@@ -121,15 +121,56 @@
             </div>
             <div class="content">
                 <wicket:extend>
-                    <form wicket:id="form" action="">
-                        <div class="panel">
+                    <div class="panel">
+                        <!--
+                          Button panel
+                        -->
+                        <form wicket:id="form" action="">
                             <div class="panelToolbar">
                                 <button id="downloadAuditsButton" type="button" wicket:id="downloadAuditsButton"><wicket:message key="label.download">Download</wicket:message></button>
                                <input name="auditId" type="hidden" value="" wicket:id="auditId"/>
                             </div>
+                        </form>
+
+                        <!--
+                          Audit Selection controls
+                        -->
+                        <div class="panelContent">
+                            <form wicket:id="auditselectform" action="">
+                                <table>
+                                    <tr>
+                                        <td><wicket:message key="label.startdate">Start Date</wicket:message>:</td>
+                                        <td><div wicket:id="auditstart"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td><wicket:message key="label.enddate">End Date</wicket:message>:</td>
+                                        <td><div wicket:id="auditend"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td><wicket:message key="label.audittype">Type</wicket:message>:</td>
+                                        <td>
+                                            <select wicket:id="audittype">
+                                                <option>[ANY]</option>
+                                                <option>Administrative</option>
+                                                <option>System</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td align="right"><button wicket:id="audit.select.button" type="submit"><wicket:message key="label.select">Select</wicket:message></button></td>
+                                    </tr>
+                                </table>
+                            </form>
+                        </div>
+
+                        <!--
+                          Audit Summary Table
+                        -->
+                        <div wicket:id="audittable.container">
                             <div wicket:id="audittable"/>
                         </div>
-                    </form>
+                    </div>
                     <div wicket:id="audit.modal"></div>
                     <div wicket:id="audit.details">
                         <div wicket:id="details"/>

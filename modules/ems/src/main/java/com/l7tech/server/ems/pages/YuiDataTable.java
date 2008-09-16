@@ -319,11 +319,12 @@ public class YuiDataTable extends Panel {
         public void toJSON(Object o, JSON.Output output) {
             PropertyColumn column = (PropertyColumn) o;
             output.add( "key", column.getPropertyExpression() );
-            output.add( "label", column.getDisplayModel().getObject() );
-            output.add( "sortable", column.isSortable() );
-            output.add( "resizeable", true );
             if ( hiddenColumn != null && hiddenColumn.equals(column.getPropertyExpression()) ) {
                 output.add( "hidden", true );
+            } else {
+                output.add( "label", column.getDisplayModel().getObject() );
+                output.add( "sortable", column.isSortable() );
+                output.add( "resizeable", true );
             }
         }
 

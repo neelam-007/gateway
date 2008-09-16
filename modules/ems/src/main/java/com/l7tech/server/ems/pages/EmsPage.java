@@ -4,19 +4,12 @@ import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.model.PropertyModel;
-import org.apache.wicket.model.IModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
-import org.apache.wicket.Localizer;
-import org.apache.wicket.Component;
 import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.server.ems.EmsSession;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Collections;
-import java.util.Date;
-import java.io.Serializable;
 import java.text.SimpleDateFormat;
 
 /**
@@ -41,7 +34,7 @@ public abstract class EmsPage extends WebPage {
         }} );
         add( new Label("sinceLabel", sinceResourceModel ));
         add( new NavigationPanel("navigation", new Model(this)) );
-        add( new Label("timeZoneLabel", new StringResourceModel( "page.timeZone", this, null, new Object[]{getSession().getTimeZoneId()}) ));
+        add( new Label("timeZoneLabel", new StringResourceModel( "page.timeZone", this, null, new Object[]{getSession().getTimeZoneId()}) ) );
     }
 
     public String getPageName() {
