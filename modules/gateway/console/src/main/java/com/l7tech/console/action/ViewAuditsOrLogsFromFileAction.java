@@ -54,7 +54,6 @@ public class ViewAuditsOrLogsFromFileAction extends BaseAction {
                 if(file.getName().endsWith(".ssga")) {
                     GatewayAuditWindow gaw = new GatewayAuditWindow(false);
                     gaw.pack();
-                    Utilities.centerOnScreen(gaw);
                     gaw.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
                     if(gaw.displayAudits(file)) {
                         gaw.setVisible(true);

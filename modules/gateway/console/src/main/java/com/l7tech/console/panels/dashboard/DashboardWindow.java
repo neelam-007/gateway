@@ -12,18 +12,20 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.SsmPreferences;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ResourceBundle;
 import java.util.Vector;
+import java.util.Properties;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Monitoring dashboard.
@@ -42,11 +44,14 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
     private ClusterStatusPanel clusterStatusPanel;
     private JPanel serviceMetricsTabPanel;
     private JPanel clusterStatusTabPanel;
+    private SsmPreferences preferences = TopComponents.getInstance().getPreferences();
 
     private final int clusterStatusTabIndex;
 
     private static final ResourceBundle _commonResources = ResourceBundle.getBundle("com.l7tech.console.resources.console");
     private static final ResourceBundle _windowResources = ResourceBundle.getBundle("com.l7tech.console.panels.dashboard.resources.DashboardWindow");
+    private static final Logger logger = Logger.getLogger(DashboardWindow.class.getName());
+
     private final ImageIcon ALERT_ICON = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/Alert16x16.gif"));
 
     public DashboardWindow() throws HeadlessException {
@@ -93,6 +98,30 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
 
         getContentPane().add(mainPanel);
         pack();
+
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                exitMenuEventHandler();
+            }
+        });
+
+        // Load the last window status (size and location).
+        Utilities.restoreWindowStatus(this, preferences.asProperties(), getWidth(), getHeight());
+    }
+
+    /**
+     * Clean up the resources of the window when the user exits the window.
+     */
+    private void exitMenuEventHandler() {
+        try {
+            Properties prop = Utilities.getWindowStatus(this);
+            preferences.updateFromProperties(prop, true);
+            preferences.store();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to save divider location.", e);
+        }
+
+        dispose();
     }
 
     private void initMenuBar() {
@@ -101,7 +130,7 @@ public class DashboardWindow extends JFrame implements LogonListener, SheetHolde
         exitMenuItem.setAccelerator(KeyStroke.getKeyStroke('X', KeyEvent.ALT_DOWN_MASK));
         exitMenuItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                dispose();
+                exitMenuEventHandler();
             }
         });
 

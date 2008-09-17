@@ -97,6 +97,7 @@ public class LogPanel extends JPanel {
 
     public static final String MSG_TOTAL_PREFIX = "Total: ";
 
+    private static final String SPLIT_PROPERTY_NAME = "last." + LogPanel.class.getSimpleName() + ".split.divider.location";
     private static final int LOG_REFRESH_TIMER = 3000;
     private int logsRefreshInterval;
     private javax.swing.Timer logsRefreshTimer;
@@ -276,6 +277,26 @@ public class LogPanel extends JPanel {
                         updateMsgDetails();
                     }
                 });
+    }
+
+    /**
+     * Load the last split location and use it to set the current split location, if applicable.
+     */
+    public void addNotify() {
+        super.addNotify();
+        if (logSplitPane == null) {
+            return;
+        }
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                try {
+                    double lastSplitLocation = Double.parseDouble(preferences.getString(SPLIT_PROPERTY_NAME));
+                    logSplitPane.setDividerLocation(lastSplitLocation);
+                } catch (Exception ex) {
+                    logSplitPane.setDividerLocation(300);
+                }
+            }
+        });
     }
 
     private void init() {
@@ -1189,6 +1210,17 @@ public class LogPanel extends JPanel {
             msgTablePane.getViewport().setBackground(getMsgTable().getBackground());
             msgTablePane.setMinimumSize(new Dimension(600, 40));
             msgTablePane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+            // Add a component listener to keep the change of the split location.
+            msgTablePane.addComponentListener(new ComponentAdapter() {
+                public void componentResized(ComponentEvent e) {
+                    if (logSplitPane == null) {
+                        return;
+                    }
+                    double logSplitPaneSplitLocation = logSplitPane.getDividerLocation() / (double)(logSplitPane.getHeight() - logSplitPane.getDividerSize());
+                    preferences.putProperty(SPLIT_PROPERTY_NAME, String.valueOf(logSplitPaneSplitLocation));
+                }
+            });
         }
 
         return msgTablePane;

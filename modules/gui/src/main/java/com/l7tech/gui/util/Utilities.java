@@ -19,6 +19,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -933,6 +934,64 @@ public class Utilities {
             public void focusLost(FocusEvent e) {
             }
         });
+    }
+
+    /**
+     * Load the last window status (size and location) and use the status to set the current window.
+     * Note: (1) do not call the method centerOnParentWindow() after this method.
+     *       (2) call this method after all components have been embedded in the window.
+     * @param window: the current window
+     * @param properties: store the window size and location.
+     * @param defaultWidth: the default width of a window.
+     * @param defaultHeight: the default height of a window.
+     */
+    public static void restoreWindowStatus(JFrame window, Properties properties, int defaultWidth, int defaultHeight) {
+        // Load the last window size if appliable.
+        String widthPropName  = "last." + window.getClass().getSimpleName() + ".size.width";
+        String heightPropName = "last." + window.getClass().getSimpleName() + ".size.height";
+        int width  = Integer.parseInt(properties.getProperty(widthPropName, String.valueOf(defaultWidth)));
+        int height = Integer.parseInt(properties.getProperty(heightPropName, String.valueOf(defaultHeight))) ;
+        window.setPreferredSize(new Dimension(width, height));
+
+        // Check all components and set their preferred size.
+        Component[] components = window.getContentPane().getComponents();
+        for (Component subComp: components) {
+            if(subComp instanceof JComponent) {
+                subComp.setPreferredSize(new Dimension(width, height));
+            }
+        }
+
+        // Load the last window location if appliable.
+        String xPropName = "last." + window.getClass().getSimpleName() + ".location.x";
+        String yPropName = "last." + window.getClass().getSimpleName() + ".location.y";
+        try {
+            int x = Integer.parseInt(properties.getProperty(xPropName));
+            int y = Integer.parseInt(properties.getProperty(yPropName));
+            window.setLocation(x, y);
+        } catch (NumberFormatException ex) {
+            // If there doesn't exist x or y properties, then showing the window in the center.
+            centerOnParentWindow(window);
+        }
+    }
+
+    /**
+     * Collect the window status such as size and location.
+     * @param window: the current window.
+     * @return size and location properties.
+     */
+    public static Properties getWindowStatus(JFrame window) {
+        String widthPropName  = "last." + window.getClass().getSimpleName() + ".size.width";
+        String heightPropName = "last." + window.getClass().getSimpleName() + ".size.height";
+        String xPropName = "last." + window.getClass().getSimpleName() + ".location.x";
+        String yPropName = "last." + window.getClass().getSimpleName() + ".location.y";
+
+        Properties prop = new Properties();
+        prop.put(widthPropName, String.valueOf(window.getWidth()));
+        prop.put(heightPropName, String.valueOf(window.getHeight()));
+        prop.put(xPropName, String.valueOf(window.getX()));
+        prop.put(yPropName, String.valueOf(window.getY()));
+
+        return prop;
     }
 
     private static final Color DISABLED_FOREGROUND_COLOR = Color.GRAY;

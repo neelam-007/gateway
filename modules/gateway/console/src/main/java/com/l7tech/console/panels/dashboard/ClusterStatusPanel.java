@@ -220,7 +220,7 @@ public class ClusterStatusPanel extends JPanel {
                     Object o = clusterStatusTable.getValueAt(rowAtPoint, STATUS_TABLE_NODE_STATUS_COLUMN_INDEX);
                     if (o instanceof Integer) {
                         Integer nodeStatus = (Integer) o;
-                        if (nodeStatus.intValue() == 0) {
+                        if (nodeStatus == 0) {
                             canDelete = true;
                         }
                     }
@@ -262,7 +262,7 @@ public class ClusterStatusPanel extends JPanel {
                     Object o = clusterStatusTable.getValueAt(row, STATUS_TABLE_NODE_STATUS_COLUMN_INDEX);
                     if (o instanceof Integer) {
                         Integer nodeStatus = (Integer) o;
-                        canDelete = (nodeStatus.intValue() == 0);
+                        canDelete = (nodeStatus == 0);
                     }
                     SecureAction sa1 = new DeleteNodeEntryAction(row, canDelete);
                     getNodeDeleteMenuItem().setEnabled(sa1.isAuthorized() && canDelete && !logsBeingDisplayed);
@@ -315,7 +315,7 @@ public class ClusterStatusPanel extends JPanel {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 this.setHorizontalAlignment(SwingConstants.TRAILING);
                 if (value instanceof Long) {
-                    this.setText(convertUptimeToString(((Long) value).longValue()));
+                    this.setText(convertUptimeToString((Long) value));
                 }
 
                 return this;
@@ -469,7 +469,7 @@ public class ClusterStatusPanel extends JPanel {
      */
     private String convertUptimeToString(long uptime) {
 
-        if (uptime == 0) return new String("0 mins");
+        if (uptime == 0) return "0 mins";
 
         long uptime_ms = (/*System.currentTimeMillis() - */uptime) / 1000;
 
@@ -567,7 +567,7 @@ public class ClusterStatusPanel extends JPanel {
 
         for (int i = 0; i < clusterRequestCounterCache.size() - 1; i++, index--) {
 
-            totalCount += clusterRequestCounterCache.get(index).longValue() - clusterRequestCounterCache.get(index - 1).longValue();
+            totalCount += clusterRequestCounterCache.get(index) - clusterRequestCounterCache.get(index - 1);
         }
 
         return totalCount;
@@ -1036,7 +1036,6 @@ public class ClusterStatusPanel extends JPanel {
                     }
                 });
 
-                Utilities.centerOnScreen(window);
                 logWindows.add(window);
                 window.setVisible(true);
             }

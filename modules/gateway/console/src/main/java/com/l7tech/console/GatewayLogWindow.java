@@ -8,18 +8,20 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.SsmPreferences;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.ResourceBundle;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * To display log records.
@@ -81,7 +83,6 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
               }
           });
 
-
         // exitMenuItem listener
         getExitMenuItem().
           addActionListener(new ActionListener() {
@@ -101,6 +102,15 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         pack();
 
         if(!startConnected) getLogPane().onDisconnect();
+
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                exitMenuEventHandler();
+            }
+        });
+
+        // Load the last window status (size and location).
+        Utilities.restoreWindowStatus(this, preferences.asProperties(), 800, 600);
     }
 
     public String getNodeId() {
@@ -152,7 +162,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
     }
 
     //- PRIVATE
-
+    private static final Logger logger = Logger.getLogger(GatewayLogWindow.class.getName());
     private static final String RESOURCE_PATH = "com/l7tech/console/resources";
     private static final ResourceBundle resapplication =
             ResourceBundle.getBundle("com.l7tech.console.resources.console");
@@ -174,6 +184,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
     private JPanel frameContentPane = null;
     private LogPanel logPane = null;
 
+    private SsmPreferences preferences = TopComponents.getInstance().getPreferences();
     /**
      * Save currently displayed logs records to file
      * TODO this can probably be merged with the code in GatewayAuditWindow that does the same thing
@@ -239,6 +250,14 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
      * Clean up the resources of the window when the user exits the window.
      */
     private void exitMenuEventHandler() {
+        try {
+            Properties prop = Utilities.getWindowStatus(this);
+            preferences.updateFromProperties(prop, true);
+            preferences.store();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to save divider location.", e);
+        }
+
         dispose();
     }
 
@@ -250,7 +269,6 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
     private JPanel getJFrameContentPane() {
         if (frameContentPane == null) {
             frameContentPane = new JPanel();
-            frameContentPane.setPreferredSize(new Dimension(800, 500));
             frameContentPane.setLayout(new BorderLayout());
             getJFrameContentPane().add(getMainPane(), "Center");
         }

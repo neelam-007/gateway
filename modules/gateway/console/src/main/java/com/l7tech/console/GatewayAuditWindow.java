@@ -16,6 +16,7 @@ import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.gateway.common.logging.LogMessage;
 import com.l7tech.objectmodel.FindException;
 
@@ -24,13 +25,13 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * To display audit records.
@@ -59,10 +60,10 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
     private JPanel frameContentPane = null;
     private LogPanel logPane = null;
     private boolean startConnected;
+    private SsmPreferences preferences = TopComponents.getInstance().getPreferences();
 
-    private static
-    ResourceBundle resapplication =
-      java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
+    private static final Logger logger = Logger.getLogger(GatewayAuditWindow.class.getName());
+    private static final ResourceBundle resapplication = ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
     /**
      * Constructor
@@ -154,6 +155,15 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         } else {
             getLogPane().onDisconnect();
         }
+
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                exitMenuEventHandler();
+            }
+        });
+
+        // Load the last window status (size and location).
+        Utilities.restoreWindowStatus(this, preferences.asProperties(), 800, 600);
     }
 
     /**
@@ -231,6 +241,14 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
      * Clean up the resources of the window when the user exits the window.
      */
     private void exitMenuEventHandler() {
+        try {
+            Properties prop = Utilities.getWindowStatus(this);
+            preferences.updateFromProperties(prop, true);
+            preferences.store();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to save divider location.", e);
+        }
+
         dispose();
     }
 

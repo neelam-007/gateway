@@ -1,7 +1,6 @@
 package com.l7tech.console.action;
 
 import com.l7tech.gateway.common.audit.LogonEvent;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
@@ -109,7 +108,6 @@ public class ViewGatewayAuditsAction extends SecureAction {
         });
 
         gatewayAuditWindow.pack();
-        Utilities.centerOnScreen(gatewayAuditWindow);
         return gatewayAuditWindow;
     }
 
