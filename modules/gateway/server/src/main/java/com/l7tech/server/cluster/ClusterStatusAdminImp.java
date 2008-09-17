@@ -229,8 +229,6 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
 
     @Secured(types = EntityType.CLUSTER_PROPERTY, stereotype = MethodStereotype.DELETE_ENTITY)
     public void deleteProperty(ClusterProperty clusterProperty) throws DeleteException {
-        if ("license".equals(clusterProperty.getName()))
-            throw new DeleteException("Can't delete license");
         clusterPropertyManager.delete(clusterProperty);
     }
 

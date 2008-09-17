@@ -11,7 +11,6 @@ import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.TooManyChildElementsException;
-import com.l7tech.console.panels.EulaDialog;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
@@ -44,8 +43,10 @@ public class LicenseDialog extends JDialog {
     private JPanel leftPanel;
     private JButton closeButton;
     private JButton installButton;
+    private JButton removeButton;
 
     private boolean showingLicenseOrError = false;
+    private ClusterStatusAdmin admin = Registry.getDefault().getClusterStatusAdmin();
 
     public LicenseDialog(Frame owner, String gatewayName) throws HeadlessException {
         super(owner);
@@ -162,6 +163,42 @@ public class LicenseDialog extends JDialog {
             }
         });
 
+        removeButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                String options[] = {"Remove", "Cancel"};
+                String initOption = options[1];
+
+                int confResult = JOptionPane.showOptionDialog(LicenseDialog.this,
+                    "Removing the gateway license will disconnect the SecureSpan Manager.\n" +
+                    "Are you sure that you want to remove the existing gateway license?", "Remove Existing License",
+                    JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null, options, initOption);
+                if (confResult != 0) {
+                    return;
+                }
+
+                Registry reg = Registry.getDefault();
+                ClusterStatusAdmin admin = reg.getClusterStatusAdmin();
+                try {
+                    ClusterProperty licProp = admin.findPropertyByName("license");
+                    if (licProp != null) {
+                        admin.deleteProperty(licProp);
+                    }
+                } catch (ObjectModelException e2) {
+                    JOptionPane.showMessageDialog(LicenseDialog.this,
+                        "Unable to forcibly remove this license file: " +
+                            ExceptionUtils.getMessage(e2),
+                        "Unable to remove license file",
+                        JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                TopComponents.getInstance().setConnectionLost(true);
+                TopComponents.getInstance().disconnectFromGateway();
+            }
+        });
+
+        setRemoveButtonVisibleOrInvisible();
+
         installButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 findLicenseStream(new Functions.BinaryVoid<InputStream, Throwable>() {
@@ -170,8 +207,6 @@ public class LicenseDialog extends JDialog {
                             if (ioe != null) throw new CausedIOException(ioe);
                             if (is == null) return;
                             String licenseXml = XmlUtil.nodeToString(XmlUtil.parse(is));
-                            Registry reg = Registry.getDefault();
-                            ClusterStatusAdmin admin = reg.getClusterStatusAdmin();
 
                             if (showingLicenseOrError) {
                                 // Last chance to confirm installation over top of an existing license
@@ -253,14 +288,16 @@ public class LicenseDialog extends JDialog {
                                 showingLicenseOrError = license != null;
                                 licensePanel.setLicense(license);
                                 TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
-                                reg.getLicenseManager().setLicense(license);
-                                installButton.setVisible(false);
+                                Registry.getDefault().getLicenseManager().setLicense(license);
+                                installButton.setText(showingLicenseOrError ? "Change License" : "Install License");
                                 pack();
                             } catch (InvalidLicenseException e1) {
                                 licensePanel.setLicenseError(ExceptionUtils.getMessage(e1));
                                 showingLicenseOrError = true;
                                 pack();
                             }
+
+                            setRemoveButtonVisibleOrInvisible();
                         } catch (IOException ex) {
                             JOptionPane.showMessageDialog(LicenseDialog.this,
                                                           "Unable to read this license file: " + ExceptionUtils.getMessage(ex),
@@ -283,10 +320,8 @@ public class LicenseDialog extends JDialog {
         });
 
         try {
-            Registry reg = Registry.getDefault();
-            ClusterStatusAdmin admin = reg.getClusterStatusAdmin();
             License license = admin.getCurrentLicense();
-            reg.getLicenseManager().setLicense(license);
+            Registry.getDefault().getLicenseManager().setLicense(license);
             licensePanel.setLicense(license);
             showingLicenseOrError = license != null;
             installButton.setText(showingLicenseOrError ? "Change License" : "Install License");
@@ -298,6 +333,21 @@ public class LicenseDialog extends JDialog {
         }
     }
 
+    /**
+     * Set the remove button to be visible or invisible depending on if a license has been installed or not.
+     */
+    private void setRemoveButtonVisibleOrInvisible() {
+        try {
+            ClusterProperty licProp = admin.findPropertyByName("license");
+            if (licProp == null) {
+                removeButton.setVisible(false);
+            } else {
+                removeButton.setVisible(true);
+            }
+        } catch (ObjectModelException e2) {
+            removeButton.setVisible(false);
+        }
+    }
 
     /**
      * Show the click-wrap EULA dialog, if there's a EULA in this license.
