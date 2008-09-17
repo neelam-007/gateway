@@ -7,6 +7,7 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ResourceReference;
+import org.apache.wicket.validation.validator.DateValidator;
 import org.apache.wicket.util.value.ValueMap;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 
@@ -23,11 +24,11 @@ public class AuditDownloadPanel extends Panel {
         super(id);
         setOutputMarkupId(true);
 
-        final DateTextField startDateField = new DateTextField("audit.startdate", new Model(new Date()));
-        final DateTextField endDateField = new DateTextField("audit.enddate", new Model(new Date()));
+        final YuiDateSelector startDateField = new YuiDateSelector("audit.startdate", new Model(new Date()));
+        final YuiDateSelector endDateField = new YuiDateSelector("audit.enddate", new Model(new Date()));
 
-        startDateField.setRequired(true);
-        endDateField.setRequired(true);
+        startDateField.getDateTextField().add(DateValidator.maximum(new Date()));
+        endDateField.getDateTextField().add(DateValidator.maximum(new Date()));
 
         OkCancelForm form = new OkCancelForm("audit.form", "feedback", "button.ok", "button.cancel", window){
             @Override

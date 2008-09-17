@@ -63,7 +63,6 @@ public class YuiDataTable extends Panel {
         add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_BUTTON ) );
         add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_MENU ) );
         add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_DATATABLE ) );
-        add( HeaderContributor.forCss( YuiCommon.RES_CSS_SKIN ) ); // Overrides previous settings
 
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DOM_EVENT ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_CONTAINER ) );

@@ -11,7 +11,6 @@ public class YuiCommon {
     static final ResourceReference RES_CSS_SAM_BUTTON = new CompressedResourceReference(YuiCommon.class, "../resources/yui/button/assets/skins/sam/button.css" );
     static final ResourceReference RES_CSS_SAM_MENU = new CompressedResourceReference(YuiCommon.class, "../resources/yui/menu/assets/skins/sam/menu.css" );
     static final ResourceReference RES_CSS_SAM_DATATABLE = new CompressedResourceReference(YuiCommon.class, "../resources/yui/datatable/assets/skins/sam/datatable.css" );
-    static final ResourceReference RES_CSS_SKIN = new CompressedResourceReference(YuiCommon.class, "../resources/css/l7-yui-skin.css" );
     static final ResourceReference RES_CSS_SAM_CALENDAR = new CompressedResourceReference(YuiCommon.class, "../resources/yui/calendar/assets/skins/sam/calendar.css" );
     static final ResourceReference RES_CSS_SAM_CONTAINER = new CompressedResourceReference(YuiCommon.class, "../resources/yui/container/assets/skins/sam/container.css" );
 

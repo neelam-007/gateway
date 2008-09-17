@@ -64,7 +64,7 @@ public class AuditAdminImpl implements AuditAdmin {
     }
 
     public void deleteOldAuditRecords() throws DeleteException {
-        auditRecordManager.deleteOldAuditRecords();
+        auditRecordManager.deleteOldAuditRecords(-1);
     }
 
     public void initDao() throws Exception {

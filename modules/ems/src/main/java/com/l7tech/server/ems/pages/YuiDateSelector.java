@@ -16,6 +16,8 @@ import org.apache.wicket.ResourceReference;
  */
 public class YuiDateSelector extends Panel {
 
+    //- PUBLIC
+
     /**
      * Create a DateSelector with the given model.
      * 
@@ -28,7 +30,6 @@ public class YuiDateSelector extends Panel {
         add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_CONTAINER ) );
         add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_BUTTON ) );
         add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_CALENDAR ) );
-        //add( HeaderContributor.forCss( YuiCommon.RES_CSS_SKIN ) ); // Overrides previous settings
 
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DOM_EVENT ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DRAGDROP ) );
@@ -40,6 +41,7 @@ public class YuiDateSelector extends Panel {
         add( HeaderContributor.forJavaScript( new ResourceReference( YuiDataTable.class, "../resources/js/dateSelector.js" ) ) );
 
         DateTextField textField = new DateTextField("date", model);
+        textField.setRequired(true);
         Button showButton = new Button("show");
         WebMarkupContainer calendarDiv = new WebMarkupContainer("calendar");
         WebMarkupContainer calendarBody = new WebMarkupContainer("calendar-body");        
@@ -69,6 +71,20 @@ public class YuiDateSelector extends Panel {
         label.setEscapeModelStrings(false);
         
         add( label );
+
+        this.dateTextField = textField;
     }
-    
+
+    /**
+     * Access the underlying date text field to allow configuration of validation options.
+     *
+     * @return The date text field.
+     */
+    public DateTextField getDateTextField() {
+        return dateTextField;
+    }
+
+    //- PRIVATE
+
+    private final DateTextField dateTextField;
 }

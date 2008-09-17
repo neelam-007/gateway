@@ -41,9 +41,14 @@ public interface AuditRecordManager extends EntityManager<AuditRecord, EntityHea
     /**
      * Delete old audit records.
      *
+     * <p>Note that if your request deletion of audits that are not of the minimum
+     * permitted age for the system wide settings then the minAge value will be
+     * silently ignored (as though -1 was used)</p>
+     *
+     * @param minAge The minimum age for deleted audits (millis, -1 for default)
      * @throws DeleteException If the deletion fails.
      */
-    void deleteOldAuditRecords() throws DeleteException;
+    void deleteOldAuditRecords( long minAge ) throws DeleteException;
 
     /**
      * Find the count of records that match the given criteria.

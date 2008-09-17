@@ -23,7 +23,7 @@ public class AuditRecordManagerStub extends EntityManagerStub<AuditRecord,Entity
         return Collections.emptyList();
     }
 
-    public void deleteOldAuditRecords() throws DeleteException {
+    public void deleteOldAuditRecords(long minAge) throws DeleteException {
         throw new UnsupportedOperationException();
     }
 

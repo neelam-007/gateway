@@ -112,11 +112,32 @@ public interface AuditContext {
     void addDetail(AuditDetail detail, Object source, Throwable thrown);
 
     /**
+     * Is the current record an update?
+     *
+     * @return true if update
+     */
+    boolean isUpdate();
+
+    /**
      * Sets whether the current record (set by {@link #setCurrentRecord}) is an update to a previous audit record.
      *
      * @param update    true if updating; false if creating
      */
     void setUpdate(boolean update);
+
+    /**
+     * Is the current record a system generated record?
+     *
+     * @return true if system
+     */
+    boolean isSystem();
+
+    /**
+     * Sets whether the current record is a system generated record.
+     *
+     * @param system true if system.
+     */
+    void setSystem(boolean system);
 
     /**
      * Get the currently acumulated hints.

@@ -45,7 +45,8 @@ public class AdminInfo {
      * @return an AdminInfo instance.  Never null, but may contain default information if the real admin info
      *         can't be located.
      */
-    public static AdminInfo find() {
+    public static AdminInfo find() { return find(true);  }
+    public static AdminInfo find( boolean warnOnMissing ) {
         Subject clientSubject = null;
         String login = null;
         String uniqueId = null;
@@ -55,8 +56,10 @@ public class AdminInfo {
             address = RemoteUtils.getClientHost();
             clientSubject = Subject.getSubject(AccessController.getContext());
         } catch (ServerNotActiveException e) {
-            logger.log(Level.WARNING, "The administrative event caused as local call, outside of servicing an adminstrative remote call." +
-              "Will use ip/user" + LOCALHOST_IP + '/' + LOCALHOST_SUBJECT);
+            if ( warnOnMissing ) {
+                logger.log(Level.WARNING, "The administrative event caused as local call, outside of servicing an adminstrative remote call." +
+                    "Will use ip/user" + LOCALHOST_IP + '/' + LOCALHOST_SUBJECT);
+            }
             address = LOCALHOST_IP;
             login = LOCALHOST_SUBJECT;
         }

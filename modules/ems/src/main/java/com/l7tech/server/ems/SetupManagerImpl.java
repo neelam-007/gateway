@@ -9,6 +9,7 @@ import com.l7tech.identity.UserBean;
 import com.l7tech.identity.User;
 
 import com.l7tech.server.GatewayLicenseManager;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -22,14 +23,20 @@ import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.util.ResourceUtils;
 import static org.springframework.transaction.annotation.Propagation.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.InitializingBean;
 
 import javax.security.auth.Subject;
+import javax.sql.DataSource;
 import java.util.Collections;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.security.AccessController;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.SQLWarning;
 
 /**
  * Encapsulates behavior for initial setup of a new EMS instance.
@@ -38,20 +45,23 @@ import java.security.AccessController;
 public class SetupManagerImpl implements InitializingBean, SetupManager {
     private static final Logger logger = Logger.getLogger(SetupManagerImpl.class.getName());
 
-    private GatewayLicenseManager licenseManager;
-    private IdentityProviderFactory identityProviderFactory;
-    private IdentityProviderConfigManager identityProviderConfigManager;
-    private RoleManager roleManager;
+    private final GatewayLicenseManager licenseManager;
+    private final IdentityProviderFactory identityProviderFactory;
+    private final IdentityProviderConfigManager identityProviderConfigManager;
+    private final RoleManager roleManager;
+    private final AuditContext auditContext;
 
     public SetupManagerImpl(final GatewayLicenseManager licenseManager,
                             final IdentityProviderFactory identityProviderFactory,
                             final IdentityProviderConfigManager identityProviderConfigManager,
-                            final RoleManager roleManager
+                            final RoleManager roleManager,
+                            final AuditContext context
     ) {
         this.licenseManager = licenseManager;
         this.identityProviderFactory = identityProviderFactory;
         this.identityProviderConfigManager = identityProviderConfigManager;
         this.roleManager = roleManager;
+        this.auditContext = context;
     }
 
     /**
@@ -134,6 +144,45 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
         }
     }
 
+    /**
+     * Test the given datasource.
+     *
+     * <p>This will cause failure of the server if the database cannot be accessed.</p>
+     *
+     * <p>This test avoids an issue with Derby issuing SQL warnings when using the
+     * createdb connection option and the database already exists.</p>
+     *
+     * @param dataSource The datasource to test
+     */
+    public static void testDataSource( final DataSource dataSource ) {
+        Connection connection = null;
+
+        boolean created = true;
+        try {
+            connection = dataSource.getConnection();
+            SQLWarning warning = connection.getWarnings();
+            while ( warning != null ) {
+                if ( "01J01".equals(warning.getSQLState()) ) {
+                    created = false;
+                } else {
+                    logger.log( Level.WARNING, "SQL Warning: " + warning.getErrorCode() + ", SQLState: " + warning.getSQLState() + ", Message: " + warning.getMessage());
+                }
+                
+                warning = warning.getNextWarning();
+            }
+        } catch ( SQLException se ) {
+            throw new RuntimeException( "Could not connect to database.", se );
+        } finally {
+            ResourceUtils.closeQuietly(connection);
+        }
+
+        if ( created ) {
+            logger.config( "Created new database." );
+        } else {
+            logger.config( "Using existing database." );
+        }
+    }
+
     private InternalUserManager getInternalUserManager() throws FindException {
         InternalUserManager internalUserManager = null;
 
@@ -162,6 +211,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
             config.setAdminEnabled(true);
             config.setName("Internal Identity Provider");
             config.setDescription("Internal Identity Provider");
+            auditContext.setSystem(true);
             long id = identityProviderConfigManager.save(config);
             logger.info("Created configuration for internal identity provider with identifier '" + id + "'.");
 
@@ -173,6 +223,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
             role.getPermissions().add(new Permission(role, OperationType.READ, EntityType.ANY));
             role.getPermissions().add(new Permission(role, OperationType.UPDATE, EntityType.ANY));
             role.getPermissions().add(new Permission(role, OperationType.DELETE, EntityType.ANY));
+            auditContext.setSystem(true);
             id = roleManager.save(role);
             logger.info("Created configuration for administration role with identifier '" + id + "'.");
         }

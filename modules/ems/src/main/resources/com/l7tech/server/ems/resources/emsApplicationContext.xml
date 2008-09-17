@@ -24,9 +24,24 @@
         </property>
     </bean>
 
-    <bean id="dataSource" class="org.apache.derby.jdbc.EmbeddedDataSource40">
+    <bean id="creationDataSource" class="org.apache.derby.jdbc.EmbeddedDataSource40">
         <property name="databaseName" value="var/db/emsdb"/>
         <property name="createDatabase" value="create"/>
+    </bean>
+
+   <bean id="createDB"
+          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod"
+                  value="com.l7tech.server.ems.SetupManagerImpl.testDataSource"/>
+        <property name="arguments">
+            <list>
+                <ref local="creationDataSource"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="dataSource" class="org.apache.derby.jdbc.EmbeddedDataSource40" depends-on="createDB">
+        <property name="databaseName" value="var/db/emsdb"/>
     </bean>
 
     <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
@@ -236,6 +251,7 @@
         <constructor-arg index="1" ref="identityProviderFactory"/>
         <constructor-arg index="2" ref="identityProviderConfigManager"/>
         <constructor-arg index="3" ref="roleManager"/>
+        <constructor-arg index="4" ref="auditContext"/>
     </bean>
 
     <!-- Security Manager -->

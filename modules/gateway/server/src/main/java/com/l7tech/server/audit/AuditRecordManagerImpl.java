@@ -42,6 +42,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -107,7 +108,7 @@ public class AuditRecordManagerImpl
         return super.findPage( sortProperty.getPropertyName(), ascending, offset, count, asCriterion(criteria) );
     }
 
-    public void deleteOldAuditRecords() throws DeleteException {
+    public void deleteOldAuditRecords( final long minAge ) throws DeleteException {
         applicationContext.publishEvent(new AuditPurgeInitiated(this));
         String sMinAgeHours = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
         if (sMinAgeHours == null || sMinAgeHours.length() == 0)
@@ -120,9 +121,8 @@ public class AuditRecordManagerImpl
                     "' is not a valid number. Using " + minAgeHours + " instead.");
         }
 
-        final long maxTime = System.currentTimeMillis() - (minAgeHours * 60 * 60 * 1000);
-
-        Runnable runnable = new DeletionTask(maxTime);
+        final long systemMinAge =  minAgeHours * 60 * 60 * 1000;
+        Runnable runnable = new DeletionTask( System.currentTimeMillis() -  Math.max(systemMinAge, minAge) );
 
         new Thread(runnable).start();
     }
@@ -158,6 +158,10 @@ public class AuditRecordManagerImpl
     private static final String PROP_OID = "oid";
     private static final String PROP_NODEID = "nodeId";
     private static final String PROP_CLASS = "class";
+
+    private static final String DELETE_MYSQL = "DELETE FROM audit_main WHERE audit_level <> ? AND time < ? LIMIT 10000";
+    private static final String DELETE_DERBY = "DELETE FROM audit_main where objectid in (SELECT objectid FROM (SELECT ROW_NUMBER() OVER() as rownumber, objectid FROM audit_main WHERE audit_level <> ?  and time < ?) AS foo WHERE rownumber <= 10000)";
+    private static final AtomicBoolean mySql = new AtomicBoolean(true);
 
     private static final Logger logger = Logger.getLogger(AuditRecordManagerImpl.class.getName());
     private ServerConfig serverConfig;
@@ -263,18 +267,33 @@ public class AuditRecordManagerImpl
 
         @SuppressWarnings({"deprecation"})
         private int deleteBatch(final AuditRecordHolder auditRecordHolder, final long maxTime, int totalDeleted) throws HibernateException, SQLException {
-            final Session session = getSession();
-            int numDeleted;
+            Session session = null;
+            boolean ismysql = mySql.get();
+            int numDeleted = 0;
             PreparedStatement deleteStmt = null;
-            try {
-                final Connection conn = session.connection();
-                deleteStmt = conn.prepareStatement("DELETE FROM audit_main WHERE audit_level <> ? AND time < ? LIMIT 10000");
-                deleteStmt.setString(1, Level.SEVERE.getName());
-                deleteStmt.setLong(2, maxTime);
-                numDeleted = deleteStmt.executeUpdate();
-            } finally {
-                ResourceUtils.closeQuietly(deleteStmt);
-                releaseSession(session);
+            boolean retry = true;
+            while ( retry ) {
+                retry = false;
+                try {
+                    session = getSession();
+                    final Connection conn = session.connection();
+                    deleteStmt = ismysql ?
+                            conn.prepareStatement(DELETE_MYSQL) :
+                            conn.prepareStatement(DELETE_DERBY);
+                    deleteStmt.setString(1, Level.SEVERE.getName());
+                    deleteStmt.setLong(2, maxTime);
+                    numDeleted = deleteStmt.executeUpdate();
+                } catch( SQLException se ) {
+                    if ( ismysql & "42X01".equals(se.getSQLState()) ) {
+                        mySql.set(ismysql = false);
+                        retry = true;
+                    } else {
+                        throw se;
+                    }
+                } finally {
+                    ResourceUtils.closeQuietly(deleteStmt);
+                    releaseSession(session);
+                }
             }
 
             final SystemAuditRecord rec = auditRecordHolder.auditRecord;

@@ -16,6 +16,7 @@ import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.ajax.markup.html.form.AjaxButton;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.validation.validator.DateValidator;
 
 import java.util.Iterator;
 import java.util.List;
@@ -63,6 +64,15 @@ public class Audits extends EmsPage {
             }
         };
 
+        Button deleteButton = new AjaxButton("deleteAuditsButton") {
+            protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
+                AuditDeletePanel delete = new AuditDeletePanel( modal.getContentId(), modal );
+                modal.setTitle( "Audit Deletion" );
+                modal.setContent( delete );
+                modal.show( ajaxRequestTarget );
+            }
+        };
+
         final HiddenField hidden = new HiddenField("auditId", new Model(""));
         hidden.setOutputMarkupId( true );
 
@@ -78,8 +88,12 @@ public class Audits extends EmsPage {
         final WebMarkupContainer tableContainer = new WebMarkupContainer("audittable.container");
         tableContainer.setOutputMarkupId(true);
         Form auditSelectionForm = new Form("auditselectform");
-        auditSelectionForm.add( new YuiDateSelector("auditstart", dateStartModel ) );
-        auditSelectionForm.add( new YuiDateSelector("auditend", dateEndModel ) );
+        YuiDateSelector startDate = new YuiDateSelector("auditstart", dateStartModel );
+        YuiDateSelector endDate = new YuiDateSelector("auditend", dateEndModel );
+        startDate.getDateTextField().add(DateValidator.maximum(new Date()));
+        endDate.getDateTextField().add(DateValidator.maximum(new Date()));
+        auditSelectionForm.add( startDate );
+        auditSelectionForm.add( endDate );
         auditSelectionForm.add( new DropDownChoice( "audittype", typeModel, Arrays.asList(values), new IChoiceRenderer(){
             public Object getDisplayValue( final Object key ) {
                 return new StringResourceModel( "audit.type."+key, Audits.this, null ).getString();
@@ -106,6 +120,7 @@ public class Audits extends EmsPage {
         tableContainer.add( buildDataTable( (String)typeModel.getObject(), (Date)dateStartModel.getObject(), (Date)dateEndModel.getObject(), columns, hidden, detailsContainer ) );
 
         pageForm.add( downloadButton );
+        pageForm.add( deleteButton );
         pageForm.add( hidden );
 
         add( pageForm );

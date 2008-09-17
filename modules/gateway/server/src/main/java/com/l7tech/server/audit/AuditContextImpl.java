@@ -86,8 +86,20 @@ public class AuditContextImpl implements AuditContext {
         }
     }
 
+    public boolean isUpdate() {
+        return update;
+    }
+
     public void setUpdate(boolean update) {
         this.update = update;
+    }
+
+    public boolean isSystem() {
+        return system;
+    }
+
+    public void setSystem(boolean system) {
+        this.system = system;
     }
 
     public void setKeystore(final DefaultKey keystore) {
@@ -243,6 +255,8 @@ public class AuditContextImpl implements AuditContext {
             details.clear();
             highestLevelYetSeen = Level.ALL;
             ordinal = 0;
+            update = false;
+            system = false;
         }
     }
 
@@ -443,6 +457,7 @@ public class AuditContextImpl implements AuditContext {
     private AuditRecord currentRecord;
     /** Indicates if {@link #currentRecord} is to be inserted or updated. */
     private boolean update;
+    private boolean system;
     private Level highestLevelYetSeen = Level.ALL;
     private volatile int ordinal = 0;
 
