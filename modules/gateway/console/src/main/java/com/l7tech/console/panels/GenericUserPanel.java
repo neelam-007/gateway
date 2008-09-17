@@ -86,12 +86,13 @@ public class GenericUserPanel extends UserPanel {
     private final String USER_DOES_NOT_EXIST_MSG = "This user no longer exists";
 
     private JCheckBox accountNeverExpiresCheckbox;
-    private JDateTimeChooser expireTimeChooser = new JDateTimeChooser();
+    private JDateTimeChooser expireTimeChooser;
     private JPanel expirationPanel;
     private boolean canUpdate;
 
     public GenericUserPanel() {
         super();
+        expireTimeChooser = new JDateTimeChooser(null, new Date(System.currentTimeMillis()), null, null);
     }
 
     private void initialize() {
