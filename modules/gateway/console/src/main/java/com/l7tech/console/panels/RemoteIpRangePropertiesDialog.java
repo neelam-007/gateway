@@ -77,7 +77,7 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
         add4.setFormatterFactory(new DefaultFormatterFactory(formatter));
         formatter = new NumberFormatter();
         formatter.setMaximum(32);
-        formatter.setMinimum(0);
+        formatter.setMinimum(1);
         suffix.setFormatterFactory(new DefaultFormatterFactory(formatter));
 
         setCallbacks();
@@ -168,6 +168,10 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
             add2.setText("" + address[1]);
             add3.setText("" + address[2]);
             add4.setText("" + address[3]);
+            // bug 4796: any existing 0's should be changed to 32 when edited.
+            if (subject.getNetworkMask() == 0) {
+                subject.setNetworkMask(32);
+            }
             suffix.setText("" + subject.getNetworkMask());
             if (subject.getIpSourceContextVariable() == null) {
                 contextVarRadio.setSelected(false);
