@@ -8,12 +8,16 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.tree.TreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.MutableTreeNode;
+import javax.swing.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.IOException;
@@ -77,10 +81,37 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
         return "com/l7tech/console/resources/folder.gif";
     }
 
-    @Override
-    public boolean accept(AbstractTreeNode node) {
-        // Can't drag into an Include (yet?)
-        return false;
+    /**
+     * Allow the include policy node to receive an assertion node and add it below the include policy node.
+     * This receive method is exactly same as the receive method of LeafAssertionTreeNode.
+     * @param node: an assertion from the palette.
+     * @return true if successfully receiving a node.
+     */
+    public boolean receive(AbstractTreeNode node) {
+        if (super.receive(node)) return true;
+
+        JTree tree = (JTree) TopComponents.getInstance().getComponent(PolicyTree.NAME);
+        if (tree != null) {
+            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+            Assertion[] nass = node.asAssertions();
+            if (nass != null) {
+                for (int i = 0; i < nass.length; i++) {
+                    Assertion nas = nass[i];
+                    AssertionTreeNode as = AssertionTreeNodeFactory.asTreeNode(nas);
+                    final MutableTreeNode parent = (MutableTreeNode)getParent();
+                    int index = parent.getIndex(this);
+                    if (index == -1) {
+                        throw new IllegalStateException("Unknown node to the three model " + this);
+                    }
+                    model.insertNodeInto(as, parent, index + (i + 1));
+                }
+            } else {
+                logger.log(Level.WARNING, "The node has no associated assertion " + node);
+            }
+        } else {
+            logger.log(Level.WARNING, "Unable to reach the palette tree.");
+        }
+        return true;
     }
 
     public Policy getPolicy() {

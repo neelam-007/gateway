@@ -539,7 +539,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
             }
         }
 
-        return isDescendantOfInclude(true);
+        return isDescendantOfInclude(false);
     }
 }
 
