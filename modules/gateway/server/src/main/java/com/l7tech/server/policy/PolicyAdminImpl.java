@@ -3,13 +3,11 @@
  */
 package com.l7tech.server.policy;
 
-import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
 import static com.l7tech.util.Functions.map;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
@@ -17,29 +15,25 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.*;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import com.l7tech.gateway.common.admin.Administrative;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.io.IOException;
-import java.text.MessageFormat;
 
 /**
  * @author alex
  */
-public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
+@Administrative
+public class PolicyAdminImpl implements PolicyAdmin {
     protected static final Logger logger = Logger.getLogger(PolicyAdminImpl.class.getName());
 
     private final PolicyManager policyManager;
     private final PolicyCache policyCache;
     private final PolicyVersionManager policyVersionManager;
     private final RoleManager roleManager;
-    private Auditor auditor;
 
     private static final Set<PropertyDescriptor> OMIT_VERSION_AND_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "version", "xml");
     private static final Set<PropertyDescriptor> OMIT_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "xml");
@@ -243,7 +237,7 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
      * @throws ObjectModelException
      */
     private void savePolicyFragments(boolean activateAsWell, HashMap<String, Policy> fragments, HashMap<String, String> fragmentNameGuidMap)
-    throws IOException, SaveException, ObjectModelException
+    throws IOException, ObjectModelException
     {
         Set<PolicyDependencyTreeNode> dependencyTree = generateIncludeDependencyTree(fragments);
 
@@ -268,7 +262,7 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
 
                 if (action == FragmentImportAction.CREATE) {
                     dependencyNode.policy.setOid(Policy.DEFAULT_OID);
-                    long oid = policyManager.save(dependencyNode.policy);
+                    policyManager.save(dependencyNode.policy);
                     policyVersionManager.checkpointPolicy(dependencyNode.policy, activateAsWell, true);
                     policyManager.addManagePolicyRole(dependencyNode.policy);
                     fragmentNameGuidMap.put(dependencyNode.policy.getName(), dependencyNode.policy.getGuid());
@@ -442,10 +436,6 @@ public class PolicyAdminImpl implements PolicyAdmin, ApplicationContextAware {
         policy.disable();
         policyManager.update(policy);
         policyVersionManager.deactivateVersions(policyOid, PolicyVersion.DEFAULT_OID);
-    }
-
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.auditor = new Auditor(this, applicationContext, logger);
     }
 
 }

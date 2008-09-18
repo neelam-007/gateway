@@ -1,13 +1,11 @@
 package com.l7tech.server.cluster;
 
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
+import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.security.rbac.EntityType;
-import com.l7tech.gateway.common.security.rbac.MethodStereotype;
-import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.util.CollectionUpdate;
 import com.l7tech.util.CollectionUpdateProducer;
 import com.l7tech.util.TimeUnit;
@@ -45,6 +43,7 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Jan 2, 2004<br/>
  */
+@Administrative
 public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     /**
      * Constructs the new cluster status admin implementation.
@@ -194,7 +193,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         Map<String,String> namesToDefs =  serverConfig.getClusterPropertyDefaults();
         Map<String,String> namesToVisi =  serverConfig.getClusterPropertyVisibilities();
 
-        Collection<ClusterPropertyDescriptor> properties = new ArrayList();
+        Collection<ClusterPropertyDescriptor> properties = new ArrayList<ClusterPropertyDescriptor>();
         for (String name : namesToDesc.keySet()) {
             String visible = namesToVisi.get(name);
             if ( visible == null ) {
@@ -227,7 +226,6 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         }
     }
 
-    @Secured(types = EntityType.CLUSTER_PROPERTY, stereotype = MethodStereotype.DELETE_ENTITY)
     public void deleteProperty(ClusterProperty clusterProperty) throws DeleteException {
         clusterPropertyManager.delete(clusterProperty);
     }

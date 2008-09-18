@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 <!--
     The Application Context contains the definitions that describe the SSG server side components.
     Things such as identitiy managers, trust components, policy services token services etc. are defined
@@ -8,7 +7,20 @@
     Data Access (Hibernate, Transactions) is defined in dataAccessContext.xml.
 -->
 <!--suppress SpringModelInspection -->
-<beans>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation= "http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+                            http://www.springframework.org/schema/aop
+                            http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+                            http://www.springframework.org/schema/tx
+                            http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+
+    <!-- enable automatic proxy generation for any class or superclass annotated with @Transactional -->
+    <tx:annotation-driven order="20000"/>
 
     <bean id="rmiConfigCheck" class="com.l7tech.gateway.common.spring.remoting.rmi.RmiConfigCheck"/>
 
@@ -20,6 +32,12 @@
     <!-- SSG boot process -->
     <bean id="ssgBoot" class="com.l7tech.server.BootProcess" depends-on="systemAuditListener systemProperties serviceWsdlImportChecker sinkManager">
         <property name="serverConfig" ref="serverConfig"/>
+    </bean>
+
+    <bean id="clusterBoot" class="com.l7tech.server.cluster.ClusterBootProcess">
+        <constructor-arg index="0" ref="clusterInfoManager"/>   
+        <constructor-arg index="1" ref="distributedMessageIdManager"/>
+        <constructor-arg index="2"  ref="serverConfig"/>
     </bean>
 
     <bean id="ssgShutdown" class="com.l7tech.server.boot.ShutdownWatcher">
@@ -161,18 +179,18 @@
         <constructor-arg value="com.l7tech.server.identity.internal.InternalIdentityProviderImpl"/>
         <constructor-arg value="internalIdentityProvider"/>
     </bean>
-    <bean id="internalIdentityProvider" class="com.l7tech.server.identity.internal.InternalIdentityProviderImpl" singleton="false">
+    <bean id="internalIdentityProvider" class="com.l7tech.server.identity.internal.InternalIdentityProviderImpl" scope="prototype">
         <property name="clientCertManager" ref="clientCertManager"/>
         <property name="keystore" ref="defaultKey"/>
         <property name="certificateAuthenticator" ref="certificateAuthenticator"/>
         <property name="userManager" ref="internalUserManager"/>
         <property name="groupManager" ref="internalGroupManager"/>
     </bean>
-    <bean name="internalUserManager" class="com.l7tech.server.identity.internal.InternalUserManagerImpl" singleton="false" parent="hibernateBean">
+    <bean name="internalUserManager" class="com.l7tech.server.identity.internal.InternalUserManagerImpl" scope="prototype" parent="hibernateBean">
         <constructor-arg ref="roleManager"/>
         <constructor-arg ref="clientCertManager"/>
     </bean>
-    <bean name="internalGroupManager" class="com.l7tech.server.identity.internal.InternalGroupManagerImpl" singleton="false" parent="hibernateBean">
+    <bean name="internalGroupManager" class="com.l7tech.server.identity.internal.InternalGroupManagerImpl" scope="prototype" parent="hibernateBean">
         <constructor-arg ref="roleManager"/>
     </bean>
 
@@ -181,7 +199,7 @@
         <constructor-arg value="com.l7tech.server.identity.fed.FederatedIdentityProviderImpl"/>
         <constructor-arg value="federatedIdentityProvider"/>
     </bean>
-    <bean id="federatedIdentityProvider" class="com.l7tech.server.identity.fed.FederatedIdentityProviderImpl" singleton="false">
+    <bean id="federatedIdentityProvider" class="com.l7tech.server.identity.fed.FederatedIdentityProviderImpl" scope="prototype">
         <property name="clientCertManager" ref="clientCertManager"/>
         <property name="trustedCertManager" ref="cachingTrustedCertManager"/>
         <property name="trustedCertServices" ref="trustedCertServices"/>
@@ -190,31 +208,36 @@
         <property name="userManager" ref="federatedUserManager"/>
         <property name="groupManager" ref="federatedGroupManager"/>
     </bean>
-    <bean name="federatedUserManager" class="com.l7tech.server.identity.fed.FederatedUserManagerImpl" singleton="false" parent="hibernateBean">
+    <bean name="federatedUserManager" class="com.l7tech.server.identity.fed.FederatedUserManagerImpl" scope="prototype" parent="hibernateBean">
         <constructor-arg ref="clientCertManager"/>
     </bean>
-    <bean name="federatedGroupManager" class="com.l7tech.server.identity.fed.FederatedGroupManagerImpl" singleton="false" parent="hibernateBean"/>
+    <bean name="federatedGroupManager" class="com.l7tech.server.identity.fed.FederatedGroupManagerImpl" scope="prototype" parent="hibernateBean"/>
 
     <!-- LDAP IdentityProvider, UserManager and GroupManager factories -->
     <bean id="ldapIdentityProviderFactory" class="com.l7tech.server.identity.GenericIdentityProviderFactorySpi">
         <constructor-arg value="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl"/>
         <constructor-arg value="ldapIdentityProvider"/>
     </bean>
-    <bean id="ldapIdentityProvider" class="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl" singleton="false">
+    <bean id="ldapIdentityProvider" class="com.l7tech.server.identity.ldap.LdapIdentityProviderImpl" scope="prototype">
         <!--roleManager-->
         <property name="clientCertManager" ref="clientCertManager"/>
         <property name="serverConfig" ref="serverConfig"/>
         <property name="certificateAuthenticator" ref ="certificateAuthenticator"/>
         <property name="userManager">
-            <bean class="com.l7tech.server.identity.ldap.LdapUserManagerImpl" singleton="false"/>
+            <bean class="com.l7tech.server.identity.ldap.LdapUserManagerImpl" scope="prototype"/>
         </property>
         <property name="groupManager">
-            <bean class="com.l7tech.server.identity.ldap.LdapGroupManagerImpl" singleton="false"/>
+            <bean class="com.l7tech.server.identity.ldap.LdapGroupManagerImpl" scope="prototype"/>
         </property>
     </bean>
 
+    <!-- server side Cluster ID manager -->
+    <bean id="clusterIDManager" class="com.l7tech.server.cluster.ClusterIDManager">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
     <!-- server side Cluster Info manager -->
     <bean id="clusterInfoManager" class="com.l7tech.server.cluster.ClusterInfoManagerImpl" depends-on="clusterPropertyCache">
+        <constructor-arg index="0" ref="clusterNodeId"/>
         <property name="sessionFactory" ref="sessionFactory"/>
         <property name="serverConfig" ref="serverConfig"/>
     </bean>
@@ -355,7 +378,7 @@
     <!-- server side HTTP routing HTTP client factory -->
     <bean id="httpRoutingHttpClientFactory"
           class="com.l7tech.server.util.IdentityBindingHttpClientFactory"
-          singleton="false">
+          scope="prototype">
         <property name="connectionManagerParameters">
             <map>
                 <entry key="http.connection.stalecheck">
@@ -508,7 +531,7 @@
         <constructor-arg ref="defaultKey"/>
     </bean>
     <!-- server side audit exporter -->
-    <bean id="auditExporter" class="com.l7tech.server.audit.AuditExporterImpl" singleton="false">
+    <bean id="auditExporter" class="com.l7tech.server.audit.AuditExporterImpl" scope="prototype">
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
     <!-- server side audit message factory -->
@@ -600,7 +623,7 @@
         <property name="targetId" value="auditContextImpl"/>
     </bean>
 
-    <bean id="auditContextImpl" class="com.l7tech.server.audit.AuditContextImpl" singleton="false">
+    <bean id="auditContextImpl" class="com.l7tech.server.audit.AuditContextImpl" scope="prototype">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="auditRecordManager"/>
         <property name="keystore" ref="defaultKey"/>
@@ -722,14 +745,13 @@
     ClusterInfoManager around
     -->
     <bean id="clusterNodeId" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="targetObject" ref='clusterInfoManager'/>
+        <property name="targetObject" ref='clusterIDManager'/>
         <property name="targetMethod" value="thisNodeId"/>
     </bean>
 
     <!-- Dependency ensures system.properties file is processed first -->
     <bean id="serviceMetricsManager"
-          class="com.l7tech.server.service.ServiceMetricsManager"
-          singleton="true"
+          class="com.l7tech.server.service.ServiceMetricsManagerImpl"
           depends-on="ssgBoot"
           parent="hibernateBean">
         <constructor-arg ref="clusterNodeId"/>

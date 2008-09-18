@@ -2,6 +2,7 @@ package com.l7tech.server.transport;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
+import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -25,6 +26,7 @@ import java.util.List;
 /**
  * Server-side implementation of the TransportAdmin API.
  */
+@Administrative
 public class TransportAdminImpl implements TransportAdmin {
     private final SsgConnectorManager connectorManager;
     private final DefaultKey defaultKeystore;

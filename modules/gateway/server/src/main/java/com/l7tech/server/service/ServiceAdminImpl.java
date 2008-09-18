@@ -3,6 +3,7 @@ package com.l7tech.server.service;
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
+import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import static com.l7tech.gateway.common.security.rbac.EntityType.SERVICE;
@@ -65,7 +66,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 
 /**
  * Server side implementation of the ServiceAdmin admin api.
@@ -76,6 +76,7 @@ import java.text.MessageFormat;
  * Date: Jun 6, 2003
  * @noinspection OverloadedMethodsWithSameNumberOfParameters,ValidExternallyBoundObject,NonJaxWsWebServices
  */
+@Administrative
 public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
     private static final ServiceHeader[] EMPTY_ENTITY_HEADER_ARRAY = new ServiceHeader[0];
 

@@ -1,25 +1,27 @@
 package com.l7tech.server;
 
-import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.gateway.common.security.rbac.Secured;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
-import org.springframework.beans.factory.config.RuntimeBeanNameReference;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
-import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.core.io.ClassPathResource;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Collections;
+import java.lang.reflect.Method;
 
 /**
  * Basic test for spring application context.
@@ -33,6 +35,10 @@ public class ApplicationContextTest  extends TestCase {
         "com/l7tech/server/resources/dataAccessContext.xml",
         "com/l7tech/server/resources/ssgApplicationContext.xml"
     };
+
+    private static final Set<String> NON_ADMIN_BEANS = new HashSet<String>( Collections.<String>emptySet());
+    private static final Set<String> EXTRA_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "adminLogin" ) );
+    private static final Set<String> NON_SECURED_BEANS = new HashSet<String>( Arrays.asList( "customAssertionsAdmin" ) );
 
     public ApplicationContextTest(String name) {
         super(name);
@@ -108,37 +114,78 @@ public class ApplicationContextTest  extends TestCase {
     }
 
     /*
-     * Ensure that all EntityManager beans in the application context are registered with the BeanNameAutoProxyCreator
+     * Ensure that all Administration beans in the application context are annotated with @Administrative
      */
-    @SuppressWarnings({"unchecked"})                  
-    public void testEntityManagerAutoProxy() throws Exception {
+    @SuppressWarnings({"unchecked"})
+    public void testAdministrativeAutoProxy() throws Exception {
         //
         DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
         XmlBeanDefinitionReader xbdr = new XmlBeanDefinitionReader(dlbf);
 
-        for (String context : CONTEXTS) {
+        for ( String context : CONTEXTS ) {
             xbdr.loadBeanDefinitions(new ClassPathResource(context));
         }
 
-        String[] autoProxyDefn = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(dlbf, BeanNameAutoProxyCreator.class, false, false);
-        assertNotNull(autoProxyDefn); assertTrue(autoProxyDefn.length == 1);
-        BeanDefinition proxyDef = dlbf.getBeanDefinition(autoProxyDefn[0]);
+        List<String> beans = new ArrayList<String>();
+        beans.addAll(EXTRA_ADMIN_BEANS);
 
-        //noinspection unchecked
-        List<String> regbeans = new ArrayList<String>();
-        for ( RuntimeBeanNameReference nameRef : (List<RuntimeBeanNameReference>)proxyDef.getPropertyValues().getPropertyValue("beanNames").getValue() ) {
-            regbeans.add( nameRef.getBeanName() );
+        for ( String beanId : dlbf.getBeanDefinitionNames() ) {
+            if ( beanId.endsWith("Admin") && !NON_ADMIN_BEANS.contains(beanId) ) {
+                beans.add(beanId);
+            }
         }
-        Collections.sort(regbeans);
 
-        System.out.println("Bean names: " + regbeans);
+        for ( String beanId : beans ) {
+            System.out.println("Checking bean '"+beanId+"'.");
+            BeanDefinition beanDef = dlbf.getBeanDefinition( beanId );
+            String className = beanDef.getBeanClassName();
+            Class adminClass = Class.forName(className);
 
-        String[] entityManagerDefns = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(dlbf, EntityManager.class, false, false);
-        assertNotNull(entityManagerDefns); assertTrue(entityManagerDefns.length > 0);
+            if ( adminClass.getAnnotation(Administrative.class) == null ) {
+                fail( "Administrative bean '"+beanId+"', is mssing the '"+Administrative.class.getName()+"' annotation." );
+            }
 
-        for (String name : entityManagerDefns) {
-            System.out.println("Checking for bean auto-proxy: " + name);
-            assertTrue("Bean " + name + " should be registered with BeanNameAutoProxyCreator", regbeans.contains(name));
+            boolean secured = false;
+            for ( Class interfaceClass : adminClass.getInterfaces() ) {
+                if ( interfaceClass.getAnnotation(Secured.class) != null ) {
+                    secured = true;
+                }
+            }
+
+            if ( !secured && !NON_SECURED_BEANS.contains(beanId) ) {
+                fail( "Administrative bean '"+beanId+"', has no interface with the '"+Secured.class.getName()+"' annotation." );
+            }
+        }
+    }
+
+    /**
+     * Using the secured annotation on an instance is incorrect, it only works on an interface
+     */
+    @SuppressWarnings({"unchecked"})
+    public void testNoSecuredImplementations() throws Exception {
+        //
+        DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
+        XmlBeanDefinitionReader xbdr = new XmlBeanDefinitionReader(dlbf);
+
+        for ( String context : CONTEXTS ) {
+            xbdr.loadBeanDefinitions(new ClassPathResource(context));
+        }
+
+        for ( String beanId : dlbf.getBeanDefinitionNames() ) {
+            BeanDefinition beanDef = dlbf.getBeanDefinition( beanId );
+            String className = beanDef.getBeanClassName();
+            if ( className != null && className.startsWith("com.l7tech" ) ) {
+                Class beanClass = Class.forName(className);
+                if ( beanClass.getAnnotation(Secured.class) != null ) {
+                    fail( "Implementation bean '"+beanId+"', is annotated with the '"+Secured.class.getName()+"' annotation, this should only be used on interfaces." );
+                }
+
+                for ( Method method : beanClass.getDeclaredMethods() ) {
+                    if ( method.getAnnotation(Secured.class) != null ) {
+                        fail( "Implementation bean '"+beanId+"' method '"+method.getName()+"', is annotated with the '"+Secured.class.getName()+"' annotation, this should only be used on interfaces." );
+                    }
+                }
+            }
         }
     }
 }

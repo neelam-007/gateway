@@ -14,7 +14,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.service.ServiceCache;
-import com.l7tech.server.service.ServiceMetricsManager;
+import com.l7tech.server.service.ServiceMetricsManagerImpl;
 import com.l7tech.server.log.TrafficLogger;
 
 import java.io.IOException;
@@ -41,7 +41,7 @@ public class TestMessageProcessor extends MessageProcessor {
      */
     public TestMessageProcessor(ServiceCache sc, PolicyCache pc, WssDecorator wssd)
       throws IllegalArgumentException {
-        super(sc, pc, wssd, null, new TestLicenseManager(), new ServiceMetricsManager("yo",null), new AuditContextStub(), ServerConfig.getInstance(), new TrafficLogger(ServerConfig.getInstance(), null));
+        super(sc, pc, wssd, null, new TestLicenseManager(), new ServiceMetricsManagerImpl("yo",null), new AuditContextStub(), ServerConfig.getInstance(), new TrafficLogger(ServerConfig.getInstance(), null));
     }
 
     @Override

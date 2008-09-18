@@ -72,6 +72,7 @@
         <dependency org="org.springframework" name="spring-tx" rev="2.5.4" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-web" rev="2.5.4" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-webmvc" rev="2.5.4" force="true" conf="core"/>
+        <dependency org="org.springframework" name="aspectjweaver" rev="2.5.4" force="true" conf="core"/> <!-- Used for parsing pointcut expressions only -->
         <dependency org="com.tarari" name="tarari-raxj" rev="4.4.3.31" force="true" conf="optional"/>
         <dependency org="org.codehaus.xfire" name="xfire-core" rev="1.2.2" force="true" conf="core">
             <exclude org="org.apache.ws.commons" module="XmlSchema" name="*" type="*" ext="*" conf="" matcher="exact"/>

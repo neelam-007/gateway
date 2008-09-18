@@ -145,7 +145,7 @@ public class Aggregator implements ServiceStateMonitor {
 
     private Map<Long, MetricsSummaryBin> getMetricsForServicesNoLock(boolean includeEmpty) {
         try {
-            long periodStart = MetricsBin.periodStartFor(MetricsBin.RES_FINE, metricsManager.getFineBinInterval(), lastMetricsTimestamp);
+            long periodStart = MetricsBin.periodStartFor(MetricsBin.RES_FINE, metricsManager.getFineInterval(), lastMetricsTimestamp);
             long[] serviceOids;
             if(metrics.size() == 0) {
                 serviceOids = new long[0];
@@ -194,7 +194,7 @@ public class Aggregator implements ServiceStateMonitor {
         lock.writeLock().lock();
         try {
             if(metrics.containsKey(serviceOid)) {
-                if(System.currentTimeMillis() - lastMetricsTimestamp <= metricsManager.getFineBinInterval()) {
+                if(System.currentTimeMillis() - lastMetricsTimestamp <= metricsManager.getFineInterval()) {
                     return metrics.get(serviceOid);
                 } else {
                     getMetricsForServicesNoLock(true);

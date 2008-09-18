@@ -1,9 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
-
 package com.l7tech.server.cluster;
 
 import com.l7tech.objectmodel.FindException;
@@ -12,8 +9,6 @@ import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import java.util.Collection;
 import java.util.Random;
@@ -23,11 +18,20 @@ import java.security.SecureRandom;
 
 /**
  * @author alex
- * @version $Revision$
  */
-public class ClusterBootProcess implements ServerComponentLifecycle, ApplicationContextAware {
+public class ClusterBootProcess implements ServerComponentLifecycle {
 
     //- PUBLIC
+
+    public ClusterBootProcess( final ClusterInfoManager clusterInfoManager,
+                               final DistributedMessageIdManager distributedMessageIdManager,
+                               final ServerConfig serverConfig ) {
+        this.clusterInfoManager = clusterInfoManager;
+        this.distributedMessageIdManager = distributedMessageIdManager;
+
+        multicastAddress = serverConfig.getPropertyCached(ServerConfig.PARAM_MULTICAST_ADDRESS);
+        if (multicastAddress != null && multicastAddress.length() == 0) multicastAddress = null;
+    }
 
     public static class AddressAlreadyInUseException extends Exception {
         public AddressAlreadyInUseException(String address) {
@@ -41,23 +45,10 @@ public class ClusterBootProcess implements ServerComponentLifecycle, Application
         private String address;
     }
 
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        if(this.applicationContext!=null) throw new IllegalStateException("applicationContext already initialized!");
-        this.applicationContext = applicationContext;
-    }
-
-    public void setServerConfig( ServerConfig config ) throws LifecycleException {
-        clusterInfoManager = (ClusterInfoManager)applicationContext.getBean("clusterInfoManager");
-        distributedMessageIdManager = (DistributedMessageIdManager)applicationContext.getBean("distributedMessageIdManager");
-        multicastAddress = config.getPropertyCached(ServerConfig.PARAM_MULTICAST_ADDRESS);
-        if (multicastAddress != null && multicastAddress.length() == 0) multicastAddress = null;
-    }
-
     public void start() throws LifecycleException {
         try {
-            clusterInfoManager.updateSelfUptime();
-
             ClusterNodeInfo myInfo = clusterInfoManager.getSelfNodeInf();
+            clusterInfoManager.updateSelfUptime();
             Collection allNodes = clusterInfoManager.retrieveClusterStatus();
 
             if ( multicastAddress == null || multicastAddress.length() == 0 ) {
@@ -143,9 +134,8 @@ public class ClusterBootProcess implements ServerComponentLifecycle, Application
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    private ApplicationContext applicationContext;
-    private ClusterInfoManager clusterInfoManager;
-    private DistributedMessageIdManager distributedMessageIdManager;
+    private final ClusterInfoManager clusterInfoManager;
+    private final DistributedMessageIdManager distributedMessageIdManager;
     private String multicastAddress;
     private static final int PORT = 8777;
 

@@ -13,9 +13,6 @@ public class ManagedTimerLifecycle implements ServerComponentLifecycle {
 
     //- PUBLIC
 
-    public void setServerConfig(ServerConfig config) throws LifecycleException {
-    }
-
     public void start() throws LifecycleException {
     }
 

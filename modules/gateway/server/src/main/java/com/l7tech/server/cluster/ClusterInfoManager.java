@@ -6,8 +6,6 @@ package com.l7tech.server.cluster;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
@@ -18,7 +16,6 @@ import java.util.Collection;
  * @author alex
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
-@Secured(types=EntityType.CLUSTER_INFO)
 public interface ClusterInfoManager {
     String thisNodeId();
 

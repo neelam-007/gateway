@@ -2,6 +2,7 @@ package com.l7tech.server.admin;
 
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
+import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
@@ -15,6 +16,7 @@ import java.util.Collection;
  * @author emil
  * @version 16-Feb-2004
  */
+@Administrative
 public class CustomAssertionsRegistrarImpl
   extends ApplicationObjectSupport implements CustomAssertionsRegistrar, InitializingBean {
     protected CustomAssertionsRegistrar delegate;

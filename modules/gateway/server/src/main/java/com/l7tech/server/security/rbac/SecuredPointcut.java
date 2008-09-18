@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.security.rbac.Secured;
 import org.springframework.aop.ClassFilter;
 import org.springframework.aop.MethodMatcher;
 import org.springframework.aop.Pointcut;
+import org.springframework.core.Ordered;
 
 import java.lang.reflect.Method;
 import java.util.logging.Level;
@@ -16,7 +17,7 @@ import java.util.logging.Logger;
  * Provides a {@link ClassFilter} and {@link MethodMatcher} for detecting use of the {@link Secured}
  * annotation.
  */
-public class SecuredPointcut implements Pointcut {
+public class SecuredPointcut implements Ordered, Pointcut {
     private static final Logger logger = Logger.getLogger(SecuredPointcut.class.getName());
 
     public SecuredPointcut() {
@@ -31,8 +32,18 @@ public class SecuredPointcut implements Pointcut {
         return METHOD_MATCHER;
     }
 
+    public int getOrder() {
+        return order;
+    }
+
+    public void setOrder( final int order ) {
+        this.order = order;
+    }
+
     private static final SecuredClassFilter CLASS_FILTER = new SecuredClassFilter();
     private static final SecuredMethodMatcher METHOD_MATCHER = new SecuredMethodMatcher();
+
+    private int order;
 
     /**
      * Matches any class with the {@link com.l7tech.gateway.common.security.rbac.Secured} annotation.
@@ -58,7 +69,7 @@ public class SecuredPointcut implements Pointcut {
                 }
             }
 
-            throw new IllegalArgumentException("No security declaration found for class " + clazz.getName());
+            return false;
         }
     }
 

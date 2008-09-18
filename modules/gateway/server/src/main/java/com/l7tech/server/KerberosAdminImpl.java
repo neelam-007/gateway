@@ -3,11 +3,9 @@ package com.l7tech.server;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.gateway.common.security.rbac.Secured;
-import com.l7tech.gateway.common.security.rbac.EntityType;
-import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.kerberos.*;
 import com.l7tech.gateway.common.admin.KerberosAdmin;
+import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -24,7 +22,7 @@ import java.util.logging.Level;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-@Secured
+@Administrative
 public class KerberosAdminImpl implements KerberosAdmin {
 
     //- PUBLIC
@@ -96,7 +94,6 @@ public class KerberosAdminImpl implements KerberosAdmin {
         return Collections.unmodifiableMap(configMap);
     }
 
-    @Secured(types=EntityType.CLUSTER_PROPERTY,stereotype=MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE)
     public void installKeytab(byte[] data) throws KerberosException {
         try {
             ClusterProperty property = clusterPropertyManager.findByUniqueName(KEYTAB_PROPERTY);

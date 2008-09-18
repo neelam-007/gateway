@@ -9,6 +9,7 @@ package com.l7tech.server.communityschemas;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gateway.common.schema.SchemaEntry;
+import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
@@ -18,6 +19,7 @@ import java.util.Collection;
  *
  * @author flascelles@layer7-tech.com
  */
+@Administrative
 public class SchemaAdminImpl implements SchemaAdmin {
     private SchemaEntryManager schemaEntryManager;
     //private final Logger logger = Logger.getLogger(SchemaAdminImpl.class.getName());

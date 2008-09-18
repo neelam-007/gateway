@@ -1,11 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 <!--
     The Spring Hibernate configuration. References Hibernate mappings, defines transaction managers
     persistence interceptors, and transactional behaviour.
 -->
 <!--suppress SpringModelInspection -->
-<beans>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation= "http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+                            http://www.springframework.org/schema/aop
+                            http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+                            http://www.springframework.org/schema/tx
+                            http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+
+    <!-- enable automatic proxy generation for any class or superclass annotated with @Transactional -->
+    <tx:annotation-driven order="20000"/>
 
     <!--
     Hibernate / C3P0 Properties location
@@ -66,6 +77,11 @@
         <constructor-arg value="c3p0DataSource"/> <!-- Name used for identification only, does not affect configuration -->
     </bean>
 
+    <!-- Lazy proxy for general purpose pooled data source -->
+    <bean id="lazyDataSource" class="org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy">
+        <constructor-arg ref="c3p0DataSource"/>
+    </bean>
+
     <!-- Administrative pooled data source, smaller pool, shorter timeouts -->
     <bean id="c3p0AdminDataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
         <constructor-arg value="c3p0AdminDataSource"/> <!-- Name used for identification only, does not affect configuration configuration-->
@@ -73,10 +89,10 @@
 
     <!-- Data source that can be switched for different pooling strategies -->
     <bean id="switchedDataSource" class="com.l7tech.server.util.UserSwitchedRoutingDataSource">
-        <property name="defaultTargetDataSource" ref="c3p0DataSource"/>
+        <property name="defaultTargetDataSource" ref="lazyDataSource"/>
         <property name="targetDataSources">
             <map>
-                <entry key="default"><ref local="c3p0DataSource"/></entry>
+                <entry key="default"><ref local="lazyDataSource"/></entry>
                 <entry key="admin"><ref local="c3p0AdminDataSource"/></entry>
             </map>
         </property>
@@ -162,75 +178,5 @@
 
     <!-- The audit events hibernate interceptor -->
     <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor"/>
-
-    <!-- Hibernate managers that need transaction interception -->
-    <bean class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
-        <property name="proxyTargetClass" value="false"/>
-        <property name="interceptorNames">
-            <list>
-                <idref bean="annotationTransactionInterceptor"/>
-            </list>
-        </property>
-        <property name="beanNames">
-            <list>
-                <!-- IDPs -->
-                <idref bean="internalIdentityProvider"/>
-                <idref bean="federatedIdentityProvider"/>
-                <idref bean="internalUserManager"/>
-                <idref bean="internalGroupManager"/>
-                <idref bean="federatedUserManager"/>
-                <idref bean="federatedGroupManager"/>
-
-                <!-- Entity managers -->
-                <idref bean="serviceManager"/>
-                <idref bean="serviceAliasManager"/>
-                <idref bean="identityProviderConfigManager"/>
-                <idref bean="trustedCertManager"/>
-                <idref bean="clientCertManager"/>
-                <idref bean="auditRecordManager"/>
-                <idref bean="statusUpdateManager"/>
-                <idref bean="sampleMessageManager"/>
-                <idref bean="serviceDocumentManager"/>
-                <idref bean="resolutionManager"/>
-                <idref bean="clusterInfoManager"/>
-                <idref bean="clusterPropertyManager"/>
-                <idref bean="serviceUsageManager"/>
-                <idref bean="jmsEndpointManager"/>
-                <idref bean="jmsConnectionManager"/>
-                <idref bean="auditExporter"/>
-                <idref bean="counterIDManager"/>
-                <idref bean="entityFinder"/>
-                <idref bean="attributeConfigManager"/>
-                <idref bean="identityMappingManager"/>
-                <idref bean="securityTokenMappingManager"/>
-                <idref bean="roleManager"/>
-                <idref bean="schemaEntryManager"/>
-                <idref bean="sharedKeyManager"/>
-                <idref bean="keystoreFileManager"/>
-                <idref bean="revocationCheckPolicyManager"/>
-                <idref bean="ssgConnectorManager"/>
-                <idref bean="policyManager"/>
-                <idref bean="policyAliasManager"/>
-                <idref bean="policyVersionManager"/>
-                <idref bean="sinkManager"/>
-                <idref bean="esmSubscriptionManager"/>
-                <idref bean="messageContextMappingKeyManager"/>
-                <idref bean="messageContextMappingValueManager"/>
-                <idref bean="folderManager" />
-            </list>
-        </property>
-    </bean>
-
-
-    <bean class="org.springframework.transaction.interceptor.TransactionAttributeSourceAdvisor">
-        <property name="transactionInterceptor" ref="annotationTransactionInterceptor"/>
-    </bean>
-
-    <bean id="annotationTransactionInterceptor" class="org.springframework.transaction.interceptor.TransactionInterceptor">
-        <property name="transactionManager" ref="transactionManager"/>
-        <property name="transactionAttributeSource">
-            <bean class="org.springframework.transaction.annotation.AnnotationTransactionAttributeSource"/>
-        </property>
-    </bean>
 
 </beans>

@@ -28,9 +28,6 @@ public abstract class LifecycleBean implements InitializingBean, ApplicationCont
 
     //- PUBLIC
 
-    public void setServerConfig(ServerConfig config) throws LifecycleException {
-    }
-
     public void afterPropertiesSet() throws Exception {
         init();
     }

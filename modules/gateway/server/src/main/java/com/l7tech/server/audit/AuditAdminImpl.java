@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
+import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -25,6 +26,7 @@ import java.util.logging.Logger;
 /**
  * Implementation of AuditAdmin in SSG.
  */
+@Administrative
 public class AuditAdminImpl implements AuditAdmin {
     private static final Logger logger = Logger.getLogger(AuditAdminImpl.class.getName());
     private static final String CLUSTER_PROP_LAST_AUDITACK_TIME = "audit.acknowledge.highestTime";

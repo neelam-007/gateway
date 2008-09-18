@@ -1,14 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
-
-    <!--
+<!--
     The Admin Services Context contains the definitions that describe and export The Admin Services.
     Things such as RMI exports, SSL admin configuration are deifned here.
  -->
-
-
 <!--suppress PlaceholderValuesInspection -->
-<beans>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation= "http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+                            http://www.springframework.org/schema/aop
+                            http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+                            http://www.springframework.org/schema/tx
+                            http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+    
     <!-- the internal rmi/ssl trust failue handler that allows connection to self -->
     <bean id="internalSslTrustFailureHandler"
           class="com.l7tech.gateway.common.spring.remoting.rmi.ssl.CertificateTrustedTrustFailureHandler">
@@ -143,7 +149,7 @@
     </bean>
 
     <!-- admin session tracker -->
-    <bean id="adminSessionManager" class="com.l7tech.server.admin.AdminSessionManager" singleton="true">
+    <bean id="adminSessionManager" class="com.l7tech.server.admin.AdminSessionManager">
         <constructor-arg index="0" ref="serverConfig"/>
         <property name="identityProviderFactory" ref="identityProviderFactory"/>
         <property name="roleManager" ref="roleManager"/>        
@@ -167,115 +173,49 @@
     </bean>
 
     <!-- Exception advices for server side error handling -->
-    <bean id="unsupportedExceptionInterceptor" class="com.l7tech.server.util.UnsupportedExceptionsThrowsAdvice"/>
-
+    <bean id="unsupportedExceptionThrowsAdvice" class="com.l7tech.server.util.UnsupportedExceptionsThrowsAdvice"/>
     <bean id="mysqlFailureThrowsAdvice" class="com.l7tech.server.util.MySqlFailureThrowsAdvice"/>
-
     <bean id="constraintViolationThrowsAdvice" class="com.l7tech.server.util.ConstraintViolationThrowsAdvice"/>
 
-    <bean id="adminConnectionPoolSelector" class="com.l7tech.server.util.UserSwitchedRoutingDataSourceSelector">
+    <!-- Bean to switch db pools for admin vs other uses -->
+    <bean id="adminConnectionPoolSelectorInterceptor" class="com.l7tech.server.util.UserSwitchedRoutingDataSourceSelector">
         <constructor-arg value="admin"/>
     </bean>
 
-    <!-- Transaction, RBAC, etc interception -->
-    <bean id="adminIntercepted" abstract="true" class="org.springframework.aop.framework.ProxyFactoryBean">
-        <property name="interceptorNames">
-            <list>
-                <idref bean="unsupportedExceptionInterceptor"/>
-                <idref bean="mysqlFailureThrowsAdvice"/>
-                <idref bean="constraintViolationThrowsAdvice"/>
-                <idref bean="adminConnectionPoolSelector"/>
-                <idref bean="annotationTransactionInterceptor"/>
-                <idref bean="rbacAdvisor"/>
-            </list>
-        </property>
-    </bean>
+    <aop:config>
+        <aop:pointcut id="administrationPointcut"
+                    expression="@within(com.l7tech.gateway.common.admin.Administrative)"/>
+
+        <!--Exception handing advice -->
+        <aop:advisor
+            pointcut-ref="administrationPointcut"
+            advice-ref="unsupportedExceptionThrowsAdvice"
+            order="5000"/>
+        <aop:advisor
+            pointcut-ref="administrationPointcut"
+            advice-ref="mysqlFailureThrowsAdvice"
+            order="5001"/>
+        <aop:advisor
+            pointcut-ref="administrationPointcut"
+            advice-ref="constraintViolationThrowsAdvice"
+            order="5002"/>
+
+        <!--
+          Connection pools switching must run outside of transaction advice
+        -->
+        <aop:advisor
+            pointcut-ref="administrationPointcut"
+            advice-ref="adminConnectionPoolSelectorInterceptor"
+            order="10000"/>
+
+    </aop:config>
 
     <!--==============================================================-
     Administration beans (admin intercepted)
     -===============================================================-->
 
-    <bean id="adminLogin" parent="adminIntercepted">
-        <property name="target" ref="adminLogin_UNSECURED"/>
-        <property name="proxyInterfaces" value="com.l7tech.gateway.common.admin.AdminLogin"/>
-    </bean>
-
-    <bean id="serviceAdmin" parent="adminIntercepted">
-        <property name="target" ref="serviceAdmin_UNSECURED"/>
-        <property name="proxyInterfaces" value="com.l7tech.gateway.common.service.ServiceAdmin"/>
-    </bean>
-
-    <bean id="folderAdmin" parent="adminIntercepted">
-        <property name="target" ref="folderAdmin_UNSECURED"/>
-        <property name="proxyInterfaces" value="com.l7tech.gateway.common.admin.FolderAdmin"/>
-    </bean>
-
-    <bean id="auditAdmin" parent="adminIntercepted">
-        <property name="target" ref="auditAdmin_UNSECURED"/>
-        <property name="proxyInterfaces" value="com.l7tech.gateway.common.audit.AuditAdmin"/>
-    </bean>
-
-    <bean id="identityAdmin" parent="adminIntercepted">
-        <property name="target" ref="identityAdmin_UNSECURED"/>
-        <property name="proxyInterfaces" value="com.l7tech.gateway.common.admin.IdentityAdmin"/>
-    </bean>
-
-    <bean id="jmsAdmin" parent="adminIntercepted">
-        <property name="target" ref="jmsAdmin_UNSECURED"/>
-        <property name="proxyInterfaces" value="com.l7tech.gateway.common.transport.jms.JmsAdmin"/>
-    </bean>
-
-    <bean id="ftpAdmin" parent="adminIntercepted">
-        <property name="target" ref="ftpAdmin_UNSECURED"/>
-        <property name="proxyInterfaces" value="com.l7tech.gateway.common.transport.ftp.FtpAdmin"/>
-    </bean>
-
-    <bean id="rbacAdmin" parent="adminIntercepted">
-        <property name="target" ref="rbacAdmin_UNSECURED"/>
-        <property name="proxyInterfaces" value="com.l7tech.gateway.common.security.rbac.RbacAdmin"/>
-    </bean>
-
-    <bean id="schemaAdmin" parent="adminIntercepted">
-        <property name="target" ref="schemaAdmin_UNSECURED"/>
-        <property name="proxyInterfaces" value="com.l7tech.gateway.common.schema.SchemaAdmin"/>
-    </bean>
-
-    <bean id="trustedCertAdmin" parent="adminIntercepted">
-        <property name="target" ref="trustedCertAdmin_UNSECURED"/>
-        <property name="proxyInterfaces" value="com.l7tech.gateway.common.security.TrustedCertAdmin"/>
-    </bean>
-
-    <bean id="clusterStatusAdmin" parent="adminIntercepted">
-        <property name="target" ref="clusterStatusAdmin_UNSECURED"/>
-        <property name="proxyInterfaces" value="com.l7tech.gateway.common.cluster.ClusterStatusAdmin"/>
-    </bean>
-
-    <bean id="transportAdmin" parent="adminIntercepted">
-        <property name="target" ref="transportAdmin_UNSECURED"/>
-        <property name="proxyInterfaces" value="com.l7tech.gateway.common.transport.TransportAdmin"/>
-    </bean>
-
-    <bean id="policyAdmin" parent="adminIntercepted">
-        <property name="target" ref="policyAdmin_UNSECURED"/>
-        <property name="proxyInterfaces" value="com.l7tech.gateway.common.admin.PolicyAdmin"/>
-    </bean>
-
-    <bean id="logSinkAdmin" parent="adminIntercepted">
-        <property name="target" ref="logSinkAdmin_UNSECURED"/>
-        <property name="proxyInterfaces" value="com.l7tech.gateway.common.log.LogSinkAdmin"/>
-    </bean>
-
-    <bean id="kerberosAdmin" parent="adminIntercepted">
-        <property name="target" ref="kerberosAdmin_UNSECURED"/>
-        <property name="proxyInterfaces" value="com.l7tech.gateway.common.admin.KerberosAdmin"/>
-    </bean>
-
-    <!--==============================================================-
-    Administration bean servants
-    -===============================================================-->
-
     <!-- admin login servant -->
-    <bean id="adminLogin_UNSECURED" class="com.l7tech.server.admin.AdminLoginImpl">
+    <bean id="adminLogin" class="com.l7tech.server.admin.AdminLoginImpl">
         <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="ssgKeyStoreManager"/>
         <property name="identityProviderConfigManager" ref="identityProviderConfigManager"/>
@@ -284,7 +224,7 @@
     </bean>
 
     <!-- identity admin servant -->
-    <bean id="identityAdmin_UNSECURED" class="com.l7tech.server.identity.IdentityAdminImpl">
+    <bean id="identityAdmin" class="com.l7tech.server.identity.IdentityAdminImpl">
         <constructor-arg ref="roleManager"/>
         <constructor-arg ref="defaultKey"/>
         <property name="identityProviderConfigManager" ref="identityProviderConfigManager"/>
@@ -293,7 +233,7 @@
     </bean>
 
     <!-- audit admin servant -->
-    <bean id="auditAdmin_UNSECURED" class="com.l7tech.server.audit.AuditAdminImpl">
+    <bean id="auditAdmin" class="com.l7tech.server.audit.AuditAdminImpl">
         <property name="auditDownloadManager" ref="auditDownloadManager"/>
         <property name="auditRecordManager" ref="auditRecordManager"/>
         <property name="logRecordManager" ref="logRecordManager"/>
@@ -302,7 +242,7 @@
     </bean>
 
     <!-- service admin servant -->
-    <bean id="serviceAdmin_UNSECURED" class="com.l7tech.server.service.ServiceAdminImpl">
+    <bean id="serviceAdmin" class="com.l7tech.server.service.ServiceAdminImpl">
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="registryPublicationManager"/>
         <constructor-arg ref="uddiAgentFactory"/>
@@ -325,31 +265,31 @@
         <constructor-arg ref="serviceTemplateManager"/>
     </bean>
 
-    <bean id="folderAdmin_UNSECURED" class="com.l7tech.server.folder.FolderAdminImpl">
+    <bean id="folderAdmin" class="com.l7tech.server.folder.FolderAdminImpl">
         <constructor-arg ref="folderManager" />
     </bean>
 
     <!-- schema admin servant -->
-    <bean id="schemaAdmin_UNSECURED" class="com.l7tech.server.communityschemas.SchemaAdminImpl">
+    <bean id="schemaAdmin" class="com.l7tech.server.communityschemas.SchemaAdminImpl">
         <property name="schemaEntryManager" ref="schemaEntryManager"/>
     </bean>
 
     <!-- jms admin servant -->
-    <bean id="jmsAdmin_UNSECURED" class="com.l7tech.server.transport.jms.JmsAdminImpl">
+    <bean id="jmsAdmin" class="com.l7tech.server.transport.jms.JmsAdminImpl">
         <constructor-arg ref="jmsConnectionManager"/>
         <constructor-arg ref="jmsEndpointManager"/>
         <constructor-arg ref="jmsPropertyMapper"/>
     </bean>
 
     <!-- FTP admin servant -->
-    <bean id="ftpAdmin_UNSECURED" class="com.l7tech.server.transport.ftp.FtpAdminImpl">
+    <bean id="ftpAdmin" class="com.l7tech.server.transport.ftp.FtpAdminImpl">
         <constructor-arg ref="routingTrustManager"/>
         <constructor-arg ref="ssgKeyStoreManager"/>
         <constructor-arg ref="assertionRegistry"/>
     </bean>
 
     <!-- trusted cert admin servant -->
-    <bean id="trustedCertAdmin_UNSECURED" class="com.l7tech.server.TrustedCertAdminImpl">
+    <bean id="trustedCertAdmin" class="com.l7tech.server.TrustedCertAdminImpl">
         <constructor-arg ref="trustedCertManager"/>
         <constructor-arg ref="revocationCheckPolicyManager"/>
         <constructor-arg ref="defaultKey"/>
@@ -357,7 +297,7 @@
         <constructor-arg ref="ssgKeyStoreManager"/>
     </bean>
 
-    <bean id="transportAdmin_UNSECURED" class="com.l7tech.server.transport.TransportAdminImpl">
+    <bean id="transportAdmin" class="com.l7tech.server.transport.TransportAdminImpl">
         <constructor-arg ref="ssgConnectorManager"/>
         <constructor-arg ref="defaultKey"/>
     </bean>
@@ -368,13 +308,13 @@
     </bean>
 
     <!-- kerberos admin servant -->
-    <bean id="kerberosAdmin_UNSECURED" class="com.l7tech.server.KerberosAdminImpl">
+    <bean id="kerberosAdmin" class="com.l7tech.server.KerberosAdminImpl">
         <constructor-arg ref="clusterPropertyManager"/>
         <constructor-arg ref="dbPasswordEncryption"/>
     </bean>
 
     <!-- trusted cert admin servant -->
-    <bean id="clusterStatusAdmin_UNSECURED" class="com.l7tech.server.cluster.ClusterStatusAdminImp">
+    <bean id="clusterStatusAdmin" class="com.l7tech.server.cluster.ClusterStatusAdminImp">
         <constructor-arg ref="clusterInfoManager"/>
         <constructor-arg ref="serviceUsageManager"/>
         <constructor-arg ref="clusterPropertyManager"/>
@@ -385,13 +325,13 @@
     </bean>
 
     <!-- RBAC admin impl -->
-    <bean id="rbacAdmin_UNSECURED" class="com.l7tech.server.security.rbac.RbacAdminImpl">
+    <bean id="rbacAdmin" class="com.l7tech.server.security.rbac.RbacAdminImpl">
         <constructor-arg ref="roleManager"/>
         <constructor-arg ref="cachingEntityFinder"/>
     </bean>
 
     <!-- Policy admin impl -->
-    <bean id="policyAdmin_UNSECURED" class="com.l7tech.server.policy.PolicyAdminImpl">
+    <bean id="policyAdmin" class="com.l7tech.server.policy.PolicyAdminImpl">
         <constructor-arg ref="policyManager"/>
         <constructor-arg ref="policyAliasManager"/>
         <constructor-arg ref="policyCache"/>
@@ -399,7 +339,7 @@
         <constructor-arg ref="roleManager"/>
     </bean>
 
-    <bean id="logSinkAdmin_UNSECURED" class="com.l7tech.server.log.LogSinkAdminImpl">
+    <bean id="logSinkAdmin" class="com.l7tech.server.log.LogSinkAdminImpl">
         <constructor-arg ref="sinkManager"/>
     </bean>
 </beans>

@@ -7,16 +7,14 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ResourceUtils;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -43,22 +41,22 @@ import java.util.regex.Pattern;
  * $Id$
  *
  */
+@Transactional(propagation= Propagation.REQUIRED)
 public class ClusterInfoManagerImpl extends HibernateDaoSupport implements ClusterInfoManager {
 
     //- PUBLIC
+
+    public ClusterInfoManagerImpl( final String nodeid ) {
+        this.nodeid = nodeid;
+    }
 
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
     }
 
-    /**
-     * returns the node id to which this server applies to
-     */
+    @Transactional(readOnly=true)
     public String thisNodeId() {
-        if (selfId != null) return selfId;
-        ClusterNodeInfo selfCI = getSelfNodeInf();
-        if (selfCI != null) return selfCI.getNodeIdentifier();
-        return null;
+        return nodeid;
     }
 
     /**
@@ -146,7 +144,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         }
         node.setName(newnodename);
         try {
-            recordNodeInDB(node);
+            updateSelfStatus(node);
         } catch (HibernateException e) {
             String msg = "error saving node's new name";
             logger.log(Level.WARNING, msg, e);
@@ -159,6 +157,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      * when the server boots. it updates the boot time and update time in the cluster_status
      * table.
      */
+    @Transactional(propagation= Propagation.REQUIRED)
     public void updateSelfUptime() throws UpdateException {
         long newboottimevalue = System.currentTimeMillis();
         ClusterNodeInfo selfCI = getSelfNodeInf();
@@ -176,6 +175,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      * @return a collection containing ClusterNodeInfo objects. if the collection is empty, it means that
      * the SSG operated by itself outsides a cluster.
      */
+    @Transactional(readOnly=true)
     public Collection<ClusterNodeInfo> retrieveClusterStatus() throws FindException {
         // get all objects from that table
         try {
@@ -196,87 +196,53 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      * determines this node's nodeid value
      */
     public synchronized ClusterNodeInfo getSelfNodeInf() {
-        if (selfId != null) {
-            return getNodeStatusFromDB(selfId);
+        ClusterNodeInfo clusterNodeInfo;
+
+        clusterNodeInfo = getNodeStatusFromDB(nodeid);
+        if (clusterNodeInfo != null) {
+
+            if ( !isInfoChecked() ) {
+                String newIpAddress = getIPAddress(); // Load of IP is used to track if info is checked
+                if (!isValidIPAddressAndClusterPort(clusterNodeInfo.getAddress(), clusterNodeInfo.getClusterPort())) {
+                    int newClusterPort = getClusterPort();
+                    clusterNodeInfo.setAddress(newIpAddress);
+                    clusterNodeInfo.setClusterPort(newClusterPort);
+                    try {
+                        updateSelfStatus(clusterNodeInfo);
+                    } catch (UpdateException e) {
+                        String msg = "Error saving node's new ip '"+newIpAddress+"' or new cluster port '"+newClusterPort+"'.";
+                        logger.log(Level.WARNING, msg, e);
+                    }
+                }
+
+                logger.config( "Using server " + clusterNodeInfo.getName() +
+                        " (Id:" + clusterNodeInfo.getNodeIdentifier() +
+                        ", Ip:" + clusterNodeInfo.getAddress() +
+                        ", Port:" + clusterNodeInfo.getClusterPort() + ")");
+            }
+
+            return clusterNodeInfo;
         } else {
-            String propertiesNodeId = loadNodeIdProperty();
-            try {
-                // special query, dont do this everytime
-                // (cache return value as this will not change while the server is up)
-                Collection<String> macs = getMacs();
-                List<String> nodeids = new ArrayList<String>();
-                nodeids.add(propertiesNodeId);
-
-                String anymac = null;
-                for ( String mac : macs ) {
-                    if (anymac == null) {
-                        anymac = mac;
-                    }
-                    nodeids.add(toNodeId(mac));
-                }
-
-                // find out which id works for us
-                for ( String nodeid : nodeids ) {
-                    ClusterNodeInfo output = getNodeStatusFromDB(nodeid);
-                    if (output != null) {
-                        if (!isValidIPAddressAndClusterPort(output.getAddress(), output.getClusterPort())) {
-                            String newIpAddress = getIPAddress();
-                            int newClusterPort = getClusterPort();
-                            output.setAddress(newIpAddress);
-                            output.setClusterPort(newClusterPort);
-                            try {
-                                recordNodeInDB(output);
-                            } catch (HibernateException e) {
-                                String msg = "Error saving node's new ip '"+newIpAddress+"' or new cluster port '"+newClusterPort+"'.";
-                                logger.log(Level.WARNING, msg, e);
-                            }
-                        }
-                        logger.config("Using server " + output.getName() +
-                                " (Id:" + output.getNodeIdentifier() +
-                                ", Ip:" + output.getAddress() +
-                                ", Port:" + output.getClusterPort() + ")");
-                        selfId = output.getNodeIdentifier();
-
-                        return output;
-                    }
-                }
-
-                // no existing row for us. create one
-                if (anymac != null) {
-                    return selfPopulateClusterDB(generateNodeId(propertiesNodeId), anymac);
-                }
-
+            // no existing row for us. create one
+            String mac = getMac();
+            if ( mac != null ) {
+                return selfPopulateClusterDB(nodeid, mac);
+            } else {
                 logger.severe("Should not get here. this server has no mac?");
                 return null;
-            } finally {
-                if ( propertiesNodeId == null ) {
-                    String id = selfId;
-                    if ( id != null ) {
-                        storeNodeIdProperty( id );
-                    }
-                }
             }
         }
     }
 
     //- PRIVATE
 
-    private static final String PROP_MAC_ADDRESS = "com.l7tech.cluster.macAddress";
     private static final String PROP_IP_ADDRESS = "com.l7tech.cluster.ipAddress";
-    private static final String SYSPROP_CONFIG_HOME = "com.l7tech.server.configDirectory";
-    private static final String NODE_ID_FILE = "node.properties";
-    private static final String NODE_ID_PROPERTY = "node.id";
 
     private static final String TABLE_NAME = "cluster_info";
     private static final String NODEID_COLUMN_NAME = "nodeIdentifier";
     private static final String NAME_COLUMN_NAME = "name";
 
-    private static Pattern ifconfigMacPattern = Pattern.compile(".*HWaddr\\s+(\\w\\w.\\w\\w.\\w\\w." +
-                                                                "\\w\\w.\\w\\w.\\w\\w).*", Pattern.DOTALL);
-
     private static Pattern ifconfigAddrPattern = Pattern.compile(".*inet addr:(\\d+\\.\\d+\\.\\d+\\.\\d+).*", Pattern.DOTALL);
-
-    private static Pattern ipconfigMacPattern = Pattern.compile(".+:\\s*(\\w\\w-\\w\\w-\\w\\w-\\w\\w-\\w\\w-\\w\\w).*", Pattern.DOTALL);
 
     private static final String HQL_FIND_ALL =
             "from " + TABLE_NAME +
@@ -296,29 +262,15 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
             "delete from " + ClusterNodeInfo.class.getName() + " as " + TABLE_NAME +
                     " where " + TABLE_NAME + "." + NODEID_COLUMN_NAME + " = :nodeid";
 
-    private final Logger logger = Logger.getLogger(getClass().getName());
-    private String selfId = null;
+    private static final Logger logger = Logger.getLogger(ClusterInfoManagerImpl.class.getName());
     private long rememberedBootTime = -1;
-    private String thisNodeIPAddress = null;
+    private String thisNodeIPAddress;
+    private String thisNodeMac;
+    private final String nodeid;
 
     private ServerConfig serverConfig;
 
-    /**
-     * Generate a new nodeid if the passed one is null 
-     */
-    private static String generateNodeId( final String nodeid ) {
-        return nodeid==null ? UUID.randomUUID().toString().replace("-","") : nodeid;
-    }
-
-    private static String toNodeId(String mac) {
-        String identifierText = mac + "-default_"; // for compatibility with default_ partition
-        byte[] identifierBytes = HexUtils.encodeUtf8(identifierText);
-        byte[] md5IdentifierBytes = HexUtils.getMd5Digest(identifierBytes);
-        return HexUtils.encodeMd5Digest(md5IdentifierBytes).toLowerCase();
-    }
-
     private ClusterNodeInfo recreateRow() {
-        selfId = null;
         ClusterNodeInfo recreatedNodeInfo = getSelfNodeInf();
         if (recreatedNodeInfo == null) {
             logger.warning("failed to recreated node info row in table.");
@@ -369,7 +321,6 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
             newnodename = "no_name";
         }
         newClusterInfo.setName(newnodename);
-        selfId = newClusterInfo.getNodeIdentifier();
         try {
             recordNodeInDB(newClusterInfo);
         } catch (HibernateException e) {
@@ -399,101 +350,6 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
             logger.log(Level.WARNING, msg, e);
             return null;
         }
-    }
-
-    /**
-     * get the mac addresses for the network adapters on this server
-     *
-     * @return a collection containing strings representing mac addresses in the following format:
-     * XX:XX:XX:XX:XX:XX
-     */
-    private Collection<String> getMacs() {
-        ArrayList<String> output = new ArrayList<String>();
-
-        // try to get mac from system property
-        String macproperty = System.getProperty(PROP_MAC_ADDRESS);
-        if (macproperty != null && macproperty.length() > 0) {
-            output.add(macproperty);
-        } else {
-            logger.fine("Cannot get mac address from system property ('"+PROP_MAC_ADDRESS+"').");
-        }
-
-        // try to get mac from ifconfig
-        if (output.isEmpty()) {
-            output.addAll(getIfconfigMac());
-            if (output.isEmpty()) {
-                logger.fine("Cannot get mac address from ifconfig.");
-            }
-        }
-
-        // try to get mac from ipconfig
-        if (output.isEmpty()) {
-            output.addAll(getIpconfigMac());
-            if (output.isEmpty()) {
-                logger.fine("Cannot get mac address from ipconfig.");
-            }
-        }
-
-        logger.config("Using mac addresses: " + output);
-
-        return output;
-    }
-
-    /**
-     * called by getMacs()
-     *
-     * tries to get mac addresses by running unix ifconfig command
-     * @return  collection of mac address strings.  May be empty but never null.
-     */
-    private Collection<String> getIfconfigMac() {
-        Process up = null;
-        InputStream got = null;
-        String ifconfigOutput = null;
-        ArrayList<String> output = new ArrayList<String>();
-        try {
-            try {
-                up = Runtime.getRuntime().exec("/sbin/ifconfig eth0");
-                got = new BufferedInputStream(up.getInputStream());
-                byte[] buff = IOUtils.slurpStreamLocalBuffer(got);
-                ifconfigOutput = new String(buff);
-                up.waitFor();
-            } finally {
-                if (got != null)
-                    got.close();
-                if (up != null)
-                    up.destroy();
-            }
-        } catch (IOException e) {
-            logger.log(Level.FINE, "Error getting ifconfig - perhaps not running on linux.", e);
-        } catch (InterruptedException e) {
-            logger.log(Level.FINE, "Error getting ifconfig - perhaps not running on linux", e);
-        }
-        // ifconfig output pattern
-        //eth0    Link encap:Ethernet  HWaddr 00:0C:6E:69:8D:CA
-        //        inet addr:192.168.1.227  Bcast:192.168.1.255  Mask:255.255.255.0
-        //        UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
-        //        RX packets:5015473 errors:2 dropped:1 overruns:0 frame:0
-        //        TX packets:69559 errors:0 dropped:0 overruns:0 carrier:0
-        //        collisions:0 txqueuelen:100
-        //        RX bytes:357230125 (340.6 Mb)  TX bytes:6648567 (6.3 Mb)
-        //        Interrupt:11 Base address:0x1000
-        //
-        //lo      Link encap:Local Loopback
-        //        inet addr:127.0.0.1  Mask:255.0.0.0
-        //        UP LOOPBACK RUNNING  MTU:16436  Metric:1
-        //        RX packets:666667 errors:0 dropped:0 overruns:0 frame:0
-        //        TX packets:666667 errors:0 dropped:0 overruns:0 carrier:0
-        //        collisions:0 txqueuelen:0
-        //        RX bytes:90058336 (85.8 Mb)  TX bytes:90058336 (85.8 Mb)
-        if (ifconfigOutput == null) return Collections.emptyList();
-        String[] splitted = breakIntoLines(ifconfigOutput);
-        for (String s : splitted) {
-            Matcher matchr = ifconfigMacPattern.matcher(s);
-            if (matchr.matches()) {
-                output.add(matchr.group(1));
-            }
-        }
-        return output;
     }
 
     private String getIfConfigIpAddress() {
@@ -530,7 +386,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         //        Interrupt:11 Base address:0x1000
         //
         if (ifconfigOutput == null) return null;
-        String[] splitted = breakIntoLines(ifconfigOutput);
+        String[] splitted = ClusterIDManager.breakIntoLines(ifconfigOutput);
         for (String s : splitted) {
             Matcher matchr = ifconfigAddrPattern.matcher(s);
             if (matchr.matches()) {
@@ -540,54 +396,8 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         return null;
     }
 
-    /**
-     * called by getMacs().
-     *
-     * tries to get mac addresses by running windows ipconfig command
-     * @return collection of mac address strings.  May be empty but never null.
-     */
-    private Collection<String> getIpconfigMac() {
-        Process up = null;
-        InputStream got = null;
-        String ipconfigOutput = null;
-        ArrayList<String> output = new ArrayList<String>();
-        try {
-            try {
-                up = Runtime.getRuntime().exec("ipconfig /all");
-                got = new BufferedInputStream(up.getInputStream());
-                byte[] buff = IOUtils.slurpStreamLocalBuffer(got);
-                ipconfigOutput = new String(buff);
-                up.waitFor();
-            } finally {
-                if (got != null)
-                    got.close();
-                if (up != null)
-                    up.destroy();
-            }
-        } catch (IOException e) {
-            logger.fine("error getting ipconfig: " + e.getMessage());
-        } catch (InterruptedException e) {
-            logger.fine("error getting ipconfig: " + e.getMessage());
-        }
-        // ipconfig output
-        // ... stuff
-        // Physical Address. . . . . . . . . . . : XX-XX-XX-XX-XX-XX
-        // ... more stuff
-        if (ipconfigOutput == null) return Collections.emptyList();
-        String[] splitted = breakIntoLines(ipconfigOutput);
-        for (String s : splitted) {
-            Matcher matchr = ipconfigMacPattern.matcher(s);
-            if (matchr.matches()) {
-                String match = matchr.group(1);
-                match = match.replace('-', ':');
-                output.add(match);
-            }
-        }
-        return output;
-    }
-
-    private static String[] breakIntoLines(String in) {
-        return Pattern.compile("$+", Pattern.MULTILINE).split(in);
+    private boolean isInfoChecked() {
+        return thisNodeIPAddress != null;
     }
 
     /**
@@ -616,6 +426,19 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
             }
         }
         return thisNodeIPAddress;
+    }
+
+    private synchronized String getMac() {
+        String mac = thisNodeMac;
+        if ( mac == null ) {
+            Collection<String> macs = ClusterIDManager.getMacs();
+            if ( !macs.isEmpty() ) {
+                mac = macs.iterator().next();
+                thisNodeMac = mac;
+            }
+        }
+
+        return mac;
     }
 
     /**
@@ -675,7 +498,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
                     valid = matchesConfig; // if it matches the config then treat as valid, you get what you ask for
                     logger.log(Level.WARNING, "Address does not resolve to any local address '"+address+"'.");
                 }
-                else if (!matchesConfig) {
+                else if (configured && !matchesConfig) {
                     valid = false;
                     logger.log(Level.CONFIG, "Updating cluster IP address to match configuration '"+configuredIp+"' (was '"+address+"')");
                 }
@@ -712,68 +535,5 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         }
 
         return found;
-    }
-
-    /**
-     * Load the nodes id from the properties file
-     */
-    private String loadNodeIdProperty() {
-        String nodeid = null;
-        String configDirectory = System.getProperty(SYSPROP_CONFIG_HOME);
-        if ( configDirectory != null ) {
-            File configDir = new File( configDirectory );
-            File configProps = new File( configDir, NODE_ID_FILE );
-            if ( configProps.isFile() ) {
-                Properties properties = new Properties();
-                InputStream in = null;
-                try {
-                    properties.load( in = new FileInputStream(configProps) );
-                    nodeid = properties.getProperty( NODE_ID_PROPERTY );
-                } catch ( IOException ioe ) {
-                    logger.log( Level.WARNING, "Error loading node properties.", ioe);
-                } finally {
-                    ResourceUtils.closeQuietly(in);
-                }
-            }
-        }
-
-        return nodeid;
-    }
-
-    /**
-     * Store the node id to the properties file.
-     */
-    private void storeNodeIdProperty( final String nodeid ) {
-        logger.config("Storing node identifier '"+nodeid+"'.");
-        String configDirectory = System.getProperty(SYSPROP_CONFIG_HOME);
-        if ( configDirectory != null ) {
-            File configDir = new File( configDirectory );
-            File configProps = new File( configDir, NODE_ID_FILE );
-            if ( configDir.isDirectory() ) {
-                OutputStream out = null;
-                try {
-                    PropertiesConfiguration newProps = new PropertiesConfiguration();
-                    newProps.setAutoSave(false);
-                    newProps.setListDelimiter((char)0);
-                    if ( configProps.isFile() ) {
-                        newProps.load(configProps);
-                    }
-                    newProps.setProperty( NODE_ID_PROPERTY, nodeid );
-
-                    out = new FileOutputStream(configProps);
-                    newProps.save(out, "iso-8859-1");
-                } catch ( IOException ioe ) {
-                    logger.log( Level.WARNING, "Error loading node properties.", ioe);
-                } catch ( ConfigurationException ioe ) {
-                    logger.log( Level.WARNING, "Error storing node properties.", ioe);
-                } finally {
-                    ResourceUtils.closeQuietly(out);
-                }
-            } else {
-                logger.warning("Could not determine configuration directory to save nodeid.");
-            }
-        } else {
-            logger.warning("Could not determine configuration directory to save nodeid.");
-        }
     }
 }

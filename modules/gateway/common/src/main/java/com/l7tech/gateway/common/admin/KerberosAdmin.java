@@ -2,6 +2,9 @@ package com.l7tech.gateway.common.admin;
 
 import com.l7tech.kerberos.KerberosException;
 import com.l7tech.kerberos.Keytab;
+import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.gateway.common.security.rbac.EntityType;
+import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 
 import java.util.Map;
 
@@ -11,6 +14,7 @@ import java.util.Map;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
+@Secured
 public interface KerberosAdmin  {
 
     /**
@@ -63,5 +67,6 @@ public interface KerberosAdmin  {
      * @param data The data for the keytab file.
      * @throws KerberosException if an error occurred.
      */
+    @Secured(types= EntityType.CLUSTER_PROPERTY,stereotype= MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE)
     public void installKeytab( byte[] data ) throws KerberosException;
 }

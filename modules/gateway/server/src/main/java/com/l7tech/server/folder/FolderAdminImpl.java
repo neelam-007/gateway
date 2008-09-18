@@ -6,23 +6,18 @@
 package com.l7tech.server.folder;
 
 import com.l7tech.gateway.common.admin.FolderAdmin;
-import com.l7tech.gateway.common.admin.PolicyAdmin;
-import com.l7tech.gateway.common.security.rbac.EntityType;
-import com.l7tech.gateway.common.security.rbac.MethodStereotype;
-import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.policy.PolicyHeader;
-import com.l7tech.policy.PolicyType;
 
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.text.MessageFormat;
 
+@Administrative
 public class FolderAdminImpl implements FolderAdmin {
 
     private final Logger logger = Logger.getLogger(getClass().getName());

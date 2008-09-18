@@ -11,6 +11,7 @@ import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.Service;
 import com.l7tech.util.ShutdownExceptionHandler;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.GlobalTarariContext;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -19,7 +20,6 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.system.*;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -47,7 +47,6 @@ public class BootProcess
      * Constructor for bean usage via subclassing.
      */
     public BootProcess() {
-        _components = new ArrayList<ServerComponentLifecycle>();
     }
 
     private void deleteOldAttachments(File attachmentDir) {
@@ -84,12 +83,6 @@ public class BootProcess
         logger.info("Starting server");
 
         logger.info("Starting server components...");
-        for (ServerComponentLifecycle component : _components) {
-            logger.info("Starting component " + component);
-            component.start();
-        }
-
-        logger.info("Starting discovered server components...");
         for (ServerComponentLifecycle component : getDiscoveredComponents()) {
             logger.info("Starting component " + component);
             component.start();
@@ -102,18 +95,8 @@ public class BootProcess
     public void stop() throws LifecycleException {
         getApplicationContext().publishEvent(new Stopping(this, Component.GW_SERVER, ipAddress));
 
+
         logger.info("Stopping server components");
-
-        List<ServerComponentLifecycle> stnenopmoc = new ArrayList<ServerComponentLifecycle>();
-        stnenopmoc.addAll(_components);
-        Collections.reverse(stnenopmoc);
-
-        for (ServerComponentLifecycle component : stnenopmoc) {
-            logger.info("Stopping component " + component);
-            component.stop();
-        }
-
-        logger.info("Stopping discovered server components");
 
         List<ServerComponentLifecycle> stnenopmocDerevocsid = new ArrayList<ServerComponentLifecycle>();
         stnenopmocDerevocsid.addAll(getDiscoveredComponents());
@@ -131,18 +114,8 @@ public class BootProcess
     public void close() throws LifecycleException {
         getApplicationContext().publishEvent(new Closing(this, Component.GW_SERVER, ipAddress));
 
+
         logger.info("Closing server components");
-
-        List<ServerComponentLifecycle> stnenopmoc = new ArrayList<ServerComponentLifecycle>();
-        stnenopmoc.addAll(_components);
-        Collections.reverse(stnenopmoc);
-
-        for (ServerComponentLifecycle component : stnenopmoc) {
-            logger.info("Closing component " + component);
-            component.close();
-        }
-
-        logger.info("Closing discovered server components");
 
         List<ServerComponentLifecycle> stnenopmocDerevocsid = new ArrayList<ServerComponentLifecycle>();
         stnenopmocDerevocsid.addAll(getDiscoveredComponents());
@@ -210,36 +183,6 @@ public class BootProcess
         auditor.logAndAudit(BootMessages.CRYPTO_ASYMMETRIC, JceProvider.getAsymmetricJceProvider().getName());
         auditor.logAndAudit(BootMessages.CRYPTO_SYMMETRIC, JceProvider.getSymmetricJceProvider().getName());
 
-        String classnameString = serverConfig.getPropertyCached(ServerConfig.PARAM_SERVERCOMPONENTS);
-        String[] componentClassnames = classnameString.split("\\s.*?");
-
-        for (String classname : componentClassnames) {
-            ServerComponentLifecycle component = null;
-            logger.info("Initializing server component '" + classname + "'");
-            try {
-                Class clazz = Class.forName(classname);
-                component = (ServerComponentLifecycle) clazz.newInstance();
-            } catch (ClassNotFoundException cnfe) {
-                auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[]{classname}, cnfe);
-            } catch (InstantiationException e) {
-                auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[]{classname}, e);
-            } catch (IllegalAccessException e) {
-                auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[]{classname}, e);
-            }
-
-            if (component != null) {
-                try {
-                    if (component instanceof ApplicationContextAware) {
-                        ((ApplicationContextAware) component).setApplicationContext(applicationContext);
-                    }
-                    component.setServerConfig(serverConfig);
-                    _components.add(component);
-                } catch (LifecycleException e) {
-                    auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[]{component.getClass().getName()}, e);
-                }
-            }
-        }
-
         applicationContext.publishEvent(new Initialized(this, Component.GW_SERVER, ipAddress));
 
         logger.info("Initialized server");
@@ -303,6 +246,7 @@ public class BootProcess
             in = new FileInputStream(file);
             jaxpProps.load(in);
         } catch (IOException e) {
+            logger.log( Level.FINE, "Error reading properties file '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
         } finally {
             ResourceUtils.closeQuietly(in);
         }
@@ -348,6 +292,7 @@ public class BootProcess
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     private Collection<ServerComponentLifecycle> getDiscoveredComponents() {
         Collection<ServerComponentLifecycle> comps = discoveredComponents;
 
@@ -366,7 +311,6 @@ public class BootProcess
 
     public static final String LOCALHOST_IP = "127.0.0.1";
 
-    private List<ServerComponentLifecycle> _components;
     private Collection<ServerComponentLifecycle> discoveredComponents;
     private ServerConfig serverConfig;
     private Auditor auditor;

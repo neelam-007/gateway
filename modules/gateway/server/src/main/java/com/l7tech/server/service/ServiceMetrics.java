@@ -58,7 +58,7 @@ public class ServiceMetrics {
     /**
      * Archived bins are added to this {@link Channel} when they are finished.
      *
-     * The {@link ServiceMetricsManager.Flusher} reads from this queue and writes to the database.
+     * The {@link ServiceMetricsManagerImpl.Flusher} reads from this queue and writes to the database.
      */
     private final Channel _queue;
 
