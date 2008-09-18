@@ -190,7 +190,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem saveAndActivateMenuItem;
     private JMenuItem saveOnlyMenuItem;
     private boolean disconnected = false;
-    private String ssgURL;
     private SsmApplication ssmApplication;
     private IdentitiesRootNode identitiesRootNode;
     private JTextPane descriptionText;
@@ -286,15 +285,6 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     public boolean isDisconnected() {
         return disconnected;
-    }
-
-    /**
-     * The SSG URL this ssm is connected to (excluding the /ssg suffix).
-     *
-     * @return the url of the SSG we are currently connected to.
-     */
-    public String ssgURL() {
-        return ssgURL;
     }
 
     /** @return the SsmApplication for which this MainWindow was created. */

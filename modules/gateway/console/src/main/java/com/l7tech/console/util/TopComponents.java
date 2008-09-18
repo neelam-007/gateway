@@ -33,6 +33,7 @@ import java.util.Map;
 public class TopComponents {
     private static final TopComponents instance = new TopComponents();
     private boolean connectionLost = false;
+    private String ssgURL;
 
     public void showHelpTopics() {
         getMainWindow().showHelpTopicsRoot();
@@ -59,7 +60,11 @@ public class TopComponents {
     }
 
     public String ssgURL() {
-        return getMainWindow().ssgURL();
+        return ssgURL;
+    }
+
+    public void setSsgURL(String url) {
+        ssgURL = url;
     }
 
     public SsmPreferences getPreferences() {

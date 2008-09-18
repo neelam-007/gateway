@@ -23,6 +23,7 @@ import com.l7tech.util.SyspropUtil;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.console.panels.LogonDialog;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.gateway.common.admin.*;
 import com.l7tech.identity.User;
@@ -403,6 +404,7 @@ public class SecurityProviderImpl extends SecurityProvider
         }
         else {
             getConfigurableHttpInvokerRequestExecutor().setSession(getHost(host), getPort(host), null);
+            TopComponents.getInstance().setSsgURL("https://" + host );
         }
 
         return (AdminLogin) applicationContext.getBean("adminLogin");
