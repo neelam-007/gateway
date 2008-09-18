@@ -1,7 +1,7 @@
 /**
  * @module treeTable
- * @namespace l7
- * @requires l7
+ * @namespace l7.TreeTable
+ * @requires l7.js
  */
 
 if (!l7.TreeTable) {
@@ -19,7 +19,7 @@ if (!l7.TreeTable) {
          *
          * To use this class,
          * 1. Include the CSS class 'l7-treeTable' in the TABLE element.
-         * 2. Each TR element belonging to the tree must have an ID.
+         * 2. Each TR element belonging to the tree must have an HTML ID.
          * 3. Each parent TR element should have a IMG element with the CSS class 'l7_treeTable_toggler'.
          *    The CSS class 'clickable' will be added to it if not already.
          * 4. Each child TR element must have a TD element with the CSS class 'parentId' whose inner HTML is the parent row ID.
@@ -42,7 +42,7 @@ if (!l7.TreeTable) {
             this.table = table;
 
             /**
-             * Array-based hash map where map key is row ID and map value is row index.
+             * Array-based hash map where map key is row HTML ID and map value is row index.
              * @private
              * @type array
              */

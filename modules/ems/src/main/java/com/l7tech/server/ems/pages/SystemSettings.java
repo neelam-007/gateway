@@ -1,40 +1,40 @@
 package com.l7tech.server.ems.pages;
 
-import org.apache.wicket.markup.html.panel.FeedbackPanel;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.InvalidLicenseException;
+import com.l7tech.gateway.common.License;
+import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.UpdatableLicenseManager;
+import com.l7tech.server.ems.NavigationPage;
+import com.l7tech.util.DateUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.TextUtils;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextArea;
-import org.apache.wicket.markup.html.form.upload.FileUploadField;
 import org.apache.wicket.markup.html.form.upload.FileUpload;
-import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.model.Model;
-import org.apache.wicket.model.StringResourceModel;
+import org.apache.wicket.markup.html.form.upload.FileUploadField;
+import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.IDetachable;
+import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.model.StringResourceModel;
+import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.lang.Bytes;
 import org.xml.sax.SAXException;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.TextUtils;
-import com.l7tech.util.DateUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.server.UpdatableLicenseManager;
-import com.l7tech.server.ems.NavigationPage;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.common.License;
-import com.l7tech.gateway.common.InvalidLicenseException;
-import com.l7tech.objectmodel.UpdateException;
 
+import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
 
 /**
  * Page for system settings
  */
-@NavigationPage(page="SystemSettings",section="Settings",sectionIndex=200,pageUrl="SystemSettings.html")
+@NavigationPage(page="SystemSettings",pageIndex=100,section="Settings",sectionIndex=200,pageUrl="SystemSettings.html")
 public class SystemSettings extends EmsPage {
 
     private static final int MAX_LICENSE_FILE_UPLOAD_BYTES = SyspropUtil.getInteger("com.l7tech.ems.licenseFile.maxBytes", 1024 * 500);

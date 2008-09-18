@@ -9,10 +9,78 @@
     <!-- PROTOTYPE ONLY END -->
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>User Settings [SecureSpan Enterprise Manager]</title>
-    <link rel="stylesheet" href="../css/l7.css" media="all" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../css/l7.css" />
+
+    <!-- Required YUI modules: button, container, event -->
+    <link rel="stylesheet" type="text/css" href="../yui/button/assets/skins/sam/button.css">
+    <link rel="stylesheet" type="text/css" href="../yui/container/assets/skins/sam/container.css">
+    <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
+    <script type="text/javascript" src="../yui/element/element-beta-min.js"></script>
+    <script type="text/javascript" src="../yui/button/button-min.js"></script>
+    <script type="text/javascript" src="../yui/container/container-min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="../css/l7-yui-skin.css" /> <!-- modifies YUI sam skin; must come after YUI CSS files -->
     <script type="text/javascript" src="../js/l7.js"></script>
+    <script type="text/javascript">
+        /** Localized header text for warning dialog. */
+        var WARNING_DIALOG_HEADER = 'Warining';
+
+        /** Localized text label for OK button. */
+        var OK_BUTTON_TEXT = 'OK';
+
+        /** Localized warning text for mismatched new passwords. */
+        var NEW_PASSWORDS_MISMATCH = 'New passwords do not match.';
+
+        /** YAHOO.widget.SimpleDialog for displaying warning messages. */
+        var warningDialog;
+
+        /** YAHOO.widget.Button for submitting user account info changes. */
+        var changeAccountInfoButton;
+
+        /** YAHOO.widget.Button for submitting UI preferences changes. */
+        var uiPreferencesButton;
+
+        YAHOO.util.Event.onContentReady('changePasswordButton', function() {
+            new YAHOO.widget.Button('changePasswordButton');
+        });
+
+        // Client-side form data validation.
+        YAHOO.util.Event.on('changePasswordForm', 'submit', function(p_oEvent) {
+            var newPassword = document.getElementById('newPassword').value;
+            var newPassword2 = document.getElementById('newPassword2').value;
+            if (newPassword != newPassword2) {
+                warningDialog.setBody(NEW_PASSWORDS_MISMATCH);
+                warningDialog.show();
+                YAHOO.util.Event.preventDefault(p_oEvent);
+            }
+        });
+
+        YAHOO.util.Event.onContentReady('uiPreferencesButton', function() {
+            uiPreferencesButton = new YAHOO.widget.Button('uiPreferencesButton');
+        });
+
+        YAHOO.util.Event.onContentReady('changeAccountInfoButton', function() {
+            changeAccountInfoButton = new YAHOO.widget.Button('changeAccountInfoButton');
+        });
+
+        function init() {
+            warningDialog = new YAHOO.widget.SimpleDialog("warningDialog", {
+                close       : true,
+                buttons     : [{text:OK_BUTTON_TEXT, handler:function(){this.hide()}, isDefault:true}],
+                draggable   : false,
+                fixedcenter : true,
+                icon        : YAHOO.widget.SimpleDialog.ICON_WARN,
+                modal       : true,
+                visible     : false,
+                width       : '20em'    // Must be set to work in IE7.
+            });
+            warningDialog.setHeader(WARNING_DIALOG_HEADER);
+            warningDialog.render(document.body);
+        }
+    </script>
 </head>
-<body>
+<body class="yui-skin-sam" onload="init();">
+<noscript><div class="javascriptWarning">This page requires JavaScript. Your browser either does not have JavaScript support or has disabled it.</div></noscript>
 <table width="100%">
     <tr>
         <td>
@@ -20,7 +88,7 @@
                 <table width="100%">
                     <tr class="header">
                         <td class="logoLeft"><img src="../images/logoLeft.png" alt="" /></td>
-                        <td class="logo"><a href="EnterpriseGateways.html"><img src="../images/l7Logo.png" alt="Layer 7 Technologies Inc." /><img src="../images/emLogo.png" alt="" /></a></td>
+                        <td class="logo"><a href="Monitor.html"><img src="../images/l7Logo.png" alt="Layer 7 Technologies Inc." /><img src="../images/emLogo.png" alt="" /></a></td>
                         <td class="logoRight"><img src="../images/logoRight.png" alt="" /></td>
                         <td width="100%"><img src="../images/spacer.png" alt="" /></td>
                         <td class="middle nowrap">Logged in as "admin"<br />since May 5, 2008 05:57:54 PM</td>
@@ -33,18 +101,15 @@
             <div>
                 <table>
                     <tr>
-                        <td id="tabLTEnterprise"><img src="../images/tabLT.png" alt="" /></td>
-                        <td id="tabCTEnterprise" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRTEnterprise"><img src="../images/tabRT.png" alt="" /></td>
-                        <td id="tabLTPolicies"><img src="../images/tabLT.png" alt="" /></td>
-                        <td id="tabCTPolicies" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRTPolicies"><img src="../images/tabRT.png" alt="" /></td>
+                        <td id="tabLTManageGateways"><img src="../images/tabLT.png" alt="" /></td>
+                        <td id="tabCTManageGateways" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRTManageGateways"><img src="../images/tabRT.png" alt="" /></td>
+                        <td id="tabLTManagePolicies"><img src="../images/tabLT.png" alt="" /></td>
+                        <td id="tabCTManagePolicies" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRTManagePolicies"><img src="../images/tabRT.png" alt="" /></td>
                         <td id="tabLTReports"><img src="../images/tabLT.png" alt="" /></td>
                         <td id="tabCTReports" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabRTReports"><img src="../images/tabRT.png" alt="" /></td>
-                        <td id="tabLTBackup"><img src="../images/tabLT.png" alt="" /></td>
-                        <td id="tabCTBackup" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRTBackup"><img src="../images/tabRT.png" alt="" /></td>
                         <td id="tabLTTools"><img src="../images/tabLT.png" alt="" /></td>
                         <td id="tabCTTools" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabRTTools"><img src="../images/tabRT.png" alt="" /></td>
@@ -56,18 +121,15 @@
                         <td><img src="../images/tabRT.png" alt="" /></td>
                     </tr>
                     <tr>
-                        <td id="tabLMEnterprise" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMEnterprise" class="tabCM"><a href="EnterpriseGateways.html">Manage Enterprise</a></td>
-                        <td id="tabRMEnterprise" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabLMPolicies" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMPolicies" class="tabCM"><a href="PolicyMigration.html">Manage Policies</a></td>
-                        <td id="tabRMPolicies" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabLMManageGateways" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabCMManageGateways" class="tabCM"><a href="Monitor.html">Manage Gateways</a></td>
+                        <td id="tabRMManageGateways" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabLMManagePolicies" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabCMManagePolicies" class="tabCM"><a href="PolicyMigration.html">Manage Policies</a></td>
+                        <td id="tabRMManagePolicies" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMReports" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabCMReports" class="tabCM"><a href="StandardReports.html">Reports</a></td>
                         <td id="tabRMReports" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabLMBackup" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMBackup" class="tabCM"><a href="Backup.html">Backup &amp; Restore</a></td>
-                        <td id="tabRMBackup" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMTools" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabCMTools" class="tabCM"><a href="Messages.html">Tools</a></td>
                         <td id="tabRMTools" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
@@ -79,18 +141,15 @@
                         <td class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                     </tr>
                     <tr>
-                        <td id="tabLBEnterprise"><img src="../images/tabLBoff.png" alt="" /></td>
-                        <td id="tabCBEnterprise" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRBEnterprise"><img src="../images/tabRBoff.png" alt="" /></td>
-                        <td id="tabLBPolicies"><img src="../images/tabLBoff.png" alt="" /></td>
-                        <td id="tabCBPolicies" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRBPolicies"><img src="../images/tabRBoff.png" alt="" /></td>
+                        <td id="tabLBManageGateways"><img src="../images/tabLBoff.png" alt="" /></td>
+                        <td id="tabCBManageGateways" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRBManageGateways"><img src="../images/tabRBoff.png" alt="" /></td>
+                        <td id="tabLBManagePolicies"><img src="../images/tabLBoff.png" alt="" /></td>
+                        <td id="tabCBManagePolicies" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRBManagePolicies"><img src="../images/tabRBoff.png" alt="" /></td>
                         <td id="tabLBReports"><img src="../images/tabLBoff.png" alt="" /></td>
                         <td id="tabCBReports" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabRBReports"><img src="../images/tabRBoff.png" alt="" /></td>
-                        <td id="tabLBBackup"><img src="../images/tabLBoff.png" alt="" /></td>
-                        <td id="tabCBBackup" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRBBackup"><img src="../images/tabRBoff.png" alt="" /></td>
                         <td id="tabLBTools"><img src="../images/tabLBoff.png" alt="" /></td>
                         <td id="tabCBTools" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabRBTools"><img src="../images/tabRBoff.png" alt="" /></td>
@@ -104,16 +163,17 @@
                 </table>
             </div>
             <script language="JavaScript" type="text/javascript">
-                l7.TabBar.initTab('Enterprise');
-                l7.TabBar.initTab('Policies');
+                l7.TabBar.initTab('ManageGateways');
+                l7.TabBar.initTab('ManagePolicies');
                 l7.TabBar.initTab('Reports');
-                l7.TabBar.initTab('Backup');
                 l7.TabBar.initTab('Tools');
             </script>
             <div class="subtabBar">
                 <span class="subtabOn">User Settings</span>
                 |
                 <span class="subtabOff"><a href="SystemSettings.html">System Settings</a></span>
+                |
+                <span class="subtabOff"><a href="EnterpriseUsers.html">User Accounts</a></span>
             </div>
             <div class="content">
                 <wicket:extend>                
@@ -201,9 +261,11 @@
                             <tr>
                                 <th><wicket:message key="label.startview">Start Up View:</wicket:message></th>
                                 <td><select id="startupView"  wicket:id="startview">
-                                    <optgroup label="Manage Enterprise">
-                                        <option value="EnterpriseGateways">Gateways</option>
-                                        <option value="EnterpriseUsers">User Accounts</option>
+                                    <optgroup label="Manage Gateways">
+                                        <option value="Monitor">Monitor</option>
+                                        <option value="Control">Configure</option>
+                                        <option value="Backup">Backup</option>
+                                        <option value="Restore">Restore</option>
                                     </optgroup>
                                     <optgroup label="Manage Policies">
                                         <option value="PolicyMigration">Migration</option>
@@ -212,21 +274,16 @@
                                     </optgroup>
                                     <optgroup label="Reports">
                                         <option value="StandardReports">Standard Reports</option>
-                                        <option value="ExternalReports">External Reports</option>
-                                    </optgroup>
-                                    <optgroup label="Backup & Restore">
-                                        <option value="Backup">Backup</option>
-                                        <option value="Restore">Restore</option>
                                     </optgroup>
                                     <optgroup label="Tools">
-                                        <option value="Notifications">Messages</option>
+                                        <option value="Messages">Messages</option>
                                         <option value="Audits">Audits</option>
                                         <option value="Logs">Logs</option>
-                                        <option value="TestWebService">Test Web Service</option>
                                     </optgroup>
                                     <optgroup label="Settings">
                                         <option value="UserSettings">User Settings</option>
                                         <option value="SystemSettings">System Settings</option>
+                                        <option value="UserAccounts">User Accounts</option>
                                     </optgroup>
                                     <option value="lastView" selected="selected">[Last Visited View]</option>
                                 </select></td>

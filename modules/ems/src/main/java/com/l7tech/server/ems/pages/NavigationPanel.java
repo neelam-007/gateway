@@ -1,17 +1,16 @@
 package com.l7tech.server.ems.pages;
 
-import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.markup.html.panel.Fragment;
-import org.apache.wicket.markup.html.link.ExternalLink;
-import org.apache.wicket.markup.html.basic.Label;
+import com.l7tech.server.ems.NavigationModel;
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.link.ExternalLink;
+import org.apache.wicket.markup.html.panel.Fragment;
+import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.RepeatingView;
 import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.AttributeModifier;
-
-import com.l7tech.server.ems.NavigationModel;
+import org.apache.wicket.model.StringResourceModel;
 
 /**
  * Panel for main navigation.
@@ -24,27 +23,25 @@ public class NavigationPanel extends Panel {
 //     * Page metadata.
 //     */
 //    private static final String[][] pages = {
-//        { "EnterpriseGateways", "Enterprise", "EnterpriseGateways.html" },
-//        { "EnterpriseUsers", "Enterprise", "EnterpriseUsers.html" },
+//        { "Configure", "ManageGateways", "Configure.html" },
+//        { "Monitor", "ManageGateways", "Monitor.html" },
+//        { "Backup", "ManageGateways", "Backup.html" },
+//        { "Restore", "ManageGateways", "Restore.html" },
 //
-//        { "PolicyMigration", "Policies", "PolicyMigration.html" },
-//        { "PolicySubmission", "Policies", "PolicySubmission.html" },
-//        { "PolicyApproval", "Policies", "PolicyApproval.html" },
-//        { "PolicyMapping", "Policies", "PolicyMapping.html" },
+//        { "PolicyMigration", "ManagePolicies", "PolicyMigration.html" },
+//        { "PolicySubmission", "ManagePolicies", "PolicySubmission.html" },
+//        { "PolicyApproval", "ManagePolicies", "PolicyApproval.html" },
+//        { "PolicyMapping", "ManagePolicies", "PolicyMapping.html" },
 //
 //        { "StandardReports", "Reports", "StandardReports.html" },
-//        { "ExternalReports", "Reports", "ExternalReports.html" },
-//
-//        { "Backup", "Backup", "Backup.html" },
-//        { "Restore", "Backup", "Restore.html" },
 //
 //        { "Messages", "Tools", "Messages.html" },
 //        { "Audits", "Tools", "Audits.html" },
 //        { "Logs", "Tools", "Logs.html" },
-//        { "TestWebService", "Tools", "TestWebService.html" },
 //
 //        { "UserSettings", "Settings", "UserSettings.html" },
 //        { "SystemSettings", "Settings", "SystemSettings.html" },
+//        { "EnterpriseUsers", "Settings", "EnterpriseUsers.html" },
 //    };
 
     /**

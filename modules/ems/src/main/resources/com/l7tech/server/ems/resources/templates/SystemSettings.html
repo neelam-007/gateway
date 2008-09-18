@@ -10,9 +10,70 @@
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>System Settings [SecureSpan Enterprise Manager]</title>
     <link rel="stylesheet" href="../css/l7.css" media="all" type="text/css" />
+
+    <!-- Required YUI modules: button, container, dom -->
+    <link rel="stylesheet" type="text/css" href="../yui/button/assets/skins/sam/button.css">
+    <link rel="stylesheet" type="text/css" href="../yui/container/assets/skins/sam/container.css">
+    <script type="text/javascript" src="../yui/yahoo-dom-event/yahoo-dom-event.js"></script>
+    <script type="text/javascript" src="../yui/element/element-beta-min.js"></script>
+    <script type="text/javascript" src="../yui/button/button-min.js"></script>
+    <script type="text/javascript" src="../yui/container/container-min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="../css/l7-yui-skin.css" /> <!-- modifies YUI sam skin; must come after YUI CSS files -->
     <script type="text/javascript" src="../js/l7.js"></script>
+    <script type="text/javascript">
+        /** Localized warning text for session timeout field. */
+        var SESSION_TIMEOUT_HINT = 'Must be positive integer';
+
+        /** Localized warning text for max. no. dashboards field. */
+        var MAX_NUM_DASHBOARDS_HINT = 'Must be positive integer';
+
+        /** YAHOO.widget.SimpleDialog for displaying warning messages. */
+        var warningDialog;
+
+        /** YAHOO.widget.Button for changing license. */
+        var changeLicenseButton;
+
+        /** YAHOO.widget.Button for submitting global settings changes. */
+        var globalSettingsButton;
+
+        YAHOO.util.Event.onContentReady('changeLicenseButton', function() {
+            changeLicenseButton = new YAHOO.widget.Button('changeLicenseButton');
+        });
+
+        YAHOO.util.Event.onContentReady('globalSettingsButton', function() {
+            globalSettingsButton = new YAHOO.widget.Button('globalSettingsButton');
+        });
+
+        function refreshGlobalSettingsElements() {
+            var timeoutTextBox = document.getElementById('timeout');
+            var timeout = timeoutTextBox.value;
+            var timeoutValid = l7.Util.isIntString(timeout) && timeout >= 0;
+            if (timeoutValid) {
+                YAHOO.util.Dom.removeClass(timeoutTextBox, 'invalid');
+                document.getElementById('timeoutHint').innerHTML = '';
+            } else {
+                YAHOO.util.Dom.addClass(timeoutTextBox, 'invalid');
+                document.getElementById('timeoutHint').innerHTML = '(' + SESSION_TIMEOUT_HINT + ')';
+            }
+
+            var maxNumDashboardsTextBox = document.getElementById('maxNumDashboards');
+            var maxNumDashboards = maxNumDashboardsTextBox.value;
+            var maxNumDashboardsValid = l7.Util.isIntString(maxNumDashboards) && maxNumDashboards >= 0;
+            if (maxNumDashboardsValid) {
+                YAHOO.util.Dom.removeClass(maxNumDashboardsTextBox, 'invalid');
+                document.getElementById('maxNumDashboardsHint').innerHTML = '';
+            } else {
+                YAHOO.util.Dom.addClass(maxNumDashboardsTextBox, 'invalid');
+                document.getElementById('maxNumDashboardsHint').innerHTML = '(' + MAX_NUM_DASHBOARDS_HINT + ')';
+            }
+
+            globalSettingsButton.set('disabled', !timeoutValid || !maxNumDashboardsValid);
+        }
+    </script>
 </head>
-<body>
+<body class="yui-skin-sam">
+<noscript><div class="javascriptWarning">This page requires JavaScript. Your browser either does not have JavaScript support or has disabled it.</div></noscript>
 <table width="100%">
     <tr>
         <td>
@@ -20,7 +81,7 @@
                 <table width="100%">
                     <tr class="header">
                         <td class="logoLeft"><img src="../images/logoLeft.png" alt="" /></td>
-                        <td class="logo"><a href="EnterpriseGateways.html"><img src="../images/l7Logo.png" alt="Layer 7 Technologies Inc." /><img src="../images/emLogo.png" alt="" /></a></td>
+                        <td class="logo"><a href="Monitor.html"><img src="../images/l7Logo.png" alt="Layer 7 Technologies Inc." /><img src="../images/emLogo.png" alt="" /></a></td>
                         <td class="logoRight"><img src="../images/logoRight.png" alt="" /></td>
                         <td width="100%"><img src="../images/spacer.png" alt="" /></td>
                         <td class="middle nowrap">Logged in as "admin"<br />since May 5, 2008 05:57:54 PM</td>
@@ -33,18 +94,15 @@
             <div>
                 <table>
                     <tr>
-                        <td id="tabLTEnterprise"><img src="../images/tabLT.png" alt="" /></td>
-                        <td id="tabCTEnterprise" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRTEnterprise"><img src="../images/tabRT.png" alt="" /></td>
-                        <td id="tabLTPolicies"><img src="../images/tabLT.png" alt="" /></td>
-                        <td id="tabCTPolicies" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRTPolicies"><img src="../images/tabRT.png" alt="" /></td>
+                        <td id="tabLTManageGateways"><img src="../images/tabLT.png" alt="" /></td>
+                        <td id="tabCTManageGateways" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRTManageGateways"><img src="../images/tabRT.png" alt="" /></td>
+                        <td id="tabLTManagePolicies"><img src="../images/tabLT.png" alt="" /></td>
+                        <td id="tabCTManagePolicies" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRTManagePolicies"><img src="../images/tabRT.png" alt="" /></td>
                         <td id="tabLTReports"><img src="../images/tabLT.png" alt="" /></td>
                         <td id="tabCTReports" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabRTReports"><img src="../images/tabRT.png" alt="" /></td>
-                        <td id="tabLTBackup"><img src="../images/tabLT.png" alt="" /></td>
-                        <td id="tabCTBackup" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRTBackup"><img src="../images/tabRT.png" alt="" /></td>
                         <td id="tabLTTools"><img src="../images/tabLT.png" alt="" /></td>
                         <td id="tabCTTools" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabRTTools"><img src="../images/tabRT.png" alt="" /></td>
@@ -56,18 +114,15 @@
                         <td><img src="../images/tabRT.png" alt="" /></td>
                     </tr>
                     <tr>
-                        <td id="tabLMEnterprise" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMEnterprise" class="tabCM"><a href="EnterpriseGateways.html">Manage Enterprise</a></td>
-                        <td id="tabRMEnterprise" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabLMPolicies" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMPolicies" class="tabCM"><a href="PolicyMigration.html">Manage Policies</a></td>
-                        <td id="tabRMPolicies" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabLMManageGateways" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabCMManageGateways" class="tabCM"><a href="Monitor.html">Manage Gateways</a></td>
+                        <td id="tabRMManageGateways" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabLMManagePolicies" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabCMManagePolicies" class="tabCM"><a href="PolicyMigration.html">Manage Policies</a></td>
+                        <td id="tabRMManagePolicies" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMReports" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabCMReports" class="tabCM"><a href="StandardReports.html">Reports</a></td>
                         <td id="tabRMReports" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabLMBackup" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMBackup" class="tabCM"><a href="Backup.html">Backup &amp; Restore</a></td>
-                        <td id="tabRMBackup" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMTools" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabCMTools" class="tabCM"><a href="Messages.html">Tools</a></td>
                         <td id="tabRMTools" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
@@ -79,18 +134,15 @@
                         <td class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                     </tr>
                     <tr>
-                        <td id="tabLBEnterprise"><img src="../images/tabLBoff.png" alt="" /></td>
-                        <td id="tabCBEnterprise" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRBEnterprise"><img src="../images/tabRBoff.png" alt="" /></td>
-                        <td id="tabLBPolicies"><img src="../images/tabLBoff.png" alt="" /></td>
-                        <td id="tabCBPolicies" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRBPolicies"><img src="../images/tabRBoff.png" alt="" /></td>
+                        <td id="tabLBManageGateways"><img src="../images/tabLBoff.png" alt="" /></td>
+                        <td id="tabCBManageGateways" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRBManageGateways"><img src="../images/tabRBoff.png" alt="" /></td>
+                        <td id="tabLBManagePolicies"><img src="../images/tabLBoff.png" alt="" /></td>
+                        <td id="tabCBManagePolicies" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRBManagePolicies"><img src="../images/tabRBoff.png" alt="" /></td>
                         <td id="tabLBReports"><img src="../images/tabLBoff.png" alt="" /></td>
                         <td id="tabCBReports" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabRBReports"><img src="../images/tabRBoff.png" alt="" /></td>
-                        <td id="tabLBBackup"><img src="../images/tabLBoff.png" alt="" /></td>
-                        <td id="tabCBBackup" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRBBackup"><img src="../images/tabRBoff.png" alt="" /></td>
                         <td id="tabLBTools"><img src="../images/tabLBoff.png" alt="" /></td>
                         <td id="tabCBTools" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabRBTools"><img src="../images/tabRBoff.png" alt="" /></td>
@@ -104,23 +156,23 @@
                 </table>
             </div>
             <script language="JavaScript" type="text/javascript">
-                l7.TabBar.initTab('Enterprise');
-                l7.TabBar.initTab('Policies');
+                l7.TabBar.initTab('ManageGateways');
+                l7.TabBar.initTab('ManagePolicies');
                 l7.TabBar.initTab('Reports');
-                l7.TabBar.initTab('Backup');
                 l7.TabBar.initTab('Tools');
             </script>
             <div class="subtabBar">
                 <span class="subtabOff"><a href="UserSettings.html">User Settings</a></span>
                 |
                 <span class="subtabOn">System Settings</span>
+                |
+                <span class="subtabOff"><a href="EnterpriseUsers.html">User Accounts</a></span>
             </div>
             <div class="content">
                 <wicket:extend>
-              <div class="panel">
-                    <div class="panelTitle tippy"><img id="productInformationTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'productInformation')" /><span class="clickable" onclick="l7.Tippy.toggleTippy('productInformationTippy', 'productInformation')">Product Information</span></div>
-                    <div id="productInformation">
-                        <div class="panelContent">
+                    <div class="panel">
+                        <div class="panelTitle tippy"><img id="productInformationTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'productInformation')" /><span class="clickable" onclick="l7.Tippy.toggleTippy('productInformationTippy', 'productInformation')">Product Information</span></div>
+                        <div id="productInformation" class="panelContent">
                             <table class="indent spaced">
                                 <tr>
                                     <th>Version:</th>
@@ -137,11 +189,9 @@
                             </table>
                         </div>
                     </div>
-                </div>
-                <div class="panel">
-                    <div class="panelTitle tippy"><img id="systemInformationTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'systemInformation')" /><span class="clickable" onclick="l7.Tippy.toggleTippy('systemInformationTippy', 'systemInformation')">System Information</span></div>
-                    <div id="systemInformation">
-                        <div class="panelContent">
+                    <div class="panel">
+                        <div class="panelTitle tippy"><img id="systemInformationTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'systemInformation')" /><span class="clickable" onclick="l7.Tippy.toggleTippy('systemInformationTippy', 'systemInformation')">System Information</span></div>
+                        <div id="systemInformation" class="panelContent">
                             <table class="indent spaced">
                                 <tr>
                                     <th>Host Name:</th>
@@ -185,11 +235,9 @@
                             </table>
                         </div>
                     </div>
-                </div>
-                <div class="panel">
-                    <div class="panelTitle tippy"><img id="licenseTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'license')" /><span class="clickable" onclick="l7.Tippy.toggleTippy('licenseTippy', 'license')">License</span></div>
-                    <div id="license">
-                        <div class="panelContent">
+                    <div class="panel">
+                        <div class="panelTitle tippy"><img id="licenseTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'license')" /><span class="clickable" onclick="l7.Tippy.toggleTippy('licenseTippy', 'license')">License</span></div>
+                        <div id="license" class="panelContent">
                             <h4>Current License</h4>
                             <table class="indent spaced">
                                 <tr>
@@ -246,7 +294,6 @@
                             </form>
                         </div>
                     </div>
-                </div>
                 </wicket:extend>
             </div>
             <div class="statusBar">

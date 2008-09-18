@@ -1,35 +1,30 @@
 package com.l7tech.server.ems.pages;
 
-import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
-import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
-import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.AbstractReadOnlyModel;
-import org.apache.wicket.model.StringResourceModel;
-import org.apache.wicket.model.Model;
-import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.HiddenField;
-import org.apache.wicket.markup.html.form.Button;
-import org.apache.wicket.ajax.markup.html.form.AjaxButton;
-import org.apache.wicket.ajax.AjaxRequestTarget;
-
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Collections;
-import java.util.Collection;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ems.EmsAccountManager;
 import com.l7tech.server.ems.NavigationPage;
-import com.l7tech.identity.internal.InternalUser;
+import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.ajax.markup.html.form.AjaxButton;
+import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
+import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
+import org.apache.wicket.markup.html.form.Button;
+import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.HiddenField;
+import org.apache.wicket.model.AbstractReadOnlyModel;
+import org.apache.wicket.model.IModel;
+import org.apache.wicket.model.Model;
+import org.apache.wicket.model.StringResourceModel;
+import org.apache.wicket.spring.injection.annot.SpringBean;
+
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Enterprise Users page
  */
-@NavigationPage(page="EnterpriseUsers",section="Enterprise",pageUrl="EnterpriseUsers.html")
+@NavigationPage(page="EnterpriseUsers",pageIndex=200,section="Settings",sectionIndex=200,pageUrl="EnterpriseUsers.html")
 public class EnterpriseUsers extends EmsPage {
 
     //- PUBLIC

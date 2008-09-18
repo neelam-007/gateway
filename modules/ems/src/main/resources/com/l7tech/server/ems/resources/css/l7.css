@@ -1,7 +1,10 @@
 @charset
 'utf-8'
 ;
-/* Universal Selectors */
+
+/********************************************************************************
+ * Universal Selectors
+ ********************************************************************************/
 
 * {
     border: 0;
@@ -9,7 +12,9 @@
     padding: 0;
 }
 
-/* Element Selectors */
+/********************************************************************************
+ * Element Selectors
+ ********************************************************************************/
 
 body, td, p, input, option, select, textarea, pre {
     font-family: Arial, Helvetica, sans-serif;
@@ -101,7 +106,9 @@ table {
     border-collapse: collapse;
 }
 
-/* Class, Attribute, and Pseudo Selectors */
+/********************************************************************************
+ * Class, Attribute, and Pseudo Selectors
+ ********************************************************************************/
 
 .top {
     vertical-align: top !important;
@@ -164,6 +171,14 @@ td > .tdRight {
 .clickableImg:hover {
     border: 1px solid #7d98b8;
     background-color: #e6f1ff;
+}
+
+input[type='text'].invalid {
+    background-color: #ffff00 !important;
+}
+
+.red {
+    color: #ff0000 !important;
 }
 
 /*
@@ -242,6 +257,12 @@ div.header {
     font-weight: bold;
 }
 
+/* Each tab in the tab bar is carved up into 9 tiles.
+   Abbrevations:
+       L = Left, C = Center, R = Right
+       T = Top, M = Middle, B = Bottom
+       on  = active state, off = inactive state, over = inactive mouse-over state
+*/
 .tabCT {
     background-image: url('../images/tabCT.png');
     background-repeat: repeat-x;
@@ -365,7 +386,7 @@ div.header {
     border-bottom: 1px solid #b2b2b2;
     border-top: 1px solid #f0f0f0;
     background-color: #d6d6d6;
-    padding: 3px 6px 3px 6px;
+    padding: 1px 6px 1px 6px;
     vertical-align: middle;
 }
 
@@ -374,6 +395,7 @@ div.header {
     padding: 8px;
 }
 
+/* A spaced table is for layout with spacing, thus no borders. */
 table.spaced th, table.spaced td {
     padding: 1px 5px 1px 5px;
     text-align: left;
@@ -390,6 +412,16 @@ img.tippy {
     padding-right: 6px;
 }
 
+/* A ghost dialog icon is an icon for bringing up a dialog.
+   It is normally invisible until mouse is over its containing table cell. */
+img.ghostDialogIcon {
+    top: 0;
+    left: -5px; /* Since padding-left of .dataTable td is 7px, so this will appear 2px from td left edge */
+    padding: 0 !important;
+    position: absolute;
+    z-index: 1;
+}
+
 .dataIFrame {
     background-color: #eeeeee;
 }
@@ -400,6 +432,7 @@ img.tippy {
     white-space: nowrap;
 }
 
+/* A dataTable is an HTML TABLE used for displaying data, as oppposed to layout purpose. */
 .dataTable {
     border-bottom: 1px #cccccc solid;
 }
@@ -449,6 +482,59 @@ img.tippy {
     padding-left: 2px;
     padding-right: 2px;
     vertical-align: middle;
+}
+
+/* These are for color-coded grouping. */
+.dataTable th.group0 {
+    background-color: #e8eaff;
+    text-align: left;
+}
+
+.dataTable th.group1 {
+    background-color: #f4ffe8;
+    text-align: left;
+}
+
+/* These are for stepped headers. */
+.dataTable th.topStep {
+    border-bottom: none;
+    text-align: left;
+}
+
+.dataTable th.middleStep {
+    background-position: top center;
+    border-bottom: none;
+    border-top: none;
+}
+
+.dataTable th.bottomStep {
+    background-position: bottom center;
+    border-top: none;
+}
+
+.dataTable th.group0middleStep, .dataTable th.group0bottomStep {
+    background-image: url(../images/steppedHeaderArrow0.png);
+    background-repeat: no-repeat;
+}
+
+.dataTable th.group1middleStep, .dataTable th.group1bottomStep {
+    background-image: url(../images/steppedHeaderArrow1.png);
+    background-repeat: no-repeat;
+}
+
+/* A table cell with no applicable data. */
+.dataTable td.notApplicable {
+    background-color: #7a7a7a;
+}
+
+/* A table cell for a monitoring property that is not turned off . */
+.dataTable td.notMonitored {
+    background-color: #a8a8a8;
+}
+
+.dataTable td.critical {
+    background-color: #ffff00;
+    color: #ff0000;
 }
 
 .dashboardsPanelContent {
@@ -560,7 +646,17 @@ td.submissionMessageDisplay textarea {
     padding: 4px 10px 4px 10px;
 }
 
-/* ID Selectors */
+.javascriptWarning {
+    background-color: #ffffff;
+    color: #ff0000;
+    font-size: 1.5em;
+    padding: 1em;
+    text-align: center;
+}
+
+/********************************************************************************
+ * ID Selectors
+ ********************************************************************************/
 
 #licenseAgreement {
     border: 1px #000000 solid;

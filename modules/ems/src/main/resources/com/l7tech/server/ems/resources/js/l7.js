@@ -1,3 +1,9 @@
+/**
+ * @module l7
+ * @namespace l7
+ * @requires YUI module "animation" if using l7.Resize
+ */
+
 // -----------------------------------------------------------------------------
 // Creates the l7 global namespace object, if not already created.
 // -----------------------------------------------------------------------------
@@ -24,32 +30,32 @@ if (!l7.Util) {
         l7.Util = {};
 
         /**
-         * Searches for elements with ID matching a given pattern.
+         * Searches for elements with HTML ID matching a given pattern.
          *
          * @static
-         * @param {string} idPattern     regexp pattern of IDs
-         * @param {object} node          node to start searching; null for document body
-         * @param {string} tagName       name of tags to restrict search; null for all tags
+         * @param {string} idPattern            regexp pattern of IDs
+         * @param {HTMLElement} startElement    element to start searching; null for document body
+         * @param {string} tagName              name of tags to restrict search; null for all tags
          * @return {array} an array of elements found; may be empty but never null
          */
-        l7.Util.getElementsById = function(idPattern, startNode, tagName) {
+        l7.Util.getElementsById = function(idPattern, startElement, tagName) {
             var result = new Array();
 
-            if (startNode == null) {
-                startNode = document.body;
+            if (startElement == null) {
+                startElement = document.body;
             }
             if (tagName == null) {
                 tagName = '*';
             }
             tagName = tagName.toLowerCase();
 
-            var elements = startNode.getElementsByTagName(tagName);
+            var elements = startElement.getElementsByTagName(tagName);
 
             if (idPattern.substring(0, 1) != '^') idPattern = '^' + idPattern;
             if (idPattern.substring(idPattern.length - 1, idPattern.length) != '$') idPattern = idPattern + '$';
-            var pattern = new RegExp(idPattern);
+            var regexp = new RegExp(idPattern);
             for(var i = 0, j = 0; i < elements.length; ++i) {
-                if (pattern.test(elements[i].id)) {
+                if (regexp.test(elements[i].id)) {
                     result[j] = elements[i];
                     ++j;
                 }
@@ -64,27 +70,27 @@ if (!l7.Util) {
          *
          * @namespace l7.Util
          * @static
-         * @param {string} className     class name
-         * @param {object} startNode     node to start searching; null for document body
-         * @param {string} tagName       name of tags to restrict search; null for all tags
+         * @param {string} className            class name
+         * @param {HTMLElement} startElement    element to start searching; null for document body
+         * @param {string} tagName              name of tags to restrict search; null for all tags
          * @return {array} an array of elements found; may be empty but never null
          */
-        l7.Util.getElementsByClassName = function(className, startNode, tagName) {
+        l7.Util.getElementsByClassName = function(className, startElement, tagName) {
             var result = new Array();
 
-            if (startNode == null) {
-                startNode = document.body;
+            if (startElement == null) {
+                startElement = document.body;
             }
             if (tagName == null) {
                 tagName = '*';
             }
             tagName = tagName.toLowerCase();
 
-            var elements = startNode.getElementsByTagName(tagName);
+            var elements = startElement.getElementsByTagName(tagName);
 
-            var pattern = new RegExp('(^|\\s)' + className + '(\\s|$)');
+            var regexp = new RegExp('(^|\\s)' + className + '(\\s|$)');
             for(var i = 0, j = 0; i < elements.length; i++) {
-                if (pattern.test(elements[i].className)) {
+                if (regexp.test(elements[i].className)) {
                     result[j] = elements[i];
                     ++j;
                 }
@@ -119,8 +125,8 @@ if (!l7.Util) {
          * Sets the source path of an IMG element.
          *
          * @static
-         * @param {object} img   an IMG element
-         * @param {string} src   the source path
+         * @param {HTMLElement} img     an IMG element
+         * @param {string} src          the source path
          */
         l7.Util.setImage = function(img, src) {
             img.src = src;
@@ -130,8 +136,8 @@ if (!l7.Util) {
          * Sets the class of an element. This will become the only class of this element.
          *
          * @static
-         * @param {object} element       the HTML element
-         * @param {string} className     the class name
+         * @param {HTMLElement} element     the HTML element
+         * @param {string} className        the class name
          */
         l7.Util.setClass = function(element, className) {
             element.className = className;
@@ -141,15 +147,15 @@ if (!l7.Util) {
          * Adds a class to an element, if not already added.
          *
          * @static
-         * @param {object} element       the HTML element
-         * @param {string} className     the class name
+         * @param {HTMLElement} element     the HTML element
+         * @param {string} className        the class name
          * @return {boolean} true if added; false if already added
          * @see removeClass
          */
         l7.Util.addClass = function(element, className) {
-            var pattern = new RegExp('(^|\\s)' + className + '(\\s|$)');
+            var regexp = new RegExp('(^|\\s)' + className + '(\\s|$)');
             var classes = element.className;
-            if (!pattern.test(classes)) {
+            if (!regexp.test(classes)) {
                 if (classes.length == 0) {
                     element.className = className;
                 } else {
@@ -166,16 +172,16 @@ if (!l7.Util) {
          * Return true if removed.
          *
          * @static
-         * @param {object} element       the HTML element
-         * @param {string} className     the class name
+         * @param {HTMLElement} element     the HTML element
+         * @param {string} className        the class name
          * @return {boolean} true if removed; false if not there
          * @see addClass
          */
         l7.Util.removeClass = function(element, className) {
-            var pattern = new RegExp('(^|\\s+)' + className + '(\\s+|$)', 'g');
+            var regexp = new RegExp('(^|\\s+)' + className + '(\\s+|$)', 'g');
             var classes = element.className;
-            if (pattern.test(classes)) {
-                element.className = classes.replace(pattern, ' ').replace(/^\s+/, '').replace(/\s+$/, '');
+            if (regexp.test(classes)) {
+                element.className = classes.replace(regexp, ' ').replace(/^\s+/, '').replace(/\s+$/, '');
                 return true;
             } else {
                 return false;
@@ -186,14 +192,57 @@ if (!l7.Util) {
          * Tests if an element is assigned a class.
          *
          * @static
-         * @param {object} element       the HTML element
-         * @param {string} className     the class name
+         * @param {HTMLElement} element     the HTML element
+         * @param {string} className        the class name
          * @return {boolean} true if element has the given class
          */
         l7.Util.hasClass = function(element, className) {
-            var pattern = new RegExp('(^|\\s)' + className + '(\\s|$)');
-            return pattern.test(element.className);
+            var regexp = new RegExp('(^|\\s+)' + className + '(\\s+|$)');
+            return regexp.test(element.className);
         };
+
+        /**
+         * Finds all the classes of an element that matches a given pattern.
+         *
+         * @static
+         * @param {HTMLElement} element     the HTML element
+         * @param {string} pattern          the regular expression pattern; must include ^ and $ if exact match desired
+         * @return {array} class names found; may be empty but never null
+         */
+        l7.Util.findClasses = function(element, pattern) {
+            var result = new Array();
+            var classes = element.className.split(/\s+/);
+            var regexp = new RegExp(pattern);
+            for (var i = 0; i < classes.length; ++i) {
+                var clazz = classes[i];
+                if (regexp.test(clazz)) {
+                    result.push(clazz);
+                }
+            }
+            return result;
+        }
+
+        /**
+         * Finds the first class of an element that matches a given pattern.
+         *
+         * @static
+         * @param {HTMLElement} element     the HTML element
+         * @param {string} pattern          the regular expression pattern; must include ^ and $ if exact match desired
+         * @return class name if found; null otherwise
+         */
+        l7.Util.findClass = function(element, pattern) {
+            var result = null;
+            var classes = element.className.split(/\s+/);
+            var regexp = new RegExp(pattern);
+            for (var i = 0; i < classes.length; ++i) {
+                var clazz = classes[i];
+                if (regexp.test(clazz)) {
+                    result = clazz;
+                    break;
+                }
+            }
+            return result;
+        }
 
         /**
          * Returns a string with all special character properly esacped for use as HTML text.
@@ -240,6 +289,30 @@ if (!l7.Util) {
                 }
             }
         };
+
+        /**
+         * Returns true if a string (all of it) is the text form of an integer (excluding floating point number).
+         *
+         * @static
+         * @param {string} s    the string to test
+         * @return {boolean}
+         */
+        l7.Util.isIntString = function(s) {
+            var n = parseInt(s, 10);
+            return s.indexOf('.') == -1 && n - s == 0;
+        }
+
+        /**
+         * Returns true if a string (all of it) is the text form of a floating point (including integer).
+         *
+         * @static
+         * @param {string} s    the string to test
+         * @return {boolean}
+         */
+        l7.Util.isFloatString = function(s) {
+            var x = parseFloat(s);
+            return x - s == 0;
+        }
     })();
 };
 
@@ -385,8 +458,8 @@ if (!l7.Tippy) {
          * Toggles the state of a tippy, and expand/collapse the target element correspondingly.
          *
          * @static
-         * @param {string, object}      ID of tippy IMG element, or a tippy IMG element
-         * @param {string} targetId     ID of target element to expand/collapse
+         * @param {string, object}      HTML ID of tippy IMG element, or a tippy IMG element
+         * @param {string} targetId     HTML ID of target element to expand/collapse
          */
         l7.Tippy.toggleTippy = function(tippy, targetId) {
             if (typeof tippy == 'string') {
@@ -403,7 +476,7 @@ if (!l7.Tippy) {
         };
 
         /**
-         * Expands all tippies (i.e., IMG elements) with ID matching a given pattern.
+         * Expands all tippies (i.e., IMG elements) with HTML ID matching a given pattern.
          *
          * @static
          * @param {string} idPattern     regexp pattern of tippies (i.e., IMG elements) IDs
@@ -418,7 +491,7 @@ if (!l7.Tippy) {
         };
 
         /**
-         * Collapses all tippies (i.e., IMG elements) with ID matching a given pattern.
+         * Collapses all tippies (i.e., IMG elements) with HTML ID matching a given pattern.
          *
          * @static
          * @param {string} idPattern     regexp patter of tippies (i.e., IMG elements) IDs

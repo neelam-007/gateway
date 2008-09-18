@@ -13,6 +13,7 @@
     <script type="text/javascript" src="../js/l7.js"></script>
 </head>
 <body>
+<noscript><div class="javascriptWarning">This page requires JavaScript. Your browser either does not have JavaScript support or has disabled it.</div></noscript>
 <table width="100%">
     <tr>
         <td>
@@ -20,7 +21,7 @@
                 <table width="100%">
                     <tr class="header">
                         <td class="logoLeft"><img src="../images/logoLeft.png" alt="" /></td>
-                        <td class="logo"><a href="EnterpriseGateways.html"><img src="../images/l7Logo.png" alt="Layer 7 Technologies Inc." /><img src="../images/emLogo.png" alt="" /></a></td>
+                        <td class="logo"><a href="Monitor.html"><img src="../images/l7Logo.png" alt="Layer 7 Technologies Inc." /><img src="../images/emLogo.png" alt="" /></a></td>
                         <td class="logoRight"><img src="../images/logoRight.png" alt="" /></td>
                         <td width="100%"><img src="../images/spacer.png" alt="" /></td>
                         <td class="middle nowrap">Logged in as "admin"<br />since May 5, 2008 05:57:54 PM</td>
@@ -33,18 +34,15 @@
             <div>
                 <table>
                     <tr>
-                        <td id="tabLTEnterprise"><img src="../images/tabLT.png" alt="" /></td>
-                        <td id="tabCTEnterprise" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRTEnterprise"><img src="../images/tabRT.png" alt="" /></td>
-                        <td id="tabLTPolicies"><img src="../images/tabLT.png" alt="" /></td>
-                        <td id="tabCTPolicies" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRTPolicies"><img src="../images/tabRT.png" alt="" /></td>
+                        <td id="tabLTManageGateways"><img src="../images/tabLT.png" alt="" /></td>
+                        <td id="tabCTManageGateways" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRTManageGateways"><img src="../images/tabRT.png" alt="" /></td>
+                        <td id="tabLTManagePolicies"><img src="../images/tabLT.png" alt="" /></td>
+                        <td id="tabCTManagePolicies" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRTManagePolicies"><img src="../images/tabRT.png" alt="" /></td>
                         <td id="tabLTReports"><img src="../images/tabLT.png" alt="" /></td>
                         <td id="tabCTReports" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabRTReports"><img src="../images/tabRT.png" alt="" /></td>
-                        <td id="tabLTBackup"><img src="../images/tabLT.png" alt="" /></td>
-                        <td id="tabCTBackup" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRTBackup"><img src="../images/tabRT.png" alt="" /></td>
                         <td id="tabLTTools"><img src="../images/tabLT.png" alt="" /></td>
                         <td id="tabCTTools" class="tabCT"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabRTTools"><img src="../images/tabRT.png" alt="" /></td>
@@ -56,18 +54,15 @@
                         <td><img src="../images/tabRT.png" alt="" /></td>
                     </tr>
                     <tr>
-                        <td id="tabLMEnterprise" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMEnterprise" class="tabCM"><a href="EnterpriseGateways.html">Manage Enterprise</a></td>
-                        <td id="tabRMEnterprise" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabLMPolicies" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMPolicies" class="tabCM"><a href="PolicyMigration.html">Manage Policies</a></td>
-                        <td id="tabRMPolicies" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabLMManageGateways" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabCMManageGateways" class="tabCM"><a href="Monitor.html">Manage Gateways</a></td>
+                        <td id="tabRMManageGateways" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabLMManagePolicies" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabCMManagePolicies" class="tabCM"><a href="PolicyMigration.html">Manage Policies</a></td>
+                        <td id="tabRMManagePolicies" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMReports" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabCMReports" class="tabCM"><a href="StandardReports.html">Reports</a></td>
                         <td id="tabRMReports" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabLMBackup" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabCMBackup" class="tabCM"><a href="Backup.html">Backup &amp; Restore</a></td>
-                        <td id="tabRMBackup" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabLMTools" class="tabLM"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabCMTools" class="tabCMon">Tools</td>
                         <td id="tabRMTools" class="tabRM"><img src="../images/spacer.png" alt="" /></td>
@@ -79,18 +74,15 @@
                         <td class="tabRM"><img src="../images/spacer.png" alt="" /></td>
                     </tr>
                     <tr>
-                        <td id="tabLBEnterprise"><img src="../images/tabLBoff.png" alt="" /></td>
-                        <td id="tabCBEnterprise" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRBEnterprise"><img src="../images/tabRBoff.png" alt="" /></td>
-                        <td id="tabLBPolicies"><img src="../images/tabLBoff.png" alt="" /></td>
-                        <td id="tabCBPolicies" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRBPolicies"><img src="../images/tabRBoff.png" alt="" /></td>
+                        <td id="tabLBManageGateways"><img src="../images/tabLBoff.png" alt="" /></td>
+                        <td id="tabCBManageGateways" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRBManageGateways"><img src="../images/tabRBoff.png" alt="" /></td>
+                        <td id="tabLBManagePolicies"><img src="../images/tabLBoff.png" alt="" /></td>
+                        <td id="tabCBManagePolicies" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
+                        <td id="tabRBManagePolicies"><img src="../images/tabRBoff.png" alt="" /></td>
                         <td id="tabLBReports"><img src="../images/tabLBoff.png" alt="" /></td>
                         <td id="tabCBReports" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabRBReports"><img src="../images/tabRBoff.png" alt="" /></td>
-                        <td id="tabLBBackup"><img src="../images/tabLBoff.png" alt="" /></td>
-                        <td id="tabCBBackup" class="tabCBoff"><img src="../images/spacer.png" alt="" /></td>
-                        <td id="tabRBBackup"><img src="../images/tabRBoff.png" alt="" /></td>
                         <td id="tabLBTools"><img src="../images/tabLBon.png" alt="" /></td>
                         <td id="tabCBTools" class="tabCBon"><img src="../images/spacer.png" alt="" /></td>
                         <td id="tabRBTools"><img src="../images/tabRBon.png" alt="" /></td>
@@ -104,10 +96,9 @@
                 </table>
             </div>
             <script language="JavaScript" type="text/javascript">
-                l7.TabBar.initTab('Enterprise');
-                l7.TabBar.initTab('Policies');
+                l7.TabBar.initTab('ManageGateways');
+                l7.TabBar.initTab('ManagePolicies');
                 l7.TabBar.initTab('Reports');
-                l7.TabBar.initTab('Backup');
                 l7.TabBar.initTab('Settings');
             </script>
             <div class="subtabBar">
@@ -116,8 +107,6 @@
                 <span class="subtabOn">Audits</span>
                 |
                 <span class="subtabOff"><a href="Logs.html">Logs</a></span>
-                |
-                <span class="subtabOff"><a href="TestWebService.html">Test Web Service</a></span>
             </div>
             <div class="content">
                 <wicket:extend>
