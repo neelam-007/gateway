@@ -13,13 +13,11 @@ import org.apache.wicket.Response;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import java.util.logging.Logger;
-
 import com.l7tech.server.ems.EmsSession;
+import com.l7tech.server.ems.NavigationModel;
 
 public class PagesTest {
 
-    private Logger logger = Logger.getLogger(PagesTest.class.getName());
     private WicketTester tester;
 
     @Before
@@ -50,6 +48,17 @@ public class PagesTest {
                 }
             }
         );
+    }
+
+    @Test
+    public void testNavigationModel() {
+        NavigationModel model = new NavigationModel("com.l7tech.server.ems.pages");
+        for ( String section : model.getNavigationSections() ) {
+            System.out.println("Found section: " + section);
+            for ( String page : model.getNavigationPages() ) {
+                System.out.println("   page: " + page);
+            }
+        }
     }
 
     @Test
