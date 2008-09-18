@@ -5,7 +5,6 @@ package com.l7tech.server.security.rbac;
 
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.security.rbac.EntityType;
-import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
@@ -20,7 +19,6 @@ import java.text.MessageFormat;
 /**
  * @author alex
  */
-@Administrative
 public class RbacAdminImpl implements RbacAdmin {
     private static final Logger logger = Logger.getLogger(RbacAdminImpl.class.getName());
 

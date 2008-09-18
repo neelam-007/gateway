@@ -2,7 +2,6 @@ package com.l7tech.gateway.common.custom;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.gateway.common.admin.Administrative;
 
@@ -14,6 +13,7 @@ import java.util.Collection;
  * provide access to the custom assertions that have been registered with
  * the runtime.
  */
+@Administrative
 public interface CustomAssertionsRegistrar {
 
     /**

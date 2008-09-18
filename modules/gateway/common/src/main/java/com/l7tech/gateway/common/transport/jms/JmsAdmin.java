@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import static com.l7tech.gateway.common.security.rbac.EntityType.*;
+import com.l7tech.gateway.common.admin.Administrative;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,7 @@ import java.io.Serializable;
  * @version $Revision$
  */
 @Secured
+@Administrative
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public interface JmsAdmin {
     /**

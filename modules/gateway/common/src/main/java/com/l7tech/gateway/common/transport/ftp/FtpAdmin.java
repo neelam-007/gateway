@@ -5,6 +5,7 @@
 package com.l7tech.gateway.common.transport.ftp;
 
 import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.gateway.common.admin.Administrative;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
  * @author rmak
  * @since SecureSpan 4.0
  */
+@Administrative
 @Secured
 public interface FtpAdmin {
     /**

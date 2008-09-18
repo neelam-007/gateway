@@ -5,7 +5,6 @@
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.gateway.common.transport.jms.*;
-import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.objectmodel.*;
 
 import javax.jms.*;
@@ -17,7 +16,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-@Administrative
 public class JmsAdminImpl implements JmsAdmin {
     private static final Logger logger = Logger.getLogger(JmsAdminImpl.class.getName());
 

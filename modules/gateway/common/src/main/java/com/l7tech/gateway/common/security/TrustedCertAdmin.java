@@ -4,6 +4,7 @@
 package com.l7tech.gateway.common.security;
 
 import com.l7tech.gateway.common.AsyncAdminMethods;
+import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import static com.l7tech.gateway.common.security.rbac.EntityType.*;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
@@ -28,6 +29,7 @@ import java.util.List;
  * Remote interface to get/save/delete certs trusted by the gateway.
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
+@Administrative
 @Secured(types=TRUSTED_CERT)
 public interface TrustedCertAdmin extends AsyncAdminMethods {
     /**

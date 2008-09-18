@@ -21,6 +21,7 @@ import com.l7tech.gateway.common.security.rbac.MethodStereotype;
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types= EntityType.FOLDER)
+@Administrative
 public interface FolderAdmin {
     /**
      * Retrieve all of the {@link Folder} headers.

@@ -9,7 +9,6 @@ import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
-import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -44,7 +43,6 @@ import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-@Administrative
 public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements ApplicationEventPublisherAware, TrustedCertAdmin {
     private final DefaultKey defaultKey;
     private final LicenseManager licenseManager;

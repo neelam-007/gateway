@@ -15,6 +15,7 @@ import java.util.Map;
  * @version $Revision$
  */
 @Secured
+@Administrative
 public interface KerberosAdmin  {
 
     /**

@@ -29,6 +29,7 @@ import java.util.logging.Level;
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types=AUDIT_RECORD)
+@Administrative
 public interface AuditAdmin extends GenericLogAdmin {
     /**
      * Retrieves the {@link AuditRecord} with the given oid, or null if no such record exists.

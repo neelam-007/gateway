@@ -23,6 +23,7 @@ import java.util.Map;
  * Remote interface for getting the status of nodes in a gateway cluster.
  */
 @Secured
+@Administrative
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public interface ClusterStatusAdmin {
     /**

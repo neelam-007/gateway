@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
+import com.l7tech.gateway.common.admin.Administrative;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import java.util.Collection;
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 @Secured(types= EntityType.SCHEMA_ENTRY)
+@Administrative
 public interface SchemaAdmin {
     @Secured(stereotype=MethodStereotype.FIND_ENTITIES)
     Collection<SchemaEntry> findAllSchemas() throws FindException;

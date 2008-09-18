@@ -17,6 +17,7 @@ import java.util.Collection;
  * @author alex
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
+@Administrative
 @Secured(types=EntityType.RBAC_ROLE)
 public interface RbacAdmin {
     String ROLE_NAME_PREFIX = "Manage";

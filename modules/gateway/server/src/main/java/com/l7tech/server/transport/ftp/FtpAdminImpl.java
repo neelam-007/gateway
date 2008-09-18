@@ -6,7 +6,6 @@ package com.l7tech.server.transport.ftp;
 
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpTestException;
-import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.server.policy.ServerAssertionRegistry;
@@ -21,7 +20,6 @@ import javax.net.ssl.X509TrustManager;
  * @author rmak
  * @since SecureSpan 4.0
  */
-@Administrative
 public class FtpAdminImpl implements FtpAdmin {
     private static final Logger _logger = Logger.getLogger(FtpAdminImpl.class.getName());
     private final X509TrustManager _x509TrustManager;

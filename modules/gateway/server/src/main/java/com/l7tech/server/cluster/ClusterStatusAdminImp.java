@@ -1,7 +1,6 @@
 package com.l7tech.server.cluster;
 
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
-import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.LicenseException;
@@ -43,7 +42,6 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Jan 2, 2004<br/>
  */
-@Administrative
 public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     /**
      * Constructs the new cluster status admin implementation.

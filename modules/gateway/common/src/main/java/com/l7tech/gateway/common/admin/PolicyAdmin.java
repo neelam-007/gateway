@@ -23,6 +23,7 @@ import java.io.Serializable;
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types=POLICY)
+@Administrative
 public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
     /**
      * This is a container for a PolicyCheckpointState for the just saved policy and a map of the new policy

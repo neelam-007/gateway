@@ -10,7 +10,6 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.objectmodel.*;
-import com.l7tech.gateway.common.admin.Administrative;
 
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +27,7 @@ import java.util.Set;
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 @Secured
+@Administrative
 public interface IdentityAdmin {
     String ROLE_NAME_TYPE_SUFFIX = "Identity Provider";
     String ROLE_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} "+ ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;

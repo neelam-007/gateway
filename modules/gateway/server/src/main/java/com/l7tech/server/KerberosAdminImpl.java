@@ -5,7 +5,6 @@ import com.l7tech.util.HexUtils;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.kerberos.*;
 import com.l7tech.gateway.common.admin.KerberosAdmin;
-import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -22,7 +21,6 @@ import java.util.logging.Level;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-@Administrative
 public class KerberosAdminImpl implements KerberosAdmin {
 
     //- PUBLIC

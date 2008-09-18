@@ -2,7 +2,6 @@ package com.l7tech.server.log;
 
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.log.SinkConfiguration;
-import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
@@ -13,7 +12,6 @@ import java.util.Collection;
 /**
  * Server-side implementation of the LogSinkAdmin API.
  */
-@Administrative
 public class LogSinkAdminImpl implements LogSinkAdmin {
     private final SinkManager sinkManager;
 

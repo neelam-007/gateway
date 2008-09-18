@@ -14,7 +14,10 @@
                             http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
                             http://www.springframework.org/schema/tx
                             http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
-    
+
+    <!-- Enable aop automatic proxy generation for pointcuts -->
+    <aop:config/>
+
     <!-- the internal rmi/ssl trust failue handler that allows connection to self -->
     <bean id="internalSslTrustFailureHandler"
           class="com.l7tech.gateway.common.spring.remoting.rmi.ssl.CertificateTrustedTrustFailureHandler">
@@ -159,7 +162,23 @@
     RBAC Enforcement and other interceptors
     -===============================================================-->
 
-    <bean id="rbacPointcut" class="com.l7tech.server.security.rbac.SecuredPointcut"/>
+    <!--
+      RBAC pointcut is on any @Secured method of a bean that implements an @Administrative interface.
+    -->
+    <bean id="rbacPointcut" class="com.l7tech.server.util.AnnotationPointcut">
+        <constructor-arg index="0">
+            <list>
+                <value>com.l7tech.gateway.common.admin.Administrative</value>
+            </list>
+        </constructor-arg>
+        <constructor-arg index="1">
+            <list>
+                <value>com.l7tech.gateway.common.security.rbac.Secured</value>
+            </list>
+        </constructor-arg>
+        <constructor-arg index="2" value="true"/>
+        <constructor-arg index="3" value="30000"/> <!-- inside transaction -->
+    </bean>
 
     <bean id="rbacAdvice" class="com.l7tech.server.security.rbac.SecuredMethodInterceptor">
         <constructor-arg ref="roleManager"/>
@@ -172,43 +191,53 @@
         <property name="advice" ref="rbacAdvice"/>
     </bean>
 
+    <!--
+      Administrative pointcut is on any bean that implements an @Administrative interface.
+    -->
+    <bean id="adminPointcut" class="com.l7tech.server.util.AnnotationPointcut">
+        <constructor-arg index="0">
+            <list>
+                <value>com.l7tech.gateway.common.admin.Administrative</value>
+            </list>
+        </constructor-arg>
+        <constructor-arg index="1">
+            <list/>
+        </constructor-arg>
+        <constructor-arg index="2" value="true"/>
+        <constructor-arg index="3" value="30000"/>  <!-- inside transaction -->
+    </bean>
+
     <!-- Exception advices for server side error handling -->
     <bean id="unsupportedExceptionThrowsAdvice" class="com.l7tech.server.util.UnsupportedExceptionsThrowsAdvice"/>
+    <bean id="unsupportedExceptionAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
+        <property name="pointcut" ref="adminPointcut"/>
+        <property name="advice" ref="unsupportedExceptionThrowsAdvice"/>
+        <property name="order" value="5000"/>
+    </bean>
+
     <bean id="mysqlFailureThrowsAdvice" class="com.l7tech.server.util.MySqlFailureThrowsAdvice"/>
+    <bean id="mysqlFailureAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
+        <property name="pointcut" ref="adminPointcut"/>
+        <property name="advice" ref="mysqlFailureThrowsAdvice"/>
+        <property name="order" value="5001"/>
+    </bean>
+
     <bean id="constraintViolationThrowsAdvice" class="com.l7tech.server.util.ConstraintViolationThrowsAdvice"/>
+    <bean id="constraintViolationAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
+        <property name="pointcut" ref="adminPointcut"/>
+        <property name="advice" ref="constraintViolationThrowsAdvice"/>
+        <property name="order" value="5002"/>
+    </bean>
 
     <!-- Bean to switch db pools for admin vs other uses -->
     <bean id="adminConnectionPoolSelectorInterceptor" class="com.l7tech.server.util.UserSwitchedRoutingDataSourceSelector">
         <constructor-arg value="admin"/>
     </bean>
-
-    <aop:config>
-        <aop:pointcut id="administrationPointcut"
-                    expression="@within(com.l7tech.gateway.common.admin.Administrative)"/>
-
-        <!--Exception handing advice -->
-        <aop:advisor
-            pointcut-ref="administrationPointcut"
-            advice-ref="unsupportedExceptionThrowsAdvice"
-            order="5000"/>
-        <aop:advisor
-            pointcut-ref="administrationPointcut"
-            advice-ref="mysqlFailureThrowsAdvice"
-            order="5001"/>
-        <aop:advisor
-            pointcut-ref="administrationPointcut"
-            advice-ref="constraintViolationThrowsAdvice"
-            order="5002"/>
-
-        <!--
-          Connection pools switching must run outside of transaction advice
-        -->
-        <aop:advisor
-            pointcut-ref="administrationPointcut"
-            advice-ref="adminConnectionPoolSelectorInterceptor"
-            order="10000"/>
-
-    </aop:config>
+    <bean id="adminConnectionPoolSelectorAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
+        <property name="pointcut" ref="adminPointcut"/>
+        <property name="advice" ref="adminConnectionPoolSelectorInterceptor"/>
+        <property name="order" value="10000"/>
+    </bean>
 
     <!--==============================================================-
     Administration beans (admin intercepted)

@@ -39,7 +39,6 @@ import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-@Administrative
 public class AdminLoginImpl
         extends ApplicationObjectSupport
         implements AdminLogin, InitializingBean

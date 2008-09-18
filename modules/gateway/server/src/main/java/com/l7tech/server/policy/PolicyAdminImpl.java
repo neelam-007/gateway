@@ -15,7 +15,6 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.*;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
-import com.l7tech.gateway.common.admin.Administrative;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
@@ -26,7 +25,6 @@ import java.io.IOException;
 /**
  * @author alex
  */
-@Administrative
 public class PolicyAdminImpl implements PolicyAdmin {
     protected static final Logger logger = Logger.getLogger(PolicyAdminImpl.class.getName());
 

@@ -7,9 +7,11 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
+import org.springframework.beans.PropertyValues;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
+import org.springframework.beans.factory.config.TypedStringValue;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
@@ -33,9 +35,11 @@ public class ApplicationContextTest  extends TestCase {
     private static final String[] CONTEXTS = {
         "com/l7tech/server/resources/adminContext.xml",
         "com/l7tech/server/resources/dataAccessContext.xml",
-        "com/l7tech/server/resources/ssgApplicationContext.xml"
+        "com/l7tech/server/resources/ssgApplicationContext.xml" ,
+        "com/l7tech/server/resources/admin-servlet.xml"
     };
 
+    private static final Set<String> NON_ADMIN_PROXY_BEANS = new HashSet<String>( Collections.<String>emptySet());
     private static final Set<String> NON_ADMIN_BEANS = new HashSet<String>( Collections.<String>emptySet());
     private static final Set<String> EXTRA_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "adminLogin" ) );
     private static final Set<String> NON_SECURED_BEANS = new HashSet<String>( Arrays.asList( "customAssertionsAdmin" ) );
@@ -113,8 +117,40 @@ public class ApplicationContextTest  extends TestCase {
         }
     }
 
+    /**
+     * Test that all HTTP exported admin interfaces are marked as administrative
+     */
+    @SuppressWarnings({"unchecked"})
+    public void testAdministrativeExports() throws Exception {
+        //
+        DefaultListableBeanFactory dlbf = new DefaultListableBeanFactory();
+        XmlBeanDefinitionReader xbdr = new XmlBeanDefinitionReader(dlbf);
+
+        for ( String context : CONTEXTS ) {
+            xbdr.loadBeanDefinitions(new ClassPathResource(context));
+        }
+
+        int testedcount = 0;
+        List<String> beans = new ArrayList<String>();
+        for ( String beanId : dlbf.getBeanDefinitionNames() ) {
+            if ( beanId.startsWith("/") && !NON_ADMIN_PROXY_BEANS.contains(beanId) ) {
+                BeanDefinition beanDef = dlbf.getBeanDefinition( beanId );
+                if ( "httpInvokerParent".equals(beanDef.getParentName()) ) {
+                    testedcount++;
+                    PropertyValues props = beanDef.getPropertyValues();
+                    Class serviceInterface = Class.forName(((TypedStringValue)props.getPropertyValue("serviceInterface").getValue()).getValue());
+                    if ( serviceInterface.getAnnotation(Administrative.class) == null ) {
+                        fail( "Administrative HTTP exported bean '"+beanId+"' service interface '"+serviceInterface.getName()+"', is not annotated as '"+Administrative.class.getName()+"'." );
+                    }
+                }
+            }
+        }
+
+        if (testedcount==0) fail("Failed to find any http exported admin beans.");
+    }
+
     /*
-     * Ensure that all Administration beans in the application context are annotated with @Administrative
+     * Ensure that all Administration bean interfaces in the application context are annotated with @Administrative
      */
     @SuppressWarnings({"unchecked"})
     public void testAdministrativeAutoProxy() throws Exception {
@@ -130,7 +166,7 @@ public class ApplicationContextTest  extends TestCase {
         beans.addAll(EXTRA_ADMIN_BEANS);
 
         for ( String beanId : dlbf.getBeanDefinitionNames() ) {
-            if ( beanId.endsWith("Admin") && !NON_ADMIN_BEANS.contains(beanId) ) {
+            if ( beanId.endsWith("Admin") && !beanId.startsWith("/") && !NON_ADMIN_BEANS.contains(beanId) ) {
                 beans.add(beanId);
             }
         }
@@ -141,15 +177,23 @@ public class ApplicationContextTest  extends TestCase {
             String className = beanDef.getBeanClassName();
             Class adminClass = Class.forName(className);
 
-            if ( adminClass.getAnnotation(Administrative.class) == null ) {
-                fail( "Administrative bean '"+beanId+"', is mssing the '"+Administrative.class.getName()+"' annotation." );
+            if ( adminClass.getAnnotation(Administrative.class) != null ) {
+                fail( "Administrative bean '"+beanId+"', annotated with '"+Administrative.class.getName()+"' annotation, this should be on the interface." );
             }
 
+            boolean admin = false;
             boolean secured = false;
             for ( Class interfaceClass : adminClass.getInterfaces() ) {
                 if ( interfaceClass.getAnnotation(Secured.class) != null ) {
                     secured = true;
                 }
+                if ( interfaceClass.getAnnotation(Administrative.class) != null ) {
+                    admin = true;
+                }
+            }
+
+            if ( !admin ) {
+                fail( "Administrative bean '"+beanId+"', has no interface with the '"+Administrative.class.getName()+"' annotation." );
             }
 
             if ( !secured && !NON_SECURED_BEANS.contains(beanId) ) {

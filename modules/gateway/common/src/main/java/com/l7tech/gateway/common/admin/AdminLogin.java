@@ -24,6 +24,7 @@ import java.security.AccessControlException;
  * @version Dec 2, 2004
  */
 @Secured
+@Administrative
 public interface AdminLogin {
     /**
      * Method that returns the SHA-1 hash over admin certificate and the admin

@@ -2,7 +2,6 @@ package com.l7tech.server.identity;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
-import com.l7tech.gateway.common.admin.Administrative;
 import static com.l7tech.gateway.common.security.rbac.EntityType.ID_PROVIDER_CONFIG;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -40,7 +39,6 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: May 26, 2003
  */
-@Administrative
 public class IdentityAdminImpl implements ApplicationEventPublisherAware, IdentityAdmin {
     private ClientCertManager clientCertManager;
 
