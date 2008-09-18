@@ -10,6 +10,7 @@ import com.l7tech.util.Pair;
 import com.l7tech.util.Triple;
 import com.l7tech.common.io.PortRange;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -167,6 +168,11 @@ public class SsgConnectorManagerWindow extends JDialog {
                         }
                     };
 
+                    if (warnAboutConflicts(connector)) {
+                        reedit.run();
+                        return;
+                    }
+
                     try {
                         long oid = getTransportAdmin().saveSsgConnector(connector);
                         if (oid != connector.getOid()) connector.setOid(oid);
@@ -188,6 +194,26 @@ public class SsgConnectorManagerWindow extends JDialog {
                 }
             }
         });
+    }
+
+    /**
+     * Check if the specified possibly-unsaved connector conflicts with any other ports known to be
+     * in use in the system and, if so, display a warning dialog.
+     *
+     * @param connector the connector to check
+     * @return true if conflicts were detected, false otherwise.
+     */
+    private boolean warnAboutConflicts(SsgConnector connector) {
+        if (connector == null) return false;
+
+        ConnectorTableModel model = (ConnectorTableModel)connectorTable.getModel();
+        boolean conflict = model.conflictChecking(connector);
+        if (! conflict)  return false;
+
+        String title = "Port Conflict";
+        String warningMessage = "The port " + connector.getPort() + " has already been in use.  Please try another port again.";
+        DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), title, warningMessage, null);
+        return true;
     }
 
     private static String explainConflict(Pair<PortRange, String> conflict) {
@@ -508,6 +534,22 @@ public class SsgConnectorManagerWindow extends JDialog {
             int rowIndex = getRowMap().get(oid);
             rows.get(rowIndex).setConflict(new Pair<PortRange, String>(conflict.middle, conflict.right));
             fireTableRowsUpdated(rowIndex, rowIndex);
+        }
+
+        /**
+         * Check if there exists any port same as the port for the given connector.
+         * @param connector: the given connector to check
+         * @return true if there exist a conflict port, false otherwise.
+         */
+        public boolean conflictChecking(SsgConnector connector) {
+            for (ConnectorTableRow row: rows) {
+                int port = row.getConnector().getPort();
+                long oid = row.getConnector().getOid();
+                if (oid != connector.getOid() && port == connector.getPort()) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
