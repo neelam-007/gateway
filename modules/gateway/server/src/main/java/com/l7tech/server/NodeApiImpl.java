@@ -74,7 +74,7 @@ public class NodeApiImpl implements NodeApi, ApplicationContextAware {
         final HttpServletRequest hsr = (HttpServletRequest)context.getMessageContext().get(MessageContext.SERVLET_REQUEST);
         if (hsr == null) throw new IllegalStateException("Request received outside of expected servlet context");
         try {
-            HttpTransportModule.requireEndpoint(hsr, SsgConnector.Endpoint.PC_NODE_API);
+            HttpTransportModule.requireEndpoint(hsr, SsgConnector.Endpoint.NODE_COMMUNICATION);
         } catch (TransportModule.ListenerException e) {
             // TODO come up with a friendlier way to throw a SOAP fault here
             throw new IllegalStateException(e);

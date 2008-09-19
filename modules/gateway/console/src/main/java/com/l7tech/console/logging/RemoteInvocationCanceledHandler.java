@@ -1,6 +1,6 @@
 package com.l7tech.console.logging;
 
-import com.l7tech.console.spring.remoting.RemoteInvocationCanceledException;
+import com.l7tech.console.util.RemoteInvocationCanceledException;
 import com.l7tech.util.ExceptionUtils;
 
 import java.util.logging.Level;

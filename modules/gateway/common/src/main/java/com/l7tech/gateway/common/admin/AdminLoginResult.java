@@ -12,13 +12,15 @@ public final class AdminLoginResult implements Serializable {
 
     private final User user;
     private final String sessionCookie;
-    private final AdminContext adminContext;
+    private final String version;
+    private final String softwareVersion;
 
-    public AdminLoginResult(User user, AdminContext context, String secret) {
-        if (user == null || secret == null || secret.length() == 0 || context == null) throw new IllegalArgumentException();
+    public AdminLoginResult(User user, String secret, String version, String softwareVersion) {
+        if (user == null || secret == null || secret.length() == 0 || version == null || softwareVersion == null) throw new IllegalArgumentException();
         this.user = user;
         this.sessionCookie = secret;
-        this.adminContext = context;
+        this.version = version;
+        this.softwareVersion = softwareVersion;
     }
 
     public User getUser() {
@@ -29,7 +31,21 @@ public final class AdminLoginResult implements Serializable {
         return sessionCookie;
     }
 
-    public AdminContext getAdminContext() {
-        return adminContext;
+    /**
+     * Get the protocol version.
+     *
+     * @return The version
+     */
+    public String getVersion() {
+        return version;
+    }
+
+    /**
+     * Get the software version
+     *
+     * @return The version
+     */
+    public String getSoftwareVersion() {
+        return softwareVersion;
     }
 }

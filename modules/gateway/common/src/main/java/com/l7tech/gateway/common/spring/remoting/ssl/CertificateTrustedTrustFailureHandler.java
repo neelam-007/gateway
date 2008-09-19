@@ -3,7 +3,7 @@
  *
  * $Id$
  */
-package com.l7tech.gateway.common.spring.remoting.rmi.ssl;
+package com.l7tech.gateway.common.spring.remoting.ssl;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;

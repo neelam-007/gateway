@@ -283,7 +283,7 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
             }
         }
 
-        throw new FindException("Identity provider '"+pId+"' not found for user '"+u.getId()+"'.");
+        return Collections.emptySet();
     }
 
     /**

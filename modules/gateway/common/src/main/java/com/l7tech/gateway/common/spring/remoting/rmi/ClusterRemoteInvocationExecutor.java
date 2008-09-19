@@ -1,14 +1,15 @@
 package com.l7tech.gateway.common.spring.remoting.rmi;
 
 import com.l7tech.identity.UserBean;
-import com.l7tech.gateway.common.spring.remoting.rmi.ssl.SslRMIServerSocketFactory;
 import com.l7tech.gateway.common.spring.remoting.RemotingProvider;
+import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import org.springframework.remoting.support.RemoteInvocation;
 import org.springframework.remoting.support.RemoteInvocationExecutor;
 
 import javax.security.auth.Subject;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.annotation.Annotation;
+import java.rmi.server.ServerNotActiveException;
 
 /**
  * Cluster invoker.
@@ -50,19 +51,21 @@ public final class ClusterRemoteInvocationExecutor<T extends Annotation> impleme
             AdminSessionRemoteInvocation adminInvocation = (AdminSessionRemoteInvocation) invocation;
             Subject administrator = adminInvocation.getSubject();
             if( administrator != null ) {
-                // Get context
-                SslRMIServerSocketFactory.Context context = SslRMIServerSocketFactory.getContext();
+                try {
+                    // Get context
+                    UserBean nodeUser = new UserBean();
+                    nodeUser.setName("NODE-" + RemoteUtils.getClientHost());
+                    nodeUser.setLogin(nodeUser.getName());
+                    nodeUser.setFirstName("Cluster");
+                    nodeUser.setFirstName("Node");
 
-                UserBean nodeUser = new UserBean();
-                nodeUser.setName("NODE-" + context.getRemoteHost());
-                nodeUser.setLogin(nodeUser.getName());
-                nodeUser.setFirstName("Cluster");
-                nodeUser.setFirstName("Node");
-
-                administrator.getPrincipals().clear();
-                administrator.getPrincipals().add(nodeUser);
-                administrator.getPrivateCredentials().clear(); // not necessary but couldn't hurt
-                administrator.getPublicCredentials().clear(); // ditto
+                    administrator.getPrincipals().clear();
+                    administrator.getPrincipals().add(nodeUser);
+                    administrator.getPrivateCredentials().clear(); // not necessary but couldn't hurt
+                    administrator.getPublicCredentials().clear(); // ditto
+                } catch ( ServerNotActiveException snae ) {
+                    throw new InvocationTargetException( snae );
+                }
             }
         }
 

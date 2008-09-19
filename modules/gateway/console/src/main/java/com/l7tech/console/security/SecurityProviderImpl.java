@@ -3,37 +3,24 @@
  */
 package com.l7tech.console.security;
 
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.gateway.common.VersionException;
-import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
-import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.LogonEvent;
-import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.gateway.common.security.rbac.RbacAdmin;
-import com.l7tech.gateway.common.transport.TransportAdmin;
-import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
-import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SyspropUtil;
-import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.console.panels.LogonDialog;
+import com.l7tech.console.util.AdminContextFactory;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.gateway.common.admin.*;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.spring.remoting.http.ConfigurableHttpInvokerRequestExecutor;
-import com.l7tech.gateway.common.spring.remoting.rmi.NamingURL;
-import com.l7tech.gateway.common.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
-import com.l7tech.gateway.common.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
-import com.l7tech.gateway.common.spring.remoting.rmi.ssl.SslRMIClientSocketFactory;
+import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -83,10 +70,12 @@ public class SecurityProviderImpl extends SecurityProvider
         serverCertificateChain = null;
         resetCredentials();
 
+        ConfigurableHttpInvokerRequestExecutor chire = getConfigurableHttpInvokerRequestExecutor();
         try {
             setPermissiveSslTrustHandler(host, validate);
 
-            AdminLogin adminLogin = getAdminLoginRemoteReference(host);
+            chire.setSession( getHost(host), getPort(host), null );
+            AdminLogin adminLogin = getAdminLoginRemoteReference();
 
             // dummy call, just to establish SSL connection (if none)
             adminLogin.getServerCertificate("admin");
@@ -134,17 +123,16 @@ public class SecurityProviderImpl extends SecurityProvider
             throw (LoginException) new LoginException("Invalid host '"+host+"'.").initCause(murle);
         }
         finally {
-            if (SslRMIClientSocketFactory.hasTrustFailureHandler()) {
-                resetSslTrustHandler();
-                if (!authenticated) {
-                    resetCredentials();
-                }
+            resetSslTrustHandler();
+            if (!authenticated) {
+                resetCredentials();
             }
+            chire.setSession( null, -1, null );
         }
     }
 
     private String checkRemoteSoftwareVersion(AdminLoginResult result) throws VersionException {
-        String remoteSoftwareVersion = result.getAdminContext().getSoftwareVersion();
+        String remoteSoftwareVersion = result.getSoftwareVersion();
         if (!Boolean.TRUE.equals(suppressVersionCheck) && !BuildInfo.getProductVersion().equals(remoteSoftwareVersion)) {
             throw new VersionException("Version mismatch", BuildInfo.getProductVersion(), remoteSoftwareVersion);
         }
@@ -153,7 +141,7 @@ public class SecurityProviderImpl extends SecurityProvider
 
     private String checkRemoteProtocolVersion(AdminLoginResult result) throws VersionException {
         // version checks
-        String remoteVersion = result.getAdminContext().getVersion();
+        String remoteVersion = result.getVersion();
         if (!SecureSpanConstants.ADMIN_PROTOCOL_VERSION.equals(remoteVersion)) {
             throw new VersionException("Version mismatch", SecureSpanConstants.ADMIN_PROTOCOL_VERSION, remoteVersion);
         }
@@ -165,10 +153,12 @@ public class SecurityProviderImpl extends SecurityProvider
             throws LoginException, VersionException {
         boolean authenticated = false;
 
+        ConfigurableHttpInvokerRequestExecutor chire = getConfigurableHttpInvokerRequestExecutor();
         final AdminLogin adminLogin;
         try {
-            adminLogin = getAdminLoginRemoteReference(host);
+            adminLogin = getAdminLoginRemoteReference();
 
+            chire.setSession( getHost(host), getPort(host), null );
             AdminLoginResult result = adminLogin.resume(sessionId);
 
             String remoteVersion = checkRemoteProtocolVersion(result);
@@ -191,6 +181,7 @@ public class SecurityProviderImpl extends SecurityProvider
             if (!authenticated) {
                 resetCredentials();
             }
+            chire.setSession( null, -1, null );
         }
     }
 
@@ -201,27 +192,12 @@ public class SecurityProviderImpl extends SecurityProvider
     {
         resetCredentials();
 
-        getConfigurableHttpInvokerRequestExecutor().setSession(getHost(remoteHost), getPort(remoteHost), sessionCookie);
         this.sessionCookie = sessionCookie;
+        this.sessionHost = remoteHost;
+        TopComponents.getInstance().setSsgURL("https://" + remoteHost );
 
-        AdminContext ac = new AdminContextBean(
-                        (IdentityAdmin) applicationContext.getBean("identityAdmin"),
-                        (AuditAdmin) applicationContext.getBean("auditAdmin"),
-                        (ServiceAdmin) applicationContext.getBean("serviceAdmin"),
-                        (JmsAdmin) applicationContext.getBean("jmsAdmin"),
-                        (FtpAdmin) applicationContext.getBean("ftpAdmin"),
-                        (TrustedCertAdmin) applicationContext.getBean("trustedCertAdmin"),
-                        (CustomAssertionsRegistrar) applicationContext.getBean("customAssertionsRegistrar"),
-                        (ClusterStatusAdmin) applicationContext.getBean("clusterStatusAdmin"),
-                        (SchemaAdmin) applicationContext.getBean("schemaAdmin"),
-                        (KerberosAdmin) applicationContext.getBean("kerberosAdmin"),
-                        (RbacAdmin) applicationContext.getBean("rbacAdmin"),
-                        (TransportAdmin) applicationContext.getBean("transportAdmin"),
-                        (PolicyAdmin) applicationContext.getBean("policyAdmin"),
-                        (LogSinkAdmin) applicationContext.getBean("logSinkAdmin"),
-                        (FolderAdmin) applicationContext.getBean("folderAdmin"),
-                        "",
-                        "");
+        AdminContextFactory factory = (AdminContextFactory) applicationContext.getBean("adminContextFactory", AdminContextFactory.class);
+        AdminContext ac = factory.buildAdminContext( getHost(remoteHost), getPort(remoteHost), sessionCookie );
 
         synchronized (this) {
             this.user = user;
@@ -250,22 +226,26 @@ public class SecurityProviderImpl extends SecurityProvider
         applicationContext.publishEvent(le);
         if (sessionCookie != null && sessionCookie.trim().length() > 0) {
             final String cookie = sessionCookie;
+            final String host = sessionHost;
             final AdminLogin adminLogin = (AdminLogin)applicationContext.getBean("adminLogin");
             if (adminLogin != null) {
                 new Thread(new Runnable() {
                     public void run() {
+                        ConfigurableHttpInvokerRequestExecutor chire = getConfigurableHttpInvokerRequestExecutor();
                         try {
+                            chire.setSession( getHost(host), getPort(host), cookie );
                             adminLogin.logout();
                         } catch (RuntimeException e) {
                             logger.log(Level.WARNING, "Error logging out old admin session: " + ExceptionUtils.getMessage(e), e);
                         } finally {
-                            getConfigurableHttpInvokerRequestExecutor().clearSessionIfMatches(cookie);
+                            chire.setSession( null, -1, null );
                         }
                     }
                 }).start();
             }
         }
         sessionCookie = null;
+        sessionHost = null;
     }
 
     /**
@@ -311,6 +291,7 @@ public class SecurityProviderImpl extends SecurityProvider
     private ApplicationContext applicationContext;
     private X509Certificate[] serverCertificateChain;
     private String sessionCookie;
+    private String sessionHost;
 
     /**
      * Initialize the SSL logic around login. This registers the trust failure handler
@@ -319,12 +300,10 @@ public class SecurityProviderImpl extends SecurityProvider
     private void setPermissiveSslTrustHandler(String host, boolean validate) {
         hostBuffer.setLength(0);
         if(validate) hostBuffer.append(getHost(host));
-        SslRMIClientSocketFactory.setTrustFailureHandler(permissiveSSLTrustFailureHandler);
         getConfigurableHttpInvokerRequestExecutor().setTrustFailureHandler(permissiveSSLTrustFailureHandler);
     }
 
     private void resetSslTrustHandler() {
-        SslRMIClientSocketFactory.setTrustFailureHandler(null);
         getConfigurableHttpInvokerRequestExecutor().setTrustFailureHandler(null);
     }
 
@@ -394,24 +373,12 @@ public class SecurityProviderImpl extends SecurityProvider
         }
     }
 
-    private AdminLogin getAdminLoginRemoteReference(String host) throws SecurityException, MalformedURLException {
-        Object beanFactory = applicationContext.getBean("&adminLogin");
-        if (beanFactory instanceof ResettableRmiProxyFactoryBean) {
-            ResettableRmiProxyFactoryBean bean = (ResettableRmiProxyFactoryBean) beanFactory;
-            NamingURL adminServiceNamingURL = NamingURL.parse(NamingURL.DEFAULT_SCHEME + "://" + host + "/AdminLogin");
-            bean.setServiceUrl(adminServiceNamingURL.toString());
-            bean.resetStub();
-        }
-        else {
-            getConfigurableHttpInvokerRequestExecutor().setSession(getHost(host), getPort(host), null);
-            TopComponents.getInstance().setSsgURL("https://" + host );
-        }
-
+    private AdminLogin getAdminLoginRemoteReference() throws SecurityException, MalformedURLException {
         return (AdminLogin) applicationContext.getBean("adminLogin");
     }
 
     private ConfigurableHttpInvokerRequestExecutor getConfigurableHttpInvokerRequestExecutor() {
-        return (ConfigurableHttpInvokerRequestExecutor) applicationContext.getBean("httpRequestExecutor");        
+        return (ConfigurableHttpInvokerRequestExecutor) applicationContext.getBean("httpRequestExecutor");
     }
 
     private void onLogoff() {

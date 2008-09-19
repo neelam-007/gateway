@@ -1,6 +1,8 @@
 package com.l7tech.server.transport.http;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.server.ServerConfig;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -51,14 +53,23 @@ public class DefaultHttpConnectors {
         httpsNocc.setEnabled(true);
         ret.add(httpsNocc);
 
-        // TODO assign this port from configuration
-        SsgConnector pcApi = new SsgConnector();
-        pcApi.setName("Process Controller API (8766)");
-        pcApi.setScheme(SsgConnector.SCHEME_HTTP);
-        pcApi.setEndpoints(SsgConnector.Endpoint.PC_NODE_API.name());
-        pcApi.setPort(8766);
-        pcApi.setEnabled(true);
-        ret.add(pcApi);
+        String portTxt = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_CLUSTER_PORT);
+        int port = 2124;
+        if ( portTxt != null ) {
+            try {
+                port = Integer.parseInt( portTxt.trim() );
+            } catch ( NumberFormatException nfe) {
+                // use default
+            }
+        }
+
+        SsgConnector nodeHttps = new SsgConnector();
+        nodeHttps.setName("Node HTTPS ("+port+")");
+        nodeHttps.setScheme(SsgConnector.SCHEME_HTTPS);
+        nodeHttps.setEndpoints(SsgConnector.Endpoint.NODE_COMMUNICATION.name());
+        nodeHttps.setPort(port);
+        nodeHttps.setEnabled(true);
+        ret.add(nodeHttps);
 
         return ret;
     }

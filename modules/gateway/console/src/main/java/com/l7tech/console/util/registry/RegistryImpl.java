@@ -40,6 +40,8 @@ public final class RegistryImpl extends Registry
   implements ApplicationContextAware, ApplicationListener {
     protected final Logger logger = Logger.getLogger(RegistryImpl.class.getName());
 
+    // When you add an admin interface don't forget to
+    // add it to the reset method
     private ApplicationContext applicationContext;
     private AdminContext adminContext = null;
     private IdentityAdmin identityAdmin;
@@ -306,6 +308,9 @@ public final class RegistryImpl extends Registry
         kerberosAdmin = null;
 		transportAdmin = null;
         policyAdmin = null;
+        folderAdmin = null;
+        rbacAdmin = null;
+        logSinkAdmin = null;
     }
 
 

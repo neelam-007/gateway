@@ -1,55 +1,32 @@
 package com.l7tech.server.cluster;
 
-import org.springframework.context.support.ApplicationObjectSupport;
-import org.springframework.beans.factory.InitializingBean;
-
 import com.l7tech.gateway.common.cluster.ClusterContext;
 import com.l7tech.gateway.common.logging.GenericLogAdmin;
+import com.l7tech.gateway.common.spring.remoting.http.RemotingContext;
+import com.l7tech.gateway.common.spring.remoting.http.ConfigurableHttpInvokerRequestExecutor;
+
+import java.util.Collection;
 
 /**
  * Cluster context implementation.
- *
- * @author $Author$
- * @version $Revision$
  */
-public class ClusterContextImpl extends ApplicationObjectSupport implements ClusterContext, InitializingBean {
-
-    //- PUBLIC
+public class ClusterContextImpl extends RemotingContext implements ClusterContext {
 
     /**
      *
      */
-    public ClusterContextImpl(GenericLogAdmin logAdmin) {
-        this.genericLogAdmin = logAdmin;
+    ClusterContextImpl( final String host,
+                        final int port,
+                        final Collection<Object> remoteObjects,
+                        final ConfigurableHttpInvokerRequestExecutor configurableInvoker ) {
+        super( host, port, "", remoteObjects, configurableInvoker );
     }
 
     /**
      *
      */
     public GenericLogAdmin getLogAdmin() throws SecurityException {
-        return genericLogAdmin;
+        return this.getRemoteInterfaceForEndpoint(GenericLogAdmin.class);
     }
 
-    /**
-     *
-     */
-    public void afterPropertiesSet() throws Exception {
-        checkServices();
-    }
-
-    //- PRIVATE
-
-    /**
-     *
-     */
-    private final GenericLogAdmin genericLogAdmin;
-
-    /**
-     *
-     */
-    private void checkServices() {
-        if(genericLogAdmin==null) {
-            throw new IllegalStateException("genericLogAdmin not initialized!");
-        }
-    }
 }

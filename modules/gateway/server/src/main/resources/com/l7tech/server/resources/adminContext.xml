@@ -19,129 +19,51 @@
     <aop:config/>
 
     <!-- the internal rmi/ssl trust failue handler that allows connection to self -->
-    <bean id="internalSslTrustFailureHandler"
-          class="com.l7tech.gateway.common.spring.remoting.rmi.ssl.CertificateTrustedTrustFailureHandler">
+    <bean id="clusterSslTrustFailureHandler"
+          class="com.l7tech.gateway.common.spring.remoting.ssl.CertificateTrustedTrustFailureHandler">
         <constructor-arg ref="sslKeystoreCertificate"/>
     </bean>
 
-    <!--
-    set the internal trust failurte handler. This is required when the ssl connection to self is attempted,
-    such as when connection to the local rmi registry.
-    -->
-    <bean id="setInternalTrustFailureHandler"
-          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="staticMethod"
-                  value="com.l7tech.gateway.common.spring.remoting.rmi.ssl.SslRMIClientSocketFactory.setTrustFailureHandler"/>
-        <property name="arguments">
-            <list>
-                <ref local="internalSslTrustFailureHandler"/>
-            </list>
-        </property>
-    </bean>
-    <!-- Handler for SSL RMI Client certificates -->
-    <bean id="setNode2NodeInternalTrustFailureHandler"
-          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="staticMethod"
-                  value="com.l7tech.gateway.common.spring.remoting.rmi.ssl.SslRMIServerSocketFactory.setTrustFailureHandler"/>
-        <property name="arguments">
-            <list>
-                <ref local="internalSslTrustFailureHandler"/>
-            </list>
-        </property>
+    <bean id="clusterHttpRequestExecutor" class="com.l7tech.gateway.common.spring.remoting.http.SecureHttpInvokerRequestExecutor">
+        <constructor-arg>
+            <ref bean="clusterHttpClient"/>
+        </constructor-arg>
+        <constructor-arg>
+            <value>SecureSpan-Manager/3.6</value>
+        </constructor-arg>
+        <property name="trustFailureHandler" ref="clusterSslTrustFailureHandler"/>
     </bean>
 
-    <!-- admin services, Rmi socket factories -->
-    <bean id="rmiServerSocketFactory" class="com.l7tech.gateway.common.spring.remoting.rmi.ssl.SslRMIServerSocketFactory"
-          depends-on="setNode2NodeInternalTrustFailureHandler">
-        <property name="signerInfo" ref="sslKeyEntry"/>
+    <bean id="clusterHttpClient" class="com.l7tech.gateway.common.spring.remoting.http.SecureHttpClient">
+        <constructor-arg ref="sslKeyManagers"/>
     </bean>
 
-    <bean id="rmiClientSocketFactory" class="com.l7tech.gateway.common.spring.remoting.rmi.ssl.SslRMIClientSocketFactory"
-          depends-on="setKeyManagersForNodeToNodeRMI, setInternalTrustFailureHandler, setNode2NodeInternalTrustFailureHandler">
-        <property name="host">
-            <!-- Extract host name from this nodes cluster node info -->
-            <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-                <property name="targetObject">
-                    <!-- Get this nodes info -->
-                    <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-                        <property name="targetObject" ref="clusterInfoManager"/>
-                        <property name="targetMethod" value="getSelfNodeInf"/>
-                    </bean>
-                </property>
-                <property name="targetMethod" value="getAddress"/>
-            </bean>
+    <!-- shared invoker properties, inherited with parent -->
+    <bean id="clusterInvokerCommon" abstract="true"  class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+        <property name="httpInvokerRequestExecutor">
+            <ref bean="clusterHttpRequestExecutor"/>
+        </property>
+        <property name="codebaseUrl">
+            <value>must not be empty</value>
         </property>
     </bean>
 
     <bean id="adminSessionInvocationFactory" class="com.l7tech.gateway.common.spring.remoting.rmi.AdminSessionInvocationFactory"/>
 
-    <bean id="rmiPort" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean" depends-on="serverConfig">
-        <property name="targetObject" ref="serverConfig"/>
-        <property name="targetMethod" value="getIntProperty"/>
-        <property name="arguments"><list><value>clusterPort</value><value>2124</value></list></property> 
+    <!-- cluster context factory -->
+    <bean id="clusterContextFactory" class="com.l7tech.server.cluster.ClusterContextFactory">
+        <constructor-arg index="0">
+            <list>
+                <ref bean="genericLogAdmin"/>    
+            </list>
+        </constructor-arg>
+        <constructor-arg index="1" ref="clusterHttpRequestExecutor"/>
+        <constructor-arg index="2" value="ADMIN"/>
     </bean>
 
-    <bean id="rmiRegistryInit" class="com.l7tech.gateway.common.spring.remoting.rmi.RmiRegistryInitializer" depends-on="systemProperties">
-        <property name="port">
-            <!--suppress InjectionValueTypeInspection -->
-            <ref local="rmiPort"/>
-        </property>
-        <property name="clientSocketFactory" ref="rmiClientSocketFactory"/>
-        <property name="serverSocketFactory" ref="rmiServerSocketFactory"/>
-    </bean>
-
-    <bean id="rmiRegistry" class="org.springframework.remoting.rmi.RmiRegistryFactoryBean" depends-on="rmiRegistryInit">
-        <property name="port">
-            <!--suppress InjectionValueTypeInspection -->
-            <ref local="rmiPort"/>
-        </property>
-        <property name="clientSocketFactory" ref="rmiClientSocketFactory"/>
-        <property name="serverSocketFactory" ref="rmiServerSocketFactory"/>
-    </bean>
-
-    <!--    shared export properties, inherited with parent= -->
-    <bean id="sharedClusterExportProperties" abstract="true" depends-on="rmiRegistryInit">
-        <property name="registry" ref="rmiRegistry"/>
-        <property name="servicePort">
-            <!--suppress InjectionValueTypeInspection -->
-            <ref local="rmiPort"/>
-        </property>
-        <property name="clientSocketFactory" ref="rmiClientSocketFactory"/>
-        <property name="serverSocketFactory" ref="rmiServerSocketFactory"/>
-        <property name="stubRemoteInvocationFactory" ref="adminSessionInvocationFactory"/>
-        <property name="remoteInvocationExecutor">
-            <bean class="com.l7tech.gateway.common.spring.remoting.rmi.ClusterRemoteInvocationExecutor">
-                <constructor-arg value="CLUSTER"/>
-                <constructor-arg ref="remotingProvider"/>
-            </bean>
-        </property>
-    </bean>
-
-    <!-- cluster login exporter -->
-    <bean class="com.l7tech.gateway.common.spring.remoting.rmi.RmiServiceExporterStubFactoryBean" parent="sharedClusterExportProperties">
-        <property name="serviceName" value="ClusterLogin"/>
-        <property name="service" ref="clusterLogin"/>
-        <property name="serviceInterface" value="com.l7tech.gateway.common.cluster.ClusterLogin"/>
-    </bean>
-    <!-- cluster login servant -->
-    <bean id="clusterLogin" class="com.l7tech.server.cluster.ClusterLoginImpl"/>
-
-    <!-- cluster context exporter -->
-    <bean id="clusterContextRemote" class="com.l7tech.gateway.common.spring.remoting.rmi.RmiServiceExporterStubFactoryBean"
-          parent="sharedClusterExportProperties">
-        <property name="service" ref="clusterContext"/>
-        <property name="serviceInterface" value="com.l7tech.gateway.common.cluster.ClusterContext"/>
-        <property name="singleton" value="false"/>
-    </bean>
-    <!-- cluster context servant -->
-    <bean id="clusterContext" class="com.l7tech.server.cluster.ClusterContextImpl">
-        <constructor-arg ref="clusterLogRemote"/>
-    </bean>
-
-    <!-- cluster audit exporter -->
-    <bean id="clusterLogRemote" class="com.l7tech.gateway.common.spring.remoting.rmi.RmiServiceExporterStubFactoryBean"
-          parent="sharedClusterExportProperties">
-        <property name="service" ref="auditAdmin"/>
+    <!-- cluster remoting clients -->
+    <bean id="genericLogAdmin" parent="clusterInvokerCommon">
+        <property name="serviceUrl" value="https://securespangateway/ssg/cluster/GenericLogAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.logging.GenericLogAdmin"/>
     </bean>
 
@@ -149,6 +71,7 @@
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="adminSessionManager"/>
         <constructor-arg ref="clusterInfoManager"/>
+        <constructor-arg ref="defaultKey"/>
     </bean>
 
     <!-- admin session tracker -->

@@ -87,7 +87,6 @@ public class AdminLoginImpl
                 logger.finer("User '" + user.getLogin() + "' logged in locally.");
             }
 
-            AdminContext adminContext = makeAdminContext();
             String cookie = "-";
             if (remoteLogin) {
                 // If local, caller is responsible for generating event/session if required
@@ -95,18 +94,11 @@ public class AdminLoginImpl
                 cookie = sessionManager.createSession(user, null);
             }
 
-            return new AdminLoginResult(user, adminContext, cookie);
+            return new AdminLoginResult(user, cookie, SecureSpanConstants.ADMIN_PROTOCOL_VERSION, BuildInfo.getProductVersion());
         } catch (ObjectModelException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
         }
-    }
-
-    private AdminContext makeAdminContext() {
-        return new AdminContextBean(
-                    null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,
-                    SecureSpanConstants.ADMIN_PROTOCOL_VERSION,
-                    BuildInfo.getProductVersion());
     }
 
     public void changePassword(final String currentPassword, final String newPassword) throws LoginException {
@@ -143,8 +135,7 @@ public class AdminLoginImpl
             throw new AuthenticationException("Authentication failed");
         }
 
-        AdminContext adminContext = makeAdminContext();
-        return new AdminLoginResult(user, adminContext, sessionId);
+        return new AdminLoginResult(user, sessionId, SecureSpanConstants.ADMIN_PROTOCOL_VERSION, BuildInfo.getProductVersion());
     }
 
     public void logout() {

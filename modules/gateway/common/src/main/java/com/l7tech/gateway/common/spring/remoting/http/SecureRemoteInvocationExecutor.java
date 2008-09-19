@@ -8,6 +8,7 @@ import org.springframework.remoting.support.RemoteInvocationExecutor;
 import org.springframework.remoting.support.RemoteInvocation;
 
 import com.l7tech.gateway.common.spring.remoting.RemotingProvider;
+import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 
 /**
  * Secure invoker.
@@ -39,39 +40,46 @@ public final class SecureRemoteInvocationExecutor<T extends Annotation> implemen
             throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
     {
         // Check if the method can be invoked when not authenticated (login method, etc)
-        T adminAnno =
+        T annotation =
                 getRemotingAnnotation(invocation.getMethodName(), invocation.getParameterTypes(), targetObject.getClass());
 
-        remotingProvider.checkPermitted( adminAnno, facility, invocation.getClass().getName() + "#" + invocation.getMethodName() );
+        remotingProvider.checkPermitted( annotation, facility, invocation.getClass().getName() + "#" + invocation.getMethodName() );
 
-        return invocation.invoke(targetObject);
+        RemoteUtils.setFacility(facility);
+        try {
+            return invocation.invoke(targetObject);
+        } finally {
+            RemoteUtils.setFacility(null);
+        }
     }
 
     private T getRemotingAnnotation(String methodName, Class[] methodParameterTypes, Class targetClass) {
-        T adminAnno = null;
+        T annotation = null;
 
-        try {
-            Method method = targetClass.getMethod(methodName, methodParameterTypes);
-            adminAnno = method.getAnnotation(annotationClass);
+        if ( annotationClass != null ) {
+            try {
+                Method method = targetClass.getMethod(methodName, methodParameterTypes);
+                annotation = method.getAnnotation(annotationClass);
 
-            if ( adminAnno == null ) {
-                // Check interfaces
-                Class[] interfaces = targetClass.getInterfaces();
-                for ( Class interfaceClass : interfaces ) {
-                    try {
-                        method = interfaceClass.getMethod(methodName, methodParameterTypes);
-                        adminAnno = method.getAnnotation(annotationClass);
-                        if  (adminAnno != null)
-                            break;
-                    } catch (NoSuchMethodException nsme) {
-                        // continue
+                if ( annotation == null ) {
+                    // Check interfaces
+                    Class[] interfaces = targetClass.getInterfaces();
+                    for ( Class interfaceClass : interfaces ) {
+                        try {
+                            method = interfaceClass.getMethod(methodName, methodParameterTypes);
+                            annotation = method.getAnnotation(annotationClass);
+                            if  (annotation != null)
+                                break;
+                        } catch (NoSuchMethodException nsme) {
+                            // continue
+                        }
                     }
                 }
+            } catch (NoSuchMethodException nsme) {
+                // ok, for now
             }
-        } catch (NoSuchMethodException nsme) {
-            // ok, for now              
         }
 
-        return adminAnno;
+        return annotation;
     }
 }

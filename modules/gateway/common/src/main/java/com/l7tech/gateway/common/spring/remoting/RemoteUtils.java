@@ -82,8 +82,27 @@ public class RemoteUtils {
         return host;
     }
 
+    /**
+     * Set the facility that is associated with this thread.
+     *
+     * @param facility The facility.
+     */
+    public static void setFacility( final String facility ) {
+        inboundFacility.set(facility);
+    }
+
+    /**
+     * Get the facility in which this request originated.
+     *
+     * @return The facility or null
+     */
+    public static String getFacility() {
+        return inboundFacility.get();
+    }
+
     //- PRIVATE
 
+    private static ThreadLocal<String> inboundFacility = new ThreadLocal<String>();
     private static ThreadLocal<String> clientHost = new ThreadLocal<String>();
     private static ThreadLocal<HttpServletRequest> servletRequest = new ThreadLocal<HttpServletRequest>();
 }

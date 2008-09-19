@@ -40,7 +40,7 @@ public class ApplicationContextTest  extends TestCase {
     };
 
     private static final Set<String> NON_ADMIN_PROXY_BEANS = new HashSet<String>( Collections.<String>emptySet());
-    private static final Set<String> NON_ADMIN_BEANS = new HashSet<String>( Collections.<String>emptySet());
+    private static final Set<String> NON_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "genericLogAdmin" ));
     private static final Set<String> EXTRA_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "adminLogin" ) );
     private static final Set<String> NON_SECURED_BEANS = new HashSet<String>( Arrays.asList( "customAssertionsAdmin" ) );
 

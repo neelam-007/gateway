@@ -157,7 +157,7 @@ public class WsdlImportStrategyServiceAdmin implements ServiceAdmin {
                 Wsdl parsedWsdl;
 
                 try {
-                    Collection<ServiceDocument> serviceDocuments = delegate.findServiceDocumentsByServiceID( serviceId );
+                    Collection<ServiceDocument> serviceDocuments = Registry.getDefault().getServiceManager().findServiceDocumentsByServiceID( serviceId );
                     parsedWsdl = Wsdl.newInstance(WsdlUtils.getWSDLFactory(), Wsdl.getWSDLLocator(uri, buildContent(uri, wsdl, serviceDocuments), logger));
                 }
                 catch (FindException fe) {

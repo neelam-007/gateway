@@ -186,6 +186,15 @@
     </servlet>
 
     <servlet>
+        <servlet-name>cluster</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>classpath:com/l7tech/server/resources/cluster-servlet.xml</param-value>
+        </init-param>
+    </servlet>
+
+    <servlet>
         <servlet-name>managerAppletServlet</servlet-name>
         <servlet-class>com.l7tech.server.admin.ManagerAppletServlet</servlet-class>
     </servlet>
@@ -219,16 +228,6 @@
         <load-on-startup>1</load-on-startup>
     </servlet>
 
-    <!--<servlet>-->
-        <!--<servlet-name>esmServlet</servlet-name>-->
-        <!--<servlet-class>com.l7tech.server.wsdm.ESMServlet</servlet-class>-->
-    <!--</servlet>-->
-
-    <!--<servlet-mapping>-->
-        <!--<servlet-name>esmServlet</servlet-name>-->
-        <!--<url-pattern>/ssg/wsdm/*</url-pattern>-->
-    <!--</servlet-mapping>-->
-
     <servlet-mapping>
         <servlet-name>fileDownloadServlet</servlet-name>
         <url-pattern>/ssg/webadmin/filedownload</url-pattern>
@@ -237,6 +236,11 @@
     <servlet-mapping>
         <servlet-name>admin</servlet-name>
         <url-pattern>/ssg/manager/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>cluster</servlet-name>
+        <url-pattern>/ssg/cluster/*</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
@@ -463,12 +467,6 @@
         <exception-type>java.lang.Exception</exception-type>
         <location>/ssg/error</location>
     </error-page>
-
-    <!-- uncomment login-config to enable (currently not used)
-    <login-config>
-        <auth-method>BASIC</auth-method>
-        <realm-name></realm-name>
-    </login-config> -->
 
     <env-entry>
         <description>List of concrete ServiceResolver implementations</description>

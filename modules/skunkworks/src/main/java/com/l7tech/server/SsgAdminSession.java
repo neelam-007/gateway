@@ -14,10 +14,6 @@ import com.l7tech.console.util.History;
 import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.UserBean;
-import com.l7tech.gateway.common.spring.remoting.rmi.NamingURL;
-import com.l7tech.gateway.common.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
-import com.l7tech.gateway.common.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
-import com.l7tech.gateway.common.spring.remoting.rmi.ssl.SslRMIClientSocketFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -25,8 +21,6 @@ import javax.security.auth.Subject;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessController;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
 /**
@@ -71,15 +65,6 @@ public class SsgAdminSession {
         // application context
         applicationContext = createApplicationContext();
         System.out.println("Connecting to " + hostPort);
-        NamingURL adminServiceNamingURL = NamingURL.parse(NamingURL.DEFAULT_SCHEME + "://" + hostPort + "/AdminLogin");
-        ResettableRmiProxyFactoryBean bean = (ResettableRmiProxyFactoryBean)applicationContext.getBean("&adminLogin");
-        SslRMIClientSocketFactory.setTrustFailureHandler(new SSLTrustFailureHandler() {
-            public boolean handle(CertificateException e, X509Certificate[] chain, String authType, boolean failure) {
-                return true;
-            }
-        });
-        bean.setServiceUrl(adminServiceNamingURL.toString());
-        bean.resetStub();
         AdminLogin adminLogin = (AdminLogin)applicationContext.getBean("adminLogin");
         AdminLoginResult loginResult = adminLogin.login(adminlogin, adminpass);
 
@@ -89,7 +74,6 @@ public class SsgAdminSession {
         u.setName(loginResult.getSessionCookie());
         subject.getPrincipals().add(u);
         subject.getPrivateCredentials().clear();
-        adminContext = loginResult.getAdminContext();
     }
 
     public AdminContext getAdminContext() {

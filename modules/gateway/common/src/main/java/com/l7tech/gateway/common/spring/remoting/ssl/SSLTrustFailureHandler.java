@@ -3,7 +3,7 @@
  *
  * $Id$
  */
-package com.l7tech.gateway.common.spring.remoting.rmi.ssl;
+package com.l7tech.gateway.common.spring.remoting.ssl;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -14,7 +14,6 @@ import java.security.cert.X509Certificate;
  * missing from the trust store for example.
  * @author emil
  * @version Dec 20, 2004
- * @see com.l7tech.gateway.common.spring.remoting.rmi.ssl.SslRMIClientSocketFactory#setTrustFailureHandler(SSLTrustFailureHandler)
  */
 public interface SSLTrustFailureHandler {
     /**

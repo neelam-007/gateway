@@ -22,7 +22,7 @@ import org.apache.commons.httpclient.protocol.Protocol;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.gateway.common.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
+import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
 import com.l7tech.gateway.common.admin.TimeoutRuntimeException;
 
 /**
@@ -41,6 +41,7 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
         super();
         this.userAgent = null;
         this.hostSubstitutionPattern = Pattern.compile(HOST_REGEX);
+        this.sessionInfoHolder = new SessionSupport();
     }
 
     public SecureHttpInvokerRequestExecutor(HttpClient httpClient) {
@@ -51,29 +52,19 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
         super(httpClient);
         this.userAgent = userAgent;
         this.hostSubstitutionPattern = Pattern.compile(HOST_REGEX);
+        this.sessionInfoHolder = new SessionSupport();
     }
 
     public void setSession(String host, int port, String sessionId) {
-        synchronized (lock) {
-            this.host = host;
-            this.port = port;
-            this.sessionId = sessionId;
-        }
+        SessionSupport.SessionInfo info = sessionInfoHolder.getSessionInfo();
+        info.host = host;
+        info.port = port;
+        info.sessionId = sessionId;
     }
 
     public void setTrustFailureHandler(SSLTrustFailureHandler failureHandler) {
         synchronized (lock) {
             this.trustFailureHandler = failureHandler;
-        }
-    }
-
-    public void clearSessionIfMatches(String sessionId) {
-        synchronized (lock) {
-            if (sessionId != null && sessionId.equals(this.sessionId)) {
-                this.sessionId = null;
-                this.host = null;
-                this.port = 0;
-            }
         }
     }
 
@@ -131,25 +122,20 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
 
     protected void executePostMethod(HttpInvokerClientConfiguration config, HttpClient httpClient, PostMethod postMethod) throws IOException {
         SSLTrustFailureHandler trustFailureHandler;
-        String host;
-        int port;
-        String sessionId;
         synchronized (lock) {
             trustFailureHandler = this.trustFailureHandler;
-            host = this.host;
-            port = this.port;
-            sessionId = this.sessionId;
         }
 
-        if (host == null) {
+        SessionSupport.SessionInfo info = sessionInfoHolder.getSessionInfo();
+        if (info.host == null) {
             throw new CausedIOException("Not logged in");
         }
 
         SecureHttpClient.setTrustFailureHandler(trustFailureHandler);
         Protocol protocol = httpClient.getHostConfiguration().getProtocol();
         HostConfiguration hostConfiguration = new HostConfiguration();
-        hostConfiguration.setHost(host, port, protocol);
-        postMethod.addRequestHeader("X-Layer7-SessionId", sessionId);
+        hostConfiguration.setHost(info.host, info.port, protocol);
+        postMethod.addRequestHeader("X-Layer7-SessionId", info.sessionId);
         try {
             httpClient.executeMethod(hostConfiguration, postMethod);
         }
@@ -171,9 +157,7 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
     private final Object lock = new Object();
     private final String userAgent;
     private SSLTrustFailureHandler trustFailureHandler;
-    private String host;
-    private int port;
-    private String sessionId;
+    private final SessionSupport sessionInfoHolder;
     private Pattern hostSubstitutionPattern;
 
     private class HttpInvokerClientConfigurationImpl implements HttpInvokerClientConfiguration {
@@ -197,9 +181,7 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
         private String decorate(final String url) {
             // switch in the correct host/port
             Matcher matcher = hostSubstitutionPattern.matcher(url);
-            String decoratedUrl = matcher.replaceFirst("");
-
-            return decoratedUrl;
+            return matcher.replaceFirst("");
         }
     }
 }

@@ -13,23 +13,9 @@ import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.schema.SchemaAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
-import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 
 public interface AdminContext {
-    /**
-     * Retrieve the server admin protocol version string.
-     *
-     * @return the server admin protocol version string, ie "20040603".  Never null
-     */
-    String getVersion();
-
-    /**
-     * Retrieve the server software product version string.
-     *
-     * @return the server admin protocol version string, ie "4.0".  Never null
-     */
-    String getSoftwareVersion();
 
     /**
      * @return the {@link IdentityAdmin} implementation

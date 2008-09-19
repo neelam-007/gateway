@@ -1,6 +1,6 @@
 package com.l7tech.gateway.common.spring.remoting.http;
 
-import com.l7tech.gateway.common.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
+import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
 import com.l7tech.util.SyspropUtil;
 
 import org.apache.commons.httpclient.HttpClient;
@@ -17,7 +17,6 @@ import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.security.*;
@@ -35,7 +34,13 @@ public class SecureHttpClient extends HttpClient {
     //- PUBLIC
 
     public SecureHttpClient() {
+        this( getDefaultKeyManagers() );
+    }
+
+    public SecureHttpClient( KeyManager[] keyManagers ) {
         super(new MultiThreadedHttpConnectionManager());
+
+        this.keyManagers = keyManagers;
 
         MultiThreadedHttpConnectionManager connectionManager =
                 (MultiThreadedHttpConnectionManager) getHttpConnectionManager();
@@ -55,7 +60,7 @@ public class SecureHttpClient extends HttpClient {
      * failed. If <b>null</b> clears the existing handler.
      *
      * @param trustFailureHandler the new SSL failure handler
-     * @see com.l7tech.gateway.common.spring.remoting.rmi.ssl.SSLTrustFailureHandler
+     * @see com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler
      */
     public static void setTrustFailureHandler(SSLTrustFailureHandler trustFailureHandler) {
         currentTrustFailureHandler = trustFailureHandler;
@@ -74,6 +79,8 @@ public class SecureHttpClient extends HttpClient {
 
     private static SSLTrustFailureHandler currentTrustFailureHandler;
 
+    private final KeyManager[] keyManagers;
+
     private SSLSocketFactory getSSLSocketFactory() {
         try {
             SSLContext sslContext = SSLContext.getInstance("SSL");
@@ -88,6 +95,10 @@ public class SecureHttpClient extends HttpClient {
     }
 
     private KeyManager[] getKeyManagers() {
+        return keyManagers;
+    }
+
+    private static KeyManager[] getDefaultKeyManagers() {
         return new KeyManager[] { new X509KeyManager() {
             public String[] getClientAliases(String string, Principal[] principals) {
                 return new String[0];
@@ -112,7 +123,7 @@ public class SecureHttpClient extends HttpClient {
             public PrivateKey getPrivateKey(String string) {
                 return null;
             }
-        }};
+        } };
     }
 
     private TrustManager[] getTrustManagers() {
@@ -176,19 +187,19 @@ public class SecureHttpClient extends HttpClient {
 
     private Protocol getProtocol(final SSLSocketFactory sockFac) {
         return new Protocol("https", (ProtocolSocketFactory) new SecureProtocolSocketFactory() {
-            public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
+            public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
                 return sockFac.createSocket(socket, host, port, autoClose);
             }
 
-            public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException, UnknownHostException {
+            public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException {
                 return sockFac.createSocket(host, port, clientAddress, clientPort);
             }
 
-            public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+            public Socket createSocket(String host, int port) throws IOException {
                 return sockFac.createSocket(host, port);
             }
 
-            public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException, UnknownHostException, ConnectTimeoutException {
+            public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException {
                 Socket socket = sockFac.createSocket();
                 int connectTimeout = httpConnectionParams.getConnectionTimeout();
 

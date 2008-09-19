@@ -22,8 +22,6 @@
     <!-- enable automatic proxy generation for any class or superclass annotated with @Transactional -->
     <tx:annotation-driven order="20000"/>
 
-    <bean id="rmiConfigCheck" class="com.l7tech.gateway.common.spring.remoting.rmi.RmiConfigCheck"/>
-
     <bean id="systemProperties" class="com.l7tech.server.SystemProperties">
         <!-- Don't fully initialize serverconfig (no cluster propertes / db access) -->
         <constructor-arg><bean class="com.l7tech.server.ServerConfig" factory-method="getInstance"/></constructor-arg>
@@ -520,6 +518,7 @@
     <bean id="logRecordManager" class="com.l7tech.server.audit.LogRecordManager">
         <constructor-arg ref="clusterInfoManager"/>
         <constructor-arg ref="logRecordRingBuffer"/>
+        <constructor-arg ref="clusterContextFactory"/>
     </bean>
 
     <!-- server side audit record manager -->
@@ -574,21 +573,6 @@
             </list>
         </property>
     </bean>
-
-    <!--
-    set the KeyManagers for use within a cluster
-    -->
-    <bean id="setKeyManagersForNodeToNodeRMI"
-          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="staticMethod"
-                  value="com.l7tech.gateway.common.spring.remoting.rmi.ssl.SslRMIClientSocketFactory.setKeyManagers"/>
-        <property name="arguments">
-            <list>
-                <ref local="sslKeyManagers"/>
-            </list>
-        </property>
-    </bean>
-
 
     <!-- server Wss Decorator -->
     <bean id="wssDecorator" class="com.l7tech.security.xml.decorator.WssDecoratorImpl"/>

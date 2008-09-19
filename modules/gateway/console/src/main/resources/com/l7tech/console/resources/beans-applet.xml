@@ -10,7 +10,7 @@
     <bean id="httpRequestExecutor" class="com.l7tech.gateway.common.spring.remoting.http.SimpleBrowserHttpInvokerRequestExecutor"/>
 
     <!-- shared invoker properties, inherited with parent= -->
-    <bean id="invokerCommon" abstract="true">
+    <bean id="invokerCommon" abstract="true" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
         <property name="httpInvokerRequestExecutor">
             <ref bean="httpRequestExecutor"/>
         </property>

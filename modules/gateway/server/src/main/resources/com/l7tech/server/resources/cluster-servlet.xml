@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+
+    <bean id="clusterHttpInvokerParent" abstract="true">
+        <property name="remoteInvocationExecutor">
+            <bean class="com.l7tech.gateway.common.spring.remoting.http.SecureRemoteInvocationExecutor">
+                <constructor-arg index="0" value="CLUSTER"/>
+                <constructor-arg index="1"><null/></constructor-arg>
+                <constructor-arg index="2" ref="remotingProvider"/>
+            </bean>
+        </property>
+    </bean>
+
+    <bean name="/GenericLogAdmin" parent="clusterHttpInvokerParent" class="org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter">
+        <property name="service" ref="auditAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.logging.GenericLogAdmin"/>
+    </bean>
+
+</beans>

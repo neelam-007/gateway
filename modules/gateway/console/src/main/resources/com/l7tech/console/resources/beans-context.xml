@@ -11,69 +11,93 @@
             The protocol used in the urls below is ignored, we always connect with https.
     -->
 
-    <bean id="adminLogin" parent="invokerCommon" class="com.l7tech.console.spring.remoting.CancelableHttpInvokerProxyFactoryBean">
+    <!-- cluster context factory -->
+    <bean id="adminContextFactory" class="com.l7tech.console.util.AdminContextFactory">
+        <constructor-arg index="0">
+            <list>
+                <ref bean="identityAdmin"/>
+                <ref bean="auditAdmin"/>
+                <ref bean="schemaAdmin"/>
+                <ref bean="jmsAdmin"/>
+                <ref bean="ftpAdmin"/>
+                <ref bean="trustedCertAdmin"/>
+                <ref bean="customAssertionsRegistrar"/>
+                <ref bean="kerberosAdmin"/>
+                <ref bean="clusterStatusAdmin"/>
+                <ref bean="rbacAdmin"/>
+                <ref bean="transportAdmin"/>
+                <ref bean="policyAdmin"/>
+                <ref bean="logSinkAdmin"/>
+                <ref bean="serviceAdmin"/>
+                <ref bean="folderAdmin"/>
+            </list>
+        </constructor-arg>
+        <constructor-arg index="1" ref="httpRequestExecutor"/>
+    </bean>
+
+    <bean id="adminLogin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/AdminLogin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.AdminLogin"/>
     </bean>
 
-    <bean id="identityAdmin" parent="invokerCommon" class="com.l7tech.console.spring.remoting.CancelableHttpInvokerProxyFactoryBean">
+    <bean id="identityAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/IdentityAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.IdentityAdmin"/>
     </bean>
 
-    <bean id="auditAdmin" parent="invokerCommon" class="com.l7tech.console.spring.remoting.CancelableHttpInvokerProxyFactoryBean">
+    <bean id="auditAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/AuditAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.audit.AuditAdmin"/>
     </bean>
 
-    <bean id="schemaAdmin" parent="invokerCommon" class="com.l7tech.console.spring.remoting.CancelableHttpInvokerProxyFactoryBean">
+    <bean id="schemaAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/SchemaAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.schema.SchemaAdmin"/>
     </bean>
 
-    <bean id="jmsAdmin" parent="invokerCommon" class="com.l7tech.console.spring.remoting.CancelableHttpInvokerProxyFactoryBean">
+    <bean id="jmsAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/JmsAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.jms.JmsAdmin"/>
     </bean>
 
-    <bean id="ftpAdmin" parent="invokerCommon" class="com.l7tech.console.spring.remoting.CancelableHttpInvokerProxyFactoryBean">
+    <bean id="ftpAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/FtpAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.ftp.FtpAdmin"/>
     </bean>
 
-    <bean id="trustedCertAdmin" parent="invokerCommon" class="com.l7tech.console.spring.remoting.CancelableHttpInvokerProxyFactoryBean">
+    <bean id="trustedCertAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/TrustedCertAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.security.TrustedCertAdmin"/>
     </bean>
 
-    <bean id="customAssertionsRegistrar" parent="invokerCommon" class="com.l7tech.console.spring.remoting.CancelableHttpInvokerProxyFactoryBean">
+    <bean id="customAssertionsRegistrar" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/CustomAssertionsRegistrar"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.custom.CustomAssertionsRegistrar"/>
     </bean>
 
-    <bean id="kerberosAdmin" parent="invokerCommon" class="com.l7tech.console.spring.remoting.CancelableHttpInvokerProxyFactoryBean">
+    <bean id="kerberosAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/KerberosAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.KerberosAdmin"/>
     </bean>
 
-    <bean id="clusterStatusAdmin" parent="invokerCommon" class="com.l7tech.console.spring.remoting.CancelableHttpInvokerProxyFactoryBean">
+    <bean id="clusterStatusAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/ClusterStatusAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.cluster.ClusterStatusAdmin"/>
     </bean>
 
-    <bean id="rbacAdmin" parent="invokerCommon" class="com.l7tech.console.spring.remoting.CancelableHttpInvokerProxyFactoryBean">
+    <bean id="rbacAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/RbacAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.security.rbac.RbacAdmin"/>
     </bean>
 
-    <bean id="transportAdmin" parent="invokerCommon" class="com.l7tech.console.spring.remoting.CancelableHttpInvokerProxyFactoryBean">
+    <bean id="transportAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/TransportAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.TransportAdmin"/>
     </bean>
 
     <bean id="policyAdmin" class="com.l7tech.console.policy.InvalidatingPolicyAdmin">
         <constructor-arg>
-            <bean parent="invokerCommon" class="com.l7tech.console.spring.remoting.CancelableHttpInvokerProxyFactoryBean">
+            <bean parent="invokerCommon">
                 <property name="serviceUrl" value="https://securespangateway/ssg/manager/PolicyAdmin"/>
                 <property name="serviceInterface" value="com.l7tech.gateway.common.admin.PolicyAdmin"/>
             </bean>
@@ -81,7 +105,7 @@
         <constructor-arg ref="managerPolicyCache"/>
     </bean>
 
-    <bean id="logSinkAdmin" parent="invokerCommon" class="com.l7tech.console.spring.remoting.CancelableHttpInvokerProxyFactoryBean">
+    <bean id="logSinkAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/LogSinkAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.log.LogSinkAdmin"/>
     </bean>
@@ -105,7 +129,7 @@
 
     <bean id="serviceAdmin" class="com.l7tech.console.util.WsdlImportStrategyServiceAdmin">
         <constructor-arg>
-            <bean parent="invokerCommon" class="com.l7tech.console.spring.remoting.CancelableHttpInvokerProxyFactoryBean">
+            <bean parent="invokerCommon">
                 <property name="serviceUrl" value="https://securespangateway/ssg/manager/ServiceAdmin"/>
                 <property name="serviceInterface" value="com.l7tech.gateway.common.service.ServiceAdmin"/>
             </bean>
@@ -114,7 +138,7 @@
 
     <bean id="defaultAliasTracker" class="com.l7tech.console.util.DefaultAliasTracker"/>
 
-    <bean id="folderAdmin" parent="invokerCommon" class="com.l7tech.console.spring.remoting.CancelableHttpInvokerProxyFactoryBean">
+    <bean id="folderAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/FolderAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.FolderAdmin"/>
     </bean>

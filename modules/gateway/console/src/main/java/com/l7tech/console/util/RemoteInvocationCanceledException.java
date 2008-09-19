@@ -1,4 +1,4 @@
-package com.l7tech.console.spring.remoting;
+package com.l7tech.console.util;
 
 /**
  * Exception thrown when a remote invocation is canceled at the user's request.

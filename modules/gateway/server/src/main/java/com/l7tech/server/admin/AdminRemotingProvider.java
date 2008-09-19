@@ -2,7 +2,6 @@ package com.l7tech.server.admin;
 
 import com.l7tech.gateway.common.spring.remoting.RemotingProvider;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
-import com.l7tech.gateway.common.spring.remoting.rmi.ssl.SslRMIServerSocketFactory;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
@@ -11,6 +10,7 @@ import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.gateway.common.admin.AdminSessionValidationRuntimeException;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
@@ -19,6 +19,7 @@ import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.common.io.CertUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.security.auth.Subject;
@@ -27,8 +28,11 @@ import java.util.logging.Level;
 import java.util.Collection;
 import java.util.Set;
 import java.security.AccessControlException;
+import java.security.cert.X509Certificate;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.rmi.server.ServerNotActiveException;
+import java.io.IOException;
 
 /**
  * Server implementation of the RemotingProvider
@@ -39,20 +43,25 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative> {
 
     //- PUBLIC
 
+    public final String FACILITY_ADMIN = "ADMIN";
+    public final String FACILITY_CLUSTER = "CLUSTER";
+
     public AdminRemotingProvider( final LicenseManager licenseManager,
                                   final AdminSessionManager adminSessionManager,
-                                  final ClusterInfoManager clusterInfoManager ) {
+                                  final ClusterInfoManager clusterInfoManager,
+                                  final DefaultKey defaultKey ) {
         this.licenseManager = licenseManager;
         this.adminSessionManager = adminSessionManager;
         this.clusterInfoManager = clusterInfoManager;
+        this.defaultKey = defaultKey;
     }
 
     public void checkPermitted( final Administrative adminAnno,
                                 final String facility,
                                 final String activity ) {
-        if ( "CLUSTER".equals(facility) ) {
+        if ( FACILITY_CLUSTER.equals(facility) ) {
             enforceClusterEnabled();
-        } else if ( "ADMIN".equals(facility) ) {
+        } else if ( FACILITY_ADMIN.equals(facility) ) {
             if (adminAnno == null || adminAnno.licensed()) {
                 enforceLicensed( activity );
             }
@@ -70,6 +79,7 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative> {
     private final LicenseManager licenseManager;
     private final AdminSessionManager adminSessionManager;
     private final ClusterInfoManager clusterInfoManager;
+    private final DefaultKey defaultKey;
 
     private void enforceLicensed( String action ) {
         try {
@@ -129,15 +139,18 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative> {
             throw new AccessControlException("Cluster invocations not permitted.");
         }
 
-        // Verify invocation is by another node.
-        SslRMIServerSocketFactory.Context context = SslRMIServerSocketFactory.getContext();
-
-        if( context == null || !context.isRemoteClientCertAuthenticated() ) {
-            throw new AccessControlException("Client certificate authentication required.");
-        }
-
         try {
-            InetAddress remoteHost = InetAddress.getByName( context.getRemoteHost() );
+            // Verify invocation is by another node using cert auth.
+            HttpServletRequest request = RemoteUtils.getHttpServletRequest();
+            if ( request == null ||
+                 request.getAttribute("javax.servlet.request.X509Certificate")==null ||
+                 CertUtils.certsAreEqual(defaultKey.getSslInfo().getCertificate(),
+                                         (X509Certificate)request.getAttribute("javax.servlet.request.X509Certificate")) ||
+                 !FACILITY_CLUSTER.equals(RemoteUtils.getFacility()) ) {
+                throw new AccessControlException("Only remote invocation of cluster methods is permitted.");
+            }
+
+            InetAddress remoteHost = InetAddress.getByName( RemoteUtils.getClientHost() );
             boolean isClusterNode = false;
             Collection clusterNodes = clusterInfoManager.retrieveClusterStatus();
             for( Object clusterNode : clusterNodes ) {
@@ -156,8 +169,14 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative> {
         catch( UnknownHostException uhe) {
             throw (AccessControlException) new AccessControlException("Cluster invocation denied, unable to check ip.").initCause(uhe);
         }
+        catch( ServerNotActiveException snae) {
+            throw (AccessControlException) new AccessControlException("Cluster invocation denied, unable to check ip.").initCause(snae);
+        }
         catch( FindException fe ) {
             throw (AccessControlException) new AccessControlException("Cluster invocation denied, unable to check ip.").initCause(fe);
+        }
+        catch( IOException ioe ) {
+            throw (AccessControlException) new AccessControlException("Cluster invocation denied, unable to check ip.").initCause(ioe);
         }
     }
 
