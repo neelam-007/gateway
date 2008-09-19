@@ -303,53 +303,64 @@ public class PolicyTree extends JTree implements DragSourceListener,
          * @param mouseEvent The event
          */
         @Override
-        protected void popUpMenuHandler(MouseEvent mouseEvent) {
-            JTree tree = (JTree)mouseEvent.getSource();
+        protected void popUpMenuHandler(final MouseEvent mouseEvent) {
+            // When the mouse right button is clicked, set the policy tree as focused.
+            PolicyTree.this.requestFocus();
+            // After the policy tree is set to be focused on, KeyboardFocusManager (in ClipBoardActions.java) will
+            // get notified for the property "permanentFocusOwner" change. Then, KeyboardFocusManager will reset if
+            // clipboard global actions (such as Copy, Copy All, and Paste) are enabled or disabled.
 
-            AssertionTreeNode node;
-            if (mouseEvent.isPopupTrigger()) {
-                int closestRow = tree.getClosestRowForLocation(mouseEvent.getX(), mouseEvent.getY());
-                if (closestRow == -1) {
-                    node = (AssertionTreeNode)tree.getModel().getRoot();
-                    if (node == null) {
-                        return;
-                    }
-                } else {
-                    int[] rows = tree.getSelectionRows();
-                    boolean found = false;
+            // After the setting of clipboard global actions are ready, then the context menu will pop up with/without Copy, Copy All, and Paste.
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    JTree tree = (JTree)mouseEvent.getSource();
 
-                    for (int i = 0; rows != null && i < rows.length; i++) {
-                        if (rows[i] == closestRow) {
-                            found = true;
-                            break;
+                    AssertionTreeNode node;
+                    if (mouseEvent.isPopupTrigger()) {
+                        int closestRow = tree.getClosestRowForLocation(mouseEvent.getX(), mouseEvent.getY());
+                        if (closestRow == -1) {
+                            node = (AssertionTreeNode)tree.getModel().getRoot();
+                            if (node == null) {
+                                return;
+                            }
+                        } else {
+                            int[] rows = tree.getSelectionRows();
+                            boolean found = false;
+
+                            for (int i = 0; rows != null && i < rows.length; i++) {
+                                if (rows[i] == closestRow) {
+                                    found = true;
+                                    break;
+                                }
+                            }
+
+                            if (!found) {
+                                tree.setSelectionRow(closestRow);
+                            }
+                            node = (AssertionTreeNode)tree.getLastSelectedPathComponent();
+                        }
+
+                        if (node != null) {
+                            Action[] actions = node.getActions();
+                            // If the node is nested in a policy include, all editor actions (such as AddAllAssertionAction,
+                            // AddOneOrMoreAssertionAction, DeleteAssertionAction, AssertionMoveDownAction, AssertionMoveUpAction,
+                            // Disable Assertion, and Enable Assertion) will not be displayed in the context menu.
+                            if (node.isDescendantOfInclude(false)) {
+                                actions = verifyActionsInPolicyInclude(actions);
+                            }
+
+                            if (policyEditorPanel != null) {
+                                policyEditorPanel.updateActions(actions);
+                            }
+                            JPopupMenu menu = getPopupMenu(actions);
+                            if (menu != null) {
+                                menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
+                            }
+
                         }
                     }
-
-                    if (!found) {
-                        tree.setSelectionRow(closestRow);
-                    }
-                    node = (AssertionTreeNode)tree.getLastSelectedPathComponent();
                 }
-
-                if (node != null) {
-                    Action[] actions = node.getActions();
-                    // If the node is nested in a policy include, all editor actions (such as AddAllAssertionAction,
-                    // AddOneOrMoreAssertionAction, DeleteAssertionAction, AssertionMoveDownAction, AssertionMoveUpAction,
-                    // Disable Assertion, and Enable Assertion) will not be displayed in the context menu.
-                    if (node.isDescendantOfInclude(false)) {
-                        actions = verifyActionsInPolicyInclude(actions);
-                    }
-
-                    if (policyEditorPanel != null) {
-                        policyEditorPanel.updateActions(actions);
-                    }
-                    JPopupMenu menu = getPopupMenu(actions);
-                    if (menu != null) {
-                        menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
-                    }
-
-                }
-            }
+            });
         }
 
         /**
