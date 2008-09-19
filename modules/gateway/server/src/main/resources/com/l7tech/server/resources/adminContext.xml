@@ -48,8 +48,6 @@
         </property>
     </bean>
 
-    <bean id="adminSessionInvocationFactory" class="com.l7tech.gateway.common.spring.remoting.rmi.AdminSessionInvocationFactory"/>
-
     <!-- cluster context factory -->
     <bean id="clusterContextFactory" class="com.l7tech.server.cluster.ClusterContextFactory">
         <constructor-arg index="0">
