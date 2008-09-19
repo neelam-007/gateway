@@ -24,6 +24,7 @@ import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.ExceptionUtils;
 import static org.springframework.transaction.annotation.Propagation.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.InitializingBean;
@@ -76,12 +77,21 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
      */
     @Transactional(propagation=SUPPORTS, readOnly=true)
     public boolean isSetupPerformed() throws SetupException  {
+        boolean setup = true;
         try {
             InternalUserManager internalUserManager = getInternalUserManager();
-            return licenseManager.isFeatureEnabled("set:Core") || internalUserManager==null || !internalUserManager.findAllHeaders().isEmpty();
+            if ( internalUserManager==null || internalUserManager.findAllHeaders().isEmpty() ) {
+                setup = false;
+            } else {
+                licenseManager.getCurrentLicense(); // gets license only if valid
+            }
         } catch (FindException e) {
             throw new SetupException(e);
+        } catch (InvalidLicenseException ile) {
+            logger.warning("License is not valid '"+ ExceptionUtils.getDebugException(ile) +"'.");
+            setup = false;
         }
+        return setup;
     }
 
 

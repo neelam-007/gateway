@@ -1,4 +1,11 @@
 <project name="layer7-ems" default="compile">
+    <!-- This value is passed in by the main build script -->
+    <property name="build.ems.version" value="1.0"/>
+
+    <!-- Module properties -->
     <property name="module.main" value="com.l7tech.server.ems.EmsMain"/>
+    <property name="module.version.target" value="${build.ems.version}"/>
+
+    <!-- Standard build -->
     <import file="../../etc/build/build-common.xml"/>
 </project>

@@ -120,7 +120,7 @@ public class BuildInfo {
      * @return The strict product name
      */
     public static String getProductName() {
-        return getBuildProperty(PROP_BUILD_PRODUCT, "Layer 7 SecureSpan Suite");
+        return getBuildProperty(PROP_BUILD_PRODUCT, productName);
     }
 
     /**
@@ -139,6 +139,21 @@ public class BuildInfo {
      */
     public static String getBuildUser() {
         return getBuildProperty(PROP_BUILD_USER, "build");        
+    }
+
+    /**
+     * Set the package for the product and the default name.
+     *
+     * @param productPackage The package whose version info should be used.
+     * @param productName The name of the product
+     */
+    public static void setProduct( final Package productPackage, final String productName ) {
+        if ( packageInfo == null || BuildInfo.class.getPackage().equals(packageInfo) ) {
+            BuildInfo.packageInfo = productPackage;
+            BuildInfo.productName = productName;
+        } else {
+            throw new IllegalStateException( "Product already initialized." );
+        }
     }
 
     /**
@@ -166,9 +181,12 @@ public class BuildInfo {
     private static final String PROP_BUILD_USER = "Built-By";
     private static final String PROP_BUILD_NUMBER = "Build-Number";    
 
+    private static Package packageInfo = BuildInfo.class.getPackage();
+    private static String productName = "Layer 7 SecureSpan Suite";
+
     private static String getPackageImplementationVersion() {
         String version = "0";
-        Package packageInfo = BuildInfo.class.getPackage();
+
         if ( packageInfo != null ) {
             String packageVersion = packageInfo.getImplementationVersion();
             if ( packageVersion != null ) {

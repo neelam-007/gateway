@@ -1,6 +1,6 @@
 Summary: SecureSpan Gateway, Copyright Layer 7 Technologies 2003-2008
 Name: ssg-appliance
-Version: 5.0
+Version: 0.0
 Release: 1
 Group: Applications/Internet
 License: Commercial
@@ -10,7 +10,7 @@ Packager: Layer 7 Technologies, <support@layer7tech.com>
 Source0: ssg-appliance.tar.gz
 Source1: jdk.tar.gz
 BuildRoot: %{_builddir}/%{name}-%{version}
-Requires: ssg >= 5.0
+Requires: ssg >= %{version}
 
 # Prevents rpm build from erroring and halting
 #%undefine       __check_files
@@ -222,7 +222,7 @@ fi
 
 # Change issue. This may move to a layer7-release file
 
-echo "Layer 7 SecureSpan(tm) Gateway v5.0" >/etc/issue
+echo "Layer 7 SecureSpan(tm) Gateway v%{version}" >/etc/issue
 echo "Kernel \r on an \m" >>/etc/issue
 #add the ssg and the configuration service to chkconfig if they are not already there
 /sbin/chkconfig --add ssg

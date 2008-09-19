@@ -75,7 +75,7 @@ public class DBActions {
     private CheckSSGDatabase ssgDbChecker;
 
     private DbVersionChecker[] dbCheckers = new DbVersionChecker[] {
-        new DbVersion50Checker(),
+        new DbVersion47Checker(),
         new DbVersion45Checker(),
         new DbVersion44Checker(),
         new DbVersion43Checker(),

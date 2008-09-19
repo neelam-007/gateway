@@ -31,7 +31,8 @@
     <property name="jar.file.test" value="${build.dir}/${ant.project.name}-test.jar"/>
     <property name="main.class.name" value="${ant.project.name}.Main"/>
 
-    <property name="module.version.target" value="1.0"/>
+    <property name="module.version.default.target" value="1.0"/>
+    <property name="module.version.target" value="${module.version.default.target}"/>
     <property name="module.classpath.prefix" value="lib/"/>
     <property name="module.compile.source" value="1.5"/>
     <property name="module.compile.target" value="1.5"/>

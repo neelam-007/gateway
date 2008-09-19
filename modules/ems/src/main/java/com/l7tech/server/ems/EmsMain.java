@@ -2,6 +2,7 @@ package com.l7tech.server.ems;
 
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.JdkLoggerConfigurator;
+import com.l7tech.util.BuildInfo;
 import com.l7tech.server.ServerConfig;
 
 import java.util.logging.Level;
@@ -15,6 +16,8 @@ public class EmsMain {
     private static final Logger logger = Logger.getLogger(EmsMain.class.getName());
 
     public static void main(String[] args) {
+        BuildInfo.setProduct( EmsMain.class.getPackage(), "Layer 7 Enterprise Service Manager" );
+
         // configure logging if the logs directory is found, else leave console output
         if ( new File("var/logs").exists() ) {
             JdkLoggerConfigurator.configure("com.l7tech.server.ems", "com/l7tech/server/ems/resources/logging.properties");

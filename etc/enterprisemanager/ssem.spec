@@ -1,6 +1,6 @@
-Summary: SecureSpan Enterprise Manager, Copyright Layer 7 Technologies 2008
+Summary: SecureSpan Enterprise Service Manager, Copyright Layer 7 Technologies 2008
 Name: ssem
-Version: 1.0
+Version: 0.0
 Release: 1
 Group: Applications/Internet
 License: Commercial
@@ -9,11 +9,11 @@ Vendor: Layer 7 Technologies
 Packager: Layer 7 Technologies, <support@layer7tech.com>
 source0: ssem.tar.gz
 buildroot: %{_builddir}/%{name}-%{version}
-requires: ssg-appliance >= 5.0
+requires: ssg-appliance >= 4.7
 Prefix: /opt/SecureSpan/EnterpriseManager
 
 %description
-SecureSpan Enterprise Manager Software Package
+SecureSpan Enterprise Service Manager Software Package
 
 %clean
 rm -fr %{buildroot}

@@ -624,7 +624,7 @@
 
     <presetdef name="modules">
         <subant buildpathref="module-build-path" >
-            <property name="module.version.target" value="${build.version}"/>
+            <property name="module.version.default.target" value="${build.version}"/>
 
             <propertyset dynamic="false">
                 <propertyref name="build.junit.xmlformat"/>
@@ -634,6 +634,7 @@
                 <propertyref name="module.pack200"/>
                 <propertyref name="src.root"/>
                 <propertyref prefix="build.version"/>
+                <propertyref prefix="build.em.version"/>
                 <propertyref name="build.timestamp"/>
                 <propertyref name="build.number"/>
                 <propertyref name="build.host"/>
@@ -777,6 +778,7 @@
             <param name="idea.gateway.vmOptions" expression="-Dcom.l7tech.server.home=&quot;${deploy.dir}&quot; -Dcom.l7tech.util.buildVersion=${build.version}"/>
             <param name="idea.client.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.version}"/>
             <param name="idea.manager.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.version}"/>
+            <param name="idea.ems.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.em.version}"/>
         </xslt>
         <move file="UneasyRooster.iws.tmp" tofile="UneasyRooster.iws" overwrite="true"/>
         <echo level="info">Generation complete.</echo>
@@ -1399,11 +1401,19 @@
         <property name="build.version.minor" value=""/>
         <property name="build.version.subminor" value=""/>
         <property name="build.version.label" value=""/>
+        <property name="build.em.version.major" value=""/>
+        <property name="build.em.version.minor" value=""/>
+        <property name="build.em.version.subminor" value=""/>
+        <property name="build.em.version.label" value=""/>
 
         <!-- Generate build.version from parts in build.version file, rpm version omits the label since '-' is not permitted in rpms -->
         <property name="build.rpmversion" value="${build.version.major}.${build.version.minor}.${build.version.subminor}"/>
         <property name="build.version" value="${build.version.major}.${build.version.minor}.${build.version.subminor}${build.version.label}"/>
         <echo level="info">Build is using version: "${build.version}"</echo>
+
+        <!-- Generate build.em.version from parts in build.version file, rpm version omits the label since '-' is not permitted in rpms -->
+        <property name="build.em.rpmversion" value="${build.em.version.major}.${build.em.version.minor}.${build.em.version.subminor}"/>
+        <property name="build.em.version" value="${build.em.version.major}.${build.em.version.minor}.${build.em.version.subminor}${build.em.version.label}"/>
     </target>
     <target name="package.defaultrpmversion" if="build.version" unless="build.rpmversion">
         <property name="build.rpmversion" value="${build.version}"/>        
@@ -2060,7 +2070,6 @@
                 <tokenfilter>
                     <replaceregex pattern="(?&lt;=^Version: )[0-9\._\-a-z]{1,10}" replace="${build.rpmversion}" flags="m"/>
                     <replaceregex pattern="(?&lt;=^Release: [0-9]{1,10})" replace="${build.release}" flags="m"/>
-                    <replaceregex pattern="(?&lt;=^[a-zA-Z &quot;]{0,80}Layer 7 SecureSpan\(tm\) Gateway v)[0-9\._\-a-z]{1,10}" replace="${build.version}" flags="m"/>
                 </tokenfilter>
             </filterchain>
         </copy>
@@ -2095,7 +2104,6 @@
                 <tokenfilter>
                     <replaceregex pattern="(?&lt;=^Version: )[0-9\._\-a-z]{1,10}" replace="${build.rpmversion}" flags="m"/>
                     <replaceregex pattern="(?&lt;=^Release: )[0-9]{1,10}" replace="${build.release}" flags="m"/>
-                    <replaceregex pattern="(?&lt;=^[a-zA-Z &quot;]{0,80}Layer 7 SecureSpan\(tm\) Gateway v)[0-9\._\-a-z]{1,10}" replace="${build.version}" flags="m"/>
                 </tokenfilter>
             </filterchain>
         </copy>
@@ -2118,11 +2126,19 @@
         <mkdir dir="${build.rpm}/SRPMS"/>
 
         <!-- build -->
+        <property name="build.release" value=""/>
         <property name="package.installem.work.rpmspec" value="etc/enterprisemanager/ssem.spec"/>
         <echo level="info">Using spec file : ${package.installem.work.rpmspec}</echo>
         <echo level="info">Using source TGZ: ${emtarball}</echo>
         <copy file="${emtarball}" tofile="${build.rpm}/SOURCES/ssem.tar.gz"/>
-        <copy file="${package.installem.work.rpmspec}" todir="${build.rpm}/SPECS"/>
+        <copy file="${package.installem.work.rpmspec}" todir="${build.rpm}/SPECS">
+            <filterchain>
+                <tokenfilter>
+                    <replaceregex pattern="(?&lt;=^Version: )[0-9\._\-a-z]{1,10}" replace="${build.em.rpmversion}" flags="m"/>
+                    <replaceregex pattern="(?&lt;=^Release: [0-9]{1,10})" replace="${build.release}" flags="m"/>
+                </tokenfilter>
+            </filterchain>
+        </copy>
 
         <rpm specFile="ssem.spec" topDir="${build.rpm}" command="-bb --target noarch" failOnError="true"/>
     </target>
