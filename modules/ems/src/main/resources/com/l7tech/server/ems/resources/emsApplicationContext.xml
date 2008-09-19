@@ -142,6 +142,7 @@
     <bean id="logRecordManager" class="com.l7tech.server.audit.LogRecordManager">
         <constructor-arg index="0"><null/></constructor-arg>
         <constructor-arg index="1" ref="logRecordRingBuffer"/>
+        <constructor-arg index="2"><null/></constructor-arg>
     </bean>
 
     <!-- server side log ring buffer -->

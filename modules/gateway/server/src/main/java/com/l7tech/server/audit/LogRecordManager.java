@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.logging.GenericLogAdmin;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.log.LogRecordRingBuffer;
+import com.l7tech.server.ServerConfig;
 
 import javax.security.auth.Subject;
 import java.net.ConnectException;
@@ -138,33 +139,40 @@ public class LogRecordManager {
                                                final long startOid,
                                                final int size) throws FindException {
         SSGLogRecord[] ssgLrs = null;
-        try {
-            ssgLrs = Subject.doAs(null, new PrivilegedExceptionAction<SSGLogRecord[]>(){
-                // It saves around 10ms if we don't serialize the subject (which we don't use).
-                public SSGLogRecord[] run() throws Exception {
-                    ClusterContext context = clusterContextFactory.buildClusterContext(clusterNodeInfo.getAddress(), clusterNodeInfo.getClusterPort() );
-                    GenericLogAdmin gla = context.getLogAdmin();
-                    return gla.getSystemLog(clusterNodeInfo.getNodeIdentifier(), -1, startOid, null, null, size);
+
+        if ( clusterContextFactory != null ) {
+            try {
+                ssgLrs = Subject.doAs(null, new PrivilegedExceptionAction<SSGLogRecord[]>(){
+                    // It saves around 10ms if we don't serialize the subject (which we don't use).
+                    public SSGLogRecord[] run() throws Exception {
+                        ClusterContext context = clusterContextFactory.buildClusterContext(clusterNodeInfo.getAddress(), getClusterPort() );
+                        GenericLogAdmin gla = context.getLogAdmin();
+                        return gla.getSystemLog(clusterNodeInfo.getNodeIdentifier(), -1, startOid, null, null, size);
+                    }
+                });
+            }
+            catch(PrivilegedActionException e) {
+                Throwable cause = e.getCause();
+                if(cause instanceof FindException) {
+                    throw (FindException) cause;
                 }
-            });
-        }
-        catch(PrivilegedActionException e) {
-            Throwable cause = e.getCause();
-            if(cause instanceof FindException) {
-                throw (FindException) cause;
+                if(ExceptionUtils.causedBy(cause, ConnectException.class)) {
+                    logger.log(Level.INFO, "Unable to connect to remote node '"+clusterNodeInfo.getNodeIdentifier()+"', for retrieval of logs.");
+                } else {
+                    logger.log(Level.WARNING, "Error during retrieval of logs from remote node '"+clusterNodeInfo.getNodeIdentifier()+"'", cause);
+                }
             }
-            if(ExceptionUtils.causedBy(cause, ConnectException.class)) {
-                logger.log(Level.INFO, "Unable to connect to remote node '"+clusterNodeInfo.getNodeIdentifier()+"', for retrieval of logs.");            
-            } else {
-                logger.log(Level.WARNING, "Error during retrieval of logs from remote node '"+clusterNodeInfo.getNodeIdentifier()+"'", cause);
+            catch(Exception e) {
+                logger.log(Level.WARNING, "Unexpected error during retrieval of logs from remote node '"+clusterNodeInfo.getNodeIdentifier()+"'", e);
             }
-        }
-        catch(Exception e) {
-            logger.log(Level.WARNING, "Unexpected error during retrieval of logs from remote node '"+clusterNodeInfo.getNodeIdentifier()+"'", e);
         }
 
         if(ssgLrs==null) ssgLrs = new SSGLogRecord[0];
 
         return ssgLrs;
+    }
+
+    private int getClusterPort() {
+        return ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_CLUSTER_PORT, 2124, 30000);
     }
 }
