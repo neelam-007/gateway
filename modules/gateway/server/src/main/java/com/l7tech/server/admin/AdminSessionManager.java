@@ -323,12 +323,12 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
                     for ( RoleAssignment assignment : adminRole.getRoleAssignments() ) {
                         if ( assignment.getProviderId()==internalProvider.getConfig().getOid() ) {
                             if ( EntityType.USER.getName().equals(assignment.getEntityType()) ) {
-                                InternalUser user = userManager.findByPrimaryKey( assignment.getId() );
+                                InternalUser user = userManager.findByPrimaryKey( assignment.getIdentityId() );
                                 if ( user != null && (user.getExpiration()<0 || user.getExpiration() < expiryMinTime)) {
                                     found = true;
                                     break;
                                 } else {
-                                    checkedUserOids.add( assignment.getId() );
+                                    checkedUserOids.add( assignment.getIdentityId() );
                                 }
                             }
                         }
@@ -339,7 +339,7 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
                         for ( RoleAssignment assignment : adminRole.getRoleAssignments() ) {
                             if ( assignment.getProviderId()==internalProvider.getConfig().getOid() ) {
                                 if ( EntityType.GROUP.getName().equals(assignment.getEntityType()) ) {
-                                    Set<IdentityHeader> users = groupManager.getUserHeaders( assignment.getId() );
+                                    Set<IdentityHeader> users = groupManager.getUserHeaders( assignment.getIdentityId() );
                                     for ( IdentityHeader userHeader : users ) {
                                         if ( checkedUserOids.contains( userHeader.getStrId() ) ) continue;
 
@@ -348,7 +348,7 @@ public class AdminSessionManager implements InitializingBean, RoleManagerIdentit
                                             found = true;
                                             break;
                                         } else {
-                                            checkedUserOids.add( assignment.getId() );
+                                            checkedUserOids.add( assignment.getIdentityId() );
                                         }
                                     }
                                 }
