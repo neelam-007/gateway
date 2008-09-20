@@ -81,8 +81,14 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
         return "com/l7tech/console/resources/folder.gif";
     }
 
+    @Override
+    public boolean accept(AbstractTreeNode node) {
+        // Can't drag into an Include (yet?)
+        return false;
+    }
+
     /**
-     * Allow the include policy node to receive an assertion node and add it below the include policy node.
+     * Allow the include policy node to add a new assertion node at the position below the include policy node.
      * This receive method is exactly same as the receive method of LeafAssertionTreeNode.
      * @param node: an assertion from the palette.
      * @return true if successfully receiving a node.

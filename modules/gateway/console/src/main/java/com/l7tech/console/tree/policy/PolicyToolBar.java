@@ -4,6 +4,7 @@ import com.l7tech.console.action.*;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
@@ -317,7 +318,14 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
             enableOrDisableButton.setEnabled(canUpdate);
         }
         if (validPNode) {
-            validPNode = lastAssertionNode == null || lastAssertionNode.accept(lastPaletteNode);
+            // Allow an include policy node to receive a new assertion at the position below the include policy node.
+            if (lastAssertionNode instanceof IncludeAssertionPolicyNode) {
+                // At this case, an include policy node should act like a leaf assertion node.
+                validPNode = (lastPaletteNode instanceof PolicyTemplateNode || lastAssertionNode.getParent() != null)
+                    && new SavePolicyAction(true).isAuthorized();
+            } else {
+                validPNode = lastAssertionNode == null || lastAssertionNode.accept(lastPaletteNode);
+            }
         }
         getAddAssertionAction().setEnabled(canUpdate && validPNode && validPolicyAssertionNode);
     }
