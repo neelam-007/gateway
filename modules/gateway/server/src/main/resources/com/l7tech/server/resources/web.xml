@@ -51,7 +51,7 @@
     </filter>
 
     <filter>
-        <filter-name>adminFilter</filter-name>
+        <filter-name>remotingFilter</filter-name>
         <filter-class>com.l7tech.gateway.common.spring.remoting.http.SecureHttpFilter</filter-class>
     </filter>
 
@@ -95,8 +95,13 @@
     </filter-mapping>
 
     <filter-mapping>
-        <filter-name>adminFilter</filter-name>
+        <filter-name>remotingFilter</filter-name>
         <url-pattern>/ssg/manager/*</url-pattern>
+    </filter-mapping>
+
+    <filter-mapping>
+        <filter-name>remotingFilter</filter-name>
+        <url-pattern>/ssg/cluster/*</url-pattern>
     </filter-mapping>
 
     <filter-mapping>

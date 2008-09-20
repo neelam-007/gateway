@@ -105,6 +105,9 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         OTHER_SERVLETS(POLICYDISCO, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY, BACKUP, HPSOAM),
 
         /** Process Controller Service Node API*/
+        PC_NODE_API,
+
+        /** Node to Node Remoting  */
         NODE_COMMUNICATION;
 
         private Endpoint[] enabledKids;

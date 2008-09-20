@@ -10,6 +10,7 @@ import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 
@@ -41,6 +42,7 @@ class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     private static final SsgKeyEntry NULL_ENTRY = new SsgKeyEntry(Long.MIN_VALUE, null, null, null);
 
     private final ServerConfig serverConfig;
+    private final AuditContext auditContext;
     private final ClusterPropertyManager clusterPropertyManager;
     private final SsgKeyStoreManager keyStoreManager;
 
@@ -48,8 +50,12 @@ class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     private final AtomicReference<SsgKeyEntry> cachedCaInfo = new AtomicReference<SsgKeyEntry>();
     private static final String SC_PROP_SSL_KEY = ServerConfig.PARAM_KEYSTORE_DEFAULT_SSL_KEY;
 
-    public DefaultKeyImpl(ServerConfig serverConfig, ClusterPropertyManager clusterPropertyManager, SsgKeyStoreManager keyStoreManager) {
+    public DefaultKeyImpl( final ServerConfig serverConfig,
+                           final AuditContext auditContext,
+                           final ClusterPropertyManager clusterPropertyManager,
+                           final SsgKeyStoreManager keyStoreManager) {
         this.serverConfig = serverConfig;
+        this.auditContext = auditContext;
         this.clusterPropertyManager = clusterPropertyManager;
         this.keyStoreManager = keyStoreManager;
     }
@@ -73,12 +79,18 @@ class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
 
     // There's currently no default SSL key designated.  Generate a new self-signed one to get us started.
     private SsgKeyEntry generateSelfSignedSslCert() throws IOException {
-        logger.log(Level.WARNING, "No default SSL private key is designated, or the designated SSL private key is not found; " +
+        logger.log(Level.INFO, "No default SSL private key is designated, or the designated SSL private key is not found; " +
                 "creating new self-signed SSL private key and certificate chain");
-        String alias = findUnusedAlias(SC_PROP_SSL_KEY, "SSL");
-        SsgKeyStore sks = findFirstMutableKeystore();
-        generateKeyPair(sks, alias);
-        return configureAsDefaultSslCert(sks, alias);
+        final boolean wasSystem = auditContext.isSystem();
+        auditContext.setSystem(true);
+        try {
+            String alias = findUnusedAlias(SC_PROP_SSL_KEY, "SSL");
+            SsgKeyStore sks = findFirstMutableKeystore();
+            generateKeyPair(sks, alias);
+            return configureAsDefaultSslCert(sks, alias);
+        } finally {
+            auditContext.setSystem(wasSystem);
+        }
     }
 
     private SsgKeyEntry configureAsDefaultSslCert(SsgKeyStore sks, String alias) throws IOException {

@@ -166,7 +166,7 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
      */
     @Override
     protected <OUT> Future<OUT> mutateKeystore(final Callable<OUT> mutator) throws KeyStoreException {
-        return mutationExecutor.submit(AdminInfo.find().wrapCallable(new Callable<OUT>() {
+        return submitMutation(AdminInfo.find(false).wrapCallable(new Callable<OUT>() {
             public OUT call() throws Exception {
 
                 final Object[] out = new Object[] { null };

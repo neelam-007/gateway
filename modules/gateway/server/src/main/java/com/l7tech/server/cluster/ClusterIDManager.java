@@ -73,8 +73,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
                 if (output != null) {
                     logger.config("Using server " + output.getName() +
                             " (Id:" + output.getNodeIdentifier() +
-                            ", Ip:" + output.getAddress() +
-                            ", Port:" + output.getClusterPort() + ")");
+                            ", Ip:" + output.getAddress() + ")");
                     selfId = output.getNodeIdentifier();
                     break;
                 }

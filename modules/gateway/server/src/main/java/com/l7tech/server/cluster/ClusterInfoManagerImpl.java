@@ -203,10 +203,9 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
 
             if ( !isInfoChecked() ) {
                 String newIpAddress = getIPAddress(); // Load of IP is used to track if info is checked
-                if (!isValidIPAddressAndClusterPort(clusterNodeInfo.getAddress(), clusterNodeInfo.getClusterPort())) {
+                if (!isValidIPAddress(clusterNodeInfo.getAddress())) {
                     int newClusterPort = getClusterPort();
                     clusterNodeInfo.setAddress(newIpAddress);
-                    clusterNodeInfo.setClusterPort(newClusterPort);
                     try {
                         updateSelfStatus(clusterNodeInfo);
                     } catch (UpdateException e) {
@@ -217,8 +216,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
 
                 logger.config( "Using server " + clusterNodeInfo.getName() +
                         " (Id:" + clusterNodeInfo.getNodeIdentifier() +
-                        ", Ip:" + clusterNodeInfo.getAddress() +
-                        ", Port:" + clusterNodeInfo.getClusterPort() + ")");
+                        ", Ip:" + clusterNodeInfo.getAddress() + ")");
             }
 
             return clusterNodeInfo;
@@ -288,7 +286,6 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         ClusterNodeInfo newClusterInfo = new ClusterNodeInfo();
         newClusterInfo.setAddress(getIPAddress());
         newClusterInfo.setNodeIdentifier(nodeid);
-        newClusterInfo.setClusterPort(getClusterPort());
         newClusterInfo.setMac(macid);
         // choose first available name
         String newnodename = null;
@@ -474,10 +471,10 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      *
      * Also check that if a system property is set it matches the given IP.
      */
-    private boolean isValidIPAddressAndClusterPort(final String address, final int clusterPort) {
+    private boolean isValidIPAddress(final String address) {
         boolean valid = true;
 
-        if (address == null || clusterPort <= 0) {
+        if (address == null) {
             valid = false;
         } else {
             InetAddress hostAddress = null;
@@ -502,11 +499,6 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
                     valid = false;
                     logger.log(Level.CONFIG, "Updating cluster IP address to match configuration '"+configuredIp+"' (was '"+address+"')");
                 }
-            }
-
-            if (clusterPort != getClusterPort()) {
-                logger.log(Level.WARNING, "Cluster port is invalid '"+clusterPort+"'.");
-                valid = false;
             }
         }
         return valid;

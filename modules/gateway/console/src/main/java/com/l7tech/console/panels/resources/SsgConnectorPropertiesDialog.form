@@ -3,7 +3,7 @@
   <grid id="cbd77" binding="contentPane" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="24" y="16" width="689" height="312"/>
+      <xy x="24" y="16" width="737" height="342"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -168,7 +168,7 @@
                   </component>
                 </children>
               </grid>
-              <grid id="c2eef" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+              <grid id="c2eef" layout-manager="GridLayoutManager" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="12" bottom="12" right="12"/>
                 <constraints>
                   <grid row="0" column="2" row-span="5" col-span="1" vsize-policy="3" hsize-policy="3" anchor="8" fill="2" indent="1" use-parent-layout="false"/>
@@ -214,6 +214,24 @@
                       <enabled value="true"/>
                       <selected value="true"/>
                       <text value="&amp;Browser-based administration "/>
+                    </properties>
+                  </component>
+                  <component id="5ecf1" class="javax.swing.JCheckBox" binding="cbEnableNode">
+                    <constraints>
+                      <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <selected value="true"/>
+                      <text value="Inter-Node &amp;Communication"/>
+                    </properties>
+                  </component>
+                  <component id="872b8" class="javax.swing.JCheckBox" binding="cbEnablePCAPI">
+                    <constraints>
+                      <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <selected value="true"/>
+                      <text value="Node Contro&amp;l"/>
                     </properties>
                   </component>
                 </children>

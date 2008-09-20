@@ -542,9 +542,11 @@
     <!-- keystore root cert and ssl config  -->
     <bean id="defaultKey" class="com.l7tech.server.DefaultKeyImpl">
         <constructor-arg index="0" ref="serverConfig"/>
-        <constructor-arg index="1" ref="clusterPropertyManager"/>
-        <constructor-arg index="2" ref="ssgKeyStoreManager"/>
+        <constructor-arg index="1" ref="auditContext"/>
+        <constructor-arg index="2" ref="clusterPropertyManager"/>
+        <constructor-arg index="3" ref="ssgKeyStoreManager"/>
     </bean>
+    <bean id="keystoreMutatorSwitch" class="com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore$StartupListener"/>
 
     <!-- TODO sslKeyEntry, sslKeystoreCertificate, and sslKeyManagers should be removed so the default SSL key can be changed without a restart -->
     <bean id="sslKeyEntry" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
@@ -900,6 +902,7 @@
 
     <bean id="httpTransportModule" class="com.l7tech.server.transport.http.HttpTransportModule" depends-on="systemAuditListener">
         <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="auditContext"/>
         <constructor-arg ref="masterPasswordManager"/>
         <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="ssgKeyStoreManager"/>

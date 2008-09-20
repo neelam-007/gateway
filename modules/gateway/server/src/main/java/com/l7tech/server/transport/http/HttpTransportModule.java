@@ -11,6 +11,7 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
@@ -83,6 +84,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     private final ServerConfig serverConfig;
+    private final AuditContext auditContext;
     private final MasterPasswordManager masterPasswordManager;
     private final SsgKeyStoreManager ssgKeyStoreManager;
     private final DefaultKey defaultKeyManager;
@@ -93,9 +95,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     private Host host;
     private StandardContext context;
     private StandardThreadExecutor executor;
-    private static final String NO_HTTPS_CONNECTORS_DEFINED = "No HTTP or HTTPS connectors are defined in database.  At least one HTTP connector is required.";
 
     public HttpTransportModule(ServerConfig serverConfig,
+                               AuditContext context,
                                MasterPasswordManager masterPasswordManager,
                                DefaultKey defaultKeyManager,
                                SsgKeyStoreManager ssgKeyStoreManager,
@@ -104,6 +106,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     {
         super("HTTP Transport Module", logger, GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager);
         this.serverConfig = serverConfig;
+        this.auditContext = context;
         this.masterPasswordManager = masterPasswordManager;
         this.defaultKeyManager = defaultKeyManager;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
@@ -340,7 +343,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     private void startInitialConnectors(boolean actuallyStartThem) throws ListenerException {
+        final boolean wasSystem = auditContext.isSystem();
         try {
+            auditContext.setSystem(true);
             Collection<SsgConnector> connectors = ssgConnectorManager.findAll();
             boolean foundHttp = false;
             for (SsgConnector connector : connectors) {
@@ -359,8 +364,12 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 createFallbackConnectors(actuallyStartThem);
             }
 
+            createRequiredConnectors(connectors, actuallyStartThem);
+
         } catch (FindException e) {
             throw new ListenerException("Unable to find initial connectors: " + ExceptionUtils.getMessage(e), e);
+        } finally {
+            auditContext.setSystem(wasSystem);
         }
     }
 
@@ -387,7 +396,35 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         return toAdd;
     }
 
+    /**
+     * Add any required connectors to the DB.
+     *
+     * @param actuallyStartThem if true, start each connector immediately after saving it.
+     * @return zero or more connectors that have already been saved to the database.  Never null or empty.
+     */
+    private Collection<SsgConnector> createRequiredConnectors(Collection<SsgConnector> currentConnectors, boolean actuallyStartThem) {
+        Collection<SsgConnector> toAdd = DefaultHttpConnectors.getRequiredConnectors(currentConnectors);
+        for (SsgConnector connector : toAdd) {
+            try {
+                ssgConnectorManager.save(connector);
+                if (actuallyStartThem) addConnector(connector);
+            } catch (SaveException e) {
+                logger.log(Level.WARNING, "Unable to save required connector to DB: " + ExceptionUtils.getMessage(e), e);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
+                            ": " + ExceptionUtils.getMessage(e), e);
+            }
+        }
+        return toAdd;
+    }
+
     protected void addConnector(SsgConnector connector) throws ListenerException {
+        if ( connector.getOid() == SsgConnector.DEFAULT_OID )
+            throw new ListenerException("Connector must be persistent.");
+        
+        if (isCurrent(connector.getOid(), connector.getVersion()))
+            return;
+
         synchronized (connectorCrudLuck) {
             removeConnector(connector.getOid());
             if (!connectorIsOwnedByThisModule(connector))
@@ -407,6 +444,20 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 logger.log(Level.WARNING, "HttpTransportModule is ignoring non-HTTP(S) connector with scheme " + scheme);
             }
         }
+    }
+
+    /**
+     *
+     */
+    private boolean isCurrent( long oid, int version ) {
+        boolean current;
+
+        synchronized (connectorCrudLuck) {
+            Pair<SsgConnector, Connector> entry = activeConnectors.get(oid);
+            current = entry != null && entry.left.getVersion()==version;
+        }
+
+        return current;
     }
 
     private Map<String, Object> asTomcatConnectorAttrs(SsgConnector c) throws ListenerException {
@@ -740,21 +791,21 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
         Long connectorOid = (Long)req.getAttribute(ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID);
         if (connectorOid == null) {
-            logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID, new Throwable());
+            logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID);
             return null;
         }
 
         Long htmId = (Long)req.getAttribute(ConnectionIdValve.ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID);
         HttpTransportModule htm = getInstance(htmId);
         if (htm == null) {
-            logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID, new Throwable());
+            logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID);
             return null;
         }
 
         Pair<SsgConnector, Connector> pair = htm.activeConnectors.get(connectorOid);
         if (pair == null) {
             logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID +
-                                      ": No active connector with oid " + connectorOid, new Throwable());
+                                      ": No active connector with oid " + connectorOid);
             return null;
         }
         return pair.left;

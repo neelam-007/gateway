@@ -28,6 +28,8 @@ import javax.xml.ws.handler.MessageContext;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /**
  * Implementation of the Service Node API used by the Process Controller.
@@ -74,10 +76,16 @@ public class NodeApiImpl implements NodeApi, ApplicationContextAware {
         final HttpServletRequest hsr = (HttpServletRequest)context.getMessageContext().get(MessageContext.SERVLET_REQUEST);
         if (hsr == null) throw new IllegalStateException("Request received outside of expected servlet context");
         try {
-            HttpTransportModule.requireEndpoint(hsr, SsgConnector.Endpoint.NODE_COMMUNICATION);
+            HttpTransportModule.requireEndpoint(hsr, SsgConnector.Endpoint.PC_NODE_API);
+
+            if ( !InetAddress.getByName(hsr.getLocalAddr()).isAnyLocalAddress() ) {
+                throw new IllegalStateException("Request denied for non-local address.");
+            }
         } catch (TransportModule.ListenerException e) {
             // TODO come up with a friendlier way to throw a SOAP fault here
             throw new IllegalStateException(e);
+        } catch (UnknownHostException uhe) {
+            throw new IllegalStateException("Request denied for non-local address.", uhe);
         }
     }
 

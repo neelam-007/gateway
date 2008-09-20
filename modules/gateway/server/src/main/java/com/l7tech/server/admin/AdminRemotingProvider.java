@@ -140,14 +140,23 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative> {
         }
 
         try {
-            // Verify invocation is by another node using cert auth.
+            // Verify invocation is by another node using cert auth and is permitted on the HTTP Connector.
             HttpServletRequest request = RemoteUtils.getHttpServletRequest();
-            if ( request == null ||
-                 request.getAttribute("javax.servlet.request.X509Certificate")==null ||
-                 CertUtils.certsAreEqual(defaultKey.getSslInfo().getCertificate(),
-                                         (X509Certificate)request.getAttribute("javax.servlet.request.X509Certificate")) ||
-                 !FACILITY_CLUSTER.equals(RemoteUtils.getFacility()) ) {
-                throw new AccessControlException("Only remote invocation of cluster methods is permitted.");
+            if ( request == null ) {
+                throw new AccessControlException("Cluster request disallowed: No request context available");
+            }
+
+            SsgConnector connector = HttpTransportModule.getConnector(request);
+            if (connector == null)
+                throw new AccessControlException("Cluster request disallowed: Unable to determine which connector this request came in on");
+
+            if (!connector.offersEndpoint(SsgConnector.Endpoint.NODE_COMMUNICATION))
+                throw new AccessControlException("Request not permitted on this port");
+
+            X509Certificate certificate = getCertificate(request);
+            if ( certificate==null ||
+                 !CertUtils.certsAreEqual(defaultKey.getSslInfo().getCertificate(),certificate) ) {
+                throw new AccessControlException("Cluster request disallowed; missing or invalid credentials.");
             }
 
             InetAddress remoteHost = InetAddress.getByName( RemoteUtils.getClientHost() );
@@ -180,4 +189,22 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative> {
         }
     }
 
+    /**
+     * Extract the certificate from the HTTP request 
+     */
+    private X509Certificate getCertificate( final HttpServletRequest request ) {
+        X509Certificate cert = null;
+
+        Object certObj = request.getAttribute("javax.servlet.request.X509Certificate");
+        if ( certObj instanceof X509Certificate ) {
+            cert = (X509Certificate) certObj;
+        } else if ( certObj instanceof X509Certificate[] ) {
+            X509Certificate[] certs = ( X509Certificate[]) certObj;
+            if ( certs.length > 0 ) {
+                cert = certs[0];
+            }
+        }
+
+        return cert;
+    }
 }

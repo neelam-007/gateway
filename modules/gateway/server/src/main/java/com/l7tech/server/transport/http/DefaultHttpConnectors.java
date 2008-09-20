@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 public class DefaultHttpConnectors {
     protected static final Logger logger = Logger.getLogger(DefaultHttpConnectors.class.getName());
     static final String defaultEndpoints = "MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS";
+    static final String defaultStrongCiphers = "TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_DSS_WITH_AES_128_CBC_SHA,TLS_DHE_DSS_WITH_AES_256_CBC_SHA";
 
     /**
      * Create connectors from server.xml if possible, or by creating some hardcoded defaults.
@@ -53,24 +54,44 @@ public class DefaultHttpConnectors {
         httpsNocc.setEnabled(true);
         ret.add(httpsNocc);
 
-        String portTxt = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_CLUSTER_PORT);
-        int port = 2124;
-        if ( portTxt != null ) {
-            try {
-                port = Integer.parseInt( portTxt.trim() );
-            } catch ( NumberFormatException nfe) {
-                // use default
+        return ret;
+    }
+
+    public static Collection<SsgConnector> getRequiredConnectors( final Collection<SsgConnector> existingConnectors ) {
+        List<SsgConnector> ret = new ArrayList<SsgConnector>();
+
+        if ( !connectorExists( existingConnectors, SsgConnector.Endpoint.NODE_COMMUNICATION ) ) {
+            int port = ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_CLUSTER_PORT, 2124, 30000);
+
+            SsgConnector nodeHttps = new SsgConnector();
+            nodeHttps.setName("Node HTTPS ("+port+")");
+            nodeHttps.setScheme(SsgConnector.SCHEME_HTTPS);
+            nodeHttps.setEndpoints(SsgConnector.Endpoint.NODE_COMMUNICATION.name() + "," + SsgConnector.Endpoint.PC_NODE_API.name());
+            nodeHttps.setPort(port);
+            nodeHttps.setKeyAlias("SSL");
+            nodeHttps.setSecure(true);
+            nodeHttps.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
+            nodeHttps.putProperty(SsgConnector.PROP_CIPHERLIST, defaultStrongCiphers);
+            nodeHttps.setEnabled(true);
+            ret.add(nodeHttps);
+        }
+
+        return ret;
+    }
+
+    /**
+     * Does any current connector have the given endpoint? (even if disabled)
+     */
+    private static boolean connectorExists( final Collection<SsgConnector> connectors, final SsgConnector.Endpoint endpoint ) {
+        boolean exists = false;
+
+        for ( SsgConnector connector: connectors ) {
+            if ( connector.offersEndpoint(endpoint) ) {
+                exists = true;
+                break;
             }
         }
 
-        SsgConnector nodeHttps = new SsgConnector();
-        nodeHttps.setName("Node HTTPS ("+port+")");
-        nodeHttps.setScheme(SsgConnector.SCHEME_HTTPS);
-        nodeHttps.setEndpoints(SsgConnector.Endpoint.NODE_COMMUNICATION.name());
-        nodeHttps.setPort(port);
-        nodeHttps.setEnabled(true);
-        ret.add(nodeHttps);
-
-        return ret;
+        return exists;
     }
 }

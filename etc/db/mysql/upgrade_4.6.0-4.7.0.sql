@@ -123,7 +123,7 @@ CREATE TABLE published_service_alias (
 ---
 --- All nodes are now assumed always to have access to the CA key
 ---
-ALTER TABLE cluster_info DROP COLUMN ismaster, DROP COLUMN partition_name;
+ALTER TABLE cluster_info DROP COLUMN ismaster, DROP COLUMN partition_name, DROP COLUMN cluster_port;
 
 --
 -- Table structure for table 'policy_alias'

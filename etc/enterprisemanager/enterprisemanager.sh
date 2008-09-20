@@ -28,7 +28,7 @@ function fail() {
 }
 
 #
-cd "${SSEM_HOME}" || fail "Directory not found: ${SSEM_HOME}" 
+cd "${SSEM_HOME}" &>/dev/null || fail 2 "Directory not found: ${SSEM_HOME}" 
 
 if [ -z "${EM_USER}" ] ; then
   "${JAVA_HOME}/bin/java" -jar EnterpriseManager.jar &>/dev/null <&- &

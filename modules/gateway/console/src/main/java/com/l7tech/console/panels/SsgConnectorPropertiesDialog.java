@@ -69,10 +69,12 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JTextField portRangeCountField;
     private javax.swing.JCheckBox enabledCheckBox;
     private JTabbedPane tabbedPane;
-    private javax.swing.JCheckBox cbEnableMessageInput;
-    private javax.swing.JCheckBox cbEnableBuiltinServices;
-    private javax.swing.JCheckBox cbEnableSsmRemote;
-    private javax.swing.JCheckBox cbEnableSsmApplet;
+    private JCheckBox cbEnableMessageInput;
+    private JCheckBox cbEnableBuiltinServices;
+    private JCheckBox cbEnableSsmRemote;
+    private JCheckBox cbEnableSsmApplet;
+    private JCheckBox cbEnableNode;
+    private JCheckBox cbEnablePCAPI;
     private JButton addPropertyButton;
     private JButton editPropertyButton;
     private JButton removePropertyButton;
@@ -170,6 +172,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         cbEnableMessageInput.addActionListener(stateSaver);
         cbEnableSsmApplet.addActionListener(stateSaver);
         cbEnableSsmRemote.addActionListener(stateSaver);
+        cbEnableNode.addActionListener(stateSaver);
+        cbEnablePCAPI.addActionListener(stateSaver);
 
         initializeInterfaceComboBox();
 
@@ -205,6 +209,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         });
         removePropertyButton.addActionListener(new ActionListener() {
+            @SuppressWarnings({"unchecked"})
             public void actionPerformed(ActionEvent e) {
                 // Check if the removing list contains the property name.  If so, don't add the property name.
                 Pair<String, String> property = (Pair<String, String>)propertyList.getSelectedValue();
@@ -274,7 +279,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                     cbEnableBuiltinServices.isSelected() ||
                     cbEnableMessageInput.isSelected() ||
                     cbEnableSsmApplet.isSelected() ||
-                    cbEnableSsmRemote.isSelected())
+                    cbEnableSsmRemote.isSelected() ||
+                    cbEnableNode.isSelected() ||
+                    cbEnablePCAPI.isSelected())
                 {
                     return null;
                 }
@@ -680,18 +687,19 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         if (ftp) {
             setEnableAndSelect(false, true, "Enabled because it is required for FTP", cbEnableMessageInput);
-            setEnableAndSelect(false, false, "Disabled because it requires HTTP or HTTPS", cbEnableBuiltinServices);
-            setEnableAndSelect(false, false, "Disabled because it requires HTTPS", cbEnableSsmApplet, cbEnableSsmRemote);
+            setEnableAndSelect(false, false, "Disabled because it requires HTTP or HTTPS", cbEnableBuiltinServices, cbEnablePCAPI);
+            setEnableAndSelect(false, false, "Disabled because it requires HTTPS", cbEnableSsmApplet, cbEnableSsmRemote, cbEnableNode);
         } else {
-            enableAndRestore(cbEnableMessageInput, cbEnableBuiltinServices);
+            enableAndRestore(cbEnableMessageInput, cbEnableBuiltinServices, cbEnablePCAPI);
             if (ssl) {
                 if (CA_REQUIRED.equals(clientAuthComboBox.getSelectedItem())) {
                     setEnableAndSelect(false, false, "Disabled because client certificate authentication is set to 'Required'", cbEnableSsmApplet, cbEnableSsmRemote);
                 } else {
                     enableAndRestore(cbEnableSsmApplet, cbEnableSsmRemote);
                 }
+                enableAndRestore(cbEnableNode);
             } else {
-                setEnableAndSelect(false, false, "Disabled because it requires HTTPS", cbEnableSsmApplet, cbEnableSsmRemote);
+                setEnableAndSelect(false, false, "Disabled because it requires HTTPS", cbEnableSsmApplet, cbEnableSsmRemote, cbEnableNode);
             }
         }
     }
@@ -740,6 +748,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         if (cbEnableSsmRemote.isSelected()) endpoints.add(Endpoint.ADMIN_REMOTE.name());
         if (cbEnableSsmApplet.isSelected()) endpoints.add(Endpoint.ADMIN_APPLET.name());
         if (cbEnableBuiltinServices.isSelected()) endpoints.add(Endpoint.OTHER_SERVLETS.name());
+        if (cbEnableNode.isSelected()) endpoints.add(Endpoint.NODE_COMMUNICATION.name());
+        if (cbEnablePCAPI.isSelected()) endpoints.add(Endpoint.PC_NODE_API.name());
 
         return TextUtils.join(",", endpoints.toArray(new String[endpoints.size()])).toString();
     }
@@ -758,6 +768,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         boolean ssmRemote = false;
         boolean ssmApplet = false;
         boolean builtin = false;
+        boolean node = false;
+        boolean pcapi = false;
 
         // Currently the GUI only has four checkboxes, so we'll try to behave sensibly if the endpoint
         // list has been customized in more detail than our GUI allows.
@@ -769,6 +781,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                     case MESSAGE_INPUT:     messages  = true;   break;
                     case ADMIN_REMOTE:      ssmRemote = true;   break;
                     case ADMIN_APPLET:      ssmApplet = true;   break;
+                    case NODE_COMMUNICATION: node     = true;   break;
+                    case PC_NODE_API:       pcapi     = true;   break;            
                     default:                builtin   = true;   break;
                 }
             } catch (IllegalArgumentException iae) {
@@ -780,6 +794,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         cbEnableSsmRemote.setSelected(ssmRemote);
         cbEnableSsmApplet.setSelected(ssmApplet);
         cbEnableBuiltinServices.setSelected(builtin);
+        cbEnableNode.setSelected(node);
+        cbEnablePCAPI.setSelected(pcapi);
     }
 
     /**
@@ -812,7 +828,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         clientAuthComboBox.setSelectedItem(ClientAuthType.bycode.get(connector.getClientAuth()));
         selectPrivateKey(connector.getKeystoreOid(), connector.getKeyAlias());
 
-        saveCheckBoxState(cbEnableBuiltinServices, cbEnableMessageInput, cbEnableSsmApplet, cbEnableSsmRemote);
+        saveCheckBoxState(cbEnableBuiltinServices, cbEnableMessageInput, cbEnableSsmApplet, cbEnableSsmRemote, cbEnableNode, cbEnablePCAPI);
 
         List<String> propNames = new ArrayList<String>(connector.getPropertyNames());
         // Don't show properties that are already exposed via specialized controls

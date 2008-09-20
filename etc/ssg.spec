@@ -140,6 +140,14 @@ if [ "$1" = "1" ] ; then
   chage -d 0   ssgconfig
 fi
 
+# If there is not a host.properties file present then
+# generate one with a random uuid. This is used by
+# process controller to identify the host.
+
+if [ -x /usr/bin/uuidgen ] && [ ! -f %{prefix}/Controller/etc/host.properties ] ; then
+    echo "host.id = $(uuidgen)" > %{prefix}/Controller/etc/host.properties
+fi
+
 %preun
 # Modifications to handle upgrades properly
 if [ "$1" = "0" ] ; then

@@ -28,7 +28,7 @@ function fail() {
 }
 
 #
-cd "${SSPC_HOME}" || fail "Directory not found: ${SSPC_HOME}"
+cd "${SSPC_HOME}" &>/dev/null || fail 2 "Directory not found: ${SSPC_HOME}"
 
 # Currently "java" is used to start gateway
 export PATH="${PATH}:${JAVA_HOME}/bin"

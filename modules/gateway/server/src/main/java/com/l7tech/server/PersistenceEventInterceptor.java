@@ -11,6 +11,7 @@ import com.l7tech.server.event.admin.*;
 import com.l7tech.server.identity.cert.CertEntryRow;
 import com.l7tech.server.service.resolution.ResolutionParameters;
 import com.l7tech.server.wsdm.subscription.Subscription;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
@@ -51,7 +52,7 @@ import java.util.logging.Logger;
 public class PersistenceEventInterceptor extends ApplicationObjectSupport implements Interceptor {
     private static Logger logger = Logger.getLogger(PersistenceEventInterceptor.class.getName());
 
-    public PersistenceEventInterceptor() {
+    public PersistenceEventInterceptor( final AuditContext context ) {
         ignoredClassNames = new HashSet<String>();
         ignoredClassNames.add(SSGLogRecord.class.getName());
         ignoredClassNames.add(ClusterNodeInfo.class.getName());
@@ -72,13 +73,15 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
 
         ignoredClassNames.add(MessageContextMappingKeys.class.getName());
         ignoredClassNames.add(MessageContextMappingValues.class.getName());
+
+        auditContext = context;
     }
 
     private final Set<String> ignoredClassNames;
+    private final AuditContext auditContext;
 
     private boolean ignored(Object entity) {
-        if (!(entity instanceof PersistentEntity)) return true;
-        return ignoredClassNames.contains(entity.getClass().getName());
+        return !(entity instanceof PersistentEntity) || auditContext.isSystem() || ignoredClassNames.contains(entity.getClass().getName());
     }
 
     /**

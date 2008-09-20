@@ -59,7 +59,7 @@ public class SecureHttpFilter implements Filter {
         final HttpServletRequest hsr = (HttpServletRequest) servletRequest;
 
         if (logger.isLoggable(Level.FINEST)) {
-            logger.log(Level.FINEST, "Admin access for URI '" + hsr.getRequestURI() + "'.");
+            logger.log(Level.FINEST, "Remoting access for URI '" + hsr.getRequestURI() + "'.");
         }
 
         // Create the subject to run as

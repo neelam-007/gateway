@@ -278,7 +278,6 @@ CREATE TABLE cluster_info (
   name varchar(128) NOT NULL,
   address varchar(16) NOT NULL,
   multicast_address varchar(16),
-  cluster_port integer NOT NULL,
   uptime bigint NOT NULL,
   avgload double NOT NULL,
   statustimestamp bigint NOT NULL,

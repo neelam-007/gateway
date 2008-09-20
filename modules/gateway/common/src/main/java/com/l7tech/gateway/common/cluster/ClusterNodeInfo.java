@@ -20,7 +20,7 @@ import java.io.Serializable;
  * User: flascell<br/>
  * Date: Dec 17, 2003<br/>
  * $Id$
- * 
+ *
  */
 @Entity
 @Table(name="cluster_info")
@@ -85,25 +85,6 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NamedEntity
      */
     public void setAddress(String address) {
         this.address = address;
-    }
-
-    /**
-     * Get the port for cluster rmi.
-     *
-     * @return The cluster rmi port.
-     */
-    @Column(name="cluster_port",nullable=false)
-    public int getClusterPort() {
-        return clusterPort;
-    }
-
-    /**
-     * Set the port for cluster rmi.
-     *
-     * @param clusterPort The cluster rmi port.
-     */
-    public void setClusterPort(int clusterPort) {
-        this.clusterPort = clusterPort;
     }
 
     /**
