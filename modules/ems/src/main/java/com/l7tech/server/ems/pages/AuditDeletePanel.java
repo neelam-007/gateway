@@ -1,13 +1,11 @@
 package com.l7tech.server.ems.pages;
 
-import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IObjectClassAwareModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.validation.validator.NumberValidator;
-import org.apache.wicket.ajax.AjaxRequestTarget;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -23,7 +21,7 @@ public class AuditDeletePanel extends Panel {
 
     //- PUBLIC
 
-    public AuditDeletePanel( final String id, final ModalWindow window ) {
+    public AuditDeletePanel( final String id ) {
         super(id);
         setOutputMarkupId(true);
 
@@ -36,10 +34,9 @@ public class AuditDeletePanel extends Panel {
         });
         minAgeTextField.add( new NumberValidator.RangeValidator(7, 365) );
 
-        OkCancelForm form = new OkCancelForm("audit.form", "feedback", "button.ok", "button.cancel", window){
+        Form form = new Form("audit.form"){
             @Override
-            protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form, final ModalWindow window ) {
-                super.onSubmit( ajaxRequestTarget, form, window );
+            protected void onSubmit() {
                 try {
                     auditRecordManager.deleteOldAuditRecords( TimeUnit.DAYS.toMillis(intHolder[0]) );
                 } catch ( DeleteException de ) {

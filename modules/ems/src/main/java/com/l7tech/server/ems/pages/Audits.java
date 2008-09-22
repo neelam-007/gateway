@@ -3,12 +3,12 @@ package com.l7tech.server.ems.pages;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
-import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
 import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.HiddenField;
@@ -47,8 +47,9 @@ public class Audits extends EmsPage {
     //- PUBLIC    
     
     public Audits() {
-        final ModalWindow modal = new ModalWindow("audit.modal");
-        modal.setCssClassName(ModalWindow.CSS_CLASS_GRAY);
+        final WebMarkupContainer auditHolder = new WebMarkupContainer("audit.holder");
+        auditHolder.add( new EmptyPanel("audit.holder.content") );
+        auditHolder.setOutputMarkupId(true);
 
         final Form pageForm = new Form("form");
         final WebMarkupContainer detailsContainer = new WebMarkupContainer("audit.details");
@@ -57,19 +58,32 @@ public class Audits extends EmsPage {
 
         Button downloadButton = new AjaxButton("downloadAuditsButton") {
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
-                AuditDownloadPanel download = new AuditDownloadPanel( modal.getContentId(), modal );
-                modal.setTitle( "Audit Download" );
-                modal.setContent( download );
-                modal.show( ajaxRequestTarget );
+                final Model downloadModel = new Model();
+                AuditDownloadPanel download = new AuditDownloadPanel( YuiDialog.getContentId(), downloadModel );
+                YuiDialog dialog = new YuiDialog("audit.holder.content", "Audit Download", YuiDialog.Style.OK_CANCEL, download, new YuiDialog.OkCancelCallback(){
+                    public boolean onAction(YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
+                        if ( button == YuiDialog.Button.OK ) {
+                            String url = (String)downloadModel.getObject();
+                            target.appendJavascript( "window.setTimeout(function() { window.location = '" + url + "'; }, 0)" );
+                        }
+                        return true;
+                    }
+                });
+                auditHolder.replace(dialog);
+                ajaxRequestTarget.addComponent(auditHolder);
             }
         };
 
         Button deleteButton = new AjaxButton("deleteAuditsButton") {
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
-                AuditDeletePanel delete = new AuditDeletePanel( modal.getContentId(), modal );
-                modal.setTitle( "Audit Deletion" );
-                modal.setContent( delete );
-                modal.show( ajaxRequestTarget );
+                AuditDeletePanel delete = new AuditDeletePanel( YuiDialog.getContentId() );
+                YuiDialog dialog = new YuiDialog("audit.holder.content", "Audit Deletion", YuiDialog.Style.OK_CANCEL, delete, new YuiDialog.OkCancelCallback(){
+                    public boolean onAction(YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
+                        return true;
+                    }
+                });
+                auditHolder.replace(dialog);
+                ajaxRequestTarget.addComponent(auditHolder);
             }
         };
 
@@ -126,8 +140,8 @@ public class Audits extends EmsPage {
         add( pageForm );
         add( auditSelectionForm );
         add( tableContainer );
-        add( modal );
         add( detailsContainer );
+        add( auditHolder );
     }
 
     //- PRIVATE
