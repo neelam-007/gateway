@@ -76,7 +76,9 @@
         <property name="schemaUpdate" value="true"/>
     </bean>
 
-    <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor"/>
+    <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor">
+        <constructor-arg index="0" ref="auditContext"/>
+    </bean>
 
     <bean id="managedBackgroundTimer" class="com.l7tech.server.util.ManagedTimer">
         <constructor-arg value="Background timer"/>
