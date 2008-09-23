@@ -1417,6 +1417,9 @@
     </target>
     <target name="package.defaultrpmversion" if="build.version" unless="build.rpmversion">
         <property name="build.rpmversion" value="${build.version}"/>        
+
+        <property name="build.em.rpmversion" value="${build.em.version.major}.${build.em.version.minor}.${build.em.version.subminor}"/>
+        <property name="build.em.version" value="${build.em.version.major}.${build.em.version.minor}.${build.em.version.subminor}${build.em.version.label}"/>
     </target>
 
     <!--
