@@ -2,6 +2,7 @@ package com.l7tech.skunkworks.jdbc;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.table.TableModel;
@@ -34,6 +35,7 @@ public class JDBCTool {
     private JEditorPane queryEditorPane;
     private JPanel mainPanel;
     private JButton updateButton;
+    private JLabel statusLabel;
 
     private static final String[] JDBC_DRIVER_NAMES = { "com.mysql.jdbc.Driver", "org.apache.derby.jdbc.EmbeddedDriver" };
 
@@ -91,8 +93,10 @@ public class JDBCTool {
             results = statement.executeQuery( queryEditorPane.getText() );
             queryTable.setModel( buildResultsModel( results ) );
             queryTable.setRowSorter( new TableRowSorter<DefaultTableModel>((DefaultTableModel)queryTable.getModel()) );            
+            statusLabel.setText("Query successful.");
         } catch ( Exception ex ) {
             logger.log( Level.WARNING, "Error processing query", ex );
+            statusLabel.setText( ExceptionUtils.getMessage(ex) );
         } finally {
             ResourceUtils.closeQuietly(results);
             ResourceUtils.closeQuietly(statement);
@@ -111,9 +115,11 @@ public class JDBCTool {
         try {
             conn = DriverManager.getConnection(url, username, password);
             statement = conn.createStatement();
-            statement.executeUpdate( queryEditorPane.getText() );
+            int count = statement.executeUpdate( queryEditorPane.getText() );
+            statusLabel.setText("Updated rows: " + count);
         } catch ( Exception ex ) {
             logger.log( Level.WARNING, "Error processing query", ex );
+            statusLabel.setText( ExceptionUtils.getMessage(ex) );
         } finally {
             ResourceUtils.closeQuietly(results);
             ResourceUtils.closeQuietly(statement);
