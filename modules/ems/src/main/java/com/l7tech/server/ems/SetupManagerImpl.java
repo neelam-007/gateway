@@ -28,6 +28,7 @@ import com.l7tech.util.ExceptionUtils;
 import static org.springframework.transaction.annotation.Propagation.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.core.io.Resource;
 
 import javax.security.auth.Subject;
 import javax.sql.DataSource;
@@ -38,6 +39,10 @@ import java.security.AccessController;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
+import java.sql.Statement;
+import java.io.StreamTokenizer;
+import java.io.InputStreamReader;
+import java.io.IOException;
 
 /**
  * Encapsulates behavior for initial setup of a new EMS instance.
@@ -164,7 +169,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
      *
      * @param dataSource The datasource to test
      */
-    public static void testDataSource( final DataSource dataSource ) {
+    public static void testDataSource( final DataSource dataSource, final Resource[] scripts ) {
         Connection connection = null;
 
         boolean created = true;
@@ -180,6 +185,10 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
                 
                 warning = warning.getNextWarning();
             }
+
+            if ( created ) {
+                runScripts( connection, scripts );
+            }            
         } catch ( SQLException se ) {
             throw new RuntimeException( "Could not connect to database.", se );
         } finally {
@@ -190,6 +199,50 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
             logger.config( "Created new database." );
         } else {
             logger.config( "Using existing database." );
+        }
+    }
+
+    private static void runScripts( final Connection connection, final Resource[] scripts ) throws SQLException {
+        for ( Resource scriptResource : scripts ) {
+            StreamTokenizer tokenizer;
+
+            try {
+                logger.config("Running DB create script '"+scriptResource.getDescription()+"'.");
+                tokenizer = new StreamTokenizer( new InputStreamReader(scriptResource.getInputStream(), "UTF-8") );
+                tokenizer.eolIsSignificant(false);
+                tokenizer.commentChar('-');
+                tokenizer.quoteChar('\'');
+                tokenizer.wordChars(16, 31);
+                tokenizer.wordChars(33, 44);
+                tokenizer.wordChars(46,126);
+
+                int token;
+                StringBuilder builder = new StringBuilder();
+                while( (token = tokenizer.nextToken()) != StreamTokenizer.TT_EOF ) {
+                    if ( token == StreamTokenizer.TT_WORD ) {
+                        if ( builder.length() > 0 ) {
+                            builder.append( " " );
+                        }
+                        builder.append( tokenizer.sval );
+                        if ( tokenizer.sval.endsWith(";") ) {
+                            builder.setLength( builder.length()-1 );
+                            String sql = builder.toString();
+                            builder.setLength( 0 );
+
+                            Statement statement = null;
+                            try {
+                                statement = connection.createStatement();
+                                statement.executeUpdate( sql );
+                            } finally {
+                                ResourceUtils.closeQuietly( statement );
+                            }
+                        }
+                    }
+                }
+
+            } catch (IOException ioe) {
+                logger.log( Level.WARNING, "Error processing DB script.", ioe );
+            }
         }
     }
 

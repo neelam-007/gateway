@@ -14,6 +14,9 @@ import java.util.logging.Level;
 import java.io.OutputStream;
 import java.io.IOException;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 /**
  * SystemAuditRecords are generated for system-level events that are not necessarily triggered by a particular
  * administrator or as a result of a client request.
@@ -22,6 +25,7 @@ import java.io.IOException;
  */
 @Entity
 @Table(name="audit_system")
+@OnDelete(action= OnDeleteAction.CASCADE)
 public class SystemAuditRecord extends AuditRecord {
     /** @deprecated to be called only for serialization and persistence purposes! */
     protected SystemAuditRecord() {

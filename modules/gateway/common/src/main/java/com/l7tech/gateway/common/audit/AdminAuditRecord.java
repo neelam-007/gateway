@@ -6,6 +6,9 @@
 
 package com.l7tech.gateway.common.audit;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import javax.persistence.Entity;
 import javax.persistence.Column;
 import javax.persistence.Table;
@@ -24,6 +27,7 @@ import java.io.IOException;
  */
 @Entity
 @Table(name="audit_admin")
+@OnDelete(action= OnDeleteAction.CASCADE)
 public class AdminAuditRecord extends AuditRecord {
     public static final char ACTION_CREATED = 'C';
     public static final char ACTION_UPDATED = 'U';

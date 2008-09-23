@@ -36,6 +36,9 @@
         <property name="arguments">
             <list>
                 <ref local="creationDataSource"/>
+                <list>
+                    <value>classpath:com/l7tech/server/ems/resources/db/audit.sql</value>
+                </list>
             </list>
         </property>
     </bean>
@@ -74,6 +77,16 @@
         <property name="hibernateProperties" value="hibernate.dialect=org.hibernate.dialect.DerbyDialect"/>
         <property name="entityInterceptor" ref="persistenceEventInterceptor"/>
         <property name="schemaUpdate" value="true"/>
+    </bean>
+
+    <bean id="schemaExport" class="com.l7tech.server.ems.EmsDbSchemaExport" init-method="init" depends-on="sessionFactory">
+        <constructor-arg index="0">
+           <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+                <property name="targetObject" ref="&amp;sessionFactory"/>
+                <property name="targetMethod" value="getConfiguration"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg index="1" value="var/db/ems.sql"/>
     </bean>
 
     <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor">

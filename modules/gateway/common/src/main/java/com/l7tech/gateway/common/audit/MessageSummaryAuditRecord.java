@@ -22,6 +22,8 @@ import java.io.OutputStream;
 import java.io.IOException;
 
 import org.hibernate.annotations.Type;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 /**
  * An {@link AuditRecord} that describes the processing of a single message.
@@ -36,6 +38,7 @@ import org.hibernate.annotations.Type;
  */
 @Entity
 @Table(name="audit_message")
+@OnDelete(action= OnDeleteAction.CASCADE)
 public class MessageSummaryAuditRecord extends AuditRecord {
     public static final String ATTR_SERVICE_OID = "serviceOid";
 

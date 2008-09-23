@@ -22,6 +22,8 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 /**
  * Abstract superclass of all of the different types of audit record.
@@ -139,7 +141,8 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
      */
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="auditRecord")
     @Fetch(FetchMode.SUBSELECT)
-    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
+    @Cascade({org.hibernate.annotations.CascadeType.DELETE_ORPHAN, org.hibernate.annotations.CascadeType.ALL})
+    @OnDelete(action=OnDeleteAction.CASCADE)    
     public Set<AuditDetail> getDetails() {
         return details;
     }
