@@ -12,6 +12,8 @@ import org.apache.wicket.markup.html.PackageResourceGuard;
 import org.apache.wicket.authorization.Action;
 import org.apache.wicket.authorization.IAuthorizationStrategy;
 import org.apache.wicket.protocol.http.WebApplication;
+import org.apache.wicket.protocol.http.WebRequestCycle;
+import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.settings.*;
 import org.apache.wicket.spring.injection.annot.SpringComponentInjector;
 import org.apache.wicket.util.lang.Bytes;
@@ -80,7 +82,7 @@ public class EmsApplication extends WebApplication {
 
         // show internal error page rather than default developer page
         IExceptionSettings exceptionSettings = getExceptionSettings();
-        exceptionSettings.setUnexpectedExceptionDisplay(IExceptionSettings.SHOW_INTERNAL_ERROR_PAGE);
+        exceptionSettings.setUnexpectedExceptionDisplay(IExceptionSettings.SHOW_EXCEPTION_PAGE);
 
         IResourceSettings resourceSettings = getResourceSettings();
         resourceSettings.setResourceStreamLocator(new ResourceLocator());
@@ -169,6 +171,16 @@ public class EmsApplication extends WebApplication {
         mountTemplate("/PolicyApproval.html");
         mountTemplate("/PolicySubmission.html");
         mountTemplate("/SubmissionReceived.html");
+    }
+
+    @Override
+    public RequestCycle newRequestCycle(Request request, Response response) {
+        return new WebRequestCycle( this, (WebRequest) request, response ){
+            @Override
+            public Page onRuntimeException(Page page, RuntimeException e) {
+                return new EmsError( e );
+            }
+        };
     }
 
     public static List<String> getDateFormatkeys() {

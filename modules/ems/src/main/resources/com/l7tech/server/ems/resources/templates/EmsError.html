@@ -117,8 +117,24 @@
             </div>
             <div class="content">
                 <wicket:extend>                
-                    <span style="font-size: 1in;">Error Page</span>
-                    <div wicket:id="feedback" class="center"/>
+                    <div class="panel">
+                        <div class="panelTitle"><wicket:message key="label.errorTitle">Error</wicket:message></div>
+                        <div class="panelContent">
+                            <span style="font-weight: bolder;"><wicket:message key="label.error">An internal error occurred.</wicket:message></span>
+                        </div>
+                    </div>
+                    
+                    <wicket:enclosure>
+                    <div class="panel">
+                        <div class="panelTitle"><wicket:message key="label.errorDetailTitle">Error</wicket:message></div>
+                        <div class="panelContent">
+                            <form>
+                                <textarea wicket:id="exception" rows="40" cols="180" wrap="off" readonly="readonly" style="width: 98%; height:70%; overflow: scroll; overflow-y: scroll; overflow-x: scroll;">
+                                </textarea>
+                            </form>
+                        </div>
+                    </div>
+                    </wicket:enclosure>
                 </wicket:extend>
             </div>
             <div class="statusBar">
