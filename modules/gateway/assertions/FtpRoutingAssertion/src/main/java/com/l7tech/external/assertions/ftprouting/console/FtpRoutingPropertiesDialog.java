@@ -6,6 +6,7 @@ package com.l7tech.external.assertions.ftprouting.console;
 
 import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gateway.common.transport.ftp.FtpTestException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.event.PolicyEvent;
@@ -67,6 +68,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
     private JButton _cancelButton;
     private JRadioButton wssRemoveRadioButton;
     private JRadioButton wssLeaveRadioButton;
+    private JLabel portStatusLabel;
 
     public static final int DEFAULT_PORT_FTP = 21;
     public static final int DEFAULT_PORT_FTPS_IMPLICIT = 990;
@@ -165,6 +167,12 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         });
 
         _portNumberTextField.setDocument(new NumberField(5));
+        _portNumberTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            public void run() {
+                enableOrDisableComponents();
+            }
+        }));
+
         _timeoutTextField.setDocument(new NumberField(6));
 
         final ActionListener filenameListener = new ActionListener() {
@@ -301,11 +309,31 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
                 && (!_useClientCertCheckBox.isSelected() || _clientCertsComboBox.getSelectedIndex() != -1);
         _testButton.setEnabled(canTest);
 
+        boolean portStatusLabelVisible = setPortStatusLabelVisibility();
+
         final boolean canOK = _hostNameTextField.getText().length() != 0
                 && !(_filenamePatternRadioButton.isSelected() && _filenamePatternTextField.getText().length() == 0)
                 && !(_credentialsSpecifyRadioButton.isSelected() && _userNameTextField.getText().length() == 0)
-                && (!_useClientCertCheckBox.isSelected() || _clientCertsComboBox.getSelectedIndex() != -1);
+                && (!_useClientCertCheckBox.isSelected() || _clientCertsComboBox.getSelectedIndex() != -1)
+                && (! portStatusLabelVisible);
         _okButton.setEnabled(!isReadOnly() && canOK);
+    }
+
+    /**
+     * Set the visibility of the port status label depending on if the port number is between 1 and 65535.
+     * @return true if the port numbere is valid, false otherwise.
+     */
+    private boolean setPortStatusLabelVisibility() {
+        boolean portStatusLabelVisible;
+        String portStr = _portNumberTextField.getText();
+        if ("".equals(portStr)) { // Since _portNumberTextField allows a blank.
+            portStatusLabelVisible = false;
+        } else {
+            int port = Integer.parseInt(portStr);
+            portStatusLabelVisible = (port <= 0) || (port > 65535);
+        }
+        portStatusLabel.setVisible(portStatusLabelVisible);
+        return portStatusLabelVisible;
     }
 
     public boolean isConfirmed() {
