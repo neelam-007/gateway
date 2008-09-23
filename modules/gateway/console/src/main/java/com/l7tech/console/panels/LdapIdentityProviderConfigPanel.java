@@ -202,7 +202,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                                                             null, null,
                                                             "ldap://host:port");
                 DefaultComboBoxModel model = (DefaultComboBoxModel)getLdapHostList().getModel();
-                if (newUrl != null) {
+                if (newUrl != null && !newUrl.trim().isEmpty()) {
                     if (model.getIndexOf(newUrl) < 0) {
                         model.insertElementAt(newUrl, model.getSize());
                     }
@@ -210,6 +210,29 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
             }
         });
         return addButt;
+    }
+
+    private JButton getEditButton() {
+        if (editButt != null) return editButt;
+        editButt = new JButton("Edit");
+        editButt.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int selected = getLdapHostList().getSelectedIndex();
+                if (selected < 0) return;
+                DefaultComboBoxModel model = (DefaultComboBoxModel)getLdapHostList().getModel();
+                String currentUrl = (String)model.getElementAt(selected);
+                String newUrl = (String)JOptionPane.showInputDialog(editButt, "Change the LDAP URL:", "Edit LDAP Host URL",
+                                                                    JOptionPane.PLAIN_MESSAGE, null, null, currentUrl);
+                if (newUrl != null && !newUrl.trim().isEmpty()) {
+                    // Check if the modified url exists in the list.
+                    if (model.getIndexOf(newUrl) < 0) {
+                        model.removeElementAt(selected);
+                        model.insertElementAt(newUrl, selected);
+                    }
+                }
+            }
+        });
+        return editButt;
     }
 
     private JButton getRemoveButton() {
@@ -329,9 +352,10 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         return typePanel;
     }
 
-    private JPanel getAddRemoveButtons() {
+    private JPanel getAddEditRemoveButtons() {
         JPanel output = new JPanel(new BorderLayout());
         output.add(getAddButton(), BorderLayout.WEST);
+        output.add(getEditButton(), BorderLayout.CENTER);
         output.add(getRemoveButton(), BorderLayout.EAST);
         return output;
     }
@@ -407,7 +431,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.SOUTHWEST;
         constraints.insets = new Insets(0, 7, 0, 0);
-        configPanel.add(getAddRemoveButtons(), constraints);
+        configPanel.add(getAddEditRemoveButtons(), constraints);
 
         // search base label
         JLabel ldapSearchBaseLabel = new JLabel();
@@ -787,6 +811,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private JPanel typePanel = null;
     private JList ldapUrlList = null;
     private JButton addButt;
+    private JButton editButt;
     private JButton removeButt;
     private JButton upbutton;
     private JButton downbutton;
