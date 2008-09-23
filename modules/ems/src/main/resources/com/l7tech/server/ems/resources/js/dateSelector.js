@@ -60,6 +60,7 @@ function initDateSelector( inputId, buttonId, calContainerId, calBodyId ) {
             }
         }
 
+        dialog.align("tl", "bl");
         dialog.show();
         if (YAHOO.env.ua.opera && document.documentElement) {
             document.documentElement.className += "";
