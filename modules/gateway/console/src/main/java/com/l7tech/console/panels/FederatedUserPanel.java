@@ -17,6 +17,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.common.io.CertUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,6 +27,7 @@ import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.security.cert.X509Certificate;
 import java.util.NoSuchElementException;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,8 +38,9 @@ import java.util.logging.Logger;
  * @version 1.1
  */
 public class FederatedUserPanel extends UserPanel {
-    static Logger log = Logger.getLogger(FederatedUserPanel.class.getName());
-    final static String USER_ICON_RESOURCE = "com/l7tech/console/resources/user16.png";
+    private static final Logger log = Logger.getLogger(FederatedUserPanel.class.getName());
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.NewUserDialog");
+    private static final String USER_ICON_RESOURCE = "com/l7tech/console/resources/user16.png";
 
     private JLabel nameLabel;
 
@@ -707,6 +710,20 @@ public class FederatedUserPanel extends UserPanel {
      * @return boolean indicating if the form fields are valid or not.
      */
     private boolean validateForm() {
+        String dn = getX509SubjectNameTextField().getText();
+        if ( dn != null && dn.trim().length() > 0 && !CertUtils.isValidDN(dn)) {
+            String message = CertUtils.getDNValidationMessage(dn);
+            if ( message == null ) {
+                message = "";
+            } else {
+                message = "\n" + message;
+            }
+            return JOptionPane.showConfirmDialog(this,
+                            resources.getString("x509SubjectDNTextField.warning.invalid") + message,
+                            resources.getString("x509SubjectDNTextField.warning.title"),
+                            JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION;
+        }
+
         return true;
     }
 

@@ -13,6 +13,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.identity.fed.NoTrustedCertsSaveException;
 import com.l7tech.objectmodel.*;
+import com.l7tech.common.io.CertUtils;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -95,8 +96,7 @@ public class NewVirtualGroupDialog extends JDialog {
         groupNameTextField.setDocument(new FilterDocument(128,
                         new FilterDocument.Filter() {
                             public boolean accept(String str) {
-                                if (str == null) return false;
-                                return true;
+                                return str != null;
                             }
                         }));
 
@@ -181,8 +181,8 @@ public class NewVirtualGroupDialog extends JDialog {
     private void fireEventGroupAdded(EntityHeader header) {
        EntityEvent event = new EntityEvent(this, header);
        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
-        for (int i = 0; i< listeners.length; i++) {
-            ((EntityListener)listeners[i]).entityAdded(event);
+        for (EventListener listener : listeners) {
+            ((EntityListener) listener).entityAdded(event);
         }
     }
 
@@ -192,12 +192,27 @@ public class NewVirtualGroupDialog extends JDialog {
      * @return true validated, false othwerwise
      */
     private boolean validateInput() {
-         if(groupNameTextField.getText().length() < 3) {
-                   JOptionPane.showMessageDialog(this, resources.getString("groupIdTextField.error.empty"),
-                                   resources.getString("groupIdTextField.error.title"),
-                                   JOptionPane.ERROR_MESSAGE);
-                   return false;
-               }
+        if(groupNameTextField.getText().length() < 3) {
+            JOptionPane.showMessageDialog(this, resources.getString("groupIdTextField.error.empty"),
+                           resources.getString("groupIdTextField.error.title"),
+                           JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        String dn = x509DNPatternTextField.getText();
+        if ( dn != null && dn.trim().length() > 0 && !CertUtils.isValidDN(dn)) {
+            String message = CertUtils.getDNValidationMessage(dn);
+            if ( message == null ) {
+                message = "";
+            } else {
+                message = "\n" + message;
+            }
+            return JOptionPane.showConfirmDialog(this,
+                            resources.getString("x509DNPatternTextField.warning.invalid") + message,
+                            resources.getString("x509DNPatternTextField.warning.title"),
+                            JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION;
+        }
+
          return true;
     }
 

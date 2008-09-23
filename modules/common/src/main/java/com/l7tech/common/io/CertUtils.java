@@ -9,6 +9,7 @@ import org.apache.harmony.security.asn1.ASN1Integer;
 import org.apache.harmony.security.asn1.ASN1Sequence;
 import org.apache.harmony.security.asn1.ASN1Type;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
@@ -59,6 +60,21 @@ public class CertUtils {
     public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
     public static final String X509_OID_AUTHORITYKEYID = "2.5.29.35";
     public static final String X509_OID_AUTHORITY_INFORMATION_ACCESS = "1.3.6.1.5.5.7.1.1";
+
+    private static final Map<String,String> DN_MAP;
+    static {
+        Map<String,String> map = new HashMap<String,String>();
+        map.put("2.5.4.12", "T");
+        map.put("1.3.6.1.4.1.42.2.11.2.1", "IP");
+        map.put("2.5.4.46", "DNQ");
+        map.put("2.5.4.4", "SURNAME");
+        map.put("2.5.4.42", "GIVENNAME");
+        map.put("2.5.4.43", "INITIALS");
+        map.put("2.5.4.44", "GENERATION");
+        map.put("1.2.840.113549.1.9.1", "EMAILADDRESS");
+        map.put("2.5.4.5", "SERIALNUMBER");
+        DN_MAP = Collections.unmodifiableMap(map);
+    }
 
     private static final String REGEX_BASE64 = "\\s*([a-zA-Z0-9+/\\s]+=*)\\s*";
     private static final Pattern PATTERN_BASE64 = Pattern.compile(REGEX_BASE64);
@@ -552,6 +568,69 @@ public class CertUtils {
         } catch (CertificateNotYetValidException e) {
             return false;
         }
+    }
+
+    /**
+     * Check that the DN contains only known attribute names.
+     *
+     * @param dn The DN to check
+     * @return True if valid
+     */
+    public static boolean isValidDN( final String dn ) {
+        boolean valid = false;
+
+        try {
+            X500Principal princ = new X500Principal(dn);
+            String formattedDn = princ.getName(X500Principal.RFC2253);
+
+            Set<String> rawDNSet = dnToAttributeMap(dn).keySet();
+            Set<String> formattedDNSet = new HashSet<String>(dnToAttributeMap(formattedDn).keySet());
+            for ( Map.Entry<String,String> entry : DN_MAP.entrySet() ) {
+                if ( formattedDNSet.contains(entry.getKey()) ) {
+                    formattedDNSet.remove(entry.getKey());
+                    formattedDNSet.add(entry.getValue());
+                }                
+            }
+
+            valid = rawDNSet.equals(formattedDNSet);
+        } catch (IllegalArgumentException iae) {
+            // invalid
+        }
+
+        return valid;
+    }
+
+    /**
+     * Get the validation message if the DN does not contain only known attribute names.
+     *
+     * @param dn The DN to check
+     * @return The message or null if valid
+     */
+    public static String getDNValidationMessage( final String dn ) {
+        String message = null;
+
+        try {
+            X500Principal princ = new X500Principal(dn);
+            String formattedDn = princ.getName(X500Principal.RFC2253);
+
+            Set<String> rawDNSet = dnToAttributeMap(dn).keySet();
+            Set<String> formattedDNSet = dnToAttributeMap(formattedDn).keySet();
+            for ( Map.Entry<String,String> entry : DN_MAP.entrySet() ) {
+                if ( formattedDNSet.contains(entry.getKey()) ) {
+                    formattedDNSet.remove(entry.getKey());
+                    formattedDNSet.add(entry.getValue());
+                }
+            }
+
+            rawDNSet.removeAll(formattedDNSet);
+            if ( !rawDNSet.isEmpty() ) {
+                message = "Unrecognized DN components " + rawDNSet; 
+            }
+        } catch (IllegalArgumentException iae) {
+            message = "Illegal DN: '" + ExceptionUtils.getMessage(iae) + "'";
+        }
+
+        return message;
     }
 
     /**

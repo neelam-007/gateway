@@ -202,7 +202,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                                                             null, null,
                                                             "ldap://host:port");
                 DefaultComboBoxModel model = (DefaultComboBoxModel)getLdapHostList().getModel();
-                if (newUrl != null && !newUrl.trim().isEmpty()) {
+                if (newUrl != null && newUrl.trim().length()>0) {
                     if (model.getIndexOf(newUrl) < 0) {
                         model.insertElementAt(newUrl, model.getSize());
                     }
@@ -223,7 +223,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 String currentUrl = (String)model.getElementAt(selected);
                 String newUrl = (String)JOptionPane.showInputDialog(editButt, "Change the LDAP URL:", "Edit LDAP Host URL",
                                                                     JOptionPane.PLAIN_MESSAGE, null, null, currentUrl);
-                if (newUrl != null && !newUrl.trim().isEmpty()) {
+                if (newUrl != null && newUrl.trim().length()>0) {
                     // Check if the modified url exists in the list.
                     if (model.getIndexOf(newUrl) < 0) {
                         model.removeElementAt(selected);

@@ -494,7 +494,7 @@ public abstract class GroupPanel<GT extends Group> extends EntityEditorPanel {
      *
      * @return boolean indicating if the form fields are valid or not.
      */
-    private boolean validateForm() {
+    protected boolean validateForm() {
         return true;
     }
 

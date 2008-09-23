@@ -19,6 +19,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.common.io.CertUtils;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -46,8 +47,6 @@ public class NewFederatedUserDialog extends JDialog {
     private static int USER_NAME_UPDATED_WITH_LOGIN = 1;
     private static int USER_NAME_UPDATED_WITH_EMAIL = 2;
     private JPanel mainPanel;
-    private JLabel loginLabel;
-    private JLabel emailLabel;
     private JTextField userNameTextField;
     private JTextField x509SubjectDNTextField;
     private JTextField loginTextField;
@@ -138,8 +137,7 @@ public class NewFederatedUserDialog extends JDialog {
         x509SubjectDNTextField.setDocument(new FilterDocument(255,
                         new FilterDocument.Filter() {
                             public boolean accept(String str) {
-                                if (str == null) return false;
-                                return true;
+                                return str != null;
                             }
                         }));
         x509SubjectDNTextField.getDocument().putProperty("name", "x509DN");
@@ -149,8 +147,7 @@ public class NewFederatedUserDialog extends JDialog {
         emailTextField.setDocument(new FilterDocument(128,
                         new FilterDocument.Filter() {
                             public boolean accept(String str) {
-                                if (str == null) return false;
-                                return true;
+                                return str != null;
                             }
                         }));
         emailTextField.getDocument().putProperty("name", "email");
@@ -168,11 +165,7 @@ public class NewFederatedUserDialog extends JDialog {
              * that need to occur when an item is selected (or deselected).
              */
             public void itemStateChanged(ItemEvent e) {
-                if (e.getStateChange() == ItemEvent.SELECTED) {
-                    createThenEdit = true;
-                } else {
-                    createThenEdit = false;
-                }
+                createThenEdit = e.getStateChange() == ItemEvent.SELECTED;
             }
         });
     }
@@ -239,12 +232,25 @@ public class NewFederatedUserDialog extends JDialog {
      * @return true if the input data are valid. false otherwise.
      */
     private boolean validateInput() {
-
         if(userNameTextField.getText().length() < 3) {
             JOptionPane.showMessageDialog(this, resources.getString("idTextField.error.empty"),
                             resources.getString("idTextField.error.title"),
                             JOptionPane.ERROR_MESSAGE);
             return false;
+        }
+
+        String dn = x509SubjectDNTextField.getText();
+        if ( dn != null && dn.trim().length() > 0 && !CertUtils.isValidDN(dn)) {
+            String message = CertUtils.getDNValidationMessage(dn);
+            if ( message == null ) {
+                message = "";
+            } else {
+                message = "\n" + message;
+            }
+            return JOptionPane.showConfirmDialog(this,
+                            resources.getString("x509SubjectDNTextField.warning.invalid") + message,
+                            resources.getString("x509SubjectDNTextField.warning.title"),
+                            JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION;
         }
 
         return true;
@@ -310,8 +316,8 @@ public class NewFederatedUserDialog extends JDialog {
     private void fireEventUserAdded(EntityHeader header) {
         EntityEvent event = new EntityEvent(this, header);
         EventListener[] listeners = listenerList.getListeners(EntityListener.class);
-        for (int i = 0; i < listeners.length; i++) {
-            ((EntityListener) listeners[i]).entityAdded(event);
+        for (EventListener listener : listeners) {
+            ((EntityListener) listener).entityAdded(event);
         }
     }
 
@@ -422,7 +428,7 @@ public class NewFederatedUserDialog extends JDialog {
         if (email == null)
             throw new IllegalArgumentException("Email is NULL");
 
-        int index = -1;
+        int index;
         if ((index = email.indexOf('@')) > 0) {
             return email.substring(0, index);
         } else {
@@ -445,8 +451,8 @@ public class NewFederatedUserDialog extends JDialog {
         String cn = "";
         int index1 = dn.indexOf("cn=");
         int index2 = dn.indexOf("CN=");
-        int startIndex = -1;
-        int endIndex = -1;
+        int startIndex;
+        int endIndex;
 
         if (index1 >= 0) {
             startIndex = index1 + 3;

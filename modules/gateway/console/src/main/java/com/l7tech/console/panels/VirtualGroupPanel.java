@@ -8,12 +8,14 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.common.io.CertUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.Collections;
 import java.util.Set;
-import java.util.logging.Logger;
+import java.util.ResourceBundle;
 
 /**
  * VirtualGroupPanel is the main entry point for Virtual Group Properties dialog.
@@ -23,15 +25,15 @@ import java.util.logging.Logger;
  */
 public class VirtualGroupPanel extends GroupPanel<VirtualGroup> {
 
-    static Logger log = Logger.getLogger(VirtualGroupPanel.class.getName());
-
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.NewVirtualGroupDialog");
+    
     private JPanel detailsPanel;
     private VirtualGroupDetailsPanel virtualGroupDetailsPanel = null;
     private VirtualGroupMembershipPanel virtualGroupMembershipPanel = null;
 
-    private Set emptyMembers = Collections.EMPTY_SET;
+    private Set<IdentityHeader> emptyMembers = Collections.emptySet();
 
-    Set getGroupMembers() {
+    Set<IdentityHeader> getGroupMembers() {
         return emptyMembers;
     }
 
@@ -136,6 +138,24 @@ public class VirtualGroupPanel extends GroupPanel<VirtualGroup> {
         setModified(false);
     }
 
+    @Override
+    protected boolean validateForm() {
+        String dn = virtualGroupDetailsPanel.getX509SubjectDNTextField().getText();
+        if ( dn != null && dn.trim().length() > 0 && !CertUtils.isValidDN(dn)) {
+            String message = CertUtils.getDNValidationMessage(dn);
+            if ( message == null ) {
+                message = "";
+            } else {
+                message = "\n" + message;
+            }
+            return JOptionPane.showConfirmDialog(this,
+                            resources.getString("x509DNPatternTextField.warning.invalid") + message,
+                            resources.getString("x509DNPatternTextField.warning.title"),
+                            JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION;
+        }
+
+        return true;
+    }
 
     /**
      * Collect changes from the form into the group instance.
