@@ -1,6 +1,7 @@
 package com.l7tech.server.ems.pages;
 
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.WebPage;
 import com.l7tech.util.SyspropUtil;
 
 import java.io.PrintWriter;
@@ -9,7 +10,7 @@ import java.io.StringWriter;
 /**
  * Error page
  */
-public class EmsError extends EmsPage {
+public class EmsError extends WebPage {
 
     //- PUBLIC
 

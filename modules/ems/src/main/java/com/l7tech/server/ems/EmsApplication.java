@@ -114,7 +114,8 @@ public class EmsApplication extends WebApplication {
                 if (logger.isLoggable(Level.FINER))
                     logger.finer("Instantiation authorized check for component : " +aClass);
 
-                return Login.class.equals(aClass) ||
+                return EmsError.class.equals(aClass) ||
+                       Login.class.equals(aClass) ||
                        Setup.class.equals(aClass) ||
                        !Page.class.isAssignableFrom(aClass) ||
                        EmsSecurityManagerImpl.isAuthenticated();
@@ -123,7 +124,8 @@ public class EmsApplication extends WebApplication {
             public boolean isActionAuthorized(Component component, Action action) {
                 if (logger.isLoggable(Level.FINER))
                     logger.finer("Action authorized check for component : " + component.getId() + ", " + action.getName());
-                return component.getPage() instanceof Login ||
+                return component.getPage() instanceof EmsError ||
+                       component.getPage() instanceof Login ||
                        component.getPage() instanceof Setup ||
                        EmsSecurityManagerImpl.isAuthenticated();
             }
