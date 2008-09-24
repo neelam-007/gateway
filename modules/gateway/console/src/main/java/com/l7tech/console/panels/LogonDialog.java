@@ -569,14 +569,14 @@ public class LogonDialog extends JDialog {
         dialog.setResizable(false);
         dialog.setSize(300, 275);
         dialog.pack();
-        Utilities.centerOnScreen(dialog);
+        Utilities.centerOnParentWindow(dialog);
         dialog.setVisible(true);
     }
 
     private static LogonInProgressDialog buildLogonInProgressDialog(Frame parent, String url) {
         LogonInProgressDialog ld = new LogonInProgressDialog(parent, url);
         ld.pack();
-        Utilities.centerOnScreen(ld);
+        Utilities.centerOnParentWindow(ld);
         return ld;
     }
 
