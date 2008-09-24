@@ -380,6 +380,26 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     }
 
     /**
+     * Get the name for the identity provider.
+     *
+     * @return The name or "Unknown" if not found or an error occurs.
+     */
+    protected String getIdentityProviderName( final long oid ) {
+        String name = "Unknown";
+
+        try {
+            IdentityProvider provider = identityProviderFactory.getProvider(oid);
+            if (provider != null) {
+                name = provider.getConfig().getName();
+            }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Error finding identity provider.", e);
+        }
+
+        return name;
+    }
+
+    /**
      * Decides whether a policy should be downloadable without providing credentials. This will return true if the
      * service described by this policy could be consumed anonymouly.
      */

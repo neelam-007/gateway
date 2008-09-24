@@ -505,6 +505,7 @@
     <!-- server side client cert manager -->
     <bean id="clientCertManager" class="com.l7tech.server.identity.cert.ClientCertManagerImp">
         <constructor-arg ref="defaultKey"/>
+        <constructor-arg ref="auditContext"/>
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
@@ -696,6 +697,7 @@
     <bean id="gatewaySanityChecker" class="com.l7tech.server.util.GatewaySanityChecker">
         <constructor-arg ref="transactionManager"/>
         <constructor-arg ref="clusterPropertyManager"/>
+        <constructor-arg ref="auditContext"/>
         <property name="earlyTasks">
             <list>
                 <bean class="com.l7tech.server.security.keystore.DefaultKeystoreFilePopulator">

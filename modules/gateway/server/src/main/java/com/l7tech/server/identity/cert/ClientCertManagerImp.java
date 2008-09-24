@@ -7,6 +7,7 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.DefaultKey;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.HexUtils;
 import org.hibernate.HibernateException;
@@ -45,9 +46,11 @@ import java.util.logging.Logger;
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class ClientCertManagerImp extends HibernateDaoSupport implements ClientCertManager {
     private final DefaultKey defaultKey;
+    private final AuditContext context;
 
-    public ClientCertManagerImp(DefaultKey defaultKey) {
+    public ClientCertManagerImp(DefaultKey defaultKey, AuditContext context) {
         this.defaultKey = defaultKey;
+        this.context = context;
     }
 
     @Transactional(propagation=Propagation.SUPPORTS)
@@ -248,22 +251,31 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     public void forbidCertReset(User user) throws UpdateException {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("forbidCertReset for " + getName(user));
-        CertEntryRow currentdata = getFromTable(user);
-        if (currentdata != null) {
-            currentdata.setResetCounter(10);
-            try {
-                // update existing data
-                getHibernateTemplate().update(currentdata);
-            } catch (HibernateException e) {
-                String msg = "Hibernate exception updating cert info";
-                logger.log(Level.WARNING, msg, e);
-                throw new UpdateException(msg, e);
+        boolean wasSystem = context.isSystem();
+        context.setSystem(true);
+        try {
+            CertEntryRow currentdata = getFromTable(user);
+            if (currentdata != null) {
+                if ( currentdata.getResetCounter() != 10 ) {
+                    currentdata.setResetCounter(10);
+                    try {
+                        // update existing data
+                        getHibernateTemplate().update(currentdata);
+                        getHibernateTemplate().flush();
+                    } catch (HibernateException e) {
+                        String msg = "Hibernate exception updating cert info";
+                        logger.log(Level.WARNING, msg, e);
+                        throw new UpdateException(msg, e);
+                    }
+                }
+            } else {
+                // this should not happen
+                String msg = "there was no existing cert for " + getName(user);
+                logger.warning(msg);
+                throw new UpdateException(msg);
             }
-        } else {
-            // this should not happen
-            String msg = "there was no existing cert for " + getName(user);
-            logger.warning(msg);
-            throw new UpdateException(msg);
+        } finally {
+            context.setSystem(wasSystem);
         }
     }
 

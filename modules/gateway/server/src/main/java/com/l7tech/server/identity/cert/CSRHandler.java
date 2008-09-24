@@ -16,6 +16,8 @@ import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.event.system.CertificateSigningServiceEvent;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.transport.TransportModule;
 
@@ -49,6 +51,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         defaultKey = (DefaultKey)getApplicationContext().getBean("defaultKey", DefaultKey.class);
+        auditContext = (AuditContext)getApplicationContext().getBean("auditContext", AuditContext.class);
     }
 
     protected String getFeature() {
@@ -144,16 +147,24 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         }
 
         // record new cert
+        boolean wasSystem = auditContext.isSystem();
+        auditContext.setSystem(true);
         try {
             clientCertManager.recordNewUserCert(authenticatedUser, cert, authResult.isCertSignedByStaleCA());
-            logger.info("Issued new cert for user " + authenticatedUser.toString());
+            String message = buildIssuedMessage(authenticatedUser);
+            getApplicationContext().publishEvent(new CertificateSigningServiceEvent(this, Level.INFO 
+                                                , request.getRemoteAddr()
+                                                , message, authenticatedUser.getProviderId()
+                                                , getName(authenticatedUser), authenticatedUser.getId()));
         } catch (UpdateException e) {
             String msg = "Could not record cert. " + e.getMessage();
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
             logger.log(Level.SEVERE, msg, e);
             return;
+        } finally {
+            auditContext.setSystem(wasSystem);
         }
-
+        
         // send cert back
         try {
             byte[] certbytes = cert.getEncoded();
@@ -168,6 +179,25 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
             logger.log(Level.SEVERE, e.getMessage(), e);
         }
+    }
+
+    private String buildIssuedMessage( User user ) {                 
+        StringBuilder message = new StringBuilder();
+        message.append("Issued certificate for user ");
+        message.append(getName(user));
+        message.append(" (#");
+        message.append(user.getId());
+        message.append("), ");
+        message.append(getIdentityProviderName(user.getProviderId()));
+        message.append(" (#");
+        message.append(user.getProviderId());
+        message.append(")");
+
+        return message.toString();
+    }
+
+    private String getName(User user) {
+        return user.getLogin()!=null ? user.getLogin() : user.getId();
     }
 
     private byte[] readCSRFromRequest(HttpServletRequest request) throws IOException {
@@ -197,6 +227,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
     }
 
     private DefaultKey defaultKey;
+    private AuditContext auditContext;
 
     public static final String AUTH_HEADER_NAME = "Authorization";
     public static final String ROUTED_FROM_PEER = "Routed-From-Peer";

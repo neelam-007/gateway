@@ -6,6 +6,7 @@ package com.l7tech.server.util;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.gateway.common.audit.BootMessages;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.objectmodel.DeleteException;
@@ -62,15 +63,18 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
 
     private final ClusterPropertyManager clusterPropertyManager;
     private final PlatformTransactionManager transactionManager; // required for TransactionTemplate
+    private final AuditContext auditContext;
     private Auditor auditor;
     private List<ClusterProperty> taskProps;
     private UpgradeTask[] earlyTasks;
 
     public GatewaySanityChecker(PlatformTransactionManager transactionManager,
-                                ClusterPropertyManager clusterPropertyManager)
+                                ClusterPropertyManager clusterPropertyManager,
+                                AuditContext auditContext)
     {
         this.transactionManager = transactionManager;
         this.clusterPropertyManager = clusterPropertyManager;
+        this.auditContext = auditContext;
         if (clusterPropertyManager == null) throw new NullPointerException("Cluster Property Manager is required");
     }
 
@@ -213,6 +217,8 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
         final NonfatalUpgradeException[] enonfatal = new NonfatalUpgradeException[] { null };
         final FatalUpgradeException[] efatal = new FatalUpgradeException[] { null };
 
+        boolean wasSystem = auditContext.isSystem();
+        auditContext.setSystem(true);
         try {
             new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
                 protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
@@ -249,6 +255,8 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
             }
 
             // Yes -- FALLTHROUGH and handle it
+        } finally {
+            auditContext.setSystem(wasSystem);
         }
 
         // Handle upgrade-failed-but-continue-anyway result
