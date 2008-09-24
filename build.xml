@@ -778,7 +778,7 @@
             <param name="idea.gateway.vmOptions" expression="-Dcom.l7tech.server.home=&quot;${deploy.dir}&quot; -Dcom.l7tech.util.buildVersion=${build.version}"/>
             <param name="idea.client.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.version}"/>
             <param name="idea.manager.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.version}"/>
-            <param name="idea.ems.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.em.version}"/>
+            <param name="idea.ems.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.em.version} -Dcom.l7tech.ems.outputDbScript=overwrite -Dcom.l7tech.ems.showExceptions=true"/>
         </xslt>
         <move file="UneasyRooster.iws.tmp" tofile="UneasyRooster.iws" overwrite="true"/>
         <echo level="info">Generation complete.</echo>
