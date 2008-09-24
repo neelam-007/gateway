@@ -333,7 +333,6 @@ public class AuditDownloadManager implements ApplicationContextAware  {
 
                 final int num = n.bytesRead;
                 if (n.eof) {
-                    producerThread.interrupt();
                     producerThread.join(5000);
                     checkForException();
                     if (num == 0) return null;
