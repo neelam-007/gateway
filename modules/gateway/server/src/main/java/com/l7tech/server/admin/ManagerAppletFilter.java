@@ -144,6 +144,15 @@ public class ManagerAppletFilter implements Filter {
         int status = 500;
         boolean passed = false;
         try {
+            // Check if there is a ADMIN_APPLET permission.
+            SsgConnector connector = HttpTransportModule.getConnector(hreq);
+            if (connector == null || !connector.offersEndpoint(SsgConnector.Endpoint.ADMIN_APPLET)) {
+                auditor.logAndAudit(ServiceMessages.APPLET_AUTH_PORT_NOT_ALLOWED);
+                hresp.setStatus(status = 403);
+                hresp.sendError(403, "Admin applet requests not permitted on this port.");
+                return;
+            }
+            
             Message request = new Message();
             request.initialize(fakeDoc);
             request.attachHttpRequestKnob(new HttpServletRequestKnob(hreq));
@@ -181,14 +190,6 @@ public class ManagerAppletFilter implements Filter {
                 return;
             }
 
-            SsgConnector connector = HttpTransportModule.getConnector(hreq);
-            if (connector == null || !connector.offersEndpoint(SsgConnector.Endpoint.ADMIN_APPLET)) {
-                auditor.logAndAudit(ServiceMessages.APPLET_AUTH_NO_SSL);
-                hresp.setStatus(status = 404);
-                hresp.sendError(404, "Service not enabled on this port.");
-                return;
-            }
-
             passed = true;
 
             // Note that the user is authenticated before this is run
@@ -222,7 +223,7 @@ public class ManagerAppletFilter implements Filter {
                 Level level = Level.FINE;
                 String message = "Admin applet request";
                 if (!passed) {
-                    message = "Applet applet request filter failed: status = " + status;
+                    message = "Applet request filter failed: status = " + status;
                     level = Level.WARNING;
                 }
                 User user = (User)hreq.getAttribute(PROP_USER);
