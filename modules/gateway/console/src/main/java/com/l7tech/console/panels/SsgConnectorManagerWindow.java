@@ -106,6 +106,8 @@ public class SsgConnectorManagerWindow extends JDialog {
 
         conflictLabel.setText(" ");
 
+        Utilities.setDoubleClickAction(connectorTable, propertiesButton);
+
         loadConnectors();
         pack();
         enableOrDisableButtons();

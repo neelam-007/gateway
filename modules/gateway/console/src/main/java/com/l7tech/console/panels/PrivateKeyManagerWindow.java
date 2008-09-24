@@ -171,6 +171,8 @@ public class PrivateKeyManagerWindow extends JDialog {
             mutableKeystore = null;
         }
 
+        Utilities.setDoubleClickAction(keyTable, propertiesButton);
+
         loadPrivateKeys();
     }
 
