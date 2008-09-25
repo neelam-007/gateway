@@ -15,6 +15,7 @@ public class YuiCommon {
     static final ResourceReference RES_CSS_SAM_CONTAINER = new CompressedResourceReference(YuiCommon.class, "../resources/yui/container/assets/skins/sam/container.css" );
 
     static final ResourceReference RES_JS_DOM_EVENT = new CompressedResourceReference(YuiCommon.class, "../resources/yui/yahoo-dom-event/yahoo-dom-event.js" );
+    static final ResourceReference RES_JS_ANIMATION = new CompressedResourceReference(YuiCommon.class, "../resources/yui/animation/animation-min.js" );
     static final ResourceReference RES_JS_CONTAINER = new CompressedResourceReference(YuiCommon.class, "../resources/yui/container/container-min.js" );
     static final ResourceReference RES_JS_ELEMENT = new CompressedResourceReference(YuiCommon.class, "../resources/yui/element/element-beta-min.js" );
     static final ResourceReference RES_JS_BUTTON = new CompressedResourceReference(YuiCommon.class, "../resources/yui/button/button-min.js" );

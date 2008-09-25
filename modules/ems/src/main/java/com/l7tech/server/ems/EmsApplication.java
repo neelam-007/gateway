@@ -14,6 +14,7 @@ import org.apache.wicket.authorization.IAuthorizationStrategy;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.http.WebRequestCycle;
 import org.apache.wicket.protocol.http.WebRequest;
+import org.apache.wicket.protocol.http.PageExpiredException;
 import org.apache.wicket.settings.*;
 import org.apache.wicket.spring.injection.annot.SpringComponentInjector;
 import org.apache.wicket.util.lang.Bytes;
@@ -180,6 +181,10 @@ public class EmsApplication extends WebApplication {
         return new WebRequestCycle( this, (WebRequest) request, response ){
             @Override
             public Page onRuntimeException(Page page, RuntimeException e) {
+                if ( e instanceof PageExpiredException ) {
+                    return super.onRuntimeException(page, e);
+                }
+                
                 return new EmsError( e );
             }
         };

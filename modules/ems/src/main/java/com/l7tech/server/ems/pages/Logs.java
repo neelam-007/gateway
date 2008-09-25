@@ -37,23 +37,19 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 public class Logs extends EmsPage {
 
     public Logs() {
-        final ModalWindow modal = new ModalWindow("log.modal");
-        modal.setCssClassName(ModalWindow.CSS_CLASS_GRAY);
-
         final Form pageForm = new Form("form");
         add ( pageForm );
 
+        final WebMarkupContainer detailsContainer = new WebMarkupContainer("log.details");
         Button viewButton = new AjaxButton("viewLogButton") {
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
                 String logIdentifier = (String)form.get("logId").getModel().getObject();
                 if ( logIdentifier != null && logIdentifier.length() > 0 ) {
                     File file = getLogFile(logIdentifier);
                     if ( file != null ) {
-                        LogDetailPanel details = new LogDetailPanel(modal.getContentId(), file, modal);
-
-                        modal.setTitle( new StringResourceModel("page.Logs.label", this, null).getString() + " : " + logIdentifier);
-                        modal.setContent(details);
-                        modal.show(ajaxRequestTarget);
+                        detailsContainer.removeAll();
+                        detailsContainer.add( new LogDetailPanel("details", file) );
+                        ajaxRequestTarget.addComponent(detailsContainer);
                     }
                 }
             }
@@ -86,10 +82,8 @@ public class Logs extends EmsPage {
         YuiDataTable table = new YuiDataTable("logtable", columns, "name", true,  new LogDataProvider(), hidden, "name", false, new Button[]{ viewButton, downloadButton });
         pageForm.add( table );
 
-        final WebMarkupContainer detailsContainer = new WebMarkupContainer("log.details");
         detailsContainer.add( new WebMarkupContainer("details") );
 
-        add(modal);
         add(detailsContainer.setOutputMarkupId(true));
     }
 
