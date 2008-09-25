@@ -129,6 +129,7 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
   echo 'console' > /etc/securetty
   echo 'tty1'   >> /etc/securetty
   echo 'ttyS0'  >> /etc/securetty
+  echo 'ttyS1'  >> /etc/securetty
 
   # GEN001880
   if [ -e /home/ssgconfig/.bash_logout ]; then
@@ -579,7 +580,7 @@ if [ ! "`stat --format=%a /root`" = "700" ] ; then
 fi
 
 # GEN000980
-if [ "`cat /etc/securetty | grep -v console | grep -v tty1 | grep -v ttyS0`" ] ; then
+if [ "`cat /etc/securetty | grep -v console | grep -v tty1 | grep -v ttyS0 | grep -v ttyS1`" ] ; then
 	echo "Error - extra lines in /etc/securetty"
 fi
 
