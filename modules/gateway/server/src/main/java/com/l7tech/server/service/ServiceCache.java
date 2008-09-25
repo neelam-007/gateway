@@ -41,6 +41,9 @@ import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.*;
+import org.springframework.jmx.export.annotation.ManagedOperation;
+import org.springframework.jmx.export.annotation.ManagedResource;
+import org.springframework.jmx.export.annotation.ManagedAttribute;
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -155,6 +158,7 @@ public class ServiceCache
         this.notifyResolvers = allResolvers;
     }
 
+    @ManagedOperation(description="Check Cache Integrity")
     public synchronized void initiateIntegrityCheckProcess() {
         if (!running) {
             final ServiceCache tasker = this;
@@ -1048,6 +1052,65 @@ public class ServiceCache
         return decorated;
     }
 
+    /**
+     * 
+     */
+    @ManagedResource(description="Service Cache", objectName="l7tech:type=ServiceCache")
+    public static class ManagedServiceCache {
+        private final ServiceCache cache;
 
+        protected ManagedServiceCache( final ServiceCache serviceCache ) {
+            this.cache = serviceCache;
+        }
 
+        @ManagedAttribute(description="Cache Size", currencyTimeLimit=30)
+        public int getSize() {
+            return cache.size();
+        }
+
+        /**
+         * Get the identifiers for cached services.
+         *
+         * @return the cached services
+         */
+        @ManagedAttribute(description="Cached Services", currencyTimeLimit=30)
+        public Set<Long> getServices() {
+            cache.rwlock.readLock().lock();
+            try {
+                return new TreeSet<Long>(cache.services.keySet());
+            } finally {
+               cache.rwlock.readLock().unlock();
+            }
+        }
+
+        /**
+         * Get the identifiers for services with errors.
+         *
+         * @return the services with errors
+         */
+        @ManagedAttribute(description="Services With Errors", currencyTimeLimit=30)
+        public Set<Long> getServicesWithErrors() {
+            cache.rwlock.readLock().lock();
+            try {
+                return new TreeSet<Long>(cache.servicesThatAreThrowing.keySet());
+            } finally {
+                cache.rwlock.readLock().unlock();
+            }
+        }
+
+        /**
+         * Get the identifiers for services that are disabled.
+         *
+         * @return the disatbled services
+         */
+        @ManagedAttribute(description="Disabled Services", currencyTimeLimit=30)
+        public Set<Long> getDisabledServices() {
+            cache.rwlock.readLock().lock();
+            try {
+                return new TreeSet<Long>(cache.servicesThatAreDisabled);
+            } finally {
+                cache.rwlock.readLock().unlock();
+            }
+        }
+    }
 }

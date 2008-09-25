@@ -18,7 +18,10 @@ import org.jboss.cache.transaction.DummyTransactionManager;
 import org.jboss.cache.transaction.DummyUserTransaction;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.jmx.export.annotation.ManagedAttribute;
+import org.springframework.jmx.export.annotation.ManagedResource;
 import org.hibernate.Session;
+import org.jgroups.stack.IpAddress;
 
 import javax.transaction.NotSupportedException;
 import javax.transaction.SystemException;
@@ -42,6 +45,7 @@ import java.util.logging.Logger;
  * @author mike
  * @version $Revision$
  */
+@ManagedResource(description="JGroups Distributed Cache", objectName="l7tech:type=JGroups")
 public class DistributedMessageIdManager extends HibernateDaoSupport implements MessageIdManager {
     /**
      * Initialize the service using the specified multicast IP address and port
@@ -82,6 +86,26 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
         initialized = true;
     }
 
+    @ManagedAttribute(description="Group Members", currencyTimeLimit=30)
+    public List<String> getMemberIpAddresses() {
+        List<String> addresses = new ArrayList<String>();
+
+        List members;
+        Vector memberVector = tree.getMembers();
+        synchronized (memberVector) {
+            //noinspection unchecked
+            members = new ArrayList(memberVector);
+        }
+        for (Object member : members) {
+            if (member instanceof IpAddress) {
+                IpAddress memberAddress = (IpAddress) member;
+                addresses.add(memberAddress.getIpAddress().getHostAddress());
+            }
+        }
+
+        return Collections.unmodifiableList(addresses);
+    }
+    
     /**
      * A {@link TimerTask} that periodically purges expired message IDs from the distributed cache and database.
      */

@@ -2,16 +2,22 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:tx="http://www.springframework.org/schema/tx"
        xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation= "http://www.springframework.org/schema/beans
-                            http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+                            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
                             http://www.springframework.org/schema/aop
-                            http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+                            http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
                             http://www.springframework.org/schema/tx
-                            http://www.springframework.org/schema/tx/spring-tx-2.0.xsd">
+                            http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+                            http://www.springframework.org/schema/context
+                            http://www.springframework.org/schema/context/spring-context-2.5.xsd">
 
     <!-- enable automatic proxy generation for any class or superclass annotated with @Transactional -->
     <tx:annotation-driven/>
+
+    <!-- export beans to JMX -->
+    <context:mbean-export/>
 
     <bean id="systemProperties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE"/>
@@ -45,6 +51,10 @@
 
     <bean id="dataSource" class="org.apache.derby.jdbc.EmbeddedDataSource40" depends-on="createDB">
         <property name="databaseName" value="var/db/emsdb"/>
+    </bean>
+
+    <bean id="dataSourceExplorer" class="com.l7tech.server.util.DataSourceExplorer">
+        <constructor-arg ref="dataSource"/>
     </bean>
 
     <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">

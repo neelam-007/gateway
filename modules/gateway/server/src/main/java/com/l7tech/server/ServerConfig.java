@@ -9,6 +9,7 @@ import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyListener;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ResourceUtils;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -21,11 +22,16 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.springframework.jmx.export.annotation.ManagedResource;
+import org.springframework.jmx.export.annotation.ManagedOperation;
+import org.springframework.jmx.export.annotation.ManagedAttribute;
 
 /**
  * Provides cached access to Gateway global configuration items, including (once the
@@ -730,6 +736,33 @@ public class ServerConfig implements ClusterPropertyListener {
         return true;
     }
 
+    @ManagedResource(description="Server config", objectName="l7tech:type=ServerConfig")
+    public static class ManagedServerConfig {
+        final ServerConfig serverConfig;
+
+        protected ManagedServerConfig( final ServerConfig serverConfig ) {
+            this.serverConfig = serverConfig;    
+        }
+
+        @ManagedOperation(description="Get Property Value")
+        public String getProperty( final String name ) {
+            return serverConfig.getProperty( name );            
+        }
+
+        @ManagedAttribute(description="Property Names", currencyTimeLimit=30)
+        public Set<String> getPropertyNames(){
+            Set<String> names;
+            serverConfig.propLock.readLock().lock();
+            try {
+                names = new TreeSet<String>(serverConfig._properties.stringPropertyNames());
+            } finally {
+                serverConfig.propLock.readLock().unlock();
+            }
+            return names;
+        }
+
+    }
+
     //- PRIVATE
 
     private static final String NO_CACHE_BY_DEFAULT = "com.l7tech.server.ServerConfig.suppressCacheByDefault";
@@ -777,6 +810,7 @@ public class ServerConfig implements ClusterPropertyListener {
             if (propStream != null)
                 try {
                     propStream.close();
+                    propStream = null;
                 } catch (IOException e) {
                     logger.log(Level.WARNING, "Couldn't close properties file", e);
                 }
@@ -803,7 +837,7 @@ public class ServerConfig implements ClusterPropertyListener {
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Error loading serverconfig_override.properties; continuing with no overrides", e);
         } finally {
-            if (propStream != null) try{ propStream.close(); }catch(IOException ioe){ /* ok */ }
+            ResourceUtils.closeQuietly( propStream );
         }
 
         // export as system property. This is required so custom assertions

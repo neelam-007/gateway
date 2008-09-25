@@ -39,6 +39,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.jmx.export.annotation.ManagedResource;
+import org.springframework.jmx.export.annotation.ManagedOperation;
+import org.springframework.jmx.export.annotation.ManagedAttribute;
 
 import java.io.IOException;
 import java.io.Closeable;
@@ -70,6 +73,7 @@ import java.util.logging.Logger;
  * @see ServerPolicyMetadata
  * @see PolicyCacheEvent
  */
+@ManagedResource(description="Policy Cache", objectName="l7tech:type=PolicyCache")
 public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, ApplicationListener {
 
     //- PUBLIC
@@ -311,6 +315,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     /**
      *
      */
+    @ManagedOperation(description="Rebuild Policy Cache")
     public void initializePolicyCache() {
         logAndAudit( MessageProcessingMessages.POLICY_CACHE_BUILD );
 
@@ -398,6 +403,51 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                     initializePolicyCache();
                 }
             });
+        }
+    }
+
+    /**
+     * Get the cache size.
+     *
+     * @return the number of services currently cached
+     */
+    @ManagedAttribute(description="Cache Size", currencyTimeLimit=30)
+    public int getSize() {
+        lock.readLock().lock();
+        try {
+            return policyCache.size();
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Get the identifiers for cached policies.
+     *
+     * @return the cached policies
+     */
+    @ManagedAttribute(description="Cached Policies", currencyTimeLimit=30)
+    public Set<Long> getPolicies() {
+        lock.readLock().lock();
+        try {
+            return new TreeSet<Long>(policyCache.keySet());
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Get the identifiers for unlicensed policies.
+     *
+     * @return the policies that are unlicensed
+     */
+    @ManagedAttribute(description="Unlicensed Policies", currencyTimeLimit=30)
+    public Set<Long> getUnlicensedPolicies() {
+        lock.readLock().lock();
+        try {
+            return new TreeSet<Long>(policiesThatAreUnlicensed);
+        } finally {
+            lock.readLock().unlock();
         }
     }
 

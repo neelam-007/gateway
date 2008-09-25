@@ -7,12 +7,17 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.jmx.export.annotation.ManagedResource;
+import org.springframework.jmx.export.annotation.ManagedAttribute;
+import org.springframework.jmx.export.annotation.ManagedOperation;
 
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.objectmodel.FindException;
@@ -22,10 +27,9 @@ import com.l7tech.gateway.common.cluster.ImmutableClusterProperty;
 /**
  * Caching for ClusterProperties
  *
- * TODO add support for property max age
- *
  * @author Steve Jones
  */
+@ManagedResource(description="Cluster Property Cache", objectName="l7tech:type=ClusterPropertyCache")
 public class ClusterPropertyCache implements ApplicationListener {
 
     //- PUBLIC
@@ -55,7 +59,7 @@ public class ClusterPropertyCache implements ApplicationListener {
 
         try {
             Collection<ClusterProperty> props = clusterPropertyManager.findAll();
-            Map<String,ClusterProperty> clusterProperties = new HashMap(props.size());
+            Map<String,ClusterProperty> clusterProperties = new HashMap<String,ClusterProperty>(props.size());
             for(ClusterProperty prop : props) {
                 if (prop.getName() != null)
                     clusterProperties.put(prop.getName(), new ImmutableClusterProperty(prop));
@@ -110,13 +114,13 @@ public class ClusterPropertyCache implements ApplicationListener {
                     Map<String,ClusterProperty> currentProps = clusterPropertyCacheRef.get();
                     Map<String,ClusterProperty> updatedProps;
                     if (currentProps == null) {
-                        updatedProps = new HashMap();
+                        updatedProps = new HashMap<String,ClusterProperty>();
                     } else {
-                        updatedProps = new HashMap(currentProps);
+                        updatedProps = new HashMap<String,ClusterProperty>(currentProps);
                     }
 
-                    List<ClusterProperty[]> updatedList = new ArrayList();
-                    List<ClusterProperty> deletedList = new ArrayList();
+                    List<ClusterProperty[]> updatedList = new ArrayList<ClusterProperty[]>();
+                    List<ClusterProperty> deletedList = new ArrayList<ClusterProperty>();
                     for (long oid : updatedOids) {
                         try {
                             ClusterProperty updated = cpm.findByPrimaryKey(oid);
@@ -157,6 +161,7 @@ public class ClusterPropertyCache implements ApplicationListener {
     /**
      *
      */
+    @SuppressWarnings({"UnusedDeclaration"})
     public ClusterProperty getCachedEntityByName(final String name, final int maxAge) {
         ClusterProperty clusterProperty = null;
 
@@ -167,12 +172,42 @@ public class ClusterPropertyCache implements ApplicationListener {
         return clusterProperty;
     }
 
+    /**
+     *
+     */
+    @ManagedOperation(description="Get Property Value")
+    public String getPropertyValue( final String name ) {
+        String value = null;
+
+        ClusterProperty clusterProperty = getCachedEntityByName( name, 10000 );
+        if ( clusterProperty != null ) {
+            value = clusterProperty.getValue();
+        }
+
+        return value;
+    }
+
+    /**
+     *
+     */
+    @ManagedAttribute(description="Cached Property Names", currencyTimeLimit=30)
+    public Set<String> getPropertyNames() {
+        Set<String> names = new TreeSet<String>();
+
+        Map<String,ClusterProperty> cache = clusterPropertyCacheRef.get();
+        if ( cache != null ) {
+            names.addAll( cache.keySet() );
+        }
+
+        return names;
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(ClusterPropertyCache.class.getName());
 
     private final AtomicReference<Map<String,ClusterProperty>> clusterPropertyCacheRef = new AtomicReference<Map<String,ClusterProperty>>();
-    private Object propLock = new Object();
+    private final Object propLock = new Object();
     private ClusterPropertyManager clusterPropertyManager;
     private ClusterPropertyListener clusterPropertyListener;
 
