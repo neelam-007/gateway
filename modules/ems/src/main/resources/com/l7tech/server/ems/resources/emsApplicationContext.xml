@@ -304,4 +304,5 @@
         </property>
     </bean>
 
+    <bean id="emsKeyStore" class="com.l7tech.server.ems.EmsKeyStore"/>
 </beans>
