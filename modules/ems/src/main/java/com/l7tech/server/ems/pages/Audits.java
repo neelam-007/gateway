@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.Serializable;
@@ -105,7 +106,6 @@ public class Audits extends EmsPage {
         YuiDateSelector startDate = new YuiDateSelector("auditstart", dateStartModel );
         YuiDateSelector endDate = new YuiDateSelector("auditend", dateEndModel );
         startDate.getDateTextField().add(DateValidator.maximum(new Date()));
-        endDate.getDateTextField().add(DateValidator.maximum(new Date()));
         auditSelectionForm.add( startDate );
         auditSelectionForm.add( endDate );
         auditSelectionForm.add( new DropDownChoice( "audittype", typeModel, Arrays.asList(values), new IChoiceRenderer(){
@@ -156,13 +156,28 @@ public class Audits extends EmsPage {
     @SpringBean
     private AuditRecordManager auditRecordManager;
 
+    private Date startOfDay( final Date date ) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+
+        calendar.set(Calendar.HOUR, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        return calendar.getTime();
+    }
+    
     private YuiDataTable buildDataTable( final String type,
                                          final Date startDate,
                                          final Date endDate,
                                          final List<PropertyColumn> columns,
                                          final HiddenField hidden,
                                          final WebMarkupContainer detailsContainer ) {
-        return new YuiDataTable("audittable", columns, "TIME", false,  new AuditDataProvider(type, startDate, endDate, "TIME", false), hidden, "id", true, null ){
+        Date start = startOfDay(startDate);
+        Date end = new Date(startOfDay(endDate).getTime() + TimeUnit.DAYS.toMillis(1));
+
+        return new YuiDataTable("audittable", columns, "TIME", false,  new AuditDataProvider(type, start, end, "TIME", false), hidden, "id", true, null ){
             @Override
             protected void onSelect( final AjaxRequestTarget ajaxRequestTarget, final String auditIdentifier ) {
                 logger.info("Processing selection callback for audit '"+auditIdentifier+"'.");
