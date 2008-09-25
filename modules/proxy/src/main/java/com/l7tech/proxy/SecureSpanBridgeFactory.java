@@ -21,7 +21,6 @@ import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.ssl.SslPeer;
-import com.l7tech.security.xml.processor.BadSecurityContextException;
 import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
@@ -331,8 +330,6 @@ public class SecureSpanBridgeFactory {
             } catch (InvalidDocumentFormatException e) {
                 throw new CausedSendException(e);
             } catch (ProcessorException e) {
-                throw new CausedSendException(e);
-            } catch (BadSecurityContextException e) {
                 throw new CausedSendException(e);
             } catch (PolicyLockedException e) {
                 throw new CausedSendException(e);

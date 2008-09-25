@@ -126,7 +126,7 @@ public class MessageProcessor {
             throws ClientCertificateException, OperationCanceledException,
             ConfigurationException, GeneralSecurityException, IOException, SAXException,
             ResponseValidationException, HttpChallengeRequiredException, PolicyAssertionException,
-            InvalidDocumentFormatException, ProcessorException, BadSecurityContextException, PolicyLockedException
+            InvalidDocumentFormatException, ProcessorException, PolicyLockedException
     {
         boolean succeeded = false;
         try {
@@ -623,7 +623,7 @@ public class MessageProcessor {
             throws ConfigurationException, IOException, PolicyRetryableException,
             OperationCanceledException, ClientCertificateException, BadCredentialsException,
             KeyStoreCorruptException, HttpChallengeRequiredException, SAXException, GeneralSecurityException,
-            InvalidDocumentFormatException, ProcessorException, BadSecurityContextException, PolicyLockedException
+            InvalidDocumentFormatException, ProcessorException, PolicyLockedException
     {
         URL url = getUrl(context);
         final Ssg ssg = context.getSsg();
@@ -941,7 +941,6 @@ public class MessageProcessor {
      * @throws HttpChallengeRequiredException if credentials are required and this Ssg is using credentials from client
      * @throws GeneralSecurityException       if there is a problem with a key or a signature
      * @throws SAXException                   if there is a problem with the response XML
-     * @throws BadSecurityContextException    if the response refers to an unrecognized WS-SecureConversation context
      */
     private ProcessorResult wssProcessResponse(final PolicyApplicationContext context,
                                                final Ssg ssg,
@@ -950,7 +949,7 @@ public class MessageProcessor {
                                                Document responseDocument)
             throws KeyStoreCorruptException, BadCredentialsException, HttpChallengeRequiredException,
                    OperationCanceledException, ProcessorException, InvalidDocumentFormatException,
-                   GeneralSecurityException, BadSecurityContextException, SAXException, IOException
+                   GeneralSecurityException, SAXException, IOException
     {
         ProcessorResult processorResult;// TODO optimize this -- a lot of these parameter objects could be saved and reused
         final boolean haveKey = ssg.getRuntime().getSsgKeyStoreManager().isClientCertUnlocked();

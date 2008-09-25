@@ -198,8 +198,6 @@ public class PolicyServiceClient {
         ProcessorResult result;
         try {
             result = wssProcessor.undecorateMessage(new Message(response), null, null, new SimpleSecurityTokenResolver(clientCert, clientKey));
-        } catch (BadSecurityContextException e) {
-            throw new ProcessorException(e); // can't happen
         } catch (IOException e) {
             throw new ProcessorException(e); // can't happen
         } catch (SAXException e) {

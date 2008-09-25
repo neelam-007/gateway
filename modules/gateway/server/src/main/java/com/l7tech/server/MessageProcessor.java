@@ -632,15 +632,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     context.setAuditLevel(Level.SEVERE);
                     assertionStatusHolder[0] = AssertionStatus.SERVER_ERROR;
                     return false;
-                } catch (BadSecurityContextException e) {
-                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
-                    context.setAuditLevel(Level.SEVERE);
-                    SoapFaultLevel cfault = new SoapFaultLevel();
-                    cfault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
-                    cfault.setFaultTemplate( SoapFaultUtils.badContextTokenFault(getIncomingURL(context)));
-                    context.setFaultlevel(cfault);
-                    assertionStatusHolder[0] = AssertionStatus.FAILED;
-                    return false;
                 } catch (IOException ioe) {
                     ioExceptionHolder[0] = ioe;
                     return false;
