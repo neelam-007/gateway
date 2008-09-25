@@ -345,7 +345,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
 
     private MessageContextMappingValues mappingValuesEntity;
 
-    public void serializeOtherProperties(OutputStream out) throws IOException {
+    public void serializeOtherProperties(OutputStream out, boolean includeAllOthers) throws IOException {
         // status:request_id:service_oid:operation_name:authenticated:authenticationType:request_length:response_length:request_zipxml:
         // response_zipxml:response_status:routing_latency
 
@@ -374,10 +374,10 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         out.write(Integer.toString(responseContentLength).getBytes());
         out.write(SERSEP.getBytes());
 
-        if (requestXml != null) out.write(requestXml.getBytes());
+        if (includeAllOthers && requestXml != null) out.write(requestXml.getBytes());
         out.write(SERSEP.getBytes());
 
-        if (responseXml != null) out.write(responseXml.getBytes());
+        if (includeAllOthers && responseXml != null) out.write(responseXml.getBytes());
         out.write(SERSEP.getBytes());
 
         out.write(Integer.toString(responseHttpStatus).getBytes());

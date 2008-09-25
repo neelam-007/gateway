@@ -4,6 +4,8 @@ import java.util.logging.LogRecord;
 import java.util.logging.Handler;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+import java.util.Set;
+import java.util.HashSet;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 
@@ -108,19 +110,16 @@ public class LogRecordRingBuffer {
      *
      * @return the currently buffered log records (oldest first).
      */
-    public LogRecord[] getLogRecords() {
-        LogRecord[] currentRecords = null;
+    synchronized  public LogRecord[] getLogRecords() {
+        LogRecord[] currentRecords;
 
-        synchronized(records) {
-            if(bufferFull) {
-                currentRecords = new LogRecord[records.length];
-                System.arraycopy(records, nextRecordIndex, currentRecords, 0, records.length-nextRecordIndex);
-                System.arraycopy(records, 0, currentRecords, records.length-nextRecordIndex, nextRecordIndex);
-            }
-            else {
-                currentRecords = new LogRecord[nextRecordIndex];
-                System.arraycopy(records, 0, currentRecords, 0, nextRecordIndex);
-            }
+        if (bufferFull) {
+            currentRecords = new LogRecord[records.length];
+            System.arraycopy(records, nextRecordIndex, currentRecords, 0, records.length - nextRecordIndex);
+            System.arraycopy(records, 0, currentRecords, records.length - nextRecordIndex, nextRecordIndex);
+        } else {
+            currentRecords = new LogRecord[nextRecordIndex];
+            System.arraycopy(records, 0, currentRecords, 0, nextRecordIndex);
         }
 
         return currentRecords;
@@ -157,15 +156,25 @@ public class LogRecordRingBuffer {
      *
      * @param record the record to publish
      */
-    void publish(LogRecord record) {
-        if(records!=null && records.length>0) {
-            synchronized(records) {
-                records[nextRecordIndex] = record;
-                nextRecordIndex++;
-                if(nextRecordIndex>=records.length) {
-                    nextRecordIndex = 0;
-                    bufferFull = true;
+    synchronized void publish(LogRecord record) {
+        if ( records != null && records.length > 0 &&
+             record != null && ! doNotLog.contains(record.getLoggerName())) {
+
+            // (pseudo)serialize record parameters; gets rid of potentially huge size params
+            Object[] params = record.getParameters();
+            if (params != null) {
+                for (int i = 0; i < params.length; i++) {
+                    if (params[i] != null) {
+                        params[i] = params[i].toString();
+                    }
                 }
+            }
+
+            records[nextRecordIndex] = record;
+            nextRecordIndex++;
+            if (nextRecordIndex >= records.length) {
+                nextRecordIndex = 0;
+                bufferFull = true;
             }
         }
     }
@@ -177,4 +186,9 @@ public class LogRecordRingBuffer {
     private boolean bufferFull;
     private int nextRecordIndex;
     private LogRecord[] records;
+
+    private static Set<String> doNotLog = new HashSet<String>();
+    static {
+        doNotLog.add(SinkManagerImpl.TRAFFIC_LOGGER_NAME);
+    }
 }

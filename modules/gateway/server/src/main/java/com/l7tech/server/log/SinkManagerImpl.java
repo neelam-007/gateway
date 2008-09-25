@@ -197,6 +197,10 @@ public class SinkManagerImpl
         StartupHandler.notifyStarted();
     }
 
+    // - PACKAGE
+
+    static final String TRAFFIC_LOGGER_NAME = "com.l7tech.traffic";
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(SinkManager.class.getName());
@@ -204,7 +208,6 @@ public class SinkManagerImpl
     private static final String SCPROP_LOG_LEVELS = "logLevels";
     private static final String SCPROP_FILE_LIMIT = "logFileSpaceMax";
     private static final String DEFAULT_TRAFFIC_LOG_NAME_POSTFIX = "_%g_%u.log";
-    private static final String TRAFFIC_LOGGER_NAME = "com.l7tech.traffic";
     private static final long ONE_GIGABYTE = 1024L * 1024L * 1024L;
     private static final long DEFAULT_FILE_SPACE_LIMIT = ONE_GIGABYTE * 5L; //5GB
 

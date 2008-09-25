@@ -201,7 +201,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     @Secured(operation=OperationType.CREATE)
     public long save(ET entity) throws SaveException {
-        if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Saving {0} ({1})", new Object[] { getImpClass().getSimpleName(), entity });
+        if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Saving {0} ({1})", new Object[] { getImpClass().getSimpleName(), entity.toString() });
         try {
             if (getUniqueType() != UniqueType.NONE) {
                 final Map<String, Object> newMap = getUniqueAttributeMap(entity);

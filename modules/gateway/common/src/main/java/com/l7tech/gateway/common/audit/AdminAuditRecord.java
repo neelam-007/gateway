@@ -122,7 +122,7 @@ public class AdminAuditRecord extends AuditRecord {
     /** a character indicating the type of event that generated this record. */
     protected char action;
 
-    public void serializeOtherProperties(OutputStream out) throws IOException {
+    public void serializeOtherProperties(OutputStream out, boolean includeAllOthers) throws IOException {
         // entity_class:entity_id:action
 
         if (entityClassname != null) out.write(entityClassname.getBytes());

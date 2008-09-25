@@ -15,6 +15,7 @@ import com.l7tech.util.TextUtils;
 import javax.persistence.*;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -233,12 +234,16 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
         out.defaultWriteObject();
     }
 
-    public abstract void serializeOtherProperties(OutputStream out) throws IOException;
-
+    public abstract void serializeOtherProperties(OutputStream out, boolean includeAllOthers) throws IOException;
+    
     public static final String SERSEP = ":";
 
     // NOTE: AuditExporterImpl must use the same columns and ordering as this method
     public final void serializeSignableProperties(OutputStream out) throws IOException {
+        outputProperties(out, true);
+    }
+
+    private void outputProperties(OutputStream out, boolean includeAllOthers) throws IOException {
         // previous format:
         // objectid:nodeid:time:audit_level:name:message:ip_address:user_name:user_id:provider_oid:
         //
@@ -281,7 +286,7 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
         //      authenticated:authenticationType:request_length:response_length:request_zipxml:
         //      response_zipxml:response_status:routing_latency
         // SystemAuditRecord component_id:action
-        serializeOtherProperties(out);
+        serializeOtherProperties(out, includeAllOthers);
 
         if (details != null && details.size() > 0) {
             ArrayList<AuditDetail> sorteddetails = new ArrayList<AuditDetail>(details);
@@ -295,6 +300,17 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
             }
             out.write("]".getBytes());
         }
+    }
+
+    public String toString() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            outputProperties(baos, false);
+        } catch (IOException e) {
+            // should not happen on a byte array; fallback to super
+            return super.toString();
+        }
+        return baos.toString();
     }
 
     @Column(name="signature", length=175)
