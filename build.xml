@@ -2830,6 +2830,7 @@
         <copy file="${src.root}/etc/appliance/sysconfigscript-initd" tofile="${install.src.app}/etc/init.d/ssgsysconfig"/>
         <copy file="${src.root}/etc/appliance/ssg-dbstatus-initd" tofile="${install.src.app}/etc/init.d/ssg-dbstatus"/>
         <copy file="${src.root}/etc/appliance/tcp_tune.sh" tofile="${install.src.app}/etc/init.d/tcp_tune"/>
+        <copy file="${src.root}/etc/appliance/snmpd.conf" tofile="${install.src.app}/etc/snmp/snmpd.conf_example"/>
         <copy file="${src.root}/etc/appliance/iptables" tofile="${install.src.app}/etc/sysconfig/iptables"/>
         <copy file="${src.root}/etc/appliance/configuser_profile" tofile="${install.src.app.ssgconfig}/.bash_profile"/>
 

@@ -55,6 +55,7 @@ mv %{buildroot}/jdk %{buildroot}/opt/SecureSpan/JDK
 %defattr(0644,root,root)
 %config(noreplace) /etc/sysconfig/iptables
 %defattr(0644,root,sys)
+/etc/snmp/snmpd.conf_example
 /etc/my.cnf.ssg
 
 # SecureSpan base
