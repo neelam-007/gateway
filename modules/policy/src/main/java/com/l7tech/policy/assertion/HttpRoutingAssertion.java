@@ -27,7 +27,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
 {
     public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = -1;
     public static final String VAR_ROUTING_LATENCY = "httpRouting.latency";
-    public static final String VAR_SERVICE_URL = "service.url";
+    public static final String VAR_HTTP_ROUTING_URL = "httpRouting.url";
     public static final String PROP_SSL_SESSION_TIMEOUT =
             HttpRoutingAssertion.class.getName() + ".sslSessionTimeoutSeconds";
     public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
@@ -331,7 +331,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     public VariableMetadata[] getVariablesSet() {
         final List<VariableMetadata> vars = new ArrayList<VariableMetadata>();
         vars.add(new VariableMetadata(VAR_ROUTING_LATENCY, false, false, VAR_ROUTING_LATENCY, false));
-        vars.add(new VariableMetadata(VAR_SERVICE_URL, false, false, VAR_SERVICE_URL, false));
+        vars.add(new VariableMetadata(VAR_HTTP_ROUTING_URL, false, false, VAR_HTTP_ROUTING_URL, false));
         if (responseMsgDest != null) {
             vars.add(new VariableMetadata(responseMsgDest, false, false, responseMsgDest, true, DataType.MESSAGE));
         }

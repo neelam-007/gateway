@@ -41,6 +41,11 @@ public class VariableUseValidator implements AssertionValidator {
                 final String[] vars = ua.getVariablesUsed();
                 final Set<String> predecessorVariables = PolicyVariableUtils.getVariablesSetByPredecessors(a).keySet();
                 for (String var : vars) {
+                    if (var.startsWith(BuiltinVariables.DEPRECATED_PREFIX_SERVICE_URL)) {
+                        warningStrings.add("The context variable \"service.url\" has been deprecated and replaced " +
+                            "with a new context variable \"httpRouting.url\" for http routing assertions.");
+                    }
+
                     if (!BuiltinVariables.isPredefined(var) &&
                         Syntax.getMatchingName(var, predecessorVariables) == null) {
                         warningStrings.add(

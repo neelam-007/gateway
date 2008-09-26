@@ -4,6 +4,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
 import com.l7tech.common.io.XmlUtil;
@@ -84,35 +85,35 @@ public class ServerVariablesTest {
             //tryUrl to get called so that it sets the routed url property
         }
         
-        String variableName = "service.url";
+        String variableName = BuiltinVariables.PREFIX_HTTP_ROUTING_URL;
         String variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal service url",url,variableValue);
+        Assert.assertEquals("ServerVariable should equal httpRouting url",url,variableValue);
 
-        variableName = "service.url.host";
+        variableName = BuiltinVariables.PREFIX_HTTP_ROUTING_URL + "." + BuiltinVariables.HTTP_ROUTING_URL_SUFFIX_HOST;
         variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal service url",host,variableValue);
+        Assert.assertEquals("ServerVariable should equal httpRouting host",host,variableValue);
 
-        variableName = "service.url.protocol";
+        variableName = BuiltinVariables.PREFIX_HTTP_ROUTING_URL + "." + BuiltinVariables.HTTP_ROUTING_URL_SUFFIX_PROTOCOL;
         variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal service url",protocol,variableValue);
+        Assert.assertEquals("ServerVariable should equal httpRouting protocol",protocol,variableValue);
 
-        variableName = "service.url.port";
+        variableName = BuiltinVariables.PREFIX_HTTP_ROUTING_URL + "." + BuiltinVariables.HTTP_ROUTING_URL_SUFFIX_PORT;
         variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal service url",port,variableValue);
+        Assert.assertEquals("ServerVariable should equal httpRouting port",port,variableValue);
 
         //file expects the query string
-        variableName = "service.url.file";
+        variableName = BuiltinVariables.PREFIX_HTTP_ROUTING_URL + "." + BuiltinVariables.HTTP_ROUTING_URL_SUFFIX_FILE;
         variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal service url",filePath+query,variableValue);
+        Assert.assertEquals("ServerVariable should equal httpRouting file",filePath+query,variableValue);
 
         //path doesn't expect the query string
-        variableName = "service.url.path";
+        variableName = BuiltinVariables.PREFIX_HTTP_ROUTING_URL + "." + BuiltinVariables.HTTP_ROUTING_URL_SUFFIX_PATH;
         variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal service url",filePath,variableValue);
+        Assert.assertEquals("ServerVariable should equal httpRouting path",filePath,variableValue);
 
-        variableName = "service.url.query";
+        variableName = BuiltinVariables.PREFIX_HTTP_ROUTING_URL + "." + BuiltinVariables.HTTP_ROUTING_URL_SUFFIX_QUERY;
         variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal service url",query,variableValue);
+        Assert.assertEquals("ServerVariable should equal httpRouting query",query,variableValue);
     }
 
     private PolicyEnforcementContext getPolicyEncorcementContext(){
