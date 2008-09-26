@@ -105,6 +105,10 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         buttonOk.setEnabled( !readOnly );
         inputValidator.attachToButton(buttonOk, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+
+                //validate policy xml to be sure it's valid
+                if (!isValidPolicyXml()) return;
+
                 copyViewToModel();
                 fireEventAssertionChanged(assertion);
                 BridgeRoutingAssertionPropertiesDialog.this.dispose();
@@ -260,5 +264,34 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
                 }
             }
         });
+    }
+
+    /**
+     * Validates the policy xml to make sure that it is not empty and the xml is valid.
+     *
+     * @return  TRUE if policy is valid, else FALSE
+     */
+    private boolean isValidPolicyXml() {
+        if (rbPolicyManual.isSelected() && policyXmlText.isEnabled()) {
+            
+            //policy XML content empty data or xml is not well-formed
+            if (policyXmlText.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        BridgeRoutingAssertionPropertiesDialog.this, "This manually specified policy XML cannot be empty.",
+                        "Invalid Policy XML", JOptionPane.OK_OPTION);
+                return false;
+            }
+            //is xml valid
+            try {
+                XmlUtil.stringToDocument(policyXmlText.getText());
+            } catch (SAXException se) {
+                JOptionPane.showMessageDialog(
+                        BridgeRoutingAssertionPropertiesDialog.this, "This manually specified policy XML is not valid.",
+                        "Invalid Policy XML", JOptionPane.OK_OPTION);
+                return false;
+            }
+
+        }
+        return true;
     }
 }
