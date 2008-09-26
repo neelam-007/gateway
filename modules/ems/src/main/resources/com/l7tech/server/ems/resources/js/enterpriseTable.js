@@ -10,7 +10,7 @@ if (!l7.EnterpriseTable) {
     (function() {
 
         /**
-         * Constructor for a table with SecureSpan enterprise entities.
+         * Constructor for a table with Layer 7 entities.
          *
          * A enterprise table is a table where some of its rows are enterprise entities.
          * This class will add context menu to those rows.

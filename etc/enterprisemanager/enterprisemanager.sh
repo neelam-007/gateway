@@ -1,6 +1,6 @@
 #!/bin/bash
 #############################################################################
-# SecureSpan Enterprise Manager Launch Script
+# Enterprise Service Manager Launch Script
 #############################################################################
 
 #
@@ -41,7 +41,7 @@ if [ ${?} -eq 0 ] ; then
   [ -z "${EM_PIDFILE}" ] || mv -f "${EM_PIDTEMP}" "${EM_PIDFILE}"
 else
   [ -z "${EM_PIDFILE}" ] || rm -f "${EM_PIDFILE}" &>/dev/null
-  fail "${?}" "Error starting Enterprise Manager."
+  fail "${?}" "Error starting Enterprise Service Manager."
 fi
 
 exit 0;
