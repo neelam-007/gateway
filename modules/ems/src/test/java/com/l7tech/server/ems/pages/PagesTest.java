@@ -97,10 +97,4 @@ public class PagesTest {
         tester.startPage(EnterpriseUsers.class);
         tester.assertRenderedPage(EnterpriseUsers.class);
     }
-
-    @Test
-    public void testEnterpriseUserNew() {
-        tester.startPage(EnterpriseUsersNew.class);
-        tester.assertRenderedPage(EnterpriseUsersNew.class);
-    }
 }

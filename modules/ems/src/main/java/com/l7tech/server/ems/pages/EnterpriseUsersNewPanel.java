@@ -1,6 +1,6 @@
 package com.l7tech.server.ems.pages;
 
-import org.apache.wicket.markup.html.panel.FeedbackPanel;
+import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.PasswordTextField;
 import org.apache.wicket.markup.html.form.RequiredTextField;
@@ -25,21 +25,20 @@ import com.l7tech.util.ExceptionUtils;
 /**
  * Page for new user creation
  */
-public class EnterpriseUsersNew extends EmsPage {
+public class EnterpriseUsersNewPanel extends Panel {
 
     //- PUBLIC
 
-    public EnterpriseUsersNew() {
-        
-        //
-        add( new FeedbackPanel("feedback") );
+    public EnterpriseUsersNewPanel( final String id ) {
+        super( id );
 
+        //
         add( new UserForm("newUserForm") );
     }
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger( EnterpriseUsersNew.class.getName() );
+    private static final Logger logger = Logger.getLogger( EnterpriseUsersNewPanel.class.getName() );
 
     @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean

@@ -62,12 +62,11 @@ public class Audits extends EmsPage {
                 final Model downloadModel = new Model();
                 AuditDownloadPanel download = new AuditDownloadPanel( YuiDialog.getContentId(), downloadModel );
                 YuiDialog dialog = new YuiDialog("audit.holder.content", "Audit Download", YuiDialog.Style.OK_CANCEL, download, new YuiDialog.OkCancelCallback(){
-                    public boolean onAction(YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
+                    public void onAction(YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
                         if ( button == YuiDialog.Button.OK ) {
                             String url = (String)downloadModel.getObject();
                             target.appendJavascript( "window.setTimeout(function() { window.location = '" + url + "'; }, 0)" );
                         }
-                        return true;
                     }
                 });
                 auditHolder.replace(dialog);
@@ -78,11 +77,7 @@ public class Audits extends EmsPage {
         Button deleteButton = new AjaxButton("deleteAuditsButton") {
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
                 AuditDeletePanel delete = new AuditDeletePanel( YuiDialog.getContentId() );
-                YuiDialog dialog = new YuiDialog("audit.holder.content", "Audit Deletion", YuiDialog.Style.OK_CANCEL, delete, new YuiDialog.OkCancelCallback(){
-                    public boolean onAction(YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
-                        return true;
-                    }
-                });
+                YuiDialog dialog = new YuiDialog("audit.holder.content", "Audit Deletion", YuiDialog.Style.OK_CANCEL, delete);
                 auditHolder.replace(dialog);
                 ajaxRequestTarget.addComponent(auditHolder);
             }

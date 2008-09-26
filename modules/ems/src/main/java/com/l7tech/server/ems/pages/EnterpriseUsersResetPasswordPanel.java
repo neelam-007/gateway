@@ -1,16 +1,14 @@
 package com.l7tech.server.ems.pages;
 
-import org.apache.wicket.markup.html.panel.FeedbackPanel;
+import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.PasswordTextField;
-import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.form.validation.EqualPasswordInputValidator;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.feedback.ContainerFeedbackMessageFilter;
 
 import java.io.Serializable;
 import java.util.logging.Logger;
@@ -26,29 +24,21 @@ import com.l7tech.util.ExceptionUtils;
 /**
  * Page for editing a user
  */
-public class EnterpriseUsersEdit extends EmsPage {
+public class EnterpriseUsersResetPasswordPanel extends Panel {
 
     //- PUBLIC
 
-    public EnterpriseUsersEdit( final String username ) {
-        //
-        UserForm editForm = new UserForm("editUserForm", buildUserModel(username));
-        FeedbackPanel editFeedback = new FeedbackPanel("editFeedback");
-        editFeedback.setFilter(new ContainerFeedbackMessageFilter(editForm));
-        add( editFeedback );
-        add( editForm );
+    public EnterpriseUsersResetPasswordPanel( final String id, final String username ) {
+        super(id);
 
         //
-        PasswordResetForm passwordForm = new PasswordResetForm("resetPasswordForm", editForm.model);
-        FeedbackPanel passwordFeedback = new FeedbackPanel("passwordFeedback");
-        passwordFeedback.setFilter(new ContainerFeedbackMessageFilter(passwordForm));
-        add( passwordFeedback );
+        PasswordResetForm passwordForm = new PasswordResetForm("resetPasswordForm", buildUserModel(username));
         add( passwordForm );
     }
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger( EnterpriseUsersEdit.class.getName() );
+    private static final Logger logger = Logger.getLogger( EnterpriseUsersResetPasswordPanel.class.getName() );
 
     @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
@@ -57,12 +47,9 @@ public class EnterpriseUsersEdit extends EmsPage {
     private UserModel buildUserModel( final String username ) {
         UserModel model = null;
         try {
-
             InternalUser user = emsAccountManager.findByLogin( username );
             if ( user != null ) {
                 model = new UserModel( user.getLogin() );
-                model.firstName = user.getFirstName();
-                model.lastName = user.getLastName();
             } else {
                 error( new StringResourceModel("message.deleted", this, null, new Object[]{ username } ).getString() );
             }
@@ -78,17 +65,11 @@ public class EnterpriseUsersEdit extends EmsPage {
         return model;
     }
 
-    private void updateUser( final UserModel model, final boolean resetPassword, final Form form ) {
+    private void updateUser( final UserModel model, final Form form ) {
         try {
             InternalUser user = emsAccountManager.findByLogin( model.username );
             if ( user != null ) {
-                if ( !resetPassword ) {
-                    user.setFirstName( model.firstName );
-                    user.setLastName( model.lastName );
-                } else {
-                    user.setCleartextPassword( model.password );
-                }
-
+                user.setCleartextPassword( model.password );
                 emsAccountManager.update( user );
             } else {
                 form.error( new StringResourceModel("message.deleted", this, null, new Object[]{ model.username } ).getString() );
@@ -111,34 +92,11 @@ public class EnterpriseUsersEdit extends EmsPage {
      */
     public final class UserModel implements Serializable {
         final String username;
-        String firstName;
-        String lastName;
         String password;
         String passwordConfirm;
 
         UserModel( final String username ) {
             this.username = username;
-        }
-    }
-
-    /**
-     * User form
-     */
-    public final class UserForm extends Form {
-        private final UserModel model;
-
-        public UserForm( final String componentName, final UserModel userModel ) {
-            super(componentName);
-
-            this.model = userModel;
-
-            add(new Label("userId", new PropertyModel(model, "username")));
-            add(new TextField("lastName", new PropertyModel(model, "lastName")).add(new StringValidator.LengthBetweenValidator(1, 128)));
-            add(new TextField("firstName", new PropertyModel(model, "firstName")).add(new StringValidator.LengthBetweenValidator(1, 128)));
-        }
-
-        public final void onSubmit() {
-            updateUser( model, false, this );
         }
     }
 
@@ -158,6 +116,7 @@ public class EnterpriseUsersEdit extends EmsPage {
 
             pass1.add( new StringValidator.LengthBetweenValidator(6, 256) );
 
+            add(new Label("userId", new PropertyModel(model, "username")));
             add(pass1.setRequired(true));
             add(pass2.setRequired(true));
 
@@ -165,7 +124,7 @@ public class EnterpriseUsersEdit extends EmsPage {
         }
 
         public final void onSubmit() {
-            updateUser( model, true, this );
+            updateUser( model, this );
         }
     }
 }

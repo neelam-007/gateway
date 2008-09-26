@@ -85,6 +85,16 @@ public class YuiDialog extends Panel {
     }
 
     /**
+     * Create a dialog with the given style and content.
+     */
+    public YuiDialog( final String id,
+                      final String title,
+                      final Style style,
+                      final Component content ) {
+        this( id, title, content, null, style.getDefaultButton(), style.getButtons() );
+    }
+
+    /**
      * Create a dialog with the given buttons and content.
      */
     public YuiDialog( final String id,
@@ -163,8 +173,8 @@ public class YuiDialog extends Panel {
     /**
      * Create a listener for dialog actions.
      */
-    public static abstract class OkCancelCallback implements Serializable {
-        public abstract boolean onAction( YuiDialog dialog, AjaxRequestTarget target, Button button );
+    public interface OkCancelCallback extends Serializable {
+        void onAction( YuiDialog dialog, AjaxRequestTarget target, Button button );
     }    
     
     //- PRIVATE
@@ -185,7 +195,7 @@ public class YuiDialog extends Panel {
                 ajaxButton = new AjaxButton(buttonId, targetForm){
                     @Override
                     protected void onSubmit(AjaxRequestTarget target, Form form) {
-                        callback.onAction(YuiDialog.this, target, result);
+                        if ( callback != null ) callback.onAction(YuiDialog.this, target, result);
                         String script = "{var button = document.getElementById('"+getMarkupId()+"'); if (button.wicketSuccessCallback) button.wicketSuccessCallback();}";
                         target.appendJavascript(script);                
                     }
@@ -198,7 +208,7 @@ public class YuiDialog extends Panel {
                 ajaxButton = new AjaxButton(buttonId, targetForm){
                     @Override
                     protected void onSubmit(AjaxRequestTarget target, Form form) {
-                        callback.onAction(YuiDialog.this, target, result);
+                        if ( callback != null ) callback.onAction(YuiDialog.this, target, result);
                     }            
                 };
             }

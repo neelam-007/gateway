@@ -65,17 +65,17 @@ public class YuiDataTable extends Panel {
         add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_DATATABLE ) );
 
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DOM_EVENT ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_CONTAINER ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_ELEMENT ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_BUTTON ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_MENU ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DATASOURCE ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DRAGDROP ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DATATABLE ) );
+        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DOM ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_EVENT ) );
+        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_MENU ) );
+        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DRAGDROP ) );
+        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_CONTAINER ) );
+        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DATASOURCE ) );
+        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DATATABLE ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_CONNECTION ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_JSON ) );
-        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DOM ) );
 
         add( HeaderContributor.forJavaScript( new ResourceReference( YuiDataTable.class, "../resources/js/dataTable.js" ) ) );
 

@@ -130,51 +130,32 @@
                 <span class="subtabOn">User Accounts</span>
             </div>
             <div class="content">
-                <wicket:extend>
-                    <div class="panel">
-                        <div class="panelTitle"><wicket:message key="panel.edituser.title">Edit User</wicket:message></div>
-                        <div class="panelContent">
-                            <div wicket:id="editFeedback" class="center"/>
-                            <form action="EnterpriseUsersNew.html" method="POST" wicket:id="editUserForm">
-                                <table class="indent spaced">
-                                    <tr>
-                                        <th>User ID:</th>
-                                        <td><span wicket:id="userId"/></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Surname:</th>
-                                        <td><input id="lastName" name="lastName" type="text" wicket:id="lastName"/></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Given Name:</th>
-                                        <td><input id="firstName" name="firstName" type="text" wicket:id="firstName"/></td>
-                                    </tr>
-                                 </table>
-                                 <input type="submit" value="Apply"/>
-                            </form>
-                        </div>
-                    </div>
-
-                    <div class="panel">
-                        <div class="panelTitle"><wicket:message key="panel.password.title">Reset Password</wicket:message></div>
-                        <div class="panelContent">
-                            <div wicket:id="passwordFeedback" class="center"/>
-                            <form action="EnterpriseUsersNew.html" method="POST" wicket:id="resetPasswordForm">
-                                <table class="indent spaced">
-                                    <tr>
-                                        <th>Password:</th>
-                                        <td><input id="password" name="password" type="password" wicket:id="password"/></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Confirm Password:</th>
-                                        <td><input id="password2" name="password2" type="password" wicket:id="passwordConfirm"/></td>
-                                    </tr>
-                                 </table>
-                                 <input type="submit" value="Apply"/>
-                            </form>
-                        </div>
-                    </div>
-                </wicket:extend>
+                <wicket:panel>
+                    <form action="EnterpriseUsers.html" method="POST" wicket:id="newUserForm">
+                        <table class="indent spaced">
+                            <tr>
+                                <th>User Name:</th>
+                                <td><input id="userId" name="userId" type="text" wicket:id="userId"/></td>
+                            </tr>
+                            <tr>
+                                <th>Surname:</th>
+                                <td><input id="lastName" name="lastName" type="text" wicket:id="lastName"/></td>
+                            </tr>
+                            <tr>
+                                <th>Given Name:</th>
+                                <td><input id="firstName" name="firstName" type="text" wicket:id="firstName"/></td>
+                            </tr>
+                            <tr>
+                                <th>Password:</th>
+                                <td><input id="password" name="password" type="password" wicket:id="password"/></td>
+                            </tr>
+                            <tr>
+                                <th>Confirm Password:</th>
+                                <td><input id="password2" name="password2" type="password" wicket:id="passwordConfirm"/></td>
+                            </tr>
+                         </table>
+                    </form>
+                </wicket:panel>
             </div>
             <div class="statusBar">
                 <table>
