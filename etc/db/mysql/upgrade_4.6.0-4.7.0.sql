@@ -152,7 +152,6 @@ ALTER TABLE community_schemas ADD CONSTRAINT UNIQUE KEY csnm_idx (name);
 ---
 --- Add description cols for fed and internal users.
 ---
-ALTER TABLE fed_user ADD COLUMN description varchar(255) default NULL;
 ALTER TABLE internal_user ADD COLUMN description varchar(255) default NULL;
 
 --

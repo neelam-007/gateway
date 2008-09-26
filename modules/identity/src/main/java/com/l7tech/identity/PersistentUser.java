@@ -1,9 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
-
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
@@ -14,7 +11,6 @@ import javax.persistence.Transient;
 
 /**
  * @author alex
- * @version $Revision$
  */
 @MappedSuperclass
 public abstract class PersistentUser extends NamedEntityImp implements User {
@@ -86,7 +82,7 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
         return email;
     }
 
-    @Column(name="description", length=255)
+    @Transient
     public String getDescription() {
         return description;
     }

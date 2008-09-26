@@ -49,6 +49,7 @@ public class InternalUser extends PersistentUser {
         setProviderId(imp.getProviderId());
         setLogin(imp.getLogin());
         setDepartment(imp.getDepartment());
+        setDescription(imp.getDescription());
         setEmail(imp.getEmail());
         setFirstName(imp.getFirstName());
         setLastName(imp.getLastName());
@@ -64,6 +65,12 @@ public class InternalUser extends PersistentUser {
     @Column(name="password", nullable=false, length=32)
     public String getHashedPassword() {
         return hashedPassword;
+    }
+
+    @Override
+    @Column(name="description", length=255)
+    public String getDescription() {
+        return super.getDescription();
     }
 
     /**

@@ -405,7 +405,6 @@ CREATE TABLE fed_user (
   login varchar(255),
   first_name varchar(32) default NULL,
   last_name varchar(32) default NULL,
-  description varchar(255) default NULL,
   PRIMARY KEY (objectid),
   INDEX i_provider_oid (provider_oid),
   INDEX i_email (email),
