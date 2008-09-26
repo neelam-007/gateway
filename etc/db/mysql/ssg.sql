@@ -70,6 +70,7 @@ CREATE TABLE internal_user (
   first_name varchar(32) default NULL,
   last_name varchar(32) default NULL,
   email varchar(128) default NULL,
+  description varchar(255) default NULL,
   expiration bigint(20) NOT NULL,
   PRIMARY KEY  (objectid),
   UNIQUE KEY l_idx (login)
@@ -404,6 +405,7 @@ CREATE TABLE fed_user (
   login varchar(255),
   first_name varchar(32) default NULL,
   last_name varchar(32) default NULL,
+  description varchar(255) default NULL,
   PRIMARY KEY (objectid),
   INDEX i_provider_oid (provider_oid),
   INDEX i_email (email),

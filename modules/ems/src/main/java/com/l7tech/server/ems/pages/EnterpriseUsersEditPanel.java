@@ -4,8 +4,8 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
+import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 
@@ -49,8 +49,10 @@ public class EnterpriseUsersEditPanel extends Panel {
             InternalUser user = emsAccountManager.findByLogin( username );
             if ( user != null ) {
                 model = new UserModel( user.getLogin() );
+                model.email = user.getEmail();
                 model.firstName = user.getFirstName();
                 model.lastName = user.getLastName();
+                model.description = user.getDescription();
             } else {
                 error( new StringResourceModel("message.deleted", this, null, new Object[]{ username } ).getString() );
             }
@@ -68,14 +70,16 @@ public class EnterpriseUsersEditPanel extends Panel {
 
     private void updateUser( final UserModel model, final Form form ) {
         try {
-            InternalUser user = emsAccountManager.findByLogin( model.username );
+            InternalUser user = emsAccountManager.findByLogin( model.userId );
             if ( user != null ) {
+                user.setEmail( model.email );
                 user.setFirstName( model.firstName );
                 user.setLastName( model.lastName );
+                user.setDescription( model.description );
 
                 emsAccountManager.update( user );
             } else {
-                form.error( new StringResourceModel("message.deleted", this, null, new Object[]{ model.username } ).getString() );
+                form.error( new StringResourceModel("message.deleted", this, null, new Object[]{ model.userId } ).getString() );
             }
         } catch (FindException fe) {
             form.error( ExceptionUtils.getMessage( fe ) );
@@ -91,12 +95,14 @@ public class EnterpriseUsersEditPanel extends Panel {
      * Model for user form
      */
     public final class UserModel implements Serializable {
-        final String username;
+        final String userId;
+        String email;
         String firstName;
         String lastName;
+        String description;
 
         UserModel( final String username ) {
-            this.username = username;
+            this.userId = username;
         }
     }
 
@@ -104,20 +110,18 @@ public class EnterpriseUsersEditPanel extends Panel {
      * User form
      */
     public final class UserForm extends Form {
-        private final UserModel model;
-
         public UserForm( final String componentName, final UserModel userModel ) {
-            super(componentName);
+            super(componentName, new CompoundPropertyModel(userModel));
 
-            this.model = userModel;
-
-            add(new Label("userId", new PropertyModel(model, "username")));
-            add(new TextField("lastName", new PropertyModel(model, "lastName")).add(new StringValidator.LengthBetweenValidator(1, 128)));
-            add(new TextField("firstName", new PropertyModel(model, "firstName")).add(new StringValidator.LengthBetweenValidator(1, 128)));
+            add(new Label("userId"));
+            add(new TextField("email").add(new StringValidator.LengthBetweenValidator(1, 128)));
+            add(new TextField("lastName").add(new StringValidator.LengthBetweenValidator(1, 32)));
+            add(new TextField("firstName").add(new StringValidator.LengthBetweenValidator(1, 32)));
+            add(new TextField("description").add(new StringValidator.LengthBetweenValidator(1, 255)));
         }
 
         public final void onSubmit() {
-            updateUser( model, this );
+            updateUser( (UserModel) getModelObject(), this );
         }
     }
 }

@@ -25,6 +25,7 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
     protected String lastName;
     protected String email;
     protected String department;
+    protected String description;
 
     /*Put in to allow for JAXB processing*/
     public PersistentUser(){
@@ -85,6 +86,11 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
         return email;
     }
 
+    @Column(name="description", length=255)
+    public String getDescription() {
+        return description;
+    }
+
     @Transient
     public String getDepartment() {
         return department;
@@ -97,6 +103,10 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
                 "\n\tLast name=" + lastName +
                 "\n\tLogin=" + login +
                 "\n\tproviderId=" + providerOid;
+    }
+
+    public void setDescription( String description ) {
+        this.description = description;
     }
 
     public void setDepartment( String department ) {
@@ -136,6 +146,7 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
         if (lastName != null ? !lastName.equals(that.lastName) : that.lastName != null) return false;
         if (login != null ? !login.equals(that.login) : that.login != null) return false;
         if (subjectDn != null ? !subjectDn.equals(that.subjectDn) : that.subjectDn != null) return false;
+        if (description != null ? !description.equals(that.description) : that.description != null) return false;
 
         return true;
     }
@@ -149,6 +160,7 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
         result = 31 * result + (lastName != null ? lastName.hashCode() : 0);
         result = 31 * result + (email != null ? email.hashCode() : 0);
         result = 31 * result + (department != null ? department.hashCode() : 0);
+        result = 31 * result + (description != null ? description.hashCode() : 0);
         return result;
     }
 }

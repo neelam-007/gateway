@@ -5,8 +5,8 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.PasswordTextField;
 import org.apache.wicket.markup.html.form.validation.EqualPasswordInputValidator;
 import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
+import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 
@@ -67,12 +67,12 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
 
     private void updateUser( final UserModel model, final Form form ) {
         try {
-            InternalUser user = emsAccountManager.findByLogin( model.username );
+            InternalUser user = emsAccountManager.findByLogin( model.userId );
             if ( user != null ) {
                 user.setCleartextPassword( model.password );
                 emsAccountManager.update( user );
             } else {
-                form.error( new StringResourceModel("message.deleted", this, null, new Object[]{ model.username } ).getString() );
+                form.error( new StringResourceModel("message.deleted", this, null, new Object[]{ model.userId } ).getString() );
             }
         } catch (InvalidPasswordException se) {
             // password is not acceptable
@@ -91,12 +91,12 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
      * Model for user form
      */
     public final class UserModel implements Serializable {
-        final String username;
+        final String userId;
         String password;
         String passwordConfirm;
 
         UserModel( final String username ) {
-            this.username = username;
+            this.userId = username;
         }
     }
 
@@ -104,19 +104,15 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
      * Password form
      */
     public final class PasswordResetForm extends Form {
-        private final UserModel model;
-
         public PasswordResetForm( final String componentName, final UserModel userModel ) {
-            super(componentName);
+            super(componentName, new CompoundPropertyModel(userModel));
 
-            this.model = userModel;
+            PasswordTextField pass1 = new PasswordTextField("password");
+            PasswordTextField pass2 = new PasswordTextField("passwordConfirm");
 
-            PasswordTextField pass1 = new PasswordTextField("password", new PropertyModel(model, "password"));
-            PasswordTextField pass2 = new PasswordTextField("passwordConfirm", new PropertyModel(model, "passwordConfirm"));
+            pass1.add( new StringValidator.LengthBetweenValidator(6, 128) );
 
-            pass1.add( new StringValidator.LengthBetweenValidator(6, 256) );
-
-            add(new Label("userId", new PropertyModel(model, "username")));
+            add(new Label("userId"));
             add(pass1.setRequired(true));
             add(pass2.setRequired(true));
 
@@ -124,7 +120,7 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
         }
 
         public final void onSubmit() {
-            updateUser( model, this );
+            updateUser( (UserModel)getModelObject(), this );
         }
     }
 }

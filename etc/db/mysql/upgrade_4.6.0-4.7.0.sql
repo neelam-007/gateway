@@ -143,12 +143,23 @@ CREATE TABLE policy_alias (
 ---
 ALTER TABLE counters ADD COLUMN cnt_min bigint(20) default 0;
 
---
--- Reenable FK at very end of script
---
-SET FOREIGN_KEY_CHECKS=1;
 
 --
 -- Global schemas names must be unique
 --
 ALTER TABLE community_schemas ADD CONSTRAINT UNIQUE KEY csnm_idx (name);
+
+---
+--- Add description cols for fed and internal users.
+---
+ALTER TABLE fed_user ADD COLUMN description varchar(255) default NULL;
+ALTER TABLE internal_user ADD COLUMN description varchar(255) default NULL;
+
+--
+-- Reenable FK at very end of script
+--
+SET FOREIGN_KEY_CHECKS=1;
+
+
+
+
