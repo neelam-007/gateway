@@ -53,7 +53,10 @@ public class LogResource extends SecureResource {
     public static List<File> listLogFiles() {
         List<File> files = new ArrayList<File>();
 
-        files.addAll(Arrays.asList(getLogDirectory().listFiles(getLogFilter())));
+        File[] fileList = getLogDirectory().listFiles(getLogFilter());
+        if ( fileList != null ) {
+            files.addAll(Arrays.asList(fileList));
+        }
 
         return files;
     }

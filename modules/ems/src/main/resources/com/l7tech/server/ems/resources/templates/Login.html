@@ -2,13 +2,7 @@
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en" xmlns:wicket="http://wicket.apache.org/">
 <head>
-    <!-- PROTOTYPE ONLY BEGIN -->
-    <meta http-equiv="Expires" content="-1" />
-    <meta http-equiv="Cache-Control" content="no-cache" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <!-- PROTOTYPE ONLY END -->
-    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-    <title>Log In [SecureSpan Enterprise Manager]</title>
+    <title><wicket:message key="label.title">Log In [SecureSpan Enterprise Manager]</wicket:message></title>
     <link rel="stylesheet" href="../css/l7.css" media="all" type="text/css" />
     <script type="text/javascript" src="../js/l7.js"></script>
 </head>
@@ -28,22 +22,38 @@
             </div>
             <div class="divider"><img src="../images/spacer.png" alt="" /></div>
             <div class="content">
-                <div wicket:id="feedback" class="center"/>                
-                <form method="post" action="Configure.html" wicket:id="loginForm">
-                    <table class="center spaced">
+                <div class="center">     <center>
+                    <table height="420" width="340">
                         <tr>
-                            <td class="right">User Name:</td>
-                            <td><input id="username" name="username" type="text" wicket:id="username" /></td>
+                            <td>
+                                <div class="panel">
+                                    <div class="panelTitle"><wicket:message key="label.login">Log In</wicket:message></div>
+                                    <div class="panelContent">
+                                        <div class="center" style="margin-left: 24px;">
+                                            <div wicket:id="feedback" class="left"/>
+                                        </div>
+                                        <form method="post" action="Configure.html" wicket:id="loginForm">
+                                            <table class="center spaced">
+                                                <tr>
+                                                    <td class="right"><wicket:message key="username">User Name</wicket:message>:</td>
+                                                    <td><input id="username" name="username" type="text" wicket:id="username" /></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="right"><wicket:message key="password">Password</wicket:message>:</td>
+                                                    <td><input id="password" name="password" type="password" wicket:id="password" /></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="right"> </td>
+                                                    <td class="right"><button type="button" wicket:id="submit"><wicket:message key="label.login">Log In</wicket:message></button></td>
+                                                </tr>
+                                            </table>
+                                        </form>
+                                    </div>
+                                </div>
+                            </td>
                         </tr>
-                        <tr>
-                            <td class="right">Password:</td>
-                            <td><input id="password" name="password" type="password" wicket:id="password" /></td>
-                        </tr>
-                    </table>
-                    <div class="center">
-                        <input type="submit" value="Log In" />
-                    </div>
-                </form>
+                    </table>  </center>
+                </div>
             </div>
             <div class="statusBar">
                 <table>

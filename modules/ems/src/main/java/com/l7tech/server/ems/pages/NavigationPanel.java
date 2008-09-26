@@ -17,40 +17,13 @@ import org.apache.wicket.model.StringResourceModel;
  */
 public class NavigationPanel extends Panel {
 
-    private final NavigationModel navigationModel;
-
-//    /**
-//     * Page metadata.
-//     */
-//    private static final String[][] pages = {
-//        { "Configure", "ManageGateways", "Configure.html" },
-//        { "Monitor", "ManageGateways", "Monitor.html" },
-//        { "Backup", "ManageGateways", "Backup.html" },
-//        { "Restore", "ManageGateways", "Restore.html" },
-//
-//        { "PolicyMigration", "ManagePolicies", "PolicyMigration.html" },
-//        { "PolicySubmission", "ManagePolicies", "PolicySubmission.html" },
-//        { "PolicyApproval", "ManagePolicies", "PolicyApproval.html" },
-//        { "PolicyMapping", "ManagePolicies", "PolicyMapping.html" },
-//
-//        { "StandardReports", "Reports", "StandardReports.html" },
-//
-//        { "Messages", "Tools", "Messages.html" },
-//        { "Audits", "Tools", "Audits.html" },
-//        { "Logs", "Tools", "Logs.html" },
-//
-//        { "UserSettings", "Settings", "UserSettings.html" },
-//        { "SystemSettings", "Settings", "SystemSettings.html" },
-//        { "EnterpriseUsers", "Settings", "EnterpriseUsers.html" },
-//    };
-
     /**
      * The model must be the page being rendered.
      */
     public NavigationPanel( final String id, final IModel model ) {
         super(id, model);
 
-        this.navigationModel = new NavigationModel("com.l7tech.server.ems.pages");
+        NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.pages");
 
         String currentPage = ((EmsPage)model.getObject()).getPageName();
         currentPage = currentPage.substring(currentPage.lastIndexOf('.')+1);

@@ -9,6 +9,8 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
+import org.apache.wicket.ajax.markup.html.form.AjaxButton;
+import org.apache.wicket.ajax.AjaxRequestTarget;
 import com.l7tech.server.ems.SetupManager;
 import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.server.ems.SetupException;
@@ -59,9 +61,25 @@ public class Login extends WebPage {
             // If not configured send the user to the setup page
             setResponsePage(new Setup());
         } else {
-            add( new FeedbackPanel("feedback") );
-            add( new LoginForm("loginForm") );
+            final FeedbackPanel feedback = new FeedbackPanel("feedback");
+            add( feedback.setOutputMarkupId(true) );
+            LoginForm form = new LoginForm("loginForm");
+            form.add(
+                new AjaxButton("submit", form){
+                    protected void onSubmit(AjaxRequestTarget target, Form form) {}
+                    @Override
+                    protected void onError(AjaxRequestTarget target, Form form) {
+                        target.addComponent(feedback);
+                    }
+                }
+            );
+            add(form);
         }
+    }
+
+    @Override
+    public boolean isVersioned() {
+        return false;
     }
 
     /**
@@ -115,8 +133,8 @@ public class Login extends WebPage {
      *
      */
     private void setUserPreferences( final User user, final EmsSession session ) {
-        String format = EmsApplication.DEFAULT_DATE_FORMAT;
-        String zoneid = TimeZone.getDefault().getID();
+        String format = null;
+        String zoneid = null;
 
         try {
             Map<String,String> props = userPropertyManager.getUserProperties( user );
@@ -128,6 +146,9 @@ public class Login extends WebPage {
         } catch ( FindException fe ) {
             // use default format            
         }
+
+        if ( format == null ) format = EmsApplication.DEFAULT_DATE_FORMAT;
+        if ( zoneid == null ) zoneid = TimeZone.getDefault().getID();
 
         session.setDateTimeFormatPattern( format );
         session.setTimeZoneId(zoneid);

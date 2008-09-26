@@ -8,6 +8,7 @@ import org.apache.wicket.Session;
 import org.apache.wicket.Request;
 import org.apache.wicket.Response;
 import org.apache.wicket.RequestCycle;
+import org.apache.wicket.request.target.coding.HybridUrlCodingStrategy;
 import org.apache.wicket.markup.html.PackageResourceGuard;
 import org.apache.wicket.authorization.Action;
 import org.apache.wicket.authorization.IAuthorizationStrategy;
@@ -160,12 +161,12 @@ public class EmsApplication extends WebApplication {
         // mount navigation pages
         NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.pages");
         for ( String page : navigationModel.getNavigationPages() ) {
-            mountBookmarkablePage( "/" + navigationModel.getPageUrlForPage(page), navigationModel.getPageClassForPage(page) );
+            mountPage( "/" + navigationModel.getPageUrlForPage(page), navigationModel.getPageClassForPage(page) );
         }
 
         // mount other pages / templates
         mountTemplate("/Help.html");
-        mountBookmarkablePage("/Login.html", Login.class);
+        mountPage("/Login.html", Login.class);
         mountTemplate("/SSGClusterSelector.html");
         mountTemplate("/UserSelector.html");
 
@@ -174,6 +175,10 @@ public class EmsApplication extends WebApplication {
         mountTemplate("/PolicyApproval.html");
         mountTemplate("/PolicySubmission.html");
         mountTemplate("/SubmissionReceived.html");
+    }
+
+    public void mountPage( final String url, final Class pageClass ) {
+        super.mount( new HybridUrlCodingStrategy( url, pageClass, false ) );
     }
 
     @Override

@@ -180,7 +180,9 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
                 request.getRequestURI().startsWith("/css") ||
                 request.getRequestURI().startsWith("/images") ||
                 request.getRequestURI().startsWith("/js") ||
-                request.getRequestURI().startsWith("/yui");
+                request.getRequestURI().startsWith("/yui") ||
+                request.getRequestURI().startsWith("/resources/org.apache.wicket.markup.html.WicketEventReference/wicket-event.js") ||
+                request.getRequestURI().startsWith("/resources/org.apache.wicket.ajax.WicketAjaxReference/wicket-ajax.js");
     }
 
     /**
