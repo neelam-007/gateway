@@ -103,23 +103,16 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
 
         hrk.setStatus(status);
         response.close();
-        try {
-            final byte[] bytes;
-            if (variablesUsed.length > 0) {
-                String msg = message;
-                msg = ExpandVariables.process(msg, context.getVariableMap(variablesUsed, auditor), auditor);
-                bytes = msg.getBytes(contentType.getEncoding());
-            } else {
-                bytes = this.messageBytesNoVar;
-            }
-            response.initialize(stashManager, contentType, new ByteArrayInputStream(bytes));
-            response.attachHttpResponseKnob(hrk);
-        } catch (NoSuchPartException e) {
-            auditor.logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                    new String[] {"Unable to produce hardcoded response"},
-                    e);
-            return AssertionStatus.FAILED;
+        final byte[] bytes;
+        if (variablesUsed.length > 0) {
+            String msg = message;
+            msg = ExpandVariables.process(msg, context.getVariableMap(variablesUsed, auditor), auditor);
+            bytes = msg.getBytes(contentType.getEncoding());
+        } else {
+            bytes = this.messageBytesNoVar;
         }
+        response.initialize(stashManager, contentType, new ByteArrayInputStream(bytes));
+        response.attachHttpResponseKnob(hrk);
         context.setRoutingStatus(RoutingStatus.ROUTED);
 
         // process early response

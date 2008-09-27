@@ -6,7 +6,6 @@ import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.UserBean;
@@ -575,23 +574,19 @@ public class PolicyProcessingTest extends TestCase {
         final Message request = new Message();
 
         ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
-        try {
-            request.initialize(TestStashManagerFactory.getInstance().createStashManager(), ctype, new ByteArrayInputStream(message.getBytes()) );
-            request.attachJmsKnob(new JmsKnob() {
-                public boolean isBytesMessage() {
-                    return true;
-                }
-                public Map<String, Object> getJmsMsgPropMap() {
-                    //noinspection unchecked
-                    return Collections.EMPTY_MAP;
-                }
-                public String getSoapAction() {
-                    return null;
-                }
-            });
-        } catch(NoSuchPartException nspe) {
-            throw new CausedIOException("Mime init error", nspe);
-        }
+        request.initialize(TestStashManagerFactory.getInstance().createStashManager(), ctype, new ByteArrayInputStream(message.getBytes()) );
+        request.attachJmsKnob(new JmsKnob() {
+            public boolean isBytesMessage() {
+                return true;
+            }
+            public Map<String, Object> getJmsMsgPropMap() {
+                //noinspection unchecked
+                return Collections.EMPTY_MAP;
+            }
+            public String getSoapAction() {
+                return null;
+            }
+        });
 
         final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
         context.setReplyExpected(true); // HTTP always expects to receive a reply

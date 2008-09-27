@@ -4,22 +4,20 @@
 
 package com.l7tech.message;
 
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.util.CausedIllegalStateException;
-import com.l7tech.util.CausedIOException;
 import com.l7tech.xml.MessageNotSoapException;
-import com.l7tech.common.http.HttpConstants;
-
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ByteArrayInputStream;
 
 /**
  * Represents an abstract Message in the system.  This can be a request or a reply; over HTTP or JMS or transport
@@ -85,13 +83,13 @@ public final class Message {
      * @param sm  the StashManager to use for stashing MIME parts temporarily.  Must not be null.
      * @param outerContentType  the content type of the body InputStream.  Must not be null.
      * @param body an InputStream positioned at the first byte of body content for this Message.
-     * @throws NoSuchPartException if the message is multipart/related but contains no initial boundary
-     * @throws IOException if there is a problem reading the initial boundary from a multipart/related body
+     * @throws IOException if there is a problem reading the initial boundary from a multipart/related body, or
+     *                     if the message is multipart/related but contains no initial boundary.
      */
     public void initialize(StashManager sm,
                                   ContentTypeHeader outerContentType,
                                   InputStream body)
-            throws NoSuchPartException, IOException
+            throws IOException
     {
         HttpRequestKnob reqKnob = (HttpRequestKnob)getKnob(HttpRequestKnob.class);
         HttpResponseKnob respKnob = (HttpResponseKnob)getKnob(HttpResponseKnob.class);
@@ -125,8 +123,6 @@ public final class Message {
             if (reqKnob != null) attachHttpRequestKnob(reqKnob);
             if (respKnob != null) attachHttpResponseKnob(respKnob);
             getXmlKnob().setDocument(body);
-        } catch (NoSuchPartException e) {
-            throw new RuntimeException(e); // can't happen, it's not multipart
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen, it's a byte array input stream
         } catch (SAXException e) {
@@ -152,8 +148,6 @@ public final class Message {
             invalidateCachedKnobs();
             if (reqKnob != null) attachHttpRequestKnob(reqKnob);
             if (respKnob != null) attachHttpResponseKnob(respKnob);
-        } catch (NoSuchPartException e) {
-            throw new CausedIOException(e);
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen, it's a byte array input stream
         }

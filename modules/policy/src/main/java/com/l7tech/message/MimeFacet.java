@@ -22,7 +22,7 @@ class MimeFacet extends MessageFacet {
     }
 
     public MimeFacet(Message message, StashManager stash, ContentTypeHeader ctype, InputStream bodyStream)
-            throws NoSuchPartException, IOException
+            throws IOException
     {
         super(message, null); // Null because this will normally be the last aspect
         this.mimeBody = new MimeBody(stash, ctype, bodyStream);

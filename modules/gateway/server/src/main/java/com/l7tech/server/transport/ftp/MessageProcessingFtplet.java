@@ -1,20 +1,19 @@
 package com.l7tech.server.transport.ftp;
 
-import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.FtpRequestKnob;
 import com.l7tech.message.Message;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ResourceUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ResourceUtils;
 import org.apache.ftpserver.DefaultFtpReply;
 import org.apache.ftpserver.ServerDataConnectionFactory;
 import org.apache.ftpserver.ftplet.*;
@@ -168,7 +167,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
                                 ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_250_REQUESTED_FILE_ACTION_OKAY, file + ": Transfer started."));
                             }
 
-                            int storeResult = onStore(dataConnection, ftpSession, message, user, path, file, secure, unique);
+                            int storeResult = onStore(dataConnection, ftpSession, user, path, file, secure, unique);
 
                             if ( storeResult == STORE_RESULT_DROP ) {
                                 result = FtpletEnum.RET_DISCONNECT;
@@ -225,14 +224,13 @@ class MessageProcessingFtplet extends DefaultFtplet {
     /**
      * Store to message processor 
      */
-    private int onStore( final DataConnection dataConnection,
-                         final FtpSession ftpSession,
-                         final String[] messageHolder, 
-                         final User user,
-                         final String path,
-                         final String file,
-                         final boolean secure,
-                         final boolean unique) throws IOException {
+    private int onStore(final DataConnection dataConnection,
+                        final FtpSession ftpSession,
+                        final User user,
+                        final String path,
+                        final String file,
+                        final boolean secure,
+                        final boolean unique) throws IOException {
         int storeResult = STORE_RESULT_FAULT;
 
         if (logger.isLoggable(Level.FINE))
@@ -240,11 +238,10 @@ class MessageProcessingFtplet extends DefaultFtplet {
         
         // Create request message
         Message request = null;
-        try {
-            ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
-            Message requestMessage = new Message();
-            requestMessage.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(dataConnection, buildUri(path, file)));
-            requestMessage.attachFtpKnob(buildFtpKnob(
+        ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
+        Message requestMessage = new Message();
+        requestMessage.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(dataConnection, buildUri(path, file)));
+        requestMessage.attachFtpKnob(buildFtpKnob(
                     ftpSession.getServerAddress(),
                     ftpSession.getServerPort(),
                     ftpSession.getClientAddress(),
@@ -253,10 +250,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
                     secure,
                     unique,
                     user));
-            request = requestMessage;
-        } catch (NoSuchPartException nspe) {
-            messageHolder[0] = "Invalid multipart data.";
-        }
+        request = requestMessage;
 
         // process request message
         if (request != null) {

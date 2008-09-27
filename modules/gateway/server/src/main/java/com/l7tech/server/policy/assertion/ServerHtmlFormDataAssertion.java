@@ -355,8 +355,6 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
 
                 field.fieldValues.add(new FieldValue(filename, true));
             }
-        } catch (NoSuchPartException e) {
-            throw new IOException("Cannot read nested multipart/mixed: " + e.toString());
         } catch (ParseException e) {
             throw new IOException("Cannot parse Content-Disposition of a multipart/mixed subpart. Cause: " + e.toString());
         }

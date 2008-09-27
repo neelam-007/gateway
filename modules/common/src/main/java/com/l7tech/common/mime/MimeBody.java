@@ -82,13 +82,12 @@ public class MimeBody implements Iterable<PartInfo> {
      *                         of the body content, regardless of whether or not the body is multipart.
      *                         If a MimeBody is successfully created, it takes ownership of the mainInputStream.
      *                         If the MimeBody constructor throws a checked exception, this StashManager will already have been closed.
-     * @throws NoSuchPartException if this message is multpart/related but does not have any parts
      * @throws IOException if the mainInputStream cannot be read or a multipart message is not in valid MIME format
      */
     public MimeBody(StashManager stashManager,
                              ContentTypeHeader outerContentType,
                              InputStream mainInputStream)
-            throws IOException, NoSuchPartException
+            throws IOException
     {
         boolean itworked = false;
         try {
@@ -159,6 +158,8 @@ public class MimeBody implements Iterable<PartInfo> {
                     partInfosByCid.put(mainContentId, mainPartInfo);
             }
             itworked = true;
+        } catch (NoSuchPartException e) {
+            throw new IOException("Message MIME type is multipart/related, but no initial boundary found", e);
         } finally {
             if (!itworked) ResourceUtils.closeQuietly(stashManager);
         }

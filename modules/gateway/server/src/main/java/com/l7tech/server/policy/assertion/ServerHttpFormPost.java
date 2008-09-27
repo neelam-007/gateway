@@ -1,18 +1,17 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.http.GenericHttpClient;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.MimeUtil;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpFormPost;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
@@ -101,12 +100,7 @@ public class ServerHttpFormPost extends AbstractServerAssertion implements Serve
             outerContentType = "multipart/related; boundary=\"" + new String(boundary) + "\"";
         }
 
-        try {
-            request.initialize(stashManagerFactory.createStashManager(), ContentTypeHeader.parseValue(outerContentType), new ByteArrayInputStream(newMessageBytes));
-        } catch (NoSuchPartException e) {
-            auditor.logAndAudit(AssertionMessages.HTTPFORM_BAD_MIME, null, e);
-            return AssertionStatus.FAILED;
-        }
+        request.initialize(stashManagerFactory.createStashManager(), ContentTypeHeader.parseValue(outerContentType), new ByteArrayInputStream(newMessageBytes));
 
         return AssertionStatus.NONE;
     }

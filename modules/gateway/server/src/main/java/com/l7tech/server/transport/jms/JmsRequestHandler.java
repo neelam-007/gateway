@@ -7,7 +7,6 @@ import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.message.JmsKnob;
 import com.l7tech.message.MimeKnob;
@@ -300,8 +299,6 @@ class JmsRequestHandler {
                         }
                     }
                 }
-            } catch (NoSuchPartException e) {
-                throw new RuntimeException(e); // can't happen
             } catch (IOException e) {
                 throw new RuntimeException(e); // can't happen
             }

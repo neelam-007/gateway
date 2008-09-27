@@ -70,14 +70,10 @@ public class ServerInverseHttpFormPost extends AbstractServerAssertion<InverseHt
                 }
             }
 
-            try {
-                request.initialize(stashManagerFactory.createStashManager(),
+            request.initialize(stashManagerFactory.createStashManager(),
                         contentType,
                         new ByteArrayInputStream(baos.toByteArray()));
-                return AssertionStatus.NONE;
-            } catch (NoSuchPartException e) {
-                throw new PolicyAssertionException(assertion, e);
-            }
+            return AssertionStatus.NONE;
         }
         finally {
             if (baos != null) baos.close();

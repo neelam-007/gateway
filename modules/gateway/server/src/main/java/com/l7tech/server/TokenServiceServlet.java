@@ -1,31 +1,30 @@
 package com.l7tech.server;
 
-import com.l7tech.server.audit.AuditContext;
+import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.StashManager;
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.InvalidClientCertificateException;
+import com.l7tech.identity.User;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.mime.StashManager;
-import com.l7tech.security.xml.processor.ProcessorException;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.SoapFaultLevel;
-import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.User;
-import com.l7tech.identity.InvalidClientCertificateException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.xml.processor.ProcessorException;
+import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.SoapFaultLevel;
 import org.springframework.beans.BeansException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -132,11 +131,6 @@ public class TokenServiceServlet extends HttpServlet {
                 return;
             } catch (AuthenticationException e) {
                 sendBackNonSoapError(res, HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
-                return;
-            } catch (NoSuchPartException e) {
-                String msg = "Cannot initialize request context. " + e.getMessage();
-                logger.log(Level.SEVERE, msg, e);
-                sendExceptionFault(context, e, res);
                 return;
             }
 
