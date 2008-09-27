@@ -4,47 +4,38 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
+import com.l7tech.gateway.common.audit.MessageProcessingMessages;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.CircularPolicyException;
+import com.l7tech.policy.InvalidPolicyException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyDeletionForbiddenException;
-import com.l7tech.policy.InvalidPolicyException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.Include;
-import com.l7tech.policy.assertion.UnknownAssertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.PolicyCacheEvent;
 import com.l7tech.server.event.system.LicenseEvent;
-import com.l7tech.server.event.system.Started;
 import com.l7tech.server.event.system.PolicyReloadEvent;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.event.system.Started;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
 import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.transaction.support.TransactionCallbackWithoutResult;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.jmx.export.annotation.ManagedResource;
-import org.springframework.jmx.export.annotation.ManagedOperation;
+import org.springframework.context.*;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
+import org.springframework.jmx.export.annotation.ManagedOperation;
+import org.springframework.jmx.export.annotation.ManagedResource;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
-import java.io.IOException;
 import java.io.Closeable;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
@@ -359,17 +350,17 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
      */
     public void onApplicationEvent( final ApplicationEvent applicationEvent ) {
         if( applicationEvent instanceof LicenseEvent || applicationEvent instanceof AssertionModuleRegistrationEvent ) {
-            transactionIfAvailable( new Functions.NullaryVoid() {
+            transactionIfAvailable( new Runnable() {
                 @Override
-                public void call() {
+                public void run() {
                     ensureCacheValid();
                     resetUnlicensed();
                 }
             });
         } else if( applicationEvent instanceof AssertionModuleUnregistrationEvent ) {
-            transactionIfAvailable( new Functions.NullaryVoid() {
+            transactionIfAvailable( new Runnable() {
                 @Override
-                public void call() {
+                public void run() {
                     ensureCacheValid();
                     resetAllForModuleUnload();
                 }
@@ -397,9 +388,9 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             }
             publishReload();
         } else if ( applicationEvent instanceof Started ) {
-            transactionIfAvailable( new Functions.NullaryVoid() {
+            transactionIfAvailable( new Runnable() {
                 @Override
-                public void call() {
+                public void run() {
                     initializePolicyCache();
                 }
             });
@@ -1132,16 +1123,16 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         }
     }
 
-    private void transactionIfAvailable( final Functions.NullaryVoid callback ) {
+    private void transactionIfAvailable( final Runnable callback ) {
         if ( transactionManager != null ) {
             new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
                 @Override
                 protected void doInTransactionWithoutResult( final TransactionStatus status ) {
-                    callback.call();
+                    callback.run();
                 }
             });
         } else {
-            callback.call();
+            callback.run();
         }
     }
     

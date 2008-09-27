@@ -10,6 +10,8 @@ import java.util.*;
 /**
  * Plumbing for building simple callbacks that don't deserve to have a special interface created just for them.
  * <p/>
+ * There is no NullaryVoid interface provided; for that just use Runnable.
+ * <p/>
  * Requires Java 5.
  * @noinspection PublicInnerClass,InterfaceNamingConvention,StaticMethodNamingConvention
  */
@@ -22,14 +24,6 @@ public final class Functions {
      */
     public interface Nullary<R> {
         R call();
-    }
-
-    /**
-     * A function that takes no arguments and returns no value.
-     * Provided for symmetry; instead of this, you might consider using the equivalent but more idiomatic Runnable.
-     */
-    public interface NullaryVoid {
-        void call();
     }
 
     /** A function that takes one argument and returns a value. */
