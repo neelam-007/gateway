@@ -184,8 +184,7 @@
                         <div class="panel">
                             <div class="panelToolbar">
                                <button id="addUserButton" type="button" wicket:id="addUserButton"><img src="../images/addUser.png" alt="" /> <wicket:message key="label.new">New</wicket:message></button>
-                               <button id="editUserButton" type="button" wicket:id="editUserButton"><img src="../images/editUser.png" alt="" /> <wicket:message key="label.edit">Edit</wicket:message></button>
-                                <button id="resetUserPasswordButton" type="button" wicket:id="resetUserPasswordButton"><img src="../images/editUser.png" alt="" /> <wicket:message key="label.resetPassword">Reset Password</wicket:message></button>
+                               <button id="deleteUserButton" type="button" wicket:id="deleteUserButton"><img src="../images/deleteUser.png" alt="" /> <wicket:message key="label.delete">Delete</wicket:message></button>
                                <input name="userId" type="hidden" value="" wicket:id="userId"/>
                             </div>
                             <div wicket:id="usertable.container">
@@ -193,6 +192,12 @@
                             </div>
                         </div>
                     </form>
+                    <div wicket:id="user.container.1">
+                        <div wicket:id="user.content"/>
+                    </div>
+                    <div wicket:id="user.container.2">
+                        <div wicket:id="user.content"/>
+                    </div>
                     <div wicket:id="user.container">
                         <div wicket:id="user.content"/>
                     </div>

@@ -117,7 +117,7 @@ public class InternalUserManagerImpl
      * @throws DeleteException if the proposed deletion would remove the last user assigned to the "Administrator" role.
      */
     @Override
-    protected void postDelete( final InternalUser user ) throws DeleteException {
+    protected void postDelete( final InternalUser user ) throws DeleteException {        
         try {
             roleManager.validateRoleAssignments();
         } catch ( UpdateException ue ) {

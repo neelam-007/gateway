@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.User;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -11,6 +12,7 @@ import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.ResolvingComparator;
+import com.l7tech.util.ExceptionUtils;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -91,6 +93,14 @@ public class EmsAccountManagerImpl implements EmsAccountManager {
 
     public String save( final InternalUser user ) throws SaveException {
         return getUserManager().save( user, Collections.<IdentityHeader>emptySet() );
+    }
+
+    public void delete( final String login ) throws DeleteException {
+        try {
+            getUserManager().delete( getUserManager().findByLogin(login) );
+        } catch ( FindException fe ) {
+            throw new DeleteException( ExceptionUtils.getMessage(fe), fe );
+        }
     }
 
     //- PRIVATE

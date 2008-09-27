@@ -1,6 +1,7 @@
 package com.l7tech.server.ems.pages;
 
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.PasswordTextField;
 import org.apache.wicket.markup.html.form.RequiredTextField;
@@ -10,10 +11,14 @@ import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.apache.wicket.ajax.markup.html.form.AjaxButton;
+import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.Component;
 
 import java.io.Serializable;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.Collection;
 
 import com.l7tech.server.ems.EmsAccountManager;
 import com.l7tech.identity.internal.InternalUser;
@@ -29,11 +34,26 @@ public class EnterpriseUsersNewPanel extends Panel {
 
     //- PUBLIC
 
-    public EnterpriseUsersNewPanel( final String id ) {
+    public EnterpriseUsersNewPanel( final String id, final Collection<? extends Component> refreshComponents ) {
         super( id );
 
         //
-        add( new UserForm("newUserForm") );
+        final FeedbackPanel feedback = new FeedbackPanel("feedback");
+        UserForm userForm = new UserForm("newUserForm");
+        add( feedback.setOutputMarkupId(true) );
+        add( userForm );
+        add( new AjaxButton( "submit", userForm ){
+            protected void onSubmit( final AjaxRequestTarget target, final Form form ) {
+                target.addComponent( feedback );
+                for ( Component component : refreshComponents ) {
+                    target.addComponent( component );
+                }
+            }
+            @Override
+            protected void onError(AjaxRequestTarget target, Form form) {
+                target.addComponent( feedback );
+            }
+        } );
     }
 
     //- PRIVATE

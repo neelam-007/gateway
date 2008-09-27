@@ -1,14 +1,16 @@
 package com.l7tech.server.ems.pages;
 
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.PasswordTextField;
 import org.apache.wicket.markup.html.form.validation.EqualPasswordInputValidator;
-import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.apache.wicket.ajax.markup.html.form.AjaxButton;
+import org.apache.wicket.ajax.AjaxRequestTarget;
 
 import java.io.Serializable;
 import java.util.logging.Logger;
@@ -32,8 +34,17 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
         super(id);
 
         //
+        final FeedbackPanel feedback = new FeedbackPanel("feedback");
+        add( feedback.setOutputMarkupId(true) );
+
         PasswordResetForm passwordForm = new PasswordResetForm("resetPasswordForm", buildUserModel(username));
         add( passwordForm );
+
+        add( new AjaxButton( "submit", passwordForm ){
+            protected void onSubmit( final AjaxRequestTarget target, final Form form ) {
+                target.addComponent( feedback );
+            }
+        });
     }
 
     //- PRIVATE
@@ -71,6 +82,7 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
             if ( user != null ) {
                 user.setCleartextPassword( model.password );
                 emsAccountManager.update( user );
+                form.info( new StringResourceModel("message.reset", this, null, new Object[]{ model.userId } ).getString() );
             } else {
                 form.error( new StringResourceModel("message.deleted", this, null, new Object[]{ model.userId } ).getString() );
             }
@@ -112,7 +124,6 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
 
             pass1.add( new StringValidator.LengthBetweenValidator(6, 128) );
 
-            add(new Label("userId"));
             add(pass1.setRequired(true));
             add(pass2.setRequired(true));
 

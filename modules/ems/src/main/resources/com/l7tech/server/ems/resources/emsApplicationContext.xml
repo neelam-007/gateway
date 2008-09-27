@@ -253,7 +253,7 @@
         <constructor-arg value="internalIdentityProvider"/>
     </bean>
     <bean id="internalUserManager" class="com.l7tech.server.identity.internal.InternalUserManagerImpl" parent="hibernateBean">
-        <constructor-arg index="0"><null/></constructor-arg>
+        <constructor-arg index="0" ref="roleManager"/>
         <constructor-arg index="1"><null/></constructor-arg>
     </bean>
     <bean id="internalIdentityProvider" class="com.l7tech.server.identity.internal.InternalIdentityProviderImpl">

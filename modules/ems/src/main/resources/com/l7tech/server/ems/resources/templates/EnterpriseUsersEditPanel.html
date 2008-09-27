@@ -131,30 +131,33 @@
             </div>
             <div class="content">
                 <wicket:panel>
-                    <form action="EnterpriseUsers.html" method="POST" wicket:id="editUserForm">
-                        <table class="indent spaced">
-                            <tr>
-                                <th>User Name:</th>
-                                <td><span wicket:id="userId"/></td>
-                            </tr>
-                            <tr>
-                                <th>Email:</th>
-                                <td><input id="email" name="email" type="text" wicket:id="email"/></td>
-                            </tr>
-                            <tr>
-                                <th>Surname:</th>
-                                <td><input id="lastName" name="lastName" type="text" wicket:id="lastName"/></td>
-                            </tr>
-                            <tr>
-                                <th>Given Name:</th>
-                                <td><input id="firstName" name="firstName" type="text" wicket:id="firstName"/></td>
-                            </tr>
-                            <tr>
-                                <th>Description:</th>
-                                <td><input id="description" name="description" type="text" wicket:id="description"/></td>
-                            </tr>
-                         </table>
-                    </form>
+                    <div class="panel">
+                        <div class="panelTitle"><wicket:message key="panel.edituser.title">Edit User</wicket:message></div>
+                        <div class="panelContent">
+                            <div wicket:id="feedback" class="center"/>
+                            <form action="EnterpriseUsers.html" method="POST" wicket:id="editUserForm">
+                                <table class="indent spaced">
+                                    <tr>
+                                        <th>Email:</th>
+                                        <td><input id="email" name="email" type="text" wicket:id="email"/></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Surname:</th>
+                                        <td><input id="lastName" name="lastName" type="text" wicket:id="lastName"/></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Given Name:</th>
+                                        <td><input id="firstName" name="firstName" type="text" wicket:id="firstName"/></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Description:</th>
+                                        <td><input id="description" name="description" type="text" wicket:id="description"/></td>
+                                    </tr>
+                                 </table>
+                            </form>
+                            <button type="submit" value="Apply" wicket:id="submit"><wicket:message key="label.apply">Apply</wicket:message></button>
+                        </div>
+                    </div>
                 </wicket:panel>
             </div>
             <div class="statusBar">

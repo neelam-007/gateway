@@ -182,7 +182,8 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
                 request.getRequestURI().startsWith("/js") ||
                 request.getRequestURI().startsWith("/yui") ||
                 request.getRequestURI().startsWith("/resources/org.apache.wicket.markup.html.WicketEventReference/wicket-event.js") ||
-                request.getRequestURI().startsWith("/resources/org.apache.wicket.ajax.WicketAjaxReference/wicket-ajax.js");
+                request.getRequestURI().startsWith("/resources/org.apache.wicket.ajax.WicketAjaxReference/wicket-ajax.js") ||
+                request.getRequestURI().startsWith("/resources/org.apache.wicket.ajax.AbstractDefaultAjaxBehavior/wicket-ajax-debug.js");
     }
 
     /**

@@ -2,6 +2,8 @@ package com.l7tech.server.ems.pages;
 
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.markup.repeater.RepeatingView;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.IModel;
@@ -16,6 +18,7 @@ import com.l7tech.gateway.common.audit.Messages;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import static com.l7tech.gateway.common.Component.fromId;
 import com.l7tech.server.ems.EmsSession;
+import com.l7tech.util.Pair;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -23,6 +26,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.io.Serializable;
 import java.text.MessageFormat;
@@ -41,14 +45,27 @@ public class AuditDetailPanel extends Panel {
     public AuditDetailPanel( final String identifier, final AuditRecord record ) {
         super( identifier, new Model(record) );
 
-        Label summary = new Label("auditsummary", new Model(buildLogDetails(record)));
+        RepeatingView summary = new RepeatingView("auditsummary");
+        int count=0;
+        for ( Pair<String,String> data : buildLogDetails(record) ) {
+            WebMarkupContainer container = new WebMarkupContainer( Integer.toString(count++) );
+            if ( data.left.equals("") ) {
+                container.add(new Label("auditsummary.name", "&nbsp;").setEscapeModelStrings(false));
+                container.add(new Label("auditsummary.value", data.right));
+            } else {
+                container.add(new Label("auditsummary.name", data.left + ":"));
+                container.add(new Label("auditsummary.value", data.right));
+            }
+            summary.add(container);
+        }
 
         List<PropertyColumn> columns = new ArrayList<PropertyColumn>();
         columns.add(new PropertyColumn(new StringResourceModel("auditdetailtable.column.date", this, null), "DATE", "date"));
         columns.add(new PropertyColumn(new StringResourceModel("auditdetailtable.column.level", this, null), "LEVEL", "level"));
         columns.add(new PropertyColumn(new StringResourceModel("auditdetailtable.column.message", this, null), "MESSAGE", "message"));
         YuiDataTable table = new YuiDataTable("auditdetailtable", columns, "TIME", false,  new AuditDetailDataProvider(record, "DATE", false));
-
+        table.setVisible(!record.getDetails().isEmpty());
+        
         add( summary );
         add( table );
     }
@@ -56,73 +73,76 @@ public class AuditDetailPanel extends Panel {
     /**
      *
      */
-    public String buildLogDetails( final AuditRecord record ) {
+    public Collection<Pair<String,String>> buildLogDetails( final AuditRecord record ) {
         EmsSession session = (EmsSession) getSession();
 
-        String msg = "";
-        msg += nonull("Time       : ", new SimpleDateFormat(session.getDateTimeFormatPattern()).format( new Date(record.getMillis()) ));
-        msg += nonull("Severity   : ", record.getLevel());
-        msg += nonule("Request Id : ", record.getReqId());
-        msg += nonull("Class      : ", record.getSourceClassName());
-        msg += nonull("Method     : ", record.getSourceMethodName());
-        msg += nonull("Message    : ", record.getMessage());
+        Collection<Pair<String,String>> details = new ArrayList<Pair<String,String>>();
 
-        msg += "\n";
+        nonull(details, "Time", new SimpleDateFormat(session.getDateTimeFormatPattern()).format( new Date(record.getMillis()) ));
+        nonull(details, "Severity", record.getLevel());
+        nonule(details, "Request Id", record.getReqId());
+        nonull(details, "Class", record.getSourceClassName());
+        nonull(details, "Method", record.getSourceMethodName());
+        nonull(details, "Message", record.getMessage());
+
+        details.add( new Pair<String,String>("","") );
 
         if (record instanceof AdminAuditRecord) {
             AdminAuditRecord aarec = (AdminAuditRecord)record;
-            msg += "Event Type : Manager Action" + "\n";
-            msg += "Admin user : " + aarec.getUserName() + "\n";
-            msg += "Admin IP   : " + record.getIpAddress() + "\n";
-            msg += "Action     : " + fixAction(aarec.getAction()) + "\n";
+            add(details, "Event Type", "Manager Action");
+            add(details, "Admin user", aarec.getUserName());
+            add(details, "Admin IP", record.getIpAddress());
+            add(details, "Action", fixAction(aarec.getAction()));
             if (AdminAuditRecord.ACTION_LOGIN!=aarec.getAction() &&
                 AdminAuditRecord.ACTION_OTHER!=aarec.getAction()) {
-                msg += "Entity name: " + record.getName() + "\n";
-                msg += "Entity id  : " + aarec.getEntityOid() + "\n";
-                msg += "Entity type: " + fixType(aarec.getEntityClassname()) + "\n";
+                add(details, "Entity name", record.getName());
+                add(details, "Entity id", aarec.getEntityOid());
+                add(details, "Entity type", fixType(aarec.getEntityClassname()));
             }
         } else if (record instanceof SystemAuditRecord) {
             SystemAuditRecord sys = (SystemAuditRecord)record;
             com.l7tech.gateway.common.Component component = fromId(sys.getComponentId());
             boolean isClient = component != null && component.isClientComponent();
-            msg += "Event Type : System Message" + "\n";
+            add(details, "Event Type", "System Message");
             if(isClient) {
-                msg += "Client IP  : " + record.getIpAddress() + "\n";
+                add(details, "Client IP", record.getIpAddress());
             }
             else {
-                msg += "Node IP    : " + record.getIpAddress() + "\n";
+                add(details, "Node IP", record.getIpAddress());
             }
-            msg += "Action     : " + sys.getAction() + "\n";
-            msg += "Component  : " + fixComponent(sys.getComponentId()) + "\n";
+            add(details, "Action", sys.getAction());
+            add(details, "Component", fixComponent(sys.getComponentId()));
             if(isClient) {
-                msg += "User ID    : " + fixUserId(record.getUserId()) + "\n";
-                msg += "User Name  : " + record.getUserName() + "\n";
+                add(details, "User ID", fixUserId(record.getUserId()));
+                add(details, "User Name", record.getUserName());
             }
-            msg += "Entity name: " + record.getName() + "\n";
+            add(details, "Entity name", record.getName());
         } else {
-            msg += "Event Type : Unknown" + "\n";
-            msg += "Entity name: " + record.getName() + "\n";
-            msg += "IP Address : " + record.getIpAddress() + "\n";
+            add(details, "Event Type", "Unknown");
+            add(details, "Entity name", record.getName());
+            add(details, "IP Address", record.getIpAddress());
         }
 
-        return msg;
+        return details;
     }
 
     //- PRIVATE
 
-    private String nonull( final String s, final Object n ) {
-        return n == null ? "" : (s + n + "\n");
+    private void add( final Collection<Pair<String,String>> details, final String s, final Object n ) {
+        details.add( new Pair<String,String>( s, n==null ? "" : n.toString() ));            
     }
 
-    private String nonule( final String s, final Object n ) {
-        String result = "";
-        String value = n == null ? null : n.toString();
-
-        if ( value != null && value.length() > 0 ) {
-            result = s + n + "\n";
+    private void nonull( final Collection<Pair<String,String>> details, final String s, final Object n ) {
+        if ( n != null ) {
+            details.add( new Pair<String,String>( s, n.toString() ));            
         }
+    }
 
-        return result;
+    private void nonule( final Collection<Pair<String,String>> details, final String s, final Object n ) {
+        String value = n == null ? null : n.toString();
+        if ( value != null && value.length() > 0 ) {
+            details.add( new Pair<String,String>( s, value ));
+        }
     }
 
     private String fixComponent( final int componentId ) {

@@ -1,17 +1,21 @@
 package com.l7tech.server.ems.pages;
 
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextField;
-import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.apache.wicket.ajax.markup.html.form.AjaxButton;
+import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.Component;
 
 import java.io.Serializable;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.Collection;
 
 import com.l7tech.server.ems.EmsAccountManager;
 import com.l7tech.identity.internal.InternalUser;
@@ -26,12 +30,26 @@ public class EnterpriseUsersEditPanel extends Panel {
 
     //- PUBLIC
 
-    public EnterpriseUsersEditPanel( final String id, final String username ) {
+    public EnterpriseUsersEditPanel( final String id, final String username, final Collection<? extends Component> refreshComponents ) {
         super(id);
         
         //
+        final FeedbackPanel feedback = new FeedbackPanel("feedback");
         UserForm editForm = new UserForm("editUserForm", buildUserModel(username));
+        add( feedback.setOutputMarkupId(true) );
         add( editForm );
+        add( new AjaxButton( "submit", editForm ){
+            protected void onSubmit( final AjaxRequestTarget target, final Form form ) {
+                target.addComponent( feedback );
+                for ( Component component : refreshComponents ) {
+                    target.addComponent( component );
+                }
+            }
+            @Override
+            protected void onError(AjaxRequestTarget target, Form form) {
+                target.addComponent( feedback );
+            }
+        } );
     }
 
     //- PRIVATE
@@ -78,6 +96,7 @@ public class EnterpriseUsersEditPanel extends Panel {
                 user.setDescription( model.description );
 
                 emsAccountManager.update( user );
+                form.info( new StringResourceModel("message.updated", this, null, new Object[]{ model.userId } ).getString() );
             } else {
                 form.error( new StringResourceModel("message.deleted", this, null, new Object[]{ model.userId } ).getString() );
             }
@@ -113,7 +132,6 @@ public class EnterpriseUsersEditPanel extends Panel {
         public UserForm( final String componentName, final UserModel userModel ) {
             super(componentName, new CompoundPropertyModel(userModel));
 
-            add(new Label("userId"));
             add(new TextField("email").add(new StringValidator.LengthBetweenValidator(1, 128)));
             add(new TextField("lastName").add(new StringValidator.LengthBetweenValidator(1, 32)));
             add(new TextField("firstName").add(new StringValidator.LengthBetweenValidator(1, 32)));

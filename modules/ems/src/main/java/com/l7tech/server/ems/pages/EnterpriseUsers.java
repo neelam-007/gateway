@@ -2,6 +2,7 @@ package com.l7tech.server.ems.pages;
 
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.ems.EmsAccountManager;
 import com.l7tech.server.ems.NavigationPage;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -12,6 +13,7 @@ import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.IModel;
@@ -34,8 +36,7 @@ public class EnterpriseUsers extends EmsPage {
     public EnterpriseUsers() {
         final WebMarkupContainer container = new WebMarkupContainer("user.container");
         container.setOutputMarkupId(true);
-        EmptyPanel content = new EmptyPanel("user.content");
-        container.add(content);
+        container.add(new EmptyPanel("user.content"));
         add ( container );
         final WebMarkupContainer tableContainer = new WebMarkupContainer("usertable.container");
 
@@ -43,53 +44,55 @@ public class EnterpriseUsers extends EmsPage {
         add ( pageForm );
         pageForm.add ( tableContainer.setOutputMarkupId(true) );
 
+        final WebMarkupContainer userContainer1 = new WebMarkupContainer("user.container.1");
+        userContainer1.setOutputMarkupId(true);
+        userContainer1.add(new EmptyPanel("user.content"));
+        add ( userContainer1 );
+
+        final WebMarkupContainer userContainer2 = new WebMarkupContainer("user.container.2");
+        userContainer2.setOutputMarkupId(true);
+        userContainer2.add(new EmptyPanel("user.content"));
+        add ( userContainer2 );
+
         Button addButton = new AjaxButton("addUserButton") {
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
+                userContainer1.removeAll();
+                userContainer2.removeAll();
+
+                userContainer1.add( new EnterpriseUsersNewPanel( "user.content", Collections.singleton(tableContainer) ) );
+                userContainer2.add( new EmptyPanel("user.content") );
+
+                ajaxRequestTarget.addComponent( userContainer1 );
+                ajaxRequestTarget.addComponent( userContainer2 );
+            }
+        };
+
+        Button deleteButton = new AjaxButton("deleteUserButton") {
+            protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
+                final String id = (String) form.get("userId").getModel().getObject();
                 container.removeAll();
-                EnterpriseUsersNewPanel panel = new EnterpriseUsersNewPanel( YuiDialog.getContentId() );
-                YuiDialog dialog = new YuiDialog( "user.content", "Create User", YuiDialog.Style.OK_CANCEL, panel );
+                Label confirmLabel = new Label( YuiDialog.getContentId(), "Are you sure you want to delete user '"+id+"'?" );
+                YuiDialog dialog = new YuiDialog( "user.content", "Delete User", YuiDialog.Style.OK_CANCEL, confirmLabel, new YuiDialog.OkCancelCallback(){
+                    public void onAction(YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
+                        if ( button == YuiDialog.Button.OK ) {
+                            try {
+                                emsAccountManager.delete( id );
+                                target.addComponent(tableContainer);
+                            } catch (DeleteException de) {
+                                logger.log(Level.WARNING, "Error deleting user.", de);
+                            }
+                        }
+                    }
+                } );
                 container.add( dialog );
                 ajaxRequestTarget.addComponent( container );
             }
         };
 
-        Button editButton = new AjaxButton("editUserButton") {
-            protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form) {
-                String id = (String) form.get("userId").getModel().getObject();
-                if ( id != null && id.length() > 0 ) {
-                    container.removeAll();
-                    EnterpriseUsersEditPanel panel = new EnterpriseUsersEditPanel( YuiDialog.getContentId(), id );
-                    YuiDialog dialog = new YuiDialog( "user.content", "Edit User", YuiDialog.Style.OK_CANCEL, panel, new YuiDialog.OkCancelCallback(){
-                        public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
-                            if ( YuiDialog.Button.OK == button ) {
-                                target.addComponent( tableContainer );
-                            }
-                        }
-                    } );
-                    container.add( dialog );
-                    ajaxRequestTarget.addComponent( container );
-                }
-            }
-        };
-
-        Button resetButton = new AjaxButton("resetUserPasswordButton") {
-            protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form) {
-                String id = (String) form.get("userId").getModel().getObject();
-                if ( id != null && id.length() > 0 ) {
-                    container.removeAll();
-                    EnterpriseUsersResetPasswordPanel panel = new EnterpriseUsersResetPasswordPanel( YuiDialog.getContentId(), id );
-                    YuiDialog dialog = new YuiDialog( "user.content", "Reset User Password", YuiDialog.Style.OK_CANCEL, panel );
-                    container.add( dialog );
-                    ajaxRequestTarget.addComponent( container );
-                }
-            }
-        };
-        
         HiddenField hidden = new HiddenField("userId", new Model(""));
 
         pageForm.add( addButton );
-        pageForm.add( editButton );
-        pageForm.add( resetButton );
+        pageForm.add( deleteButton );
         pageForm.add( hidden.setOutputMarkupId(true) );
 
         List<PropertyColumn> columns = new ArrayList<PropertyColumn>();
@@ -97,7 +100,21 @@ public class EnterpriseUsers extends EmsPage {
         columns.add(new PropertyColumn(new StringResourceModel("usertable.column.lastName", this, null), "lastName", "lastName"));
         columns.add(new PropertyColumn(new StringResourceModel("usertable.column.firstName", this, null), "firstName", "firstName"));
 
-        YuiDataTable table = new YuiDataTable("usertable", columns, "login", true, new UserDataProvider("login", true), hidden, "login", false, new Button[]{ editButton });
+        YuiDataTable table = new YuiDataTable("usertable", columns, "login", true, new UserDataProvider("login", true), hidden, "login", false, new Button[]{ deleteButton }){
+            @Override
+            @SuppressWarnings({"UnusedDeclaration"})
+            protected void onSelect( final AjaxRequestTarget ajaxRequestTarget, final String value ) {
+                if ( value != null && value.length() > 0 ) {
+                    userContainer1.removeAll();
+                    userContainer1.add(new EnterpriseUsersEditPanel( "user.content", value, Collections.singleton(tableContainer) ));
+                    ajaxRequestTarget.addComponent( userContainer1 );
+
+                    userContainer2.removeAll();
+                    userContainer2.add( new EnterpriseUsersResetPasswordPanel( "user.content", value ) );
+                    ajaxRequestTarget.addComponent( userContainer2 );
+                }
+            }
+        };
         tableContainer.add( table );        
     }
 

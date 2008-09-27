@@ -42,25 +42,20 @@ public class YuiDateSelector extends Panel {
 
         DateTextField textField = new DateTextField("date", model);
         textField.setRequired(true);
-        Button showButton = new Button("show");
         WebMarkupContainer calendarDiv = new WebMarkupContainer("calendar");
         WebMarkupContainer calendarBody = new WebMarkupContainer("calendar-body");        
                 
         textField.setOutputMarkupId(true);
-        showButton.setOutputMarkupId(true);
         calendarDiv.setOutputMarkupId(true);
         calendarBody.setOutputMarkupId(true);
                 
         add( textField );
-        add( showButton );
         add( calendarDiv );
         calendarDiv.add( calendarBody );
         
         StringBuilder scriptBuilder = new StringBuilder();
         scriptBuilder.append("YAHOO.util.Event.onDOMReady( function(){ initDateSelector('");
         scriptBuilder.append( textField.getMarkupId() );
-        scriptBuilder.append("', '");
-        scriptBuilder.append( showButton.getMarkupId() );
         scriptBuilder.append("', '");
         scriptBuilder.append( calendarDiv.getMarkupId() );
         scriptBuilder.append("', '");

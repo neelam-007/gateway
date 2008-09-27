@@ -4,6 +4,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.DeleteException;
 
 import java.util.Collection;
 
@@ -22,4 +23,5 @@ public interface EmsAccountManager {
 
     void update( InternalUser user ) throws UpdateException;
 
+    void delete( String login ) throws DeleteException;
 }

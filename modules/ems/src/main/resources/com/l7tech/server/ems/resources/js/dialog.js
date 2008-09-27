@@ -40,6 +40,7 @@ function showDialog( dialogId, optionButtons ) {
         };
 
         var closeHandler = function(){};
+        var defaultButtonId;
         var buttonArray = [];
         for ( var i=0; i<optionButtons.length; i++ ) {
             var scopedConfig = function() {
@@ -51,6 +52,7 @@ function showDialog( dialogId, optionButtons ) {
                     handle( buttonId, this, callback );
                 };
                 closeHandler = handleButton; //TODO explicit button for close?
+                defaultButtonId = buttonId;
                 buttonArray[i] = { text:text, handler:handleButton, isDefault:isDefault };
             }
             scopedConfig();
@@ -68,6 +70,14 @@ function showDialog( dialogId, optionButtons ) {
                                       constraintoviewport : true,
                                       buttons : buttonArray
                                     });
+
+        // Don't focus the form on show, it causes problems for the pop-up calendar
+        dialog.showEvent.unsubscribe(dialog.focusFirst);
+        dialog.showEvent.subscribe( function(){
+            if (defaultButtonId) {
+                try{ document.getElementById(defaultButtonId).focus(); } catch(oException) { }
+            }
+        });
 
         // Handle close dialog
         dialog.hideEvent.subscribe(closeHandler);

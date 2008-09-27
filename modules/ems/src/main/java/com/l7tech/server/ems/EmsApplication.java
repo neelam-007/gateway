@@ -57,7 +57,8 @@ public class EmsApplication extends WebApplication {
      * 
      */
     public String getConfigurationType() {
-        return WebApplication.DEPLOYMENT;
+        return WebApplication.DEVELOPMENT;
+//        return WebApplication.DEPLOYMENT;
     }
 
     public Session newSession(Request request, Response response) {

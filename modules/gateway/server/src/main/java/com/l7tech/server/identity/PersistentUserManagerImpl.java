@@ -143,7 +143,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     @Secured(operation=OperationType.DELETE)
     @Override
     public void delete(UT user) throws DeleteException {
-        UT userImp = cast(user);
+        final UT userImp = cast(user);
         try {
             UT originalUser = findByPrimaryKey(userImp.getId());
 
@@ -154,15 +154,29 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
             preDelete(originalUser);
 
             final GMT gman = identityProvider.getGroupManager();
-            Set<IdentityHeader> groupHeaders = gman.getGroupHeaders(userImp);
-            for (EntityHeader groupHeader : groupHeaders) {
-                GT group = gman.findByPrimaryKey(groupHeader.getStrId());
-                gman.deleteMembership(group, user);
+            if (gman != null) {
+                Set<IdentityHeader> groupHeaders = gman.getGroupHeaders(userImp);
+                for (EntityHeader groupHeader : groupHeaders) {
+                    GT group = gman.findByPrimaryKey(groupHeader.getStrId());
+                    gman.deleteMembership(group, user);
+                }
             }
 
             // Revoke cert before deleting user (Bug #2963)
             revokeCert(userImp);
-            getHibernateTemplate().delete(userImp);
+            getHibernateTemplate().execute(new HibernateCallback(){
+                @SuppressWarnings({"unchecked"})
+                public Object doInHibernate( final Session session) throws HibernateException, SQLException {
+                    UT entity = (UT)session.get(userImp.getClass(), userImp.getOid());
+                    if (entity == null) {
+                        session.delete(userImp);
+                    } else {
+                        // Avoid NonUniqueObjectException if an older version of this is still in the Session
+                        session.delete(entity);
+                    }
+                    return null;
+                }
+            });
             postDelete( user );
         } catch (DeleteException e) {
             throw e;

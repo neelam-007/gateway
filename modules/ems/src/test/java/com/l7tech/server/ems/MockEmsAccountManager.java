@@ -3,6 +3,7 @@ package com.l7tech.server.ems;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.identity.internal.InternalUser;
 
 import java.util.Collection;
@@ -30,5 +31,9 @@ public class MockEmsAccountManager implements EmsAccountManager {
 
     public void update(InternalUser user) throws UpdateException {
         throw new UpdateException("Mock does not support update");
+    }
+
+    public void delete(String user) throws DeleteException {
+        throw new DeleteException("Mock does not support delete");
     }
 }

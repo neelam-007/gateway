@@ -1,7 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
+<html xmlns:wicket="http://wicket.apache.org/">
   <head>
-    <title></title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   </head>
   <body>  
@@ -9,26 +8,25 @@
         <style type="text/css">
             .dateselector-container .bd:after {content:".";display:block;clear:left;height:0;visibility:hidden;}
             .dateselector-container .bd {padding:0;}
-            .dateselector-cal {border:none;padding:1em}
-            .dateselector input, .dateselector button, .dateselector label {vertical-align:middle}
-            .dateselector button img {padding:0;margin:0;vertical-align:middle}
-            .dateselector label {font-weight:bold}
-            .dateselector input {width:15em}
-            .dateselector button {padding:0 5px 0 5px; margin-left:2px}
-        </style>       
+            .dateselector-calendar {border:none;padding:1em}
+            .dateselector input, .dateselector {vertical-align:middle}
+            .dateselector input {width:17em}
+        </style>
       </wicket:head>
       <wicket:panel>
         <div class="dateselector">
             <input wicket:id="date" name="date" type="text" value="" maxlength="10"/>
-            <button wicket:id="show" type="button"><wicket:message key="label.calendar">Calendar</wicket:message></button>
         </div>
-        <div wicket:id="calendar" class="dateselector-container">
-            <div class="hd"><wicket:message key="label.calendar">Calendar</wicket:message></div>
-            <div class="bd">
-                <div wicket:id="calendar-body" class="dateselector-calendar"></div>
-            </div>
-       </div>      
-       <script wicket:id="javascript" type="text/javascript"/>
-      </wicket:panel>  
+          
+        <div style="visibility:hidden;">
+            <div wicket:id="calendar" class="dateselector-container">
+                <div class="bd">
+                    <div wicket:id="calendar-body" class="dateselector-calendar"/>
+                </div>
+           </div>
+        </div>
+          
+        <script wicket:id="javascript" type="text/javascript"/>
+      </wicket:panel>
   </body>
 </html>

@@ -92,7 +92,7 @@ public class Audits extends EmsPage {
         columns.add(new PropertyColumn(new StringResourceModel("audittable.column.level", this, null), "LEVEL", "level"));
         columns.add(new PropertyColumn(new StringResourceModel("audittable.column.message", this, null), "MESSAGE", "message"));
 
-        final Model dateStartModel = new Model(new Date(System.currentTimeMillis()- TimeUnit.DAYS.toMillis(7)));
+        final Model dateStartModel = new Model(new Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(7)));
         final Model dateEndModel = new Model(new Date());
         final Model typeModel = new Model(values[0]);
         final WebMarkupContainer tableContainer = new WebMarkupContainer("audittable.container");
