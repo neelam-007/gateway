@@ -275,7 +275,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         if (rbPolicyManual.isSelected() && policyXmlText.isEnabled()) {
             
             //policy XML content empty data or xml is not well-formed
-            if (policyXmlText.getText().trim().isEmpty()) {
+            if (policyXmlText.getText().trim().length() == 0) {
                 JOptionPane.showMessageDialog(
                         BridgeRoutingAssertionPropertiesDialog.this, "This manually specified policy XML cannot be empty.",
                         "Invalid Policy XML", JOptionPane.OK_OPTION);
