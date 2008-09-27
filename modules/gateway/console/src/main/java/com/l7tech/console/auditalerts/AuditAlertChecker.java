@@ -134,7 +134,7 @@ public class AuditAlertChecker {
 
     private AuditSearchCriteria getAuditSearchCriteria(Date lastAckedTime) {
         Level currentLevel = configBean.getAuditAlertLevel();
-        return new AuditSearchCriteria(lastAckedTime, null, currentLevel, null, null, null, 0,0,1);
+        return new AuditSearchCriteria.Builder().fromTime(lastAckedTime).fromLevel(currentLevel).maxRecords(1).build();
     }
 
     private void startTimer() {

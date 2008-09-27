@@ -8,6 +8,7 @@ package com.l7tech.server.audit;
 import com.l7tech.objectmodel.*;
 import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.audit.AuditRecord;
+import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.server.EntityManagerStub;
 
 import java.util.Collection;
@@ -18,9 +19,13 @@ import java.util.Collections;
  * @author emil
  * @version Feb 17, 2005
  */
-public class AuditRecordManagerStub extends EntityManagerStub<AuditRecord,EntityHeader> implements AuditRecordManager {
+public class AuditRecordManagerStub extends EntityManagerStub<AuditRecord,AuditRecordHeader> implements AuditRecordManager {
     public Collection<AuditRecord> find(AuditSearchCriteria criteria) throws FindException {
         return Collections.emptyList();
+    }
+
+    public Collection<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException{
+        throw new UnsupportedOperationException();
     }
 
     public void deleteOldAuditRecords(long minAge) throws DeleteException {

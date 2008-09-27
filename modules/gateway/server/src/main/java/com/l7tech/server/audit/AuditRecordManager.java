@@ -8,6 +8,7 @@ package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.AuditSearchCriteria;
+import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
@@ -16,7 +17,7 @@ import java.util.Collection;
  * @author alex
  * @version $Revision$
  */
-public interface AuditRecordManager extends EntityManager<AuditRecord, EntityHeader> {
+public interface AuditRecordManager extends EntityManager<AuditRecord, AuditRecordHeader> {
 
     enum SortProperty {
         TIME("millis"), MESSAGE("message"), LEVEL("strLvl");
@@ -37,6 +38,15 @@ public interface AuditRecordManager extends EntityManager<AuditRecord, EntityHea
      * @throws FindException If an error occurs
      */
     Collection<AuditRecord> find(AuditSearchCriteria criteria) throws FindException;
+
+    /**
+     * Find {@link com.l7tech.gateway.common.audit.AuditRecordHeader}s that match the given criteria.
+     * (This is the same as the above find() method except it returns headers only as opposed to entire records.
+     * @param criteria criteria The search settings (must not be null)
+     * @return The collection of audit records (not null)
+     * @throws FindException If an error occurs
+     */
+    Collection<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException;
 
     /**
      * Delete old audit records.

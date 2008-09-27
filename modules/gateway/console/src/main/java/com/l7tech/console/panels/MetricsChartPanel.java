@@ -1050,17 +1050,14 @@ public class MetricsChartPanel extends ChartPanel {
         final Registry registry = Registry.getDefault();
         if (registry.isAdminContextPresent()) {
             final AuditAdmin auditAdmin = registry.getAuditAdmin();
-            final AuditSearchCriteria criteria = new AuditSearchCriteria(
-                    startDate,
-                    endDate,
-                    null,                   // fromLevel
-                    null,                   // toLevel
-                    null,                   // recordClass
-                    null,                   // nodeId
-                    0L,                     // startMessageNumber,
-                    0L,                     // endMessageNumber,
-                    0                       // maxRecords
-            );
+            final ClusterNodeInfo nodeSelected = _serviceMetricsPanel.getClusterNodeSelected();
+            final EntityHeader serviceSelected = _serviceMetricsPanel.getPublishedServiceSelected();
+
+            final AuditSearchCriteria criteria = new AuditSearchCriteria.Builder().
+                    fromTime(startDate).
+                    toTime(endDate).
+                    nodeId(nodeSelected == null ? null : nodeSelected.getId()).
+                    serviceName(serviceSelected == null ? null : serviceSelected.getName()).build();
             try {
                 final Collection<AuditRecord> records = auditAdmin.find(criteria);
 
@@ -1074,12 +1071,6 @@ public class MetricsChartPanel extends ChartPanel {
                 _gatewayAuditWindow.toFront();
                 _gatewayAuditWindow.setTitle(GATEWAY_AUDIT_WINDOW_TITLE + " (" +
                         timeRangeAsString(startDate, endDate, _timeZone) + ")");
-
-                final ClusterNodeInfo nodeSelected = _serviceMetricsPanel.getClusterNodeSelected();
-                _gatewayAuditWindow.getLogPane().setMsgFilterNode(nodeSelected == null ? "" : nodeSelected.getName());
-
-                final EntityHeader serviceSelected = _serviceMetricsPanel.getPublishedServiceSelected();
-                _gatewayAuditWindow.getLogPane().setMsgFilterService(serviceSelected == null ? "" : serviceSelected.getName());
 
                 _gatewayAuditWindow.displayAudits(records);
             } catch (FindException e) {

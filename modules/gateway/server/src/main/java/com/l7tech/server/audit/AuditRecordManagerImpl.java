@@ -6,13 +6,10 @@
 
 package com.l7tech.server.audit;
 
-import com.l7tech.gateway.common.audit.AuditRecord;
-import com.l7tech.gateway.common.audit.AuditSearchCriteria;
-import com.l7tech.gateway.common.audit.SystemAuditRecord;
+import com.l7tech.gateway.common.audit.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
@@ -36,12 +33,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,7 +48,7 @@ import java.util.logging.Logger;
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class AuditRecordManagerImpl
-        extends HibernateEntityManager<AuditRecord, EntityHeader>
+        extends HibernateEntityManager<AuditRecord, AuditRecordHeader>
         implements AuditRecordManager, ApplicationContextAware
 {
     //- PUBLIC
@@ -73,6 +65,8 @@ public class AuditRecordManagerImpl
         try {
             Class findClass = criteria.recordClass;
             if (findClass == null) findClass = getInterfaceClass();
+
+            if(criteria.requestId != null && findClass != MessageSummaryAuditRecord.class) findClass = MessageSummaryAuditRecord.class;
 
             session = getSession();
 
@@ -94,6 +88,23 @@ public class AuditRecordManagerImpl
         } finally {
             releaseSession(session);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public Collection<AuditRecordHeader> findHeaders(final AuditSearchCriteria criteria) throws FindException {
+        Collection<AuditRecord> auditRecords = find(criteria);
+        List<AuditRecordHeader> auditRecordHeaders = new ArrayList<AuditRecordHeader>();
+        for (AuditRecord auditRecord : auditRecords) {
+            auditRecordHeaders.add(newHeader(auditRecord));
+        }
+        return Collections.unmodifiableList(auditRecordHeaders);
+    }
+
+    @Override
+    protected AuditRecordHeader newHeader(final AuditRecord auditRecord) {
+        AuditRecordHeader arh = new AuditRecordHeader(auditRecord);
+        arh.setSignatureDigest(auditRecord.computeSignatureDigest());
+        return arh;
     }
 
     public int findCount( final AuditSearchCriteria criteria ) throws FindException {
@@ -157,7 +168,9 @@ public class AuditRecordManagerImpl
     private static final String PROP_LEVEL = "strLvl";
     private static final String PROP_OID = "oid";
     private static final String PROP_NODEID = "nodeId";
-    private static final String PROP_CLASS = "class";
+    private static final String PROP_MESSAGE = "message";
+    private static final String PROP_SERVICE_NAME = "name";
+    private static final String PROP_REQUEST_ID = "strRequestId";
 
     private static final String DELETE_MYSQL = "DELETE FROM audit_main WHERE audit_level <> ? AND time < ? LIMIT 10000";
     private static final String DELETE_DERBY = "DELETE FROM audit_main where objectid in (SELECT objectid FROM (SELECT ROW_NUMBER() OVER() as rownumber, objectid FROM audit_main WHERE audit_level <> ?  and time < ?) AS foo WHERE rownumber <= 10000)";
@@ -200,11 +213,13 @@ public class AuditRecordManagerImpl
             criterion.add(Restrictions.in(PROP_LEVEL, levels));
         }
 
-        if (criteria.recordClass != null) criterion.add(Restrictions.eq(PROP_CLASS, criteria.recordClass));
-
         if (criteria.startMessageNumber > 0) criterion.add(Restrictions.ge(PROP_OID, criteria.startMessageNumber));
         if (criteria.endMessageNumber > 0) criterion.add(Restrictions.lt(PROP_OID, criteria.endMessageNumber));
 
+        if (criteria.requestId != null) criterion.add(Restrictions.ilike(PROP_REQUEST_ID, criteria.requestId));
+        if (criteria.serviceName != null) criterion.add(Restrictions.ilike(PROP_SERVICE_NAME, criteria.serviceName));
+
+        if (criteria.message != null) criterion.add(Restrictions.ilike(PROP_MESSAGE, criteria.message));
         if (criteria.nodeId != null) criterion.add(Restrictions.eq(PROP_NODEID, criteria.nodeId));
 
         return criterion.toArray( new Criterion[criterion.size()] );

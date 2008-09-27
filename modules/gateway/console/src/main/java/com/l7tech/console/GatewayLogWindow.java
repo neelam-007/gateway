@@ -138,7 +138,6 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
      */
     public boolean displayLogs(File logFile) throws IOException {
         setTitle(WINDOW_TITLE + " (" + logFile.getName() + ")");
-        gatewayLogTitle.setText(BANNER_TITLE + " (" + logFile.getName() + ")");
         return getLogPane().importView(logFile);
     }
 
@@ -167,13 +166,10 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
     private static final ResourceBundle resapplication =
             ResourceBundle.getBundle("com.l7tech.console.resources.console");
     private static final String WINDOW_TITLE = "SecureSpan Manager - Gateway Log Events";
-    private static final String BANNER_TITLE = " Log Events";
 
     private boolean startConnected;
     private String nodeName = null;
     private String nodeId = null;
-    private JLabel gatewayLogTitle = null;
-    private JPanel gatewayLogPane = null;
     private JPanel mainPane = null;
     private JMenuBar windowMenuBar = null;
     private JMenu fileMenu = null;
@@ -381,19 +377,10 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         if (mainPane != null) return mainPane;
 
         mainPane = new JPanel();
-        gatewayLogPane = new JPanel();
-        gatewayLogTitle = new JLabel();
+        JPanel gatewayLogPane = new JPanel();
 
         mainPane.setLayout(new BorderLayout());
-
-        gatewayLogTitle.setFont(new Font("Dialog", 1, 18));
-        gatewayLogTitle.setText(BANNER_TITLE + (nodeName == null ? "" : " for " + nodeName));
-        gatewayLogTitle.setMaximumSize(new Dimension(136, 40));
-        gatewayLogTitle.setMinimumSize(new Dimension(136, 40));
-        gatewayLogTitle.setPreferredSize(new Dimension(136, 40));
-
         gatewayLogPane.setLayout(new BorderLayout());
-        gatewayLogPane.add(gatewayLogTitle);
 
         mainPane.add(gatewayLogPane, BorderLayout.NORTH);
         mainPane.add(getLogPane(), BorderLayout.CENTER);
@@ -412,9 +399,4 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         logPane = new LogPanel(false, false, getNodeId());
         return logPane;
     }
-
-    private void flushCachedLogs() {
-        getLogPane().clearMsgTable();
-    }
-
 }

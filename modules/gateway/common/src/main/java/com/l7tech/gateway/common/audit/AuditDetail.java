@@ -20,16 +20,14 @@ import java.util.Arrays;
 import java.text.MessageFormat;
 import java.text.FieldPosition;
 
-import org.hibernate.annotations.CollectionOfElements;
-import org.hibernate.annotations.IndexColumn;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.*;
 
 /**
  * An audit detail record.
  */
 @Entity
 @Table(name="audit_detail")
+@BatchSize(size=50)
 public class AuditDetail extends PersistentEntityImp implements Serializable, Comparable {
     private transient AuditRecord auditRecord;
     private long auditOid;

@@ -1,6 +1,9 @@
 package com.l7tech.gateway.common.cluster;
 
+import com.l7tech.gateway.common.audit.AuditType;
+
 import java.util.Date;
+import java.util.logging.Level;
 
 /*
  * This class encapsultes the request for retrieving logs from cluster nodes.
@@ -10,31 +13,116 @@ import java.util.Date;
  * $Id$
  */
 
-public class LogRequest {
+public final class LogRequest {
 
-    private final String nodeId;
+    private final String nodeName;
     private long startMsgNumber;
     private long endMsgNumber;
-    private Date startMsgDate;
+    private final Date startMsgDate;
     private Date endMsgDate;
+    private final Level logLevel;
+    private final String serviceName;
+    private final String message;
+    private final String requestId;
+    private final AuditType auditType;
+
     private int retrievedLogCount;
 
-    public LogRequest(String nodeId, long startMsgNumber, long endMsgNumber, Date startMsgDate, Date endMsgDate) {
-        this.nodeId = nodeId;
-        this.endMsgNumber = endMsgNumber;
-        this.startMsgNumber = startMsgNumber;
-        this.startMsgDate = startMsgDate;
-        this.endMsgDate = endMsgDate;
+    public LogRequest(LogRequest lr) {
+        this.nodeName = lr.getNodeName();
+        this.endMsgNumber = lr.getEndMsgNumber();
+        this.startMsgNumber = lr.getStartMsgNumber();
+        this.startMsgDate = lr.getStartMsgDate();
+        this.endMsgDate = lr.getEndMsgDate();
+        this.logLevel = lr.getLogLevel();
+        this.serviceName = lr.getServiceName();
+        this.message = lr.getMessage();
+        this.requestId = lr.getRequestId();
+        this.auditType = lr.getAuditType();
+    }
+
+    private LogRequest(Builder builder) {
+        nodeName = builder.nodeName;
+        endMsgNumber = builder.endMsgNumber;
+        startMsgNumber = builder.startMsgNumber;
+        startMsgDate = builder.startMsgDate;
+        endMsgDate = builder.endMsgDate;
+        logLevel = builder.logLevel;
+        serviceName = builder.serviceName;
+        message = builder.message;
+        requestId = builder.requestId;
+        auditType = builder.auditType;
         retrievedLogCount = 0;
     }
 
-    /**
-     * Return the node Id.
-     *
-     * @return String  The node Id.
-     */
-    public String getNodeId() {
-        return nodeId;
+    public static class Builder{
+        private String nodeName = null;
+        private long startMsgNumber = -1;
+        private long endMsgNumber = -1;
+        private Date startMsgDate = null;
+        private Date endMsgDate = null;
+        private Level logLevel = Level.WARNING;
+        private String serviceName = null;
+        private String message = null;
+        private String requestId = null;
+        private AuditType auditType = AuditType.ALL;
+
+        public Builder(){
+        }
+
+        public Builder nodeName(String value){
+            nodeName = value;
+            return this;
+        }
+
+        public Builder startMsgNumber(long value){
+            startMsgNumber = value;
+            return this;
+        }
+
+        public Builder endMsgNumber(long value){
+            endMsgNumber = value;
+            return this;
+        }
+
+        public Builder startMsgDate(Date value){
+            startMsgDate = value;
+            return this;
+        }
+
+        public Builder endMsgDate(Date value){
+            endMsgDate = value;
+            return this;
+        }
+
+        public Builder logLevel(Level value){
+            logLevel = value;
+            return this;
+        }
+
+        public Builder serviceName(String value){
+            serviceName = value;
+            return this;
+        }
+
+        public Builder message(String value){
+            message = value;
+            return this;
+        }
+
+        public Builder requestId(String value){
+            requestId = value;
+            return this;
+        }
+
+        public Builder auditType(AuditType value){
+            auditType = value;
+            return this;
+        }
+
+        public LogRequest build(){
+            return new LogRequest(this);
+        }
     }
 
     /**
@@ -110,15 +198,6 @@ public class LogRequest {
     }
 
     /**
-     * Set the start date (may be null)
-     *
-     * @param startMsgDate the date to use
-     */
-    public void setStartMsgDate(Date startMsgDate) {
-        this.startMsgDate = startMsgDate;
-    }
-
-    /**
      * Get the end date (may be null)
      *
      * @return the date if set
@@ -136,4 +215,27 @@ public class LogRequest {
         this.endMsgDate = endMsgDate;
     }
 
+    public String getNodeName() {
+        return nodeName;
+    }
+
+    public Level getLogLevel() {
+        return logLevel;
+    }
+
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public AuditType getAuditType() {
+        return auditType;
+    }
 }

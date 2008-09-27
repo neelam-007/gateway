@@ -225,7 +225,13 @@ public class Audits extends EmsPage {
         private final AuditSearchCriteria auditSearchCriteria;
 
         public AuditDataProvider(final String type, final Date start, final Date end,  final String sort, final boolean asc) {
-            auditSearchCriteria = new AuditSearchCriteria(start, end, null, null, getClassForType(type), null, -1, -1, -1);
+            auditSearchCriteria = new AuditSearchCriteria.Builder().fromTime(start).
+                    toTime(end).
+                    recordClass(getClassForType(type)).
+                    startMessageNumber(-1).
+                    endMessageNumber(-1).
+                    maxRecords(-1).build();
+            
             setSort( sort, asc );
         }
 

@@ -1,11 +1,11 @@
 package com.l7tech.console.table;
 
-import com.l7tech.gateway.common.cluster.GatewayStatus;
-import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
-import com.l7tech.console.panels.LogPanel;
 import com.l7tech.gateway.common.logging.LogMessage;
+import com.l7tech.gateway.common.cluster.GatewayStatus;
+import com.l7tech.console.panels.LogPanel;
 
 import java.util.*;
+import java.util.logging.Level;
 
 /*
  * This class encapsulates the table model for filtered logs.
@@ -17,33 +17,23 @@ import java.util.*;
 
 public class FilteredLogTableModel extends FilteredDefaultTableModel {
 
-    public static final int MAX_MESSAGE_BLOCK_SIZE = 600;
-    public static final int MAX_NUMBER_OF_LOG_MESSGAES = 4096;
-
-    protected Map<String, Collection<LogMessage>> rawLogCache = new HashMap<String, Collection<LogMessage>>();
+    public static final int MAX_MESSAGE_BLOCK_SIZE = 1024;
+    public static final int MAX_NUMBER_OF_LOG_MESSAGES = 131072;//2^17
+    protected Map<Long, LogMessage> rawLogCache = new HashMap<Long, LogMessage>(); 
     protected List<LogMessage> filteredLogCache = new ArrayList<LogMessage>();
-    private int filterLevel = LogPanel.MSG_FILTER_LEVEL_WARNING;
-    private String filterNodeName = "";
-    private String filterService = "";
+    protected Map<String, GatewayStatus> currentNodeList;
+    private LogPanel.LogLevelOption filterLevel = LogPanel.LogLevelOption.WARNING;
+
     private String filterThreadId = "";
     private String filterMessage = "";
-    protected Map<String, GatewayStatus> currentNodeList;
 
     /**
      * Set the filter level.
      *
      * @param filterLevel  The filter level to be applied.
      */
-    public void setMsgFilterLevel(int filterLevel) {
+    public void setMsgFilterLevel(LogPanel.LogLevelOption filterLevel) {
         this.filterLevel = filterLevel;
-    }
-
-    public void setMsgFilterNodeName(String filterNodeName) {
-        this.filterNodeName = filterNodeName;
-    }
-
-    public void setMsgFilterService(String filterService) {
-        this.filterService = filterService;
     }
 
     public void setMsgFilterThreadId(String filterThreadId) {
@@ -66,19 +56,15 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
 
         if ((((logSeverity.equals("FINEST")) ||
               (logSeverity.equals("FINER")) ||
-              (logSeverity.equals("FINE"))) && (filterLevel >= LogPanel.MSG_FILTER_LEVEL_ALL)) ||
-             (logSeverity.equals("INFO")    && (filterLevel >= LogPanel.MSG_FILTER_LEVEL_INFO)) ||
-             (logSeverity.equals("WARNING") && (filterLevel >= LogPanel.MSG_FILTER_LEVEL_WARNING)) ||
-             (logSeverity.equals("SEVERE")  && (filterLevel >= LogPanel.MSG_FILTER_LEVEL_SEVERE))) {
+              (logSeverity.equals("FINE"))) && (filterLevel.getLevel().intValue() <= Level.ALL.intValue())) ||
+             (logSeverity.equals("INFO")    && (filterLevel.getLevel().intValue() <= Level.INFO.intValue()))||
+             (logSeverity.equals("WARNING") && (filterLevel.getLevel().intValue() <= Level.WARNING.intValue())) ||
+             (logSeverity.equals("SEVERE")  && (filterLevel.getLevel().intValue() <= Level.SEVERE.intValue()))) {
 
-            String name = logMsg.getNodeName();
             String message = logMsg.getMsgDetails();
             String threadId = Integer.toString(logMsg.getSSGLogRecord().getThreadID());
-            String service = getServiceName(logMsg);
 
-            return matches(filterNodeName, name) &&
-                   matches(filterService, service) &&
-                   matches(filterThreadId, threadId) &&
+            return matches(filterThreadId, threadId) &&
                    matches(filterMessage, message);
         } else {
             return false;
@@ -136,58 +122,26 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
         return matches;
     }
 
-    /**
+    /*
      * Filtering messages with the specified filter level.
-     *
-     * @param msgFilterLevel
      */
-    protected void filterData(int msgFilterLevel,
-                              String msgFilterNodeName,
-                              String msgFilterService,
+    protected void filterData(LogPanel.LogLevelOption msgFilterLevel,
                               String msgFilterThreadId,
                               String msgFilterMessage) {
 
         setMsgFilterLevel(msgFilterLevel);
-        setMsgFilterNodeName(msgFilterNodeName);
-        setMsgFilterService(msgFilterService);
         setMsgFilterThreadId(msgFilterThreadId);
         setMsgFilterMessage(msgFilterMessage);
 
         // initialize the cache
         filteredLogCache = new ArrayList<LogMessage>();
 
-        for (String node : rawLogCache.keySet()) {
-            filterData(node);
-        }
-    }
+        Collection<LogMessage> rawLogCacheCollection = rawLogCache.values();
 
-    protected String getServiceName(LogMessage msg) {
-        return msg.getSSGLogRecord() instanceof MessageSummaryAuditRecord
-                        ? ((MessageSummaryAuditRecord)msg.getSSGLogRecord()).getName()
-                        : "";
-    }
-
-    /**
-     * Filtering messages of the given node.
-     *
-     * @param nodeId  The Id of the node whose messages will be filtered.
-     */
-    private void filterData(String nodeId) {
-        Collection<LogMessage> nodeLogs;
-        GatewayStatus status;
-
-        if((status = currentNodeList.get(nodeId)) == null) {
-            return;
-        }
-
-        if ((nodeLogs = rawLogCache.get(nodeId)) != null) {
-            for (LogMessage logMsg : nodeLogs) {
-                if (isFilteredMsg(logMsg) && !filteredLogCache.contains(logMsg)) {
-                    logMsg.setNodeName(status.getName());
-                    filteredLogCache.add(logMsg);
-                }
+        for (LogMessage msg : rawLogCacheCollection) {
+            if (isFilteredMsg(msg) && !filteredLogCache.contains(msg)) {
+                filteredLogCache.add(msg);
             }
         }
     }
-
 }

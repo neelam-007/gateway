@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,9 +44,6 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
 
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
     private static final String WINDOW_TITLE = "SecureSpan Manager - Gateway Audit Events";
-    private static final String BANNER_TITLE = " Audit Events";
-    private JLabel gatewayLogTitle = null;
-    private JPanel gatewayLogPane = null;
     private JPanel mainPane = null;
     private JMenuBar clusterWindowMenuBar = null;
     private JMenu fileMenu = null;
@@ -81,7 +79,6 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         ImageIcon imageIcon =
           new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
         setIconImage(imageIcon.getImage());
-        setBounds(0, 0, 850, 600);
         setJMenuBar(getClusterWindowMenuBar());
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(getJFrameContentPane(), BorderLayout.CENTER);
@@ -174,7 +171,6 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
      */
     public boolean displayAudits(File auditFile) throws IOException {
         setTitle(WINDOW_TITLE + " (" + auditFile.getName() + ")");
-        gatewayLogTitle.setText(BANNER_TITLE + " (" + auditFile.getName() + ")");
         getViewControlsMenuItem().setEnabled(false);
         return getLogPane().importView(auditFile);
     }
@@ -212,28 +208,23 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         }
         // else Leave the map empty.
 
-        // Converts flat collection to map.
-        final Map<String, Collection<LogMessage>> map = new HashMap<String, Collection<LogMessage>>();
+        // Converts flat collection to Map.
+//        final List<LogMessage> logs = new ArrayList<LogMessage>();
+        final Map<Long, LogMessage> logs = new HashMap<Long, LogMessage>();
         for (AuditRecord auditRecord : auditRecords) {
             final String nodeId = auditRecord.getNodeId();
-            Collection<LogMessage> coll = map.get(nodeId);
-            if (coll == null) {
-                coll = new LinkedHashSet<LogMessage>();
-                map.put(nodeId, coll);
-            }
+
 
             final LogMessage logMessage = new LogMessage(auditRecord);
             // Needs to set gateway node name manually:
             String nodeName = nodeIdNames.get(nodeId);
-            if (nodeName == null) {     // Node has been removed from cluster.
-                nodeName = nodeId;      // Better than blank?
+            if (nodeName != null) {     // Node has been removed from cluster. To be consistent w/the full blown audit viewer do not show
+                logMessage.setNodeName(nodeName);
             }
-            logMessage.setNodeName(nodeName);
-
-            coll.add(logMessage);
+//            logs.add(logMessage);
+            logs.put(logMessage.getMsgNumber(), logMessage);
         }
-
-        getLogPane().setLogs(map);
+        getLogPane().setLogs(logs);
         getViewControlsMenuItem().setEnabled(false);
     }
 
@@ -260,7 +251,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
     private JPanel getJFrameContentPane() {
         if (frameContentPane == null) {
             frameContentPane = new JPanel();
-            frameContentPane.setPreferredSize(new Dimension(800, 600));
+            frameContentPane.setPreferredSize(new Dimension(950, 600));//TODO this is where you change the size!!!
             frameContentPane.setLayout(new BorderLayout());
             getJFrameContentPane().add(getMainPane(), "Center");
         }
@@ -452,20 +443,9 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         if (mainPane != null) return mainPane;
 
         mainPane = new javax.swing.JPanel();
-        gatewayLogPane = new javax.swing.JPanel();
-        gatewayLogTitle = new javax.swing.JLabel();
-
+        JPanel gatewayLogPane = new JPanel();
         mainPane.setLayout(new java.awt.BorderLayout());
-
-        gatewayLogTitle.setFont(new java.awt.Font("Dialog", 1, 18));
-        gatewayLogTitle.setText(BANNER_TITLE);
-        gatewayLogTitle.setMaximumSize(new java.awt.Dimension(136, 40));
-        gatewayLogTitle.setMinimumSize(new java.awt.Dimension(136, 40));
-        gatewayLogTitle.setPreferredSize(new java.awt.Dimension(136, 40));
-
         gatewayLogPane.setLayout(new java.awt.BorderLayout());
-        gatewayLogPane.add(gatewayLogTitle);
-
         mainPane.add(gatewayLogPane, java.awt.BorderLayout.NORTH);
         mainPane.add(getLogPane(), java.awt.BorderLayout.CENTER);
 
@@ -541,7 +521,13 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
     private void saveMenuEventHandler() {
         SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
             public void useFileChooser(JFileChooser fc) {
-                doSave(fc);
+                int numRecords = logPane.getMsgTable().getRowCount();
+                if (numRecords > 1000) {
+                    DialogDisplayer.showMessageDialog(GatewayAuditWindow.this, null,
+                            "Audit Viewer cannot save more than 1000 records.  Please narrow your search.", null);
+                } else {
+                    doSave(fc);
+                }
             }
         });
     }

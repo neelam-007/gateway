@@ -11,20 +11,25 @@ import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.TextUtils;
+import com.l7tech.util.HexUtils;
 
 import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.CascadeType;
+import javax.crypto.Cipher;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.*;
 
 /**
  * Abstract superclass of all of the different types of audit record.
@@ -38,6 +43,7 @@ import org.hibernate.annotations.OnDeleteAction;
 @Entity
 @Table(name="audit_main")
 @Inheritance(strategy=InheritanceType.JOINED)
+@BatchSize(size=50)
 public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, PersistentEntity {
     private long oid;
     private int version;
@@ -73,7 +79,7 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
     public long getMillis() {
         return super.getMillis();
     }
-
+   
     /**
      * Fills in the fields that are common to all types of AuditRecord
      * @param level the {@link Level} of this record.
@@ -143,7 +149,8 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
     @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="auditRecord")
     @Fetch(FetchMode.SUBSELECT)
     @Cascade({org.hibernate.annotations.CascadeType.DELETE_ORPHAN, org.hibernate.annotations.CascadeType.ALL})
-    @OnDelete(action=OnDeleteAction.CASCADE)    
+    @OnDelete(action=OnDeleteAction.CASCADE)
+    @BatchSize(size=50)
     public Set<AuditDetail> getDetails() {
         return details;
     }
@@ -321,4 +328,36 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
     public void setSignature(String signature) {
         this.signature = signature;
     }
+
+    private static Logger logger = Logger.getLogger(AuditRecord.class.getName());
+    public byte[] computeSignatureDigest() {
+        String signatureToVerify = getSignature();
+            if (signatureToVerify == null || signatureToVerify.length() < 1) {
+                return null;
+            }
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            MessageDigest digest;
+            try {
+                digest = MessageDigest.getInstance("SHA-512");
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("should not happen", e);
+            }
+            byte[] digestvalue = null;
+            try {
+                serializeSignableProperties(baos);
+                digestvalue = digest.digest(baos.toByteArray());
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "could not serialize audit record", e);
+            } finally {
+                try {
+                    baos.close();
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "error closing stream", e);
+                }
+            }
+
+        return digestvalue;
+    }
+
 }

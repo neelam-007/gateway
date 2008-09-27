@@ -7,12 +7,10 @@ package com.l7tech.server.audit;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.AuditSearchCriteria;
+import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.util.OpaqueId;
@@ -61,6 +59,10 @@ public class AuditAdminImpl implements AuditAdmin {
 
     public Collection<AuditRecord> find(final AuditSearchCriteria criteria) throws FindException {
         return auditRecordManager.find(criteria);
+    }
+
+    public Collection<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException{
+        return auditRecordManager.findHeaders(criteria);
     }
 
     public void deleteOldAuditRecords() throws DeleteException {
@@ -116,7 +118,9 @@ public class AuditAdminImpl implements AuditAdmin {
                                                     final int size)
                                              throws FindException {
         logger.finest("Get audits interval ["+startMsgDate+", "+endMsgDate+"] for node '"+nodeid+"'");
-        return auditRecordManager.find(new AuditSearchCriteria(startMsgDate, endMsgDate, null, null, null, nodeid, -1, -1, size));
+        //return auditRecordManager.find(new AuditSearchCriteria(startMsgDate, endMsgDate, null, null, null, nodeid, -1, -1, size));
+        return auditRecordManager.find(new AuditSearchCriteria.Builder().fromTime(startMsgDate).
+                toTime(endMsgDate).nodeId(nodeid).startMessageNumber(-1).endMessageNumber(-1).maxRecords(size).build());
     }
 
     public Date getLastAcknowledgedAuditDate() {

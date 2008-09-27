@@ -25,11 +25,14 @@ import java.util.EventObject;
  */
 public class AssociatedLogsTable extends JTable {
 
-    private static int[] DEFAULT_COLUMN_WIDTHS ={175, 80, 80, 40, 400};
+    private static int[] DEFAULT_COLUMN_WIDTHS = {175, 80, 80, 40, 400};
 
     private AssociatedLogsTableSorter associatedLogsTableModel = null;
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
+
+    int width = DEFAULT_COLUMN_WIDTHS[4] - 45;//45 ~ approx size of button
+    private boolean showMessageButton = false;
 
     public AssociatedLogsTable() {
         setModel(getAssociatedLogsTableModel());
@@ -55,12 +58,20 @@ public class AssociatedLogsTable extends JTable {
         return button;
     }
 
-    private JComponent buildDetailComponent(JButton button) {
-        JPanel detailPanel = new JPanel(){
-            public void firePropertyChange(String propertyName, boolean oldValue, boolean newValue) {}
-            public void firePropertyChange(String propertyName, char oldValue, char newValue) {}
-            public void firePropertyChange(String propertyName, int oldValue, int newValue) {}
-            public boolean isOpaque() { return true; }
+    private JComponent buildButtonComponent(JButton button) {
+        JPanel detailPanel = new JPanel() {
+            public void firePropertyChange(String propertyName, boolean oldValue, boolean newValue) {
+            }
+
+            public void firePropertyChange(String propertyName, char oldValue, char newValue) {
+            }
+
+            public void firePropertyChange(String propertyName, int oldValue, int newValue) {
+            }
+
+            public boolean isOpaque() {
+                return true;
+            }
         };
         detailPanel.setLayout(new BoxLayout(detailPanel, BoxLayout.X_AXIS));
         detailPanel.add(Box.createHorizontalGlue());
@@ -70,7 +81,8 @@ public class AssociatedLogsTable extends JTable {
 
     /**
      * Return LogColumnModel property value
-     * @return  DefaultTableColumnModel
+     *
+     * @return DefaultTableColumnModel
      */
     private DefaultTableColumnModel getLogColumnModel() {
         final DefaultTableColumnModel columnModel = new DefaultTableColumnModel();
@@ -81,14 +93,15 @@ public class AssociatedLogsTable extends JTable {
         columnModel.addColumn(new TableColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_CODE_COLUMN_INDEX, DEFAULT_COLUMN_WIDTHS[3]));
         columnModel.addColumn(new TableColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_MSG_COLUMN_INDEX, DEFAULT_COLUMN_WIDTHS[4]));
 
-        columnModel.getColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_DETAIL_COLUMN_INDEX).setCellRenderer(new DefaultTableCellRenderer(){
+        //detail column
+        columnModel.getColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_DETAIL_COLUMN_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
             JButton detailRenderButton = buildButton();
-            JComponent detailRenderComponent = buildDetailComponent(detailRenderButton);
+            JComponent detailRenderComponent = buildButtonComponent(detailRenderButton);
 
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 JComponent comp = (JComponent) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 if (comp instanceof JLabel) {
-                    ((JLabel)comp).setText("");
+                    ((JLabel) comp).setText("");
                 }
                 String detailText = (String) value;
                 if (detailText != null && detailText.trim().length() > 0) {
@@ -100,26 +113,60 @@ public class AssociatedLogsTable extends JTable {
             }
         });
 
-        CellEditorWithButton cellEditorWithButton = new CellEditorWithButton();
-        columnModel.getColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_DETAIL_COLUMN_INDEX).setCellEditor(cellEditorWithButton);
-        this.getSelectionModel().addListSelectionListener(cellEditorWithButton);
+        CellEditorWithButton detailCellEditorWithButton = new CellEditorWithButton("Detail");
+        columnModel.getColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_DETAIL_COLUMN_INDEX).setCellEditor(detailCellEditorWithButton);
+        this.getSelectionModel().addListSelectionListener(detailCellEditorWithButton);
 
-        columnModel.getColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_MSG_COLUMN_INDEX).setCellRenderer(new DefaultTableCellRenderer(){
+        //message column
+        columnModel.getColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_MSG_COLUMN_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
+            JButton messageRenderButton = buildButton();
+            JComponent messageRenderComponent = buildButtonComponent(messageRenderButton);
+
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                if(comp instanceof JLabel) {
-                    String detailText = ((JLabel)comp).getText();
-                    if (detailText == null || detailText.trim().length() == 0) {
-                        ((JComponent)comp).setToolTipText(null);
-                    } else {
-                        ((JComponent)comp).setToolTipText(detailText);
+                JComponent comp = (JComponent) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+                String messageText = (String) value;
+                if (messageText != null && messageText.trim().length() > 0 && (messageText.length() > 200 || messageText.contains("\n"))) {
+                    showMessageButton = true;
+                    JLabel textLabel = new JLabel(messageText, SwingConstants.LEFT);
+                    if (messageRenderComponent.getWidth() != 0 && messageRenderButton.getWidth() != 0) {
+                        width = columnModel.getColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_MSG_COLUMN_INDEX).getWidth() - messageRenderComponent.getWidth();
+                    }
+
+                    textLabel.setPreferredSize(new Dimension(width, 25));
+
+                    messageRenderComponent.setBackground(comp.getBackground());
+                    messageRenderComponent.setBorder(comp.getBorder());
+
+                    JPanel messagePane = new JPanel();
+                    messagePane.setBackground(comp.getBackground());
+                    messagePane.setLayout(new BorderLayout());
+                    messagePane.add(textLabel, BorderLayout.WEST);
+                    messagePane.add(messageRenderComponent, BorderLayout.EAST);
+                    comp = messagePane;
+                }else{
+                    showMessageButton = false;
+                }
+
+                //set tooltip
+                if (messageText == null || messageText.trim().length() == 0) {
+                    comp.setToolTipText(null);
+                } else {
+                    if (messageText.length() < 4096) {
+                        comp.setToolTipText("<html><pre>" + messageText + "</pre</html>");//sanitize in case messageText contains html?
                     }
                 }
+
                 return comp;
             }
         });
 
-        for(int i = 0; i < columnModel.getColumnCount(); i++){
+        CellEditorWithButton messageCellEditorWithButton = new CellEditorWithButton("Message");
+        columnModel.getColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_MSG_COLUMN_INDEX).setCellEditor(messageCellEditorWithButton);
+        this.getSelectionModel().addListSelectionListener(messageCellEditorWithButton);
+
+
+        for (int i = 0; i < columnModel.getColumnCount(); i++) {
             columnModel.getColumn(i).setHeaderRenderer(iconHeaderRenderer);
             columnModel.getColumn(i).setHeaderValue(getAssociatedLogsTableModel().getColumnName(i));
         }
@@ -132,7 +179,6 @@ public class AssociatedLogsTable extends JTable {
      * create the table model with log fields
      *
      * @return DefaultTableModel
-     *
      */
     private AssociatedLogsTableSorter getAssociatedLogsTableModel() {
         if (associatedLogsTableModel != null) {
@@ -144,7 +190,7 @@ public class AssociatedLogsTable extends JTable {
 
         associatedLogsTableModel = new AssociatedLogsTableSorter(new DefaultTableModel(rows, cols)) {
             public boolean isCellEditable(int row, int col) {
-                return col == 2;
+                return col == 2 || col == 4;
             }
         };
 
@@ -180,7 +226,7 @@ public class AssociatedLogsTable extends JTable {
     TableCellRenderer iconHeaderRenderer = new DefaultTableCellRenderer() {
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus, int row, int column) {
-            // Inherit the colors and font from the header component
+            // Inherit the colors and font from the header buttonComponent
             if (table != null) {
                 JTableHeader header = table.getTableHeader();
                 if (header != null) {
@@ -200,8 +246,7 @@ public class AssociatedLogsTable extends JTable {
                 } else {
                     setIcon(downArrowIcon);
                 }
-            }
-            else{
+            } else {
                 setIcon(null);
             }
 
@@ -211,13 +256,13 @@ public class AssociatedLogsTable extends JTable {
         }
     };
 
-    private static class DetailViewDialog extends JDialog {
-        private DetailViewDialog(final String detail) {
-            super((Frame)null/*(Frame)SwingUtilities.getWindowAncestor(AssociatedLogsTable.this)*/, true);
-            setTitle("Associated Log - Detail");
+    private static class ViewDialog extends JDialog {
+        private ViewDialog(final String title, final String detail) {
+            super((Frame) null, true);
+            setTitle("Associated Log - " + title);
             JPanel panel = new JPanel(new BorderLayout());
 
-            // configure text display component
+            // configure text display buttonComponent
             JTextArea textArea = new JTextArea();
             textArea.setEditable(false);
             textArea.setText(detail);
@@ -237,49 +282,65 @@ public class AssociatedLogsTable extends JTable {
     }
 
     private class CellEditorWithButton extends AbstractCellEditor implements TableCellEditor, ListSelectionListener {
-        private final JButton detailEditButton;
-        private final JComponent detailEditComponent;
+        private final JButton button;
+        private final JComponent buttonComponent;
         private int row;
         private String value;
 
-        private CellEditorWithButton() {
-            detailEditButton = buildButton();
-            detailEditComponent = buildDetailComponent(detailEditButton);
+        private CellEditorWithButton(final String columnTitle) {
+            button = buildButton();
+            buttonComponent = buildButtonComponent(button);
+            buttonComponent.setBackground(getColour());
 
-            // When the color is exactly the same as the row bg the panel
-            // does not get painted correctly, not sure why.
-            Color selColor = AssociatedLogsTable.this.getSelectionBackground();
-            Color color = selColor.getRed()<255 && selColor.getGreen()<255 && selColor.getBlue()<255 ?
-                    new Color(selColor.getRed()+1, selColor.getGreen()+1, selColor.getBlue()+1) :
-                    new Color(selColor.getRed(), selColor.getGreen(), selColor.getBlue());
-
-            detailEditComponent.setBackground(color);
-            detailEditButton.addActionListener(new ActionListener() {
+            this.button.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     if (value != null) {
-                        DialogDisplayer.display(new DetailViewDialog(value), new Runnable() {
+                        DialogDisplayer.display(new ViewDialog(columnTitle, value), new Runnable() {
                             public void run() {
                                 // Make the renderer reappear.
                                 fireEditingStopped();
+
                             }
                         });
                     }
                 }
             });
 
-            detailEditButton.setNextFocusableComponent(AssociatedLogsTable.this);
-            detailEditComponent.setNextFocusableComponent(AssociatedLogsTable.this);
+            this.button.setNextFocusableComponent(AssociatedLogsTable.this);
+            this.buttonComponent.setNextFocusableComponent(AssociatedLogsTable.this);
         }
 
         public void valueChanged(ListSelectionEvent e) {
-            if(AssociatedLogsTable.this.isEditing() && row!=AssociatedLogsTable.this.getSelectedRow())
+            if (AssociatedLogsTable.this.isEditing() && row != AssociatedLogsTable.this.getSelectedRow()) {
                 this.fireEditingCanceled(); // stop edit when another row is selected
+            }
+        }
+
+        // When the color is exactly the same as the row bg the panel
+        // does not get painted correctly, not sure why.
+        private Color getColour() {
+            Color selColor = AssociatedLogsTable.this.getSelectionBackground();
+            return selColor.getRed() < 255 && selColor.getGreen() < 255 && selColor.getBlue() < 255 ?
+                    new Color(selColor.getRed() + 1, selColor.getGreen() + 1, selColor.getBlue() + 1) :
+                    new Color(selColor.getRed(), selColor.getGreen(), selColor.getBlue());
         }
 
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
             this.value = (String) value;
             this.row = row;
-            return detailEditComponent;
+
+            JComponent tempButtonComponent = buildButtonComponent(button);
+            JLabel textLabel = new JLabel(this.value, SwingConstants.LEFT);
+            textLabel.setPreferredSize(new Dimension(width, 25));
+            JPanel messagePane = new JPanel();
+            messagePane.setBackground(getColour());
+            messagePane.setLayout(new BorderLayout());
+            messagePane.add(textLabel, BorderLayout.WEST);
+            if (showMessageButton) {
+                messagePane.add(tempButtonComponent, BorderLayout.EAST);
+            }
+
+            return messagePane;
         }
 
         public Object getCellEditorValue() {
@@ -288,6 +349,8 @@ public class AssociatedLogsTable extends JTable {
 
         public boolean isCellEditable(EventObject anEvent) {
             boolean editable = false;
+
+            if(!showMessageButton) return false;
 
             String value = getValue(anEvent);
             if (value != null && value.trim().length() > 0) {
@@ -299,7 +362,7 @@ public class AssociatedLogsTable extends JTable {
 
         public boolean shouldSelectCell(EventObject anEvent) {
             if (anEvent instanceof MouseEvent) {
-                detailEditComponent.dispatchEvent((MouseEvent)anEvent);
+                buttonComponent.dispatchEvent((MouseEvent)anEvent);
             }
             return true;
         }
@@ -313,7 +376,7 @@ public class AssociatedLogsTable extends JTable {
 
             if (anEvent instanceof MouseEvent) {
                 MouseEvent me = (MouseEvent) anEvent;
-                int row    = AssociatedLogsTable.this.rowAtPoint(me.getPoint());
+                int row = AssociatedLogsTable.this.rowAtPoint(me.getPoint());
                 int column = AssociatedLogsTable.this.columnAtPoint(me.getPoint());
 
                 value = (String) AssociatedLogsTable.this.getValueAt(row, column);

@@ -3,43 +3,45 @@
  */
 package com.l7tech.console.table;
 
-import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.cluster.GatewayStatus;
 import com.l7tech.gateway.common.cluster.LogRequest;
 import com.l7tech.gateway.common.audit.AuditAdmin;
+import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.gateway.common.audit.AuditRecord;
+import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.gui.util.ImageCache;
-import com.l7tech.util.HexUtils;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.ClusterLogWorker;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.logging.LogMessage;
+import com.l7tech.gateway.common.logging.GenericLogAdmin;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
+import com.l7tech.util.HexUtils;
 
-import javax.crypto.Cipher;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.crypto.Cipher;
+import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.security.cert.X509Certificate;
+import java.security.PublicKey;
+import java.security.NoSuchAlgorithmException;
+import java.security.MessageDigest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /*
  * This class extends the <CODE>FilteredLogTableModel</CODE> class for providing the sorting functionality to the log display.
  */
 
-public class FilteredLogTableSorter extends FilteredLogTableModel {
+public class AuditLogTableSorterModel extends FilteredLogTableModel {
 
     /** Validity state of a digital signature. */
-    public enum DigitalSignatureState {
+    public enum DigitalSignatureUIState {
         // NOTE: elements are ordered for display sorting (i.e., from bad to good).
         /** Has signature but is invalid. */
         INVALID("invalid", "digital signature is invalid", MainWindow.RESOURCE_PATH + "/DigitalSignatureStateInvalid16.png"),
@@ -55,7 +57,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         private final String icon16Path;
         private Icon icon16;
 
-        DigitalSignatureState(String name, String description, String icon16Path) {
+        DigitalSignatureUIState(String name, String description, String icon16Path) {
             this.name = name;
             this.description = description;
             this.icon16Path = icon16Path;
@@ -79,9 +81,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             }
             return icon16;
         }
-    };
+    }
 
-    private static Logger logger = Logger.getLogger(StatisticsTableSorter.class.getName());
+    private static Logger logger = Logger.getLogger(AuditLogTableSorterModel.class.getName());
     private boolean ascending = false;
     private int columnToSort = LogPanel.LOG_TIMESTAMP_COLUMN_INDEX;
     private Object[] sortedData = null;
@@ -92,15 +94,21 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     private boolean displayingFromFile;
     private boolean truncated;
 
-    /**
-     * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
-     *
-     * @param model  A table model.
-     */
-    public FilteredLogTableSorter(DefaultTableModel model, int logType) {
+//    /**
+//     * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
+//     *
+//     * @param model  A table model.
+//     */
+    public AuditLogTableSorterModel(DefaultTableModel model, int logType) {
         this.logType = logType;
         this.displayingFromFile = false;
+
         setModel(model);
+    }
+
+    public boolean isCellEditable(int row, int col) {
+        // the table cells are not editable
+        return false;
     }
 
     /**
@@ -131,77 +139,76 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     }
 
     /**
-     * @return true if displayed logs are truncated to {@link #MAX_NUMBER_OF_LOG_MESSGAES}.
+     * @return true if displayed logs are truncated to {@link #MAX_NUMBER_OF_LOG_MESSAGES}.
      */
     public boolean isTruncated() {
         return truncated;
     }
 
-    /**
-     * Add the new logs to head of the cache.
-     *
-     * @param nodeList  A list of node objects accompanied with their new logs.
-     */
-    private void addLogs(Map<String, Collection<LogMessage>> nodeList) {
-        for (String node : nodeList.keySet()) {
-            Collection<LogMessage> logs = nodeList.get(node);
-            addLogs(node, logs);
-        }
-    }
-
    /**
      * Add the new logs to the cache. The position depends on the input parameter specified.
      *
-     * @param nodeId  The Id of the node which is the source of the new logs.
+//     * @param nodeId  The Id of the node which is the source of the new logs.
      * @param newLogs  The new logs.
      */
-    private void addLogs(String nodeId, Collection<LogMessage> newLogs) {
+    private void addLogs(Map<Long, LogMessage> newLogs) {
 
         // add new logs to the cache
         if (newLogs.size() > 0) {
-            Collection<LogMessage> gatewayLogs;
-            Collection<LogMessage> cachedLogs;
-            if ((cachedLogs = rawLogCache.get(nodeId)) != null) {
-                gatewayLogs = cachedLogs;
-            } else {
-                // create a empty cache for the new node
-                gatewayLogs = new TreeSet<LogMessage>();
-            }
+//            Collection<LogMessage> gatewayLogs;
+//            Collection<LogMessage> cachedLogs;
+//            if ((cachedLogs = rawLogCache.get(nodeId)) != null) {
+//                gatewayLogs = cachedLogs;
+//            } else {
+//                // create a empty cache for the new node
+//                gatewayLogs = new TreeSet<LogMessage>();
+//            }
+//
+//            if (gatewayLogs.size() < MAX_NUMBER_OF_LOG_MESSAGES) {
+//                truncated = false;
+//            }
+//
+//            // try to remove first to make room
+//            Iterator setIter = gatewayLogs.iterator();
+//            int additionalLogCount = newLogs.size() - (MAX_MESSAGE_BLOCK_SIZE/10); // allow for 10% duplicates
+//            for(int i=0; setIter.hasNext(); i++) {
+//                // remove the last element
+//                setIter.next();
+//                if(i+additionalLogCount>=MAX_NUMBER_OF_LOG_MESSAGES) {
+//                    setIter.remove();
+//                }
+//            }
+//
+//            // add logs
+//            gatewayLogs.addAll(newLogs);
+//
+//            // remove after to ensure correct size
+//            final int sizeBefore = gatewayLogs.size();
+//            setIter = gatewayLogs.iterator();
+//            for(int i=0; setIter.hasNext(); i++) {
+//                // remove the last element
+//                setIter.next();
+//                if(i>=MAX_NUMBER_OF_LOG_MESSAGES) {
+//                    setIter.remove();
+//                }
+//            }
+//            if (gatewayLogs.size() < sizeBefore) {
+//                truncated = true;
+//            }
+//
+//            // update the logsCache
+//            rawLogCache.put(nodeId, gatewayLogs);
+            //rawLogCache.addAll(newLogs);
 
-            if (gatewayLogs.size() < MAX_NUMBER_OF_LOG_MESSGAES) {
-                truncated = false;
-            }
+//            for(LogMessage lm : newLogs){
+//                if(!rawLogCache.contains(lm)){
+//                    rawLogCache.add(lm);
+//                }
+//            }
+            rawLogCache.putAll(newLogs);
 
-            // try to remove first to make room
-            Iterator setIter = gatewayLogs.iterator();
-            int additionalLogCount = newLogs.size() - (MAX_MESSAGE_BLOCK_SIZE/10); // allow for 10% duplicates
-            for(int i=0; setIter.hasNext(); i++) {
-                // remove the last element
-                setIter.next();
-                if(i+additionalLogCount>=MAX_NUMBER_OF_LOG_MESSGAES) {
-                    setIter.remove();
-                }
-            }
-
-            // add logs
-            gatewayLogs.addAll(newLogs);
-
-            // remove after to ensure correct size
-            final int sizeBefore = gatewayLogs.size();
-            setIter = gatewayLogs.iterator();
-            for(int i=0; setIter.hasNext(); i++) {
-                // remove the last element
-                setIter.next();
-                if(i>=MAX_NUMBER_OF_LOG_MESSGAES) {
-                    setIter.remove();
-                }
-            }
-            if (gatewayLogs.size() < sizeBefore) {
-                truncated = true;
-            }
-
-            // update the logsCache
-            rawLogCache.put(nodeId, gatewayLogs);
+            filteredLogCache.clear();
+            filteredLogCache.addAll(rawLogCache.values());
         }
     }
 
@@ -211,22 +218,22 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
       * @param nodeId  The Id of the node whose logs will be removed from the cache.
       */
      private void removeLogs(String nodeId) {
-
-         if (rawLogCache.get(nodeId) != null) {
-                rawLogCache.remove(nodeId);
-         }
+        Collection<LogMessage> rawLogCacheCollection = rawLogCache.values();
+        for(LogMessage logMsg : rawLogCacheCollection){
+            if(logMsg.getNodeId().equals(nodeId)){
+                rawLogCache.remove(logMsg.getMsgNumber());
+            }
+        }
     }
 
     /**
      * Apply the filter specified.
      */
-    public void applyNewMsgFilter(int filterLevel,
-                                  String filterNodeName,
-                                  String filterService,
+    public void applyNewMsgFilter(LogPanel.LogLevelOption filterLevel,
                                   String filterThreadId,
                                   String filterMessage) {
 
-        filterData(filterLevel, filterNodeName, filterService, filterThreadId, filterMessage);
+        filterData(filterLevel, filterThreadId, filterMessage);
         sortData(columnToSort, false);
 
         realModel.fireTableDataChanged();
@@ -258,7 +265,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             sorted[i] = new Integer(i);
         }
 
-        Arrays.sort(sorted, new FilteredLogTableSorter.ColumnSorter(columnToSort, ascending));
+        Arrays.sort(sorted, new AuditLogTableSorterModel.ColumnSorter(columnToSort, ascending));
         sortedData = sorted;
 
         // update the row count
@@ -276,7 +283,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         LogMessage msg = getLogMessageAtRow(row);
         switch (col) {
             case LogPanel.LOG_SIGNATURE_COLUMN_INDEX:
-                return checkDigitalSignature(msg.getSSGLogRecord());
+                return getUISignatureState(msg);
             case LogPanel.LOG_MSG_NUMBER_COLUMN_INDEX:
                 return new Long(msg.getMsgNumber());
             case LogPanel.LOG_NODE_NAME_COLUMN_INDEX:
@@ -296,7 +303,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             case LogPanel.LOG_NODE_ID_COLUMN_INDEX:
                 return msg.getNodeId();
             case LogPanel.LOG_SERVICE_COLUMN_INDEX:
-                return getServiceName(msg);
+                return msg.getServiceName();
             case LogPanel.LOG_THREAD_COLUMN_INDEX:
                 return Integer.toString(msg.getSSGLogRecord().getThreadID());
             default:
@@ -306,6 +313,11 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
 
     public LogMessage getLogMessageAtRow(int row) {
         return filteredLogCache.get(((Integer) sortedData[row]).intValue());
+    }
+
+    private DigitalSignatureUIState getUISignatureState(LogMessage msg) {
+        if(msg.getHeader() != null) return compareSignatureDigests(msg.getHeader());
+        return checkDigitalSignature(msg.getSSGLogRecord());
     }
 
     /**
@@ -326,7 +338,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             this.column = column;
         }
 
-        /**
+        /**                                                                                    CDW
          * Compare the order of the two objects. A negative integer, zero, or a positive integer
          * as the the specified String is greater than, equal to, or less than this String,
          * ignoring case considerations.
@@ -345,8 +357,8 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
 
             switch (column) {
                 case LogPanel.LOG_SIGNATURE_COLUMN_INDEX:
-                    final DigitalSignatureState stateA = checkDigitalSignature(logMsgA.getSSGLogRecord());
-                    final DigitalSignatureState stateB = checkDigitalSignature(logMsgB.getSSGLogRecord());
+                    final DigitalSignatureUIState stateA = getUISignatureState(logMsgA);/*checkDigitalSignature(logMsgA.getSSGLogRecord());*/
+                    final DigitalSignatureUIState stateB = getUISignatureState(logMsgB);/*checkDigitalSignature(logMsgB.getSSGLogRecord());*/
                     return (ascending ? 1 : -1) * stateA.compareTo(stateB);
                 case LogPanel.LOG_MSG_NUMBER_COLUMN_INDEX:
                     elementA = Long.toString(logMsgA.getMsgNumber());
@@ -462,11 +474,16 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         return canceled;
     }
 
+    public void removeLogRecordFromCache(Long oid){
+        LogMessage lm = rawLogCache.get(oid);
+        lm.setLog(null);
+    }
+
     /**
      * Clear all caches.
      */
     public void clearLogCache() {
-        rawLogCache = new HashMap<String, Collection<LogMessage>>();
+        rawLogCache = new HashMap<Long, LogMessage>();
         filteredLogCache = new ArrayList<LogMessage>();
         currentNodeList = new HashMap<String, GatewayStatus>();
         sortedData = new Object[0];
@@ -475,7 +492,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         truncated = false;
     }
 
-    /**
+    /*
      *  Remove the logs of Non-exist nodes from the cache
      */
     private void removeLogsOfNonExistNodes(Map newNodeList) {
@@ -487,7 +504,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         }
     }
 
-    /**
+    /*
      * Remove any logs that are outside the selected date range
      */
     private void purgeOutOfRange(Collection logMessageCollection, Date start, Date end) {
@@ -505,70 +522,44 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     }
 
     /**
-     * Retreive logs from the cluster for a given duration in the past.
+     * Retrieve audits/logs from the cluster.
      *
-     * @param logPane   The object reference to the LogPanel.
-     * @param duration  duration in the past to retrieve (in milliseconds)
-     * @param restartTimer  Specifying whether the refresh timer should be restarted.
-     * @param nodeId the node to filter requests by (may be null)
+     * @param logPane The object reference to the LogPanel.
+     * @param logRequest The LogRequest object containing the search criteria.
+     * @param restartTimer Specifying whether or not to restart the refresh timer.
      */
-    public void refreshLogs(final LogPanel logPane, final long duration, final boolean restartTimer, final String nodeId) {
-        Date startDate =  new Date(System.currentTimeMillis() - duration);
-        doRefreshLogs(logPane, restartTimer, startDate, null, null, nodeId, 0);
-    }
+    public void refreshLogs(final LogPanel logPane, LogRequest logRequest, final boolean restartTimer) {
+        logPane.getSearchButton().setEnabled(false);//disable the search button while searching
 
-    /**
-     * Retreive logs from the cluster for a given time range.
-     *
-     * @param logPane   The object reference to the LogPanel.
-     * @param start The start date for log records.
-     * @param end The end date for log records.
-     * @param nodeId the node to filter requests by (may be null)
-     */
-    public void refreshLogs(final LogPanel logPane, final Date start, final Date end, final String nodeId) {
-        doRefreshLogs(logPane, false, start, end, null, nodeId, 0);
+        //if auto-refresh is enabled, we only want the latest logs, we dont want to re-load every record.
+        if (restartTimer) {
+            //...so must set the start message number
+            //TODO there is likely a faster way to do this
+            long highest = -1;
+            Collection<LogMessage> rawLogCacheCollection = rawLogCache.values();
+            for (LogMessage lm : rawLogCacheCollection) {
+                if (lm.getMsgNumber() > highest) {
+                    highest = lm.getMsgNumber();
+                }
+            }
+            logRequest.setStartMsgNumber(highest);
+        }
+        doRefreshLogs(logPane, logRequest, restartTimer, 0);
     }
 
     /**
      * Set the log/audit data to be displayed.
      *
-     * <p>The logs Map is a map of nodeId (Strings) to Collection of log
-     * messages (LogMessage).</p>
-     *
      * @param logPane   The object reference to the LogPanel.
-     * @param logs the data hashtable.
+     * @param logs the data list.
      */
-    public void setLogs(final LogPanel logPane, final Map<String, Collection<LogMessage>> logs) {
-        // validate input
-        int count = 0;
-        for (Map.Entry<String, Collection<LogMessage>> me : logs.entrySet()) {
-            Collection<LogMessage> logMessages = me.getValue();
-            count += logMessages.size();
-        }
-        logger.info("Importing "+count+" log/audit records.");
+    public void setLogs(final LogPanel logPane, final Map<Long, LogMessage> logs) {
+        logger.info("Importing "+/*count*/logs.size()+" log/audit records.");
 
         // import
         clearLogCache();
         displayingFromFile = true;
-        for (Map.Entry<String, Collection<LogMessage>> entry : logs.entrySet()) {
-            String nodeId = entry.getKey();
-            Collection<LogMessage> logVector = entry.getValue();
-            if (!logVector.isEmpty()) {
-                LogMessage logMessage = logVector.iterator().next();
-                ClusterNodeInfo cni = new ClusterNodeInfo();
-                cni.setName(logMessage.getNodeName());
-                cni.setMac(logMessage.getNodeId());
-                currentNodeList.put(nodeId, new GatewayStatus(cni));
-            }
-        }
         addLogs(logs);
-
-        // filter the logs
-        filterData(logPane.getMsgFilterLevel(),
-                logPane.getMsgFilterNodeName(),
-                logPane.getMsgFilterService(),
-                logPane.getMsgFilterThreadId(),
-                logPane.getMsgFilterMessage());
 
         // sort the logs
         sortData(columnToSort, false);
@@ -579,54 +570,22 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         logPane.updateMsgTotal();
     }
 
-    /**
-     * Retreive logs from the cluster.
-     *
-     * @param logPane   The object reference to the LogPanel.
-     * @param restartTimer  Specifying whether the refresh timer should be restarted.
-     * @param start The start date for log records.
-     * @param end The end date for log records.
-     * @param requests  The list of requests for retrieving logs. One request per node.
-     * @param nodeId the node to filter requests by (may be null)
-     * @param count Number of records retrieved in the current refresh cycle.
-     */
-    private void doRefreshLogs(final LogPanel logPane, final boolean restartTimer, final Date start, final Date end, List<LogRequest> requests, final String nodeId, final int count) {
+//    /**
+//     * Retreive logs from the cluster.
+//     *
+//     * @param logPane   The object reference to the LogPanel.
+//     * @param restartTimer  Specifying whether the refresh timer should be restarted.
+//     * @param start The start date for log records.
+//     * @param end The end date for log records.
+//     * @param requests  The list of requests for retrieving logs. One request per node.
+//     * @param nodeId the node to filter requests by (may be null)
+//     * @param count Number of records retrieved in the current refresh cycle.
+//     */
+    private void doRefreshLogs(final LogPanel logPane, LogRequest logRequest, final boolean restartTimer, final int count) {
 
         if(displayingFromFile) {
             displayingFromFile = false;
             clearLogCache();
-        }
-
-        // New request or still working on an old request?
-        if (count == 0) {
-            // create request for each node
-            requests = new ArrayList<LogRequest>();
-            for (String s : currentNodeList.keySet()) {
-                GatewayStatus gatewayStatus = currentNodeList.get(s);
-
-                if (nodeId != null && !nodeId.equals(gatewayStatus.getNodeId()))
-                    continue;
-
-                Collection<LogMessage> logCache = rawLogCache.get(gatewayStatus.getNodeId());
-                long latest = -1;
-                if (logCache != null && logCache.size() > 0) {
-                    // remove any cached logs that are outside of our current range.
-                    purgeOutOfRange(logCache, start, end);
-
-                    // find limit
-                    for (LogMessage lm : logCache) {
-                        if (lm.getSSGLogRecord().getMillis() > latest) latest = lm.getSSGLogRecord().getMillis();
-                    }
-                }
-
-                // add the request for retrieving logs from the node
-                Date latestDate = new Date(latest);
-                if (latestDate.after(start)) {
-                    requests.add(new LogRequest(gatewayStatus.getNodeId(), -1, -1, latestDate, end));
-                } else {
-                    requests.add(new LogRequest(gatewayStatus.getNodeId(), -1, -1, start, end));
-                }
-            }
         }
 
         try {
@@ -635,23 +594,20 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                     clusterStatusAdmin,
                     auditAdmin,
                     logType,
-                    nodeId,
-                    start,
-                    end,
-                    currentNodeList,
-                    requests) {
+                    //currentNodeList,
+                    logRequest) {
                 public void finished() {
 
                     if (isCanceled()) {
                         logger.info("Log retrieval is canceled.");
                         logPane.getLogsRefreshTimer().stop();
                         logPane.getMsgProgressBar().setVisible(false);
+                        logPane.getSearchButton().setEnabled(true);
                     } else {
                         // Note: the get() operation is a blocking operation.
                         if (this.get() != null) {
-
-                            Map<String, Collection<LogMessage>> newLogs = getNewLogs();
-                            int logCount = countLogs(newLogs);
+                            Map<Long, LogMessage> newLogs = getNewLogs();
+                            int logCount = newLogs.size();
                             boolean updated = logCount > 0;
 
                             if (count==0) {
@@ -660,7 +616,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                                 updated = updated || currentNodeList==null || !currentNodeList.keySet().equals(newNodeList.keySet());
                                 currentNodeList = newNodeList;
                             }
-                            
+
                             addLogs(newLogs);
 
                             if (updated) {
@@ -668,11 +624,11 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                                 String msgNumSelected = logPane.getSelectedMsgNumber();
 
                                 // filter the logs
-                                filterData(logPane.getMsgFilterLevel(),
-                                        logPane.getMsgFilterNodeName(),
-                                        logPane.getMsgFilterService(),
+                                if(logType == GenericLogAdmin.TYPE_LOG){
+                                    filterData(logPane.getMsgFilterLevel(),
                                         logPane.getMsgFilterThreadId(),
                                         logPane.getMsgFilterMessage());
+                                }
 
                                 // sort the logs
                                 sortData(columnToSort, false);
@@ -680,27 +636,27 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                                 // populate the change to the display
                                 realModel.fireTableDataChanged();
                                 logPane.updateMsgTotal();
-
                                 logPane.setSelectedRow(msgNumSelected);
                             }
 
                             logPane.updateTimeStamp(getCurrentClusterSystemTime());
 
-                            final List<LogRequest> unfilledRequest = getUnfilledRequest();
+                            final LogRequest unfilledRequest = getUnfilledRequest();
 
                             // if there unfilled requests
                             final int total = count + logCount;
-                            if (unfilledRequest.size() > 0 && total < MAX_NUMBER_OF_LOG_MESSGAES) {
+                            if (unfilledRequest != null && total < MAX_NUMBER_OF_LOG_MESSAGES) {
                                 logPane.getMsgProgressBar().setVisible(true);
                                 SwingUtilities.invokeLater(
                                         new Runnable() {
                                             public void run() {
-                                                doRefreshLogs(logPane, restartTimer, start, end, unfilledRequest, nodeId, total);
+                                                doRefreshLogs(logPane, unfilledRequest, restartTimer, total);
                                             }
                                         });
 
                             } else {
                                 logPane.getMsgProgressBar().setVisible(false);
+                                logPane.getSearchButton().setEnabled(true);
                                 if (restartTimer) {
                                     logPane.getLogsRefreshTimer().start();
                                 }
@@ -709,16 +665,6 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                         }
                     }
                 }
-
-                private int countLogs(Map<String, Collection<LogMessage>> newLogs) {
-                    int count = 0;
-
-                    for (Collection<LogMessage> logs : newLogs.values()) {
-                        count += logs.size();
-                    }
-
-                    return count;
-                }
             };
 
             infoWorker.start();
@@ -726,6 +672,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         catch(IllegalArgumentException iae) {
             //can happen on disconnect when auto refresh is on.
             logPane.getMsgProgressBar().setVisible(false);
+            logPane.getSearchButton().setEnabled(true);
         }
     }
 
@@ -735,13 +682,13 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * @param record    a log record
      * @return validity of signature
      */
-    private DigitalSignatureState checkDigitalSignature(SSGLogRecord record) {
+    private DigitalSignatureUIState checkDigitalSignature(SSGLogRecord record) {
         if (record instanceof AuditRecord) {
             final AuditRecord auditRecord = (AuditRecord) record;
 
             String signatureToVerify = auditRecord.getSignature();
             if (signatureToVerify == null || signatureToVerify.length() < 1) {
-                return DigitalSignatureState.NONE;
+                return DigitalSignatureUIState.NONE;
             }
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -767,24 +714,58 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
 
             // get the cert of the ssg we're connected to
             X509Certificate cert = TopComponents.getInstance().getSsgCert()[0];
-            if (cert == null) return DigitalSignatureState.INVALID;
+            if (cert == null) return DigitalSignatureUIState.INVALID;
             PublicKey pub = cert.getPublicKey();
-            if (pub == null) return DigitalSignatureState.INVALID;
+            if (pub == null) return DigitalSignatureUIState.INVALID;
             try {
                 byte[] decodedSig = HexUtils.decodeBase64(signatureToVerify);
                 Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
                 rsaCipher.init(Cipher.DECRYPT_MODE, pub);
                 byte[] decrypteddata = rsaCipher.doFinal(decodedSig);
                 if (Arrays.equals(decrypteddata, digestvalue)) {
-                    return DigitalSignatureState.VALID;
+                    return DigitalSignatureUIState.VALID;
                 }
             } catch (Exception e) {
                 logger.log(Level.WARNING, "cannot verify signature", e);
             }
-            return DigitalSignatureState.INVALID;
+            return DigitalSignatureUIState.INVALID;
         } else {
             // No digital signature for other record types.
-            return DigitalSignatureState.NONE;
+            return DigitalSignatureUIState.NONE;
         }
+    }
+
+    private DigitalSignatureUIState compareSignatureDigests(AuditRecordHeader auditHeader) {
+        String signatureToVerify = auditHeader.getSignature();
+        byte[] digestValue = auditHeader.getSignatureDigest();
+
+        if (signatureToVerify == null || signatureToVerify.length() < 1 || digestValue == null) {
+            return DigitalSignatureUIState.NONE;
+        }
+
+        // get the cert of the ssg we're connected to
+        X509Certificate cert = TopComponents.getInstance().getSsgCert()[0];
+        if (cert == null) return DigitalSignatureUIState.INVALID;
+        PublicKey pub = cert.getPublicKey();
+        if (pub == null) return DigitalSignatureUIState.INVALID;
+        try {
+            byte[] decodedSig = HexUtils.decodeBase64(signatureToVerify);
+            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            rsaCipher.init(Cipher.DECRYPT_MODE, pub);
+            byte[] decrypteddata = rsaCipher.doFinal(decodedSig);
+            if (Arrays.equals(decrypteddata, digestValue)) {
+                return DigitalSignatureUIState.VALID;
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "cannot verify signature", e);
+        }
+        return DigitalSignatureUIState.INVALID;
+    }
+
+
+    protected String getServiceName(LogMessage msg) {
+        return msg.getSSGLogRecord() instanceof MessageSummaryAuditRecord
+                ? ((MessageSummaryAuditRecord) msg.getSSGLogRecord()).getName()
+                : "";
     }
 }

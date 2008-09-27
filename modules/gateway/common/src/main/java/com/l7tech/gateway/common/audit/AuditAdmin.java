@@ -11,6 +11,7 @@ import com.l7tech.util.OpaqueId;
 import com.l7tech.gateway.common.logging.GenericLogAdmin;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.gateway.common.admin.Administrative;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
@@ -51,6 +52,18 @@ public interface AuditAdmin extends GenericLogAdmin {
     @Secured(stereotype=FIND_ENTITIES)
     @Administrative(licensed=false)
     Collection<AuditRecord> find(AuditSearchCriteria criteria) throws FindException;
+
+    /**
+     * Retrieves a collection of {@link AuditRecordHeader}s matching the provided criteria.  May be empty, but never null.
+     * (This is the same as the above method except it retrives AuditRecordHeaders instead of entire AuditRecords.)
+     * @param criteria
+     * @return criteria an {@link AuditSearchCriteria} describing the search criteria.  Must not be null.
+     * @throws FindException if there was a problem retrieving Audit records from the database
+     */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITIES)
+    @Administrative(licensed=false)
+    Collection<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException;
 
     /**
      * Get the level below which the server will not record audit events of type {@link MessageSummaryAuditRecord}.

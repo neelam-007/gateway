@@ -66,6 +66,12 @@ public interface SsmPreferences {
     String AUDIT_WINDOW_TIME_RANGE_START = "auditWindow.retrieval.timeRange.startTime";
     String AUDIT_WINDOW_TIME_RANGE_END = "auditWindow.retrieval.timeRange.endTime";
     String AUDIT_WINDOW_TIME_RANGE_TIMEZONE = "auditWindow.retrieval.timeRange.timeZone";
+    String AUDIT_WINDOW_LOG_LEVEL = "auditWindow.search.logLevel";
+    String AUDIT_WINDOW_SERVICE_NAME = "auditWindow.search.serviceName";
+    String AUDIT_WINDOW_MESSAGE = "auditWindow.search.message";
+    String AUDIT_WINDOW_AUDIT_TYPE = "auditWindow.search.auditType";
+    String AUDIT_WINDOW_NODE = "auditWindow.search.node";
+    String AUDIT_WINDOW_REQUEST_ID = "auditWindow.search.requestId";
 
     /**
      * Update preferences from given properties, optionally

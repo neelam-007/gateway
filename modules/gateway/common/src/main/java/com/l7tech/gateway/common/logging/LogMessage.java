@@ -1,10 +1,14 @@
 package com.l7tech.gateway.common.logging;
 
+import com.l7tech.gateway.common.audit.AuditRecordHeader;
+import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
+import com.l7tech.gateway.common.audit.AuditRecord;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * This class encapsulates an SSGLogRecord and contains further information for displaying it in a UI in a
+ * This class encapsulates an SSGLogRecord and/or an AuditRecordHeader and contains further information for displaying it in a UI in a
  * friendly way.
  *
  * Copyright (C) 2003 Layer 7 Technologies Inc.
@@ -12,29 +16,30 @@ import java.util.Date;
  * $Id$
  */
 public class LogMessage implements Comparable {
-    private final SSGLogRecord log;
+    private AuditRecordHeader header = null;
+    private SSGLogRecord log = null;
     private final String time;
-    private final String msgClass;
-    private final String msgMethod;
-    private final String msgDetails;
     private String nodeName = "";  // gets filled in afterward
+
+    public LogMessage(AuditRecordHeader header){
+        this.header = header;
+        if(header == null) throw new NullPointerException();
+
+        SimpleDateFormat sdf = new SimpleDateFormat( "yyyyMMdd HH:mm:ss.SSS" );
+        time = sdf.format(new Date(header.getTimestamp()));
+    }
 
     public LogMessage(SSGLogRecord log) {
         this.log = log;
         if (log == null) throw new NullPointerException();
 
         SimpleDateFormat sdf = new SimpleDateFormat( "yyyyMMdd HH:mm:ss.SSS" );
-        String details = log.getMessage();
-        if(details==null) details = "";
-        
         time = sdf.format(new Date(log.getMillis()));
-        msgClass = log.getSourceClassName();
-        msgMethod = log.getSourceMethodName();
-        msgDetails = details;
     }
 
     public long getMsgNumber() {
-        return log.getOid();
+        if(log != null) return log.getOid();
+        return header.getOid();
     }
 
     public String getTime() {
@@ -42,19 +47,23 @@ public class LogMessage implements Comparable {
     }
 
     public String getSeverity() {
-        return log.getLevel().toString();
+        if(log != null) return log.getLevel().toString();
+        return header.getLevel().toString();
     }
 
     public String getMsgClass() {
-        return msgClass;
+        if(log != null) return log.getSourceClassName();
+        return "";
     }
 
     public String getMsgMethod() {
-        return msgMethod;
+        if(log != null) return log.getSourceMethodName();
+        return "";
     }
 
     public String getMsgDetails(){
-        return msgDetails;
+        if(log != null) return log.getMessage() == null ? "" : log.getMessage();
+        return header.getMessage() == null ? "" : header.getMessage();
     }
 
     public String getReqId() {
@@ -69,12 +78,27 @@ public class LogMessage implements Comparable {
         this.nodeName = nodeName;
     }
 
+    public String getServiceName() {
+        if(log != null && log instanceof MessageSummaryAuditRecord) return ((MessageSummaryAuditRecord) log).getName();
+        if(header != null) return header.getServiceName();
+        return "";
+    }
+
     public String getNodeId() {
-        return log.getNodeId();
+        if(log != null) return log.getNodeId();
+        return header.getNodeId();
     }
 
     public SSGLogRecord getSSGLogRecord() {
         return log;
+    }
+
+    public void setLog(SSGLogRecord log) {
+        this.log = log;
+    }
+
+    public AuditRecordHeader getHeader() {
+        return header;
     }
 
     public boolean equals(Object o) {
@@ -83,7 +107,7 @@ public class LogMessage implements Comparable {
 
         LogMessage that = (LogMessage) o;
 
-        if (log.getOid() != that.log.getOid()) return false;
+        if (getMsgNumber() != that.getMsgNumber()) return false;
         if (nodeName != null ? !nodeName.equals(that.nodeName) : that.nodeName != null) return false;
 
         return true;
@@ -91,7 +115,8 @@ public class LogMessage implements Comparable {
 
     public int hashCode() {
         int result;
-        result = Long.valueOf(log.getOid()).hashCode();
+
+        result = Long.valueOf(getMsgNumber()).hashCode();
         result = 31 * result + (nodeName != null ? nodeName.hashCode() : 0);
         return result;
     }
@@ -108,9 +133,9 @@ public class LogMessage implements Comparable {
         if ( this.equals(other) ) {
             compareValue = 0;
         } else {
-            if ( other.getSSGLogRecord().getMillis() < getSSGLogRecord().getMillis()) {
+            if ( other.getHeader().getTimestamp() < getHeader().getTimestamp()) {
                 compareValue = -1;
-            } else if ( other.getSSGLogRecord().getMillis() > getSSGLogRecord().getMillis()) {
+            } else if ( other.getHeader().getTimestamp() > getHeader().getTimestamp()) {
                 compareValue = 1;
             } else {
                 if (other.getNodeId().compareTo(getNodeId()) == -1) {

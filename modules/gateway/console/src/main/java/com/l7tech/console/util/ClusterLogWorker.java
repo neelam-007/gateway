@@ -1,29 +1,25 @@
 package com.l7tech.console.util;
 
-import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
+import com.l7tech.gateway.common.cluster.LogRequest;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.cluster.GatewayStatus;
-import com.l7tech.gateway.common.cluster.LogRequest;
+import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gui.util.SwingWorker;
 import com.l7tech.gateway.common.audit.AuditAdmin;
-import com.l7tech.console.table.FilteredLogTableModel;
+import com.l7tech.gateway.common.audit.AuditRecordHeader;
+import com.l7tech.gateway.common.audit.AuditSearchCriteria;
+import com.l7tech.console.table.AuditLogTableSorterModel;
 import com.l7tech.gateway.common.logging.GenericLogAdmin;
 import com.l7tech.gateway.common.logging.LogMessage;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.objectmodel.FindException;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.LinkedHashSet;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /*
- * This class performs the log retrieval from the cluster. The work is carried out on a separate thread.
+ * This class performs the log/audit header retrieval from the cluster. The work is carried out on a separate thread.
  * Upon completion of the data retrieval, the Log Browser window is updated by the Swing thread.
  *
  * Copyright (C) 2003 Layer 7 Technologies Inc.
@@ -36,56 +32,42 @@ public class ClusterLogWorker extends SwingWorker {
     private ClusterStatusAdmin clusterStatusService = null;
     private AuditAdmin logService = null;
     private int logType;
-    private String nodeId;
     private Map<String, GatewayStatus> newNodeList;
-    private Map currentNodeList;
-    private List<LogRequest> requests;
-    private Map<String, Collection<LogMessage>> retrievedLogs;
+    private LogRequest logRequest;
+    private Map<Long, LogMessage> retrievedLogs;
     private java.util.Date currentClusterSystemTime = null;
-    private final Date startDate;
-    private final Date endDate;
     static Logger logger = Logger.getLogger(ClusterLogWorker.class.getName());
 
     /**
      * Create a new cluster log worker.
-     *
+     * <p/>
      * @param clusterStatusService  An object reference to the <CODE>ClusterStatusAdmin</CODE>service
-     * @param logService  An object reference to the <CODE>GenericLogAdmin</CODE> service
-     * @param logType the type (log or audit)
-     * @param startDate the earliest date to fetch
-     * @param endDate the latest date to fetch
-     * @param currentNodeList  A list of nodes obtained from the last retrieval
-     * @param requests  A list of requests for retrieving logs. One request per node.
+     *
+     * @param logService An object reference to the <CODE>GenericLogAdmin</CODE> service
+     * @param logType    the type (log or audit)
+     * @param logRequest  A request for retrieving logs.
      */
     public ClusterLogWorker(ClusterStatusAdmin clusterStatusService,
                             AuditAdmin logService,
                             int logType,
-                            String nodeId,
-                            Date startDate,
-                            Date endDate,
-                            Map currentNodeList,
-                            List<LogRequest> requests) {
-        this.clusterStatusService = clusterStatusService;
-        this.logService = logService;
-        this.logType = logType;
-        this.nodeId = nodeId;
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.currentNodeList = currentNodeList;
+                            LogRequest logRequest) {
 
-        if (currentNodeList == null || logService == null || clusterStatusService == null) {
+        if (logService == null || clusterStatusService == null) {
             throw new IllegalArgumentException();
         }
 
-        this.requests = requests;
+        this.clusterStatusService = clusterStatusService;
+        this.logService = logService;
+        this.logType = logType;
+        this.logRequest = logRequest;
 
-        retrievedLogs = new HashMap<String, Collection<LogMessage>>();
+        retrievedLogs = new HashMap<Long, LogMessage>();
     }
 
     /**
      * Return the updated node list.
      *
-     * @return  The list of nodes obtained from the lateset retrieval.
+     * @return The list of nodes obtained from the lateset retrieval.
      */
     public Map<String, GatewayStatus> getNewNodeList() {
         return newNodeList;
@@ -94,19 +76,19 @@ public class ClusterLogWorker extends SwingWorker {
     /**
      * Return the logs newly retrieved from the cluster.
      *
-     * @return  new logs
+     * @return new logs
      */
-    public Map<String, Collection<LogMessage>> getNewLogs() {
+    public Map<Long, LogMessage> getNewLogs(){
         return retrievedLogs;
     }
 
     /**
      * Return the list of unfilled requests.
      *
-     * @return  the list of unfilled requests.
+     * @return the list of unfilled requests.
      */
-    public List<LogRequest> getUnfilledRequest() {
-        return requests;
+    public LogRequest getUnfilledRequest() {
+        return logRequest;
     }
 
     /**
@@ -121,10 +103,11 @@ public class ClusterLogWorker extends SwingWorker {
     /**
      * Consturct the value. This function performs the actual work of retrieving logs.
      *
-     * @return  Object  An object with the value constructed by this function.
+     * @return Object  An object with the value constructed by this function.
      */
     public Object construct() {
 
+        Map<String, String> nodeNameIdMap = new HashMap<String, String>();
         // create a new empty node list
         newNodeList = new HashMap<String, GatewayStatus>();
 
@@ -145,97 +128,106 @@ public class ClusterLogWorker extends SwingWorker {
             GatewayStatus nodeStatus = new GatewayStatus(nodeInfo);
             String clusterNodeId = nodeStatus.getNodeId();
             if (clusterNodeId != null) {
-                if (currentNodeList.get(clusterNodeId) == null
-                        && (nodeId == null || nodeId.equals(clusterNodeId))) {
-                    // add the new node to the request array with the startMsgNumber and endMsgNumber set to -1
-                    requests.add(new LogRequest(nodeStatus.getNodeId(), -1, -1, startDate, endDate));
-                }
 
                 // add the node to the new list
                 newNodeList.put(nodeStatus.getNodeId(), nodeStatus);
+                nodeNameIdMap.put(nodeStatus.getName(), nodeStatus.getNodeId());
             }
         }
 
-        SSGLogRecord[] rawLogs = new SSGLogRecord[]{};
-        List<LogRequest> requestCompleted = new ArrayList<LogRequest>();
+        SSGLogRecord[] rawLogs;
+        AuditRecordHeader[] rawHeaders;
+        if (logRequest != null) {
+            Map<Long, LogMessage> newLogs = new HashMap<Long, LogMessage>();
 
-        if (requests.size() > 0) {
+            try {
+                LogMessage logMsg;
+//                    System.out.println("Calling getSystemLog with start#='"+logRequest.getStartMsgNumber()+"', end#='"+logRequest.getEndMsgNumber()+"', startDate='"+logRequest.getStartMsgDate()+"', endDate='"+logRequest.getEndMsgDate()+"'.");
+                switch (logType) {
+                    case GenericLogAdmin.TYPE_AUDIT:
+                        AuditSearchCriteria asc = new AuditSearchCriteria.Builder(logRequest).
+                                nodeId(nodeNameIdMap.get(logRequest.getNodeName())).//TODO if the name does not map to a nodeid it will be ignored
+                                maxRecords(AuditLogTableSorterModel.MAX_MESSAGE_BLOCK_SIZE).build();
 
-            for (LogRequest logRequest : requests) {
-                Collection<LogMessage> newLogs = new LinkedHashSet<LogMessage>(512);
+                        rawHeaders = logService.findHeaders(asc).toArray(new AuditRecordHeader[0]);
+                        if (rawHeaders.length > 0) {
+                            long lowest = -1;
+                            long oldest = -1;
+                            GatewayStatus nodeStatus;
+                            for (int j = 0; j < (rawHeaders.length) && (newLogs.size() < AuditLogTableSorterModel.MAX_NUMBER_OF_LOG_MESSAGES); j++) {
+                                AuditRecordHeader header = rawHeaders[j];
+                                logMsg = new LogMessage(header);
+                                nodeStatus = newNodeList.get(header.getNodeId());
+                                if (nodeStatus != null) { // do not add log messages for nodes that are no longer in the cluster
+                                    if (j == 0) {
+                                        lowest = logMsg.getMsgNumber();
+                                        oldest = logMsg.getHeader().getTimestamp();
+                                    } else if (lowest > logMsg.getMsgNumber()) {
+                                        lowest = logMsg.getMsgNumber();
+                                        oldest = logMsg.getHeader().getTimestamp();
+                                    }
+                                    logMsg.setNodeName(nodeStatus.getName());
+                                    newLogs.put(logMsg.getMsgNumber(), logMsg);
 
-                try {
-                    rawLogs = new SSGLogRecord[]{};
-
-                    //System.out.println("Calling getSystemLog with start#='"+logRequest.getStartMsgNumber()+"', end#='"+logRequest.getEndMsgNumber()+"', startDate='"+logRequest.getStartMsgDate()+"', endDate='"+logRequest.getEndMsgDate()+"'.");
-                    switch (logType) {
-                        case GenericLogAdmin.TYPE_AUDIT:
-                            rawLogs = logService.findAuditRecords(logRequest.getNodeId(),
-                                    logRequest.getStartMsgDate(),
-                                    logRequest.getEndMsgDate(),
-                                    FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE).toArray(new SSGLogRecord[0]);
-                            break;
-                        case GenericLogAdmin.TYPE_LOG:
-                            rawLogs = logService.getSystemLog(logRequest.getNodeId(),
-                                    logRequest.getStartMsgNumber(),
-                                    logRequest.getEndMsgNumber(),
-                                    logRequest.getStartMsgDate(),
-                                    logRequest.getEndMsgDate(),
-                                    FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);
-                            break;
-                    }
-
-                    //System.out.println("startMsgNumber: " + logRequest.getStartMsgNumber());
-                    //System.out.println("endMsgNumber: " + logRequest.getEndMsgNumber());
-                    //System.out.println("NodeId: " + logRequest.getNodeId() + ", Number of logs received: " + rawLogs.length);
-
-                    LogMessage logMsg;
-
-                    if (rawLogs.length > 0) {
-                        long lowest = -1;
-                        long oldest = -1;
-                        for (int j = 0; j < (rawLogs.length) && (newLogs.size() < FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES); j++)
-                        {
-
-                            logMsg = new LogMessage(rawLogs[j]);
-                            if (j == 0) {
-                                lowest = logMsg.getMsgNumber();
-                                oldest = logMsg.getSSGLogRecord().getMillis();
+                                }
                             }
-                            else if (lowest > logMsg.getMsgNumber()) {
-                                lowest = logMsg.getMsgNumber();
-                                oldest = logMsg.getSSGLogRecord().getMillis();
-                            }
-                            newLogs.add(logMsg);
+                            logRequest.setEndMsgNumber(lowest);
+                            logRequest.setEndMsgDate(new Date(oldest + 1)); // end date is exclusive
+
+                        } else {
+                            //we are done
+                            logRequest = null;
                         }
-                        logRequest.setEndMsgNumber(lowest);
-                        logRequest.setEndMsgDate(new Date(oldest+1)); // end date is exclusive
-                        
-                    }
-                } catch (FindException e) {
-                    logger.log(Level.SEVERE, "Unable to retrieve logs from server", e);
-                }
+                        break;
+                    case GenericLogAdmin.TYPE_LOG:
+                        rawLogs = logService.getSystemLog(logRequest.getNodeName(),
+                                logRequest.getStartMsgNumber(),
+                                logRequest.getEndMsgNumber(),
+                                logRequest.getStartMsgDate(),
+                                logRequest.getEndMsgDate(),
+                                AuditLogTableSorterModel.MAX_MESSAGE_BLOCK_SIZE);
 
-                if (newLogs.size() > 0) {
-                    retrievedLogs.put(logRequest.getNodeId(), newLogs);
-                    logRequest.addRetrievedLogCount(newLogs.size());
+                        if (rawLogs.length > 0) {
+                            long lowest = -1;
+                            long oldest = -1;
+                            GatewayStatus nodeStatus;
+                            for (int j = 0; j < (rawLogs.length) && (newLogs.size() < AuditLogTableSorterModel.MAX_NUMBER_OF_LOG_MESSAGES); j++) {
+                                logMsg = new LogMessage(rawLogs[j]);
+                                nodeStatus = newNodeList.get(logMsg.getSSGLogRecord().getNodeId());
+                                if (nodeStatus != null) { // do not add log messages for nodes that are no longer in the cluster
+                                    if (j == 0) {
+                                        lowest = logMsg.getMsgNumber();
+                                        oldest = logMsg.getSSGLogRecord().getMillis();
+                                    } else if (lowest > logMsg.getMsgNumber()) {
+                                        lowest = logMsg.getMsgNumber();
+                                        oldest = logMsg.getSSGLogRecord().getMillis();
+                                    }
+                                    logMsg.setNodeName(nodeStatus.getName());
+                                    newLogs.put(logMsg.getMsgNumber(), logMsg);
+                                }
+                            }
+                            logRequest.setStartMsgNumber(lowest);
+                            logRequest.setEndMsgDate(new Date(oldest + 1)); // end date is exclusive
+                        } else {
+                            System.out.println("setting log request to null");
+                            //we are done
+                            logRequest = null;
+                        }
+                        break;
                 }
+            } catch (FindException e) {
+                logger.log(Level.SEVERE, "Unable to retrieve logs from server", e);
+            }
 
-                // We add a bit to the MAX_NUMBER_OF_LOG_MESSGAES to allow for duplicate logs
-                if (this.logType == GenericLogAdmin.TYPE_LOG ||
-                        rawLogs.length < FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE ||
-                        logRequest.getRetrievedLogCount() >= (FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES + (FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES/20))) {
+            if (newLogs.size() > 0) {
+                retrievedLogs.putAll(newLogs);
+                logRequest.addRetrievedLogCount(newLogs.size());
+            }
 
-                    requestCompleted.add(logRequest);
-                }
+            if(this.logType == GenericLogAdmin.TYPE_LOG){
+                logRequest = null;
             }
         }
-
-        for (LogRequest logRequest : requestCompleted) {
-            // remove the request from the list
-            requests.remove(logRequest);
-        }
-
         currentClusterSystemTime = clusterStatusService.getCurrentClusterSystemTime();
 
         if (currentClusterSystemTime == null) {
@@ -243,7 +235,6 @@ public class ClusterLogWorker extends SwingWorker {
         } else {
             return newNodeList;
         }
-
     }
 }
 
