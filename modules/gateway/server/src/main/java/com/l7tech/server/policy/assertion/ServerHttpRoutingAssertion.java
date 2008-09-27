@@ -102,8 +102,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             protectedServiceUrl = url;
         }
 
-
-
         try {
             final SignerInfo signerInfo;
             signerInfo = ServerResponseWssSignature.getSignerInfo(ctx, assertion);
@@ -247,6 +245,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     private AssertionStatus tryUrl(PolicyEnforcementContext context, URL url) throws PolicyAssertionException {
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
         context.setRoutedServiceUrl(url);
+        setHttpRoutingUrlContextVariables(context);
 
         Throwable thrown = null;
         try {
@@ -724,5 +723,53 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
 
         return url;
+    }
+
+    private void setHttpRoutingUrlContextVariables(PolicyEnforcementContext context) {
+        URL url = context.getRoutedServiceUrl();
+        if (url == null) return;
+        try {
+            url = new URL(url.toString());
+        } catch (MalformedURLException e) {
+            logger.log(Level.WARNING, "URL cannot be parsed: {0}", new String[] {url.toString()});
+            return;
+        }
+        context.setVariable(HttpRoutingAssertion.VAR_HTTP_ROUTING_URL, url.toString());
+        context.setVariable(HttpRoutingAssertion.getVarHttpRoutingUrlHost(), url.getHost());
+        context.setVariable(HttpRoutingAssertion.getVarHttpRoutingUrlProtocol(), url.getProtocol());
+        context.setVariable(HttpRoutingAssertion.getVarHttpRoutingUrlPort(), getHttpRoutingUrlPort(url));
+        context.setVariable(HttpRoutingAssertion.getVarHttpRoutingUrlFile(), url.getFile());
+        context.setVariable(HttpRoutingAssertion.getVarHttpRoutingUrlPath(), url.getPath());
+        context.setVariable(HttpRoutingAssertion.getVarHttpRoutingUrlQuery(), url.getQuery() == null ? null : "?" + url.getQuery());
+        context.setVariable(HttpRoutingAssertion.getVarHttpRoutingUrlFragment(), url.getRef());
+    }
+
+    private Integer getHttpRoutingUrlPort(URL url) {
+        if (url == null) return null;
+        try {
+            url = new URL(url.toString());
+        } catch (MalformedURLException e) {
+            logger.log(Level.WARNING, "URL cannot be parsed: {0}", new String[] {url.toString()});
+            return null;
+        }
+
+        String protocol = url.getProtocol();
+        int port = url.getPort();
+        if (port == -1) {
+            if ("http".equalsIgnoreCase(protocol)) {
+                port = 80;
+            } else if ("https".equalsIgnoreCase(protocol)) {
+                port = 443;
+            } else if ("ftp".equalsIgnoreCase(protocol)) {
+                port = 21;
+            } else if ("smtp".equalsIgnoreCase(protocol)) {
+                port = 25;
+            } else if ("pop3".equalsIgnoreCase(protocol)) {
+                port = 110;
+            } else if ("imap".equalsIgnoreCase(protocol)) {
+                port = 143;
+            }
+        }
+        return port;
     }
 }

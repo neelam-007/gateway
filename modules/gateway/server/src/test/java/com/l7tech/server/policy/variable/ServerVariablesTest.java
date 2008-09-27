@@ -84,36 +84,61 @@ public class ServerVariablesTest {
             //This is expected, we don't expect to rouet to the url, just want
             //tryUrl to get called so that it sets the routed url property
         }
-        
-        String variableName = BuiltinVariables.PREFIX_HTTP_ROUTING_URL;
+
+        String serviceurl = BuiltinVariables.PREFIX_SERVICE + "." + BuiltinVariables.SERVICE_SUFFIX_URL;
+
+        // Test the deprecated context variable service.url
+        String variableName = serviceurl;
         String variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal httpRouting url",url,variableValue);
+        Assert.assertEquals("ServerVariable should equal httpRouting url", url, variableValue);
+        // Test the new context variable httpRouting.url
+        variableName = HttpRoutingAssertion.VAR_HTTP_ROUTING_URL;
+        variableValue = (String)pec.getVariable(variableName);
+        Assert.assertEquals("ServerVariable should equal httpRouting url", url, variableValue);
 
-        variableName = BuiltinVariables.PREFIX_HTTP_ROUTING_URL + "." + BuiltinVariables.HTTP_ROUTING_URL_SUFFIX_HOST;
+        variableName = serviceurl + "." + BuiltinVariables.SERVICE_SUFFIX_HOST;
         variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal httpRouting host",host,variableValue);
+        Assert.assertEquals("ServerVariable should equal httpRouting url host", host, variableValue);
+        variableName = HttpRoutingAssertion.getVarHttpRoutingUrlHost();
+        variableValue = (String)pec.getVariable(variableName);
+        Assert.assertEquals("ServerVariable should equal httpRouting url host", host, variableValue);
 
-        variableName = BuiltinVariables.PREFIX_HTTP_ROUTING_URL + "." + BuiltinVariables.HTTP_ROUTING_URL_SUFFIX_PROTOCOL;
+        variableName = serviceurl + "." + BuiltinVariables.SERVICE_SUFFIX_PROTOCOL;
         variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal httpRouting protocol",protocol,variableValue);
+        Assert.assertEquals("ServerVariable should equal httpRouting url protocol", protocol, variableValue);
+        variableName = HttpRoutingAssertion.getVarHttpRoutingUrlProtocol();
+        variableValue = (String)pec.getVariable(variableName);
+        Assert.assertEquals("ServerVariable should equal httpRouting url protocol", protocol, variableValue);
 
-        variableName = BuiltinVariables.PREFIX_HTTP_ROUTING_URL + "." + BuiltinVariables.HTTP_ROUTING_URL_SUFFIX_PORT;
+        variableName = serviceurl + "." + BuiltinVariables.SERVICE_SUFFIX_PORT;
         variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal httpRouting port",port,variableValue);
+        Assert.assertEquals("ServerVariable should equal httpRouting url port", port, variableValue);
+        variableName = HttpRoutingAssertion.getVarHttpRoutingUrlPort();
+        variableValue = pec.getVariable(variableName).toString();
+        Assert.assertEquals("ServerVariable should equal httpRouting url port", port, variableValue);
 
         //file expects the query string
-        variableName = BuiltinVariables.PREFIX_HTTP_ROUTING_URL + "." + BuiltinVariables.HTTP_ROUTING_URL_SUFFIX_FILE;
+        variableName = serviceurl + "." + BuiltinVariables.SERVICE_SUFFIX_FILE;
         variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal httpRouting file",filePath+query,variableValue);
+        Assert.assertEquals("ServerVariable should equal httpRouting url file", filePath+query, variableValue);
+        variableName = HttpRoutingAssertion.getVarHttpRoutingUrlFile();
+        variableValue = (String)pec.getVariable(variableName);
+        Assert.assertEquals("ServerVariable should equal httpRouting url file", filePath+query, variableValue);
 
         //path doesn't expect the query string
-        variableName = BuiltinVariables.PREFIX_HTTP_ROUTING_URL + "." + BuiltinVariables.HTTP_ROUTING_URL_SUFFIX_PATH;
+        variableName = serviceurl + "." + BuiltinVariables.SERVICE_SUFFIX_PATH;
         variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal httpRouting path",filePath,variableValue);
+        Assert.assertEquals("ServerVariable should equal httpRouting url path", filePath, variableValue);
+        variableName = HttpRoutingAssertion.getVarHttpRoutingUrlPath();
+        variableValue = (String)pec.getVariable(variableName);
+        Assert.assertEquals("ServerVariable should equal httpRouting url path", filePath, variableValue);
 
-        variableName = BuiltinVariables.PREFIX_HTTP_ROUTING_URL + "." + BuiltinVariables.HTTP_ROUTING_URL_SUFFIX_QUERY;
+        variableName = serviceurl + "." + BuiltinVariables.SERVICE_SUFFIX_QUERY;
         variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal httpRouting query",query,variableValue);
+        Assert.assertEquals("ServerVariable should equal httpRouting url query", query, variableValue);
+        variableName = HttpRoutingAssertion.getVarHttpRoutingUrlQuery();
+        variableValue = (String)pec.getVariable(variableName);
+        Assert.assertEquals("ServerVariable should equal httpRouting url query", query, variableValue);
     }
 
     private PolicyEnforcementContext getPolicyEncorcementContext(){

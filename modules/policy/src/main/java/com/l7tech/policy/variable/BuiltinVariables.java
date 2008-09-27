@@ -24,11 +24,6 @@ public class BuiltinVariables {
 
     public static final String PREFIX_GATEWAY_TIME = "gateway.time";
     public static final String PREFIX_REQUEST_TIME = "request.time";
-    /**
-     * @deprecated replace "service.url" with "httpRouting.url" due to the bug 5324 fixing.
-     */
-    public static final String DEPRECATED_PREFIX_SERVICE_URL = "service.url";
-    public static final String PREFIX_HTTP_ROUTING_URL = "httpRouting.url";
     public static final String PREFIX_SERVICE = "service";
 
     public static final String PREFIX_REQUEST_URL = "request.url";
@@ -46,14 +41,23 @@ public class BuiltinVariables {
 
     public static final String SERVICE_SUFFIX_NAME = "name";
     public static final String SERVICE_SUFFIX_OID = "oid";
-    
-    public static final String HTTP_ROUTING_URL_SUFFIX_HOST = "host";
-    public static final String HTTP_ROUTING_URL_SUFFIX_PROTOCOL = "protocol";
-    public static final String HTTP_ROUTING_URL_SUFFIX_PORT = "port";
-    public static final String HTTP_ROUTING_URL_SUFFIX_FILE = "file";
-    public static final String HTTP_ROUTING_URL_SUFFIX_PATH = "path";
-    public static final String HTTP_ROUTING_URL_SUFFIX_QUERY = "query";
-    public static final String HTTP_ROUTING_URL_SUFFIX_FRAGMENT = "fragment";
+
+    @Deprecated
+    public static final String SERVICE_SUFFIX_URL = "url";
+    @Deprecated
+    public static final String SERVICE_SUFFIX_HOST = "host";
+    @Deprecated
+    public static final String SERVICE_SUFFIX_PROTOCOL = "protocol";
+    @Deprecated
+    public static final String SERVICE_SUFFIX_PORT = "port";
+    @Deprecated
+    public static final String SERVICE_SUFFIX_FILE = "file";
+    @Deprecated
+    public static final String SERVICE_SUFFIX_PATH = "path";
+    @Deprecated
+    public static final String SERVICE_SUFFIX_QUERY = "query";
+    @Deprecated
+    public static final String SERVICE_SUFFIX_FRAGMENT = "fragment";
 
     public static boolean isSupported(String name) {
         return getMetadata(name) != null;
@@ -104,7 +108,7 @@ public class BuiltinVariables {
         new VariableMetadata("request.elapsedTime", false, false, null, false, DataType.INTEGER),
         new VariableMetadata(PREFIX_GATEWAY_TIME, true, false, null, false),
         new VariableMetadata(PREFIX_REQUEST_TIME, true, false, null, false),
-        new VariableMetadata(PREFIX_HTTP_ROUTING_URL, true, false, null, false),
+        new VariableMetadata(PREFIX_SERVICE+"."+SERVICE_SUFFIX_URL, true, false, null, false),
         //service.name and service.oid have no suffixes => have no need to be stored as a variable
         //which can have suffixes attached to it, unlike service.url which can have service.url.host etc...
         new VariableMetadata(PREFIX_SERVICE+"."+SERVICE_SUFFIX_NAME, false, false, null, false),
@@ -131,7 +135,7 @@ public class BuiltinVariables {
         for (int i = 0; i < VARS.length; i++) {
             metadataByName.put(VARS[i].getName().toLowerCase(), VARS[i]);
             // builtin variables that are not set at beginning of context
-            if (!VARS[i].getName().equals(PREFIX_HTTP_ROUTING_URL)) { // bugzilla 3208, add other non-preset variables as needed
+            if (!VARS[i].getName().equals(PREFIX_SERVICE+"."+SERVICE_SUFFIX_URL)) { // bugzilla 3208, add other non-preset variables as needed
                 metadataPresetByName.put(VARS[i].getName().toLowerCase(), VARS[i]);
             }
         }

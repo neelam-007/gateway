@@ -28,9 +28,18 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = -1;
     public static final String VAR_ROUTING_LATENCY = "httpRouting.latency";
     public static final String VAR_HTTP_ROUTING_URL = "httpRouting.url";
-    public static final String PROP_SSL_SESSION_TIMEOUT =
-            HttpRoutingAssertion.class.getName() + ".sslSessionTimeoutSeconds";
+    public static final String VAR_HTTP_ROUTING_URL_SUFFIX_HOST = "host";
+    public static final String VAR_HTTP_ROUTING_URL_SUFFIX_PROTOCOL = "protocol";
+    public static final String VAR_HTTP_ROUTING_URL_SUFFIX_PORT = "port";
+    public static final String VAR_HTTP_ROUTING_URL_SUFFIX_FILE = "file";
+    public static final String VAR_HTTP_ROUTING_URL_SUFFIX_PATH = "path";
+    public static final String VAR_HTTP_ROUTING_URL_SUFFIX_QUERY = "query";
+    public static final String VAR_HTTP_ROUTING_URL_SUFFIX_FRAGMENT = "fragment";
+    public static final String PROP_SSL_SESSION_TIMEOUT = HttpRoutingAssertion.class.getName() + ".sslSessionTimeoutSeconds";
     public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
+
+    @Deprecated 
+    public static final String VAR_SERVICE_URL = "service.url";
 
     protected String protectedServiceUrl;
     protected String login;
@@ -332,6 +341,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         final List<VariableMetadata> vars = new ArrayList<VariableMetadata>();
         vars.add(new VariableMetadata(VAR_ROUTING_LATENCY, false, false, VAR_ROUTING_LATENCY, false));
         vars.add(new VariableMetadata(VAR_HTTP_ROUTING_URL, false, false, VAR_HTTP_ROUTING_URL, false));
+        vars.add(new VariableMetadata(VAR_SERVICE_URL, false, false, VAR_SERVICE_URL, false));
         if (responseMsgDest != null) {
             vars.add(new VariableMetadata(responseMsgDest, false, false, responseMsgDest, true, DataType.MESSAGE));
         }
@@ -380,5 +390,33 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
 
     public void setKeyAlias(String keyid) {
         this.keyId = keyid;
+    }
+
+    public static String getVarHttpRoutingUrlHost() {
+        return VAR_HTTP_ROUTING_URL + "." + VAR_HTTP_ROUTING_URL_SUFFIX_HOST;
+    }
+
+    public static String getVarHttpRoutingUrlProtocol() {
+        return VAR_HTTP_ROUTING_URL + "." + VAR_HTTP_ROUTING_URL_SUFFIX_PROTOCOL;
+    }
+
+    public static String getVarHttpRoutingUrlPort() {
+        return VAR_HTTP_ROUTING_URL + "." + VAR_HTTP_ROUTING_URL_SUFFIX_PORT;
+    }
+
+    public static String getVarHttpRoutingUrlFile() {
+        return VAR_HTTP_ROUTING_URL + "." + VAR_HTTP_ROUTING_URL_SUFFIX_FILE;
+    }
+
+    public static String getVarHttpRoutingUrlPath() {
+        return VAR_HTTP_ROUTING_URL + "." + VAR_HTTP_ROUTING_URL_SUFFIX_PATH;
+    }
+
+    public static String getVarHttpRoutingUrlQuery() {
+        return VAR_HTTP_ROUTING_URL + "." + VAR_HTTP_ROUTING_URL_SUFFIX_QUERY;
+    }
+
+    public static String getVarHttpRoutingUrlFragment() {
+        return VAR_HTTP_ROUTING_URL + "." + VAR_HTTP_ROUTING_URL_SUFFIX_FRAGMENT;
     }
 }
