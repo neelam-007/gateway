@@ -223,6 +223,7 @@ public class SystemSettings extends EmsPage {
             super(componentName);
 
             add(fileUpload);
+            add(new YuiButton("license.submit"));
 
             setMaxSize(Bytes.bytes(MAX_LICENSE_FILE_UPLOAD_BYTES));
         }
