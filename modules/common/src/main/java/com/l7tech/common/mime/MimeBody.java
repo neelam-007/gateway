@@ -159,7 +159,7 @@ public class MimeBody implements Iterable<PartInfo> {
             }
             itworked = true;
         } catch (NoSuchPartException e) {
-            throw new IOException("Message MIME type is multipart/related, but no initial boundary found", e);
+            throw (IOException) new IOException("Message MIME type is multipart/related, but no initial boundary found").initCause(e);
         } finally {
             if (!itworked) ResourceUtils.closeQuietly(stashManager);
         }
@@ -405,6 +405,7 @@ public class MimeBody implements Iterable<PartInfo> {
 
             public Object nextElement() {
                 if (errorCondition != null)
+                    //noinspection ThrowableInstanceNeverThrown
                     return new IOExceptionThrowingInputStream(new CausedIOException(errorCondition));
 
                 // Generate the next input stream for the user to read.
@@ -1072,12 +1073,12 @@ public class MimeBody implements Iterable<PartInfo> {
         }
 
         private void setSizeLimitNonFlagging(long newLimit) throws IOException {
-            if (!limitCustomized)
+            if (!isLimitCustomized())
                 super.setSizeLimit(newLimit);
         }
 
         private void clearLimitNonFlagging() throws IOException {
-            if (!limitCustomized)
+            if (!isLimitCustomized())
                 super.setSizeLimit(0);
         }
 
