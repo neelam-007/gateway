@@ -9,7 +9,6 @@ import com.l7tech.policy.Policy;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.policy.exporter.PolicyImporter;
 import com.l7tech.console.tree.PolicyTemplatesFolderNode;
-import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
@@ -138,7 +137,7 @@ public abstract class ImportPolicyFromFileAction extends EntityWithPolicyNodeAct
         } catch (PolicyConflictException e) {
             log.log(Level.WARNING, "could not localize or read policy from " + chooser.getSelectedFile().getPath(), e);
             DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                                          "The policy fragment " + e.getPolicyGuid() + " in the imported file is different from the existing policy fragment.",
+                                          e.getMessage(),
                                           "Policy Fragment Conflict",
                                           JOptionPane.WARNING_MESSAGE, null);
         } catch (IOException e) {

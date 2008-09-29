@@ -69,7 +69,7 @@ public class IncludedPolicyReference extends ExternalReference {
         
         try {
             Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(policyReference.retrievePolicyGuid());
-            this.name = policy.getName();
+            this.name = (name == null)? policy.getName() : name;
             this.type = policy.getType();
             this.soap = policy.isSoap();
             this.xml = policy.getXml();
@@ -143,7 +143,7 @@ public class IncludedPolicyReference extends ExternalReference {
                 }
             }
 
-            throw new PolicyConflictException("The imported policy fragment #" + guid + " does not match the existing policy.", name, guid);
+            throw new PolicyConflictException("The policy fragment " + name + " in the imported file is different from the existing policy fragment " + policy.getName() + ".", name, guid);
         } catch(InvalidPolicyStreamException e) {
             throw e;
         } catch (Exception e) {
