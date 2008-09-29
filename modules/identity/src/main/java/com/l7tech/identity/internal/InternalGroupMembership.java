@@ -38,6 +38,15 @@ public class InternalGroupMembership extends GroupMembership {
     private long memberProviderOid;
     private String memberSubgroupId;
 
+    /**
+     * This constructor is used mainly for hibernate.  If you wish to construct this object, USE the factories method
+     * instead, as it defines theproper provider oid values.
+     */
+    protected InternalGroupMembership() {
+        //bug 5726: internal group should only have one provider ID (INTERNALPROVIDER_SPECIAL_OID)        
+        super.thisGroupProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+    }
+
     @Id
     @Column(name="objectid", nullable=false, updatable=false)
     @GenericGenerator( name="generator", strategy = "hilo" )
