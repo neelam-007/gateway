@@ -183,7 +183,14 @@ public class EmsSecurityManagerImpl implements EmsSecurityManager {
                 request.getRequestURI().startsWith("/yui") ||
                 request.getRequestURI().startsWith("/resources/org.apache.wicket.markup.html.WicketEventReference/wicket-event.js") ||
                 request.getRequestURI().startsWith("/resources/org.apache.wicket.ajax.WicketAjaxReference/wicket-ajax.js") ||
-                request.getRequestURI().startsWith("/resources/org.apache.wicket.ajax.AbstractDefaultAjaxBehavior/wicket-ajax-debug.js");
+                request.getRequestURI().startsWith("/resources/org.apache.wicket.ajax.AbstractDefaultAjaxBehavior/wicket-ajax-debug.js") ||                
+                request.getRequestURI().startsWith("/resources/com.l7tech.server.ems.pages.YuiCommon/$up$/resources/yui/button/assets/skins/sam/button.css") ||
+                request.getRequestURI().startsWith("/resources/com.l7tech.server.ems.pages.YuiCommon/$up$/resources/yui/yahoo-dom-event/yahoo-dom-event.js") ||
+                request.getRequestURI().startsWith("/resources/com.l7tech.server.ems.pages.YuiCommon/$up$/resources/yui/element/element-beta-min.js") ||
+                request.getRequestURI().startsWith("/resources/com.l7tech.server.ems.pages.YuiCommon/$up$/resources/yui/button/button-min.js") ||
+                request.getRequestURI().startsWith("/resources/com.l7tech.server.ems.pages.YuiCommon/$up$/resources/css/l7-yui-skin.css") ||
+                request.getRequestURI().startsWith("/resources/com.l7tech.server.ems.pages.YuiCommon/$up$/resources/yui/assets/skins/sam/sprite.png");
+
     }
 
     /**

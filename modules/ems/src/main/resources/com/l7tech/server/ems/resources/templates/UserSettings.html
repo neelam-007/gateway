@@ -180,7 +180,7 @@
                 <div class="panel">
                     <div class="panelTitle"><wicket:message key="label.changepass">Change Password</wicket:message></div>
                     <div class="panelContent">
-                        <div wicket:id="feedback" class="center"/>
+                        <div wicket:id="password.feedback" class="center"/>
                         <form action="UserSettings.html" method="post" wicket:id="passwordForm">
                         <table class="indent spaced">
                             <tr>
@@ -196,13 +196,14 @@
                                 <td><input id="newPassword2" name="newPassword2" type="password" wicket:id="newPasswordConfirm"/></td>
                             </tr>
                         </table>
-                        <input type="submit" value="Apply" wicket:message="value:label.apply"/>
                         </form>
+                        <button type="button" wicket:id="password.submit"><wicket:message key="label.apply">Apply</wicket:message></button>
                     </div>
                 </div>
                 <div class="panel">
                     <div class="panelTitle"><wicket:message key="label.prefs">User Interface Preferences</wicket:message></div>
                     <div class="panelContent">
+                        <div wicket:id="account.feedback" class="center"/>
                         <form action="UserSettings.html" method="post" wicket:id="preferencesForm">
                         <table class="indent spaced">
                             <tr>
@@ -289,8 +290,8 @@
                                 </select></td>
                             </tr>
                         </table>
-                        <input type="submit" value="Apply" wicket:message="value:label.apply"/>
                         </form>
+                        <button type="button" wicket:id="account.submit"><wicket:message key="label.apply">Apply</wicket:message></button>
                     </div>
                 </div>
                 </wicket:extend>

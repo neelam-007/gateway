@@ -26,7 +26,6 @@ import org.apache.wicket.request.target.basic.RedirectRequestTarget;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ResourceReference;
 import org.apache.wicket.util.value.ValueMap;
-import org.apache.wicket.ajax.markup.html.form.AjaxButton;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 
 /**
@@ -40,7 +39,7 @@ public class Logs extends EmsPage {
         add ( pageForm );
 
         final WebMarkupContainer detailsContainer = new WebMarkupContainer("log.details");
-        Button viewButton = new AjaxButton("viewLogButton") {
+        Button viewButton = new YuiAjaxButton("viewLogButton") {
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
                 String logIdentifier = (String)form.get("logId").getModel().getObject();
                 if ( logIdentifier != null && logIdentifier.length() > 0 ) {
@@ -54,7 +53,7 @@ public class Logs extends EmsPage {
             }
         };
 
-        Button downloadButton = new AjaxButton("downloadLogButton") {
+        Button downloadButton = new YuiAjaxButton("downloadLogButton") {
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
                 String logIdentifier = (String)form.get("logId").getModel().getObject();
                 if ( logIdentifier != null && logIdentifier.length() > 0 ) {

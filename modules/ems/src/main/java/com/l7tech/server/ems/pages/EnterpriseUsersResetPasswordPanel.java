@@ -9,7 +9,6 @@ import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.ajax.markup.html.form.AjaxButton;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 
 import java.io.Serializable;
@@ -40,7 +39,7 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
         PasswordResetForm passwordForm = new PasswordResetForm("resetPasswordForm", buildUserModel(username));
         add( passwordForm );
 
-        add( new AjaxButton( "submit", passwordForm ){
+        add( new YuiAjaxButton( "submit", passwordForm ){
             protected void onSubmit( final AjaxRequestTarget target, final Form form ) {
                 target.addComponent( feedback );
             }

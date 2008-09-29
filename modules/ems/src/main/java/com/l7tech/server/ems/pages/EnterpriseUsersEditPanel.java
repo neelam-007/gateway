@@ -8,7 +8,6 @@ import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.ajax.markup.html.form.AjaxButton;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.Component;
 
@@ -38,7 +37,7 @@ public class EnterpriseUsersEditPanel extends Panel {
         UserForm editForm = new UserForm("editUserForm", buildUserModel(username));
         add( feedback.setOutputMarkupId(true) );
         add( editForm );
-        add( new AjaxButton( "submit", editForm ){
+        add( new YuiAjaxButton( "submit", editForm ){
             protected void onSubmit( final AjaxRequestTarget target, final Form form ) {
                 target.addComponent( feedback );
                 for ( Component component : refreshComponents ) {

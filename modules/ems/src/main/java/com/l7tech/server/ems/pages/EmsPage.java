@@ -54,6 +54,10 @@ public abstract class EmsPage extends WebPage {
         return (EmsSession) super.getSession();
     }
 
+    //- PACKAGE
+
+    static final ResourceReference RES_CSS_SKIN = new CompressedResourceReference(YuiCommon.class, "../resources/css/l7-yui-skin.css" );    
+
     //- PROTECTED
 
     @Override
@@ -71,8 +75,6 @@ public abstract class EmsPage extends WebPage {
 
     //- PRIVATE
     
-    private static final ResourceReference RES_CSS_SKIN = new CompressedResourceReference(YuiCommon.class, "../resources/css/l7-yui-skin.css" );
-
     @SuppressWarnings({"UnusedDeclaration"})
     @SpringBean
     private EmsSecurityManager securityManager;

@@ -14,7 +14,6 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.IChoiceRenderer;
-import org.apache.wicket.ajax.markup.html.form.AjaxButton;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.validation.validator.DateValidator;
 
@@ -57,7 +56,7 @@ public class Audits extends EmsPage {
         detailsContainer.add( new WebMarkupContainer("details") );
         detailsContainer.setOutputMarkupId(true);
 
-        Button downloadButton = new AjaxButton("downloadAuditsButton") {
+        Button downloadButton = new YuiAjaxButton("downloadAuditsButton") {
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
                 final Model downloadModel = new Model();
                 AuditDownloadPanel download = new AuditDownloadPanel( YuiDialog.getContentId(), downloadModel );
@@ -74,7 +73,7 @@ public class Audits extends EmsPage {
             }
         };
 
-        Button deleteButton = new AjaxButton("deleteAuditsButton") {
+        Button deleteButton = new YuiAjaxButton("deleteAuditsButton") {
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
                 AuditDeletePanel delete = new AuditDeletePanel( YuiDialog.getContentId() );
                 YuiDialog dialog = new YuiDialog("audit.holder.content", "Audit Deletion", YuiDialog.Style.OK_CANCEL, delete);
@@ -111,7 +110,7 @@ public class Audits extends EmsPage {
                 return values[index];
             }
         } ) );
-        auditSelectionForm.add( new AjaxButton("audit.select.button"){
+        auditSelectionForm.add( new YuiAjaxButton("audit.select.button"){
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
                 // Rebuild the data table
                 tableContainer.removeAll();

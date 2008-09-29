@@ -12,6 +12,8 @@ import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.validation.validator.StringValidator;
+import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.feedback.ContainerFeedbackMessageFilter;
 
 import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.server.ems.EmsApplication;
@@ -62,9 +64,27 @@ public class UserSettings extends EmsPage {
             logger.log( Level.WARNING, "Error loading user preferences.", fe );       
         }
 
-        add( new FeedbackPanel("feedback") );
-        add( new PasswordForm("passwordForm") );
-        add( new PreferencesForm("preferencesForm", preferences ) );
+        final FeedbackPanel passwordFeedback = new FeedbackPanel("password.feedback");
+        Form passwordForm = new PasswordForm("passwordForm");
+        passwordFeedback.setFilter( new ContainerFeedbackMessageFilter(passwordForm) );
+        add( passwordFeedback.setOutputMarkupId(true) );
+        add( passwordForm );
+        add( new YuiAjaxButton("password.submit", passwordForm){
+            protected void onSubmit(AjaxRequestTarget target, Form form) { target.addComponent(passwordFeedback); }
+            @Override
+            protected void onError(AjaxRequestTarget target, Form form) { target.addComponent(passwordFeedback); }
+        } );
+
+        final FeedbackPanel accountFeedback = new FeedbackPanel("account.feedback");
+        Form accountForm = new PreferencesForm("preferencesForm", preferences );
+        accountFeedback.setFilter( new ContainerFeedbackMessageFilter(accountForm) );
+        add( accountFeedback.setOutputMarkupId(true) );
+        add( accountForm );
+        add( new YuiAjaxButton("account.submit", accountForm){
+            protected void onSubmit(AjaxRequestTarget target, Form form) { target.addComponent(accountFeedback); }
+            @Override
+            protected void onError(AjaxRequestTarget target, Form form) { target.addComponent(accountFeedback); }
+        } );
     }
 
     /**
@@ -142,6 +162,8 @@ public class UserSettings extends EmsPage {
             if ( model.newPassword.equals(model.newPasswordConfirm) ) {
                 if ( changePassword( model.password, model.newPassword ) ) {
                     this.info( new StringResourceModel("password.message.updated", this, null).getString() );
+                } else {
+                    this.error( new StringResourceModel("password.message.updatefailed", this, null).getString() );
                 }
             }
         }

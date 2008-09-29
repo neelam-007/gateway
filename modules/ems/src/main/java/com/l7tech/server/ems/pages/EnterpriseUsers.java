@@ -6,7 +6,6 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.ems.EmsAccountManager;
 import com.l7tech.server.ems.NavigationPage;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.markup.html.form.AjaxButton;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.markup.html.form.Button;
@@ -54,7 +53,7 @@ public class EnterpriseUsers extends EmsPage {
         userContainer2.add(new EmptyPanel("user.content"));
         add ( userContainer2 );
 
-        Button addButton = new AjaxButton("addUserButton") {
+        Button addButton = new YuiAjaxButton("addUserButton") {
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
                 userContainer1.removeAll();
                 userContainer2.removeAll();
@@ -67,7 +66,7 @@ public class EnterpriseUsers extends EmsPage {
             }
         };
 
-        Button deleteButton = new AjaxButton("deleteUserButton") {
+        Button deleteButton = new YuiAjaxButton("deleteUserButton") {
             protected void onSubmit(AjaxRequestTarget ajaxRequestTarget, Form form) {
                 final String id = (String) form.get("userId").getModel().getObject();
                 container.removeAll();

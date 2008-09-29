@@ -2,6 +2,7 @@ package com.l7tech.server.ems.pages;
 
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
+import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.PasswordTextField;
 import org.apache.wicket.markup.html.form.RequiredTextField;
@@ -9,8 +10,8 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
-import org.apache.wicket.ajax.markup.html.form.AjaxButton;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.behavior.HeaderContributor;
 import com.l7tech.server.ems.SetupManager;
 import com.l7tech.server.ems.EmsSecurityManager;
 import com.l7tech.server.ems.SetupException;
@@ -65,7 +66,7 @@ public class Login extends WebPage {
             add( feedback.setOutputMarkupId(true) );
             LoginForm form = new LoginForm("loginForm");
             form.add(
-                new AjaxButton("submit", form){
+                new YuiAjaxButton("submit", form){
                     protected void onSubmit(AjaxRequestTarget target, Form form) {}
                     @Override
                     protected void onError(AjaxRequestTarget target, Form form) {
@@ -75,6 +76,10 @@ public class Login extends WebPage {
             );
             add(form);
         }
+
+        EmptyPanel empty = new EmptyPanel("empty");
+        empty.add( HeaderContributor.forCss( EmsPage.RES_CSS_SKIN ) );
+        add(empty);
     }
 
     @Override
