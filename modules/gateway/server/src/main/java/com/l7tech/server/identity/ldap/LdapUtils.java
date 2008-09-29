@@ -32,7 +32,19 @@ public final class LdapUtils {
     private LdapUtils() { }
 
     static boolean attrContainsCaseIndependent(Attribute attr, String valueToLookFor) {
-        return attr.contains(valueToLookFor) || attr.contains(valueToLookFor.toLowerCase());
+        if (valueToLookFor == null || "".equals(valueToLookFor))
+            return true;
+        for (int i = 0; i < attr.size(); i++) {
+            try {
+                Object attrVal = attr.get(i);
+                if (attrVal == null) continue;
+                if (valueToLookFor.equalsIgnoreCase(attrVal.toString()))
+                    return true;
+            } catch (NamingException e) {
+                // ignore this (non)value
+            }
+        }
+        return false;
     }
 
     static Object extractOneAttributeValue(Attributes attributes, String attrName) throws NamingException {
