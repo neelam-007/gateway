@@ -17,6 +17,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.*;
 import java.util.EventObject;
+import java.beans.PropertyChangeEvent;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -31,8 +32,9 @@ public class AssociatedLogsTable extends JTable {
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
 
-    int width = DEFAULT_COLUMN_WIDTHS[4] - 45;//45 ~ approx size of button
-    private boolean showMessageButton = false;
+    private DefaultTableColumnModel columnModel;
+
+//    int width = DEFAULT_COLUMN_WIDTHS[4] - 45;//45 ~ approx size of button
 
     public AssociatedLogsTable() {
         setModel(getAssociatedLogsTableModel());
@@ -85,7 +87,10 @@ public class AssociatedLogsTable extends JTable {
      * @return DefaultTableColumnModel
      */
     private DefaultTableColumnModel getLogColumnModel() {
-        final DefaultTableColumnModel columnModel = new DefaultTableColumnModel();
+        if(columnModel != null){
+            return columnModel;
+        }
+        columnModel = new DefaultTableColumnModel();
 
         columnModel.addColumn(new TableColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_TIMESTAMP_COLUMN_INDEX, DEFAULT_COLUMN_WIDTHS[0]));
         columnModel.addColumn(new TableColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_SECURITY_COLUMN_INDEX, DEFAULT_COLUMN_WIDTHS[1]));
@@ -127,13 +132,8 @@ public class AssociatedLogsTable extends JTable {
 
                 String messageText = (String) value;
                 if (messageText != null && messageText.trim().length() > 0 && (messageText.length() > 200 || messageText.contains("\n"))) {
-                    showMessageButton = true;
                     JLabel textLabel = new JLabel(messageText, SwingConstants.LEFT);
-                    if (messageRenderComponent.getWidth() != 0 && messageRenderButton.getWidth() != 0) {
-                        width = columnModel.getColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_MSG_COLUMN_INDEX).getWidth() - messageRenderComponent.getWidth();
-                    }
-
-                    textLabel.setPreferredSize(new Dimension(width, 25));
+                    textLabel.setPreferredSize(new Dimension(columnModel.getColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_MSG_COLUMN_INDEX).getWidth() - 45, 25));
 
                     messageRenderComponent.setBackground(comp.getBackground());
                     messageRenderComponent.setBorder(comp.getBorder());
@@ -144,8 +144,6 @@ public class AssociatedLogsTable extends JTable {
                     messagePane.add(textLabel, BorderLayout.WEST);
                     messagePane.add(messageRenderComponent, BorderLayout.EAST);
                     comp = messagePane;
-                }else{
-                    showMessageButton = false;
                 }
 
                 //set tooltip
@@ -331,12 +329,13 @@ public class AssociatedLogsTable extends JTable {
 
             JComponent tempButtonComponent = buildButtonComponent(button);
             JLabel textLabel = new JLabel(this.value, SwingConstants.LEFT);
-            textLabel.setPreferredSize(new Dimension(width, 25));
+            textLabel.setPreferredSize(new Dimension(getLogColumnModel().getColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_MSG_COLUMN_INDEX).getWidth() - 45, 25));
             JPanel messagePane = new JPanel();
             messagePane.setBackground(getColour());
             messagePane.setLayout(new BorderLayout());
             messagePane.add(textLabel, BorderLayout.WEST);
-            if (showMessageButton) {
+
+            if (this.value != null && this.value.trim().length() > 0 && (this.value.length() > 200 || this.value.contains("\n"))) {
                 messagePane.add(tempButtonComponent, BorderLayout.EAST);
             }
 
@@ -348,16 +347,22 @@ public class AssociatedLogsTable extends JTable {
         }
 
         public boolean isCellEditable(EventObject anEvent) {
-            boolean editable = false;
+            int column;
+            if (anEvent instanceof MouseEvent) {
+                MouseEvent me = (MouseEvent) anEvent;
+                column = AssociatedLogsTable.this.columnAtPoint(me.getPoint());
 
-            if(!showMessageButton) return false;
-
-            String value = getValue(anEvent);
-            if (value != null && value.trim().length() > 0) {
-                editable = true;
+                DefaultTableColumnModel model = getLogColumnModel();
+                if (me.getPoint().getX() < model.getTotalColumnWidth() && me.getPoint().getX() > (model.getTotalColumnWidth() - 45)) {
+                    String value = getValue(anEvent);
+                    if (column == 4 && value != null && value.length() > 0 && (value.length() > 200 || value.contains("\n"))) {
+                        return true;
+                    } else if (column == 2 && value != null && value.length() > 0) {
+                        return true;
+                    }
+                }
             }
-
-            return editable;
+            return false;
         }
 
         public boolean shouldSelectCell(EventObject anEvent) {
