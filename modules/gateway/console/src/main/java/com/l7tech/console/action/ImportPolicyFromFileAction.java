@@ -136,8 +136,21 @@ public abstract class ImportPolicyFromFileAction extends EntityWithPolicyNodeAct
             }
         } catch (PolicyConflictException e) {
             log.log(Level.WARNING, "could not localize or read policy from " + chooser.getSelectedFile().getPath(), e);
+
+            String existingPolicyName = e.getExistingPolicyName();
+            String importedPolicyName = e.getImportedPolicyName();
+
+            // Generate an error message depending on if the name of the imported policy fragment is the same as
+            // the name of the existing policy fragment or not.
+            StringBuilder errorMessage = new StringBuilder("The policy fragment " + importedPolicyName + " in the imported file is different from the existing policy fragment");
+            if (! importedPolicyName.equals(existingPolicyName)) {
+                errorMessage.append(" ").append(existingPolicyName);
+            }
+            errorMessage.append(".\n");
+            errorMessage.append("Due to this conflict, the policy fragment ").append(importedPolicyName).append(" cannot be imported.");
+
             DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                                          e.getMessage(),
+                                          errorMessage.toString(),
                                           "Policy Fragment Conflict",
                                           JOptionPane.WARNING_MESSAGE, null);
         } catch (IOException e) {

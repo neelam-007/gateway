@@ -8,37 +8,43 @@ package com.l7tech.policy.wsp;
  * To change this template use File | Settings | File Templates.
  */
 public class PolicyConflictException extends InvalidPolicyStreamException {
-    private String policyName;
+    private String importedPolicyName;
+    private String existingPolicyName;
     private String policyGuid;
 
     PolicyConflictException() {
     }
 
-    public PolicyConflictException(String s, String policyName, String policyGuid) {
+    public PolicyConflictException(String s, String importedPolicyName, String existingPolicyName, String policyGuid) {
         super(s);
-        this.policyName = policyName;
+        this.importedPolicyName = importedPolicyName;
+        this.existingPolicyName = existingPolicyName;
         this.policyGuid = policyGuid;
     }
 
-    public PolicyConflictException(Throwable cause, String policyName, String policyGuid) {
+    public PolicyConflictException(Throwable cause, String importedPolicyName, String policyGuid) {
         super();
         initCause(cause);
-        this.policyName = policyName;
+        this.importedPolicyName = importedPolicyName;
         this.policyGuid = policyGuid;
     }
 
-    PolicyConflictException(String s, Throwable cause, String policyName, String policyGuid) {
+    PolicyConflictException(String s, Throwable cause, String importedPolicyName, String policyGuid) {
         super(s);
         initCause(cause);
-        this.policyName = policyName;
+        this.importedPolicyName = importedPolicyName;
         this.policyGuid = policyGuid;
     }
 
-    public String getPolicyName() {
-        return policyName;
+    public String getImportedPolicyName() {
+        return importedPolicyName;
     }
 
     public String getPolicyGuid() {
         return policyGuid;
+    }
+
+    public String getExistingPolicyName() {
+        return existingPolicyName;
     }
 }

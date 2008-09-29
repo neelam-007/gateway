@@ -143,7 +143,7 @@ public class IncludedPolicyReference extends ExternalReference {
                 }
             }
 
-            throw new PolicyConflictException("The policy fragment " + name + " in the imported file is different from the existing policy fragment " + policy.getName() + ".", name, guid);
+            throw new PolicyConflictException("The imported policy fragment " + name + " does not match the existing policy.", name, policy.getName(), guid);
         } catch(InvalidPolicyStreamException e) {
             throw e;
         } catch (Exception e) {
