@@ -9,6 +9,8 @@ import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * A GUI widget to choose a date-time range.
@@ -22,6 +24,7 @@ import java.util.*;
  */
 public class TimeRangePicker extends JComponent implements PropertyChangeListener {
 
+    private static Logger logger = Logger.getLogger(TimeRangePicker.class.getName());
     /**
      * Combo box item for a time zone. Time zone IDs are used in the display
      * because they are more distinguishable then the Time zone display names.
@@ -180,9 +183,12 @@ public class TimeRangePicker extends JComponent implements PropertyChangeListene
      */
     public void setTimeZone(final TimeZone timeZone, final boolean firePropertyChange) {
         final TimeZone oldZone = _timeZone;
-        final TimeZoneItem tzItem = TIME_ZONE_ITEMS.get(timeZone);
+        TimeZoneItem tzItem = TIME_ZONE_ITEMS.get(timeZone);
+        
         if (tzItem == null) {
-            throw new IllegalArgumentException("Not an available time zone.");
+            //use the default time zone
+            tzItem = TIME_ZONE_ITEMS.get(TimeZone.getDefault());
+            logger.log(Level.WARNING, "Selected time zone not available.  Using default.");
         }
         _timeZone = tzItem.getTimeZone();
         _startChooser.setTimeZone(_timeZone);
