@@ -31,17 +31,11 @@
         <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
 
         <dependency org="com.l7tech.lib" name="apache-cxf-lib" rev="2.1.1" force="true" conf="core"/>
-	<dependency org="com.sun.xml.fastinfoset" name="FastInfoset" rev="1.0.1" force="true" conf="core"/>
+    	<dependency org="com.sun.xml.fastinfoset" name="FastInfoset" rev="1.0.1" force="true" conf="core"/>
 
-        <dependency org="org.hibernate" name="hibernate" rev="3.2.6.ga" force="true" conf="core"/>
-        <dependency org="org.hibernate" name="hibernate-annotations" rev="3.3.1.GA" force="true" conf="core"/>
-    	<dependency org="org.hibernate" name="hibernate-commons-annotations" rev="3.0.0.ga" force="true" conf="core"/>
-        <dependency org="org.hibernate" name="hibernate-entitymanager" rev="3.3.2.GA" force="true" conf="core"/>
-        <dependency org="javassist" name="javassist" rev="3.4.GA" force="true" conf="core"/>
         <dependency org="javax.ejb" name="ejb-api" rev="3.0" force="true" conf="core"/>
         <dependency org="javax.persistence" name="persistence-api" rev="3.0" force="true" conf="core"/>
 
-        <dependency org="org.apache.derby" name="derby" rev="10.4.1.3" force="true" conf="core"/>
         <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.8" force="true" conf="core"/>
     	<dependency org="org.mortbay.jetty" name="jetty" rev="6.1.8" force="true" conf="core"/>
         <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.8" force="true" conf="core"/>

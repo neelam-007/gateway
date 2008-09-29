@@ -3,6 +3,7 @@ package com.l7tech.server.boot;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.server.BootProcess;
 import com.l7tech.server.LifecycleException;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.log.JdkLogConfig;
 import com.l7tech.util.BuildInfo;
@@ -52,6 +53,7 @@ public class GatewayBoot {
         // This thread is responsible for attempting to start the server, and for clearing "running" flag if it fails
         boolean itworked = false;
         try {
+            ServerConfig.getInstance().getLocalDirectoryProperty(ServerConfig.PARAM_LOG_DIRECTORY, null, true);
             spawnDbWarner();
             createApplicationContext();
             String ipAddress = startBootProcess();

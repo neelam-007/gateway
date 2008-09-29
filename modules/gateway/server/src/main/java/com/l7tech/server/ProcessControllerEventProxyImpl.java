@@ -10,14 +10,21 @@ import com.l7tech.server.management.api.node.ProcessControllerApi;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.util.Background;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
+import org.apache.cxf.jaxws.JaxWsClientFactoryBean;
+import org.apache.cxf.endpoint.Client;
+import org.apache.cxf.transport.http.HTTPConduit;
+import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.springframework.context.ApplicationEvent;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
 
 /** @author alex */
 public class ProcessControllerEventProxyImpl implements ProcessControllerEventProxy {
@@ -64,14 +71,7 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
 
             ProcessControllerApi api;
             try {
-                final JaxWsProxyFactoryBean pfb = new JaxWsProxyFactoryBean();
-/*
-                final CXFBusImpl bus = new CXFBusImpl();
-                bus.setExtension(new DestinationFactoryManagerImpl(), DestinationFactoryManager.class);
-                cfb.setBus(bus);
-*/
-                pfb.setServiceClass(ProcessControllerApi.class);
-                pfb.setAddress("http://localhost:" + port + uri);
+                final JaxWsProxyFactoryBean pfb = makeSslStub("https://localhost:" + port + uri, ProcessControllerApi.class);
                 api = (ProcessControllerApi)pfb.create();
                 api.ping();
                 processControllerApi = api;
@@ -86,6 +86,30 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
             }
         }
         return processControllerApi;
+    }
+
+    // TODO make this a util method
+    private static JaxWsProxyFactoryBean makeSslStub(String url, final Class<ProcessControllerApi> apiClass) {
+        final JaxWsProxyFactoryBean pfb = new JaxWsProxyFactoryBean(new JaxWsClientFactoryBean());
+        pfb.setServiceClass(apiClass);
+        pfb.setAddress(url);
+        final Client c = pfb.getClientFactoryBean().create();
+        final HTTPConduit httpConduit = (HTTPConduit)c.getConduit();
+        httpConduit.setTlsClientParameters(new TLSClientParameters() {
+            public boolean isDisableCNCheck() {
+                return true;
+            }
+
+            // TODO should we explicitly trust the PC cert?
+            public TrustManager[] getTrustManagers() {
+                return new TrustManager[] { new X509TrustManager() {
+                    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) {}
+                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) {}
+                    public X509Certificate[] getAcceptedIssuers() {return new X509Certificate[0];}
+                }};
+            }
+        });
+        return pfb;
     }
 
     public void onApplicationEvent(ApplicationEvent event) {
@@ -107,6 +131,7 @@ public class ProcessControllerEventProxyImpl implements ProcessControllerEventPr
                                 logger.log(Level.WARNING, "Unable to find recently created SsgConnector #" + oid, e);
                                 continue;
                             }
+                        //noinspection fallthrough
                         case EntityInvalidationEvent.UPDATE: // TODO
                         case EntityInvalidationEvent.DELETE: // TODO
                     }

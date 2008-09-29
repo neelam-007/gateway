@@ -20,19 +20,15 @@ public class ProcessControllerApiImpl implements ProcessControllerApi {
     private ProcessController processController;
 
     public void connectorCreated(SsgConnector connector) {
-        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     public void connectorUpdated(SsgConnector connector) {
-        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     public void connectorDeleted(SsgConnector connector) {
-        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     public void notifyEvent(EventSubscription sub, Object event) {
-        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     public void ping() {

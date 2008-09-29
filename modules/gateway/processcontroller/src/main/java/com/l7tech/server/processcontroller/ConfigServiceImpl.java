@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.processcontroller;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.config.host.HostConfig;
@@ -10,6 +11,9 @@ import com.l7tech.server.management.config.host.IpAddressConfig;
 import com.l7tech.server.management.config.host.PCHostConfig;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.PCNodeConfig;
+import com.l7tech.util.DefaultMasterPasswordFinder;
+import com.l7tech.util.MasterPasswordManager;
+import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 
 import javax.ejb.TransactionAttribute;
@@ -21,9 +25,13 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.Enumeration;
-import java.util.Properties;
-import java.util.Set;
+import java.security.GeneralSecurityException;
+import java.security.Key;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,16 +46,19 @@ public class ConfigServiceImpl implements ConfigService {
     private final File processControllerHomeDirectory;
     private final File nodeBaseDirectory;
     private final HostConfig host;
+    private final MasterPasswordManager masterPasswordManager;
+    private final Pair<X509Certificate[], RSAPrivateKey> sslKeypair;
+    private final Set<X509Certificate> trustedRemoteNodeManagementCerts;
+    private final int sslPort;
+    private final File configDirectory;
+    private final File javaBinary;
 
-    public ConfigServiceImpl() {
+    public ConfigServiceImpl() throws IOException, GeneralSecurityException {
+        // TODO maybe just pass the host.properties path instead, and put the nodeBaseDirectory in there
         String s = System.getProperty("com.l7tech.server.processcontroller.homeDirectory");
         if (s == null) {
             processControllerHomeDirectory = new File(System.getProperty("user.dir"));
-            try {
-                logger.info("Assuming Process Controller home directory is " + processControllerHomeDirectory.getCanonicalPath());
-            } catch (IOException e) {
-                throw new RuntimeException(e); // Can't happen
-            }
+            logger.info("Assuming Process Controller home directory is " + processControllerHomeDirectory.getCanonicalPath());
         } else {
             processControllerHomeDirectory = new File(s);
         }
@@ -59,6 +70,12 @@ public class ConfigServiceImpl implements ConfigService {
         } else {
             nodeBaseDirectory = new File(s);
         }
+
+        File configDirectory = new File(processControllerHomeDirectory, "/etc/conf");
+        if (!configDirectory.exists() || !configDirectory.isDirectory()) 
+            throw new IllegalStateException("Configuration directory " + configDirectory.getAbsolutePath() + " does not exist");
+        this.configDirectory = configDirectory;
+        this.masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(configDirectory, "omp.dat") ) );
 
         final File hostPropsFile = new File(getProcessControllerHomeDirectory(), "etc/host.properties");
         if (!hostPropsFile.exists())
@@ -88,6 +105,16 @@ public class ConfigServiceImpl implements ConfigService {
             throw new IllegalStateException("Unsupported operating system"); // TODO muddle through?
         }
 
+        String jrePath = hostProps.getProperty("host.jre");
+        if (jrePath == null) jrePath = System.getProperty("java.home");
+        final File javaBinary = new File(new File(jrePath), "bin" + System.getProperty("file.separator") + "java");
+        if (!javaBinary.exists() || !javaBinary.canExecute()) throw new IllegalStateException(javaBinary.getCanonicalPath() + " is not executable");
+        this.javaBinary = javaBinary.getCanonicalFile();
+        logger.info("Using java binary: " + javaBinary.getPath());
+        this.sslPort = Integer.valueOf(hostProps.getProperty("host.controller.sslPort", "8765"));
+        this.sslKeypair = readSslKeypair(hostProps);
+        this.trustedRemoteNodeManagementCerts = readTrustedNodeManagementCerts(hostProps);
+
         reverseEngineerIps(config);
         reverseEngineerNodes(config);
         this.host = config;
@@ -116,6 +143,128 @@ public class ConfigServiceImpl implements ConfigService {
         return id;
     }
 
+    private Pair<X509Certificate[], RSAPrivateKey> readSslKeypair(Properties hostProps) throws IOException, GeneralSecurityException {
+        final String keystoreFilename = hostProps.getProperty("host.controller.keystore.file");
+        if (keystoreFilename == null) throw new IllegalArgumentException("host.controller.keystore.file not found");
+        final File keystoreFile = new File(keystoreFilename);
+
+        final String encryptedPassword = hostProps.getProperty("host.controller.keystore.password");
+        if (encryptedPassword == null) throw new IllegalArgumentException("host.controller.keystore.password not found");
+        char[] keystorePass = masterPasswordManager.decryptPasswordIfEncrypted(encryptedPassword);
+
+        String keystoreType = hostProps.getProperty("host.controller.keystore.type");
+        if (keystoreType == null) keystoreType = "PKCS12";
+
+        final KeyStore ks = KeyStore.getInstance(keystoreType);
+        FileInputStream fis = null;
+        try {
+            fis = new FileInputStream(keystoreFile);
+            ks.load(fis, keystorePass);
+        } finally {
+            ResourceUtils.closeQuietly(fis);
+        }
+
+        final String alias = hostProps.getProperty("host.controller.keystore.alias");
+        final Key key;
+        final Certificate[] chain;
+        if (alias != null) {
+            if (!ks.containsAlias(alias)) throw new IllegalStateException(keystoreFile.getAbsolutePath() + " does not contain an entry with the alias " + alias);
+            key = ks.getKey(alias, keystorePass);
+            if (key == null) throw new IllegalStateException("Couldn't get private key for " + alias + " in " + keystoreFile.getAbsolutePath());
+            if (!(key instanceof RSAPrivateKey)) throw new IllegalStateException(alias + " in " + keystoreFile.getAbsolutePath() + " is not an RSAPrivateKey");
+            chain = ks.getCertificateChain(alias);
+            if (chain == null) throw new IllegalStateException("Couldn't get certificate chain for " + alias + " in " + keystoreFile.getAbsolutePath());
+        } else {
+            // Try to find a single usable keyEntry
+            RSAPrivateKey gotKey = null;
+            Certificate[] gotChain = null;
+            GeneralSecurityException thrown = null;
+
+            final Enumeration<String> aliases = ks.aliases();
+            while (aliases.hasMoreElements()) {
+                String s = aliases.nextElement();
+
+                final Key tempKey;
+                try {
+                    tempKey = ks.getKey(s, keystorePass);
+                    if (!(tempKey instanceof RSAPrivateKey)) continue;
+                } catch (GeneralSecurityException e) {
+                    thrown = e;
+                    continue;
+                }
+
+                final Certificate[] tempChain = ks.getCertificateChain(s);
+                if (tempChain == null) continue;
+
+                if (gotKey != null) throw new IllegalStateException(keystoreFile.getAbsolutePath() + " contains multiple usable key entries; must specify one using host.keystore.alias");
+                gotKey = (RSAPrivateKey)tempKey;
+                gotChain = tempChain;
+            }
+
+            if (gotKey == null) {
+                if (thrown != null) throw thrown;
+                throw new IllegalStateException(keystoreFile.getAbsolutePath() + " did not contain a usable key entry");
+            }
+            chain = gotChain;
+            key = gotKey;
+        }
+        X509Certificate[] xchain = new X509Certificate[chain.length];
+        //noinspection SuspiciousSystemArraycopy
+        System.arraycopy(chain, 0, xchain, 0, chain.length);
+        return new Pair<X509Certificate[], RSAPrivateKey>(xchain, (RSAPrivateKey)key);
+    }
+
+    private Set<X509Certificate> readTrustedNodeManagementCerts(Properties hostProps) throws GeneralSecurityException, IOException {
+        final String trustStoreFilename = hostProps.getProperty("host.controller.remoteNodeManagement.truststore.file");
+        String trustStoreType;
+        File trustStoreFile;
+        if (trustStoreFilename == null) {
+            trustStoreFile = new File(configDirectory, "remoteNodeManagementTruststore.p12");
+            if (!trustStoreFile.exists()) {
+                logger.info("No remote node management truststore found; continuing with remote node management disabled");
+                return Collections.emptySet();
+            }
+            trustStoreType = "PKCS12";
+        } else {
+            trustStoreFile = new File(trustStoreFilename);
+            if (!trustStoreFile.exists()) throw new IllegalArgumentException("Can't find remote node management truststore at " + trustStoreFile.getAbsolutePath());
+
+            trustStoreType = hostProps.getProperty("host.controller.remoteNodeManagement.truststore.type");
+            if (trustStoreType == null) trustStoreType = "PKCS12";
+        }
+
+        final String encryptedPassword = hostProps.getProperty("host.controller.remoteNodeManagement.truststore.password");
+        if (encryptedPassword == null) throw new IllegalArgumentException("host.controller.remoteNodeManagement.truststore.password not found");
+        char[] keystorePass = masterPasswordManager.decryptPasswordIfEncrypted(encryptedPassword);
+
+        final KeyStore ks = KeyStore.getInstance(trustStoreType);
+        FileInputStream fis = null;
+        Set<X509Certificate> trustedCerts = new HashSet<X509Certificate>();
+        try {
+            fis = new FileInputStream(trustStoreFile);
+            ks.load(fis, keystorePass);
+            final Enumeration<String> aliases = ks.aliases();
+            while (aliases.hasMoreElements()) {
+                String alias = aliases.nextElement();
+                if (ks.isCertificateEntry(alias)) {
+                    final Certificate cert = ks.getCertificate(alias);
+                    if (cert instanceof X509Certificate) {
+                        final X509Certificate xc = (X509Certificate)cert;
+                        trustedCerts.add(xc);
+                        logger.log(Level.INFO,
+                                   "Certificate trusted for remote node management: dn=\"{0}\", serial=\"{1}\", thumbprintSha1=\"{2}\"",
+                                   new Object[] {xc.getSubjectDN().getName(), xc.getSerialNumber(), CertUtils.getThumbprintSHA1(xc)});
+                    } else {
+                        logger.warning("Skipping non-X.509 certificate with alias " + alias);
+                    }
+                }
+            }
+            return trustedCerts;
+        } finally {
+            ResourceUtils.closeQuietly(fis);
+        }
+    }
+
     private String getLocalHostname(Properties hostProps) {
         String hostname = (String)hostProps.get("host.hostname");
         if (hostname != null) {
@@ -134,33 +283,30 @@ public class ConfigServiceImpl implements ConfigService {
 
     private void reverseEngineerNodes(PCHostConfig g) {
         try {
-            File nodes = new File("../Nodes").getCanonicalFile();
+            for (File nodeDirectory : nodeBaseDirectory.listFiles()) {
+                File nodeConfigFile = new File(nodeDirectory, "etc/conf/node.properties");
+                if (!nodeConfigFile.isFile()) continue;
 
-            if ( nodes.isDirectory() ) {
-                for ( File nodeDirectory : nodes.listFiles() ) {
-                    File nodeConfigFile = new File( nodeDirectory, "etc/conf/node.properties" );
-                    if ( !nodeConfigFile.isFile() ) continue;
+                Properties nodeProperties = new Properties();
+                InputStream in = null;
+                try {
+                    nodeProperties.load(in = new FileInputStream(nodeConfigFile));
+                } finally {
+                    ResourceUtils.closeQuietly(in);
+                }
 
-                    Properties nodeProperties = new Properties();
-                    InputStream in = null;
-                    try {
-                        nodeProperties.load(in = new FileInputStream(nodeConfigFile));
-                    } finally {
-                        ResourceUtils.closeQuietly(in);
-                    }
+                if (!nodeProperties.containsKey("node.enabled") ||
+                        !nodeProperties.containsKey("node.id")) {
+                    logger.log(Level.WARNING, "Ignoring node ''{0}'' due to invalid properties.", nodeDirectory.getName());
+                    continue;
+                }
 
-                    if ( !nodeProperties.containsKey("node.enabled") ||
-                         !nodeProperties.containsKey("node.id") ) {
-                        logger.log( Level.WARNING, "Ignoring node ''{0}'' due to invalid properties.", nodeDirectory.getName());
-                        continue;
-                    }
-
-                    final PCNodeConfig node = new PCNodeConfig();
-                    node.setHost(g);
-                    node.setName(nodeDirectory.getName());
-                    node.setSoftwareVersion(SoftwareVersion.fromString("5.0")); //TODO get version for node
-                    node.setEnabled( Boolean.valueOf(nodeProperties.getProperty("node.enabled")) );
-                    node.setGuid( nodeProperties.getProperty("node.id") );
+                final PCNodeConfig node = new PCNodeConfig();
+                node.setHost(g);
+                node.setName(nodeDirectory.getName());
+                node.setSoftwareVersion(SoftwareVersion.fromString("4.7.0")); //TODO get version for node
+                node.setEnabled(Boolean.valueOf(nodeProperties.getProperty("node.enabled")));
+                node.setGuid(nodeProperties.getProperty("node.id"));
 
 //                    final DatabaseConfig db = new DatabaseConfig();
 //                    db.setType(DatabaseType.NODE_ALL);
@@ -171,14 +317,13 @@ public class ConfigServiceImpl implements ConfigService {
 //                    db.setNodePassword( nodeProperties.getProperty() );
 //                    node.getDatabases().add(db);
 
-                    logger.log(Level.INFO, "Detected node ''{0}''.", nodeDirectory.getName());
-                    g.getNodes().put(node.getName(), node);
-                }
+                logger.log(Level.INFO, "Detected node ''{0}''.", nodeDirectory.getName());
+                g.getNodes().put(node.getName(), node);
             }
         } catch (IOException ioe) {
-            logger.log( Level.WARNING, "Error when detecting nodes.", ioe);
+            logger.log(Level.WARNING, "Error when detecting nodes.", ioe);
         } catch (NumberFormatException nfe) {
-            logger.log( Level.WARNING, "Error when detecting nodes.", nfe);
+            logger.log(Level.WARNING, "Error when detecting nodes.", nfe);
         }
     }
 
@@ -211,6 +356,7 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     public void updateServiceNode(NodeConfig node) {
+        // TODO what kinds of NodeConfig changes might necessitate a restart?
         host.getNodes().put(node.getName(), node);
     }
 
@@ -218,7 +364,23 @@ public class ConfigServiceImpl implements ConfigService {
         return nodeBaseDirectory;
     }
 
+    public Pair<X509Certificate[], RSAPrivateKey> getSslKeypair() {
+        return sslKeypair;
+    }
+
     public File getProcessControllerHomeDirectory() {
         return processControllerHomeDirectory;
+    }
+
+    public int getSslPort() {
+        return sslPort;
+    }
+
+    public Set<X509Certificate> getTrustedRemoteNodeManagementCerts() {
+        return trustedRemoteNodeManagementCerts;
+    }
+
+    public File getJavaBinary() {
+        return javaBinary;
     }
 }

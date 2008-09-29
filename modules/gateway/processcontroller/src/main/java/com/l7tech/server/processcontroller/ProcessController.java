@@ -16,16 +16,20 @@ import com.l7tech.server.management.config.node.NodeFeature;
 import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import org.apache.cxf.configuration.jsse.TLSClientParameters;
+import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
+import org.apache.cxf.transport.http.HTTPConduit;
 import org.springframework.context.ApplicationContext;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.xml.ws.soap.SOAPFaultException;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.SocketException;
+import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,18 +53,22 @@ public class ProcessController {
     /** The amount of time the PC should wait for a node to start before beginning to test whether it's started yet */
     static final int NODE_START_TIME_MIN = 5000;
     /** The amount of time the PC should wait after a node has died before beginning to attempt to restart it */
-    private static final int DEAD_NODE_RETRY_INTERVAL = 60 * 1000; // one minute
+    private static final int UNSTARTABLE_NODE_RETRY_INTERVAL = 60 * 1000; // one minute
     /** The amount of time the PC should wait after a supposedly running node has stopped responding to pings before killing and restarting it */
     private static final int NODE_CRASH_DETECTION_TIME = 15000;
     /** The amount of time the PC should wait after asking a node to shutdown before killing it */
-    private static final int DEFAULT_STOP_TIMEOUT = 10000;
+    static final int DEFAULT_STOP_TIMEOUT = 10000;
+    /** The amount of time the PC should wait, during shutdown, after asking a node to shutdown before killing it */ 
+    private static final int NODE_SHUTDOWN_TIMEOUT = 5000;
 
     private final Map<String, NodeState> nodeStates = new ConcurrentHashMap<String, NodeState>();
     private final Map<String, ProcessBuilder> processBuilders = new HashMap<String, ProcessBuilder>();
 
     private static final String LOG_TIMEOUT = "{0} still hasn''t started after {1}ms.  Killing it dead.";
 
-    public void stopNode(final String nodeName, final int timeout) {
+    private volatile boolean daemon;
+
+    public synchronized void stopNode(final String nodeName, final int timeout) {
         logger.info("Stopping " + nodeName);
         final NodeState state = nodeStates.get(nodeName);
         final Process process = state instanceof HasProcess ? ((HasProcess)state).getProcess() : null;
@@ -73,7 +81,7 @@ public class ProcessController {
             nodeStates.put(nodeName, new StoppingNodeState(state.node, process, api, timeout));
         } catch (Exception e) {
             if (ExceptionUtils.causedBy(e, SocketException.class)) {
-                logger.warning("Unable to contact node; assuming it crashed. Will restart.");
+                logger.warning("Unable to contact node; assuming it crashed.");
                 nodeStates.put(nodeName, new SimpleNodeState(state.node, CRASHED));
             } else {
                 logger.log(Level.WARNING, "Unable to contact node, but not for any expected reason. Assuming it's crashed.", e);
@@ -90,17 +98,33 @@ public class ProcessController {
         return builder.start();
     }
 
-    public NodeStateType getNodeState(String nodeName) {
+    public synchronized NodeStateType getNodeState(String nodeName) {
         final NodeState state = nodeStates.get(nodeName);
         return state == null ? UNKNOWN : state.type;
     }
 
-    public void startNode(PCNodeConfig node) throws IOException {
+    public synchronized void startNode(PCNodeConfig node, boolean sync) throws IOException {
         nodeStates.put(node.getName(), new StartingNodeState(this, node));
+        if (!sync) return;
+        NodeState state;
+        do {
+            visitNodes();
+            state = nodeStates.get(node.getName());
+        } while (state.type == NodeStateType.STARTING);
+    }
+
+    public synchronized void startNode(String nodeName, boolean sync) throws IOException {
+        final PCNodeConfig node = (PCNodeConfig)configService.getHost().getNodes().get(nodeName);
+        if (node == null) throw new IllegalArgumentException(nodeName + " does not exist");
+        startNode(node, sync);
     }
 
     public List<SoftwareVersion> getAvailableNodeVersions() {
         return Collections.singletonList(SoftwareVersion.fromString("5.0")); //TODO
+    }
+
+    public void setDaemon(boolean daemon) {
+        this.daemon = daemon;
     }
 
     private static abstract class NodeState {
@@ -179,27 +203,7 @@ public class ProcessController {
         }
     }
 
-    @PostConstruct
-    public void start() {
-        logger.info("Starting");
-        visitNodes();
-    }
-
-    void loop() {
-        synchronized (this) {
-            try {
-                wait(ProcessControllerMain.SHUTDOWN_POLL_INTERVAL);
-            } catch (InterruptedException e) {
-                logger.info("Interrupted; cancelling this poll");
-                Thread.currentThread().interrupt();
-                return;
-            }
-        }
-
-        visitNodes();
-    }
-
-    private synchronized void visitNodes() {
+    synchronized void visitNodes() {
         final Collection<NodeConfig> nodeConfigs = configService.getHost().getNodes().values();
         if (nodeConfigs.isEmpty()) return;
 
@@ -217,12 +221,12 @@ public class ProcessController {
                     handleStartingState(node, (StartingNodeState)state);
                     break;
                 case WONT_START:
-                    if (System.currentTimeMillis() - state.sinceWhen > DEAD_NODE_RETRY_INTERVAL) {
+                    if (System.currentTimeMillis() - state.sinceWhen > UNSTARTABLE_NODE_RETRY_INTERVAL) {
                         logger.info(node.getName() + " wouldn't start; restarting...");
                         startItUp(node);
                         break;
                     } else {
-                        logger.fine(node.getName() + " wouldn't start; waiting " + DEAD_NODE_RETRY_INTERVAL + "ms before attempting to restart");
+                        logger.fine(node.getName() + " wouldn't start; waiting " + UNSTARTABLE_NODE_RETRY_INTERVAL + "ms before attempting to restart");
                         break;
                     }
                 case RUNNING:
@@ -377,7 +381,7 @@ public class ProcessController {
         final NodeApi api = getNodeApi(node);
         try {
             api.ping();
-            if (!node.isEnabled()) {
+            if (daemon && !node.isEnabled()) {
                 logger.info("Stopping disabled node " + node.getName());
                 api.shutdown();
                 nodeStates.put(node.getName(), new StoppingNodeState(node, null, api, DEFAULT_STOP_TIMEOUT));
@@ -386,7 +390,7 @@ public class ProcessController {
                 nodeStates.put(node.getName(), new RunningNodeState(node, null, api));
             }
         } catch (Exception e) {
-            if (e instanceof SOAPFaultException) {
+            if (daemon && e instanceof SOAPFaultException) {
                 SOAPFaultException sfe = (SOAPFaultException)e;
                 if (NodeApi.NODE_NOT_CONFIGURED_FOR_PC.equals(sfe.getFault().getFaultString())) {
                     logger.warning(node.getName() + " is already running but has not been configured for use with the PC; will try again later");
@@ -395,8 +399,9 @@ public class ProcessController {
                 }
             }
 
-            // TODO what about other kinds of node-is-still-running? We want to avoid "address already in use".
+            if (!daemon) return;
 
+            // TODO what about other kinds of node-is-still-running? We want to avoid spinning helplessly on stuff like "address already in use".
             logger.log(Level.FINE, node.getName() + " isn't running", e);
             try {
                 StartingNodeState startingState = new StartingNodeState(this, node);
@@ -426,7 +431,7 @@ public class ProcessController {
                 try {
                     // TODO make this less hard-coded (e.g. use the host profile)
                     cmds = new LinkedList<String>(Arrays.asList(
-                        "java",
+                        configService.getJavaBinary().getCanonicalPath(),
                         "-Dcom.l7tech.server.home=\"" + ssgPwd.getCanonicalPath() + "\"",
                         "-Dcom.l7tech.server.processControllerPresent=true"
 //                        "-Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig"
@@ -441,7 +446,7 @@ public class ProcessController {
                     }
 
                     cmds.add("-jar");
-                    cmds.add("Gateway.jar"); // TODO is Gateway.jar in some subdirectory?
+                    cmds.add("Gateway.jar");
                 } catch (IOException e) {
                     throw new RuntimeException(e); // If the
                 }
@@ -467,7 +472,22 @@ public class ProcessController {
         final JaxWsProxyFactoryBean pfb = new JaxWsProxyFactoryBean();
         pfb.setServiceClass(NodeApi.class);
         final String url = node.getProcessControllerApiUrl();
-        pfb.setAddress(url == null ? "http://localhost:8766/ssg/services/processControllerNodeApi" : url);
+        pfb.setAddress(url == null ? "https://localhost:2124/ssg/services/processControllerNodeApi" : url);
+        Client c = pfb.getClientFactoryBean().create();
+        HTTPConduit httpConduit = (HTTPConduit)c.getConduit();
+        httpConduit.setTlsClientParameters(new TLSClientParameters() {
+            public boolean isDisableCNCheck() {
+                return true;
+            }
+
+            public TrustManager[] getTrustManagers() {
+                return new TrustManager[] { new X509TrustManager() {
+                    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) {}
+                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) {}
+                    public X509Certificate[] getAcceptedIssuers() {return new X509Certificate[0];}
+                }};
+            }
+        });
         return (NodeApi)pfb.create();
     }
 
@@ -483,24 +503,16 @@ public class ProcessController {
         }
     }
 
-    @PreDestroy
-    public synchronized void stop() {
-        logger.info("Stopping Process Controller");
-
+    synchronized void stopNodes() {
         // Reset any running node states to STOPPING
         for (Map.Entry<String, NodeState> entry : nodeStates.entrySet()) {
             final String name = entry.getKey();
+            logger.info(name + " stopping"); // TODO find some cleaner way of ensuring this log text gets flushed promptly
             final NodeState state = entry.getValue();
             if (EnumSet.of(RUNNING, UNKNOWN, STARTING).contains(state.type)) {
-                logger.info("Stopping node " + name);
-                final Process proc = state instanceof HasProcess ? ((HasProcess)state).getProcess() : null;
-                final NodeApi api = state instanceof HasApi ? ((HasApi)state).getApi() : null;
-                nodeStates.put(name, new StoppingNodeState(state.node, proc, api, DEFAULT_STOP_TIMEOUT));
+                stopNode(name, NODE_SHUTDOWN_TIMEOUT);
             }
         }
-
-        // Kick the loop
-        notifyAll();
     }
 
 }

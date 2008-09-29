@@ -6,6 +6,7 @@ package com.l7tech.server.management.api.node;
 import com.l7tech.gateway.common.transport.SsgConnector;
 
 import javax.jws.WebService;
+import java.text.MessageFormat;
 
 /**
  * API published by the Process Controller for use by the Node
@@ -22,6 +23,19 @@ public interface ProcessControllerApi {
 
     /** Tells the PC that the SN has been told to delete a connector; the PC may need to make firewall changes. */
     void connectorDeleted(SsgConnector connector);
+
+    public static class ReservedPortException extends Exception {
+        private final int port;
+
+        public ReservedPortException(int port) {
+            super(MessageFormat.format("Port {0} is reserved", port));
+            this.port = port;
+        }
+
+        public int getPort() {
+            return port;
+        }
+    }
 
     /** Notifies the PC of an event that has occurred in the SN */
     void notifyEvent(EventSubscription sub, Object event);

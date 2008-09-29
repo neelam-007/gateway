@@ -68,6 +68,14 @@ public class BootProcess
         serverConfig = config;
     }
 
+    public void setOtherPropertiesFiles(Map<String, String> otherPropertiesFiles) {
+        this.otherPropertiesFiles = otherPropertiesFiles;
+    }
+
+    public void setSystemProperties(SystemProperties systemProperties) {
+        this.systemProperties = systemProperties;
+    }
+
     public void start() throws LifecycleException {
         try {
             initialize();
@@ -152,6 +160,23 @@ public class BootProcess
         ApplicationContext applicationContext = getApplicationContext();
 
         auditor = new Auditor(this, applicationContext, logger);
+
+        if (otherPropertiesFiles == null || otherPropertiesFiles.isEmpty()) return;
+
+        for (String systemPropertyPrefix : otherPropertiesFiles.keySet()) {
+            String filename = otherPropertiesFiles.get(systemPropertyPrefix);
+            Properties props = new Properties();
+            FileInputStream fis = null;
+            try {
+                fis = new FileInputStream(new File(filename));
+                props.load(fis);
+                systemProperties.setSystemProperties(props, systemPropertyPrefix, false);
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Couldn't read from " + filename + "; ignoring", e);
+            } finally {
+                ResourceUtils.closeQuietly(fis);
+            }
+        }
 
         logger.info(BuildInfo.getLongBuildString());
         logConfiguredFactories();
@@ -312,7 +337,10 @@ public class BootProcess
     public static final String LOCALHOST_IP = "127.0.0.1";
 
     private Collection<ServerComponentLifecycle> discoveredComponents;
+    private Map<String, String> otherPropertiesFiles;
+    private SystemProperties systemProperties;
     private ServerConfig serverConfig;
     private Auditor auditor;
     private String ipAddress;
+
 }

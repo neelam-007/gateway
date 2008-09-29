@@ -36,6 +36,13 @@
     <!-- SSG boot process -->
     <bean id="ssgBoot" class="com.l7tech.server.BootProcess" depends-on="systemAuditListener systemProperties serviceWsdlImportChecker sinkManager">
         <property name="serverConfig" ref="serverConfig"/>
+        <property name="otherPropertiesFiles">
+            <map>
+                <entry key="com.l7tech.server"
+                       value="${com.l7tech.server.configDirectory}${file.separator}node.properties"/>
+            </map>
+        </property>
+        <property name="systemProperties" ref="systemProperties"/>
     </bean>
 
     <bean id="clusterBoot" class="com.l7tech.server.cluster.ClusterBootProcess">

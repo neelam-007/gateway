@@ -62,14 +62,19 @@ public class SystemProperties implements InitializingBean {
 
             if (is != null) props.load(is);
 
-            for (Object o : props.keySet()) {
-                String name = (String) o;
-                String value = (String) props.get(name);
-                logger.config("Setting system property " + name + "=" + value);
-                System.setProperty(name, value);
-            }
+            setSystemProperties(props, null, true);
         } finally {
             ResourceUtils.closeQuietly(is);
+        }
+    }
+
+    public void setSystemProperties(Properties props, String prefix, boolean log) {
+        final String realPrefix = prefix == null ? "" : (prefix.endsWith(".") ? prefix : prefix + ".");
+        for (String unprefixedPropertyName : props.stringPropertyNames()) {
+            String value = props.getProperty(unprefixedPropertyName);
+            String sysPropName = realPrefix + unprefixedPropertyName;
+            if (log) logger.config("Setting system property " + sysPropName + "=" + value);
+            System.setProperty(sysPropName, value);
         }
     }
 

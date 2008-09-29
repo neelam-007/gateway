@@ -152,7 +152,7 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
             this.is = is;
             this.os = new BufferPoolByteArrayOutputStream(16384);
             this.quitter = quitter;
-            setDaemon(false);
+            setDaemon(true);
         }
 
         @Override

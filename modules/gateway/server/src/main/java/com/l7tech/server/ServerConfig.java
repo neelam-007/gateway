@@ -158,6 +158,8 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_ADD_MAPPINGS_INTO_AUDIT = "customerMapping.addToGatewayAuditEvents";
     public static final String PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS = "customerMapping.addToServiceMetrics";
 
+    public static final String PARAM_LOG_DIRECTORY = "logDirectory";
+
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
 
     public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;

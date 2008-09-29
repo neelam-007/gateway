@@ -1,8 +1,10 @@
 package com.l7tech.server.processcontroller;
 
+import com.l7tech.common.io.SingleCertX509KeyManager;
+import com.l7tech.util.Pair;
 import org.apache.cxf.transport.servlet.CXFServlet;
-import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Server;
+import org.mortbay.jetty.security.SslSocketConnector;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.DefaultServlet;
 import org.mortbay.jetty.servlet.ServletHolder;
@@ -13,9 +15,14 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocketFactory;
 import java.io.File;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -40,17 +47,40 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
     private final int httpPort;
     private ApplicationContext applicationContext;
     private Server server;
+    private final ConfigService configService;
 
-    public PCServletContainer() {
+    public PCServletContainer(ConfigService configService) {
         this.instanceId = nextInstanceId.getAndIncrement();
         //noinspection ThisEscapedInObjectConstruction
         instancesById.put(instanceId, new WeakReference<PCServletContainer>(this));
 
-        this.httpPort = Integer.getInteger("com.l7tech.server.processcontroller.httpPort", 8765);
+        this.httpPort = configService.getSslPort();
+        this.configService = configService;
     }
 
     private void initializeServletEngine() throws Exception {
-        server = new Server(httpPort);
+        Server server = new Server();
+        Pair<X509Certificate[],RSAPrivateKey> keypair = configService.getSslKeypair();
+        final SSLContext ctx = SSLContext.getInstance("SSL");
+        ctx.init(new KeyManager[] { new SingleCertX509KeyManager(keypair.left, keypair.right) }, null, null);
+        final SslSocketConnector sslConnector = new SslSocketConnector() {
+            @Override
+            protected SSLServerSocketFactory createFactory() throws Exception {
+                return ctx.getServerSocketFactory();
+            }
+
+            @Override
+            public int getPort() {
+                return httpPort;
+            }
+
+            @Override
+            public String getHost() {
+                return "localhost"; // TODO make this configurable for when the EM comes calling
+            }
+        };
+        server.addConnector(sslConnector);
+
         final Context root = new Context(server, "/", Context.SESSIONS);
         root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/processcontroller/resources/web"));
         root.setDisplayName("Layer 7 Process Controller");
@@ -72,11 +102,8 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         final ServletHolder defaultHolder = new ServletHolder(defaultServlet);
         root.addServlet(defaultHolder, "/");
 
-        for (Connector c : server.getConnectors()) {
-            c.setHost("localhost"); // TODO make this configurable in case of EM
-        }
-
         server.start();
+        this.server = server;
     }
 
     private void shutdownServletEngine() throws Exception {

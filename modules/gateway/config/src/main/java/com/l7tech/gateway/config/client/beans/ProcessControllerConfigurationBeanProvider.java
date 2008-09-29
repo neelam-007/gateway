@@ -1,23 +1,25 @@
 package com.l7tech.gateway.config.client.beans;
 
 import com.l7tech.gateway.config.client.ConfigurationException;
-import com.l7tech.server.management.api.node.NodeManagementApi;
-import com.l7tech.server.management.config.node.NodeConfig;
-import com.l7tech.server.management.config.node.DatabaseConfig;
-import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.net.URL;
-
+import com.l7tech.server.management.api.node.NodeManagementApi;
+import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.server.management.config.node.DatabaseType;
+import com.l7tech.server.management.config.node.NodeConfig;
+import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.frontend.ClientProxyFactoryBean;
+import org.apache.cxf.transport.http.HTTPConduit;
+import org.apache.cxf.configuration.jsse.TLSClientParameters;
+
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.net.URL;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
 
 /**
  * ConfigurationBeanProvider that is backed by the Process Controller
@@ -103,6 +105,23 @@ public class ProcessControllerConfigurationBeanProvider implements Configuration
             ClientProxyFactoryBean factory = new ClientProxyFactoryBean();
             factory.setServiceClass(NodeManagementApi.class);
             factory.setAddress(nodeManagementUrl.toString());
+            Client c = factory.getClientFactoryBean().create();
+            HTTPConduit hc = (HTTPConduit)c.getConduit();
+            hc.setTlsClientParameters(new TLSClientParameters() {
+                @Override
+                public TrustManager[] getTrustManagers() {
+                    return new TrustManager[] { new X509TrustManager() {
+                        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
+                        public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
+                        public X509Certificate[] getAcceptedIssuers() {return new X509Certificate[0];}
+                    }};
+                }
+
+                @Override
+                public boolean isDisableCNCheck() {
+                    return true;
+                }
+            });
             managementService = (NodeManagementApi) factory.create();
             this.managementService = managementService;
          }

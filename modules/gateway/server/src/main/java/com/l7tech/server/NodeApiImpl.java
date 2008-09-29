@@ -78,7 +78,7 @@ public class NodeApiImpl implements NodeApi, ApplicationContextAware {
         try {
             HttpTransportModule.requireEndpoint(hsr, SsgConnector.Endpoint.PC_NODE_API);
 
-            if ( !InetAddress.getByName(hsr.getLocalAddr()).isAnyLocalAddress() ) {
+            if ( !InetAddress.getByName(hsr.getRemoteAddr()).isLoopbackAddress()) {
                 throw new IllegalStateException("Request denied for non-local address.");
             }
         } catch (TransportModule.ListenerException e) {

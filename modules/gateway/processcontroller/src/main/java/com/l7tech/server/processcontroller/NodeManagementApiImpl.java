@@ -17,22 +17,57 @@ import com.l7tech.util.ExceptionUtils;
 import javax.activation.DataHandler;
 import javax.annotation.Resource;
 import javax.jws.WebService;
+import javax.servlet.http.HttpServletRequest;
+import javax.xml.ws.WebServiceContext;
+import javax.xml.ws.handler.MessageContext;
 import java.io.IOException;
+import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @WebService(name="NodeManagementAPI",
             targetNamespace="http://ns.l7tech.com/secureSpan/5.0/component/processController/nodeManagementApi",
             endpointInterface="com.l7tech.server.management.api.node.NodeManagementApi")
 public class NodeManagementApiImpl implements NodeManagementApi {
+    private static final Logger logger = Logger.getLogger(NodeManagementApiImpl.class.getName());
+
     @Resource
     private ConfigService configService;
 
     @Resource
     private ProcessController processController;
 
+    @Resource
+    private WebServiceContext webServiceContext;
+
+    private void checkRequest() {
+        final HttpServletRequest req = (HttpServletRequest)webServiceContext.getMessageContext().get(MessageContext.SERVLET_REQUEST);
+        if (req == null) throw new IllegalStateException("Couldn't get HttpServletRequest");
+
+        final Object maybeCert = req.getParameter("javax.servlet.request.X509Certificate");
+        final X509Certificate certificate;
+        if (maybeCert instanceof X509Certificate) {
+            certificate = (X509Certificate)maybeCert;
+        } else if (maybeCert instanceof X509Certificate[]) {
+            X509Certificate[] certs = (X509Certificate[])maybeCert;
+            certificate = certs[0];
+        } else if (maybeCert != null) {
+            throw new IllegalStateException("Client Certificate was a " + maybeCert.getClass().getName() + ", not an X509Certificate");
+        } else {
+            throw new IllegalArgumentException("Client certificate authentication is required");
+        }
+
+        if (!configService.getTrustedRemoteNodeManagementCerts().contains(certificate)) {
+            throw new IllegalArgumentException("The client certificate provided is not trusted for remote node management");
+        }
+
+        logger.log(Level.FINE, "Accepted client certificate {0}", certificate.getSubjectDN().getName());
+    }
+
     public NodeConfig createNode(String newNodeName, String desiredVersion, Set<DatabaseConfigRow> databaseConfigs)
             throws SaveException {
-
+        checkRequest();
         final Map<String,NodeConfig> nodes = configService.getHost().getNodes();
         PCNodeConfig temp = (PCNodeConfig)nodes.get(newNodeName);
         if (temp != null) throw new IllegalArgumentException(newNodeName + " already exists");
@@ -79,10 +114,12 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     }
 
     public NodeConfig getNode(String nodeName) throws FindException {
+        checkRequest();
         return configService.getHost().getNodes().get(nodeName);
     }
 
     public Set<NodeHeader> listNodes() throws FindException {
+        checkRequest();
         final Set<NodeHeader> nodes = new HashSet<NodeHeader>();
         for (NodeConfig config : configService.getHost().getNodes().values()) {
             final PCNodeConfig pcNodeConfig = (PCNodeConfig)config;
@@ -93,22 +130,27 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     }
 
     public void updateNode(NodeConfig node) throws UpdateException, RestartRequiredException {
+        checkRequest();
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
     public void deleteNode(String nodeName, int shutdownTimeout) throws DeleteException, ForcedShutdownException {
+        checkRequest();
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
     public String uploadNodeSoftware(DataHandler softwareData) throws IOException, UpdateException {
+        checkRequest();
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
     public void upgradeNode(String nodeName, String targetVersion) throws UpdateException, RestartRequiredException {
+        checkRequest();
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
     public NodeStateType startNode(String nodeName) throws FindException, StartupException {
+        checkRequest();
         NodeStateType tempState = processController.getNodeState(nodeName);
         if (tempState == null) tempState = NodeStateType.UNKNOWN;
         switch(tempState) {
@@ -131,7 +173,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
 
                 try {
                     if (!node.isEnabled()) throw new StartupException(nodeName, "Node is disabled");
-                    processController.startNode(node);
+                    processController.startNode(node, false);
                     return NodeStateType.STARTING;
                 } catch (IOException e) {
                     throw new StartupException(nodeName, "Couldn't be started: " + ExceptionUtils.getMessage(e));
@@ -140,6 +182,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     }
 
     public void stopNode(String nodeName, int timeout) throws FindException, ForcedShutdownException {
+        checkRequest();
         processController.stopNode(nodeName, timeout);
     }
 }
