@@ -122,18 +122,18 @@
 		<defaultValueExpression ><![CDATA[new HashMap()]]></defaultValueExpression>
 	</parameter>
 	<parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
-		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(standardreports.Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(com.l7tech.server.ems.standardreports.Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
 	</parameter>
 	<parameter name="relativeEndTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())
-?new Long(standardreports.Utilities.getMillisForEndTimePeriod($P{RELATIVE_TIME_UNIT}))
+?new Long(com.l7tech.server.ems.standardreports.Utilities.getMillisForEndTimePeriod($P{RELATIVE_TIME_UNIT}))
 : null]]></defaultValueExpression>
 	</parameter>
 	<parameter name="absoluteStartTimeMilli" isForPrompting="false" class="java.lang.Long">
-		<defaultValueExpression ><![CDATA[new Long(standardreports.Utilities.getAbsoluteMilliSeconds($P{ABSOLUTE_START_TIME}))]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[new Long(com.l7tech.server.ems.standardreports.Utilities.getAbsoluteMilliSeconds($P{ABSOLUTE_START_TIME}))]]></defaultValueExpression>
 	</parameter>
 	<parameter name="absoluteEndTimeMilli" isForPrompting="false" class="java.lang.Long">
-		<defaultValueExpression ><![CDATA[new Long(standardreports.Utilities.getAbsoluteMilliSeconds($P{ABSOLUTE_END_TIME}))]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[new Long(com.l7tech.server.ems.standardreports.Utilities.getAbsoluteMilliSeconds($P{ABSOLUTE_END_TIME}))]]></defaultValueExpression>
 	</parameter>
 	<parameter name="startTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?$P{relativeStartTimeMilli}:$P{absoluteStartTimeMilli}]]></defaultValueExpression>
@@ -159,7 +159,7 @@ IN clause with and 'AND before it]]></parameterDescription>
 		<defaultValueExpression ><![CDATA[($P{SERVICE_NAME_TO_ID_MAP} == null || $P{SERVICE_NAME_TO_ID_MAP}.values() == null
  || $P{SERVICE_NAME_TO_ID_MAP}.values().isEmpty())?
  ""
-:" AND p.objectid IN " + standardreports.Utilities.getServiceIdInQuery($P{SERVICE_NAME_TO_ID_MAP}.values())
+:" AND p.objectid IN " + com.l7tech.server.ems.standardreports.Utilities.getServiceIdInQuery($P{SERVICE_NAME_TO_ID_MAP}.values())
 
 ]]></defaultValueExpression>
 	</parameter>
@@ -167,7 +167,7 @@ IN clause with and 'AND before it]]></parameterDescription>
 		<defaultValueExpression ><![CDATA["( sm.period_start >= "+$P{startTimeMilli}+" AND sm.period_start < " + $P{endTimeMilli} +")"+ " " + $P{serviceIdInClause}]]></defaultValueExpression>
 	</parameter>
 	<parameter name="serviceIdDisplayText" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[standardreports.Utilities.getServiceNamesFromCollection($P{SERVICE_NAME_TO_ID_MAP}.keySet())]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getServiceNamesFromCollection($P{SERVICE_NAME_TO_ID_MAP}.keySet())]]></defaultValueExpression>
 	</parameter>
 	<parameter name="serviceIdValueToDisplay" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[($P{serviceIdDisplayText} == null || $P{serviceIdDisplayText}.equals(""))
@@ -190,9 +190,9 @@ AND $P!{whereClause}]]></queryString>
 	</variable>
 	<variable name="TIME_PERIOD_DS" class="java.lang.Object" resetType="Group" resetGroup="SERVICE_ID" calculation="Nothing">
 		<variableExpression><![CDATA[($P{IS_RELATIVE}.booleanValue())
-?(new standardreports.TimePeriodDataSource($P{startTimeMilli}.longValue(), $P{endTimeMilli}.longValue(), $P{INTERVAL_NUM_OF_TIME_UNITS}.intValue(), $P{INTERVAL_TIME_UNIT})):null]]></variableExpression>
+?(new com.l7tech.server.ems.standardreports.TimePeriodDataSource($P{startTimeMilli}.longValue(), $P{endTimeMilli}.longValue(), $P{INTERVAL_NUM_OF_TIME_UNITS}.intValue(), $P{INTERVAL_TIME_UNIT})):null]]></variableExpression>
 		<initialValueExpression><![CDATA[($P{IS_RELATIVE}.booleanValue())
-?(new standardreports.TimePeriodDataSource($P{startTimeMilli}.longValue(), $P{endTimeMilli}.longValue(), $P{INTERVAL_NUM_OF_TIME_UNITS}.intValue(), $P{INTERVAL_TIME_UNIT})):null]]></initialValueExpression>
+?(new com.l7tech.server.ems.standardreports.TimePeriodDataSource($P{startTimeMilli}.longValue(), $P{endTimeMilli}.longValue(), $P{INTERVAL_NUM_OF_TIME_UNITS}.intValue(), $P{INTERVAL_TIME_UNIT})):null]]></initialValueExpression>
 	</variable>
 	<variable name="THROUGHPUT_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_ID" calculation="Nothing">
 	</variable>
@@ -230,7 +230,7 @@ AND $P!{whereClause}]]></queryString>
 		<group  name="SERVICE_ID" isReprintHeaderOnEachPage="true" >
 			<groupExpression><![CDATA[$F{published_service_oid}]]></groupExpression>
 			<groupHeader>
-			<band height="150"  isSplitAllowed="true" >
+			<band height="36"  isSplitAllowed="true" >
 				<frame>					<reportElement
 						style="FrameHeaderTableRow"
 						mode="Opaque"
@@ -390,33 +390,7 @@ AND $P!{whereClause}]]></queryString>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[$F{service_name} + "[" + $F{routing_uri} + "]"]]></textFieldExpression>
 				</textField>
-				</frame>				<pieChart>
-					<chart evaluationTime="Group" evaluationGroup="SERVICE_ID"  hyperlinkTarget="Self" >
-					<reportElement
-						style="TableCell"
-						x="77"
-						y="44"
-						width="269"
-						height="86"
-						key="element-1"/>
-					<box></box>
-						<chartLegend textColor="#000000" backgroundColor="#FFFFFF" >
-					</chartLegend>
-					</chart>
-					<pieDataset>
-						<dataset resetType="Group" resetGroup="SERVICE_ID" incrementType="Group" incrementGroup="SERVICE_ID" >
-						</dataset>
-						<keyExpression><![CDATA[$F{service_name}]]></keyExpression>
-						<valueExpression><![CDATA[$V{TP_TEST}]]></valueExpression>
-				<sectionHyperlink >
-				</sectionHyperlink>
-					</pieDataset>
-					<piePlot 
-isCircular="true" >
-						<plot />
-					</piePlot>
-				</pieChart>
-			</band>
+				</frame>			</band>
 			</groupHeader>
 			<groupFooter>
 			<band height="36"  isSplitAllowed="true" >
@@ -656,11 +630,11 @@ isCircular="true" >
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_RELATIVE}.booleanValue())?("Last " + $P{timePeriodAsString} +
-" (" + standardreports.Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
-" to " + standardreports.Utilities.getMilliSecondAsStringDate($P{endTimeMilli}) + ")")
+" (" + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
+" to " + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{endTimeMilli}) + ")")
 :
-standardreports.Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
-" to " + standardreports.Utilities.getMilliSecondAsStringDate($P{endTimeMilli})]]></textFieldExpression>
+com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
+" to " + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{endTimeMilli})]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -1327,11 +1301,11 @@ standardreports.Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_RELATIVE}.booleanValue())?("Last " + $P{timePeriodAsString} +
-" (" + standardreports.Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
-" to " + standardreports.Utilities.getMilliSecondAsStringDate($P{endTimeMilli}) + ")")
+" (" + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
+" to " + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{endTimeMilli}) + ")")
 :
-standardreports.Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
-" to " + standardreports.Utilities.getMilliSecondAsStringDate($P{endTimeMilli})]]></textFieldExpression>
+com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{startTimeMilli}) +
+" to " + com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{endTimeMilli})]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
