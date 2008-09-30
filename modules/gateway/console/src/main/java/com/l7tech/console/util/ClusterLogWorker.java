@@ -146,7 +146,7 @@ public class ClusterLogWorker extends SwingWorker {
                 switch (logType) {
                     case GenericLogAdmin.TYPE_AUDIT:
                         AuditSearchCriteria asc = new AuditSearchCriteria.Builder(logRequest).
-                                nodeId(nodeNameIdMap.get(logRequest.getNodeName())).//TODO if the name does not map to a nodeid it will be ignored
+                                nodeId(nodeNameIdMap.get(logRequest.getNodeName())).
                                 maxRecords(AuditLogTableSorterModel.MAX_MESSAGE_BLOCK_SIZE).build();
 
                         rawHeaders = logService.findHeaders(asc).toArray(new AuditRecordHeader[0]);

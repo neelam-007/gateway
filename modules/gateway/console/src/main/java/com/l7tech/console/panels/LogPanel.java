@@ -3,18 +3,14 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
-import com.l7tech.gateway.common.cluster.LogRequest;
+import com.l7tech.gateway.common.cluster.*;
 import com.l7tech.util.BuildInfo;
 import static com.l7tech.gateway.common.Component.fromId;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gui.NumberField;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.JTableColumnResizeMouseListener;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.ContextMenuTextArea;
+import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.common.io.XmlUtil;
@@ -415,6 +411,37 @@ public class LogPanel extends JPanel {
                     updateMsgFilterMessage(controlPanel.messageTextField.getText());
                 }
             }));
+        }
+
+        if (isAuditType) {
+            InputValidator inputValidator = new InputValidator(this, "LogPanel Control Panel");
+            inputValidator.constrainTextField(controlPanel.nodeTextField, new InputValidator.ComponentValidationRule(controlPanel.nodeTextField) {
+                public String getValidationError() {
+                    String nodeName = controlPanel.nodeTextField.getText();
+                    if(nodeName == null || nodeName.length() <= 0) return null;
+
+                    Registry reg = Registry.getDefault();
+                    if (!reg.isAdminContextPresent()) return null;
+
+                    ClusterStatusAdmin clusterStatusAdmin = reg.getClusterStatusAdmin();
+                    ClusterNodeInfo[] clusterNodes;
+                    try {
+                        clusterNodes = clusterStatusAdmin.getClusterStatus();
+                        if (clusterNodes == null) return null;
+
+                        for (ClusterNodeInfo nodeInfo : clusterNodes) {
+                            if (nodeInfo.getName().equals(nodeName)) {
+                                return null;
+                            }
+                        }
+                    } catch (FindException e) {
+                        logger.log(Level.WARNING, "Unable to find cluster status from server.", e);
+                        return null;
+                    }
+                    return "Node name does not exist in cluster and will be ignored.";
+                }
+            });
+            inputValidator.validateWhenDocumentChanges(controlPanel.nodeTextField);
         }
 
         getSearchButton().addActionListener(new ActionListener() {
@@ -2172,11 +2199,10 @@ public class LogPanel extends JPanel {
         private JTextField minutesTextField;
         private JCheckBox autoRefreshCheckBox;
         private TimeRangePicker timeRangePicker;
-        //        private JButton applyButton;
         private JTextField serviceTextField;
         private JTextField messageTextField;
         private JTextField requestIdTextField;
-        private JTextField nodeTextField;
+        private SquigglyTextField nodeTextField;
         private JTextField threadIdTextField;
         private JComboBox auditTypeComboBox;
         private JComboBox levelComboBox;
