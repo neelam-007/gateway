@@ -143,7 +143,8 @@ public class CreateTestData {
         double seed = Math.random();
         int numAttempted = (int) (seed * 100);
         int numAuthorized = (int) (numAttempted * seed);
-        int numCompleted = (numAttempted - numAuthorized > 0)?numAttempted - numAuthorized: 0;
+        //int numCompleted = (numAttempted - numAuthorized > 0)?numAttempted - numAuthorized: 0;
+        int numCompleted = (int) (numAuthorized * seed);
         tpStats[attempted] = numAttempted;
         tpStats[authorized] = numAuthorized;
         tpStats[completed] = numCompleted;

@@ -189,8 +189,7 @@ AND $P!{whereClause}]]></queryString>
 		<variableExpression><![CDATA[$F{published_service_oid}]]></variableExpression>
 	</variable>
 	<variable name="TIME_PERIOD_DS" class="java.lang.Object" resetType="Group" resetGroup="SERVICE_ID" calculation="Nothing">
-		<variableExpression><![CDATA[($P{IS_RELATIVE}.booleanValue())
-?(new com.l7tech.server.ems.standardreports.TimePeriodDataSource($P{startTimeMilli}.longValue(), $P{endTimeMilli}.longValue(), $P{INTERVAL_NUM_OF_TIME_UNITS}.intValue(), $P{INTERVAL_TIME_UNIT})):null]]></variableExpression>
+		<variableExpression><![CDATA[new com.l7tech.server.ems.standardreports.TimePeriodDataSource($P{startTimeMilli}.longValue(), $P{endTimeMilli}.longValue(), $P{INTERVAL_NUM_OF_TIME_UNITS}.intValue(), $P{INTERVAL_TIME_UNIT})]]></variableExpression>
 		<initialValueExpression><![CDATA[($P{IS_RELATIVE}.booleanValue())
 ?(new com.l7tech.server.ems.standardreports.TimePeriodDataSource($P{startTimeMilli}.longValue(), $P{endTimeMilli}.longValue(), $P{INTERVAL_NUM_OF_TIME_UNITS}.intValue(), $P{INTERVAL_TIME_UNIT})):null]]></initialValueExpression>
 	</variable>
@@ -211,20 +210,6 @@ AND $P!{whereClause}]]></queryString>
 	<variable name="BRTA_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_ID" calculation="Nothing">
 	</variable>
 	<variable name="AP_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_ID" calculation="Nothing">
-	</variable>
-	<variable name="CURRENT_PAGE_NUMBER" class="java.lang.Integer" resetType="Page" calculation="Nothing">
-		<variableExpression><![CDATA[$V{PAGE_NUMBER}]]></variableExpression>
-	</variable>
-	<variable name="TOTAL_PAGE_NUMBERS" class="java.lang.Integer" resetType="Report" calculation="Nothing">
-		<variableExpression><![CDATA[$V{PAGE_NUMBER}]]></variableExpression>
-	</variable>
-	<variable name="INTERVAL_AS_STRING" class="java.lang.String" resetType="Group" incrementType="Report" resetGroup="SERVICE_ID" calculation="Nothing">
-		<variableExpression><![CDATA[$P{INTERVAL_NUM_OF_TIME_UNITS} + " " 
-+ $P{INTERVAL_TIME_UNIT}.substring(0,1).toUpperCase()
-+ $P{INTERVAL_TIME_UNIT}.toLowerCase().substring(1, $P{INTERVAL_TIME_UNIT}.length())
-+ (($P{INTERVAL_NUM_OF_TIME_UNITS}.intValue() > 1)? "s":"")]]></variableExpression>
-	</variable>
-	<variable name="TP_TEST" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_ID" calculation="Sum">
 	</variable>
 
 		<group  name="SERVICE_ID" isReprintHeaderOnEachPage="true" >
@@ -941,7 +926,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="0"
+						x="5"
 						y="0"
 						width="58"
 						height="18"
@@ -955,9 +940,9 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="58"
+						x="63"
 						y="0"
-						width="205"
+						width="200"
 						height="18"
 						key="staticText-79"/>
 					<box></box>
@@ -969,9 +954,9 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="58"
+						x="63"
 						y="36"
-						width="205"
+						width="200"
 						height="18"
 						key="staticText-80"/>
 					<box></box>
@@ -983,9 +968,9 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="58"
+						x="63"
 						y="54"
-						width="205"
+						width="200"
 						height="18"
 						key="staticText-81"/>
 					<box></box>
@@ -998,7 +983,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					<reportElement
 						style="TableCell"
 						x="270"
-						y="1"
+						y="0"
 						width="58"
 						height="18"
 						key="staticText-82"/>
@@ -1011,9 +996,9 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="328"
+						x="327"
 						y="0"
-						width="205"
+						width="200"
 						height="18"
 						key="staticText-83"/>
 					<box></box>
@@ -1025,9 +1010,9 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="328"
+						x="327"
 						y="36"
-						width="205"
+						width="200"
 						height="18"
 						key="staticText-84"/>
 					<box></box>
@@ -1039,9 +1024,9 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="328"
+						x="327"
 						y="54"
-						width="205"
+						width="200"
 						height="18"
 						key="staticText-85"/>
 					<box></box>
@@ -1095,9 +1080,9 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="328"
+						x="327"
 						y="18"
-						width="205"
+						width="200"
 						height="18"
 						key="staticText-89"/>
 					<box></box>
@@ -1109,7 +1094,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="0"
+						x="5"
 						y="18"
 						width="58"
 						height="18"
@@ -1123,7 +1108,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="0"
+						x="5"
 						y="36"
 						width="58"
 						height="18"
@@ -1137,7 +1122,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="0"
+						x="5"
 						y="54"
 						width="58"
 						height="18"
@@ -1151,9 +1136,9 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="58"
+						x="63"
 						y="18"
-						width="205"
+						width="200"
 						height="18"
 						key="staticText-93"/>
 					<box></box>

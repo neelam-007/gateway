@@ -32,14 +32,14 @@
 	</parameter>
 	<queryString><![CDATA[SELECT
     p.objectid as SERVICE_ID,
-    SUM(if(authorized, authorized,0)) as throughput,
+    SUM(if(completed, completed,0)) as throughput,
     MIN(front_min) as FRTM,
     MAX(front_max) as FRTMX,
     if(SUM(front_sum), if(SUM(attempted), SUM(front_sum)/SUM(attempted),0), 0) as FRTA,
     MIN(back_min) as BRTM,
     MAX(back_max) as BRTMX,
     if(SUM(back_sum), if(SUM(completed), SUM(back_sum)/SUM(completed),0), 0) as BRTA,
-    if(SUM(completed) + (SUM(attempted) - SUM(authorized)), (1.0 - ((SUM(authorized) - SUM(completed)) / (SUM(completed) + (SUM(attempted) - SUM(authorized))))) , 1) as 'AP'
+    if(SUM(attempted), ( 1.0 - ( ( (SUM(authorized) - SUM(completed)) / SUM(attempted) ) ) ) , 0) as 'AP'
 FROM
      service_metrics sm,
      published_service p
@@ -93,7 +93,7 @@ p.objectid]]></queryString>
 		<variableExpression><![CDATA[($F{BRTA}.equals(new Double(0)))? null: $F{BRTA}]]></variableExpression>
 	</variable>
 	<variable name="AP_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
-		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: (Math.abs($F{AP}.doubleValue()) > 1)?new Double(1):new Double(Math.abs($F{AP}.doubleValue()))]]></variableExpression>
+		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
 	</variable>
 		<background>
 			<band height="0"  isSplitAllowed="true" >
@@ -215,7 +215,9 @@ p.objectid]]></queryString>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[ ( Math.abs($F{AP}.doubleValue()) > 1 )?new Double(1):new Double(Math.abs($F{AP}.doubleValue()))]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.Double">
+                    <![CDATA[ $F{AP}]]>
+                </textFieldExpression>
 				</textField>
 			</band>
 		</detail>

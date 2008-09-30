@@ -165,7 +165,7 @@ public class Utilities {
     /**
      * Return a millisecond value from the start of epoch up to the date
      * represented by the date parameter.
-     * @param date The format MUST BE in the format 'YYYY-MM-DD HH:mm'
+     * @param date The format MUST BE in the format 'yyyy/MM/dd HH:mm'
      * @return The number of milliseconds since epoch represented by the supplied date
      */
     public static long getAbsoluteMilliSeconds(String date) throws ParseException {

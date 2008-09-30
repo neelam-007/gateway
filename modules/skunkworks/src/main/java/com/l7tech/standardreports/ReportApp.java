@@ -146,6 +146,11 @@ public class ReportApp
         i = Integer.parseInt(prop.getProperty(RELATIVE_NUM_OF_TIME_UNITS).toString());
         parameters.put(RELATIVE_NUM_OF_TIME_UNITS, i);
 
+        b = Boolean.parseBoolean(prop.getProperty(IS_ABSOLUTE).toString());
+        parameters.put(IS_ABSOLUTE, b);
+        parameters.put(ABSOLUTE_START_TIME, prop.getProperty(ABSOLUTE_START_TIME));
+        parameters.put(ABSOLUTE_END_TIME, prop.getProperty(ABSOLUTE_END_TIME));
+
         JasperFillManager.fillReportToFile(fileName, parameters, getConnection(prop));
         System.err.println("Filling time : " + (System.currentTimeMillis() - start));
     }
