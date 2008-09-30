@@ -14,6 +14,21 @@ import java.util.Set;
 
 /** @author alex */
 public interface ConfigService {
+    String HOSTPROPERTIES_SSL_PORT = "host.controller.sslPort";
+    String HOSTPROPERTIES_SSL_KEYSTOREFILE = "host.controller.keystore.file";
+    String HOSTPROPERTIES_SSL_KEYSTOREPASSWORD = "host.controller.keystore.password";
+    String HOSTPROPERTIES_SSL_KEYSTORETYPE = "host.controller.keystore.type";
+    String HOSTPROPERTIES_SSL_KEYSTOREALIAS = "host.controller.keystore.alias";
+    String HOSTPROPERTIES_JRE = "host.jre";
+    String HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_FILE = "host.controller.remoteNodeManagement.truststore.file";
+    String HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_TYPE = "host.controller.remoteNodeManagement.truststore.type";
+    String HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_PASSWORD = "host.controller.remoteNodeManagement.truststore.password";
+    String HOSTPROPERTIES_TYPE = "host.type";
+    String HOSTPROPERTIES_ID = "host.id";
+
+    String NODEPROPERTIES_ENABLED = "node.enabled";
+    String NODEPROPERTIES_ID = "node.id";
+
     HostConfig getHost();
 
     void addServiceNode(NodeConfig node);

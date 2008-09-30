@@ -52,18 +52,12 @@ public class ConfigServiceImpl implements ConfigService {
     private final int sslPort;
     private final File configDirectory;
     private final File javaBinary;
+    private static final String SLASH = System.getProperty("file.separator");
 
     public ConfigServiceImpl() throws IOException, GeneralSecurityException {
         // TODO maybe just pass the host.properties path instead, and put the nodeBaseDirectory in there
-        String s = System.getProperty("com.l7tech.server.processcontroller.homeDirectory");
-        if (s == null) {
-            processControllerHomeDirectory = new File(System.getProperty("user.dir"));
-            logger.info("Assuming Process Controller home directory is " + processControllerHomeDirectory.getCanonicalPath());
-        } else {
-            processControllerHomeDirectory = new File(s);
-        }
-
-        s = System.getProperty("com.l7tech.server.processcontroller.nodeBaseDirectory");
+        processControllerHomeDirectory = getHomeDirectory();
+        String s = System.getProperty("com.l7tech.server.processcontroller.nodeBaseDirectory");
         if (s == null) {
             File parent = processControllerHomeDirectory.getParentFile();
             nodeBaseDirectory = new File(parent, "Nodes");
@@ -77,7 +71,7 @@ public class ConfigServiceImpl implements ConfigService {
         this.configDirectory = configDirectory;
         this.masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(configDirectory, "omp.dat") ) );
 
-        final File hostPropsFile = new File(getProcessControllerHomeDirectory(), "etc/host.properties");
+        final File hostPropsFile = new File(getProcessControllerHomeDirectory(), "etc" + SLASH + "host.properties");
         if (!hostPropsFile.exists())
             throw new IllegalStateException("Couldn't find " + hostPropsFile.getAbsolutePath());
 
@@ -92,7 +86,7 @@ public class ConfigServiceImpl implements ConfigService {
         }
 
         PCHostConfig config = new PCHostConfig();
-        config.setGuid(getHostId(hostProps));
+        config.setGuid(getRequiredProperty(hostProps, HOSTPROPERTIES_ID));
         config.setLocalHostname(getLocalHostname(hostProps));
         config.setHostType(getHostType(hostProps));
         if (OSDetector.isLinux()) {
@@ -105,13 +99,14 @@ public class ConfigServiceImpl implements ConfigService {
             throw new IllegalStateException("Unsupported operating system"); // TODO muddle through?
         }
 
-        String jrePath = hostProps.getProperty("host.jre");
+        String jrePath = hostProps.getProperty(HOSTPROPERTIES_JRE);
         if (jrePath == null) jrePath = System.getProperty("java.home");
-        final File javaBinary = new File(new File(jrePath), "bin" + System.getProperty("file.separator") + "java");
+        final File javaBinary = new File(new File(jrePath), "bin" + SLASH + "java");
         if (!javaBinary.exists() || !javaBinary.canExecute()) throw new IllegalStateException(javaBinary.getCanonicalPath() + " is not executable");
         this.javaBinary = javaBinary.getCanonicalFile();
         logger.info("Using java binary: " + javaBinary.getPath());
-        this.sslPort = Integer.valueOf(hostProps.getProperty("host.controller.sslPort", "8765"));
+
+        this.sslPort = Integer.valueOf(hostProps.getProperty(HOSTPROPERTIES_SSL_PORT, "8765"));
         this.sslKeypair = readSslKeypair(hostProps);
         this.trustedRemoteNodeManagementCerts = readTrustedNodeManagementCerts(hostProps);
 
@@ -120,40 +115,42 @@ public class ConfigServiceImpl implements ConfigService {
         this.host = config;
     }
 
+    static File getHomeDirectory() {
+        String s = System.getProperty("com.l7tech.server.processcontroller.homeDirectory");
+        if (s == null) {
+            final File f = new File(System.getProperty("user.dir"));
+            logger.info("Assuming Process Controller home directory is " + f.getAbsolutePath());
+            return f;
+        } else {
+            return new File(s);
+        }
+    }
+
     public HostConfig getHost() {
         return host;
     }
 
     private HostConfig.HostType getHostType(Properties props) {
-        String type = (String)props.get("host.type");
+        String type = props.getProperty(HOSTPROPERTIES_TYPE);
         if (type == null) {
-            logger.info("host.type not set; assuming appliance");
+            logger.info(HOSTPROPERTIES_TYPE + " not set; assuming appliance");
             return HostConfig.HostType.APPLIANCE;
         } else try {
             return HostConfig.HostType.valueOf(type.toUpperCase());
         } catch (IllegalArgumentException e) {
-            logger.warning("Unsupported host.type " + type + "; assuming \"software\"");
+            logger.warning("Unsupported " + HOSTPROPERTIES_TYPE + " " + type + "; assuming \"software\"");
             return HostConfig.HostType.SOFTWARE;
         }
     }
 
-    private String getHostId(Properties props) {
-        String id = (String)props.get("host.id");
-        if (id == null) throw new IllegalStateException("host.id not found");
-        return id;
-    }
-
     private Pair<X509Certificate[], RSAPrivateKey> readSslKeypair(Properties hostProps) throws IOException, GeneralSecurityException {
-        final String keystoreFilename = hostProps.getProperty("host.controller.keystore.file");
-        if (keystoreFilename == null) throw new IllegalArgumentException("host.controller.keystore.file not found");
+        final String keystoreFilename = getRequiredProperty(hostProps, HOSTPROPERTIES_SSL_KEYSTOREFILE);
         final File keystoreFile = new File(keystoreFilename);
 
-        final String encryptedPassword = hostProps.getProperty("host.controller.keystore.password");
-        if (encryptedPassword == null) throw new IllegalArgumentException("host.controller.keystore.password not found");
+        final String encryptedPassword = getRequiredProperty(hostProps, HOSTPROPERTIES_SSL_KEYSTOREPASSWORD);
         char[] keystorePass = masterPasswordManager.decryptPasswordIfEncrypted(encryptedPassword);
 
-        String keystoreType = hostProps.getProperty("host.controller.keystore.type");
-        if (keystoreType == null) keystoreType = "PKCS12";
+        String keystoreType = hostProps.getProperty(HOSTPROPERTIES_SSL_KEYSTORETYPE, "PKCS12");
 
         final KeyStore ks = KeyStore.getInstance(keystoreType);
         FileInputStream fis = null;
@@ -164,7 +161,7 @@ public class ConfigServiceImpl implements ConfigService {
             ResourceUtils.closeQuietly(fis);
         }
 
-        final String alias = hostProps.getProperty("host.controller.keystore.alias");
+        final String alias = hostProps.getProperty(HOSTPROPERTIES_SSL_KEYSTOREALIAS);
         final Key key;
         final Certificate[] chain;
         if (alias != null) {
@@ -214,8 +211,14 @@ public class ConfigServiceImpl implements ConfigService {
         return new Pair<X509Certificate[], RSAPrivateKey>(xchain, (RSAPrivateKey)key);
     }
 
+    private String getRequiredProperty(Properties hostProps, final String what) {
+        final String that = hostProps.getProperty(what);
+        if (that == null) throw new IllegalArgumentException(what + " not found");
+        return that;
+    }
+
     private Set<X509Certificate> readTrustedNodeManagementCerts(Properties hostProps) throws GeneralSecurityException, IOException {
-        final String trustStoreFilename = hostProps.getProperty("host.controller.remoteNodeManagement.truststore.file");
+        final String trustStoreFilename = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_FILE);
         String trustStoreType;
         File trustStoreFile;
         if (trustStoreFilename == null) {
@@ -229,12 +232,10 @@ public class ConfigServiceImpl implements ConfigService {
             trustStoreFile = new File(trustStoreFilename);
             if (!trustStoreFile.exists()) throw new IllegalArgumentException("Can't find remote node management truststore at " + trustStoreFile.getAbsolutePath());
 
-            trustStoreType = hostProps.getProperty("host.controller.remoteNodeManagement.truststore.type");
-            if (trustStoreType == null) trustStoreType = "PKCS12";
+            trustStoreType = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_TYPE, "PKCS12");
         }
 
-        final String encryptedPassword = hostProps.getProperty("host.controller.remoteNodeManagement.truststore.password");
-        if (encryptedPassword == null) throw new IllegalArgumentException("host.controller.remoteNodeManagement.truststore.password not found");
+        final String encryptedPassword = getRequiredProperty(hostProps, HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_PASSWORD);
         char[] keystorePass = masterPasswordManager.decryptPasswordIfEncrypted(encryptedPassword);
 
         final KeyStore ks = KeyStore.getInstance(trustStoreType);
@@ -295,8 +296,7 @@ public class ConfigServiceImpl implements ConfigService {
                     ResourceUtils.closeQuietly(in);
                 }
 
-                if (!nodeProperties.containsKey("node.enabled") ||
-                        !nodeProperties.containsKey("node.id")) {
+                if (!nodeProperties.containsKey(NODEPROPERTIES_ENABLED) || !nodeProperties.containsKey(NODEPROPERTIES_ID)) {
                     logger.log(Level.WARNING, "Ignoring node ''{0}'' due to invalid properties.", nodeDirectory.getName());
                     continue;
                 }
@@ -305,8 +305,8 @@ public class ConfigServiceImpl implements ConfigService {
                 node.setHost(g);
                 node.setName(nodeDirectory.getName());
                 node.setSoftwareVersion(SoftwareVersion.fromString("4.7.0")); //TODO get version for node
-                node.setEnabled(Boolean.valueOf(nodeProperties.getProperty("node.enabled")));
-                node.setGuid(nodeProperties.getProperty("node.id"));
+                node.setEnabled(Boolean.valueOf(nodeProperties.getProperty(NODEPROPERTIES_ENABLED)));
+                node.setGuid(nodeProperties.getProperty(NODEPROPERTIES_ID));
 
 //                    final DatabaseConfig db = new DatabaseConfig();
 //                    db.setType(DatabaseType.NODE_ALL);
