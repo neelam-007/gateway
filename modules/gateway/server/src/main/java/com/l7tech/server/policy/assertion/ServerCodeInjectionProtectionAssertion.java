@@ -23,6 +23,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -59,25 +60,26 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
         final Message requestMessage = context.getRequest();
         final Message responseMessage = context.getResponse();
         AssertionStatus status = AssertionStatus.NONE;
+        boolean isHttp = true;
 
         // Skips if not HTTP.
         final HttpServletRequestKnob httpServletRequestKnob = (HttpServletRequestKnob) requestMessage.getKnob(HttpServletRequestKnob.class);
         if (httpServletRequestKnob == null) {
             _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_NOT_HTTP);
-            return AssertionStatus.NOT_APPLICABLE;
+            //bug 5290: we'll audit that it's not a HTTP request and we won't scan the URL because there won't be one,
+            //but we'll continue to scan the rest of the message body
+            isHttp = false;
         }
 
         // Scans request URL.
-        if (_assertion.isIncludeRequestUrl()) {
+        if (_assertion.isIncludeRequestUrl() && isHttp) {
             status = scanRequestUrl(httpServletRequestKnob);
             if (status != AssertionStatus.NONE)
                 return status;
         }
 
         // Scans request message body.
-        if (_assertion.isIncludeRequestBody() &&
-                ("POST".equalsIgnoreCase(httpServletRequestKnob.getMethod()) ||
-                 "PUT".equalsIgnoreCase(httpServletRequestKnob.getMethod()))) {
+        if (_assertion.isIncludeRequestBody()) {
             status = scanRequestBody(requestMessage);
             if (status != AssertionStatus.NONE)
                 return status;
@@ -124,7 +126,12 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
             _logger.finer("Scanning request message body as application/x-www-form-urlencoded.");
             final StringBuilder evidence = new StringBuilder();
             final HttpServletRequestKnob httpServletRequestKnob = (HttpServletRequestKnob) requestMessage.getKnob(HttpServletRequestKnob.class);
-            final Map<String, String[]> urlParams = httpServletRequestKnob.getRequestBodyParameterMap();
+            Map<String, String[]> urlParams = Collections.emptyMap();
+            //we'll process if we are sure there is HTTP, otherwise just an empty map
+            if (httpServletRequestKnob != null) {
+                 urlParams = httpServletRequestKnob.getRequestBodyParameterMap();
+            }
+
             for (String urlParamName : urlParams.keySet()) {
                 for (String urlParamValue : urlParams.get(urlParamName)) {
                     final CodeInjectionProtectionType protectionViolated = scan(urlParamValue, _assertion.getProtections(), evidence);
