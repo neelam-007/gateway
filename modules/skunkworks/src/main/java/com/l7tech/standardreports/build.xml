@@ -3,7 +3,8 @@
     <description>Run ReportApp</description>
 
 	<property name="class.name" value="com.l7tech.standardreports.ReportApp" />
-	<property name="file.name" value="${basedir}/PS_IntervalMasterReport_NoMapping" />
+    <property name="test_data_class.name" value="com.l7tech.standardreports.CreateTestData" />
+    <property name="file.name" value="${basedir}/PS_IntervalMasterReport_NoMapping" />
     <property name="jasper_lib.dir" value="/home/darmstrong/Jasper/jasperreports-3.0.1/lib" />
     <property name="jasper_jar_lib.dir" value="/home/darmstrong/Jasper/jasperreports-3.0.1/dist" />
     <property name="lib.dir" value="../../../../../../../../modules/ems/build" />
@@ -52,7 +53,16 @@
 		</java>
 	</target>
 
-	<target name="view" description="Launches the report viewer to preview the report stored in the .jrprint file.">
+    <target name="test_data" description="Creates test data for the supplied services for the maximum default retention
+    period for hourly and daily metric bins">
+        <java classname="${test_data_class.name}">
+            <arg value="294912"/>
+            <arg value="1933312"/>
+            <classpath refid="classpath"/>
+        </java>
+    </target>
+
+    <target name="view" description="Launches the report viewer to preview the report stored in the .jrprint file.">
 		<java classname="net.sf.jasperreports.view.JasperViewer" fork="true">
 			<arg value="${file.name}.jrprint"/>
 			<classpath refid="classpath"/>

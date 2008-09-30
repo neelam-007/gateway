@@ -177,9 +177,9 @@ public class CreateTestData {
     }
 
     public static void main(String [] args) throws Exception{
-        String [] services = new String[]{"294912", "1933312"};
+//        String [] services = new String[]{"294912", "1933312"};
 
-        for(String s: services){
+        for(String s: args){
             new CreateTestData("240869cda32562eb0287696033b4acca", Utilities.HOUR).createData(s);
             new CreateTestData("240869cda32562eb0287696033b4acca", Utilities.DAY).createData(s);
         }
