@@ -2,6 +2,7 @@
  * @module l7
  * @namespace l7
  * @requires YUI module "animation" if using l7.Resize
+ * @requires YUI modules "container", "button" if using l7.Error
  */
 
 // -----------------------------------------------------------------------------
@@ -418,13 +419,13 @@ if (!l7.TabBar) {
 // -----------------------------------------------------------------------------
 if (!l7.Tippy) {
     (function(){
-    /**
-     * Provides support functions for expandable/collipsible tippies.
-     *
-     * @class l7.Tippy
-     * @static
-     */
-    l7.Tippy = {};
+        /**
+         * Provides support functions for expandable/collipsible tippies.
+         *
+         * @class l7.Tippy
+         * @static
+         */
+        l7.Tippy = {};
 
         /** Base name of image file representing a tippy in expanded state. */
         var EXPANDED_TIPPY_IMG_NAME = 'tippyExpanded.png';
@@ -538,6 +539,54 @@ if (!l7.Resize) {
                 if (h > max) h = max;
                 new YAHOO.util.Anim(ids[i], {height: {to: h, unit: 'px'}}, 0.1, YAHOO.util.Easing.easeOut).animate();
             }
+        }
+    })();
+}
+
+// -----------------------------------------------------------------------------
+// Error
+// -----------------------------------------------------------------------------
+if (!l7.Error) {
+    (function(){
+        /**
+         * Provides simple error dialog.
+         *
+         * @class l7.Error
+         * @static
+         */
+        l7.Error = {};
+
+        /**
+         * Displays a simple error dialog.
+         *
+         * @param {string} header   localized header text; defaults to 'Error' if null
+         * @param {string} width    width; defaults to '30em' if null
+         * @param {html} body       HTML content
+         * @param {string} okText   localized text label for the OK button
+         * @requires YAHOO.widget.SimpleDialog
+         * @requires YAHOO.widget.Button
+         */
+        l7.Error.showDialog = function(header, width, body, okText) {
+            var errDlg = new YAHOO.widget.SimpleDialog('errDlg', {
+                buttons     : [
+                    {
+                        text      : okText == null ? 'OK' : okText,
+                        handler   : function() { this.hide() },
+                        isDefault : true
+                    }
+                ],
+                close       : true,
+                draggable   : false,
+                fixedcenter : true,
+                icon        : YAHOO.widget.SimpleDialog.ICON_WARN,
+                modal       : true,
+                width       : width == null ? '30em' : width,
+                visible     : false
+            });
+            errDlg.setHeader(header == null ? 'Error' : header);
+            errDlg.setBody(body);
+            errDlg.render(document.body);
+            errDlg.show();
         }
     })();
 }

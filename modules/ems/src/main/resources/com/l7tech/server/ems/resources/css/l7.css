@@ -191,11 +191,19 @@ input[type='text'].invalid {
     background-color: #c1e8ff;
 }
 
+.noBackground {
+    background: none !important;
+}
+
+.noBorder {
+    border: none !important;
+}
+
 .noCursor {
     cursor: default !important;
 }
 
-.unselected {
+.unselected, .disabled {
     opacity: 0.2;
     *filter: alpha(opacity=20);
 }
@@ -403,6 +411,12 @@ table.spaced th, table.spaced td {
     white-space: nowrap;
 }
 
+/* Text box, list box and iframe needs more space around them because they have borders. */
+table.spaced td input[type='text'], table.spaced td input[type='password'], table.spaced td select, table.spaced td iframe {
+    margin-bottom: 1px;
+    margin-top: 1px;
+}
+
 div.tippy {
     font-weight: bold;
 }
@@ -420,6 +434,10 @@ img.ghostDialogIcon {
     padding: 0 !important;
     position: absolute;
     z-index: 1;
+}
+
+img.debugLogReader {
+    margin-right: 8px;
 }
 
 .dataIFrame {
@@ -641,6 +659,11 @@ td.submissionMessageDisplay textarea {
     padding: 2px 8px 2px 8px;
 }
 
+.userRolesSelector {
+    background-color: #ffffff;
+    padding: 0 4px 0 4px;
+}
+
 .statusBar {
     background-color: #d6d6d6;
     padding: 4px 10px 4px 10px;
@@ -657,6 +680,11 @@ td.submissionMessageDisplay textarea {
 /********************************************************************************
  * ID Selectors
  ********************************************************************************/
+#debugLogReader {
+    font-size: 1em;
+    margin: 8px;
+    width: 70%;
+}
 
 #licenseAgreement {
     border: 1px #000000 solid;
