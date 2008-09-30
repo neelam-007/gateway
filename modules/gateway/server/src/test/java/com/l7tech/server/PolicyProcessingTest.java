@@ -99,6 +99,7 @@ public class PolicyProcessingTest extends TestCase {
         {"/httpwssheaderremove", "POLICY_httpwssheaderremove.xml"},
         {"/httpwssheaderpromote", "POLICY_httpwssheaderpromote.xml"},
         {"/attachment", "POLICY_signed_attachment.xml"},
+        {"/requestnonxmlok", "POLICY_request_modified_non_xml.xml"}
     };
 
     /**
@@ -409,6 +410,17 @@ public class PolicyProcessingTest extends TestCase {
         String requestMessage1 = new String(loadResource("REQUEST_unsigned_attachment.txt"));
 
         processMessage("/attachment", requestMessage1, 600);
+    }
+
+    /**
+     * Bug #5725: Make sure the correct response is returned in the following scenario:
+     * - the request is non-xml (or is modified to be non-xml by the policy)
+     * - all policies return success
+     * - respnse is SOAP and needs to be decorated
+     */
+    public void testRequestNonXmlOk() throws Exception
+    {
+        processMessage("/requestnonxmlok", new String(loadResource("REQUEST_general.xml")), 0);
     }
 
     /**

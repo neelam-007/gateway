@@ -50,7 +50,6 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceStatistics;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
-import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -299,18 +298,21 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                   response.getSecurityKnob().getDecorationRequirements().length > 0 &&
                   response.isSoap())
             {
-                Document doc;
                 try {
-                    final XmlKnob respXml = response.getXmlKnob();
                     DecorationRequirements[] allrequirements = response.getSecurityKnob().getDecorationRequirements();
-                    XmlKnob reqXml = request.getXmlKnob();
                     SecurityKnob reqSec = request.getSecurityKnob();
-                    doc = respXml.getDocumentWritable(); // writable, we are about to decorate it
-                    if (request.isSoap()) {
-                        final String messageId = SoapUtil.getL7aMessageId(reqXml.getDocumentReadOnly());
-                        if (messageId != null) {
-                            SoapUtil.setL7aRelatesTo(doc, messageId);
+
+                    try {
+                        if (request.isSoap()) {
+                            final String messageId = SoapUtil.getL7aMessageId(request.getXmlKnob().getDocumentReadOnly());
+                            if (messageId != null) {
+                                SoapUtil.setL7aRelatesTo(response.getXmlKnob().getDocumentWritable(), messageId);
+                            }
                         }
+                    } catch(IOException e) {
+                        logger.log(Level.WARNING, "Unable to extract message ID from request.", ExceptionUtils.getMessage(e));
+                    } catch(SAXException e) {
+                        logger.log(Level.WARNING, "Unable to extract message ID from request.", ExceptionUtils.getMessage(e));
                     }
 
                     // if the request was processed on the noactor sec header instead of the l7 sec actor, then
