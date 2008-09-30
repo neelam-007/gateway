@@ -782,8 +782,21 @@ public class JmsQueuePropertiesDialog extends JDialog {
         } catch (Exception e) {
             logger.log(Level.WARNING, "problem listing services", e);
         }
-
-        if (allServices != null) {
+        if (allServices == null || allServices.length == 0) {
+            // Case 1: the queue associated with a published service and the user may be with a role of Manage JMS Queue.
+            if (isHardWired) {
+                String message = "Service " + hardWiredId + " is selected, but cannot be displayed.";
+                serviceNameCombo.addItem(new ComboItem(message, hardWiredId));
+                associateQueueWithPublishedCheckBox.setSelected(true);
+            }
+            // Case 2: There are no any published services at all.
+            else {
+                // We just want to show the message "No published services available." in the combo box.
+                // So "-1" is just a dummy ServiceOID and it won't be used since the checkbox is set to disabled.
+                serviceNameCombo.addItem(new ComboItem("No published services available.", -1));
+                associateQueueWithPublishedCheckBox.setEnabled(false);
+            }
+        } else {
             java.util.List<EntityHeader> onlySoapServicesList = new ArrayList<EntityHeader>();
             for (EntityHeader entity : allServices) {
                 if (((ServiceHeader)entity).isSoap()) onlySoapServicesList.add(entity);
