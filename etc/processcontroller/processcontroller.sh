@@ -27,11 +27,15 @@ function fail() {
   exit ${1}
 }
 
-#
 cd "${SSPC_HOME}" &>/dev/null || fail 2 "Directory not found: ${SSPC_HOME}"
 
-# Currently "java" is used to start gateway
-export PATH="${PATH}:${JAVA_HOME}/bin"
+# Run the config bootstrapper if it looks like this is the first time we've run
+if [ ! -f "${SSPC_HOME}/etc/host.properties" ] ; then
+  "${JAVA_HOME}/bin/java" -classpath "$SSPC_HOME/Controller.jar" -Dcom.l7tech.server.processcontroller.homeDirectory="$SSPC_HOME" com.l7tech.server.processcontroller.BootstrapConfig
+  if [ ${?} -ne 0 ]; then
+    fail "${?}" "Error saving initial configuration."
+  fi
+fi
 
 #
 if [ -z "${PC_USER}" ] ; then

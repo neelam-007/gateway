@@ -45,10 +45,12 @@ rm -fr %{buildroot}
 /opt/SecureSpan/Gateway/Controller/Controller.jar
 %dir /opt/SecureSpan/Gateway/Controller/bin
 %dir /opt/SecureSpan/Gateway/Controller/etc
+%dir /opt/SecureSpan/Gateway/Controller/etc/conf
 %attr(0755,root,root) /opt/SecureSpan/Gateway/Controller/bin/*
 /opt/SecureSpan/Gateway/Controller/lib
 %defattr(0644,gateway,gateway,0755)
 /opt/SecureSpan/Gateway/Controller/var
+/opt/SecureSpan/Gateway/Controller/etc/conf/omp.dat
 
 # The main Gateway jar
 %defattr(0644,root,root,0755)

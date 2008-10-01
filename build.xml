@@ -2667,6 +2667,7 @@
         <mkdir dir="${install.src.ssg.control}"/>
         <mkdir dir="${install.src.ssg.controlbin}"/>
         <mkdir dir="${install.src.ssg.controletc}"/>
+        <mkdir dir="${install.src.ssg.controletc}/conf"/>
         <mkdir dir="${install.src.ssg.controllib}"/>
         <mkdir dir="${install.src.ssg.controllogs}"/>
         <mkdir dir="${install.src.ssg.etc}"/>
@@ -2736,6 +2737,8 @@
         <copy todir="${install.src.ssg.controlbin}">
             <fileset dir="${src.root}/etc/processcontroller" includes="processcontroller.sh"/>
         </copy>
+
+        <copy file="${src.root}/etc/omp.dat" tofile="${install.src.ssg.controletc}/conf/omp.dat"/>
 
         <!-- Copy Gateway.jar -->
         <copy todir="${install.src.ssg.base}">

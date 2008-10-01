@@ -78,8 +78,10 @@ public class BootstrapConfig {
 
         MasterPasswordManager masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder(masterPasswordFile) );
 
+        logger.info("Generating keypair...");
         FileOutputStream kfos = null;
         final File ksFile = new File(etcDir, "localhost.p12");
+        if (ksFile.exists()) throw new DieDieDie("Keystore file " + ksFile.getAbsolutePath() + " already exists", 6);
         byte[] passBytes = new byte[4];
         new SecureRandom().nextBytes(passBytes);
         String pass = HexUtils.hexDump(passBytes);
