@@ -18,13 +18,13 @@ ISNCES=""
 ## #%PAM-1.0
 ## # This file is auto-generated.
 ## # User changes will be destroyed the next time authconfig is run.
-## auth        required      /lib/security/$ISA/pam_tally2.so deny=5 even_deny_root_account onerr=fail no_magic_root unlock_time=1200
+## auth        required      /lib/security/$ISA/pam_tally2.so deny=5 even_deny_root_account onerr=fail unlock_time=1200
 ## auth        required      /lib/security/$ISA/pam_env.so
 ## auth        sufficient    /lib/security/$ISA/pam_unix.so likeauth nullok
 ## auth        required      /lib/security/$ISA/pam_deny.so
 ## 
 ## account     required      /lib/security/$ISA/pam_unix.so
-## account     required      /lib/security/$ISA/pam_tally2.so no_magic_root reset
+## account     required      /lib/security/$ISA/pam_tally2.so 
 ## account     sufficient    /lib/security/$ISA/pam_succeed_if.so uid < 100 quiet
 ## account     required      /lib/security/$ISA/pam_permit.so
 ## 
@@ -67,19 +67,19 @@ harden() {
   sed -i -e '/pam_tally\.so/d' /etc/pam.d/system-auth
 
   echo "Checking pam_tally2"
-  if ! grep -Eq 'auth +required +.*/pam_tally2.so deny=[0-9].*no_magic_root unlock_time=1200' /etc/pam.d/system-auth; then
+  if ! grep -Eq 'auth +required +.*/pam_tally2.so deny=[0-9].*unlock_time=1200' /etc/pam.d/system-auth; then
 	  echo "Modifying pam_tally2"
 
 	 # delete any auth required pam_tally2 lines to be sure
 	 sed -i -e '/auth\s*required\s*.*\/pam_tally2.so/d' /etc/pam.d/system-auth
 
 	 # add in the new line before the pam_env line, use \2 as the substitution to ensure we have the same lib or lib64 line
-	 sed -i -r -e 's/^(.*(auth\s*required\s*.*)\/pam_env\.so.*)$/\2\/pam_tally2\.so deny=5 even_deny_root_account onerr=fail no_magic_root unlock_time=1200\n\1/' /etc/pam.d/system-auth
+	 sed -i -r -e 's/^(.*(auth\s*required\s*.*)\/pam_env\.so.*)$/\2\/pam_tally2\.so deny=5 even_deny_root_account onerr=fail unlock_time=1200\n\1/' /etc/pam.d/system-auth
 
 	 # delete any account sufficient pam_tally2 lines to be sure
 	 sed -i -e '/account\s*required\s*.*\/pam_tally2.so/d' /etc/pam.d/system-auth
 
-	 sed -i -r -e 's/^(.*(account\s*)sufficient(\s*.*)\/pam_succeed_if\.so.*)$/\2required  \3\/pam_tally2.so no_magic_root reset\n\1/' /etc/pam.d/system-auth
+	 sed -i -r -e 's/^(.*(account\s*)sufficient(\s*.*)\/pam_succeed_if\.so.*)$/\2required  \3\/pam_tally2.so\n\1/' /etc/pam.d/system-auth
 
   fi
   # Use a listfile with SSH to prevent DOS attacks on system accounts
@@ -240,6 +240,10 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
 
   # GEN004560
   sed -i -e 's/O SmtpGreetingMessage=\$j Sendmail \$v\/\$Z; \$b/O SmtpGreetingMessage= Mail Server Ready ; $b/' /etc/mail/sendmail.cf
+
+	# change root and ssgconfig password to 'password'
+#	usermod -p $1$c.vxuRpE$uNvTtWmyjg/UzmVXGOJaT. root
+#	usermod -p $1$c.vxuRpE$uNvTtWmyjg/UzmVXGOJaT. ssgconfig
 }
 
 soften() {
@@ -546,7 +550,7 @@ if [ ! -e /var/log/btmp ] ; then
 fi
 
 # GEN000460
-if [ ! "$(cat /etc/pam.d/system-auth | grep ^auth | head -n 1 | egrep 'auth(.*)required(.*)/lib(.*)/security/\$ISA/pam_tally2.so deny=5 even_deny_root_account onerr=fail no_magic_root unlock_time=1200')" ] ; then
+if [ ! "$(cat /etc/pam.d/system-auth | grep ^auth | head -n 1 | egrep 'auth(.*)required(.*)/lib(.*)/security/\$ISA/pam_tally2.so deny=5 even_deny_root_account onerr=fail unlock_time=1200')" ] ; then
 	echo "Error - pam_tally2 not set up properly - auth required"
 fi
 
