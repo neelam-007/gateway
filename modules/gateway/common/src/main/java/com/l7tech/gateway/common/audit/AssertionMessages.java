@@ -431,6 +431,7 @@ public class AssertionMessages extends Messages {
     public static final M CODEINJECTIONPROTECTION_CANNOT_PARSE = m(7152, Level.WARNING, "Cannot parse {0} as {1}.");
     public static final M CODEINJECTIONPROTECTION_DETECTED_PARAM = m(7153, Level.WARNING, "{3} detected in {0} parameter \"{1}\": {2}");
     public static final M CODEINJECTIONPROTECTION_DETECTED = m(7154, Level.WARNING, "{2} detected in {0}: {1}");
+    public static final M CODEINJECTIONPROJECTION_CANNOT_PARSE_CONTENT_TYPE = m(7155, Level.WARNING, "Message is not HTTP, cannot parse content type ''{0}''");
 
     // SqlAttackAssertion
     public static final M SQLATTACK_UNRECOGNIZED_PROTECTION = m(7200, Level.WARNING, "Unrecognized protection name: {0}.  Assertion will always fail.");

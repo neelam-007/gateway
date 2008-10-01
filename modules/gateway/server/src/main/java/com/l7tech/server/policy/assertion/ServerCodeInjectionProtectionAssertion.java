@@ -23,7 +23,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -79,8 +78,10 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
         }
 
         // Scans request message body.
-        if (_assertion.isIncludeRequestBody()) {
-            status = scanRequestBody(requestMessage);
+        if (_assertion.isIncludeRequestBody() &&
+                (!isHttp || (isHttp && ("POST".equalsIgnoreCase(httpServletRequestKnob.getMethod()) ||
+                        "PUT".equalsIgnoreCase(httpServletRequestKnob.getMethod()))))) {
+            status = scanRequestBody(requestMessage, isHttp);
             if (status != AssertionStatus.NONE)
                 return status;
         }
@@ -91,7 +92,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
             if (context.getRoutingStatus() != RoutingStatus.ROUTED) {
                 _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_SKIP_RESPONSE_NOT_ROUTED);
             } else {
-                status = scanResponseBody(responseMessage);
+                status = scanResponseBody(responseMessage, isHttp);
                 if (status != AssertionStatus.NONE)
                     return status;
             }
@@ -118,19 +119,21 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
         return AssertionStatus.NONE;
     }
 
-    private AssertionStatus scanRequestBody(final Message requestMessage) throws IOException {
+    private AssertionStatus scanRequestBody(final Message requestMessage, boolean isHttp) throws IOException {
         AssertionStatus status = AssertionStatus.NONE;
 
         final ContentTypeHeader contentType = requestMessage.getMimeKnob().getOuterContentType();
         if (contentType.matches("application", "x-www-form-urlencoded")) {
+            //this can only work with http
+            if (!isHttp) {
+                _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_CANNOT_PARSE_CONTENT_TYPE, "application/x-www-form-urlencoded");
+                return AssertionStatus.FALSIFIED;
+            }
+
             _logger.finer("Scanning request message body as application/x-www-form-urlencoded.");
             final StringBuilder evidence = new StringBuilder();
             final HttpServletRequestKnob httpServletRequestKnob = (HttpServletRequestKnob) requestMessage.getKnob(HttpServletRequestKnob.class);
-            Map<String, String[]> urlParams = Collections.emptyMap();
-            //we'll process if we are sure there is HTTP, otherwise just an empty map
-            if (httpServletRequestKnob != null) {
-                 urlParams = httpServletRequestKnob.getRequestBodyParameterMap();
-            }
+            final Map<String, String[]> urlParams = httpServletRequestKnob.getRequestBodyParameterMap();
 
             for (String urlParamName : urlParams.keySet()) {
                 for (String urlParamValue : urlParams.get(urlParamName)) {
@@ -143,6 +146,10 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
                 }
             }
         } else if (contentType.matches("multipart", "form-data")) {
+            if (!isHttp) {
+                _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_CANNOT_PARSE_CONTENT_TYPE, "multipart/form-data");
+                return AssertionStatus.FALSIFIED;
+            }
             status = scanBodyAsMultipartFormData(requestMessage, Direction.request);
         } else if (contentType.matches("text", "xml")) {
             status = scanBodyAsXml(requestMessage, Direction.request);
@@ -153,11 +160,15 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractServerAssert
         return status;
     }
 
-    private AssertionStatus scanResponseBody(final Message responseMessage) throws IOException {
+    private AssertionStatus scanResponseBody(final Message responseMessage, boolean isHttp) throws IOException {
         AssertionStatus status = AssertionStatus.NONE;
 
         final ContentTypeHeader contentType = responseMessage.getMimeKnob().getOuterContentType();
         if (contentType.matches("multipart", "form-data")) {
+            if (!isHttp) {
+                _auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_CANNOT_PARSE_CONTENT_TYPE, "multipart/form-data");
+                return AssertionStatus.FALSIFIED;
+            }
             status = scanBodyAsMultipartFormData(responseMessage, Direction.response);
         } else if (contentType.matches("text", "xml")) {
             status = scanBodyAsXml(responseMessage, Direction.response);
