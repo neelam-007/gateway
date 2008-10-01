@@ -45,6 +45,14 @@ public interface EntityManager<ET extends PersistentEntity, HT extends EntityHea
 
     String getTableName();
 
+    /**
+     * Find a single entity by its unique name.  This is typically only meaningful
+     * for a NamedEntity.
+     *
+     * @param name the name of the entity to locate.  Required.
+     * @return the entity by that name, or null if none was found.
+     * @throws FindException in the event of a database problem
+     */
     ET findByUniqueName(String name) throws FindException;
 
     void delete(long oid) throws DeleteException, FindException;

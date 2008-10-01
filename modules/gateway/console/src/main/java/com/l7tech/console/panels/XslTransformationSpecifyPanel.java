@@ -8,43 +8,41 @@ import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.common.io.ByteOrderMarkInputStream;
+import com.l7tech.common.io.IOUtils;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.console.SsmApplication;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
-import com.l7tech.console.panels.UrlPanel;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.common.io.ByteOrderMarkInputStream;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
-import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.SsmApplication;
-
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.URIResolver;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.stream.StreamSource;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.URIResolver;
 import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamSource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.AccessControlException;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.AccessControlException;
 
 /**
  * Part of {@link XslTransformationPropertiesDialog}.
@@ -229,7 +227,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
             Document doc;
             byte[] bytes;
             try {
-                bytes = IOUtils.slurpStreamLocalBuffer(bomis);
+                bytes = IOUtils.slurpStream(bomis);
                 doc = XmlUtil.parse(new ByteArrayInputStream(bytes));
             } catch (SAXException e) {
                 xslDialog.displayError(resources.getString("error.noxmlaturl") + " " + filename, null);
@@ -280,7 +278,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
             String ctype = conn.getContentType();
             encoding = ctype == null ? null : ContentTypeHeader.parseValue(ctype).getEncoding();
             httpStream = conn.getInputStream();
-            bytes = IOUtils.slurpStreamLocalBuffer(httpStream);
+            bytes = IOUtils.slurpStream(httpStream);
             bomis = new ByteOrderMarkInputStream(new ByteArrayInputStream(bytes));
             if (encoding == null) encoding = bomis.getEncoding();
         } catch (AccessControlException ace) {

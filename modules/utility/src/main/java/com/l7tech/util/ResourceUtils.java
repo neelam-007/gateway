@@ -3,7 +3,7 @@ package com.l7tech.util;
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import java.io.IOException;
+import java.io.*;
 import java.nio.channels.FileLock;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -106,6 +106,17 @@ public final class ResourceUtils {
             catch (Exception e) {
                 logger.log(Level.WARNING, "Unexpected error when closing object", e);
             }
+        }
+    }
+
+    /**
+     * Close one or more {@link java.io.Closeable}s without throwing any exceptions.
+     *
+     * @param closeables the object(s) to close.
+     */
+    public static void closeQuietly(java.io.Closeable... closeables) {
+        for (java.io.Closeable closeable : closeables) {
+            closeQuietly(closeable);
         }
     }
 

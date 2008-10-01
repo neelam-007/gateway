@@ -1,36 +1,24 @@
 package com.l7tech.server.cluster;
 
-import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.HexUtils;
 import com.l7tech.common.io.IOUtils;
+import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Properties;
-import java.util.UUID;
-import java.util.Collections;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.io.File;
-import java.io.InputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.FileOutputStream;
-import java.io.BufferedInputStream;
-import java.sql.SQLException;
-
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.ResourceUtils;
 import org.apache.commons.configuration.ConfigurationException;
-import org.hibernate.Session;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
+import org.hibernate.Session;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+
+import java.io.*;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 
@@ -208,7 +196,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
             try {
                 up = Runtime.getRuntime().exec("/sbin/ifconfig eth0");
                 got = new BufferedInputStream(up.getInputStream());
-                byte[] buff = IOUtils.slurpStreamLocalBuffer(got);
+                byte[] buff = IOUtils.slurpStream(got);
                 ifconfigOutput = new String(buff);
                 up.waitFor();
             } finally {
@@ -265,7 +253,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
             try {
                 up = Runtime.getRuntime().exec("ipconfig /all");
                 got = new BufferedInputStream(up.getInputStream());
-                byte[] buff = IOUtils.slurpStreamLocalBuffer(got);
+                byte[] buff = IOUtils.slurpStream(got);
                 ipconfigOutput = new String(buff);
                 up.waitFor();
             } finally {

@@ -1,5 +1,6 @@
 package com.l7tech.common.http;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -324,6 +325,27 @@ public class CookieUtils {
             c.setExpiryDate(new Date(System.currentTimeMillis() + (servletCookie.getMaxAge() * 1000L)));
 
         return c;
+    }
+
+    /**
+     * Search a cookie array for a single cookie with the requested name.
+     *
+     * @param cookies cookie array to search. Required.
+     * @param cookieName name of cookie to search for.  Required.
+     * @return a cookie with that name, or null.
+     * @throws IOException if more than one cookie is found with that name.
+     */
+    public static HttpCookie findSingleCookie(HttpCookie[] cookies, String cookieName) throws IOException {
+        HttpCookie found = null;
+        for (HttpCookie cookie : cookies) {
+            if (cookie.getCookieName().equalsIgnoreCase(cookieName)) {
+                if (found == null)
+                    found = cookie;
+                else
+                    throw new IOException("More than one cookie found named " + cookieName);
+            }
+        }
+        return found;
     }
 
     //- PRIVATE

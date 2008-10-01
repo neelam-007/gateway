@@ -1,13 +1,10 @@
 package com.l7tech.common.http;
 
+import com.l7tech.util.SyspropUtil;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,6 +25,7 @@ import java.util.regex.Pattern;
  * @version $Revision$
  */
 public class ParameterizedString {
+    private static final int MAX_FIELD_LENGTH = SyspropUtil.getInteger("com.l7tech.http.maxParameterLength", 600000);
 
     //- PUBLIC
 
@@ -177,7 +175,7 @@ public class ParameterizedString {
     /**
      * It is debatable whether to allow "/", ":", "@" and "$" in the qs names.
      */
-    private static Pattern validcomponent = Pattern.compile("[a-zA-Z0-9+%-_.!~*'()|/:@$,]{0,512}");
+    private static Pattern validcomponent = Pattern.compile("[a-zA-Z0-9+%-_.!~*'()|/:@$,]*");
 
     /**
      * Map of parsed parameters name (string) -> values (string array)
@@ -188,6 +186,8 @@ public class ParameterizedString {
      * Check that the given parameter string nvp does not contain invalid characters.
      */
     private static void checkContents(String text, String fulltext) {
+        if (text.length() > MAX_FIELD_LENGTH)
+            throw new IllegalArgumentException("Field exceeds configured maximum field length of " + MAX_FIELD_LENGTH + " characters");
         Matcher matcher = validcomponent.matcher(text);
         if(!matcher.matches()) {
             throw new IllegalArgumentException("Invalid character in '"+text+"'; '"+fulltext+"'");

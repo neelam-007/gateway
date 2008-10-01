@@ -228,7 +228,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
 
                 final String[] artifacts = (String[]) queryParams.get(assertion.getArtifactQueryParameter());
                 if (artifacts == null || artifacts.length == 0) {
-                    byte[] responseBytes = IOUtils.slurpStreamLocalBuffer(loginResponse.getInputStream());
+                    byte[] responseBytes = IOUtils.slurpStream(loginResponse.getInputStream());
                     logger.info(loginResponseHeaders.toString());
                     logger.info(new String(responseBytes, HttpConstants.ENCODING_UTF8));
                     throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSERARTIFACT_REDIRECT_NO_ARTIFACT);
@@ -251,7 +251,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
                 else {
                     if(logger.isLoggable(Level.FINEST)) {
                         logger.log(Level.FINEST, "Unexpected HTTP status code ({0}), response body is: \n{1}",
-                                new Object[]{new Integer(loginResponseStatus), new String(IOUtils.slurpStreamLocalBuffer(loginResponse.getInputStream()))});
+                                new Object[]{new Integer(loginResponseStatus), new String(IOUtils.slurpStream(loginResponse.getInputStream()))});
                     }
                     throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSERARTIFACT_RESPONSE_NON_302);
                 }

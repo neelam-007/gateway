@@ -121,13 +121,7 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
             final GenericHttpResponse sourceResponse = resp;
             UT userObject = userObjectFactory.createUserObject(params.getTargetUrl().toExternalForm(), new UserObjectSource(){
                 public byte[] getBytes() throws IOException {
-                    byte[] slurped = IOUtils.slurpStream(sourceResponse.getInputStream(), maxCrlSize+1);
-
-                    if ( slurped.length > maxCrlSize ) {
-                        throw new IOException("CRL exceeds maximum size " + maxCrlSize + " bytes.");
-                    }
-
-                    return slurped;
+                    return IOUtils.slurpStream(sourceResponse.getInputStream(), maxCrlSize);
                 }
 
                 public ContentTypeHeader getContentType() {

@@ -225,6 +225,11 @@
     </servlet>
 
     <servlet>
+        <servlet-name>emsTrustServlet</servlet-name>
+        <servlet-class>com.l7tech.server.EmsTrustServlet</servlet-class>
+    </servlet>
+
+    <servlet>
         <servlet-name>CXFServlet</servlet-name>
         <display-name>CXF Servlet</display-name>
         <servlet-class>
@@ -351,7 +356,12 @@
         <url-pattern>/ssg/backup</url-pattern>
     </servlet-mapping>
 
-	<servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>emsTrustServlet</servlet-name>
+        <url-pattern>/ssg/emstrust</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
 		<servlet-name>CXFServlet</servlet-name>
 		<url-pattern>/ssg/services/*</url-pattern>
 	</servlet-mapping>

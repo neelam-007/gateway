@@ -47,7 +47,7 @@ public abstract class GenericHttpResponse implements Closeable, GenericHttpRespo
         if (getStatus() != HttpConstants.STATUS_OK)
             throw new IOException("HTTP status was " + getStatus());
 
-        byte[] bytes = IOUtils.slurpStreamLocalBuffer(getInputStream());
+        byte[] bytes = IOUtils.slurpStream(getInputStream());
 
         // Try to get the charset encoding from the data, if that fails, then use
         // HTTP charset encoding.

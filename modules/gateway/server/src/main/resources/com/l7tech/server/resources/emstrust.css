@@ -1,0 +1,61 @@
+body {
+    font-family: sans-serif;
+    height: 95%;
+}
+
+.title {
+    color: #6a737b;
+    text-indent: 40px;
+    font-weight: bold;
+    font-size: 24px;
+    background-image: url('com/l7tech/internal/license/gui/resources/layer7_logo_small_32x32.png');
+    background-position: 4px 4px;
+    background-repeat: no-repeat;
+    background-color: white;
+    height: 36px;
+}
+
+.heading {
+    text-indent: 42px;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.tableheading {
+    background-color: #6a737b;
+    font-weight: bold;
+}
+
+.message {
+    color: red;
+    text-align: center;
+}
+
+.tableheading {
+    font-weight: bold;
+}
+
+.tableheading {
+    font-weight: bold;
+}
+
+.logintable {
+    border: 1px solid black;
+    width: 420px;
+}
+
+.spacer {
+    width:35px;
+}
+
+.label {
+    width:120px;
+    color: black;
+}
+
+.emstrustcontrols {
+}
+
+.emssubmit {
+    text-align: right;
+}

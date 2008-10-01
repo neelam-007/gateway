@@ -3,25 +3,26 @@
  */
 package com.l7tech.gateway.common.security.rbac;
 
-import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.gateway.common.alert.AlertEvent;
 import com.l7tech.gateway.common.alert.Notification;
 import com.l7tech.gateway.common.audit.AdminAuditRecord;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
+import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.cluster.ServiceUsage;
+import com.l7tech.gateway.common.emstrust.TrustedEms;
+import com.l7tech.gateway.common.emstrust.TrustedEmsUser;
 import com.l7tech.gateway.common.log.SinkConfiguration;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyAlias;
+import com.l7tech.gateway.common.logging.SSGLogRecord;
+import com.l7tech.gateway.common.schema.SchemaEntry;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
-import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.service.*;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.gateway.common.schema.SchemaEntry;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
@@ -29,10 +30,11 @@ import com.l7tech.identity.mapping.AttributeConfig;
 import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.identity.mapping.SecurityTokenMapping;
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.folder.Folder;
 import static com.l7tech.objectmodel.EntityType.UNDEFINED;
-import com.l7tech.gateway.common.service.*;
-import com.l7tech.gateway.common.logging.SSGLogRecord;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyAlias;
+import com.l7tech.security.cert.TrustedCert;
 
 import java.util.Comparator;
 
@@ -84,6 +86,9 @@ public enum EntityType {
     LOG_SINK("Log Sink", SinkConfiguration.class, UNDEFINED, true),
 
     SERVICE_TEMPLATE("Service Template", ServiceTemplate.class, UNDEFINED, true),
+
+    TRUSTED_EMS("Trusted EMS", TrustedEms.class, UNDEFINED, true),
+    TRUSTED_EMS_USER("Trusted EMS User", TrustedEmsUser.class, UNDEFINED, true),
     ;
 
     private final String name;

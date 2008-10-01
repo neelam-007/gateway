@@ -202,7 +202,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
     private byte[] readCSRFromRequest(HttpServletRequest request) throws IOException {
         // csr request might be based64 or not, we need to see what format we are getting
-        byte[] contents = IOUtils.slurpStreamLocalBuffer(request.getInputStream());
+        byte[] contents = IOUtils.slurpStream(request.getInputStream());
         try {
             return CertUtils.csrPemToBinary(contents);
         } catch (IOException e) {

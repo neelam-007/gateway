@@ -34,6 +34,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
     private static final Object NO_VALUE = new Object();
     private static final Pattern ucfirst = Pattern.compile("(\\b[a-z])");
     private static final Pattern badlocalnamechars = Pattern.compile("[^a-zA-Z0-9_]"); // very, very conservative.. us-ascii only!
+    private static final Pattern camelSplitter = Pattern.compile("(?<=[a-z])(?=[A-Z])");
 
     /**
      * Convert a String like "foo b8r blatz_foo 99" into title caps, like "Foo B8r Blatz_foo 99".
@@ -224,7 +225,7 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         // Default finder for shortName.  This looks at the asertion class name, and changes (ie) FooBarAssertion into "Foo Bar".
         put(SHORT_NAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
-                return cache(meta, key, Pattern.compile("(?<=[a-z])(?=[A-Z])").matcher((CharSequence)meta.get(BASE_NAME)).replaceAll(" "));
+                return cache(meta, key, camelSplitter.matcher((CharSequence)meta.get(BASE_NAME)).replaceAll(" "));
             }
         });
 

@@ -15,50 +15,33 @@ import java.util.zip.GZIPOutputStream;
 public class IOUtils {
     /**
      * Slurp at most maxLength bytes from stream into a byte array and return an array of the appropriate size.
-     * This requires reading into a new byte array of size maxLength, and then copying to a new array with the
-     * exact resulting size.
-     * If you don't need the the returned array to be the same size as the total amount of data read,
-     * you can avoid a copy by supplying your own array to the alternate call
-     * {@link #slurpStream(java.io.InputStream, byte[])}.
-     * <p/>
-     * If the stream contains more than maxLength bytes of data, additional unread information may be left in
-     * the stream, and
-     * the amount returned will be silently truncated to maxLength.  To detect if this might
-     * have been the case, check if the returned amount exactly equals maxLength.  (Unfortunately
-     * there is no way to tell this situation apart from the non-lossy outcome of the stream containing exactly
-     * maxLength bytes.)
+     * The slurping will fail with an IOException if there are more than maxLength bytes remaining in the stream.
      *
      * @param stream  the stream to read.  Must not be null.
      * @param maxLength  the maximum number of bytes you are willing to recieve
-     * @return the newly read array, sized to the amount read or maxLength if the data may have been truncated.
-     *         never null.
-     * @throws java.io.IOException on IOException
+     * @return the newly read array, sized to the amount read.  Never larger than maxLength bytes.
+     * @throws java.io.IOException on IOException; or, if there were more than maxLength bytes remaining in the stream.
      */
-    public static byte[] slurpStream( InputStream stream, int maxLength) throws IOException {
-        byte[] buffer = new byte[maxLength];
-        int got = slurpStream(stream, buffer);
-        byte[] ret = new byte[got];
-        System.arraycopy(buffer, 0, ret, 0, got);
-        return ret;
-    }
-
-    /**
-     * This method is now a synonym for {@link #slurpStream(java.io.InputStream)}, now that that method uses BufferPool.
-     *
-     * @param stream  the stream to read.  Must not be null.
-     * @return the newly read array, sized to the amount read.  never null.
-     * @throws java.io.IOException if there was a problem reading the stream
-     * @see #slurpStream(java.io.InputStream)
-     */
-    public static byte[] slurpStreamLocalBuffer(InputStream stream) throws IOException {
-        return slurpStream(stream);
+    public static byte[] slurpStream(InputStream stream, int maxLength) throws IOException {
+        if (maxLength < 0 || maxLength > Integer.MAX_VALUE - 2) throw new IllegalArgumentException("Invalid length limit");
+        byte[] buffer = BufferPool.getBuffer(maxLength + 1);
+        try {
+            int got = slurpStream(stream, buffer);
+            if (got > maxLength)
+                throw new IOException("Stream size limit exceeded: " + maxLength + " bytes");
+            byte[] ret = new byte[got];
+            System.arraycopy(buffer, 0, ret, 0, got);
+            return ret;
+        } finally {
+            BufferPool.returnBuffer(buffer);
+        }
     }
 
     /**
      * Slurp a stream into a byte array without doing any copying, and return the number of bytes that
      * were read from stream.  The stream will be read until EOF or until the maximum specified number of bytes have
      * been read.  If you would like the array created for you with the exact size required, and don't mind
-     * an extra array copy being involved, use the other form of slurpStream().
+     * an extra array copy being involved, use {@link #slurpStream(java.io.InputStream, int)}.
      *
      * @param stream the stream to read
      * @param bb the array of bytes in which to read it
@@ -197,11 +180,12 @@ public class IOUtils {
     /**
      * Compare two InputStreams for an exact match.  This method returns true if and only if both InputStreams
      * produce exactly the same bytes when read from the current position through EOF, and that both reach EOF
-     * at the same time.  If so requested, each stream can be closed after reading.  Otherwise, if the comparison
-     * succeeds, both streams are left positioned at EOF; if the comparison fails due to a mismatched byte,
-     * both streams will be positioned somewhere after the mismatch; and, if the comparison fails due to one of the
+     * at the same time.  If so requested, either or both streams can be closed before this method returns.
+     * Otherwise, if the comparison
+     * succeeds, unclosed streams are left positioned at EOF; if the comparison fails due to a mismatched byte,
+     * unclosed streams will be positioned somewhere after the mismatch; and, if the comparison fails due to one of the
      * streams reaching EOF early, the other stream will be left positioned somewhere after its counterpart
-     * reached EOF.  The states of both streams is undefined if IOException is thrown.
+     * reached EOF.  The state of both streams is undefined if IOException is thrown.
      *
      * @param left          one of the InputStreams to compare
      * @param closeLeft     if true, left will be closed when the comparison finishes
@@ -234,13 +218,13 @@ public class IOUtils {
                 }
             }
 
-            if (closeLeft) left.close();
-            if (closeRight) right.close();
-
             return match;
         } finally {
             BufferPool.returnBuffer(lb);
             BufferPool.returnBuffer(rb);
+
+            if (closeLeft) ResourceUtils.closeQuietly(left);
+            if (closeRight) ResourceUtils.closeQuietly(right);
         }
     }
 

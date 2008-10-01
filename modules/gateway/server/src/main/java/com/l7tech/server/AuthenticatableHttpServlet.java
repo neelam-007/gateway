@@ -79,10 +79,17 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         wspReader = (WspReader)getBean("wspReader");
     }
 
-    private Object getBean(String name) throws ServletException {
+    protected Object getBean(String name) throws ServletException {
+        return getBean(name, null);
+    }
+
+    protected <T> T getBean(String name, Class<T> clazz) throws ServletException {
         Object bean = applicationContext.getBean(name);
-        if (bean == null) throw new ServletException("Configuration error; could not get " + name);
-        return bean;
+        if (bean == null)
+            throw new ServletException("Configuration error; could not get " + name);
+        if (clazz != null && !clazz.isAssignableFrom(bean.getClass()))
+            throw new ServletException("Configuration error; bean \'" + name + "\' was unexpected type " + bean.getClass());
+        return (T) bean;
     }
 
     /**

@@ -6,6 +6,8 @@
 
 package com.l7tech.common.io;
 
+import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.HexUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -14,9 +16,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.logging.Logger;
-
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ArrayUtils;
 
 /**
  * Test for {@link HexUtils} facilities.
@@ -116,10 +115,14 @@ public class HexUtilsTest extends TestCase {
             assertTrue(new String(got).equals(teststring));
         }
 
-        {   // Test size-copied read with too-small cutoff size  (truncated)
+        {   // Test size-copied read with too-small cutoff size  (throws)
             ByteArrayInputStream bais = new ByteArrayInputStream(teststring.getBytes());
-            byte[] got = IOUtils.slurpStream(bais, 10);
-            assertTrue(new String(got).equals(teststring.substring(0, 10)));
+            try {
+                byte[] got = IOUtils.slurpStream(bais, 10);
+                fail("expected exception not thrown");
+            } catch (IOException e) {
+                // Ok
+            }
         }
 
         {

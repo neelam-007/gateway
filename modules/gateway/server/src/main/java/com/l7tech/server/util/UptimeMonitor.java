@@ -158,7 +158,7 @@ public class UptimeMonitor {
             got = new BufferedInputStream(up.getInputStream());
             if (Thread.currentThread().isInterrupted())
                 throw new InterruptedException("Interrupted during exec.");
-            byte[] buff = IOUtils.slurpStreamLocalBuffer(got);
+            byte[] buff = IOUtils.slurpStream(got);
             String uptimeOutput = new String(buff);
             UptimeMetrics snapshot = new UptimeMetrics(uptimeOutput, ServerConfig.getInstance().getServerBootTime() );
             up.waitFor();

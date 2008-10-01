@@ -167,7 +167,7 @@ public class LdapConfigTemplateManager {
         InputStream is = null;
         try {
             is = templateUrl.openStream();
-            byte[] data = IOUtils.slurpStreamLocalBuffer(is);
+            byte[] data = IOUtils.slurpStream(is);
             String properties = new String(data);
 
             LdapIdentityProviderConfig template = new LdapIdentityProviderConfig();

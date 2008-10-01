@@ -162,6 +162,10 @@
 
                 <!-- Policy Assertion Related Entities -->
                 <value>com.l7tech.server.sla.CounterIDRecord</value>
+
+                <!-- EMS Support -->
+                <value>com.l7tech.gateway.common.emstrust.TrustedEms</value>
+                <value>com.l7tech.gateway.common.emstrust.TrustedEmsUser</value>
             </list>
         </property>
         <property name="dataSource" ref="switchedDataSource"/>

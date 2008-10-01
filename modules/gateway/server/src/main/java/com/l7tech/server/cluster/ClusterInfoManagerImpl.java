@@ -357,7 +357,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
             try {
                 up = Runtime.getRuntime().exec("/sbin/ifconfig eth0");
                 got = new BufferedInputStream(up.getInputStream());
-                byte[] buff = IOUtils.slurpStreamLocalBuffer(got);
+                byte[] buff = IOUtils.slurpStream(got);
                 ifconfigOutput = new String(buff);
                 up.waitFor();
             } finally {

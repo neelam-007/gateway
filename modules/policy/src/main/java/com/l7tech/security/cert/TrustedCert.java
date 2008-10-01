@@ -69,7 +69,10 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
         SAML_ISSUER("Sign SAML"),
 
         /** Is this cert trusted as a SAML attesting entity? This applies to sender-vouches only. */
-        SAML_ATTESTING_ENTITY("SAML Attesting Entity");
+        SAML_ATTESTING_ENTITY("SAML Attesting Entity"),
+
+        /** Is this cert trusted to vouch for EMS users in incoming admin requests from the EMS? */
+        TRUSTED_EMS("Enterprise Management Server");
 
         private final String usageDescription;
 
@@ -362,8 +365,6 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
         result = 31 * result + (trustedFor != null ? trustedFor.hashCode() : 0);
         result = 31 * result + (verifyHostname ? 1 : 0);
         result = 31 * result + (trustAnchor ? 1 : 0);
-        result = 31 * result + (revocationCheckPolicyType != null ? revocationCheckPolicyType.hashCode() : 0);
-        result = 31 * result + (revocationCheckPolicyOid != null ? revocationCheckPolicyOid.hashCode() : 0);
         return result;
     }
 

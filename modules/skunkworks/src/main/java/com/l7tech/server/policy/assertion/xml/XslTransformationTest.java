@@ -276,7 +276,7 @@ public class XslTransformationTest extends TestCase {
     }
 
     public void testStuff() throws Exception {
-        byte[] bytes = IOUtils.slurpStreamLocalBuffer(new URL("http://locutus/reuters/response5.xml").openStream());
+        byte[] bytes = IOUtils.slurpStream(new URL("http://locutus/reuters/response5.xml").openStream());
         char[] chars = new String(bytes, "UTF-8").toCharArray();
         for (int i = 0; i < chars.length; i++) {
             char c = chars[i];

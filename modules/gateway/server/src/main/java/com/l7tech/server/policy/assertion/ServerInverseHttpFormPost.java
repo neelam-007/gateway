@@ -58,7 +58,7 @@ public class ServerInverseHttpFormPost extends AbstractServerAssertion<InverseHt
                     PartInfo partInfo = reqMime.getPart(i);
                     ContentTypeHeader ctype = partInfo.getContentType();
                     InputStream partStream = partInfo.getInputStream(false);
-                    byte[] partBytes = IOUtils.slurpStreamLocalBuffer(partStream);
+                    byte[] partBytes = IOUtils.slurpStream(partStream);
 
                     baos.write(fieldName.getBytes(ENCODING));
                     baos.write("=".getBytes());
