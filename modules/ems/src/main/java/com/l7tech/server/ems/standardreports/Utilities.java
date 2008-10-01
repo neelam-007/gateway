@@ -62,6 +62,26 @@ public class Utilities {
     }
 
     /**
+     * Get the resolution to use in queries. Used in a summary report
+     * If the difference between the startTimeMilli and endTimeMilli > hourRetentionPeriod * num milli seconds in a day,
+     * then the daily bin resolution is used, otherwise hourly is used.
+     * @param startTimeMilli start of time period, in milliseconds, since epoch
+     * @param endTimeMilli end of time period, in milliseconds, since epoch
+     * @param hourRetentionPeriod SSG's current hourly bin max retention policy value
+     * @return
+     */
+    public static Integer getResolutionFromTimePeriod(Integer hourRetentionPeriod, Long startTimeMilli, Long endTimeMilli){
+
+        long duration = endTimeMilli - startTimeMilli;
+        long dayMillis = getMilliSecondsForTimeUnit(Utilities.DAY);
+        long maxHourRenentionMilli = dayMillis * hourRetentionPeriod;
+        if(duration > maxHourRenentionMilli){
+            return new Integer(2);
+        }else{
+            return new Integer(1);
+        }
+    }
+    /**
      * Get the date string representation of a time value in milliseconds
      * @param timeMilliSeconds the number of milliseconds since epoch
      * @return a date in the format yyyy-MM-dd HH:mm

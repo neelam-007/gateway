@@ -17,15 +17,15 @@ import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperExportManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrintManager;
+import net.sf.jasperreports.view.JasperViewer;
 
 
 public class ReportApp
 {
 	private static final String TASK_FILL = "fill";
-	private static final String TASK_PRINT = "print";
 	private static final String TASK_PDF = "pdf";
 	private static final String TASK_HTML = "html";
-	private static final String TASK_RUN = "run";
+	private static final String TASK_VIEW = "view";
 
     //The following params must be supplied when filling the report
     private static final String REPORT_CONNECTION= "REPORT_CONNECTION";
@@ -37,8 +37,8 @@ public class ReportApp
 
     //Optional
     private static final String SERVICE_NAME_TO_ID_MAP = "SERVICE_NAME_TO_ID_MAP";
-    private static final String SERVICE_ID_TO_NAME = "SERVICE_ID_TO_NAME";
-    private static final String SERVICE_ID_TO_NAME_OID = "SERVICE_ID_TO_NAME_OID";
+    public static final String SERVICE_ID_TO_NAME = "SERVICE_ID_TO_NAME";
+    public static final String SERVICE_ID_TO_NAME_OID = "SERVICE_ID_TO_NAME_OID";
 
     //one of each set must be supplied - relative or absolute time
     private static final String IS_RELATIVE = "IS_RELATIVE";
@@ -54,10 +54,18 @@ public class ReportApp
     private static final String DB_USER = "DB_USER";
     private static final String DB_PASSWORD = "DB_PASSWORD";
 
+    private static final String psIntervalReport = "PS_IntervalMasterReport_NoMapping";
+    private static final String psSummaryReport = "PS_Summary_NoMapping";
+
+    //Non report params, just used in ReportApp
+    private static final String IS_SUMMARY = "IS_SUMMARY";
+    private static final String HOURLY_MAX_RETENTION_NUM_DAYS = "HOURLY_MAX_RETENTION_NUM_DAYS";
+    private static final Properties prop = new Properties();
+
     /**
 	 *
 	 */
-	public static void main(String[] args)
+	public static void main(String[] args) throws Exception
 	{
 		if(args.length == 0)
 		{
@@ -66,35 +74,45 @@ public class ReportApp
 		}
 
 		String taskName = args[0];
-		String fileName = args[1];
 
-		try
+        FileInputStream fileInputStream = new FileInputStream("report.properties");
+        prop.load(fileInputStream);
+
+        try
 		{
 			long start = System.currentTimeMillis();
-			if (TASK_FILL.equals(taskName))
+            boolean isSummary = Boolean.parseBoolean(prop.getProperty(IS_SUMMARY).toString());
+            if (TASK_FILL.equals(taskName))
 			{
-                fill(fileName, start);
-			}
-			else if (TASK_PRINT.equals(taskName))
-			{
-				JasperPrintManager.printReport(fileName, true);
-				System.err.println("Printing time : " + (System.currentTimeMillis() - start));
+                fill(start);
 			}
 			else if (TASK_PDF.equals(taskName))
 			{
-				JasperExportManager.exportReportToPdfFile(fileName);
+                if(isSummary){
+                    JasperExportManager.exportReportToPdfFile(psSummaryReport+".jrprint");
+                }else{
+                    JasperExportManager.exportReportToPdfFile(psIntervalReport+".jrprint");
+                }
+
 				System.err.println("PDF creation time : " + (System.currentTimeMillis() - start));
 			}
 			else if (TASK_HTML.equals(taskName))
 			{
-				JasperExportManager.exportReportToHtmlFile(fileName);
+                if(isSummary){
+                    JasperExportManager.exportReportToHtmlFile(psSummaryReport+".jrprint");
+                }else{
+                    JasperExportManager.exportReportToHtmlFile(psIntervalReport+".jrprint");
+                }
 				System.err.println("HTML creation time : " + (System.currentTimeMillis() - start));
 			}
-            else if (TASK_RUN.equals(taskName))
+            else if (TASK_VIEW.equals(taskName))
             {
-                fill(fileName, start);
-                JasperExportManager.exportReportToPdfFile(fileName);
-                System.err.println("PDF creation time : " + (System.currentTimeMillis() - start));
+                if(isSummary){
+                    JasperViewer.viewReport(psSummaryReport+".jrprint", false);
+                }else{
+                    JasperViewer.viewReport(psIntervalReport+".jrprint", false);
+                }
+                System.err.println("View time : " + (System.currentTimeMillis() - start));
             }
             else
 			{
@@ -111,10 +129,7 @@ public class ReportApp
 		}
 	}
 
-    private static void fill(String fileName, long start) throws Exception{
-        FileInputStream fileInputStream = new FileInputStream("report.properties");
-        Properties prop = new Properties();
-        prop.load(fileInputStream);
+    private static void fill(long start) throws Exception{
 
         //Preparing parameters
         Map parameters = new HashMap();
@@ -151,7 +166,16 @@ public class ReportApp
         parameters.put(ABSOLUTE_START_TIME, prop.getProperty(ABSOLUTE_START_TIME));
         parameters.put(ABSOLUTE_END_TIME, prop.getProperty(ABSOLUTE_END_TIME));
 
-        JasperFillManager.fillReportToFile(fileName, parameters, getConnection(prop));
+        parameters.put(HOURLY_MAX_RETENTION_NUM_DAYS, new Integer(prop.getProperty(HOURLY_MAX_RETENTION_NUM_DAYS)));
+
+        boolean isSummary = Boolean.parseBoolean(prop.getProperty(IS_SUMMARY).toString());
+        if(isSummary){
+            JasperFillManager.fillReportToFile(psSummaryReport+".jasper", parameters, getConnection(prop));
+        }else{
+            JasperFillManager.fillReportToFile(psIntervalReport+".jasper", parameters, getConnection(prop));            
+        }
+
+
         System.err.println("Filling time : " + (System.currentTimeMillis() - start));
     }
 
@@ -162,7 +186,7 @@ public class ReportApp
 	{
 		System.out.println( "ReportApp usage:" );
 		System.out.println( "\tjava SubreportApp task file" );
-		System.out.println( "\tTasks : fill | print | pdf | html | run" );
+		System.out.println( "\tTasks : fill | print | pdf | html" );
 	}
 
 

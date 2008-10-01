@@ -45,9 +45,9 @@ FROM
      published_service p
 WHERE
 sm.published_service_oid = p.objectid  
-and p.objectid = $P{SERVICE_ID}
-and sm.period_start >= $P{INTERVAL_START} and sm.period_start < $P{INTERVAL_END}
-and sm.resolution = $P{RESOLUTION}
+AND p.objectid = $P{SERVICE_ID}
+AND sm.period_start >= $P{INTERVAL_START} AND sm.period_start < $P{INTERVAL_END}
+AND sm.resolution = $P{RESOLUTION}
 GROUP BY
 p.objectid]]></queryString>
 

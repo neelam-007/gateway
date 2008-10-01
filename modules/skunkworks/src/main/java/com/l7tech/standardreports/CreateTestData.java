@@ -15,14 +15,18 @@ import com.l7tech.server.ems.standardreports.Utilities;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.util.Calendar;
+import java.util.Properties;
+import java.util.Map;
+import java.util.HashMap;
 
 public class CreateTestData {
 
     private final Calendar cal;
     private int currentDay;
     private int timeUnitChanges = 0;
-    private int maxUnitChanges = 31;
+    private final int maxUnitChanges;
     private String nodeId;
     private final int hourlyResolution = 1;
     private final int dailyResolution = 2;
@@ -179,8 +183,23 @@ public class CreateTestData {
 
     public static void main(String [] args) throws Exception{
 //        String [] services = new String[]{"294912", "1933312"};
+        FileInputStream fileInputStream = new FileInputStream("report.properties");
+        Properties prop = new Properties();
+        prop.load(fileInputStream);
 
-        for(String s: args){
+        Map<String, String> nameToId = new HashMap<String,String>();
+        String serviceName = prop.getProperty(ReportApp.SERVICE_ID_TO_NAME+"_1");
+        String serviceOid = prop.getProperty(ReportApp.SERVICE_ID_TO_NAME_OID+"_1");
+        int index = 2;
+
+        while(serviceName != null && serviceOid != null){
+            nameToId.put(serviceName, serviceOid);
+            serviceName = prop.getProperty(ReportApp.SERVICE_ID_TO_NAME+"_"+index);
+            serviceOid = prop.getProperty(ReportApp.SERVICE_ID_TO_NAME_OID+"_"+index);
+            index++;
+        }
+
+        for(String s: nameToId.values()){
             new CreateTestData("240869cda32562eb0287696033b4acca", Utilities.HOUR).createData(s);
             new CreateTestData("240869cda32562eb0287696033b4acca", Utilities.DAY).createData(s);
         }
