@@ -412,8 +412,8 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             //noinspection IOResourceOpenedButNotSafelyClosed
             p = new PrintStream(b, true, "UTF-8");
             t.printStackTrace(p);
-            p.flush();
-            appendMessage(new SavedTextMessage(SERVER_ERROR, b.toString("UTF-8")));
+            p.flush();            
+            appendMessage(new SavedTextMessage(SERVER_ERROR, t.getMessage()));
         } catch (UnsupportedEncodingException e) {
             log.log(Level.SEVERE, e.getMessage(), e);
             appendMessage(new SavedTextMessage(SERVER_ERROR, t.getMessage()));
