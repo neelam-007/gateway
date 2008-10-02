@@ -550,13 +550,13 @@ public class ServiceMetricsPanel extends JPanel {
                 latestFromTimeLabel.setText(TIME_FORMAT.format(new Date(latestBin.getPeriodStart())));
                 latestToTimeLabel.setText(TIME_FORMAT.format(new Date(latestBin.getPeriodEnd())));
 
-                latestFrontMaxText.setText(Integer.toString(latestBin.getMaxFrontendResponseTime()));
+                latestFrontMaxText.setText(Integer.toString(latestBin.getMaxFrontendResponseTime()==null?0:latestBin.getMaxFrontendResponseTime()));
                 latestFrontAvgText.setText(Long.toString(Math.round(latestBin.getAverageFrontendResponseTime())));
-                latestFrontMinText.setText(Integer.toString(latestBin.getMinFrontendResponseTime()));
+                latestFrontMinText.setText(Integer.toString(latestBin.getMinFrontendResponseTime()==null?0:latestBin.getMinFrontendResponseTime()));
 
-                latestBackMaxText.setText(Integer.toString(latestBin.getMaxBackendResponseTime()));
+                latestBackMaxText.setText(Integer.toString(latestBin.getMaxBackendResponseTime()==null?0:latestBin.getMaxBackendResponseTime()));
                 latestBackAvgText.setText(Long.toString(Math.round(latestBin.getAverageBackendResponseTime())));
-                latestBackMinText.setText(Integer.toString(latestBin.getMinBackendResponseTime()));
+                latestBackMinText.setText(Integer.toString(latestBin.getMinBackendResponseTime()==null?0:latestBin.getMinBackendResponseTime()));
 
                 latestNumRoutingFailureText.setText(Integer.toString(latestBin.getNumRoutingFailure()));
                 latestNumPolicyViolationText.setText(Integer.toString(latestBin.getNumPolicyViolation()));
@@ -639,12 +639,12 @@ public class ServiceMetricsPanel extends JPanel {
         } else {
             selectionFromTimeLabel.setText(TIME_FORMAT.format(new Date(bin.getPeriodStart())));
             selectionToTimeLabel.setText(TIME_FORMAT.format(new Date(bin.getPeriodEnd())));
-            selectionFrontMaxText.setText(Integer.toString(bin.getMaxFrontendResponseTime()));
+            selectionFrontMaxText.setText(Integer.toString(bin.getMaxFrontendResponseTime()==null?0:bin.getMaxFrontendResponseTime()));
             selectionFrontAvgText.setText(Long.toString(Math.round(bin.getAverageFrontendResponseTime())));
-            selectionFrontMinText.setText(Integer.toString(bin.getMinFrontendResponseTime()));
-            selectionBackMaxText.setText(Integer.toString(bin.getMaxBackendResponseTime()));
+            selectionFrontMinText.setText(Integer.toString(bin.getMinFrontendResponseTime()==null?0:bin.getMinFrontendResponseTime()));
+            selectionBackMaxText.setText(Integer.toString(bin.getMaxBackendResponseTime()==null?0:bin.getMaxBackendResponseTime()));
             selectionBackAvgText.setText(Long.toString(Math.round(bin.getAverageBackendResponseTime())));
-            selectionBackMinText.setText(Integer.toString(bin.getMinBackendResponseTime()));
+            selectionBackMinText.setText(Integer.toString(bin.getMinBackendResponseTime()==null?0:bin.getMinBackendResponseTime()));
             selectionNumRoutingFailureText.setText(Integer.toString(bin.getNumRoutingFailure()));
             selectionNumPolicyViolationText.setText(Integer.toString(bin.getNumPolicyViolation()));
             selectionNumSuccessText.setText(Integer.toString(bin.getNumSuccess()));

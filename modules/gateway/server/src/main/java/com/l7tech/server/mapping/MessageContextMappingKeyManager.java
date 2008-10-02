@@ -12,5 +12,5 @@ import com.l7tech.objectmodel.EntityManager;
  */
 public interface MessageContextMappingKeyManager extends EntityManager<MessageContextMappingKeys, EntityHeader> {
     MessageContextMappingKeys getMessageContextMappingKeys(long oid) throws FindException;
-    MessageContextMappingKeys getMessageContextMappingKeys(final String guid) throws FindException;
+    MessageContextMappingKeys getMessageContextMappingKeys(MessageContextMappingKeys keys) throws FindException;
 }

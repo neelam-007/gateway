@@ -1,6 +1,5 @@
 package com.l7tech.server.service;
 
-import EDU.oswego.cs.dl.util.concurrent.BoundedPriorityQueue;
 import com.l7tech.gateway.common.security.rbac.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.server.util.JaasUtils;
@@ -18,14 +17,18 @@ import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceState;
+import com.l7tech.gateway.common.service.MetricsBinDetail;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
-import com.l7tech.util.Functions;
+import com.l7tech.util.TimeUnit;
+import com.l7tech.util.ResourceUtils;
+
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
+import org.hibernate.engine.SessionImplementor;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.DisposableBean;
@@ -38,6 +41,7 @@ import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallback;
@@ -49,8 +53,15 @@ import java.beans.PropertyChangeListener;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.Types;
+import java.sql.SQLException;
 
 /**
  * Manages the processing and accumulation of service metrics for one SSG node.
@@ -63,9 +74,8 @@ import java.util.logging.Logger;
 public class ServiceMetricsManagerImpl extends HibernateDaoSupport
         implements InitializingBean, DisposableBean, PropertyChangeListener, ApplicationListener, ServiceMetricsManager {
 
-    private static final Logger logger = Logger.getLogger(ServiceMetricsManagerImpl.class.getName());
-
     //- PUBLIC
+
     public ServiceMetricsManagerImpl(String clusterNodeId, ManagedTimer timer) {
         _clusterNodeId = clusterNodeId;
 
@@ -97,7 +107,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
      * @return whether collection of service metrics is currently enabled
      */
     public boolean isEnabled() {
-        return _enabled;
+        return _enabled.get();
     }
 
     /**
@@ -106,27 +116,25 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
      * @param serviceOid    OID of published service
      * @return null if service metrics processing is disabled
      */
-    public ServiceMetrics getServiceMetrics(final long serviceOid, final List<MessageContextMapping> mappings) {
-        if (_enabled) {
-            ServiceMetrics serviceMetrics;
-            String clusterNodeId = _clusterNodeId;
-            int fineBinInterval = _fineBinInterval;
-            synchronized (_serviceMetricsMapLock) {
-                MetricsKey metricsKey = new MetricsKey(serviceOid, new TreeSet<MessageContextMapping>(mappings));
-                if (! _serviceMetricsMap.containsKey(metricsKey)) {
-                    serviceMetrics = new ServiceMetrics(serviceOid, clusterNodeId, fineBinInterval, _flusherQueue, new Functions.Nullary<Long>() {
-                        public Long call() {
-                            Long mapping_values_oid = null;
-                            if (_addMappingsIntoServiceMetrics) {
-                                mapping_values_oid = saveMessageContextMapping(mappings);
-                            }
-                            return mapping_values_oid;
-                        }
-                    });
+    public void trackServiceMetrics(final long serviceOid) {
+        getServiceMetrics( serviceOid );
+    }
 
-                    _serviceMetricsMap.put(metricsKey, serviceMetrics);
+    /**
+     * Gets the service metrics for a given published service.
+     *
+     * @param serviceOid    OID of published service
+     * @return null if service metrics processing is disabled
+     */
+    ServiceMetrics getServiceMetrics(final long serviceOid) {
+        if (_enabled.get()) {
+            ServiceMetrics serviceMetrics;
+            synchronized (_serviceMetricsMapLock) {
+                if (! _serviceMetricsMap.containsKey(serviceOid)) {
+                    serviceMetrics = new ServiceMetrics(serviceOid);
+                    _serviceMetricsMap.put(serviceOid, serviceMetrics);
                 } else {
-                    serviceMetrics = _serviceMetricsMap.get(metricsKey);
+                    serviceMetrics = _serviceMetricsMap.get(serviceOid);
                 }
             }
             return serviceMetrics;
@@ -134,6 +142,18 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
             return null;
         }
     }
+
+    public void addRequest(long serviceOid, String operation, User authorizedUser, List<MessageContextMapping> mappings, boolean authorized, boolean completed, int frontTime, int backTime) {
+        ServiceMetrics metrics = getServiceMetrics( serviceOid );
+        if ( metrics != null ) {
+            if (_addMappingsIntoServiceMetrics.get()) {
+                metrics.addRequest(operation, authorizedUser, mappings, authorized, completed, frontTime, backTime);
+            } else {
+                metrics.addRequest(null, null, null, authorized, completed, frontTime, backTime);
+            }
+        }
+    }
+
 
     public int getFineInterval() {
         return _fineBinInterval;
@@ -248,11 +268,11 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
             return bins;
         } catch (DataAccessException e) {
             throw new FindException("Cannot find MetricsBins in database. " +
-                                    "(nodeId=" + nodeId +
+                                    "(nodeId=" + (nodeId==null ? "<ANY>" : nodeId) +
                                     ", serviceOid=" + filteredOids +
-                                    ", resolution=" + resolution +
-                                    ", minPeriodStart=" + new Date(minPeriodStart) +
-                                    ", maxPeriodStart=" + new Date(maxPeriodStart) + ")",
+                                    ", resolution=" + (resolution==null ? "<ANY>" : resolution) +
+                                    ", minPeriodStart=" + (minPeriodStart==null ? "<ANY>" : new Date(minPeriodStart)) +
+                                    ", maxPeriodStart=" + (maxPeriodStart==null ? "<ANY>" : new Date(maxPeriodStart)) + ")",
                                     e);
         }
     }
@@ -353,9 +373,9 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
 
         if (ServerConfig.PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS.equals(event.getPropertyName())) {
             if (Boolean.valueOf((String)event.getNewValue())) {
-                _addMappingsIntoServiceMetrics = true;
+                _addMappingsIntoServiceMetrics.set(true);
             } else {
-                _addMappingsIntoServiceMetrics = false;
+                _addMappingsIntoServiceMetrics.set(false);
                 _logger.info("Adding message context mappings to Service Metrics is currently disabled.");
             }
         }
@@ -375,19 +395,101 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
         }
 
         if (Boolean.valueOf(ServerConfig.getInstance().getProperty(ServerConfig.PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS))) {
-            _addMappingsIntoServiceMetrics = true;
+            _addMappingsIntoServiceMetrics.set(true);
         } else {
-            _addMappingsIntoServiceMetrics = false;
+            _addMappingsIntoServiceMetrics.set(false);
             _logger.info("Adding message context mappings to Service Metrics is currently disabled.");
         }
     }
 
     //- PRIVATE
 
+    private static final Logger logger = Logger.getLogger(ServiceMetricsManagerImpl.class.getName());
+
     /** Name of cluster property that enables/disables service metrics collection. */
     private static final String CLUSTER_PROP_ENABLED = "serviceMetricsEnabled";
 
     private static final String HQL_DELETE = "DELETE FROM " + MetricsBin.class.getName() + " WHERE periodStart < ? AND resolution = ?";
+    private static final String HQL_DELETE_DETAILS = "DELETE FROM " + MetricsBinDetail.class.getName() + " WHERE metricsBinOid = ?";
+
+    private static final String SQL_INSERT_OR_UPDATE_BIN =
+        "INSERT INTO service_metrics\n" +
+        "    (objectid,nodeid,published_service_oid,resolution,period_start,interval_size,service_state,\n" +
+        "     start_time,end_time,attempted,authorized,completed,back_min,back_max,back_sum,front_min,front_max,front_sum)\n" +
+        "SELECT ?,?,?,?,?,?,?,\n" +
+        "    min(start_time),\n" +
+        "    max(end_time),\n" +
+        "    coalesce(sum(attempted),0),\n" +
+        "    coalesce(sum(authorized),0),\n" +
+        "    coalesce(sum(completed),0),\n" +
+        "    IF(min(coalesce(back_min, 100000000))=100000000,NULL,min(coalesce(back_min, 100000000))),\n" +
+        "    IF(max(coalesce(back_max, -1))=-1,NULL,max(coalesce(back_max, -1))),\n" +
+        "    coalesce(sum(back_sum),0),\n" +
+        "    IF(min(coalesce(front_min, 100000000))=100000000,NULL,min(coalesce(front_min, 100000000))),\n" +
+        "    IF(max(coalesce(front_max, -1))=-1,NULL,max(coalesce(front_max, -1)))," +
+        "    coalesce(sum(front_sum),0)\n" +
+        "FROM service_metrics WHERE\n" +
+        "    nodeid=? AND\n" +
+        "    published_service_oid=? AND\n" +
+        "    resolution=? AND\n" +
+        "    period_start>=?  AND\n" +
+        "    period_start+interval_size<=?\n" +
+        "GROUP BY nodeid,published_service_oid,resolution\n" +
+        "ON DUPLICATE KEY UPDATE\n" +
+        "    start_time=values(start_time),\n" +
+        "    end_time=values(end_time),\n" +
+        "    attempted=values(attempted),\n" +
+        "    authorized=values(authorized),\n" +
+        "    completed=values(completed),\n" +
+        "    back_min=values(back_min),\n" +
+        "    back_max=values(back_max),\n" +
+        "    back_sum=values(back_sum),\n" +
+        "    front_min=values(front_min),\n" +
+        "    front_max=values(front_max),\n" +
+        "    front_sum=values(front_sum);";
+
+    private static final String SQL_INSERT_OR_UPDATE_DETAILS =
+        "INSERT INTO service_metrics_details\n" +
+        "    (service_metrics_oid,mapping_values_oid,attempted,authorized,completed,back_min,back_max,back_sum,front_min,front_max,front_sum)\n" +
+        "SELECT\n" +
+        "    (\n" +
+        "        SELECT objectid FROM service_metrics WHERE\n" +
+        "        nodeid=? AND\n" +
+        "        published_service_oid=? AND\n" +
+        "        resolution=? AND\n" +
+        "        period_start=?\n" +
+        "    ) as id,\n" +
+        "    mapping_values_oid,\n" +
+        "    coalesce(sum(attempted),0),\n" +
+        "    coalesce(sum(authorized),0),\n" +
+        "    coalesce(sum(completed),0),\n" +
+        "    IF(min(coalesce(back_min, 100000000))=100000000,NULL,min(coalesce(back_min, 100000000))),\n" +
+        "    IF(max(coalesce(back_max, -1))=-1,NULL,max(coalesce(back_max, -1))),\n" +
+        "    coalesce(sum(back_sum),0),\n" +
+        "    IF(min(coalesce(front_min, 100000000))=100000000,NULL,min(coalesce(front_min, 100000000))),\n" +
+        "    IF(max(coalesce(front_max, -1))=-1,NULL,max(coalesce(front_max, -1))),\n" +
+        "    coalesce(sum(front_sum),0)\n" +
+        "FROM service_metrics_details WHERE service_metrics_oid IN\n" +
+        "(\n" +
+        "    SELECT objectid FROM service_metrics WHERE\n" +
+        "    nodeid=? AND\n" +
+        "    published_service_oid=? AND\n" +
+        "    resolution=? AND\n" +
+        "    period_start>=?  AND\n" +
+        "    period_start+interval_size<=?\n" +
+        ")\n" +
+        "GROUP BY id, mapping_values_oid\n" +
+        "ON DUPLICATE KEY UPDATE\n" +
+        "    attempted=values(attempted),\n" +
+        "    authorized=values(authorized),\n" +
+        "    completed=values(completed),\n" +
+        "    back_min=values(back_min),\n" +
+        "    back_max=values(back_max),\n" +
+        "    back_sum=values(back_sum),\n" +
+        "    front_min=values(front_min),\n" +
+        "    front_max=values(front_max),\n" +
+        "    front_sum=values(front_sum);";
+
     private static final int MINUTE = 60 * 1000;
     private static final int HOUR = 60 * MINUTE;
     private static final long DAY = 24 * HOUR;
@@ -420,7 +522,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
     private String _clusterNodeId;
 
     /** Whether statistics collecting is turned on. */
-    private boolean _enabled;
+    private final AtomicBoolean _enabled = new AtomicBoolean(false);
 
     /** For synchronizing calling {@link #enable()} and {@link #disable()}. */
     private final Object _enableLock = new Object();
@@ -446,9 +548,9 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
 
     private Flusher _flusher;
     private Thread _flusherThread;
-    private static final BoundedPriorityQueue _flusherQueue = new BoundedPriorityQueue(500);
+    private static final BlockingQueue<ServiceMetrics.MetricsCollectorSet> _flusherQueue = new ArrayBlockingQueue<ServiceMetrics.MetricsCollectorSet>(500);
 
-    private final Map<MetricsKey, ServiceMetrics> _serviceMetricsMap = new HashMap<MetricsKey, ServiceMetrics>();
+    private final Map<Long, ServiceMetrics> _serviceMetricsMap = new HashMap<Long, ServiceMetrics>();
     private final Object _serviceMetricsMapLock = new Object();
 
     private PlatformTransactionManager _transactionManager;
@@ -461,12 +563,12 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
 
     private MessageContextMappingManager messageContextMappingManager;
 
-    private boolean _addMappingsIntoServiceMetrics;
+    private AtomicBoolean _addMappingsIntoServiceMetrics = new AtomicBoolean(false);
 
     /** Turns on service metrics collection. */
     private void enable() {
         synchronized(_enableLock) {
-            if (_enabled) return;   // alreay enabled
+            if (_enabled.get()) return;   // alreay enabled
 
             _logger.info("Enabling service metrics collection.");
 
@@ -484,7 +586,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
             _logger.config("Scheduled first fine archive task for " + nextFineStart);
 
             // Sets hourly resolution timer to excecute every hour; starting at the next hourly period.
-            final Date nextHourlyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_HOURLY, 0, now));
+            final Date nextHourlyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_HOURLY, 0, now) + TimeUnit.MINUTES.toMillis(1));
             _hourlyArchiver = new HourlyTask();
             _timer.scheduleAtFixedRate(_hourlyArchiver, nextHourlyStart, HOUR);
             _logger.config("Scheduled first hourly archive task for " + nextHourlyStart);
@@ -492,7 +594,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
             // Sets daily resolution timer to execute at the next daily period start (= end of current daily period).
             // But can't just schedule at fixed rate of 24-hours interval because a
             // calender day varies, e.g., when switching Daylight Savings Time.
-            final Date nextDailyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, now));
+            final Date nextDailyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, now) + TimeUnit.MINUTES.toMillis(2));
             _dailyArchiver = new DailyTask();
             _timer.schedule(_dailyArchiver, nextDailyStart);
             _logger.config("Scheduled first daily archive task for " + nextDailyStart);
@@ -507,13 +609,8 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
                     Collection<ServiceHeader> serviceHeaders = _serviceManager.findAllHeaders();
                     for ( ServiceHeader service : serviceHeaders) {
                         final Long oid = service.getOid();
-                        ServiceMetrics serviceMetrics = new ServiceMetrics(service.getOid(), _clusterNodeId, _fineBinInterval, _flusherQueue, new Functions.Nullary<Long>() {
-                            public Long call() {
-                                return null;
-                            }
-                        });
-                        MetricsKey metricsKey = new MetricsKey(oid, new TreeSet<MessageContextMapping>());
-                         _serviceMetricsMap.put(metricsKey, serviceMetrics);
+                        ServiceMetrics serviceMetrics = new ServiceMetrics(service.getOid());
+                         _serviceMetricsMap.put(oid, serviceMetrics);
                         // There won't be any deleted services on startup
                         serviceStates.put(oid, service.isDisabled() ? ServiceState.DISABLED : ServiceState.ENABLED);
                     }
@@ -550,14 +647,14 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
             _timer.schedule(_dailyDeleter, HOUR, 24 * HOUR);
             _logger.config("Scheduled first deletion task for daily metric bins at " + new Date(System.currentTimeMillis() + HOUR));
 
-            _enabled = true;
+            _enabled.set(true);
         }
     }
 
     /** Turns off service metrics collection. */
     private void disable() {
         synchronized(_enableLock) {
-            if (!_enabled) return;  // already disabled
+            if (!_enabled.get()) return;  // already disabled
 
             _logger.info("Disabling service metrics collection.");
 
@@ -596,7 +693,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
                 _serviceMetricsMap.clear();
             }
 
-            _enabled = false;
+            _enabled.set(false);
         }
     }
 
@@ -714,7 +811,15 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
             int numArchived = 0;
             for (ServiceMetrics serviceMetrics : list) {
                 final ServiceState state = serviceStates.get(serviceMetrics.getServiceOid());
-                if (serviceMetrics.archiveFineBin(state)) {
+                ServiceMetrics.MetricsCollectorSet metricsSet = serviceMetrics.getMetricsCollectorSet(state);
+                if ( metricsSet != null ) {
+                    try {
+                        _flusherQueue.put( metricsSet );
+                    } catch (InterruptedException e) {
+                        _logger.log(Level.WARNING, "Interrupted waiting for queue", e);
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
                     ++ numArchived;
                 }
             }
@@ -726,14 +831,8 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
             // 2. to keep Dashboard moving chart advancing when no request is going through a service
             final long periodEnd = MetricsBin.periodStartFor(MetricsBin.RES_FINE, _fineBinInterval, System.currentTimeMillis());
             final long periodStart = periodEnd - _fineBinInterval;
-            final MetricsBin emptyBin = new MetricsBin(periodStart, _fineBinInterval, MetricsBin.RES_FINE, _clusterNodeId, -1L, new Functions.Nullary<Long>() {
-                            public Long call() {
-                                return null;
-                            }
-                        });
-            emptyBin.setEndTime(periodEnd);
             try {
-                _flusherQueue.put(emptyBin);
+                _flusherQueue.put( ServiceMetrics.getEmptyMetricsSet(periodStart, periodEnd) );
             } catch (InterruptedException e) {
                 _logger.log(Level.WARNING, "Interrupted waiting for queue", e);
                 Thread.currentThread().interrupt();
@@ -747,13 +846,16 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
      */
     private class HourlyTask extends ManagedTimerTask {
         protected void doRun() {
-            List<ServiceMetrics> list = new ArrayList<ServiceMetrics>();
+            Set<Long> list = new HashSet<Long>();
             synchronized(_serviceMetricsMapLock) {
-                list.addAll(_serviceMetricsMap.values());
+                list.addAll(_serviceMetricsMap.keySet());
             }
-            for (ServiceMetrics serviceMetrics : list) {
-                final ServiceState state = serviceStates.get(serviceMetrics.getServiceOid());
-                serviceMetrics.archiveHourlyBin(state);
+
+            // get start time for the last hourly period
+            long startTime = MetricsBin.periodStartFor( MetricsBin.RES_HOURLY, 0, System.currentTimeMillis() ) - TimeUnit.HOURS.toMillis(1);
+            for ( Long serviceOid : list ) {
+                final ServiceState state = serviceStates.get( serviceOid );
+                createHourlyBin( serviceOid, state, startTime );
             }
             if (_logger.isLoggable(Level.FINE))
                 _logger.fine("Hourly archiving task completed; archived " + list.size() + " hourly bins.");
@@ -766,13 +868,16 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
      */
     private class DailyTask extends ManagedTimerTask {
         protected void doRun() {
-            List<ServiceMetrics> list = new ArrayList<ServiceMetrics>();
+            Set<Long> list = new HashSet<Long>();
             synchronized(_serviceMetricsMapLock) {
-                list.addAll(_serviceMetricsMap.values());
+                list.addAll(_serviceMetricsMap.keySet());
             }
-            for (ServiceMetrics serviceMetrics : list) {
-                final ServiceState state = serviceStates.get(serviceMetrics.getServiceOid());
-                serviceMetrics.archiveDailyBin(state);
+
+            // get start time for the last daily period
+            long startTime = MetricsBin.periodStartFor( MetricsBin.RES_DAILY, 0, System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1) );
+            for ( Long serviceOid : list ) {
+                final ServiceState state = serviceStates.get( serviceOid );
+                createDailyBin( serviceOid, state, startTime );
             }
             if (_logger.isLoggable(Level.FINE))
                 _logger.fine("Daily archiving task completed; archived " + list.size() + " daily bins.");
@@ -783,6 +888,92 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
             _timer.schedule(new DailyTask(), nextTimerDate);
             if (_logger.isLoggable(Level.FINE))
                 _logger.fine("Scheduled next daily flush task for " + nextTimerDate);
+        }
+    }
+
+    private void createHourlyBin( final long serviceOid, final ServiceState serviceState, final long startTime ) {
+        createSummaryBin( serviceOid, serviceState, startTime, MetricsBin.RES_HOURLY, MetricsBin.RES_FINE );
+    }
+
+    private void createDailyBin( final long serviceOid, final ServiceState serviceState, final long startTime ) {
+        createSummaryBin( serviceOid, serviceState, startTime, MetricsBin.RES_DAILY, MetricsBin.RES_HOURLY );
+    }
+
+    private void createSummaryBin( final long serviceOid, final ServiceState serviceState, final long startTime, final int binResolution, final int summaryResolution ) {
+        try {
+            new TransactionTemplate(_transactionManager).execute(new TransactionCallback() {
+                public Object doInTransaction(final TransactionStatus status) {
+                    return getHibernateTemplate().execute(new HibernateCallback() {
+                        @SuppressWarnings({"deprecation"})
+                        public Object doInHibernate(final Session session) throws HibernateException {
+                            MetricsBin bin = new MetricsBin( startTime, _fineBinInterval, binResolution, _clusterNodeId, serviceOid );
+                            Long id = (Long) ((SessionImplementor)session).getEntityPersister(null, bin).getIdentifierGenerator().generate(((SessionImplementor)session), bin);
+
+                            Connection connection = null;
+                            PreparedStatement statement = null;
+                            try {
+                                connection = session.connection();
+                                statement = connection.prepareStatement(SQL_INSERT_OR_UPDATE_BIN);
+
+                                int i=0;
+                                // INSERT PARAMS
+                                statement.setLong( ++i, id );
+                                statement.setString( ++i, _clusterNodeId );
+                                statement.setLong( ++i, serviceOid );
+                                statement.setInt( ++i, binResolution );
+                                statement.setLong( ++i, startTime );
+                                statement.setInt( ++i, bin.getInterval() );
+                                if( serviceState == null )
+                                    statement.setNull( ++i, Types.VARCHAR );
+                                else
+                                    statement.setString( ++i, serviceState.toString() );
+
+                                // FROM PARAMS
+                                statement.setString( ++i, _clusterNodeId );
+                                statement.setLong( ++i, serviceOid );
+                                statement.setInt( ++i, summaryResolution );
+                                statement.setLong( ++i, startTime );
+                                statement.setLong( ++i, startTime + bin.getInterval() );
+
+                                int result = statement.executeUpdate();
+                                statement.close();
+                                statement = null;
+                                _logger.log(Level.FINE, "Row count for inserting/updating summary bin is " + result + ".");
+
+
+                                statement = connection.prepareStatement(SQL_INSERT_OR_UPDATE_DETAILS);
+                                i=0;
+
+                                // INSERT BIN IDENTIFIER PARAMS
+                                statement.setString( ++i, _clusterNodeId );
+                                statement.setLong( ++i, serviceOid );
+                                statement.setInt( ++i, binResolution );
+                                statement.setLong( ++i, startTime );
+
+                                // SOURCE BIN ID PARAMS
+                                statement.setString( ++i, _clusterNodeId );
+                                statement.setLong( ++i, serviceOid );
+                                statement.setInt( ++i, summaryResolution );
+                                statement.setLong( ++i, startTime );
+                                statement.setLong( ++i, startTime + bin.getInterval() );
+                                
+                                result = statement.executeUpdate();
+                                _logger.log(Level.FINE, "Row count for inserting/updating summary detail bins is " + result + ".");
+                            } catch (SQLException se) {
+                                status.setRollbackOnly();
+                                _logger.log(Level.WARNING, "Error inserting/updating summary bin", se);
+                            } finally {
+                                ResourceUtils.closeQuietly( statement );
+                                ResourceUtils.closeQuietly( connection );
+                            }
+
+                            return null;
+                        }
+                    });
+                }
+            });
+        } catch (TransactionException te) {
+            _logger.log(Level.WARNING, "Couldn't summarize MetricsBins", te);
         }
     }
 
@@ -836,35 +1027,60 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
         }
 
         private void flush() throws InterruptedException {
-            final MetricsBin head = (MetricsBin)_flusherQueue.take();
             // This will wait indefinitely until there is an item in the queue.
+            final ServiceMetrics.MetricsCollectorSet metricsSet = _flusherQueue.take();
+
+            final MetricsBin bin = new MetricsBin( metricsSet.getStartTime(), _fineBinInterval, MetricsBin.RES_FINE, _clusterNodeId, metricsSet.getServiceOid() );
+            if ( metricsSet.getServiceState() != null ) bin.setServiceState( metricsSet.getServiceState() );
+            bin.setEndTime( metricsSet.getEndTime() );
+
+            if ( metricsSet.getSummaryMetrics().getNumAttemptedRequest() > 0 ) {
+                bin.setMinFrontendResponseTime( metricsSet.getSummaryMetrics().getMinFrontendResponseTime() );
+                bin.setMaxFrontendResponseTime( metricsSet.getSummaryMetrics().getMaxFrontendResponseTime() );
+            }
+            bin.setSumFrontendResponseTime( metricsSet.getSummaryMetrics().getSumFrontendResponseTime() );
+
+            if ( metricsSet.getSummaryMetrics().getNumCompletedRequest() > 0 ) {
+                bin.setMinBackendResponseTime( metricsSet.getSummaryMetrics().getMinBackendResponseTime() );
+                bin.setMaxBackendResponseTime( metricsSet.getSummaryMetrics().getMaxBackendResponseTime() );
+            }
+            bin.setSumBackendResponseTime( metricsSet.getSummaryMetrics().getSumBackendResponseTime() );
+
+            bin.setNumAttemptedRequest( metricsSet.getSummaryMetrics().getNumAttemptedRequest() );
+            bin.setNumAuthorizedRequest( metricsSet.getSummaryMetrics().getNumAuthorizedRequest() );
+            bin.setNumCompletedRequest( metricsSet.getSummaryMetrics().getNumCompletedRequest() );
 
             if (_logger.isLoggable(Level.FINEST))
-                _logger.finest("Saving " + head.toString());
+                _logger.finest("Saving " + bin.toString());
 
             new TransactionTemplate(_transactionManager).execute(new TransactionCallbackWithoutResult() {
                 protected void doInTransactionWithoutResult(TransactionStatus status) {
                     try {
                         getHibernateTemplate().execute(new HibernateCallback(){
                             public Object doInHibernate(Session session) throws HibernateException {
-                                head.resolve();
-
                                 Criteria criteria = session.createCriteria(MetricsBin.class);
-                                criteria.add(Restrictions.eq("clusterNodeId", head.getClusterNodeId()));
-                                criteria.add(Restrictions.eq("serviceOid", head.getServiceOid()));
-                                criteria.add(Restrictions.eq("resolution", head.getResolution()));
-                                criteria.add(Restrictions.eq("periodStart", head.getPeriodStart()));
-                                criteria.add(Restrictions.eq("mappingValuesOid", head.getMappingValuesOid()));
+                                criteria.add(Restrictions.eq("clusterNodeId", bin.getClusterNodeId()));
+                                criteria.add(Restrictions.eq("serviceOid", bin.getServiceOid()));
+                                criteria.add(Restrictions.eq("resolution", bin.getResolution()));
+                                criteria.add(Restrictions.eq("periodStart", bin.getPeriodStart()));
                                 MetricsBin existing = (MetricsBin) criteria.uniqueResult();
                                 if (existing == null) {
-                                    session.save(head);
+                                    Long id = (Long) session.save( bin );
+                                    saveDetails( session, id, metricsSet.getDetailMetrics() );
                                 } else {
                                     if (_logger.isLoggable(Level.FINE)) {
                                         _logger.log(Level.FINE, "Merging contents of duplicate MetricsBin [ClusterNodeId={0}; ServiceOid={1}; Resolution={2}; PeriodStart={3}]",
-                                                new Object[]{head.getClusterNodeId(), head.getServiceOid(), head.getResolution(), head.getPeriodStart()});
+                                                new Object[]{bin.getClusterNodeId(), bin.getServiceOid(), bin.getResolution(), bin.getPeriodStart()});
                                     }
-                                    existing.merge(head);
+                                    existing.merge(bin);
                                     session.save(existing);
+
+                                    // could merge these too
+                                    Query deleteDetails = session.createQuery(HQL_DELETE_DETAILS);
+                                    deleteDetails.setLong(0, existing.getOid());
+                                    deleteDetails.executeUpdate();
+
+                                    saveDetails( session, existing.getOid(), metricsSet.getDetailMetrics() );
                                 }
                                 return null;
                             }
@@ -874,6 +1090,34 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
                     }
                 }
             });
+        }
+    }
+
+    private void saveDetails( final Session session, final Long id, final Map<ServiceMetrics.MetricsDetailKey,ServiceMetrics.MetricsCollector> detailMap ) {
+        if ( detailMap != null ) {
+            for ( Map.Entry<ServiceMetrics.MetricsDetailKey,ServiceMetrics.MetricsCollector> entry : detailMap.entrySet() ) {
+                MetricsBinDetail details = new MetricsBinDetail();
+                details.setMetricsBinOid( id );
+                details.setMappingValuesOid( saveMessageContextMapping( entry.getKey() ) );
+
+                if ( entry.getValue().getNumAttemptedRequest() > 0 ) {
+                    details.setMinFrontendResponseTime( entry.getValue().getMinFrontendResponseTime() );
+                    details.setMaxFrontendResponseTime( entry.getValue().getMaxFrontendResponseTime() );
+                }
+                details.setSumFrontendResponseTime( entry.getValue().getSumFrontendResponseTime() );
+
+                if ( entry.getValue().getNumCompletedRequest() > 0 ) {
+                    details.setMinBackendResponseTime( entry.getValue().getMinBackendResponseTime() );
+                    details.setMaxBackendResponseTime( entry.getValue().getMaxBackendResponseTime() );
+                }
+                details.setSumBackendResponseTime( entry.getValue().getSumBackendResponseTime() );
+
+                details.setNumAttemptedRequest( entry.getValue().getNumAttemptedRequest() );
+                details.setNumAuthorizedRequest( entry.getValue().getNumAuthorizedRequest() );
+                details.setNumCompletedRequest( entry.getValue().getNumCompletedRequest() );
+
+                session.save( details );
+            }
         }
     }
 
@@ -966,76 +1210,39 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
         return filteredOids;
     }
 
-    private Long saveMessageContextMapping(List<MessageContextMapping> mappings) {
+    private Long saveMessageContextMapping( final ServiceMetrics.MetricsDetailKey key ) {
         if (messageContextMappingManager == null) return null;
         
         MessageContextMappingKeys keysEntity = new MessageContextMappingKeys();
-        keysEntity.setCreateTime(System.currentTimeMillis());
         MessageContextMappingValues valuesEntity = new MessageContextMappingValues();
-        valuesEntity.setCreateTime(System.currentTimeMillis());
 
-        for (int i = 0; i < mappings.size(); i++) {
-            MessageContextMapping mapping = mappings.get(i);
-            keysEntity.setTypeAndKey(i, mapping.getMappingType(), mapping.getKey());
-            valuesEntity.setValue(i, mapping.getValue());
+        keysEntity.setCreateTime(System.currentTimeMillis());
+        valuesEntity.setCreateTime(System.currentTimeMillis());
+        valuesEntity.setServiceOperation(key.getOperation());
+
+        if ( key.getMappings() != null ) {
+            int index = 0;
+            for ( MessageContextMapping mapping : key.getMappings() ) {
+                if ( mapping.getMappingType() == MessageContextMapping.MappingType.AUTH_USER ) {
+                    valuesEntity.setAuthUserProviderId( key.getUserProviderId() );
+                    valuesEntity.setAuthUserId( key.getUserId() );
+                } else {
+                    keysEntity.setTypeAndKey(index, mapping.getMappingType(), mapping.getKey());
+                    valuesEntity.setValue(index, mapping.getValue());
+                    index++;
+                }
+            }
         }
 
         try {
             long mapping_keys_oid = messageContextMappingManager.saveMessageContextMappingKeys(keysEntity);
             valuesEntity.setMappingKeysOid(mapping_keys_oid);
 
-            //noinspection UnnecessaryLocalVariable
-            long mapping_values_oid = messageContextMappingManager.saveMessageContextMappingValues(valuesEntity);
-            return mapping_values_oid;
+            return messageContextMappingManager.saveMessageContextMappingValues(valuesEntity);
         } catch (Exception e) {
-            _logger.warning("Faied to save the keys or values of the message context mapping.");
+            _logger.warning("Failed to save the keys or values of the message context mapping.");
             return null;
         }
     }
 
-    private class MetricsKey {
-        private long serviceOid;
-        private Set<MessageContextMapping> mappings;
-
-        private MetricsKey(long serviceOid, Set<MessageContextMapping> mappings) {
-            this.serviceOid = serviceOid;
-            this.mappings = mappings;
-        }
-
-        public long getServiceOid() {
-            return serviceOid;
-        }
-
-        public void setServiceOid(long serviceOid) {
-            this.serviceOid = serviceOid;
-        }
-
-        public Set<MessageContextMapping> getMappings() {
-            return mappings;
-        }
-
-        public void setMappings(Set<MessageContextMapping> mappings) {
-            this.mappings = mappings;
-        }
-
-        @SuppressWarnings({"RedundantIfStatement"})
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            MetricsKey that = (MetricsKey) o;
-
-            if (serviceOid != that.serviceOid) return false;
-            if (mappings != null ? !mappings.equals(that.mappings) : that.mappings != null) return false;
-
-            return true;
-        }
-
-        public int hashCode() {
-            int result;
-            result = (int) (serviceOid ^ (serviceOid >>> 32));
-            result = 31 * result + (mappings != null ? mappings.hashCode() : 0);
-            return result;
-        }
-    }
 }

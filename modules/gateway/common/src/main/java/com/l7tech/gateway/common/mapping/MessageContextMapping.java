@@ -22,9 +22,21 @@ public class MessageContextMapping implements Serializable, Comparable<MessageCo
         public String getName() {
             return name;
         }
+
+        public static MappingType byName( final String name ) {
+            MappingType mappingType = null;
+
+            for ( MappingType type : values() ) {
+                if ( type.getName().equals(name) ) {
+                    mappingType = type;
+                }
+            }
+
+            return mappingType;
+        }
     }
 
-    private String mappingType;
+    private MappingType mappingType;
     private String key;
     private String value;
 
@@ -48,17 +60,17 @@ public class MessageContextMapping implements Serializable, Comparable<MessageCo
      * @param key: the key of a mapping.
      * @param value: the value of a mapping.
      */
-    public MessageContextMapping(String mappingType, String key, String value) {
+    public MessageContextMapping(MappingType mappingType, String key, String value) {
         this.mappingType = mappingType;
         this.key = key;
         this.value = value;
     }
 
-    public String getMappingType() {
+    public MappingType getMappingType() {
         return mappingType;
     }
 
-    public void setMappingType(String mappingType) {
+    public void setMappingType(MappingType mappingType) {
         this.mappingType = mappingType;
     }
 
@@ -104,6 +116,7 @@ public class MessageContextMapping implements Serializable, Comparable<MessageCo
         }
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -131,24 +144,24 @@ public class MessageContextMapping implements Serializable, Comparable<MessageCo
 
     public int compareTo(MessageContextMapping mcm) {
         // Step 1: check type
-        String type1 = getMappingType();
-        String type2 = mcm.getMappingType();
+        MappingType type1 = getMappingType();
+        MappingType type2 = mcm.getMappingType();
         if (type1 == null && type2 == null) return 0;
         else if (type1 == null)             return -1;
         else if (type2 == null)             return 1;
         else if (! type1.equals(type2))     return type1.compareTo(type2);
 
         // Step 2: check key
-        String key1 = getMappingType();
-        String key2 = mcm.getMappingType();
+        String key1 = this.getKey();
+        String key2 = mcm.getKey();
         if (key1 == null && key2 == null) return 0;
         else if (key1 == null)             return -1;
         else if (key2 == null)             return 1;
         else if (! key1.equals(key2))      return key1.toLowerCase().compareTo(key2.toLowerCase());
 
         // Step 3: check value
-        String value1 = getMappingType();
-        String value2 = mcm.getMappingType();
+        String value1 = getValue();
+        String value2 = mcm.getValue();
         if (value1 == null && value2 == null) return 0;
         else if (value1 == null)              return -1;
         else if (value2 == null)              return 1;
@@ -169,7 +182,7 @@ public class MessageContextMapping implements Serializable, Comparable<MessageCo
      * @return a default IP address mapping.
      */
     public static MessageContextMapping getDefaultIPAddressMapping() {
-        return new MessageContextMapping(MappingType.IP_ADDRESS.getName(), "IP_ADDRESS", "(SYSTEM DEFINED)");
+        return new MessageContextMapping(MappingType.IP_ADDRESS, "IP_ADDRESS", "(SYSTEM DEFINED)");
     }
 
     /**
@@ -177,6 +190,6 @@ public class MessageContextMapping implements Serializable, Comparable<MessageCo
      * @return a default AUTH User mapping.
      */
     public static MessageContextMapping getDefaultAuthUserMapping() {
-        return new MessageContextMapping(MappingType.AUTH_USER.getName(), "AUTH_USER", "(SYSTEM DEFINED)");
+        return new MessageContextMapping(MappingType.AUTH_USER, "AUTH_USER", "(SYSTEM DEFINED)");
     }
 }

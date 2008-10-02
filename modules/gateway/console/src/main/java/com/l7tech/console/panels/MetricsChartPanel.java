@@ -281,14 +281,14 @@ public class MetricsChartPanel extends ChartPanel {
                 return null;    // No tooltip if no message.
 
             final String frontLabel = responseTimes.getSeriesKey(0).toString();
-            final int frontMax = bin.getMaxFrontendResponseTime();
+            final int frontMax = bin.getMaxFrontendResponseTime()==null?0:bin.getMaxFrontendResponseTime();
             final int frontAvg = (int)Math.round(bin.getAverageFrontendResponseTime());
-            final int frontMin = bin.getMinFrontendResponseTime();
+            final int frontMin = bin.getMinFrontendResponseTime()==null?0:bin.getMinFrontendResponseTime();
 
             final String backLabel = responseTimes.getSeriesKey(1).toString();
-            final int backMax = bin.getMaxBackendResponseTime();
+            final int backMax = bin.getMaxBackendResponseTime()==null?0:bin.getMaxBackendResponseTime();
             final int backAvg = (int)Math.round(bin.getAverageBackendResponseTime());
-            final int backMin = bin.getMinBackendResponseTime();
+            final int backMin = bin.getMinBackendResponseTime()==null?0:bin.getMinBackendResponseTime();
 
             return FMT.format(new Object[]{
                     _timeFormat.format(periodStart),
@@ -730,12 +730,12 @@ public class MetricsChartPanel extends ChartPanel {
 
             _frontendResponseTimes.add(period,
                     bin.getAverageFrontendResponseTime(),
-                    bin.getMaxFrontendResponseTime(),
-                    bin.getMinFrontendResponseTime());
+                    (double)(bin.getMaxFrontendResponseTime()==null ? 0 : bin.getMaxFrontendResponseTime()),
+                    (double)(bin.getMinFrontendResponseTime()==null ? 0 : bin.getMinFrontendResponseTime()));
             _backendResponseTimes.add(period,
                     bin.getAverageBackendResponseTime(),
-                    bin.getMaxBackendResponseTime(),
-                    bin.getMinBackendResponseTime());
+                    (double)(bin.getMaxBackendResponseTime()==null?0:bin.getMaxBackendResponseTime()),
+                    (double)(bin.getMinBackendResponseTime()==null?0:bin.getMinBackendResponseTime()));
 
             // Since we are using nominal start and end times, we have to use
             // message rates calculated with nominal time interval to avoid

@@ -71,7 +71,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
                                      String responseXml, int responseContentLength, int httpRespStatus, int routingLatency,
                                      long serviceOid, String serviceName, Object operationNameHaver,
                                      boolean authenticated, SecurityTokenType authenticationType, long identityProviderOid,
-                                     String userName, String userId, Long mapping_values_oid)
+                                     String userName, String userId, Number mappingValueOidHaver)
     {
         super(level, nodeId, clientAddr, identityProviderOid, userName, userId, serviceName, null);
         StringBuffer msg = new StringBuffer("Message ");
@@ -101,7 +101,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         this.serviceOid = serviceOid;
         this.authenticated = authenticated;
         this.authenticationType = authenticationType;
-        this.mapping_values_oid = mapping_values_oid;
+        this.mappingValueOidHaver = mappingValueOidHaver;
     }
 
     /**
@@ -217,12 +217,20 @@ public class MessageSummaryAuditRecord extends AuditRecord {
     }
 
     @Column(name="mapping_values_oid")
-    public Long getMapping_values_oid() {
-        return mapping_values_oid;
+    public Long getMappingValuesOid() {
+        if ( mappingValuesOid == null ) {
+            if (mappingValueOidHaver != null) {
+                mappingValuesOid = mappingValueOidHaver.longValue();
+                if ( mappingValuesOid <= 0 ) mappingValuesOid = null;
+            }
+
+        }
+        return mappingValuesOid;
     }
 
-    public void setMapping_values_oid(Long mapping_values_oid) {
-        this.mapping_values_oid = mapping_values_oid;
+    public void setMappingValuesOid(Long mappingValuesOid) {
+        this.mappingValueOidHaver = null;
+        this.mappingValuesOid = mappingValuesOid;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
@@ -302,7 +310,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
             mappings.get(i).setValue(mappingValues[i]);
         }
 
-        return mappings.toArray(new MessageContextMapping[0]);
+        return mappings.toArray(new MessageContextMapping[mappings.size()]);
     }
 
     /** Status of the request so far, or AssertionStatus.UNDEFINED if it's not yet known. */
@@ -341,7 +349,10 @@ public class MessageSummaryAuditRecord extends AuditRecord {
     /** Used to lazily populate operationName if it is not yet set. */
     private Object operationNameHaver;
 
-    private Long mapping_values_oid;
+    private Long mappingValuesOid;
+
+    /** Used to lazily populate mapping_values_oid if it is not yet set. */
+    private Number mappingValueOidHaver;
 
     private MessageContextMappingValues mappingValuesEntity;
 

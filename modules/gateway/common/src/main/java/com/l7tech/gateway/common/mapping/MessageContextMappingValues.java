@@ -1,11 +1,13 @@
 package com.l7tech.gateway.common.mapping;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
+import com.l7tech.util.HexUtils;
 
 import javax.persistence.*;
-import java.util.UUID;
 
 /**
+ * Value information for a message context mapping.
+ *
  * @Copyright: Layer 7 Tech. Inc.
  * @Author: ghuang
  * @Date: Aug 12, 2008
@@ -17,7 +19,15 @@ public class MessageContextMappingValues extends PersistentEntityImp {
 
     private long mappingKeysOid;
     private long createTime;
-    private String guid;
+    private String digested;
+
+    // special case mappings
+    private Long authUserProviderId;
+    private String authUserId;
+    private String authUserDescription; // this is not part of the identity
+    private String serviceOperation;
+
+    // general purpose mappings
     private String mapping1_value;
     private String mapping2_value;
     private String mapping3_value;
@@ -26,13 +36,13 @@ public class MessageContextMappingValues extends PersistentEntityImp {
 
     private MessageContextMappingKeys mappingKeysEntity;
 
-    @Column(name="guid")
-    public String getGuid() {
-        return guid;
+    @Column(name="digested")
+    public String getDigested() {
+        return digested;
     }
 
-    public void setGuid(String guid) {
-        this.guid = guid;
+    public void setDigested(String digested) {
+        this.digested = digested;
     }
 
     @Column(name="mapping_keys_oid")
@@ -51,6 +61,42 @@ public class MessageContextMappingValues extends PersistentEntityImp {
 
     public void setCreateTime(long createTime) {
         this.createTime = createTime;
+    }
+
+    @Column(name="auth_user_provider_id")
+    public Long getAuthUserProviderId() {
+        return authUserProviderId;
+    }
+
+    public void setAuthUserProviderId(Long authUserProviderId) {
+        this.authUserProviderId = authUserProviderId;
+    }
+
+    @Column(name="auth_user_id", length=255)
+    public String getAuthUserId() {
+        return authUserId;
+    }
+
+    public void setAuthUserId(String authUserId) {
+        this.authUserId = authUserId;
+    }
+
+    @Column(name="auth_user_description", length=255)
+    public String getAuthUserDescription() {
+        return authUserDescription;
+    }
+
+    public void setAuthUserDescription(String authUserDescription) {
+        this.authUserDescription = authUserDescription;
+    }
+
+    @Column(name="service_operation", length=255)
+    public String getServiceOperation() {
+        return serviceOperation;
+    }
+
+    public void setServiceOperation(String serviceOperation) {
+        this.serviceOperation = serviceOperation;
     }
 
     @Column(name="mapping1_value", length= MAX_VALUE_LENGTH)
@@ -141,22 +187,53 @@ public class MessageContextMappingValues extends PersistentEntityImp {
     }
 
     /**
+     * Check if the values for this object match those of the given object.
+     *
+     * <p>This test ignores object identity.</p>
+     *
+     * @param values The values to check
+     * @return true if matches
+     */
+    @SuppressWarnings({"RedundantIfStatement"})
+    public boolean matches( final MessageContextMappingValues values ) {
+        if (mappingKeysOid != values.mappingKeysOid) return false;
+        if (serviceOperation != null ? !serviceOperation.equals(values.serviceOperation) : values.serviceOperation != null)
+            return false;
+        if (authUserId != null ? !authUserId.equals(values.authUserId) : values.authUserId != null) return false;
+        if (authUserProviderId != null ? !authUserProviderId.equals(values.authUserProviderId) : values.authUserProviderId != null)
+            return false;
+        if (mapping1_value != null ? !mapping1_value.equals(values.mapping1_value) : values.mapping1_value != null)
+            return false;
+        if (mapping2_value != null ? !mapping2_value.equals(values.mapping2_value) : values.mapping2_value != null)
+            return false;
+        if (mapping3_value != null ? !mapping3_value.equals(values.mapping3_value) : values.mapping3_value != null)
+            return false;
+        if (mapping4_value != null ? !mapping4_value.equals(values.mapping4_value) : values.mapping4_value != null)
+            return false;
+        if (mapping5_value != null ? !mapping5_value.equals(values.mapping5_value) : values.mapping5_value != null)
+            return false;
+
+        return true;
+    }
+
+    /**
      * Create a guid for the set of ordered values.  The guid is to identify whether the database
      * has had the same set of ordered values already.
      * @return a guid.
      */
-    public String generateGuid() {
+    public String generateDigest() {
         StringBuilder sb = new StringBuilder();
-        sb.append(mappingKeysOid).append("#");
-        sb.append(mapping1_value).append("#");
-        sb.append(mapping2_value).append("#");
-        sb.append(mapping3_value).append("#");
-        sb.append(mapping4_value).append("#");
-        sb.append(mapping5_value).append("#");
+        sb.append(mappingKeysOid);
+        sb.append(serviceOperation);
+        sb.append(authUserId);
+        sb.append(authUserProviderId);
+        sb.append(mapping1_value);
+        sb.append(mapping2_value);
+        sb.append(mapping3_value);
+        sb.append(mapping4_value);
+        sb.append(mapping5_value);
 
-        String uuidName = sb.toString();
-        UUID guid = UUID.nameUUIDFromBytes(uuidName.getBytes());
-        this.guid = guid.toString();
-        return this.guid;
+        String toDigest = sb.toString();
+        return digested = HexUtils.hexDump(HexUtils.getMd5Digest(HexUtils.encodeUtf8(toDigest)));
     }
 }

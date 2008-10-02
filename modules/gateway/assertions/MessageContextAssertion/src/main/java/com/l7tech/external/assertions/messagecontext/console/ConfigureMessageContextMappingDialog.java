@@ -91,14 +91,14 @@ public class ConfigureMessageContextMappingDialog extends JDialog {
             keyStatusLabel.setVisible(false);
         } else {
             // Case 2: Edit an existing mapping
-            if (mapping.getMappingType().equals(MessageContextMapping.MappingType.CUSTOM_MAPPING.getName())) {
+            if (mapping.getMappingType() == MessageContextMapping.MappingType.CUSTOM_MAPPING) {
                 keyTextField.setEditable(true);
                 valueTextField.setEditable(true);
             } else {
                 keyTextField.setEditable(false);
                 valueTextField.setEditable(false);
             }
-            typeComboBox.setSelectedItem(mapping.getMappingType());
+            typeComboBox.setSelectedItem(mapping.getMappingType().getName());
             keyTextField.setText(mapping.getKey());
             valueTextField.setText(mapping.getValue());
         }
@@ -139,14 +139,14 @@ public class ConfigureMessageContextMappingDialog extends JDialog {
             }
 
             // Case 2: the user choosed one of mapping types from the combo box.
-            String mappingTypeCurrentlyChosen = (String)typeComboBox.getSelectedItem();
-            String customMappingType = MessageContextMapping.MappingType.CUSTOM_MAPPING.getName();
+            MessageContextMapping.MappingType mappingTypeCurrentlyChosen = MessageContextMapping.MappingType.byName((String)typeComboBox.getSelectedItem());
+            MessageContextMapping.MappingType customMappingType = MessageContextMapping.MappingType.CUSTOM_MAPPING;
 
-            if (mappingTypeCurrentlyChosen.equals(customMappingType)) {
+            if (mappingTypeCurrentlyChosen == customMappingType) {
                 keyTextField.setEditable(true);
                 valueTextField.setEditable(true);
 
-                if (mapping == null || (! mapping.getMappingType().equals(customMappingType))) {
+                if (mapping == null || (mapping.getMappingType() != customMappingType)) {
                     keyTextField.setText(null);
                     valueTextField.setText(null);
                 } else {
@@ -182,7 +182,7 @@ public class ConfigureMessageContextMappingDialog extends JDialog {
         if (mapping == null) {
             mapping = new MessageContextMapping();
         }
-        mapping.setMappingType((String)typeComboBox.getSelectedItem());
+        mapping.setMappingType(MessageContextMapping.MappingType.byName((String)typeComboBox.getSelectedItem()));
         mapping.setKey(keyTextField.getText());
         mapping.setValue(valueTextField.getText());
         wasOKed = true;

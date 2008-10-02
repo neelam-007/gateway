@@ -13,6 +13,7 @@ import com.l7tech.server.service.resolution.ResolutionParameters;
 import com.l7tech.server.wsdm.subscription.Subscription;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.gateway.common.service.MetricsBin;
+import com.l7tech.gateway.common.service.MetricsBinDetail;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ServiceUsage;
@@ -62,6 +63,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         ignoredClassNames.add(MessageSummaryAuditRecord.class.getName());
         ignoredClassNames.add(AuditDetail.class.getName());
         ignoredClassNames.add(MetricsBin.class.getName());
+        ignoredClassNames.add(MetricsBinDetail.class.getName());
         ignoredClassNames.add(ClusterNodeInfo.class.getName());
 
         ignoredClassNames.add(Permission.class.getName());

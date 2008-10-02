@@ -11,6 +11,7 @@ import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.ArrayTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -53,7 +54,7 @@ public class MessageContextAssertion extends Assertion implements UsesVariables 
             String[] vars = Syntax.getReferencedNames(value);
             variableList.addAll(variableList.size(), Arrays.asList(vars));
         }
-        return variableList.toArray(new String[0]); 
+        return variableList.toArray(new String[variableList.size()]); 
     }
 
     public AssertionMetadata meta() {
@@ -96,7 +97,8 @@ public class MessageContextAssertion extends Assertion implements UsesVariables 
 
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new BeanTypeMapping(MessageContextMapping.class, "mappingInfo"),
-            new ArrayTypeMapping(new MessageContextMapping[0], "mappingInfoArray")
+            new ArrayTypeMapping(new MessageContextMapping[0], "mappingInfoArray"),
+            new Java5EnumTypeMapping(MessageContextMapping.MappingType.class, "mappingType")
         )));
 
         return meta;
@@ -127,8 +129,7 @@ public class MessageContextAssertion extends Assertion implements UsesVariables 
             // Add all mappings to be checked into the list, distinctMappings.
             List<MessageContextMapping> distinctMappings = new ArrayList<MessageContextMapping>();
             for (MessageContextAssertion mca: checkedAssertions) {
-                MessageContextMapping[] mappings = mca.getMappings();
-                for (MessageContextMapping mapping: mappings) distinctMappings.add(mapping);
+                distinctMappings.addAll(Arrays.asList(mca.getMappings()));
             }
 
             // Remove all overridden mappings, where each such mapping has the same mapping type and key as other mapping's.

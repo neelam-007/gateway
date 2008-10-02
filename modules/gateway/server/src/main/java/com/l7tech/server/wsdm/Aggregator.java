@@ -187,7 +187,7 @@ public class Aggregator implements ServiceStateMonitor {
         // Ensure manager tracks metrics for this service
         // If this is not done then service status changes are not tracked
         // until the service is consumed.
-        metricsManager.getServiceMetrics( serviceoid, new ArrayList<MessageContextMapping>(){});
+        metricsManager.trackServiceMetrics( serviceoid );
     }
     
     public MetricsSummaryBin getMetricsForService(long serviceOid) {

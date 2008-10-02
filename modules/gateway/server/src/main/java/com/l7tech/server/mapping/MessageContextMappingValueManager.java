@@ -12,5 +12,5 @@ import com.l7tech.objectmodel.FindException;
  */
 public interface MessageContextMappingValueManager extends EntityManager<MessageContextMappingValues, EntityHeader> {
     MessageContextMappingValues getMessageContextMappingValues(long oid) throws FindException;
-    MessageContextMappingValues getMessageContextMappingValues(final String guid) throws FindException;
+    MessageContextMappingValues getMessageContextMappingValues(MessageContextMappingValues values) throws FindException;
 }

@@ -1,9 +1,7 @@
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
-import com.l7tech.util.Functions;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -12,19 +10,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A statistical bin for collecting service metrics. Conceptually, a bin has
- * 2 distinct states: an open state to accumulate data (i.e., mutable state),
- * a closed state to read accumulated data (i.e., immutable state).
- * <p/>
- * A bin occupies a time interval. There is the <b>nominal</b> period
+ * A statistical bin for service metrics.
+ *
+ * <p>A bin occupies a time interval. There is the <b>nominal</b> period
  * when a bin was supposed to start and end, according to regular scheduling.
  * But since timers are not exact, a bin also has the <b>actual</b> time
- * interval when the bin actually starts and ends.
- * <p/>
- * This class has limited thread safety for mutable methods only. For performance
- * reason, there is no synchronization for immutable methods and hibernate
- * setter/getter methods because, in typical usage, mutable methods are called
- * only during the open state, which never overlaps the closed state.
+ * interval when the bin actually starts and ends.</p>
  *
  * @author rmak
  */
@@ -47,8 +38,6 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
 
     /** Object ID of the {@link PublishedService} for which this bin collects data. */
     private long _serviceOid;
-    private Long _mappingValuesOid = null;
-    private transient Functions.Nullary<Long> _mappingValuesOidResolver;
 
     /**
      * Resolution of this bin.
@@ -75,33 +64,22 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
     private int _numCompletedRequest;
 
     /** Minimum frontend response time (in milliseconds) of all attempted requests. */
-    private int _minFrontendResponseTime;
+    private Integer _minFrontendResponseTime;
 
     /** Maximum frontend response time (in milliseconds) of all attempted requests. */
-    private int _maxFrontendResponseTime;
+    private Integer _maxFrontendResponseTime;
 
     /** Sum over frontend response times (in milliseconds) of all attempted requests. */
     private long _sumFrontendResponseTime;
 
     /** Minimum backend response time (in milliseconds) of all completed requests. */
-    private int _minBackendResponseTime;
+    private Integer _minBackendResponseTime;
 
     /** Maximum backend response time (in milliseconds) of all completed requests. */
-    private int _maxBackendResponseTime;
+    private Integer _maxBackendResponseTime;
 
     /** Sum over backend response times (in milliseconds) of all completed requests. */
     private long _sumBackendResponseTime;
-
-    /** Protects write access to {@link #_numAttemptedRequest}, {@link #_minFrontendResponseTime},
-     * {@link #_maxFrontendResponseTime} and {@link #_sumFrontendResponseTime}. */
-    private transient Object _attemptedLock = new Object();
-
-    /** Protects write access to {@link #_numAuthorizedRequest}. */
-    private transient Object _authorizedLock = new Object();
-
-    /** Protects write access to {@link #_numCompletedRequest}, {@link #_minBackendResponseTime},
-     * {@link #_maxBackendResponseTime} and {@link #_sumBackendResponseTime}. */
-    private transient Object _completedLock = new Object();
 
     /**
      * State of the associated {@link PublishedService} at approximately the time this bin was archived.
@@ -314,13 +292,12 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
      *                                  but <code>fineInterval</code> <= 0
      */
     public MetricsBin(final long startTime, int fineInterval, int resolution,
-                      String clusterNodeId, long serviceOid, Functions.Nullary<Long> mappingOidResolver)
+                      String clusterNodeId, long serviceOid)
     {
         checkResolutionType(resolution);
 
         _clusterNodeId = clusterNodeId;
         _serviceOid = serviceOid;
-        _mappingValuesOidResolver = mappingOidResolver;
         _resolution = resolution;
         _periodStart = periodStartFor(resolution, fineInterval, startTime);
         if (resolution == RES_FINE) {
@@ -345,26 +322,12 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
     public MetricsBin() {
     }
 
-    public void resolve() {
-        if (_mappingValuesOidResolver != null) {
-            _mappingValuesOid = _mappingValuesOidResolver.call();
-        }
-    }
-
     public String getClusterNodeId() {
         return _clusterNodeId;
     }
 
     public long getServiceOid() {
         return _serviceOid;
-    }
-
-    public Long getMappingValuesOid() {
-        return _mappingValuesOid;
-    }
-
-    public void setMappingValuesOid(Long mappingValuesOid) {
-        _mappingValuesOid = mappingValuesOid;
     }
 
     public int getResolution() {
@@ -424,53 +387,35 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
     }
 
     public int getNumAttemptedRequest() {
-        synchronized(_attemptedLock) {
-            return _numAttemptedRequest;
-        }
+        return _numAttemptedRequest;
     }
 
     public int getNumAuthorizedRequest() {
-        synchronized(_authorizedLock){
-            return _numAuthorizedRequest;
-        }
+        return _numAuthorizedRequest;
     }
 
     public int getNumCompletedRequest() {
-        synchronized(_completedLock){
-            return _numCompletedRequest;
-        }
+        return _numCompletedRequest;
     }
 
     /** @return number of successful requests in this bin */
     public int getNumSuccess() {
-        synchronized(_completedLock) {
-            return _numCompletedRequest;
-        }
+        return _numCompletedRequest;
     }
 
     /** @return number of requests with policy violations in this bin */
     public int getNumPolicyViolation() {
-        synchronized(_attemptedLock) {
-            synchronized(_authorizedLock) {
-                return _numAttemptedRequest - _numAuthorizedRequest;
-            }
-        }
+        return _numAttemptedRequest - _numAuthorizedRequest;
     }
 
     /** @return number of requests with routing failures in this bin */
     public int getNumRoutingFailure() {
-        synchronized(_authorizedLock) {
-            synchronized(_completedLock) {
-                return _numAuthorizedRequest - _numCompletedRequest;
-            }
-        }
+        return _numAuthorizedRequest - _numCompletedRequest;
     }
 
     /** @return number of all requests in this bin */
     public int getNumTotal() {
-        synchronized(_attemptedLock) {
-            return _numAttemptedRequest;
-        }
+        return _numAttemptedRequest;
     }
 
     /** @return the rate of attempted requests (in messages per second) based on actual time interval */
@@ -481,9 +426,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
             // End time has not been set. Returns zero instead of ArithmeticException.
             return 0.0;
         } else {
-            synchronized(_attemptedLock){
-                return 1000.0 * _numAttemptedRequest / (endTime - startTime);
-            }
+            return 1000.0 * _numAttemptedRequest / (endTime - startTime);
         }
     }
 
@@ -495,9 +438,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
             // End time has not been set. Returns zero instead of ArithmeticException.
             return 0.0;
         } else {
-            synchronized(_authorizedLock){
-                return 1000.0 * _numAuthorizedRequest / (endTime - startTime);
-            }
+            return 1000.0 * _numAuthorizedRequest / (endTime - startTime);
         }
     }
 
@@ -509,34 +450,26 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
             // End time has not been set. Returns zero instead of ArithmeticException.
             return 0.0;
         } else {
-            synchronized(_completedLock){
-                return 1000.0 * _numCompletedRequest / (endTime - startTime);
-            }
+            return 1000.0 * _numCompletedRequest / (endTime - startTime);
         }
     }
 
     /** @return the rate of attempted requests (in messages per second) based on nominal period */
     public double getNominalAttemptedRate() {
         int interval = _interval;
-        synchronized(_attemptedLock){
-            return 1000.0 * _numAttemptedRequest / interval;
-        }
+        return 1000.0 * _numAttemptedRequest / interval;
     }
 
     /** @return the rate of authorized requests (in messages per second) based on nominal period */
     public double getNominalAuthorizedRate() {
         int interval = _interval;
-        synchronized(_authorizedLock){
-            return 1000.0 * _numAuthorizedRequest / interval;
-        }
+        return 1000.0 * _numAuthorizedRequest / interval;
     }
 
     /** @return the rate of completed requests (in messages per second) based on nominal period */
     public double getNominalCompletedRate() {
         int interval = _interval;
-        synchronized(_completedLock){
-            return 1000.0 * _numCompletedRequest / interval;
-        }
+        return 1000.0 * _numCompletedRequest / interval;
     }
 
     /** @return the rate of successful requests (in requests per second) based on nominal period */
@@ -561,24 +494,18 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
 
     /** @return the minimum frontend response time (in milliseconds) of all attempted requests;
      *          this is meaningful only if {@link #getNumAttemptedRequest()} returns non-zero */
-    public int getMinFrontendResponseTime() {
-        synchronized(_attemptedLock) {
-            return _minFrontendResponseTime;
-        }
+    public Integer getMinFrontendResponseTime() {
+        return _minFrontendResponseTime;
     }
 
     /** @return the maximum frontend response time (in milliseconds) of all attempted requests;
      *          this is meaningful only if {@link #getNumAttemptedRequest()} returns non-zero */
-    public int getMaxFrontendResponseTime() {
-        synchronized(_attemptedLock) {
-            return _maxFrontendResponseTime;
-        }
+    public Integer getMaxFrontendResponseTime() {
+        return _maxFrontendResponseTime;
     }
 
     public long getSumFrontendResponseTime() {
-        synchronized(_attemptedLock){
-            return _sumFrontendResponseTime;
-        }
+        return _sumFrontendResponseTime;
     }
 
    public void setServiceState(ServiceState serviceState) {
@@ -591,12 +518,8 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
 
     /** @return the average frontend response time (in milliseconds) of all attempted requests */
     public double getAverageFrontendResponseTime() {
-        int numAttemptedRequest;
-        long sumFrontendResponseTime;
-        synchronized(_attemptedLock){
-            numAttemptedRequest = _numAttemptedRequest;
-            sumFrontendResponseTime = _sumFrontendResponseTime;
-        }
+        int numAttemptedRequest = _numAttemptedRequest;
+        long sumFrontendResponseTime = _sumFrontendResponseTime;
         if (numAttemptedRequest == 0) {
             return 0.0;
         } else {
@@ -606,34 +529,24 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
 
     /** @return the minimum backend response time (in milliseconds) of all completed requests;
      *          this is meaningful only if {@link #getNumCompletedRequest()} returns non-zero */
-    public int getMinBackendResponseTime() {
-        synchronized(_completedLock){
-            return _minBackendResponseTime;
-        }
+    public Integer getMinBackendResponseTime() {
+        return _minBackendResponseTime;
     }
 
     /** @return the maximum backend response time (in milliseconds) of all completed requests;
      *          this is meaningful only if {@link #getNumCompletedRequest()} returns non-zero */
-    public int getMaxBackendResponseTime() {
-        synchronized(_completedLock){
-            return _maxBackendResponseTime;
-        }
+    public Integer getMaxBackendResponseTime() {
+        return _maxBackendResponseTime;
     }
 
     public long getSumBackendResponseTime() {
-        synchronized(_completedLock){
-            return _sumBackendResponseTime;
-        }
+        return _sumBackendResponseTime;
     }
 
     /** @return the average backend response time (in milliseconds) of all completed requests */
     public double getAverageBackendResponseTime() {
-        int numCompletedRequest;
-        long sumBackendResponseTime;
-        synchronized(_completedLock){
-            numCompletedRequest = _numCompletedRequest;
-            sumBackendResponseTime = _sumBackendResponseTime;
-        }
+        int numCompletedRequest = _numCompletedRequest;
+        long sumBackendResponseTime = _sumBackendResponseTime;
         if (numCompletedRequest == 0) {
             return 0.0;
         } else {
@@ -680,128 +593,39 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
     }
 
     public void setNumAttemptedRequest(int numAttemptedRequest) {
-        synchronized(_attemptedLock){
-            _numAttemptedRequest = numAttemptedRequest;
-        }
+        _numAttemptedRequest = numAttemptedRequest;
     }
 
     public void setNumAuthorizedRequest(int numAuthorizedRequest) {
-        synchronized(_authorizedLock){
-            _numAuthorizedRequest = numAuthorizedRequest;
-        }
+        _numAuthorizedRequest = numAuthorizedRequest;
     }
 
     public void setNumCompletedRequest(int numCompletedRequest) {
-        synchronized(_completedLock){
-            _numCompletedRequest = numCompletedRequest;
-        }
+        _numCompletedRequest = numCompletedRequest;
     }
 
-    public void setMinFrontendResponseTime(int minFrontendResponseTime) {
-        synchronized(_attemptedLock) {
-            _minFrontendResponseTime = minFrontendResponseTime;
-        }
+    public void setMinFrontendResponseTime(Integer minFrontendResponseTime) {
+        _minFrontendResponseTime = minFrontendResponseTime;
     }
 
-    public void setMaxFrontendResponseTime(int maxFrontendResponseTime) {
-        synchronized(_attemptedLock) {
-            _maxFrontendResponseTime = maxFrontendResponseTime;
-        }
+    public void setMaxFrontendResponseTime(Integer maxFrontendResponseTime) {
+        _maxFrontendResponseTime = maxFrontendResponseTime;
     }
 
     public void setSumFrontendResponseTime(long sumFrontendResponseTime) {
-        synchronized(_attemptedLock){
-            _sumFrontendResponseTime = sumFrontendResponseTime;
-        }
+        _sumFrontendResponseTime = sumFrontendResponseTime;
     }
 
-    public void setMinBackendResponseTime(int minBackendResponseTime) {
-        synchronized(_completedLock){
-            _minBackendResponseTime = minBackendResponseTime;
-        }
+    public void setMinBackendResponseTime(Integer minBackendResponseTime) {
+        _minBackendResponseTime = minBackendResponseTime;
     }
 
-    public void setMaxBackendResponseTime(int maxBackendResponseTime) {
-        synchronized(_completedLock){
-            _maxBackendResponseTime = maxBackendResponseTime;
-        }
+    public void setMaxBackendResponseTime(Integer maxBackendResponseTime) {
+        _maxBackendResponseTime = maxBackendResponseTime;
     }
 
     public void setSumBackendResponseTime(long sumBackendResponseTime) {
-        synchronized(_completedLock){
-            _sumBackendResponseTime = sumBackendResponseTime;
-        }
-    }
-
-    /**
-     * Records an attempted request.
-     * @param frontendResponseTime  front end response time for the request being added
-     */
-    public void addAttemptedRequest(int frontendResponseTime) {
-        if (frontendResponseTime < 0) {
-            // Don't really know what causes negative response time sometimes,
-            // or if this still happens. Just suppress it and log warning.
-            // (Bugzilla # 2328)
-            _logger.warning("Negative frontend response time (" + frontendResponseTime +
-                            " ms) suppressed (forced to zero) in " + describeResolution(_resolution) +
-                            " bin (period start = " + new Date(_periodStart) + ").");
-            frontendResponseTime = 0;
-        }
-
-        synchronized(_attemptedLock) {
-            if (_numAttemptedRequest == 0) {
-                _minFrontendResponseTime = frontendResponseTime;
-                _maxFrontendResponseTime = frontendResponseTime;
-            } else {
-                if (frontendResponseTime < _minFrontendResponseTime) {
-                    _minFrontendResponseTime = frontendResponseTime;
-                }
-                if (frontendResponseTime > _maxFrontendResponseTime) {
-                    _maxFrontendResponseTime = frontendResponseTime;
-                }
-            }
-            _sumFrontendResponseTime += frontendResponseTime;
-            ++ _numAttemptedRequest;
-        }
-    }
-
-    /** Records an authorized request. */
-    public void addAuthorizedRequest() {
-        synchronized(_authorizedLock) {
-            ++ _numAuthorizedRequest;
-        }
-    }
-
-    /**
-     * Records a completed request.
-     * @param backendResponseTime   back end response time for the request being added
-     */
-    public void addCompletedRequest(int backendResponseTime) {
-        if (backendResponseTime < 0) {
-            // Don't really know what causes negative response time sometimes,
-            // or if this still happens. Just suppress it and log warning.
-            // (Bugzilla # 2328)
-            _logger.warning("Negative backend response time (" + backendResponseTime +
-                            " ms) suppressed (forced to zero) in " + describeResolution(_resolution) +
-                            " bin (period start = " + new Date(_periodStart) + ").");
-            backendResponseTime = 0;
-        }
-
-        synchronized(_completedLock) {
-            if (_numCompletedRequest == 0) {
-                _minBackendResponseTime = backendResponseTime;
-                _maxBackendResponseTime = backendResponseTime;
-            } else {
-                if (backendResponseTime < _minBackendResponseTime) {
-                    _minBackendResponseTime = backendResponseTime;
-                }
-                if (backendResponseTime > _maxBackendResponseTime) {
-                    _maxBackendResponseTime = backendResponseTime;
-                }
-            }
-            _sumBackendResponseTime += backendResponseTime;
-            ++ _numCompletedRequest;
-        }
+        _sumBackendResponseTime = sumBackendResponseTime;
     }
 
     /**
@@ -849,18 +673,10 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
     }
 
     public String toString() {
-        int numAttemptedRequest;
-        synchronized(_attemptedLock){
-            numAttemptedRequest = _numAttemptedRequest;
-        }
-        int numAuthorizedRequest;
-        synchronized(_authorizedLock){
-            numAuthorizedRequest = _numAuthorizedRequest;
-        }
-        int numCompletedRequest;
-        synchronized(_completedLock){
-            numCompletedRequest = _numCompletedRequest;
-        }
+        int numAttemptedRequest = _numAttemptedRequest;
+        int numAuthorizedRequest = _numAuthorizedRequest;
+        int numCompletedRequest = _numCompletedRequest;
+
         StringBuffer b = new StringBuffer("<MetricsBin resolution=\"");
         b.append(getResolutionName());
         b.append("\" periodStart=\"").append(DATE_FORMAT.format(new Date(_periodStart)));
@@ -874,6 +690,7 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
         return b.toString();
     }
 
+    @SuppressWarnings({"SimplifiableIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -911,12 +728,5 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
             return (int)(_periodStart - other._periodStart);
         }
         return _resolution - other._resolution;
-    }
-
-    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException{
-        in.defaultReadObject();
-        _attemptedLock = new Object();
-        _authorizedLock = new Object();
-        _completedLock = new Object();
     }
 }

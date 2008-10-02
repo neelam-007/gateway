@@ -3,6 +3,7 @@ package com.l7tech.server.service;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.identity.User;
 
 import java.util.List;
 import java.util.Collection;
@@ -19,12 +20,25 @@ public interface ServiceMetricsManager {
     boolean isEnabled();
 
     /**
-     * Gets the service metrics for a given published service.
+     * Ensure service metrics are tracked for a given published service.
      *
      * @param serviceOid    OID of published service
-     * @return null if service metrics processing is disabled
      */
-    ServiceMetrics getServiceMetrics(long serviceOid, List<MessageContextMapping> mappings);
+    void trackServiceMetrics(long serviceOid);
+
+    /**
+     * Record service metrics for a given published service and mapping info.
+     *
+     * @param serviceOid  OID of published service
+     * @param operation   the published service operation (may be null)
+     * @param authorizedUser the user for the request (may be null)
+     * @param mappings    Message context mapping information (may be null)
+     * @param authorized True if the policy execution was successful (routing attempted).
+     * @param completed  True if the routing was successful
+     * @param frontTime  Complete time for request processing
+     * @param backTime   Time taken by the protected service
+     */
+    void addRequest(long serviceOid, String operation, User authorizedUser, List<MessageContextMapping> mappings, boolean authorized, boolean completed, int frontTime, int backTime);
 
     /**
      * Get the interval for fine metrics bins.

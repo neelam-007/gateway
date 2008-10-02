@@ -64,7 +64,7 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
         }
 
         // Step 2: remove those overidden mappings in the current MCA.
-        if (newMappings != null && !newMappings.isEmpty()) {
+        if (!newMappings.isEmpty()) {
             removeOverriddenMappings(newMappings);
         }
 
@@ -126,12 +126,12 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
         String value = checkedMapping.getValue();
         if (value == null || value.trim().equals("")) return;
 
-        String mappingType = checkedMapping.getMappingType();
-        if (mappingType.equals(MessageContextMapping.MappingType.IP_ADDRESS.getName())) {
+        MessageContextMapping.MappingType mappingType = checkedMapping.getMappingType();
+        if (mappingType == MessageContextMapping.MappingType.IP_ADDRESS) {
             Message request = context.getRequest();
             TcpKnob reqTcp = (TcpKnob)request.getKnob(TcpKnob.class);
             value = (reqTcp != null)? reqTcp.getRemoteAddress() : null;
-        } else if (mappingType.equals(MessageContextMapping.MappingType.AUTH_USER.getName())) {
+        } else if (mappingType == MessageContextMapping.MappingType.AUTH_USER) {
             User user = context.getLastAuthenticatedUser();
             value = (user != null)? user.getName() : null;
         } else {

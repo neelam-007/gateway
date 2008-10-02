@@ -128,14 +128,15 @@
     </class>
 
     <class name="com.l7tech.gateway.common.service.MetricsBin" table="service_metrics">
-        <composite-id>
-            <key-property name="clusterNodeId" column="nodeid" type="string"/>
-            <key-property name="serviceOid" column="published_service_oid" type="long"/>
-            <key-property name="resolution" column="resolution" type="int"/>
-            <key-property name="periodStart" column="period_start" type="long"/>
-        </composite-id>
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
 
-        <property name="mappingValuesOid" column="mapping_values_oid" type="long"/>
+        <property name="clusterNodeId" column="nodeid" type="string"/>
+        <property name="serviceOid" column="published_service_oid" type="long"/>
+        <property name="resolution" column="resolution" type="int"/>
+        <property name="periodStart" column="period_start" type="long"/>
+
         <property name="startTime" column="start_time" type="long"/>
         <property name="endTime" column="end_time" type="long"/>
 
@@ -154,6 +155,25 @@
         <property name="interval" column="interval_size" type="int"/>
 
         <property name="serviceState" column="service_state" type="service_state_type" length="16"/>
+    </class>
+
+    <class name="com.l7tech.gateway.common.service.MetricsBinDetail" table="service_metrics_details">
+        <composite-id>
+            <key-property name="metricsBinOid" column="service_metrics_oid" type="long"/>
+            <key-property name="mappingValuesOid" column="mapping_values_oid" type="long"/>
+        </composite-id>        
+
+        <property name="numAttemptedRequest" column="attempted" type="int"/>
+        <property name="numAuthorizedRequest" column="authorized" type="int"/>
+        <property name="numCompletedRequest" column="completed" type="int"/>
+
+        <property name="minBackendResponseTime" column="back_min" type="int"/>
+        <property name="sumBackendResponseTime" column="back_sum" type="long"/>
+        <property name="maxBackendResponseTime" column="back_max" type="int"/>
+
+        <property name="minFrontendResponseTime" column="front_min" type="int"/>
+        <property name="sumFrontendResponseTime" column="front_sum" type="long"/>
+        <property name="maxFrontendResponseTime" column="front_max" type="int"/>
     </class>
 
     <class name="com.l7tech.gateway.common.service.ServiceDocument" table="service_documents">

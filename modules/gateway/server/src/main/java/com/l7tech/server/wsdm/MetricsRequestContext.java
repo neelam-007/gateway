@@ -42,7 +42,7 @@ public class MetricsRequestContext {
 
         lastResponseTime = (long)bin.getLastAverageFrontendResponseTime();
         lastUpdated = bin.getLastAttemptedRequest();
-        maxResponseTime = bin.getMaxFrontendResponseTime();
+        maxResponseTime = bin.getMaxFrontendResponseTime()==null?0:bin.getMaxFrontendResponseTime();
         nrFailedRequests = bin.getNumPolicyViolation() + bin.getNumRoutingFailure();
         nrRequests = bin.getNumAttemptedRequest();
         nrSuccessRequests = bin.getNumCompletedRequest();

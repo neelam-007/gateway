@@ -43,7 +43,6 @@ import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceCache;
-import com.l7tech.server.service.ServiceMetrics;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -52,6 +51,8 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.xml.sax.SAXException;
 
+import javax.wsdl.Operation;
+import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
@@ -163,7 +164,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         final Message response = context.getResponse();
         final ProcessorResult[] wssOutput = { null };
         AssertionStatus status = AssertionStatus.UNDEFINED;
-        ServiceMetrics metrics = null;
+        long serviceOid = -1;
         ServiceStatistics stats = null;
         boolean attemptedRequest = false;
 
@@ -279,10 +280,9 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             auditor.logAndAudit(MessageProcessingMessages.RUNNING_POLICY);
             stats = serviceCache.getServiceStatistics(service.getOid());
             attemptedRequest = true;
+            serviceOid = service.getOid();
 
             status = serverPolicy.checkRequest(context);
-
-            metrics = serviceMetricsManager.getServiceMetrics(service.getOid(), context.getMappings());
             
             // Execute deferred actions for request, then response
             if (status == AssertionStatus.NONE) {
@@ -457,10 +457,16 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 }
             }
 
-            if (metrics != null && attemptedRequest) {
+            if (attemptedRequest && serviceMetricsManager.isEnabled()) {
                 final int frontTime = (int)(context.getEndTime() - context.getStartTime());
                 final int backTime = (int)(context.getRoutingTotalTime());
-                metrics.addRequest(authorizedRequest, completedRequest, frontTime, backTime);
+
+                serviceMetricsManager.addRequest(
+                        serviceOid, 
+                        getOperationName(context),
+                        context.getLastAuthenticatedUser(),
+                        context.getMappings(),
+                        authorizedRequest, completedRequest, frontTime, backTime);
             }
 
             for (TrafficMonitor tm : trafficMonitors) {
@@ -493,6 +499,24 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 return status;
         }
         return status;
+    }
+
+    private String getOperationName( PolicyEnforcementContext context ) {
+        String name = null;
+        try {
+            Operation operation = context.getOperation();
+            name = operation==null ? null : operation.getName();
+        } catch ( IOException ioe ) {
+            logger.log(Level.INFO, "Could not determine soap operation '"+ExceptionUtils.getMessage(ioe)+"'.", ExceptionUtils.getDebugException(ioe));
+        } catch ( SAXException saxe ) {
+            logger.log(Level.INFO, "Could not determine soap operation '"+ExceptionUtils.getMessage(saxe)+"'.", ExceptionUtils.getDebugException(saxe));
+        } catch ( WSDLException wsdle ) {
+            logger.log(Level.INFO, "Could not determine soap operation '"+ExceptionUtils.getMessage(wsdle)+"'.", ExceptionUtils.getDebugException(wsdle));
+        } catch ( InvalidDocumentFormatException idfe ) {
+            logger.log(Level.INFO, "Could not determine soap operation '"+ExceptionUtils.getMessage(idfe)+"'.", ExceptionUtils.getDebugException(idfe));
+        }
+
+        return name;
     }
 
     private static final Level DEFAULT_MESSAGE_AUDIT_LEVEL = Level.INFO;

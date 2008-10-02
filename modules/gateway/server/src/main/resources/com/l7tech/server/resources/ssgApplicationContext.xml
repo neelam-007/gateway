@@ -1006,6 +1006,7 @@
     <bean id="messageContextMappingManager" class="com.l7tech.server.mapping.MessageContextMappingManagerImpl">
         <constructor-arg ref="messageContextMappingKeyManager"/>
         <constructor-arg ref="messageContextMappingValueManager"/>
+        <constructor-arg ref="identityProviderFactory"/>
     </bean>
 
     <bean id="trustedEmsManager" class="com.l7tech.server.TrustedEmsManagerImpl" parent="hibernateBean">

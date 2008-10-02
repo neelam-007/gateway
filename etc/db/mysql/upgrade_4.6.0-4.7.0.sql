@@ -52,7 +52,7 @@ DROP TABLE IF EXISTS message_context_mapping_keys;
 CREATE TABLE message_context_mapping_keys (
   objectid bigint(20) NOT NULL,
   version int(11) NOT NULL,
-  guid char(36) NOT NULL,
+  digested char(36) NOT NULL,
   mapping1_type varchar(36),
   mapping1_key varchar(128),
   mapping2_type varchar(36),
@@ -65,8 +65,7 @@ CREATE TABLE message_context_mapping_keys (
   mapping5_key varchar(128),
   create_time bigint(20),
   PRIMARY KEY (objectid),
-  UNIQUE KEY (guid),
-  INDEX (guid)
+  INDEX (digested)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -75,8 +74,12 @@ CREATE TABLE message_context_mapping_keys (
 DROP TABLE IF EXISTS message_context_mapping_values;
 CREATE TABLE message_context_mapping_values (
   objectid bigint(20) NOT NULL,
-  guid char(36) NOT NULL,
+  digested char(36) NOT NULL,
   mapping_keys_oid bigint(20) NOT NULL,
+  auth_user_provider_id bigint(20),
+  auth_user_id varchar(255),
+  auth_user_description varchar(255),
+  service_operation varchar(255),
   mapping1_value varchar(255),
   mapping2_value varchar(255),
   mapping3_value varchar(255),
@@ -85,15 +88,36 @@ CREATE TABLE message_context_mapping_values (
   create_time bigint(20),
   PRIMARY KEY  (objectid),
   FOREIGN KEY (mapping_keys_oid) REFERENCES message_context_mapping_keys (objectid),
-  UNIQUE KEY (guid),
-  INDEX (guid)
+  INDEX (digested)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
--- Add a new column, mapping_values_oid into service_metrics
+-- Update service_metrics for context mapping changes
 --
-ALTER TABLE service_metrics ADD COLUMN mapping_values_oid BIGINT(20);
-ALTER TABLE service_metrics ADD CONSTRAINT FOREIGN KEY (mapping_values_oid) REFERENCES message_context_mapping_values (objectid);
+ALTER TABLE service_metrics DROP PRIMARY KEY;
+ALTER TABLE service_metrics ADD COLUMN objectid bigint(20) NOT NULL, MODIFY COLUMN front_min INTEGER, MODIFY COLUMN front_max INTEGER, MODIFY COLUMN back_min INTEGER, MODIFY COLUMN back_max INTEGER;
+SET @rowid = 100000;
+UPDATE service_metrics set objectid = @rowid := @rowid + 1;
+ALTER TABLE service_metrics ADD CONSTRAINT PRIMARY KEY (objectid);
+
+DROP TABLE IF EXISTS service_metrics_details;
+CREATE TABLE service_metrics_details (
+  service_metrics_oid BIGINT(20) NOT NULL,
+  mapping_values_oid BIGINT(20) NOT NULL,
+  attempted INTEGER NOT NULL,
+  authorized INTEGER NOT NULL,
+  completed INTEGER NOT NULL,
+  back_min INTEGER,
+  back_max INTEGER,
+  back_sum INTEGER NOT NULL,
+  front_min INTEGER,
+  front_max INTEGER,
+  front_sum INTEGER NOT NULL,
+  PRIMARY KEY (service_metrics_oid, mapping_values_oid),
+  FOREIGN KEY (service_metrics_oid) REFERENCES service_metrics (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (mapping_values_oid) REFERENCES message_context_mapping_values (objectid)
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
 --
 -- Add a new column, mapping_values_oid into audit_message
 --
@@ -103,7 +127,7 @@ ALTER TABLE audit_message ADD CONSTRAINT FOREIGN KEY (mapping_values_oid) REFERE
 --
 -- Folder changes
 --
-INSERT INTO folder (objectid, name, parent_folder_oid) VALUES (-5002, 'Root Node', NULL);
+--INSERT INTO folder (objectid, name, parent_folder_oid) VALUES (-5002, 'Root Node', NULL);
 UPDATE folder SET parent_folder_oid = -5002 WHERE objectid = -5001;
 UPDATE folder SET parent_folder_oid = -5002 WHERE objectid = -5000;
 
