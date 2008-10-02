@@ -310,9 +310,9 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                             }
                         }
                     } catch(IOException e) {
-                        logger.log(Level.WARNING, "Unable to extract message ID from request.", ExceptionUtils.getMessage(e));
+                        logger.log(Level.WARNING, "Unable to extract message ID from request: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     } catch(SAXException e) {
-                        logger.log(Level.WARNING, "Unable to extract message ID from request.", ExceptionUtils.getMessage(e));
+                        logger.log(Level.WARNING, "Unable to extract message ID from request: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     }
 
                     // if the request was processed on the noactor sec header instead of the l7 sec actor, then
