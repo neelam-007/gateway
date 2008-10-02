@@ -4,9 +4,6 @@
 
 	<property name="class.name" value="com.l7tech.standardreports.ReportApp" />
     <property name="test_data_class.name" value="com.l7tech.standardreports.CreateTestData" />
-    <property name="file.name" value="${basedir}/PS_IntervalMasterReport_NoMapping" />
-    <property name="jasper_lib.dir" value="/home/darmstrong/Jasper/jasperreports-3.0.1/lib" />
-    <property name="jasper_jar_lib.dir" value="/home/darmstrong/Jasper/jasperreports-3.0.1/dist" />
     <property name="ems.classes.dir" value="../../../../../../../../modules/ems/build/classes" />
     <property name="ems.dependency.dir" value="../../../../../../../../modules/ems/build/dependency" />
 
@@ -53,7 +50,7 @@
 
     <target name="test_data" description="Creates test data for the supplied services for the maximum default retention
     period for hourly and daily metric bins">
-        <java classname="${test_data_class.name}">
+        <java classname="${test_data_class.name}" fork="true">
             <classpath refid="classpath"/>
         </java>
     </target>
@@ -88,9 +85,8 @@
 			<fileset dir="." includes="**/*.html" />
 			<fileset dir="." includes="**/*.rtf" />
 			<fileset dir="." includes="**/*.pdf" />
-		</delete>
-		<delete dir="${file.name}.jrpxml_files" />
-		<delete dir="${file.name}.html_files" />
+            <fileset dir="." includes="**/*.sql" />
+        </delete>
 	</target>
 
 	<target name="test" description="Runs the sample.">
