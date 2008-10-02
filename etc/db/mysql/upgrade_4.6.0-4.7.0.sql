@@ -98,6 +98,8 @@ ALTER TABLE service_metrics DROP PRIMARY KEY;
 ALTER TABLE service_metrics ADD COLUMN objectid bigint(20) NOT NULL, MODIFY COLUMN front_min INTEGER, MODIFY COLUMN front_max INTEGER, MODIFY COLUMN back_min INTEGER, MODIFY COLUMN back_max INTEGER;
 SET @rowid = 100000;
 UPDATE service_metrics set objectid = @rowid := @rowid + 1;
+UPDATE service_metrics set front_min = NULL, front_max = NULL where resolution = 0 and attempted = 0;
+UPDATE service_metrics set back_min = NULL, back_max = NULL where resolution = 0 and completed = 0;
 ALTER TABLE service_metrics ADD CONSTRAINT PRIMARY KEY (objectid);
 
 DROP TABLE IF EXISTS service_metrics_details;

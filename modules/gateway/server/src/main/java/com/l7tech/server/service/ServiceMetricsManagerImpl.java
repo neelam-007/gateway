@@ -504,11 +504,11 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
     /** Default fine resolution bin interval (in milliseconds). */
     private static final int DEF_FINE_BIN_INTERVAL = 5 * 1000; // 5 seconds
 
-    private static final int MIN_FINE_AGE = HOUR;
-    private static final int MAX_FINE_AGE = HOUR;
-    private static final int DEF_FINE_AGE = HOUR;
+    private static final int MIN_FINE_AGE = MINUTE * 65; // more than 1 hour to ensure an hourly rollup bin can be created
+    private static final int MAX_FINE_AGE = MINUTE * 65;
+    private static final int DEF_FINE_AGE = MINUTE * 65;
 
-    private static final long MIN_HOURLY_AGE = DAY;          // a day
+    private static final long MIN_HOURLY_AGE = DAY + (5 * MINUTE); // more than 1 day to ensure an hourly rollup bin can be created
     private static final long MAX_HOURLY_AGE = 31 * DAY;     // a month
     private static final long DEF_HOURLY_AGE = 7 * DAY;      // a week
 
@@ -586,6 +586,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
             _logger.config("Scheduled first fine archive task for " + nextFineStart);
 
             // Sets hourly resolution timer to excecute every hour; starting at the next hourly period.
+            // Run slightly after the period end to allow all fine bins to be persisted
             final Date nextHourlyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_HOURLY, 0, now) + TimeUnit.MINUTES.toMillis(1));
             _hourlyArchiver = new HourlyTask();
             _timer.scheduleAtFixedRate(_hourlyArchiver, nextHourlyStart, HOUR);
@@ -594,6 +595,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
             // Sets daily resolution timer to execute at the next daily period start (= end of current daily period).
             // But can't just schedule at fixed rate of 24-hours interval because a
             // calender day varies, e.g., when switching Daylight Savings Time.
+            // Run slightly after the period end to allow all hourly bins to be persisted
             final Date nextDailyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, now) + TimeUnit.MINUTES.toMillis(2));
             _dailyArchiver = new DailyTask();
             _timer.schedule(_dailyArchiver, nextDailyStart);
