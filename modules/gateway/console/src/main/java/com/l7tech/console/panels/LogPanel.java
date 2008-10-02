@@ -35,8 +35,6 @@ import org.w3c.dom.Node;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.Component;
@@ -864,8 +862,7 @@ public class LogPanel extends JPanel {
                         StringBuilder sb = new StringBuilder("\nMessage Context Mappings\n");
                         boolean foundCustomMapping = false;
                         for (MessageContextMapping mapping : mappings) {
-                            String customMappingType = MessageContextMapping.MappingType.CUSTOM_MAPPING.getName();
-                            if (mapping.getMappingType().equals(customMappingType)) {
+                            if (mapping.getMappingType().equals(MessageContextMapping.MappingType.CUSTOM_MAPPING)) {
                                 sb.append("Mapping Key  : ").append(mapping.getKey()).append("\n");
                                 sb.append("Mapping Value: ").append(mapping.getValue()).append("\n");
                                 foundCustomMapping = true;

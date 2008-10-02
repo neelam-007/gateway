@@ -181,7 +181,7 @@ public class MessageContextAssertionPropertiesDialog extends AssertionProperties
         public Object getValueAt(int row, int col) {
             switch (col) {
                 case 0:
-                    return mappings.get(row).getMappingType();
+                    return mappings.get(row).getMappingType().getName();
                 case 1:
                     return mappings.get(row).getKey();
                 case 2:

@@ -222,8 +222,10 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
             int index = 0;
             for ( MessageContextMapping mapping : mappings ) {
                 if ( mapping.getMappingType() == MessageContextMapping.MappingType.AUTH_USER ) {
-                    valuesEntity.setAuthUserProviderId( user.getProviderId() );
-                    valuesEntity.setAuthUserId( user.getId() );
+                    if (user != null) {
+                        valuesEntity.setAuthUserProviderId( user.getProviderId() );
+                        valuesEntity.setAuthUserId( user.getId() );
+                    }
                 } else {
                     keysEntity.setTypeAndKey(index, mapping.getMappingType(), mapping.getKey());
                     valuesEntity.setValue(index, mapping.getValue());
