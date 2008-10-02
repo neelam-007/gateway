@@ -1,24 +1,20 @@
 package com.l7tech.server;
 
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.emstrust.TrustedEms;
 import com.l7tech.gateway.common.emstrust.TrustedEmsUser;
 import com.l7tech.gateway.common.security.rbac.EntityType;
-import static com.l7tech.gateway.common.security.rbac.EntityType.*;
+import static com.l7tech.gateway.common.security.rbac.EntityType.TRUSTED_EMS_USER;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import static com.l7tech.gateway.common.security.rbac.OperationType.CREATE;
 import static com.l7tech.gateway.common.security.rbac.OperationType.READ;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.security.AccessControlException;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
@@ -36,9 +32,6 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
     @Resource
     private RoleManager roleManager;
 
-    @Resource
-    private TrustedCertManager trustedCertManager;
-
 
     public Class<? extends Entity> getImpClass() {
         return TrustedEmsUser.class;
@@ -46,6 +39,10 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
 
     public Class<? extends Entity> getInterfaceClass() {
         return TrustedEmsUser.class;
+    }
+
+    protected UniqueType getUniqueType() {
+        return UniqueType.NONE;
     }
 
     public String getTableName() {
@@ -57,46 +54,19 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
             throw new AccessControlException("Permission denied: " + op + " " + ent);
     }
 
-    private TrustedCert lookupCert(X509Certificate cert) throws FindException, CertificateEncodingException {
-        List tc = trustedCertManager.findByThumbprint(CertUtils.getThumbprintSHA1(cert));
-        return tc != null && tc.size() > 0 ? (TrustedCert) tc.get(0) : null;
-    }
 
-    public long addUserMapping(User user, String emsId, X509Certificate emsCert, String emsUsername) throws ObjectModelException, AccessControlException, CertificateException {
-        require(user, READ, TRUSTED_EMS);
-        TrustedEms trustedEms = trustedEmsManager.findByUniqueName(emsId);
+    public TrustedEmsUser configureUserMapping(User user, String emsId, X509Certificate emsCert, String emsUsername) throws ObjectModelException, AccessControlException, CertificateException
+    {
+        if (user == null)
+            throw new IllegalArgumentException("Missing authenticated user");
+        if (emsId == null || emsId.trim().length() < 1)
+            throw new IllegalArgumentException("Missing or malformed EMS ID");
+        if (emsCert == null)
+            throw new IllegalArgumentException("Missing EMS certificate");
+        if (emsUsername == null || emsUsername.trim().length() < 1)
+            throw new IllegalArgumentException("Missing or malformed emsUsername");
 
-        if (trustedEms == null) {
-            // Need to create a new TrustedEms first.
-
-            require(user, READ, TRUSTED_CERT);
-            TrustedCert trustedCert = lookupCert(emsCert);
-
-            if (trustedCert == null) {
-                // Need to create TrustedCert first.
-                trustedCert = new TrustedCert();
-                trustedCert.setName("EMS Cert: " + emsId);
-                trustedCert.setCertificate(emsCert);
-                trustedCert.setTrustedFor(TrustedCert.TrustedFor.TRUSTED_EMS, true);
-
-                require(user, CREATE, TRUSTED_CERT);
-                trustedCert.setOid(trustedCertManager.save(trustedCert));
-            }
-
-            trustedEms = new TrustedEms();
-            trustedEms.setName(emsId);
-            trustedEms.setTrustedCert(trustedCert);
-
-            require(user, CREATE, TRUSTED_EMS);
-            trustedEms.setOid(trustedEmsManager.save(trustedEms));
-        }
-
-        if (!CertUtils.certsAreEqual(trustedEms.getTrustedCert().getCertificate(), emsCert)) {
-            // New cert being set for this EMS instance
-            // TODO should we update the existing TrustedCert?  How do we keep from stomping user data?
-            // TODO or should we always add a new TrustedCert instead?  How do we generate a nice unique name?
-            throw new CertificateException("There is an existing trust relationship for this EMS instance using a different certificate.");
-        }
+        TrustedEms trustedEms = trustedEmsManager.getOrCreateEmsAssociation(user, emsId, emsCert);
 
         require(user, READ, TRUSTED_EMS_USER);
         TrustedEmsUser trustedEmsUser = findByEmsUsername(trustedEms, emsUsername);
@@ -112,7 +82,9 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
         trustedEmsUser.setEmsUserId(emsUsername);
 
         require(user, CREATE, TRUSTED_EMS_USER);
-        return save(trustedEmsUser);
+        long oid = save(trustedEmsUser);
+        trustedEmsUser.setOid(oid);
+        return trustedEmsUser;
     }
 
     private TrustedEmsUser findByEmsUsername(TrustedEms trustedEms, String emsUsername) throws FindException {

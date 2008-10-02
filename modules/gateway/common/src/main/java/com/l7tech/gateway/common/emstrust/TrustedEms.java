@@ -13,7 +13,6 @@ import javax.persistence.*;
 public class TrustedEms extends NamedEntityImp {
     private TrustedCert trustedCert;
 
-
     @ManyToOne(optional=false)
     @JoinColumn(name="trusted_cert_oid", nullable=false)
     public TrustedCert getTrustedCert() {

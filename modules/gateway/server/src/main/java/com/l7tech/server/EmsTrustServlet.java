@@ -142,7 +142,12 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         if (checkForCrossSiteRequestForgery(hresp, param, req.getHttpRequestKnob()))
             return;
 
-        handleTrustRequest(req, hresp, param);
+        try {
+            handleTrustRequest(req, hresp, param);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "EmsTrustServlet request failed: " + ExceptionUtils.getMessage(e), e);
+            sendError(hresp, "Unable to establish trust relationship: " + ExceptionUtils.getMessage(e));
+        }
     }
 
     private void handleTrustRequest(Message req, HttpServletResponse hresponse, FormParams param) throws IOException {
@@ -196,7 +201,7 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         AdminLoginResult result = adminLogin.login(username, password);
         User user = result.getUser();
 
-        trustedEmsUserManager.addUserMapping(user, emsId, emsCert, emsUsername);
+        trustedEmsUserManager.configureUserMapping(user, emsId, emsCert, emsUsername);
 
         String returnurl = param.get("returnurl");
         URL url;

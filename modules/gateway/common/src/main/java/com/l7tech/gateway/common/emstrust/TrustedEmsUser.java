@@ -15,6 +15,13 @@ public class TrustedEmsUser extends PersistentEntityImp {
     private String ssgUserId;
     private String emsUserId;
 
+    @Override
+    @Version
+    @Column(name="version")
+    public int getVersion() {
+        return super.getVersion();
+    }
+
     @ManyToOne(optional=false)
     @JoinColumn(name="trusted_ems_oid", nullable=false)
     public TrustedEms getTrustedEms() {

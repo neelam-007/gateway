@@ -411,10 +411,10 @@ CREATE TABLE trusted_ems_user (
   trusted_ems_oid bigint(20) NOT NULL,
   provider_oid bigint(20) NOT NULL,
   user_id varchar(128) NOT NULL,
-  em_user_id varchar(128) NOT NULL,
+  ems_user_id varchar(128) NOT NULL,
   PRIMARY KEY(objectid),
   FOREIGN KEY (trusted_ems_oid) REFERENCES trusted_ems (objectid) ON DELETE CASCADE,
-  FOREIGN KEY (provider_oid) REFERENCES identity_provider (objectid) ON DELETE CASCADE,  
+  FOREIGN KEY (provider_oid) REFERENCES identity_provider (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 DROP TABLE IF EXISTS fed_user;

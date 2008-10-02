@@ -15,22 +15,22 @@ import java.security.cert.X509Certificate;
  */
 public interface TrustedEmsUserManager extends EntityManager<TrustedEmsUser, EntityHeader> {
     /**
-     * Add a mapping allowing this Gateway to be administered by the specified EMS user, using the access rights of the
-     * specified User.
+     * Add or update a mapping allowing this Gateway to be administered by the specified EMS user, using the access
+     * rights of the specified User.
      * <p/>
      * Caller is responsible for ensuring that User has already been authenticated.
      * <p/>
      * This method will fail (by throwing AccessControlException) if the specified user does not possess a role
-     * to read or change one of the entities that need to be changed to complete this operation.
+     * to read or change one of the entities that need to be changed to complete this operation.  The following
+     * permissions are required to add a mapping for an already-associated EMS instance:
      * <ul>
-     * <li>READ of ANY {@link com.l7tech.gateway.common.emstrust.TrustedEms}
-     * <li>READ, CREATE and UPDATE of ANY {@link TrustedEmsUser}
+     * <li>READ, CREATE and/or UPDATE of ANY {@link com.l7tech.gateway.common.emstrust.TrustedEmsUser}
      * </ul>
-     * If this is the first mapping for this EMS instance ID with this EMS certificate, then the User will additionally
-     * require the following permissions:
+     * If there is not yet a trust association for this EMS instance, the user will in addition require
+     * the following permissions:
      * <ul>
-     * <li>CREATE and UPDATE of ANY {@link com.l7tech.gateway.common.emstrust.TrustedEms}
-     * <li>CREATE of {@link com.l7tech.security.cert.TrustedCert}
+     * <li>READ, CREATE and/or UPDATE of ANY {@link com.l7tech.security.cert.TrustedCert}
+     * <li>READ, CREATE and/or UPDATE of ANY {@link com.l7tech.gateway.common.emstrust.TrustedEms}
      * </ul>
      * <p/>
      *
@@ -39,10 +39,10 @@ public interface TrustedEmsUserManager extends EntityManager<TrustedEmsUser, Ent
      *                     This identifier is opaque to the Gateway.
      * @param emsCert      The certificate this EMS instance will use when vouching for emsUsername in admin requests.  Required.
      * @param emsUsername  The identifier this EMS instance will use when referring to this User in admin requests.  Required.
-     * @return the oid of the newly-created TrustedEmsUser instance.
+     * @return the newly-created TrustedEmsUser instance.  Never null.
      * @throws java.security.AccessControlException if the specified user lacks sufficient permission to create or update this mapping
-     * @throws com.l7tech.objectmodel.ObjectModelException  if there is a problem accessing the database
+     * @throws com.l7tech.objectmodel.ObjectModelException  if there is a problem accessing or updating the database
      * @throws java.security.cert.CertificateException if there is a problem with the emsCert
      */
-    long addUserMapping(User user, String emsId, X509Certificate emsCert, String emsUsername) throws ObjectModelException, AccessControlException, CertificateException;
+    TrustedEmsUser configureUserMapping(User user, String emsId, X509Certificate emsCert, String emsUsername) throws ObjectModelException, AccessControlException, CertificateException;
 }

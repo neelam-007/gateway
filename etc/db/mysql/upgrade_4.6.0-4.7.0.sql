@@ -178,6 +178,34 @@ ALTER TABLE community_schemas ADD CONSTRAINT UNIQUE KEY csnm_idx (name);
 ---
 ALTER TABLE internal_user ADD COLUMN description varchar(255) default NULL;
 
+
+---
+--- Add tables for EMS trust and user mapping support
+---
+
+DROP TABLE IF EXISTS trusted_ems;
+CREATE TABLE trusted_ems (
+  objectid bigint NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  trusted_cert_oid bigint(20) NOT NULL,
+  primary key(objectid),
+  FOREIGN KEY (trusted_cert_oid) REFERENCES trusted_cert (objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+DROP TABLE IF EXISTS trusted_ems_user;
+CREATE TABLE trusted_ems_user (
+  objectid bigint NOT NULL,
+  version integer NOT NULL,
+  trusted_ems_oid bigint(20) NOT NULL,
+  provider_oid bigint(20) NOT NULL,
+  user_id varchar(128) NOT NULL,
+  ems_user_id varchar(128) NOT NULL,
+  PRIMARY KEY(objectid),
+  FOREIGN KEY (trusted_ems_oid) REFERENCES trusted_ems (objectid) ON DELETE CASCADE,
+  FOREIGN KEY (provider_oid) REFERENCES identity_provider (objectid) ON DELETE CASCADE
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
 --
 -- Reenable FK at very end of script
 --
