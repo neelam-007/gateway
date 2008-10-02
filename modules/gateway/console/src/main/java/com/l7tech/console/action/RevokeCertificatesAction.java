@@ -61,9 +61,23 @@ public class RevokeCertificatesAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        DialogDisplayer.OptionListener callback = new DialogDisplayer.OptionListener() {
-            public void reportResult(int option) {
-                if (option == JOptionPane.OK_OPTION) {
+        String confirmationDialogTitle = "Confirm Certificate Revocation";
+        String confirmationDialogMessage =
+            "<html><center>This will irrevocably destroy all user certificates and cannot be undone.</center>" +
+                "<center>Really revoke all certificates issued by the SecureSpan Gateway certificate authority?</center></html>";
+
+        DialogDisplayer.showSafeConfirmDialog(
+            TopComponents.getInstance().getTopParent(),
+            confirmationDialogMessage,
+            confirmationDialogTitle,
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.WARNING_MESSAGE,
+            new DialogDisplayer.OptionListener() {
+                public void reportResult(int option) {
+                    if (option == JOptionPane.CANCEL_OPTION) {
+                        return;
+                    }
+
                     try {
                         IdentityAdmin identityAdmin = getIdentityAdmin();
                         int revoked = identityAdmin.revokeCertificates();
@@ -76,24 +90,18 @@ public class RevokeCertificatesAction extends SecureAction {
                         }
 
                         DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                                                      message,
-                                                      "Client Certificates Revoked",
-                                                      JOptionPane.INFORMATION_MESSAGE, null);
+                            message,
+                            "Client Certificates Revoked",
+                            JOptionPane.INFORMATION_MESSAGE, null);
                     } catch (UpdateException e) {
                         String msg = "Error revoking certificates.\n" + ExceptionUtils.getMessage(e);
                         DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), msg,
-                                                      "Cannot Revoke Certificates",
-                                                      JOptionPane.ERROR_MESSAGE, null);
+                            "Cannot Revoke Certificates",
+                            JOptionPane.ERROR_MESSAGE, null);
                     }
                 }
             }
-        };
-            
-        DialogDisplayer.showConfirmDialog(TopComponents.getInstance().getTopParent(),
-                                          "<html>Revoke all user certificates issued by the SecureSpan Gateway certificate authority?</html>",
-                                          "Confirm Certificate Revocation",
-                                          JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE,
-                                          callback);
+        );
     }
 
     //- PRIVATE

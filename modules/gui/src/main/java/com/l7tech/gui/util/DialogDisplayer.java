@@ -46,6 +46,9 @@ public class DialogDisplayer {
     /** Default images to use for dialogs. */
     private static List defaultWindowImages = null;
 
+    /** A dialog to safely make a confirmation. */
+    private static JDialog safeConfirmationDialog;
+
     /**
      * Display the specified dialog as a sheet if possible, but otherwise as a normal dialog.
      * Even if the dialog is modal, this method <b>may return immediately</b>
@@ -635,6 +638,101 @@ public class DialogDisplayer {
     }
 
     /**
+     * Display a confirmation dialog, in which the OK button won't enabled until the checkbox is marked.
+     * Such safe manner is to avoid that the user accidentally clicked OK and could not undo the action.
+     *
+     * @param parent: a parent of the safe-confirmation dialog
+     * @param mess: a message reminding the user what the safe-confirmation dialog does.
+     * @param title: a title of the safe-confirmation dialog
+     * @param opType: operation type per JOptionPane
+     * @param messType: message type per JOptionPane.
+     * @param result: callback to invoke with the result when dialog is dismissed.
+     */
+    public static void showSafeConfirmDialog(final Component parent,
+                                             final Object mess,
+                                             final String title,
+                                             final int opType,
+                                             final int messType,
+                                             final OptionListener result) {
+        // Create safe-confirmation-dialog components such as one checkbox, one OK button, and one Cancel button.
+        JPanel confirmationComponentsPanel = new JPanel();
+        JCheckBox enableOkCheckBox = new JCheckBox();
+        JButton okButton = new JButton();
+        JButton cancelButton = new JButton();
+        initSafeConfirmationComponents(confirmationComponentsPanel, enableOkCheckBox, okButton, cancelButton, result);
+
+        // Create a JOptionPane consisting of all safe-confirmation-dialog components.
+        Object[] options = new Object[] { confirmationComponentsPanel };
+        JOptionPane optionPane = new JOptionPane(mess, messType, opType, null, options, null);
+
+        // Create a safe-confirmation dialog
+        safeConfirmationDialog = optionPane.createDialog(parent, title);
+        safeConfirmationDialog.getRootPane().setDefaultButton(cancelButton);
+        safeConfirmationDialog.pack();
+        Utilities.centerOnParentWindow(safeConfirmationDialog);
+
+        // Display the safe-confirmation dialog
+        display(safeConfirmationDialog);
+    }
+
+    /**
+     * Initialize the safe-confirmation components such as panels, checkbox, and buttons.
+     *
+     * @param confirmationComponentsPanel: used to arrange the positions of the checkbox and two buttons.
+     * @param enableOkCheckBox: a checkbox to enable/disable the OK button.
+     * @param okButton: a button to confirm the action.
+     * @param cancelButton: a button to cancel the action.
+     * @param result: callback to invoke with the result when dialog is dismissed.
+     */
+    private static void initSafeConfirmationComponents(final JPanel confirmationComponentsPanel,
+                                                       final JCheckBox enableOkCheckBox,
+                                                       final JButton okButton,
+                                                       final JButton cancelButton,
+                                                       final OptionListener result) {
+        enableOkCheckBox.setText("To enable OK, check this box first.");
+        okButton.setText("OK");
+        cancelButton.setText("Cancel");
+
+        enableOkCheckBox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                okButton.setEnabled(enableOkCheckBox.isSelected());
+            }
+        });
+
+        okButton.setEnabled(enableOkCheckBox.isSelected());
+        okButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                result.reportResult(JOptionPane.OK_OPTION);
+                safeConfirmationDialog.dispose();
+            }
+        });
+
+        cancelButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                result.reportResult(JOptionPane.CANCEL_OPTION);
+                safeConfirmationDialog.dispose();
+            }
+        });
+
+        confirmationComponentsPanel.setLayout(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
+        c.gridx = 0;
+        c.gridy = 0;
+        confirmationComponentsPanel.add(enableOkCheckBox, c);
+
+        JPanel buttonsPanel = new JPanel();
+        FlowLayout layout = (FlowLayout)buttonsPanel.getLayout();
+        int gapBetweenTwoButtons = enableOkCheckBox.getPreferredSize().width
+            - okButton.getPreferredSize().width - cancelButton.getPreferredSize().width;
+        layout.setHgap(gapBetweenTwoButtons - 6);
+        buttonsPanel.add(okButton);
+        buttonsPanel.add(cancelButton);
+        c.gridx = 0;
+        c.gridy = 1;
+        confirmationComponentsPanel.add(buttonsPanel, c);
+    }
+
+    /**
      * Show an input dialog as a sheet if possible; otherwise as an ordinary dialog.
      *
      * @see JOptionPane#showInputDialog(java.awt.Component, Object, String, int, javax.swing.Icon, Object[], Object)
@@ -645,9 +743,9 @@ public class DialogDisplayer {
      * @param icon     Icon to use, or null
      * @param values array of possible selection values
      * @param initialValue the initial selection value
-     * @param result callback which will be invoked later with the user's input when the dialog is closed 
+     * @param result callback which will be invoked later with the user's input when the dialog is closed
      */
-    public static void showInputDialog(Component parent, Object mess, String title, int messType, Icon icon, 
+    public static void showInputDialog(Component parent, Object mess, String title, int messType, Icon icon,
                                          Object[] values, Object initialValue, final InputListener result)
     {
         final JOptionPane pane = new JOptionPane(mess, messType, JOptionPane.OK_CANCEL_OPTION, icon, null, null);

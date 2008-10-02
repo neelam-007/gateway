@@ -526,24 +526,30 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             JOptionPane.showMessageDialog(this, "This keystore is read-only.", "Unable to Remove Key", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        final String cancel = "   Cancel   ";
-        int option = JOptionPane.showOptionDialog(
-                this,
-                "Really delete private key " + subject.getAlias() + " (" + subject.getKeyEntry().getSubjectDN() + ")?\n\n" +
-                "This will irrevocably destroy this key, and cannot be undone.\n\n" +
-                "The change will not fully take effect until all cluster nodes have been restarted.",
-                "Confirm deletion",
-                JOptionPane.YES_NO_CANCEL_OPTION,
-                JOptionPane.WARNING_MESSAGE,
-                null,
-                new Object[] { "Destroy", cancel },
-                cancel);
-        if (option != 0)
-            return;
-        deleted = true;
-        dispose();
-    }
 
+        String confirmationDialogTitle = "Confirm Private Key Deletion";
+        String confirmationDialogMessage =
+            "<html>This will irrevocably destroy this key and cannot be undone. The change" +
+                  "<center>will not fully take effect until all cluster nodes have been restarted.</center><p>" +
+                "<center>Really delete the private key " + subject.getAlias() + " (" + subject.getKeyEntry().getSubjectDN() + ")?</center></html>";
+
+        DialogDisplayer.showSafeConfirmDialog(
+            this,
+            confirmationDialogMessage,
+            confirmationDialogTitle,
+            JOptionPane.OK_CANCEL_OPTION,
+            JOptionPane.WARNING_MESSAGE,
+            new DialogDisplayer.OptionListener() {
+                public void reportResult(int option) {
+                    if (option == JOptionPane.CANCEL_OPTION) {
+                        return;
+                    }
+                    deleted = true;
+                    dispose();
+                }
+            }
+        );
+    }
 
     public boolean isDeleted() {
         return deleted;

@@ -165,35 +165,45 @@ public class LicenseDialog extends JDialog {
 
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                String options[] = {"Remove", "Cancel"};
-                String initOption = options[1];
+                String confirmationDialogTitle = "Confirm License Removal";
+                String confirmationDialogMessage =
+                    "<html>This will irrevocably destroy the existing gateway license and cannot<p>" +
+                        "be undone.  Also this will cause the SecureSpan Manager to disconnect.<p>" +
+                        "<center>Really remove the existing gateway license?</center></html>";
 
-                int confResult = JOptionPane.showOptionDialog(LicenseDialog.this,
-                    "Removing the gateway license will disconnect the SecureSpan Manager.\n" +
-                    "Are you sure that you want to remove the existing gateway license?", "Remove Existing License",
-                    JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null, options, initOption);
-                if (confResult != 0) {
-                    return;
-                }
+                DialogDisplayer.showSafeConfirmDialog(
+                    LicenseDialog.this,
+                    confirmationDialogMessage,
+                    confirmationDialogTitle,
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    new DialogDisplayer.OptionListener() {
+                        public void reportResult(int option) {
+                            if (option == JOptionPane.CANCEL_OPTION) {
+                                return;
+                            }
 
-                Registry reg = Registry.getDefault();
-                ClusterStatusAdmin admin = reg.getClusterStatusAdmin();
-                try {
-                    ClusterProperty licProp = admin.findPropertyByName("license");
-                    if (licProp != null) {
-                        admin.deleteProperty(licProp);
+                            Registry reg = Registry.getDefault();
+                            ClusterStatusAdmin admin = reg.getClusterStatusAdmin();
+                            try {
+                                ClusterProperty licProp = admin.findPropertyByName("license");
+                                if (licProp != null) {
+                                    admin.deleteProperty(licProp);
+                                }
+                            } catch (ObjectModelException e2) {
+                                JOptionPane.showMessageDialog(LicenseDialog.this,
+                                    "Unable to forcibly remove this license file: " +
+                                        ExceptionUtils.getMessage(e2),
+                                    "Unable to remove license file",
+                                    JOptionPane.ERROR_MESSAGE);
+                                return;
+                            }
+
+                            TopComponents.getInstance().setConnectionLost(true);
+                            TopComponents.getInstance().disconnectFromGateway();
+                        }
                     }
-                } catch (ObjectModelException e2) {
-                    JOptionPane.showMessageDialog(LicenseDialog.this,
-                        "Unable to forcibly remove this license file: " +
-                            ExceptionUtils.getMessage(e2),
-                        "Unable to remove license file",
-                        JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                TopComponents.getInstance().setConnectionLost(true);
-                TopComponents.getInstance().disconnectFromGateway();
+                );
             }
         });
 
