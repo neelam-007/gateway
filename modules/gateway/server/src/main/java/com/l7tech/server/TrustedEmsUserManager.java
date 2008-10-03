@@ -2,9 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.gateway.common.emstrust.TrustedEmsUser;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.*;
 
 import java.security.AccessControlException;
 import java.security.cert.CertificateException;
@@ -45,4 +43,14 @@ public interface TrustedEmsUserManager extends EntityManager<TrustedEmsUser, Ent
      * @throws java.security.cert.CertificateException if there is a problem with the emsCert
      */
     TrustedEmsUser configureUserMapping(User user, String emsId, X509Certificate emsCert, String emsUsername) throws ObjectModelException, AccessControlException, CertificateException;
+
+    /**
+     * Deletes all EMS user mappings for the specified user.
+     *
+     * @param user the user whose mappings to delete.
+     * @return true iff. any mappings were deleted.
+     * @throws com.l7tech.objectmodel.FindException if DB problem
+     * @throws com.l7tech.objectmodel.DeleteException if DB problem
+     */
+    boolean deleteMappingsForUser(User user) throws FindException, DeleteException;
 }

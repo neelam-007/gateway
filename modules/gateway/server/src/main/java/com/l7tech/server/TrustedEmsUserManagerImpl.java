@@ -20,12 +20,18 @@ import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Entity manager for {@link com.l7tech.gateway.common.emstrust.TrustedEmsUser}.
+ *
+ * TODO ensure user mappings get delete when the corresponding user is deleted.
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEmsUser, EntityHeader> implements TrustedEmsUserManager {
+    private static final Logger logger = Logger.getLogger(TrustedEmsUserManagerImpl.class.getName());
+
     @Resource
     private TrustedEmsManager trustedEmsManager;
 
@@ -85,6 +91,23 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
         long oid = save(trustedEmsUser);
         trustedEmsUser.setOid(oid);
         return trustedEmsUser;
+    }
+
+    public boolean deleteMappingsForUser(User user) throws FindException, DeleteException {
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("userId", user.getId());
+        map.put("providerOid", user.getProviderId());
+
+        boolean didDelete = false;
+        List<TrustedEmsUser> found = findMatching(map);
+        for (TrustedEmsUser trustedEmsUser : found) {
+            if (logger.isLoggable(Level.INFO))
+                logger.log(Level.INFO, "Deleting EMS user mapping for user {0} on EMS {1}", new Object[] { trustedEmsUser, trustedEmsUser.getTrustedEms().getId() });
+            delete(trustedEmsUser);
+            didDelete = true;
+        }
+
+        return didDelete;
     }
 
     private TrustedEmsUser findByEmsUsername(TrustedEms trustedEms, String emsUsername) throws FindException {

@@ -8,6 +8,7 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.admin.AdminLogin;
 import com.l7tech.gateway.common.admin.AdminLoginResult;
+import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.User;
 import com.l7tech.message.HttpRequestKnob;
@@ -20,6 +21,7 @@ import com.l7tech.util.HexUtils;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
+import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -32,11 +34,14 @@ import java.io.PrintStream;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.PrivilegedExceptionAction;
 import java.security.SecureRandom;
+import java.security.PrivilegedActionException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -143,16 +148,16 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
             return;
 
         try {
-            handleTrustRequest(req, hresp, param);
+            handleTrustRequest(hreq, hresp, param);
         } catch (Exception e) {
             logger.log(Level.WARNING, "EmsTrustServlet request failed: " + ExceptionUtils.getMessage(e), e);
             sendError(hresp, "Unable to establish trust relationship: " + ExceptionUtils.getMessage(e));
         }
     }
 
-    private void handleTrustRequest(Message req, HttpServletResponse hresponse, FormParams param) throws IOException {
+    private void handleTrustRequest(HttpServletRequest hreq, HttpServletResponse hresponse, FormParams param) throws IOException {
         try {
-            doHandleTrustRequest(req, hresponse, param);
+            doHandleTrustRequest(hreq, hresponse, param);
         } catch (CertificateException e) {
             logger.log(Level.WARNING, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), e);
             param.put("message", "Invalid EMS PEM certificate.");
@@ -169,6 +174,10 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
             logger.log(Level.WARNING, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), e);
             param.put("message", "Unable to access information in database.");
             sendForm(hresponse, param);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to establish EMS trust: " + ExceptionUtils.getMessage(e), e);
+            param.put("message", "An unexpected error occurred.");
+            sendForm(hresponse, param);
         }
     }
 
@@ -183,7 +192,7 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         }
     }
 
-    private void doHandleTrustRequest(Message req, HttpServletResponse hresp, FormParams inParam) throws IOException, CertificateException, PolicyAssertionException, LoginException, ObjectModelException {
+    private void doHandleTrustRequest(HttpServletRequest hreq, HttpServletResponse hresp, FormParams inParam) throws Exception {
         FormParams param = new FormParams();
         for (Map.Entry<String, String> entry : inParam.entrySet())
             param.put(entry.getKey(), stripchars(entry.getValue()));
@@ -201,7 +210,11 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         AdminLoginResult result = adminLogin.login(username, password);
         User user = result.getUser();
 
-        trustedEmsUserManager.configureUserMapping(user, emsId, emsCert, emsUsername);
+        try {
+            configureUserMapping(hreq, emsId, emsCert, emsUsername, user);
+        } catch (PrivilegedActionException e) {
+            throw e.getException();
+        }
 
         String returnurl = param.get("returnurl");
         URL url;
@@ -213,6 +226,28 @@ public class EmsTrustServlet extends AuthenticatableHttpServlet {
         }
 
         sendHtml(hresp, "<p>The specified user mapping has been configured.</p>");
+    }
+
+    private void configureUserMapping(final HttpServletRequest hreq,
+                                      final String emsId,
+                                      final X509Certificate emsCert,
+                                      final String emsUsername,
+                                      final User user)
+            throws PrivilegedActionException
+    {
+        Subject subject = new Subject();
+        subject.getPrincipals().add(user);
+        Subject.doAs(subject, new PrivilegedExceptionAction<Object>() {
+            public Object run() throws Exception {
+                RemoteUtils.callWithConnectionInfo(null, hreq, new Callable<Object>() {
+                    public Object call() throws Exception {
+                        trustedEmsUserManager.configureUserMapping(user, emsId, emsCert, emsUsername);
+                        return null;
+                    }
+                });
+                return null;
+            }
+        });
     }
 
     private URL parseUrl(String urlstr) {

@@ -39,13 +39,14 @@ public class RemoteUtils {
     /**
      * Call a callable with the given host (and, optionally, HttpServletRequest) in the context.
      *
-     * @param host the remote ip
+     * @param host the remote ip.  May be null if request is provided.
      * @param request an HttpServletRequest to make available or null
      * @param callable the Callable to invoke
      * @return the value returned by the callable
      * @throws Exception if the callable threw an exception
      */
     public static <OUT> OUT callWithConnectionInfo(String host, HttpServletRequest request, Callable<OUT> callable) throws Exception {
+        if (host == null && request != null) host = request.getRemoteAddr();
         clientHost.set(host);
         servletRequest.set(request);
         try {
