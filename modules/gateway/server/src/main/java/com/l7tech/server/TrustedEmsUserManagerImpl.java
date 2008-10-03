@@ -94,9 +94,26 @@ public class TrustedEmsUserManagerImpl extends HibernateEntityManager<TrustedEms
     }
 
     public boolean deleteMappingsForUser(User user) throws FindException, DeleteException {
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put("userId", user.getId());
+        Map<String, Object> map = new HashMap<String, Object>();        
+        map.put("ssgUserId", user.getId());
         map.put("providerOid", user.getProviderId());
+
+        boolean didDelete = false;
+        List<TrustedEmsUser> found = findMatching(map);
+        for (TrustedEmsUser trustedEmsUser : found) {
+            if (logger.isLoggable(Level.INFO))
+                logger.log(Level.INFO, "Deleting EMS user mapping for user {0} ({1} on EMS {2})", new Object[] {
+                        trustedEmsUser.getSsgUserId(), trustedEmsUser.getEmsUserId(), trustedEmsUser.getTrustedEms().getName() });
+            delete(trustedEmsUser);
+            didDelete = true;
+        }
+
+        return didDelete;
+    }
+
+    public boolean deleteMappingsForIdentityProvider(long identityProviderOid) throws FindException, DeleteException {
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("providerOid", identityProviderOid);
 
         boolean didDelete = false;
         List<TrustedEmsUser> found = findMatching(map);

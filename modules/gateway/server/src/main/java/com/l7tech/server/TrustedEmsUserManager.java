@@ -53,4 +53,14 @@ public interface TrustedEmsUserManager extends EntityManager<TrustedEmsUser, Ent
      * @throws com.l7tech.objectmodel.DeleteException if DB problem
      */
     boolean deleteMappingsForUser(User user) throws FindException, DeleteException;
+
+    /**
+     * Deletes all EMS user mappings for users in the specified identity provider.
+     *
+     * @param identityProviderOid the OID of the identity provider whose EMS user mappings to delete.  Required.
+     * @return true iff. any mappings were deleted.
+     * @throws com.l7tech.objectmodel.FindException if DB problem
+     * @throws com.l7tech.objectmodel.DeleteException if DB problem
+     */
+    boolean deleteMappingsForIdentityProvider(long identityProviderOid) throws FindException, DeleteException;
 }

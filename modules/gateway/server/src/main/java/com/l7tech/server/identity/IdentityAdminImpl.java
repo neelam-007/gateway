@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
+import com.l7tech.server.TrustedEmsUserManager;
 import com.l7tech.server.event.admin.AuditRevokeAllUserCertificates;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.security.rbac.RoleManager;
@@ -19,6 +20,7 @@ import com.l7tech.util.HexUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 
+import javax.annotation.Resource;
 import javax.security.auth.x500.X500Principal;
 import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
@@ -45,6 +47,9 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     private final RoleManager roleManager;
     private final DefaultKey defaultKey;
     private ApplicationEventPublisher applicationEventPublisher;
+
+    @Resource
+    private TrustedEmsUserManager trustedEmsUserManager;
 
     private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);
 
@@ -125,6 +130,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             UserManager userManager = retrieveUserManager(ipoid);
             if (userManager == null) throw new DeleteException("Cannot retrieve the UserManager");
             userManager.deleteAll(ipoid);
+            trustedEmsUserManager.deleteMappingsForIdentityProvider(ipoid);
         } catch (FindException e) {
             throw new DeleteException("This object cannot be found (it no longer exist?).", e);
         }
@@ -185,6 +191,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             manager.delete(ipc);
 
             roleManager.deleteEntitySpecificRole(ID_PROVIDER_CONFIG, ipc.getOid());
+            trustedEmsUserManager.deleteMappingsForIdentityProvider(ipc.getOid());
             logger.info("Deleted IDProviderConfig: " + ipc);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
@@ -248,6 +255,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             if (user.equals(JaasUtils.getCurrentUser()))
                 throw new DeleteException("The currently logged-in user cannot be deleted");
             userManager.delete(user);
+            trustedEmsUserManager.deleteMappingsForUser(user);
             logger.info("Deleted User: " + user.getLogin());
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
