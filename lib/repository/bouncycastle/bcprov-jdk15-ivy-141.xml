@@ -2,7 +2,7 @@
 <ivy-module version="1.0">
 	<info organisation="bouncycastle"
 		module="bcprov-jdk15"
-		revision="135"
+		revision="141"
 		status="release"
 		publication="20080707125026"
 		default="true"

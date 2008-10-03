@@ -25,7 +25,7 @@
         <dependency name="layer7-gui" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-policy" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
-        <dependency org="bouncycastle" name="bcprov-jdk15" rev="135" force="true" conf="core"/>
+        <dependency org="bouncycastle" name="bcprov-jdk15" rev="141" force="true" conf="core"/>
 		<dependency org="commons-codec" name="commons-codec" rev="1.2" force="true" conf="core"/>
         <dependency org="commons-collections" name="commons-collections" rev="3.2" force="true" conf="core"/>
         <dependency org="commons-logging" name="commons-logging" rev="1.1.1" force="true" conf="core"/>

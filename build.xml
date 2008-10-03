@@ -196,7 +196,7 @@
         <include name="**/xmlpad-res.jar"/>
         <include name="**/xss4j*.jar"/>
         <include name="**/log4j-1.2.14.jar"/>
-        <include name="**/bcprov-jdk15-135.jar"/>
+        <include name="**/bcprov*.jar"/>
         <include name="**/xalan-2.7.1.jar"/>
         <include name="**/serializer-xalan-2.7.1.jar"/>
         <include name="**/saaj-api.jar"/>

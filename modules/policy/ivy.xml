@@ -29,7 +29,7 @@
         <dependency name="layer7-wsdl" rev="latest.integration" force="true" conf="core"/>
         <dependency org="antlr" name="antlr" rev="2.7.7-l7p1" conf="optional,test"/>
         <!-- Needed when tarari is used -->
-        <dependency org="bouncycastle" name="bcprov-jdk15" rev="135" force="true" conf="core"/>
+        <dependency org="bouncycastle" name="bcprov-jdk15" rev="141" force="true" conf="core"/>
         <dependency org="jaxen" name="jaxen" rev="1.1-beta-10" force="true" conf="core"/>
         <dependency org="nekohtml" name="nekohtml" rev="0.9.5" force="true" conf="core"/>
         <dependency org="org.apache.ws.commons.policy" name="policy" rev="1.0" force="true" conf="core"/>
