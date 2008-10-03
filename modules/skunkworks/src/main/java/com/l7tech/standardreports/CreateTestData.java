@@ -17,7 +17,7 @@ import java.util.*;
 
 public class CreateTestData {
 
-    private static int objectId = 500000;
+    private static int objectId = 700000;
     private Calendar cal;
     private int currentDay;
     private int timeUnitChanges;
@@ -45,13 +45,14 @@ public class CreateTestData {
     private String fileName;
 
     //mapping_type to mapping_key
-    private final LinkedHashMap<String,String> mappingKeys;
-    private String mappingKeyInsert;
-    private int mappingKeyObjectId;
+    private final List<LinkedHashMap<String,String>> mappingKeys;
+    private List<String> mappingKeyInsertList = new ArrayList<String>();
+    private List<Integer> mappingKeyObjectIdList =  new ArrayList<Integer>();
     private final LinkedHashMap<String,List<String>> values;
     private final List<String> operations;
-    private List<Map<Integer, String>> valueInserts;
+    private List<List<Map<Integer, String>>> valueInsertsList = new ArrayList<List<Map<Integer, String>>>();
 
+    private static final String NODE_ID = "NODE_ID";
     /**
      *
      * @param nodeId
@@ -59,7 +60,7 @@ public class CreateTestData {
      * @param values the key in the Map must be a key in mappingKeys, all len
      * @param operations
      */
-    public CreateTestData(String nodeId, LinkedHashMap<String, String> mappingKeys, LinkedHashMap<String, List<String>> values,
+    public CreateTestData(String nodeId, List<LinkedHashMap<String, String>> mappingKeys, LinkedHashMap<String, List<String>> values,
                           List<String> operations) {
         this.nodeId = nodeId;
         this.mappingKeys = mappingKeys;
@@ -70,24 +71,25 @@ public class CreateTestData {
     }
 
     private void initMappingRecords(){
-        objectId++;
-        mappingKeyObjectId = objectId;
-        
-        StringBuilder sb = new StringBuilder("INSERT INTO message_context_mapping_keys (objectid, version, digested");
-        for(int i = 0; i < mappingKeys.keySet().size(); i++){
-            sb.append(",mapping"+(i+1)+"_type,");
-            sb.append("mapping"+(i+1)+"_key");
-        }
+        for(LinkedHashMap<String, String> currentKeyMap: mappingKeys){
+            objectId++;
+            mappingKeyObjectIdList.add(objectId);
 
-        sb.append(") VALUES (" + mappingKeyObjectId + ",1,\"NOT USED\"");
+            StringBuilder sb = new StringBuilder("INSERT INTO message_context_mapping_keys (objectid, version, digested");
+            for(int i = 0; i < currentKeyMap.keySet().size(); i++){
+                sb.append(",mapping"+(i+1)+"_type,");
+                sb.append("mapping"+(i+1)+"_key");
+            }
 
-        for(String s: mappingKeys.keySet()){
-            sb.append(",\"" + s + "\",");
-            sb.append("\""+mappingKeys.get(s)+"\"");
+            sb.append(") VALUES (" + objectId + ",1,\"NOT USED\"");
+
+            for(String s: currentKeyMap.keySet()){
+                sb.append(",\"" + s + "\",");
+                sb.append("\""+currentKeyMap.get(s)+"\"");
+            }
+            sb.append(");");
+            mappingKeyInsertList.add(sb.toString());
         }
-        sb.append(");");
-        mappingKeyInsert = sb.toString();
-//        System.out.println(mappingKeyInsert);
 
     }
 
@@ -96,42 +98,48 @@ public class CreateTestData {
   INSERT INTO message_context_mapping_values (  objectid, digested, mapping_keys_oid, service_operation, mapping1_value,
    mapping2_value, create_time) VALUES () 
 */
-        objectId++;
-        StringBuilder sb = new StringBuilder("INSERT INTO message_context_mapping_values (  objectid, digested, " +
-                "mapping_keys_oid, service_operation");
 
-        for(int i = 0; i < mappingKeys.keySet().size(); i++){
-            sb.append(",mapping"+(i+1)+"_value");
-        }
+        for (int i1 = 0; i1 < mappingKeys.size(); i1++) {
+            LinkedHashMap<String, String> currentKeyMap = mappingKeys.get(i1);
+            List<Map<Integer, String>> currentValueListMap = new ArrayList<Map<Integer, String>>();
+            objectId++;
+            StringBuilder sb = new StringBuilder("INSERT INTO message_context_mapping_values (  objectid, digested, " +
+                    "mapping_keys_oid, service_operation");
 
-        sb.append(",create_time) VALUES (");
-
-        String halfInsert = sb.toString();
-
-        List<List<String>> completeList = new ArrayList<List<String>>();
-        addToList(completeList, operations);
-        for(String s: mappingKeys.keySet()){
-            addToList(completeList, values.get(s));
-        }
-
-        valueInserts = new ArrayList<Map<Integer, String>>();
-        //Create and record the objectid to insert statement for each of the message_context_mapping_values
-        for(List<String> list: completeList){
-            sb = new StringBuilder(halfInsert);
-            int newValueKey = objectId++;
-            sb.append( newValueKey + ",\"NOT USED\", " + mappingKeyObjectId);
-            for(String s: list){
-                sb.append(",\"" + s+"\"");
+            for (int i = 0; i < currentKeyMap.keySet().size(); i++) {
+                sb.append(",mapping" + (i + 1) + "_value");
             }
-            sb.append(", " + System.currentTimeMillis()+ ");");
-            Map<Integer, String> map = new HashMap<Integer, String>();
-            map.put(new Integer(newValueKey), sb.toString());
-            valueInserts.add(map);
-        }
 
-//        for(Map<Integer, String> map: valueInserts){
-//            System.out.println(map.values().iterator().next()+" ");
-//        }
+            sb.append(",create_time) VALUES (");
+
+            String halfInsert = sb.toString();
+
+            List<List<String>> completeList = new ArrayList<List<String>>();
+            addToList(completeList, operations);
+            for (String s : currentKeyMap.keySet()) {
+                addToList(completeList, values.get(s));
+            }
+
+            //Create and record the objectid to insert statement for each of the message_context_mapping_values
+            for (List<String> list : completeList) {
+                sb = new StringBuilder(halfInsert);
+                int newValueKey = objectId++;
+                sb.append(newValueKey + ",\"NOT USED\", " + mappingKeyObjectIdList.get(i1));
+                for (String s : list) {
+                    sb.append(",\"" + s + "\"");
+                }
+                sb.append(", " + System.currentTimeMillis() + ");");
+                Map<Integer, String> map = new HashMap<Integer, String>();
+                map.put(new Integer(newValueKey), sb.toString());
+                currentValueListMap.add(map);
+            }
+
+            valueInsertsList.add(currentValueListMap);
+
+            //        for(Map<Integer, String> map: valueInsertsList){
+            //            System.out.println(map.values().iterator().next()+" ");
+            //        }
+        }
 
     }
 
@@ -186,11 +194,16 @@ public class CreateTestData {
             }
 
             bw = new BufferedWriter(new FileWriter(f));
-            bw.write(mappingKeyInsert);
-
-            for(Map<Integer, String> map: valueInserts){
-                bw.write(map.values().iterator().next() + System.getProperty("line.separator"));
+            for(String s: mappingKeyInsertList){
+                bw.write(s + System.getProperty("line.separator"));    
             }
+
+            for(List<Map<Integer, String>> listMap: valueInsertsList){
+                for(Map<Integer, String> map: listMap){
+                    bw.write(map.values().iterator().next() + System.getProperty("line.separator"));
+                }
+            }
+            
         } finally {
             if(bw != null) {
                 bw.flush();
@@ -259,20 +272,22 @@ public class CreateTestData {
                 "attempted, authorized, completed, back_min, back_max, back_sum, front_min, front_max, front_sum) " +
                 " VALUES (";
 
-        for(Map<Integer, String> map: valueInserts){
-            StringBuffer sb = new StringBuffer(insertStr);
-            sb.append(serviceMetricId);
-            sb.append(", ").append(map.keySet().iterator().next());
-            int [] tpStats = getThroughPutStats();
-            for(int i: tpStats){
-                sb.append(", ").append(i);                
+        for(List<Map<Integer, String>> currentValueListMap: valueInsertsList){
+            for(Map<Integer, String> map: currentValueListMap){
+                StringBuffer sb = new StringBuffer(insertStr);
+                sb.append(serviceMetricId);
+                sb.append(", ").append(map.keySet().iterator().next());
+                int [] tpStats = getThroughPutStats();
+                for(int i: tpStats){
+                    sb.append(", ").append(i);
+                }
+                int [] responseTimes = getResponseTimes();
+                for(int i: responseTimes){
+                    sb.append(", ").append(i);
+                }
+                sb.append(");");
+                bw.write(sb.toString() + System.getProperty("line.separator"));
             }
-            int [] responseTimes = getResponseTimes();
-            for(int i: responseTimes){
-                sb.append(", ").append(i);                
-            }
-            sb.append(");");
-            bw.write(sb.toString() + System.getProperty("line.separator"));
         }
     }
     
@@ -399,26 +414,41 @@ public class CreateTestData {
      * @throws Exception
      */
     public static void main(String [] args) throws Exception{
-        FileInputStream fileInputStream = new FileInputStream("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/report.properties");
+        FileInputStream fileInputStream = new FileInputStream("report.properties");
         Properties prop = new Properties();
         prop.load(fileInputStream);
 
         LinkedHashMap<String, String> nameToId = loadMapFromProperties(ReportApp.SERVICE_ID_TO_NAME, ReportApp.SERVICE_ID_TO_NAME_OID, prop);
-        LinkedHashMap<String, String> mappingKeys1 = loadMapFromProperties("MAPPING_KEY_TYPE", "MAPPING_KEY_KEY", prop);
 
+        List<LinkedHashMap<String, String>> mappingKeyList = new ArrayList<LinkedHashMap<String, String>>();
+        LinkedHashMap<String, String> mappingKeys;
+        boolean empty = false;
+        int index = 1;
+        while(!empty){
+            mappingKeys = loadMapFromProperties(index+"_MAPPING_KEY_TYPE", index+"_MAPPING_KEY_KEY", prop);
+            empty = mappingKeys.isEmpty();
+            if(!empty) mappingKeyList.add(mappingKeys);
+            index++;
+        }
 
+        if(mappingKeyList.isEmpty()) throw new IllegalArgumentException("At least one key mapping row must be defined");
+        
         LinkedHashMap<String, List<String>> values = new LinkedHashMap<String,  List<String>>();
 
         //Loads up all the custom mapping values which is determined by the map of keys above
-        //currently hardcoded for 2 mapping key table rows
-        for(String mappingType: mappingKeys1.keySet()){
-            List<String> mappingValueList = loadListFromProperties(mappingKeys1.get(mappingType), prop);
+        //Use the first map in mappingkeyList for key names
+        LinkedHashMap<String, String> mappingKeyFirstMap = mappingKeyList.iterator().next();
+
+        for(String mappingType: mappingKeyFirstMap.keySet()){
+            List<String> mappingValueList = loadListFromProperties(mappingKeyFirstMap.get(mappingType), prop);
             values.put(mappingType,mappingValueList);
         }
 
         List<String> operations = loadListFromProperties("OPERATION", prop);
 
-        CreateTestData testData = new CreateTestData("240869cda32562eb0287696033b4acca", mappingKeys1, values, operations);
+
+        String nodeId = prop.getProperty(NODE_ID);
+        CreateTestData testData = new CreateTestData(nodeId, mappingKeyList, values, operations);
         testData.createMappingData();
         for(String s: nameToId.values()){
             testData.createMetricData(Utilities.HOUR, s);
