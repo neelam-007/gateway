@@ -400,7 +400,7 @@
             </indexjars>
             <manifest>
                 <attribute name="Implementation-Title" value="${ivy.extra.title}"/>
-                <attribute name="Implementation-Version" value="${build.version}"/>
+                <attribute name="Implementation-Version" value="${module.version.target}"/>
                 <attribute name="Implementation-Vendor" value="${build.vendor}"/>
                 <attribute name="Implementation-Vendor-Id" value="${build.vendor.id}"/>
                 <attribute name="Built-By" value="${build.user}"/>
