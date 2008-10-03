@@ -1,6 +1,7 @@
 package com.l7tech.client.gui;
 
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.ImageCache;
 import com.l7tech.client.gui.util.IconManager;
 
 import javax.swing.*;
@@ -23,6 +24,8 @@ class MessageViewer extends JFrame {
     private JPanel messageView;
     private JList messageList;
     private JCheckBox formatXmlCheckbox;
+    private JLabel warningMsg = new JLabel(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/proxy/resources/Warning16.png")));
+
 
     private class MessageViewListener implements ListDataListener {
         public void intervalAdded(final ListDataEvent e) {
@@ -60,6 +63,9 @@ class MessageViewer extends JFrame {
                                                    GridBagConstraints.CENTER,
                                                    GridBagConstraints.BOTH,
                                                    new Insets(0, 0, 0, 0), 0, 0));
+
+            //check if message was truncated
+            warningMsg.setVisible(messageViewerModel.isMessageTruncated(idx));
         }
         messageView.validate();
         messageView.updateUI();
@@ -121,8 +127,13 @@ class MessageViewer extends JFrame {
         Utilities.runActionOnEscapeKey(getRootPane(), hideAction);
         getRootPane().setDefaultButton(hideButton);
         final JPanel buttonPanel = new JPanel();
+        warningMsg.setForeground(new Color(255, 102, 0));
+        warningMsg.setText("Message was truncated");
+        warningMsg.setVisible(false);
+        buttonPanel.add(warningMsg);
+        buttonPanel.add(Box.createHorizontalStrut(15));
         buttonPanel.add(formatXmlCheckbox);
-        buttonPanel.add(Box.createHorizontalStrut(60));
+        buttonPanel.add(Box.createHorizontalStrut(15));
         buttonPanel.add(clearButton);
         buttonPanel.add(hideButton);
 
@@ -142,7 +153,7 @@ class MessageViewer extends JFrame {
                                       GridBagConstraints.HORIZONTAL,
                                       new Insets(0, 0, 0, 0), 0, 0));
 
-        setSize(500, 400);
+        setSize(600, 400);
         validate();
         Utilities.centerOnScreen(this);
     }

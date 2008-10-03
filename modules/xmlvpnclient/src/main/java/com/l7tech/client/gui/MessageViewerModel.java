@@ -9,6 +9,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.HttpHeadersKnob;
 import com.l7tech.message.Message;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.Policy;
@@ -19,6 +20,7 @@ import com.l7tech.client.gui.policy.PolicyTreeModel;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.tree.TreeModel;
@@ -37,6 +39,9 @@ import java.util.logging.Logger;
  * Keep track of messages that have come and gone.
  */
 class MessageViewerModel extends AbstractListModel implements RequestInterceptor {
+    private static final String PER_MESSAGE_STORAGE_SIZE = "com.l7tech.client.gui.perMessageStorageSize";
+    private static final int MAX_PER_MESSAGE_STORAGE_SIZE = 50 * 1024; //50kb
+
     private static final Logger log = Logger.getLogger(MessageViewerModel.class.getName());
     private static final int MAX_MESSAGES = 64;
     private static final char RIGHTWARD_ARROW = '\u2192';
@@ -54,9 +59,17 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     private boolean recordToClient = false;
     private boolean recordPolicies = true;
     private boolean recordErrors = true;
+    private int perMessageStorageSize = 0;
+    private int messagesListSize = 0;
 
     MessageViewerModel() {
-        messages.add(new SavedTextMessage("Session started      ", ""));
+        //initialize message viewer
+        perMessageStorageSize = SyspropUtil.getInteger(PER_MESSAGE_STORAGE_SIZE, MAX_PER_MESSAGE_STORAGE_SIZE);
+        if (perMessageStorageSize <= 0 || perMessageStorageSize > MAX_PER_MESSAGE_STORAGE_SIZE) {
+            perMessageStorageSize = MAX_PER_MESSAGE_STORAGE_SIZE;
+        }
+
+        messages.add(new SavedTextMessage("Session started      ", "", perMessageStorageSize));
     }
 
     /** Represents an intercept message we are keeping track of. */
@@ -65,18 +78,30 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         private final String title;
         private final HttpHeaders headers;
         private final Date when;
+        private final int truncateSize;
+        private boolean messageTruncated;
 
-        SavedMessage(final String title, final HttpHeaders headers) {
+        SavedMessage(final String title, final HttpHeaders headers, int truncateSize) {
             this.title = title;
             this.headers = headers;
             this.when = new Date();
+            this.truncateSize = truncateSize;
+            this.messageTruncated = false;
         }
 
-        SavedMessage(final String title) {
-            this(title, null);
+        SavedMessage(final String title, int truncateSize) {
+            this(title, null, truncateSize);
         }
 
         abstract Component getComponent(boolean reformat);
+
+        /**
+         * Truncates the message if the message size limit has been reached.
+         * Generally, we'll truncate to the message size limit and append "..." to denote the truncated parts.
+         *
+         * @param message   The message to be processed for truncation
+         */
+        abstract void processMessageTruncation(String message);
 
         public String toString() {
             return dateFormat.format(when) + ": " + title;
@@ -85,25 +110,54 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         protected String headersToString() {
             return headers == null ? "" : (headers.toExternalForm() + '\n');
         }
+
+        public int getTruncateSize() {
+            return truncateSize;
+        }
+
+        public boolean isMessageTruncated() {
+            return messageTruncated;
+        }
+
+        public void setMessageTruncated(boolean messageTruncated) {
+            this.messageTruncated = messageTruncated;
+        }
     }
 
     /** Represents a message in text form. */
     private static class SavedTextMessage extends SavedMessage {
         private String message;
 
-        SavedTextMessage(final String title, final String message) {
-            this(title, message, null);
+        SavedTextMessage(final String title, final String message, int truncateSize) {
+            this(title, message, null, truncateSize);
         }
 
-        SavedTextMessage(final String title, final String message, final HttpHeaders headers) {
-            super(title, headers);
-            this.message = message;
+        SavedTextMessage(final String title, final String message, final HttpHeaders headers, int truncateSize) {
+            super(title, headers, truncateSize);
+            processMessageTruncation(message);
         }
 
         Component getComponent(boolean reformat) {
             JTextArea ta = new ContextMenuTextArea(headersToString() + message);
             ta.setEditable(false);
             return ta;
+        }
+
+        void processMessageTruncation(String message) {
+            int messageSize = 0;
+            try {                              
+                 messageSize = message.getBytes("UTF-8").length * 2;
+                if (messageSize  > getTruncateSize()) {
+                    setMessageTruncated(true);
+                    this.message = (new String(message.getBytes("UTF-8"), 0, getTruncateSize(), "UTF-8")) + "\n   [Message truncated...]" ;
+                } else {
+                    this.message = message;
+                }
+            } catch (UnsupportedEncodingException uee) {
+                this.message = "Unable truncated message.  Message size '" + messageSize + "' bytes too large to store: " + uee;
+            } catch (IndexOutOfBoundsException iobe) {
+                this.message = "Unable truncated message.  Message size '" + messageSize + "' bytes too large to store: " + iobe;
+            }
         }
     }
 
@@ -112,7 +166,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         private final PolicyAttachmentKey key;
 
         SavedPolicyMessage(final String title, PolicyAttachmentKey key, ClientAssertion policy) {
-            super(title);
+            super(title, 0);
             this.key = key;
             this.policy = policy;
         }
@@ -135,6 +189,10 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
                                              new Insets(0, 0, 0, 0), 0, 0));
 
             return panel;
+        }
+
+        void processMessageTruncation(String message) {
+            //no message to be truncated
         }
     }
 
@@ -185,7 +243,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         private final String err;
 
         PolicyErrorMessage(String title, PolicyAttachmentKey key, String err) {
-            super(title);
+            super(title, 0);
             this.key = key;
             this.err = err != null ? err : "No extra information available";
         }
@@ -202,6 +260,10 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
                                              new Insets(0, 0, 0, 0), 0, 0));
             return panel;
         }
+
+        void processMessageTruncation(String message) {
+            //not sure if we really want to truncate error messages, so we'll leave it as is for now
+        }
     }
 
     /**
@@ -214,38 +276,31 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     private static class SavedXmlMessage extends SavedMessage {
         private String str = null;
         private boolean strWasFormatted = false;
-        private String unparsed = null;
-        private Document message = null;
+        private String unformatted = null;
+        private String formatted = null;
+        //private Document message = null;
 
-        SavedXmlMessage(final String title, final Document msg, HttpHeaders headers) {
-            super(title, headers);
-            this.message = msg;
+        @Deprecated
+        SavedXmlMessage(final String title, final Document msg, HttpHeaders headers, int truncateSize) {
+            super(title, headers, truncateSize);
+
         }
 
-        SavedXmlMessage(final String title, final String unparsed, HttpHeaders headers) {
-            super(title, headers);
-            this.unparsed = unparsed;
+        SavedXmlMessage(final String title, final String unparsed, HttpHeaders headers, int truncateSize) {
+            super(title, headers, truncateSize);
+            processMessageTruncation(unparsed);
         }
 
         String getMessageText(boolean reformat) {
             if (str != null && reformat == strWasFormatted)
                 return str;
-            if (message == null) {
-                try {
-                    message = XmlUtil.stringToDocument(unparsed);
-                } catch (Exception e) {
-                    log.log(Level.SEVERE, e.getMessage(), e);
-                    return headersToString() + unparsed;
-                }
+
+            if (reformat) {
+                str = headersToString() + formatted;
+            } else {
+                str = headersToString() + unformatted;
             }
-            try {
-                if (reformat)
-                    str = headersToString() + XmlUtil.nodeToFormattedString(message);
-                else
-                    str = headersToString() + XmlUtil.nodeToString(message);
-            } catch (IOException e) {
-                str = headersToString() + "Unable to read message: " + e;
-            }
+
             strWasFormatted = reformat;
             return str;
         }
@@ -254,6 +309,46 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             JTextArea ta = new ContextMenuTextArea(getMessageText(reformat));
             ta.setEditable(false);
             return ta;
+        }
+
+        void processMessageTruncation(String message) {
+            int messageSize = 0;
+            boolean isTruncated = false;
+            Document document = null;
+            try {
+                document = XmlUtil.stringToDocument(message);
+                StringBuffer buf = new StringBuffer(XmlUtil.nodeToString(document));
+
+                //process the unformated message
+                messageSize = buf.toString().getBytes("UTF-8").length * 2;
+                if (messageSize > getTruncateSize()) {
+                    setMessageTruncated(true);
+                    this.unformatted = (new String(buf.toString().getBytes("UTF-8"), 0, getTruncateSize(), "UTF-8")) + "\n   [Message truncated...]" ;
+                    isTruncated = true;
+                } else {
+                    this.unformatted = buf.toString();
+                }
+
+                //process the formated message
+                buf = new StringBuffer(XmlUtil.nodeToFormattedString(document));
+                messageSize = buf.toString().getBytes("UTF-8").length * 2;
+                if (messageSize > getTruncateSize()) {
+                    setMessageTruncated(true);
+                    this.formatted = (new String(buf.toString().getBytes("UTF-8"), 0, getTruncateSize(), "UTF-8")) + "\n   [Message truncated...]" ;
+                    isTruncated = true;
+                } else {
+                    this.formatted = buf.toString();
+                }
+            } catch (UnsupportedEncodingException see) {
+                this.formatted = "Unable truncated message.  Message size '" + messageSize + "' bytes too large to store: " + see;
+                this.unformatted = "Unable truncated message.  Message size '" + messageSize + "' bytes too large to store: " + see;
+            } catch (SAXException se) {
+                this.formatted = "Unable truncated message.  Message size '" + messageSize + "' bytes too large to store: " + se;
+                this.unformatted = "Unable truncated message.  Message size '" + messageSize + "' bytes too large to store: " + se;
+            } catch (IOException ioe) {
+                this.formatted = "Unable truncated message.  Message size '" + messageSize + "' bytes too large to store: " + ioe;
+                this.unformatted = "Unable truncated message.  Message size '" + messageSize + "' bytes too large to store: " + ioe;
+            }
         }
     }
 
@@ -275,6 +370,16 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     }
 
     /**
+     * Get the message value to determine whether the message was truncated.
+     *
+     * @param idx   The index of the messsage.
+     * @return  TRUE if the original message was truncated, otherwise FALSE.
+     */
+    public boolean isMessageTruncated(final int idx) {
+        return messages.get(idx).isMessageTruncated();
+    }
+
+    /**
      * Add a simple custom text message to the GUI viewer.
      * Can be called from any thread.
      *
@@ -282,7 +387,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
      * @param body   the body of the message.  May be empty but must not be null.
      */
     public void addMessage(String title, String body) {
-        appendMessage(new SavedTextMessage(title, body));
+        appendMessage(new SavedTextMessage(title, body, perMessageStorageSize));
     }
 
     /**
@@ -312,12 +417,12 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         HttpHeadersKnob hhk = (HttpHeadersKnob)context.getRequest().getKnobAlways(HttpHeadersKnob.class);
         try {
             appendMessage(new SavedXmlMessage("From Client",
-                                              context.getRequest().getXmlKnob().getOriginalDocument(),
-                                              hhk.getHeaders()));
+                    XmlUtil.nodeToString(context.getRequest().getXmlKnob().getOriginalDocument()),
+                    hhk.getHeaders(), perMessageStorageSize));
         } catch (Exception e) {
             final String msg = "Message Viewer unable to get request as XML Document: " + e.getMessage();
             log.log(Level.WARNING, msg, e);
-            appendMessage(new SavedTextMessage("From Client", msg));
+            appendMessage(new SavedTextMessage("From Client", msg, perMessageStorageSize));
         }
     }
 
@@ -329,15 +434,17 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             final HttpHeadersKnob hhk = (HttpHeadersKnob)response.getKnobAlways(HttpHeadersKnob.class);
             final HttpHeaders headers = hhk.getHeaders();
             if (!response.isXml()) {
-                appendMessage(new SavedTextMessage("To Client", "<Non-XML response of type " + response.getMimeKnob().getOuterContentType().getMainValue() + '>', headers));
+                appendMessage(new SavedTextMessage("To Client",
+                        "<Non-XML response of type " + response.getMimeKnob().getOuterContentType().getMainValue() + '>',
+                        headers, perMessageStorageSize));
                 return;
             }
             final Document responseDoc = response.getXmlKnob().getDocumentReadOnly();
-            appendMessage(new SavedXmlMessage("To Client", responseDoc, headers));
+            appendMessage(new SavedXmlMessage("To Client", XmlUtil.nodeToString(responseDoc), headers, perMessageStorageSize));
         } catch (Exception e) {
             final String msg = "Message Viewer unable to get response as XML Document: " + e.getMessage();
             log.log(Level.WARNING, msg, e);
-            appendMessage(new SavedTextMessage("To Client", msg));
+            appendMessage(new SavedTextMessage("To Client", msg, perMessageStorageSize));
         }
     }
 
@@ -347,12 +454,12 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         try {
             GenericHttpHeaders headers = new GenericHttpHeaders(headersSent.toArray(new HttpHeader[headersSent.size()]));
             appendMessage(new SavedXmlMessage(TO_SERVER,
-                                              context.getRequest().getXmlKnob().getDocumentReadOnly(),
-                                              headers));
+                                              XmlUtil.nodeToString(context.getRequest().getXmlKnob().getDocumentReadOnly()),
+                                              headers, perMessageStorageSize));
         } catch (Exception e) {
             final String msg = "Message Viewer unable to get request as XML Document: " + e.getMessage();
             log.log(Level.WARNING, msg, e);
-            appendMessage(new SavedTextMessage(TO_SERVER, msg));
+            appendMessage(new SavedTextMessage(TO_SERVER, msg, perMessageStorageSize));
         }
     }
 
@@ -364,16 +471,18 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             final HttpHeadersKnob hhk = (HttpHeadersKnob)response.getKnobAlways(HttpHeadersKnob.class);
             final HttpHeaders headers = hhk.getHeaders();
             if (!response.isXml()) {
-                appendMessage(new SavedTextMessage(FROM_SERVER, "<Non-XML response of type " + response.getMimeKnob().getOuterContentType().getMainValue() + '>', headers));
+                appendMessage(new SavedTextMessage(FROM_SERVER,
+                        "<Non-XML response of type " + response.getMimeKnob().getOuterContentType().getMainValue() + '>',
+                        headers, perMessageStorageSize));
                 return;
             }
             Document responseDoc = response.getXmlKnob().getDocumentReadOnly();
-            responseDoc = XmlUtil.stringToDocument(XmlUtil.nodeToString(responseDoc));
-            appendMessage(new SavedXmlMessage(FROM_SERVER, responseDoc, headers));
+            //responseDoc = XmlUtil.stringToDocument(XmlUtil.nodeToString(responseDoc));
+            appendMessage(new SavedXmlMessage(FROM_SERVER, XmlUtil.nodeToString(responseDoc), headers, perMessageStorageSize));
         } catch (Exception e) {
             final String msg = "Message Viewer unable to get response as XML Document: " + e.getMessage();
             log.log(Level.WARNING, msg, e);
-            appendMessage(new SavedTextMessage(FROM_SERVER, msg));
+            appendMessage(new SavedTextMessage(FROM_SERVER, msg, perMessageStorageSize));
         }
     }
 
@@ -390,10 +499,10 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             p = new PrintStream(b, true, "UTF-8");
             t.printStackTrace(p);
             p.flush();
-            appendMessage(new SavedTextMessage("Client Error", b.toString("UTF-8")));
+            appendMessage(new SavedTextMessage("Client Error", b.toString("UTF-8"), perMessageStorageSize));
         } catch (UnsupportedEncodingException e) {
             log.log(Level.SEVERE, e.getMessage(), e);
-            appendMessage(new SavedTextMessage("Client Error", t.getMessage()));
+            appendMessage(new SavedTextMessage("Client Error", t.getMessage(), perMessageStorageSize));
         } finally {
             ResourceUtils.closeQuietly(p);
             ResourceUtils.closeQuietly(b);
@@ -413,10 +522,10 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             p = new PrintStream(b, true, "UTF-8");
             t.printStackTrace(p);
             p.flush();            
-            appendMessage(new SavedTextMessage(SERVER_ERROR, t.getMessage()));
+            appendMessage(new SavedTextMessage(SERVER_ERROR, t.getMessage(), perMessageStorageSize));
         } catch (UnsupportedEncodingException e) {
             log.log(Level.SEVERE, e.getMessage(), e);
-            appendMessage(new SavedTextMessage(SERVER_ERROR, t.getMessage()));
+            appendMessage(new SavedTextMessage(SERVER_ERROR, t.getMessage(), perMessageStorageSize));
         } finally {
             ResourceUtils.closeQuietly(p);
             ResourceUtils.closeQuietly(b);
@@ -449,7 +558,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             appendMessage(new PolicyErrorMessage(POLICY_DOWNLOAD_ERROR, binding, mess));
         } catch (UnsupportedEncodingException e) {
             log.log(Level.SEVERE, e.getMessage(), e);
-            appendMessage(new SavedTextMessage(POLICY_DOWNLOAD_ERROR, error == null ? "null" : error.getMessage()));
+            appendMessage(new SavedTextMessage(POLICY_DOWNLOAD_ERROR, error == null ? "null" : error.getMessage(), perMessageStorageSize));
         } finally {
             ResourceUtils.closeQuietly(p);
             ResourceUtils.closeQuietly(b);
