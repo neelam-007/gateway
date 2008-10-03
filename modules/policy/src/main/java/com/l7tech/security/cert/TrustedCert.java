@@ -69,10 +69,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
         SAML_ISSUER("Sign SAML"),
 
         /** Is this cert trusted as a SAML attesting entity? This applies to sender-vouches only. */
-        SAML_ATTESTING_ENTITY("SAML Attesting Entity"),
-
-        /** Is this cert trusted to vouch for EMS users in incoming admin requests from the EMS? */
-        TRUSTED_EMS("Enterprise Management Server");
+        SAML_ATTESTING_ENTITY("SAML Attesting Entity");
 
         private final String usageDescription;
 

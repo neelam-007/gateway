@@ -6,16 +6,13 @@ import com.l7tech.gateway.common.security.rbac.EntityType;
 import static com.l7tech.gateway.common.security.rbac.EntityType.TRUSTED_CERT;
 import static com.l7tech.gateway.common.security.rbac.EntityType.TRUSTED_EMS;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import static com.l7tech.gateway.common.security.rbac.OperationType.CREATE;
-import static com.l7tech.gateway.common.security.rbac.OperationType.READ;
-import static com.l7tech.gateway.common.security.rbac.OperationType.UPDATE;
+import static com.l7tech.gateway.common.security.rbac.OperationType.*;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
-import static com.l7tech.security.cert.TrustedCert.TrustedFor;
 import com.l7tech.server.security.rbac.RoleManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,19 +87,10 @@ public class TrustedEmsManagerImpl extends HibernateEntityManager<TrustedEms, En
             trustedCert = new TrustedCert();
             trustedCert.setName("EMS Cert: " + emsId);
             trustedCert.setCertificate(emsCert);
-            trustedCert.setTrustedFor(TrustedFor.TRUSTED_EMS, true);
             trustedCert.setRevocationCheckPolicyType(TrustedCert.PolicyUsageType.NONE);
 
             require(user, CREATE, TRUSTED_CERT);
             trustedCert.setOid(trustedCertManager.save(trustedCert));
-        } else {
-            // Ensure existing TrustedCert allows EMS usage.
-            if (!trustedCert.isTrustedFor(TrustedFor.TRUSTED_EMS)) {
-                trustedCert.setTrustedFor(TrustedFor.TRUSTED_EMS, true);
-                
-                require(user, UPDATE, TRUSTED_CERT);
-                trustedCertManager.update(trustedCert);
-            }
         }
 
         trustedEms = new TrustedEms();
