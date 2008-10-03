@@ -1,9 +1,0 @@
-{
-    'recordsReturned':0,
-    'totalRecords':100,
-    'startIndex':100,
-    'sort':null,
-    'dir':'asc',
-    'records':[
-    ]
-}

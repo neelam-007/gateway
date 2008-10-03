@@ -5,6 +5,6 @@ import com.l7tech.server.ems.NavigationPage;
 /**
  *
  */
-@NavigationPage(page="PolicyMapping",pageIndex=100,section="ManagePolicies",pageUrl="PolicyMapping.html")
+@NavigationPage(page="PolicyMapping",pageIndex=300,section="ManagePolicies",pageUrl="PolicyMapping.html")
 public class PolicyMapping extends EmsPage  {
 }

@@ -1,37 +1,31 @@
 package com.l7tech.server.ems.pages;
 
-import com.l7tech.server.ems.NavigationPage;
 import com.l7tech.server.ems.LogResource;
-
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.io.File;
-import java.io.Serializable;
-
+import com.l7tech.server.ems.NavigationPage;
+import org.apache.wicket.RequestCycle;
+import org.apache.wicket.ResourceReference;
+import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
-import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.AbstractReadOnlyModel;
-import org.apache.wicket.model.Model;
-import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.HiddenField;
+import org.apache.wicket.model.AbstractReadOnlyModel;
+import org.apache.wicket.model.IModel;
+import org.apache.wicket.model.Model;
+import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.request.target.basic.RedirectRequestTarget;
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.ResourceReference;
 import org.apache.wicket.util.value.ValueMap;
-import org.apache.wicket.ajax.AjaxRequestTarget;
+
+import java.io.File;
+import java.io.Serializable;
+import java.util.*;
 
 /**
  * Log management
  */
-@NavigationPage(page="Logs",section="Tools",sectionIndex=100,pageUrl="Logs.html")
+@NavigationPage(page="Logs",pageIndex=200,section="Tools",sectionIndex=100,pageUrl="Logs.html")
 public class Logs extends EmsPage {
 
     public Logs() {

@@ -1,47 +1,36 @@
 package com.l7tech.server.ems.pages;
 
-import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
-import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
-import org.apache.wicket.model.AbstractReadOnlyModel;
-import org.apache.wicket.model.IModel;
-import org.apache.wicket.model.StringResourceModel;
-import org.apache.wicket.model.Model;
-import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.apache.wicket.markup.html.panel.EmptyPanel;
-import org.apache.wicket.markup.html.form.Button;
-import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.HiddenField;
-import org.apache.wicket.markup.html.form.DropDownChoice;
-import org.apache.wicket.markup.html.form.IChoiceRenderer;
-import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.validation.validator.DateValidator;
-
-import java.util.Iterator;
-import java.util.List;
-import java.util.Collections;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.io.Serializable;
-
-import com.l7tech.gateway.common.audit.AuditSearchCriteria;
-import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.AdminAuditRecord;
+import com.l7tech.gateway.common.audit.AuditRecord;
+import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.audit.AuditRecordManager;
 import com.l7tech.server.ems.NavigationPage;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TimeUnit;
+import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
+import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
+import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.markup.html.form.*;
+import org.apache.wicket.markup.html.panel.EmptyPanel;
+import org.apache.wicket.model.AbstractReadOnlyModel;
+import org.apache.wicket.model.IModel;
+import org.apache.wicket.model.Model;
+import org.apache.wicket.model.StringResourceModel;
+import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.apache.wicket.validation.validator.DateValidator;
+
+import java.io.Serializable;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * 
  */
-@NavigationPage(page="Audits",section="Tools",sectionIndex=100,pageUrl="Audits.html")
+@NavigationPage(page="Audits",pageIndex=100,section="Tools",sectionIndex=100,pageUrl="Audits.html")
 public class Audits extends EmsPage {
     
     //- PUBLIC    

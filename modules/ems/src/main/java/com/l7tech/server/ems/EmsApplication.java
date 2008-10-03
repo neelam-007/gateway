@@ -1,41 +1,32 @@
 package com.l7tech.server.ems;
 
-import com.l7tech.server.ems.pages.*;
-import org.apache.wicket.Component;
-import org.apache.wicket.Page;
-import org.apache.wicket.ResourceReference;
-import org.apache.wicket.Session;
-import org.apache.wicket.Request;
-import org.apache.wicket.Response;
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.request.target.coding.HybridUrlCodingStrategy;
-import org.apache.wicket.markup.html.PackageResourceGuard;
+import com.l7tech.server.ems.pages.EmsError;
+import com.l7tech.server.ems.pages.Login;
+import com.l7tech.server.ems.pages.Setup;
+import com.l7tech.server.ems.pages.SystemSettings;
+import org.apache.wicket.*;
 import org.apache.wicket.authorization.Action;
 import org.apache.wicket.authorization.IAuthorizationStrategy;
-import org.apache.wicket.protocol.http.WebApplication;
-import org.apache.wicket.protocol.http.WebRequestCycle;
-import org.apache.wicket.protocol.http.WebRequest;
+import org.apache.wicket.markup.html.PackageResourceGuard;
 import org.apache.wicket.protocol.http.PageExpiredException;
+import org.apache.wicket.protocol.http.WebApplication;
+import org.apache.wicket.protocol.http.WebRequest;
+import org.apache.wicket.protocol.http.WebRequestCycle;
+import org.apache.wicket.request.target.coding.HybridUrlCodingStrategy;
 import org.apache.wicket.settings.*;
 import org.apache.wicket.spring.injection.annot.SpringComponentInjector;
+import org.apache.wicket.util.convert.ConverterLocator;
+import org.apache.wicket.util.convert.IConverter;
 import org.apache.wicket.util.lang.Bytes;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.locator.ResourceStreamLocator;
-import org.apache.wicket.util.convert.ConverterLocator;
-import org.apache.wicket.util.convert.IConverter;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Map;
-import java.util.LinkedHashMap;
-import java.util.Collections;
-import java.util.List;
-import java.util.ArrayList;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.text.ParseException;
 
 /**
  * Wicket WebApplication for Enterprise Manager.
@@ -169,11 +160,6 @@ public class EmsApplication extends WebApplication {
         mountPage("/Login.html", Login.class);
         mountTemplate("/SSGClusterSelector.html");
         mountTemplate("/UserSelector.html");
-
-        // mount other pages that will not be shown in navigation for now
-        mountTemplate("/Messages.html");
-        mountTemplate("/PolicyApproval.html");
-        mountTemplate("/PolicySubmission.html");
         mountTemplate("/SubmissionReceived.html");
     }
 
