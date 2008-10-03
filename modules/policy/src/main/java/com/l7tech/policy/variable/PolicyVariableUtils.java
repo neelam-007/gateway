@@ -40,7 +40,7 @@ public final class PolicyVariableUtils {
         for (Iterator i = ancestor.preorderIterator(); i.hasNext(); ) {
             Assertion ass = (Assertion) i.next();
             if (ass == assertion) break; // Can't use our own variables or those of any subsequent assertion
-            if (ass instanceof SetsVariables) {
+            if (ass.isEnabled() && ass instanceof SetsVariables) {
                 SetsVariables sv = (SetsVariables)ass;
                 for (VariableMetadata meta : sv.getVariablesSet()) {
                     String name = meta.getName();
