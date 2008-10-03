@@ -255,14 +255,13 @@ public class CreateTestData {
             " VALUES (  
 */
 
-        String insertStr = "INSERT INTO service_metrics_details (objectid, service_metrics_oid, mapping_values_oid, " +
+        String insertStr = "INSERT INTO service_metrics_details (service_metrics_oid, mapping_values_oid, " +
                 "attempted, authorized, completed, back_min, back_max, back_sum, front_min, front_max, front_sum) " +
                 " VALUES (";
 
         for(Map<Integer, String> map: valueInserts){
             StringBuffer sb = new StringBuffer(insertStr);
-            sb.append(objectId++);
-            sb.append(", ").append(serviceMetricId);
+            sb.append(serviceMetricId);
             sb.append(", ").append(map.keySet().iterator().next());
             int [] tpStats = getThroughPutStats();
             for(int i: tpStats){
@@ -393,26 +392,33 @@ public class CreateTestData {
         return returnList;
     }
 
+
+    /**
+     * Run for every distinct set of mapping key values, which would make up a new row in mcmk
+     * @param args
+     * @throws Exception
+     */
     public static void main(String [] args) throws Exception{
         FileInputStream fileInputStream = new FileInputStream("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/report.properties");
         Properties prop = new Properties();
         prop.load(fileInputStream);
 
         LinkedHashMap<String, String> nameToId = loadMapFromProperties(ReportApp.SERVICE_ID_TO_NAME, ReportApp.SERVICE_ID_TO_NAME_OID, prop);
-        LinkedHashMap<String, String> mappingKeys = loadMapFromProperties("MAPPING_KEY_TYPE", "MAPPING_KEY_KEY", prop);
+        LinkedHashMap<String, String> mappingKeys1 = loadMapFromProperties("MAPPING_KEY_TYPE", "MAPPING_KEY_KEY", prop);
 
 
         LinkedHashMap<String, List<String>> values = new LinkedHashMap<String,  List<String>>();
 
         //Loads up all the custom mapping values which is determined by the map of keys above
-        for(String mappingType: mappingKeys.keySet()){
-            List<String> mappingValueList = loadListFromProperties(mappingKeys.get(mappingType), prop);
+        //currently hardcoded for 2 mapping key table rows
+        for(String mappingType: mappingKeys1.keySet()){
+            List<String> mappingValueList = loadListFromProperties(mappingKeys1.get(mappingType), prop);
             values.put(mappingType,mappingValueList);
         }
 
         List<String> operations = loadListFromProperties("OPERATION", prop);
 
-        CreateTestData testData = new CreateTestData("240869cda32562eb0287696033b4acca", mappingKeys, values, operations);
+        CreateTestData testData = new CreateTestData("240869cda32562eb0287696033b4acca", mappingKeys1, values, operations);
         testData.createMappingData();
         for(String s: nameToId.values()){
             testData.createMetricData(Utilities.HOUR, s);

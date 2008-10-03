@@ -27,6 +27,7 @@ public class Utilities {
     public static final String DAY = "DAY";
     public static final String WEEK = "WEEK";
     public static final String MONTH = "MONTH";
+    private static final int NUM_MAPPING_KEYS = 5;
 
     /**
      * Relative time is calculated to a fixed point of time depending on the unit of time supplied. For day, week
@@ -320,6 +321,211 @@ public class Utilities {
         return sb.toString();
     }
 
+
+    /**
+     *
+     * This is the general query we are going to create.
+     * What's dynamic in this query is the key's from message_context_message_keys table which we are including
+     * in the query.
+     * There are 4 main areas in this query:-
+     * SECTION A: Select out the metrics as normal
+     * SECTION B: For every key included in the query, we need its corresponding mapping_value from
+     * message_context_message_values table. As the key can be used in any index we need to pick the correct column
+     * to use for each key and give this derived column a value so we can group by it in section D
+     * SECTION C: For every key included we need to add an OR block which as an entire block are added as an AND
+     * constraint. All 5 mapping key's are checked, and corresponding values if we are filtering mapping values.
+     * if none of the keys match the key specified the overall AND constraint will fail and the row will not be included
+     * SECTION D: For every key included, we need to group by it's value derived in section B. This allows us to
+     * get the data grouped to produce a data set for each distinct set of values together, for every key supplied
+     *
+       **********SECTION A**********
+     SELECT count(*) as count, p.objectid,
+         SUM(if(smd.completed, smd.completed,0)) as THROUGHPUT,
+         MIN(smd.front_min) as FRTM,
+         MAX(smd.front_max) as FRTMX,
+         if(SUM(smd.front_sum), if(SUM(smd.attempted), SUM(smd.front_sum)/SUM(smd.attempted),0), 0) as FRTA,
+         MIN(smd.back_min) as BRTM,
+         MAX(smd.back_max) as BRTMX,
+         if(SUM(smd.back_sum), if(SUM(smd.completed), SUM(smd.back_sum)/SUM(smd.completed),0), 0) as BRTA,
+         if(SUM(smd.attempted), ( 1.0 - ( ( (SUM(smd.authorized) - SUM(smd.completed)) / SUM(smd.attempted) ) ) ) , 0) as 'AP',
+
+        **********SECTION B**********
+     CASE WHEN mcmk.mapping1_key = 'IP_ADDRESS' THEN mcmv.mapping1_value
+     WHEN mcmk.mapping1_key = 'IP_ADDRESS' THEN mcmv.mapping1_value
+     WHEN mcmk.mapping2_key = 'IP_ADDRESS' THEN mcmv.mapping2_value
+     WHEN mcmk.mapping3_key = 'IP_ADDRESS' THEN mcmv.mapping3_value
+     WHEN mcmk.mapping4_key = 'IP_ADDRESS' THEN mcmv.mapping4_value
+     WHEN mcmk.mapping5_key = 'IP_ADDRESS' THEN mcmv.mapping5_value
+     END as IP_ADDRESS,
+     CASE WHEN mcmk.mapping1_key = 'Customer' THEN mcmv.mapping1_value
+     WHEN mcmk.mapping1_key = 'Customer' THEN mcmv.mapping1_value
+     WHEN mcmk.mapping2_key = 'Customer' THEN mcmv.mapping2_value
+     WHEN mcmk.mapping3_key = 'Customer' THEN mcmv.mapping3_value
+     WHEN mcmk.mapping4_key = 'Customer' THEN mcmv.mapping4_value
+     WHEN mcmk.mapping5_key = 'Customer' THEN mcmv.mapping5_value
+     END as Customer
+     FROM service_metrics sm, published_service p, service_metrics_details smd, message_context_mapping_values mcmv, message_context_mapping_keys mcmk
+     WHERE p.objectid = sm.published_service_oid
+     AND sm.objectid = smd.service_metrics_oid
+     AND smd.mapping_values_oid = mcmv.objectid
+     AND mcmv.mapping_keys_oid = mcmk.objectid
+        **********SECTION C**********
+     AND (
+         (mcmk.mapping1_key = 'IP_ADDRESS')
+         OR
+         (mcmk.mapping2_key = 'IP_ADDRESS')
+         OR
+         (mcmk.mapping3_key = 'IP_ADDRESS')
+         OR
+         (mcmk.mapping4_key = 'IP_ADDRESS')
+         OR
+         (mcmk.mapping5_key = 'IP_ADDRESS')
+         )
+     AND
+     (
+         (mcmk.mapping1_key = 'Customer' )
+         OR
+         (mcmk.mapping2_key = 'Customer' )
+         OR
+         (mcmk.mapping3_key = 'Customer' )
+         OR
+         (mcmk.mapping4_key = 'Customer' )
+         OR
+         (mcmk.mapping5_key = 'Customer' )
+     )
+        **********SECTION D**********
+     GROUP BY p.objectid, IP_ADDRESS, Customer
+
+     *
+     * @param timeConstraintSQL sql to be inserted as is into the where clause, no preseding 'AND' and no trailing comma
+     * can be null and the empty string, in which case it's ignored
+     * @param serviceIdConstraintSQL a complete IN clause start and closing bracket included, no preceding AND
+     * or trailing comma. If null or empty string, then it's ignored
+     * @param keys the list of keys representing the mapping keys
+     * @param keyValueConstraints the values which each key must be equal to
+     * @param trueIfAndElseLike for each key and value, if a value constraint exists as the index, the index into this
+     * list dictitates whether an = or like constraint is applied
+     * @return
+     * @throws IllegalArgumentException If all the lists are not the same size and if they are empty.
+     */
+    public static String createMappingQuery(String timeConstraintSQL, String serviceIdConstraintSQL, List<String> keys, List<String> keyValueConstraints,
+                                            List<Boolean> trueIfAndElseLike){
+        if(!(keys.size() == keyValueConstraints.size() && keyValueConstraints.size() == trueIfAndElseLike.size())){
+            throw new IllegalArgumentException("The length of each list must match");
+        }
+        if(keys.isEmpty()){
+            throw new IllegalArgumentException("Mapping queries require at least one key");
+        }
+
+        //SECTION A
+        StringBuilder sb = new StringBuilder("     SELECT count(*) as count, p.objectid as SERVICE_ID, " +
+                "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI," +
+                " mcmv.service_operation AS SERVICE_OPERATION, "+
+                " SUM(if(smd.completed, smd.completed,0)) as THROUGHPUT," +
+                " MIN(smd.front_min) as FRTM," +
+                " MAX(smd.front_max) as FRTMX," +
+                " if(SUM(smd.front_sum), if(SUM(smd.attempted), " +
+                " SUM(smd.front_sum)/SUM(smd.attempted),0), 0) as FRTA," +
+                " MIN(smd.back_min) as BRTM," +
+                " MAX(smd.back_max) as BRTMX," +
+                " if(SUM(smd.back_sum), if(SUM(smd.completed), " +
+                " SUM(smd.back_sum)/SUM(smd.completed),0), 0) as BRTA," +
+                " if(SUM(smd.attempted), ( 1.0 - ( ( (SUM(smd.authorized) - SUM(smd.completed)) / SUM(smd.attempted) ) ) ) , 0) as 'AP' ");
+
+        //SECTION B
+        int max = 0;
+        for(int i = 0; i < keys.size(); i++,max++){
+            sb.append(",").append(createCaseSection(keys.get(i), i+1));
+        }
+
+        //if were not using all 5 possible mappings, then we need to create the missing to help jasper report impl
+        for(int i = max+1; i <= NUM_MAPPING_KEYS; i++){
+            sb.append(", 1 AS MAPPING"+i+"_VALUE");
+        }
+
+
+        sb.append(" FROM service_metrics sm, published_service p, service_metrics_details smd, " +
+                " message_context_mapping_values mcmv, message_context_mapping_keys mcmk" +
+                " WHERE p.objectid = sm.published_service_oid" +
+                " AND sm.objectid = smd.service_metrics_oid" +
+                " AND smd.mapping_values_oid = mcmv.objectid" +
+                " AND mcmv.mapping_keys_oid = mcmk.objectid ");
+
+        if(timeConstraintSQL != null && !timeConstraintSQL.equals("")){
+            sb.append(" AND ").append(timeConstraintSQL).append(" ");
+        }
+
+        if(serviceIdConstraintSQL != null && !serviceIdConstraintSQL.equals("")){
+            sb.append(" AND p.objectid IN ").append(serviceIdConstraintSQL).append(" ");
+        }
+
+        for(int i = 0; i < keys.size(); i++){
+            boolean useAnd = (trueIfAndElseLike.get(i) == null)? true: trueIfAndElseLike.get(i).booleanValue();
+            sb.append(" AND (").append( createOrKeyValueBlock(keys.get(i), keyValueConstraints.get(i), useAnd) );
+            sb.append(")");
+        }
+
+        sb.append(" GROUP BY p.objectid ");
+        for(int i = 0; i < keys.size(); i++){
+            sb.append(", ").append("MAPPING" + (i+1) + "_VALUE");
+        }
+        System.out.println(sb.toString());
+        return sb.toString();
+    }
+
+    private static String createCaseSection(String key, int index){
+       /*CASE WHEN mcmk.mapping1_key = 'IP_ADDRESS' THEN mcmv.mapping1_value
+WHEN mcmk.mapping1_key = 'IP_ADDRESS' THEN mcmv.mapping1_value
+WHEN mcmk.mapping2_key = 'IP_ADDRESS' THEN mcmv.mapping2_value
+WHEN mcmk.mapping3_key = 'IP_ADDRESS' THEN mcmv.mapping3_value
+WHEN mcmk.mapping4_key = 'IP_ADDRESS' THEN mcmv.mapping4_value
+WHEN mcmk.mapping5_key = 'IP_ADDRESS' THEN mcmv.mapping5_value
+END as IP_ADDRESS,
+*/
+        StringBuilder sb = new StringBuilder(" CASE ");
+        for(int i = 1; i <= NUM_MAPPING_KEYS; i++){
+            sb.append(" WHEN mcmk.mapping"+i+"_key = ").append("'"+key+"'");
+            sb.append(" THEN mcmv.mapping"+i+"_value");
+        }
+        sb.append(" END AS MAPPING" + index + "_VALUE ");
+        return sb.toString();
+    }
+
+    private static String createOrKeyValueBlock(String key, String value, boolean andValue){
+/*(
+Value is included in all or none, comment is just illustrative
+	(mcmk.mapping1_key = 'IP_ADDRESS' AND mcmk.mapping1_value = '127.0.0.1')
+	OR
+	(mcmk.mapping2_key = 'IP_ADDRESS')
+	OR
+	(mcmk.mapping3_key = 'IP_ADDRESS')
+	OR
+	(mcmk.mapping4_key = 'IP_ADDRESS')
+	OR
+	(mcmk.mapping5_key = 'IP_ADDRESS')
+    )*/
+        StringBuilder sb = new StringBuilder();
+        for(int i = 1; i <= NUM_MAPPING_KEYS; i++){
+            if(i != 1){
+                sb.append(" OR ");
+            }
+            sb.append("( mcmk.mapping").append(i).append("_key ");
+            sb.append(" = '").append(key).append("' ");
+
+            if(value != null && !value.equals("")){
+                sb.append(" AND mcmv.mapping").append(i).append("_value ");
+                if(andValue){
+                    sb.append(" = '").append(value).append("' ");
+                }else{
+                    sb.append(" LIKE '").append(value).append("' ");
+                }
+
+            }
+            sb.append(")");
+        }
+        return sb.toString();
+    }
+    
     public static void main(String [] args) throws ParseException {
 //        String date = "2008-09-18 15:08";
 //        System.out.println(Utilities.getAbsoluteMilliSeconds(date));
@@ -383,8 +589,23 @@ public class Utilities {
 //        System.out.print(System.getProperty("line.separator"));
 //        System.out.print(Utilities.getServiceNamesFromCollection(l));
 
-        String date = Utilities.getMilliSecondAsStringDate(1222239651000L);
-        System.out.println("Date: " + date);
+//        String date = Utilities.getMilliSecondAsStringDate(1222239651000L);
+//        System.out.println("Date: " + date);
+
+        List<String > keys  = new ArrayList<String>();
+        keys.add("IP_ADDRESS");
+        keys.add("Customer");
+
+        List<String> values = new ArrayList<String>();
+        values.add("127.0.0.%");
+        values.add("Gold");
+
+        List<Boolean> useAnd = new ArrayList<Boolean>();
+        useAnd.add(false);
+        useAnd.add(true);
+
+        String sql = createMappingQuery(null, null, keys, values, useAnd);
+        System.out.println("Sql is: " + sql);
 
 
     }

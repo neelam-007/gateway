@@ -9,14 +9,11 @@ package com.l7tech.standardreports;
 import java.io.FileInputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperExportManager;
 import net.sf.jasperreports.engine.JasperFillManager;
-import net.sf.jasperreports.engine.JasperPrintManager;
 import net.sf.jasperreports.view.JasperViewer;
 
 
@@ -35,6 +32,7 @@ public class ReportApp
     private static final String INTERVAL_NUM_OF_TIME_UNITS = "INTERVAL_NUM_OF_TIME_UNITS";
     private static final String REPORT_RAN_BY = "REPORT_RAN_BY";
 
+    private static final String IS_DETAIL = "IS_DETAIL";
     //Optional
     private static final String SERVICE_NAME_TO_ID_MAP = "SERVICE_NAME_TO_ID_MAP";
     public static final String SERVICE_ID_TO_NAME = "SERVICE_ID_TO_NAME";
@@ -54,13 +52,14 @@ public class ReportApp
     private static final String DB_USER = "DB_USER";
     private static final String DB_PASSWORD = "DB_PASSWORD";
 
-    private static final String psIntervalReport = "PS_IntervalMasterReport_NoMapping";
-    private static final String psSummaryReport = "PS_Summary_NoMapping";
-
     //Non report params, just used in ReportApp
     private static final String IS_SUMMARY = "IS_SUMMARY";
     private static final String HOURLY_MAX_RETENTION_NUM_DAYS = "HOURLY_MAX_RETENTION_NUM_DAYS";
+    private static final String REPORT_FILE_NAME_NO_ENDING = "REPORT_FILE_NAME_NO_ENDING";
     private static final Properties prop = new Properties();
+    private static final String MAPPING_KEYS = "MAPPING_KEYS";
+    private static final String MAPPING_VALUES = "MAPPING_VALUES";
+    private static final String VALUE_EQUAL_OR_LIKE = "VALUE_EQUAL_OR_LIKE";
 
     /**
 	 *
@@ -77,41 +76,28 @@ public class ReportApp
 
         FileInputStream fileInputStream = new FileInputStream("report.properties");
         prop.load(fileInputStream);
+        String fileName = prop.getProperty(REPORT_FILE_NAME_NO_ENDING);
 
         try
 		{
 			long start = System.currentTimeMillis();
-            boolean isSummary = Boolean.parseBoolean(prop.getProperty(IS_SUMMARY).toString());
             if (TASK_FILL.equals(taskName))
 			{
-                fill(start);
+                fill(fileName, start);
 			}
 			else if (TASK_PDF.equals(taskName))
 			{
-                if(isSummary){
-                    JasperExportManager.exportReportToPdfFile(psSummaryReport+".jrprint");
-                }else{
-                    JasperExportManager.exportReportToPdfFile(psIntervalReport+".jrprint");
-                }
-
+                JasperExportManager.exportReportToPdfFile(fileName+".jrprint");
 				System.err.println("PDF creation time : " + (System.currentTimeMillis() - start));
 			}
 			else if (TASK_HTML.equals(taskName))
 			{
-                if(isSummary){
-                    JasperExportManager.exportReportToHtmlFile(psSummaryReport+".jrprint");
-                }else{
-                    JasperExportManager.exportReportToHtmlFile(psIntervalReport+".jrprint");
-                }
+                JasperExportManager.exportReportToHtmlFile(fileName+".jrprint");
 				System.err.println("HTML creation time : " + (System.currentTimeMillis() - start));
 			}
             else if (TASK_VIEW.equals(taskName))
             {
-                if(isSummary){
-                    JasperViewer.viewReport(psSummaryReport+".jrprint", false);
-                }else{
-                    JasperViewer.viewReport(psIntervalReport+".jrprint", false);
-                }
+                JasperViewer.viewReport(fileName+".jrprint", false);
                 System.err.println("View time : " + (System.currentTimeMillis() - start));
             }
             else
@@ -129,7 +115,7 @@ public class ReportApp
 		}
 	}
 
-    private static void fill(long start) throws Exception{
+    private static void fill(String fileName, long start) throws Exception{
 
         //Preparing parameters
         Map parameters = new HashMap();
@@ -168,13 +154,27 @@ public class ReportApp
 
         parameters.put(HOURLY_MAX_RETENTION_NUM_DAYS, new Integer(prop.getProperty(HOURLY_MAX_RETENTION_NUM_DAYS)));
 
-        boolean isSummary = Boolean.parseBoolean(prop.getProperty(IS_SUMMARY).toString());
-        if(isSummary){
-            JasperFillManager.fillReportToFile(psSummaryReport+".jasper", parameters, getConnection(prop));
-        }else{
-            JasperFillManager.fillReportToFile(psIntervalReport+".jasper", parameters, getConnection(prop));            
-        }
+        b = Boolean.parseBoolean(prop.getProperty(IS_DETAIL).toString());
+        parameters.put(IS_DETAIL, b);
 
+        List<String > keys  = new ArrayList<String>();
+        keys.add("IP_ADDRESS");
+        keys.add("Customer");
+
+        List<String> values = new ArrayList<String>();
+        values.add("127.0.0.%");
+        values.add("Gold");
+
+        List<Boolean> useAnd = new ArrayList<Boolean>();
+        useAnd.add(false);
+        useAnd.add(true);
+
+        parameters.put(MAPPING_KEYS, keys);
+        parameters.put(MAPPING_VALUES, values);
+        parameters.put(VALUE_EQUAL_OR_LIKE, useAnd);
+
+        
+        JasperFillManager.fillReportToFile(fileName+".jasper", parameters, getConnection(prop));
 
         System.err.println("Filling time : " + (System.currentTimeMillis() - start));
     }
