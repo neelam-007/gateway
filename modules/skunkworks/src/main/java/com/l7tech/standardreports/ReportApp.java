@@ -60,6 +60,8 @@ public class ReportApp
     private static final String MAPPING_KEYS = "MAPPING_KEYS";
     private static final String MAPPING_VALUES = "MAPPING_VALUES";
     private static final String VALUE_EQUAL_OR_LIKE = "VALUE_EQUAL_OR_LIKE";
+    private static final String MAPPING_KEY = "MAPPING_KEY";
+    private static final String MAPPING_VALUE = "MAPPING_VALUE";
 
     /**
 	 *
@@ -115,6 +117,38 @@ public class ReportApp
 		}
 	}
 
+    public static LinkedHashMap<String, String> loadMapFromProperties(String key1, String key2, Properties prop){
+
+        LinkedHashMap<String, String> returnMap = new LinkedHashMap<String,String>();
+        String key1Name = prop.getProperty(key1+"_1");
+        String key2Name = prop.getProperty(key2+"_1");
+        int index = 2;
+
+        while(key1Name != null && key2Name != null){
+            returnMap.put(key1Name, key2Name);
+            key1Name = prop.getProperty(key1+"_"+index);
+            key2Name = prop.getProperty(key2+"_"+index);
+            index++;
+        }
+
+        return returnMap;
+    }
+
+    public static List<String> loadListFromProperties(String key, Properties prop){
+
+        List<String> returnList = new ArrayList<String>();
+        String key1Name = prop.getProperty(key+"_1");
+        int index = 2;
+
+        while(key1Name != null){
+            returnList.add(key1Name);
+            key1Name = prop.getProperty(key+"_"+index);
+            index++;
+        }
+
+        return returnList;
+    }
+
     private static void fill(String fileName, long start) throws Exception{
 
         //Preparing parameters
@@ -157,17 +191,11 @@ public class ReportApp
         b = Boolean.parseBoolean(prop.getProperty(IS_DETAIL).toString());
         parameters.put(IS_DETAIL, b);
 
-        List<String > keys  = new ArrayList<String>();
-        keys.add("IP_ADDRESS");
-        keys.add("Customer");
 
-        List<String> values = new ArrayList<String>();
-        values.add("127.0.0.%");
-        values.add("Gold");
+        List<String > keys  = loadListFromProperties(MAPPING_KEY, prop);
+        List<String> values = loadListFromProperties(MAPPING_VALUE, prop);
 
-        List<Boolean> useAnd = new ArrayList<Boolean>();
-        useAnd.add(false);
-        useAnd.add(true);
+        List<String> useAnd = loadListFromProperties(VALUE_EQUAL_OR_LIKE, prop);
 
         parameters.put(MAPPING_KEYS, keys);
         parameters.put(MAPPING_VALUES, values);

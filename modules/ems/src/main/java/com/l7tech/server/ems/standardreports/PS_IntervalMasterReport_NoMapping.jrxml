@@ -167,7 +167,7 @@ IN clause with and 'AND before it]]></parameterDescription>
 		<defaultValueExpression ><![CDATA["( sm.period_start >= "+$P{startTimeMilli}+" AND sm.period_start < " + $P{endTimeMilli} +")"+ " " + $P{serviceIdInClause}]]></defaultValueExpression>
 	</parameter>
 	<parameter name="serviceIdDisplayText" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getServiceNamesFromCollection($P{SERVICE_NAME_TO_ID_MAP}.keySet())]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getStringNamesFromCollection((java.util.Collection)$P{SERVICE_NAME_TO_ID_MAP}.keySet())]]></defaultValueExpression>
 	</parameter>
 	<parameter name="serviceIdValueToDisplay" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[($P{serviceIdDisplayText} == null || $P{serviceIdDisplayText}.equals(""))

@@ -375,39 +375,6 @@ public class CreateTestData {
         return responseTimes;
     }
 
-    private static LinkedHashMap<String, String> loadMapFromProperties(String key1, String key2, Properties prop){
-
-        LinkedHashMap<String, String> returnMap = new LinkedHashMap<String,String>();
-        String key1Name = prop.getProperty(key1+"_1");
-        String key2Name = prop.getProperty(key2+"_1");
-        int index = 2;
-
-        while(key1Name != null && key2Name != null){
-            returnMap.put(key1Name, key2Name);
-            key1Name = prop.getProperty(key1+"_"+index);
-            key2Name = prop.getProperty(key2+"_"+index);
-            index++;
-        }
-
-        return returnMap;
-    }
-
-    private static List<String> loadListFromProperties(String key, Properties prop){
-
-        List<String> returnList = new ArrayList<String>();
-        String key1Name = prop.getProperty(key+"_1");
-        int index = 2;
-
-        while(key1Name != null){
-            returnList.add(key1Name);
-            key1Name = prop.getProperty(key+"_"+index);
-            index++;
-        }
-
-        return returnList;
-    }
-
-
     /**
      * Run for every distinct set of mapping key values, which would make up a new row in mcmk
      * @param args
@@ -418,14 +385,14 @@ public class CreateTestData {
         Properties prop = new Properties();
         prop.load(fileInputStream);
 
-        LinkedHashMap<String, String> nameToId = loadMapFromProperties(ReportApp.SERVICE_ID_TO_NAME, ReportApp.SERVICE_ID_TO_NAME_OID, prop);
+        LinkedHashMap<String, String> nameToId = ReportApp.loadMapFromProperties(ReportApp.SERVICE_ID_TO_NAME, ReportApp.SERVICE_ID_TO_NAME_OID, prop);
 
         List<LinkedHashMap<String, String>> mappingKeyList = new ArrayList<LinkedHashMap<String, String>>();
         LinkedHashMap<String, String> mappingKeys;
         boolean empty = false;
         int index = 1;
         while(!empty){
-            mappingKeys = loadMapFromProperties(index+"_MAPPING_KEY_TYPE", index+"_MAPPING_KEY_KEY", prop);
+            mappingKeys = ReportApp.loadMapFromProperties(index+"_MAPPING_KEY_TYPE", index+"_MAPPING_KEY_KEY", prop);
             empty = mappingKeys.isEmpty();
             if(!empty) mappingKeyList.add(mappingKeys);
             index++;
@@ -440,11 +407,11 @@ public class CreateTestData {
         LinkedHashMap<String, String> mappingKeyFirstMap = mappingKeyList.iterator().next();
 
         for(String mappingType: mappingKeyFirstMap.keySet()){
-            List<String> mappingValueList = loadListFromProperties(mappingKeyFirstMap.get(mappingType), prop);
+            List<String> mappingValueList = ReportApp.loadListFromProperties(mappingKeyFirstMap.get(mappingType), prop);
             values.put(mappingType,mappingValueList);
         }
 
-        List<String> operations = loadListFromProperties("OPERATION", prop);
+        List<String> operations = ReportApp.loadListFromProperties("OPERATION", prop);
 
 
         String nodeId = prop.getProperty(NODE_ID);

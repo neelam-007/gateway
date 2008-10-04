@@ -307,7 +307,7 @@ public class Utilities {
      * @param values The Collection of strings to be placed into a single string for user info
      * @return string with all the strings from values concat'ed with " " between them
      */
-    public static String getServiceNamesFromCollection(Collection values){
+    public static String getStringNamesFromCollection(Collection values){
         if(values.isEmpty()) return "";
 
         Iterator iter = values.iterator();
@@ -337,7 +337,7 @@ public class Utilities {
      * if none of the keys match the key specified the overall AND constraint will fail and the row will not be included
      * SECTION D: For every key included, we need to group by it's value derived in section B. This allows us to
      * get the data grouped to produce a data set for each distinct set of values together, for every key supplied
-     *
+     *                       //todo [Donal] update the sql here, as it's now out of date
        **********SECTION A**********
      SELECT count(*) as count, p.objectid,
          SUM(if(smd.completed, smd.completed,0)) as THROUGHPUT,
@@ -402,19 +402,38 @@ public class Utilities {
      * @param serviceIdConstraintSQL a complete IN clause start and closing bracket included, no preceding AND
      * or trailing comma. If null or empty string, then it's ignored
      * @param keys the list of keys representing the mapping keys
-     * @param keyValueConstraints the values which each key must be equal to
-     * @param trueIfAndElseLike for each key and value, if a value constraint exists as the index, the index into this
-     * list dictitates whether an = or like constraint is applied
+     * @param keyValueConstraints the values which each key must be equal to, Can be null or empty
+     * @param valueConstraintAndOrLike for each key and value, if a value constraint exists as the index, the index into this
+     * list dictitates whether an = or like constraint is applied. Can be null or empty. Cannot have values if
+     * keyValueConstraints is null or empty
+     * @param resolution 1 = hourly, 2 = daily. Which resolution from service_metrics to use
      * @return
      * @throws IllegalArgumentException If all the lists are not the same size and if they are empty.
      */
     public static String createMappingQuery(String timeConstraintSQL, String serviceIdConstraintSQL, List<String> keys, List<String> keyValueConstraints,
-                                            List<Boolean> trueIfAndElseLike){
-        if(!(keys.size() == keyValueConstraints.size() && keyValueConstraints.size() == trueIfAndElseLike.size())){
-            throw new IllegalArgumentException("The length of each list must match");
+                                            List<String> valueConstraintAndOrLike, int resolution){
+
+        if(keys == null || keys.isEmpty()){
+            throw new IllegalArgumentException("Mapping queries require at least one value in the keys list");
         }
-        if(keys.isEmpty()){
-            throw new IllegalArgumentException("Mapping queries require at least one key");
+
+        boolean keyValuesSupplied = false;
+        if(keyValueConstraints != null && !keyValueConstraints.isEmpty()){
+            if(keys.size() != keyValueConstraints.size()){
+                throw new IllegalArgumentException("The length of keys must match the length of the keyValueConstraints");
+            }
+            if(valueConstraintAndOrLike != null && !valueConstraintAndOrLike.isEmpty()){
+                if(valueConstraintAndOrLike.size() != keyValueConstraints.size()){
+                    throw new IllegalArgumentException("The length of valueConstraintAndOrLike must match the length of the keyValueConstraints");
+                }
+            }
+            keyValuesSupplied = true;
+        }else{
+            //if keyValueConstraint are not supplied, then we can't have valueConstraintAndOrLike supplied either
+            if(valueConstraintAndOrLike != null && !valueConstraintAndOrLike.isEmpty()){
+                throw new IllegalArgumentException("Cannot supply valueConstraintAndOrLike with values if no values in" +
+                        " keyValueConstraints have been supplied, on which they would be applied");                
+            }
         }
 
         //SECTION A
@@ -440,9 +459,8 @@ public class Utilities {
 
         //if were not using all 5 possible mappings, then we need to create the missing to help jasper report impl
         for(int i = max+1; i <= NUM_MAPPING_KEYS; i++){
-            sb.append(", 1 AS MAPPING"+i+"_VALUE");
+            sb.append(", 1 AS MAPPING_VALUE_"+i);
         }
-
 
         sb.append(" FROM service_metrics sm, published_service p, service_metrics_details smd, " +
                 " message_context_mapping_values mcmv, message_context_mapping_keys mcmk" +
@@ -451,6 +469,8 @@ public class Utilities {
                 " AND smd.mapping_values_oid = mcmv.objectid" +
                 " AND mcmv.mapping_keys_oid = mcmk.objectid ");
 
+        sb.append(" AND sm.resolution = " + resolution+" ");
+        
         if(timeConstraintSQL != null && !timeConstraintSQL.equals("")){
             sb.append(" AND ").append(timeConstraintSQL).append(" ");
         }
@@ -459,16 +479,27 @@ public class Utilities {
             sb.append(" AND p.objectid IN ").append(serviceIdConstraintSQL).append(" ");
         }
 
-        for(int i = 0; i < keys.size(); i++){
-            boolean useAnd = (trueIfAndElseLike.get(i) == null)? true: trueIfAndElseLike.get(i).booleanValue();
-            sb.append(" AND (").append( createOrKeyValueBlock(keys.get(i), keyValueConstraints.get(i), useAnd) );
-            sb.append(")");
+        if(keyValuesSupplied){//then the lengths have to match from above constraint
+            for(int i = 0; i < keys.size(); i++){
+                boolean useAnd = valueConstraintAndOrLike.get(i) == null || valueConstraintAndOrLike.get(i).equalsIgnoreCase("AND");
+                sb.append(" AND (").append( createOrKeyValueBlock(keys.get(i), keyValueConstraints.get(i), useAnd) );
+                sb.append(")");
+            }
         }
 
-        sb.append(" GROUP BY p.objectid ");
-        for(int i = 0; i < keys.size(); i++){
-            sb.append(", ").append("MAPPING" + (i+1) + "_VALUE");
+        sb.append(" GROUP BY p.objectid, SERVICE_OPERATION ");
+        for(int i = 0; i < NUM_MAPPING_KEYS; i++){
+            sb.append(", ").append("MAPPING_VALUE_" + (i+1));
         }
+
+        sb.append(" ORDER BY  ");
+        for(int i = 0; i < NUM_MAPPING_KEYS; i++){
+            if(i != 0) sb.append(", ");
+            sb.append("MAPPING_VALUE_" + (i+1));
+        }
+
+        sb.append(" ,p.objectid, SERVICE_OPERATION ");
+
         System.out.println(sb.toString());
         return sb.toString();
     }
@@ -487,7 +518,7 @@ END as IP_ADDRESS,
             sb.append(" WHEN mcmk.mapping"+i+"_key = ").append("'"+key+"'");
             sb.append(" THEN mcmv.mapping"+i+"_value");
         }
-        sb.append(" END AS MAPPING" + index + "_VALUE ");
+        sb.append(" END AS MAPPING_VALUE_" + index);
         return sb.toString();
     }
 
@@ -587,7 +618,7 @@ Value is included in all or none, comment is just illustrative
 //
 //        System.out.print(Utilities.getServiceIdInQuery(l));
 //        System.out.print(System.getProperty("line.separator"));
-//        System.out.print(Utilities.getServiceNamesFromCollection(l));
+//        System.out.print(Utilities.getStringNamesFromCollection(l));
 
 //        String date = Utilities.getMilliSecondAsStringDate(1222239651000L);
 //        System.out.println("Date: " + date);
@@ -600,11 +631,11 @@ Value is included in all or none, comment is just illustrative
         values.add("127.0.0.%");
         values.add("Gold");
 
-        List<Boolean> useAnd = new ArrayList<Boolean>();
-        useAnd.add(false);
-        useAnd.add(true);
+        List<String> useAnd = new ArrayList<String>();
+        useAnd.add("AND");
+        useAnd.add("AND");
 
-        String sql = createMappingQuery(null, null, keys, values, useAnd);
+        String sql = createMappingQuery(null, null, keys, values, useAnd,2);
         System.out.println("Sql is: " + sql);
 
 

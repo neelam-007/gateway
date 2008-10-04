@@ -161,7 +161,7 @@ IN clause with and 'AND before it]]></parameterDescription>
 		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getResolutionFromTimePeriod($P{HOURLY_MAX_RETENTION_NUM_DAYS}, $P{startTimeMilli}, $P{endTimeMilli} )]]></defaultValueExpression>
 	</parameter>
 	<parameter name="serviceIdDisplayText" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getServiceNamesFromCollection($P{SERVICE_NAME_TO_ID_MAP}.keySet())]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getStringNamesFromCollection((java.util.Collection)$P{SERVICE_NAME_TO_ID_MAP}.keySet())]]></defaultValueExpression>
 	</parameter>
 	<parameter name="serviceIdValueToDisplay" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[($P{serviceIdDisplayText} == null || $P{serviceIdDisplayText}.equals(""))
@@ -173,7 +173,8 @@ IN clause with and 'AND before it]]></parameterDescription>
 	</parameter>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.createMappingQuery($P{timePeriodSql}, 
-$P{serviceIdInClause}, $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE})]]></defaultValueExpression>
+$P{serviceIdInClause}, $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE}, 
+$P{resolution}.intValue())]]></defaultValueExpression>
 	</parameter>
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
@@ -189,43 +190,72 @@ $P{serviceIdInClause}, $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_L
 	<field name="BRTA" class="java.lang.Double"/>
 	<field name="AP" class="java.lang.Double"/>
 	<field name="SERVICE_OPERATION" class="java.lang.String"/>
-	<field name="MAPPING1_VALUE" class="java.lang.String"/>
-	<field name="MAPPING2_VALUE" class="java.lang.String"/>
-	<field name="MAPPING3_VALUE" class="java.lang.String"/>
-	<field name="MAPPING4_VALUE" class="java.lang.String"/>
-	<field name="MAPPING5_VALUE" class="java.lang.String"/>
+	<field name="MAPPING_VALUE_1" class="java.lang.String"/>
+	<field name="MAPPING_VALUE_2" class="java.lang.String"/>
+	<field name="MAPPING_VALUE_3" class="java.lang.String"/>
+	<field name="MAPPING_VALUE_4" class="java.lang.String"/>
+	<field name="MAPPING_VALUE_5" class="java.lang.String"/>
 
 	<variable name="SERVICE_ID" class="java.lang.Long" resetType="Report" calculation="Nothing">
 		<variableExpression><![CDATA[$F{SERVICE_ID}]]></variableExpression>
 	</variable>
-	<variable name="THROUGHPUT_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_ID" calculation="Sum">
-		<variableExpression><![CDATA[$F{THROUGHPUT}]]></variableExpression>
-	</variable>
-	<variable name="FRTM_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_ID" calculation="Lowest">
+	<variable name="FRTM_MIN" class="java.lang.Integer" resetType="Group" resetGroup="MAPPING_VALUES_GROUP" calculation="Lowest">
 		<variableExpression><![CDATA[($F{FRTM} == null || $F{FRTM}.equals(new Integer(0)) )? new Integer(Integer.MAX_VALUE)
 : $F{FRTM}]]></variableExpression>
 	</variable>
-	<variable name="FRTMX_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_ID" calculation="Highest">
+	<variable name="FRTMX_MAX" class="java.lang.Integer" resetType="Group" resetGroup="MAPPING_VALUES_GROUP" calculation="Highest">
 		<variableExpression><![CDATA[($F{FRTMX} == null || $F{FRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
 	</variable>
-	<variable name="FRTA_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_ID" calculation="Average">
+	<variable name="FRTA_AVG" class="java.lang.Double" resetType="Group" resetGroup="MAPPING_VALUES_GROUP" calculation="Average">
 		<variableExpression><![CDATA[($F{FRTA}.equals(new Double(0)))? null: $F{FRTA}]]></variableExpression>
 	</variable>
-	<variable name="BRTM_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_ID" calculation="Lowest">
+	<variable name="BRTM_MIN" class="java.lang.Integer" resetType="Group" resetGroup="MAPPING_VALUES_GROUP" calculation="Lowest">
 		<variableExpression><![CDATA[($F{BRTM} == null || $F{BRTM}.equals(new Integer(0)))? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
 	</variable>
-	<variable name="BRTMX_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_ID" calculation="Highest">
+	<variable name="BRTMX_MAX" class="java.lang.Integer" resetType="Group" resetGroup="MAPPING_VALUES_GROUP" calculation="Highest">
 		<variableExpression><![CDATA[($F{BRTMX} == null || $F{BRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
 	</variable>
-	<variable name="BRTA_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_ID" calculation="Average">
+	<variable name="BRTA_AVG" class="java.lang.Double" resetType="Group" resetGroup="MAPPING_VALUES_GROUP" calculation="Average">
 		<variableExpression><![CDATA[($F{BRTA}.equals(new Double(0)))? null: $F{BRTA}]]></variableExpression>
 	</variable>
-	<variable name="AP_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_ID" calculation="Average">
+	<variable name="AP_AVG" class="java.lang.Double" resetType="Group" resetGroup="MAPPING_VALUES_GROUP" calculation="Average">
+		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
+	</variable>
+	<variable name="TABLE_HEADER" class="java.lang.String" resetType="Group" resetGroup="MAPPING_VALUES_GROUP" calculation="Nothing">
+		<variableExpression><![CDATA[$F{MAPPING_VALUE_1} + " " + $F{MAPPING_VALUE_2}]]></variableExpression>
+	</variable>
+	<variable name="THROUGHPUT_SERVICE_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Sum">
+		<variableExpression><![CDATA[$F{THROUGHPUT}]]></variableExpression>
+	</variable>
+	<variable name="THROUGHPUT_SUM" class="java.lang.Long" resetType="Group" resetGroup="MAPPING_VALUES_GROUP" calculation="Sum">
+		<variableExpression><![CDATA[$F{THROUGHPUT}]]></variableExpression>
+	</variable>
+	<variable name="FRTM_SERVICE_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Lowest">
+		<variableExpression><![CDATA[($F{FRTM} == null || $F{FRTM}.equals(new Integer(0)) )? new Integer(Integer.MAX_VALUE)
+: $F{FRTM}]]></variableExpression>
+	</variable>
+	<variable name="FRTMX_SERVICE_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Highest">
+		<variableExpression><![CDATA[($F{FRTMX} == null || $F{FRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
+	</variable>
+	<variable name="FRTA_SERVICE_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Average">
+		<variableExpression><![CDATA[($F{FRTA}.equals(new Double(0)))? null: $F{FRTA}]]></variableExpression>
+	</variable>
+	<variable name="BRTM_SERVICE_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Lowest">
+		<variableExpression><![CDATA[($F{BRTM} == null || $F{BRTM}.equals(new Integer(0)))? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
+	</variable>
+	<variable name="BRTMX_SERVICE_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Highest">
+		<variableExpression><![CDATA[($F{BRTMX} == null || $F{BRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
+	</variable>
+	<variable name="BRTA_SERVICE_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Average">
+		<variableExpression><![CDATA[($F{BRTA}.equals(new Double(0)))? null: $F{BRTA}]]></variableExpression>
+	</variable>
+	<variable name="AP_SERVICE_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Average">
 		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
 	</variable>
 
-		<group  name="SERVICE_ID" >
-			<groupExpression><![CDATA[$F{SERVICE_ID}]]></groupExpression>
+		<group  name="MAPPING_VALUES_GROUP" >
+			<groupExpression><![CDATA[$F{MAPPING_VALUE_1}+$F{MAPPING_VALUE_2}+$F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}
++$F{MAPPING_VALUE_5}]]></groupExpression>
 			<groupHeader>
 			<band height="36"  isSplitAllowed="true" >
 				<frame>					<reportElement
@@ -237,7 +267,7 @@ $P{serviceIdInClause}, $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_L
 						height="18"
 						key="frame-7"/>
 					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Group" evaluationGroup="MAPPING_VALUES_GROUP"  hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
 						x="3"
@@ -249,7 +279,7 @@ $P{serviceIdInClause}, $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_L
 					<textElement>
 						<font isBold="true"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{MAPPING1_VALUE}+" " + $F{MAPPING2_VALUE}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$V{TABLE_HEADER}]]></textFieldExpression>
 				</textField>
 				</frame>				<frame>					<reportElement
 						style="FrameHeaderTableRow"
@@ -431,7 +461,8 @@ $P{serviceIdInClause}, $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_L
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[($V{FRTM_MIN}.equals(new Integer(Integer.MAX_VALUE)))?0+"?":$V{FRTM_MIN}+"ms"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($V{FRTM_MIN}.equals(new Integer(Integer.MAX_VALUE)))?0+"?":$V{FRTM_MIN}+"ms"
+]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -530,6 +561,144 @@ $P{serviceIdInClause}, $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_L
 						<font/>
 					</textElement>
 				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{AP_AVG} == null)? new Double(0) : $V{AP_AVG}]]></textFieldExpression>
+				</textField>
+				</frame>			</band>
+			</groupFooter>
+		</group>
+		<group  name="SERVICE_ID_GROUP" >
+			<groupExpression><![CDATA[$F{SERVICE_ID}]]></groupExpression>
+			<groupHeader>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+			</groupHeader>
+			<groupFooter>
+			<band height="18"  isSplitAllowed="true" >
+				<frame>					<reportElement
+						style="FrameDetailTableRow"
+						mode="Opaque"
+						x="0"
+						y="0"
+						width="534"
+						height="18"
+						key="frame-3"/>
+					<box></box>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="118"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-112"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{THROUGHPUT_SERVICE_SUM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="170"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-113"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Integer"><![CDATA[$V{FRTM_SERVICE_MIN}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="222"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-114"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Integer"><![CDATA[$V{FRTMX_SERVICE_MAX}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="274"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-115"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[$V{FRTA_SERVICE_AVG}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="326"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-116"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Integer"><![CDATA[$V{BRTM_SERVICE_MIN}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="378"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-117"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Integer"><![CDATA[$V{BRTMX_SERVICE_MAX}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="430"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-118"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[$V{BRTA_SERVICE_AVG}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="482"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-119"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[$V{AP_SERVICE_AVG}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="5"
+						y="0"
+						width="113"
+						height="17"
+						key="textField-120"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupFooter>
@@ -709,7 +878,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["None"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.server.ems.standardreports.Utilities.getStringNamesFromCollection((java.util.Collection)$P{MAPPING_KEYS})]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -796,148 +965,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 			</band>
 		</columnHeader>
 		<detail>
-			<band height="18"  isSplitAllowed="true" >
-				<frame>					<reportElement
-						style="FrameDetailTableRow"
-						mode="Opaque"
-						x="0"
-						y="0"
-						width="534"
-						height="18"
-						key="frame-3"/>
-					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						x="118"
-						y="0"
-						width="52"
-						height="17"
-						key="textField-85"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.Long"><![CDATA[$F{THROUGHPUT}]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						x="170"
-						y="0"
-						width="52"
-						height="17"
-						key="textField-86"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.Integer"><![CDATA[$F{FRTM}]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						x="222"
-						y="0"
-						width="52"
-						height="17"
-						key="textField-87"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.Integer"><![CDATA[$F{FRTMX}]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						x="274"
-						y="0"
-						width="52"
-						height="17"
-						key="textField-88"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[$F{FRTA}]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						x="326"
-						y="0"
-						width="52"
-						height="17"
-						key="textField-89"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.Integer"><![CDATA[$F{BRTM}]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						x="378"
-						y="0"
-						width="52"
-						height="17"
-						key="textField-90"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.Integer"><![CDATA[$F{BRTMX}]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						x="430"
-						y="0"
-						width="52"
-						height="17"
-						key="textField-91"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[$F{BRTA}]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						x="482"
-						y="0"
-						width="52"
-						height="17"
-						key="textField-92"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[$F{AP}]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="TableCell"
-						x="5"
-						y="0"
-						width="113"
-						height="17"
-						key="textField-93"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
-				</textField>
-				</frame>				<staticText>
-					<reportElement
-						style="TableCell"
-						x="478"
-						y="8"
-						width="0"
-						height="0"
-						key="staticText-35"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[Static Text]]></text>
-				</staticText>
+			<band height="0"  isSplitAllowed="true" >
 			</band>
 		</detail>
 		<columnFooter>
