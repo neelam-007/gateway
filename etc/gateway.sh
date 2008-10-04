@@ -97,7 +97,12 @@ if [ "$1" = "start" ] ; then
     fi
 
 elif [ "$1" = "run" ] ; then
-   shift
+    shift
+    if [ "$1" = "-pc" ]; then
+        shift
+        JAVA_OPTS="${JAVA_OPTS} -Dcom.l7tech.server.processControllerPresent=true -Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig  -Dcom.l7tech.server.log.console=true"
+    fi
+
     if [ -n "${GATEWAY_PID}" ]; then
         rm -f "${GATEWAY_PID}"
         echo $$ > "${GATEWAY_PID}"

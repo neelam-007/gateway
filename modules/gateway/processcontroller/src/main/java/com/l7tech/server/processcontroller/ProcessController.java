@@ -441,6 +441,7 @@ public class ProcessController {
 
                     cmds.add("/opt/SecureSpan/Appliance/libexec/gateway_control");
                     cmds.add("run");
+                    cmds.add("-pc");
 
 //                    for (HostFeature hf : node.getHost().getFeatures()) {  // TODO needs more scala.Seq#filter
 //                        collectArgs(cmds, hf);
