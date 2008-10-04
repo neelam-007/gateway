@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.gateway.common.LicenseException;
 import org.springframework.context.ApplicationContext;
 
@@ -37,7 +38,11 @@ public class ServerOneOrMoreAssertion extends ServerCompositeAssertion implement
                 continue;
             }
             child = kid;
-            result = child.checkRequest(context);
+            try {
+                result = child.checkRequest(context);
+            } catch (AssertionStatusException e) {
+                result = e.getAssertionStatus();
+            }
             context.assertionFinished(child, result);
             if (result == AssertionStatus.NONE) return result;
             else {

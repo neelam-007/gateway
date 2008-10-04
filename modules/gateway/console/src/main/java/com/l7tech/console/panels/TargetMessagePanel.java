@@ -4,22 +4,27 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.TargetMessageType;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
-import java.awt.Dimension;
-import java.awt.BorderLayout;
+import java.awt.*;
+import java.util.regex.Pattern;
 
 /** @author alex */
 public class TargetMessagePanel extends JPanel {
+    private static final Pattern FIXSTART = Pattern.compile("\\s*(?:\\$\\{)?\\s*");
+    private static final Pattern FIXEND = Pattern.compile("\\s*(?:\\})?\\s*");
+
     private JPanel mainPanel;
     private JRadioButton requestRadioButton;
     private JRadioButton responseRadioButton;
     private JRadioButton otherRadioButton;
     private JTextField otherMessageVariableTextfield;
+    private boolean allowNonMessageVariables = false;
 
     private final RunOnChangeListener listener = new RunOnChangeListener(new Runnable() {
         public void run() {
@@ -41,7 +46,16 @@ public class TargetMessagePanel extends JPanel {
         setTitle(title);
         initComponents();
     }
-   
+
+    public void setAllowNonMessageVariables(boolean allowNonMessageVariables) {
+        if (allowNonMessageVariables != this.allowNonMessageVariables) {
+            otherRadioButton.setText(allowNonMessageVariables
+                    ? "Other Context Variable:"
+                    : "Other Message Variable");
+            this.allowNonMessageVariables = allowNonMessageVariables;
+        }
+    }
+
     public void setTitle(String title) {
         Border border = getBorder();
         if (border instanceof TitledBorder) {
@@ -59,6 +73,11 @@ public class TargetMessagePanel extends JPanel {
         throw new IllegalStateException();
     }
 
+    /**
+     * Configure the GUI controls to reflect the settings of the specified model object.
+     *
+     * @param model the object whose values are to be read to configure the GUI controls.  Required.
+     */
     public void setModel(MessageTargetable model) {
         switch(model.getTarget()) {
             case REQUEST:
@@ -81,12 +100,27 @@ public class TargetMessagePanel extends JPanel {
         responseRadioButton.addActionListener(listener);
         otherRadioButton.addActionListener(listener);
         otherMessageVariableTextfield.getDocument().addDocumentListener(listener);
+        Utilities.attachDefaultContextMenu(otherMessageVariableTextfield);
 
         enableDisable();
         this.setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
     }
 
+    private String getVariableName() {
+        String varname = otherMessageVariableTextfield.getText().trim();
+        // As a convenience to our poor confused users, we'll remove any ${ } surrounding the variable name
+        varname = FIXSTART.matcher(varname).replaceAll("");
+        varname = FIXEND.matcher(varname).replaceAll("");
+        return varname;
+    }
+
+    /**
+     * Update the specified model object to correspond to the values the user has set
+     * by manipulating the GUI controls.
+     *
+     * @param model the object to update.  Required.
+     */
     public void updateModel(MessageTargetable model) {
         final TargetMessageType type;
         final String var;
@@ -98,7 +132,7 @@ public class TargetMessagePanel extends JPanel {
             var = null;
         } else if (otherRadioButton.isSelected()) {
             type = TargetMessageType.OTHER;
-            var = otherMessageVariableTextfield.getText().trim();
+            var = getVariableName();
         } else {
             throw new IllegalStateException();
         }

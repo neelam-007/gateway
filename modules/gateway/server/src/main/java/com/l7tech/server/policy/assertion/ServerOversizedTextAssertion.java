@@ -99,7 +99,7 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion<Oversi
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
             throws PolicyAssertionException, IOException
     {
-        if (ServerRegex.isPostRouting(context)) {
+        if (context.isPostRouting()) {
             auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_ALREADY_ROUTED);
             return AssertionStatus.FAILED;
         }

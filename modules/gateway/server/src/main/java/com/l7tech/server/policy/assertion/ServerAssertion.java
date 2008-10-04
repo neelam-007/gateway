@@ -25,6 +25,7 @@ public interface ServerAssertion extends Closeable {
      * @return AssertionStatus.NONE if this Assertion did its business successfully; otherwise, some error code
      * @throws PolicyAssertionException something is wrong in the policy dont throw this if there is an issue with the request or the response
      * @throws java.io.IOException if there is a problem reading a request or response
+     * @throws AssertionStatusException as an alternate mechanism to return an assertion status other than AssertionStatus.NONE.
      */
     AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException;
 

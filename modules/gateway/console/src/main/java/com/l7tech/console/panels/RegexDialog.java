@@ -1,11 +1,12 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.event.BeanEditSupport;
-import com.l7tech.gui.widgets.SquigglyTextArea;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.PauseListener;
+import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.SquigglyTextArea;
 import com.l7tech.policy.assertion.Regex;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
@@ -55,23 +56,22 @@ public class RegexDialog extends JDialog {
     public JSplitPane splitPaneTest;
     public JSplitPane splitPaneRegex;
     private JTextField captureVariablePrefix;
-    private JTextField inputContextVariableName;
-    private JRadioButton rbContextVariableInput;
-    private JRadioButton rbResponseInput;
-    private JRadioButton rbRequestInput;
     private JRadioButton encodingDefaultButton;
     private JRadioButton encodingCustomButton;
     private JLabel mimePartLabel;
     private JLabel characterEncodingLabel;
+    private TargetMessagePanel targetMessagePanel;
+    private final boolean postRouting;
     private final boolean readOnly;
 
-    public RegexDialog(Frame owner, Regex regexAssertion, boolean readOnly) throws HeadlessException {
+    public RegexDialog(Frame owner, Regex regexAssertion, boolean postRouting, boolean readOnly) throws HeadlessException {
         super(owner, true);
         setTitle("Regular Expression Assertion");
         if (regexAssertion == null) {
             throw new IllegalArgumentException();
         }
         this.regexAssertion = regexAssertion;
+        this.postRouting = postRouting;
         this.readOnly = readOnly;
         initialize();
     }
@@ -181,15 +181,13 @@ public class RegexDialog extends JDialog {
 
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
         Utilities.equalizeComponentSizes(new JComponent[]  {
-                rbContextVariableInput, rbResponseInput, rbRequestInput,
                 mimePartLabel, characterEncodingLabel
         });
         Utilities.attachDefaultContextMenu(regexTextArea);
         Utilities.attachDefaultContextMenu(replaceTextArea);
         Utilities.attachDefaultContextMenu(testInputTextArea);
         Utilities.attachDefaultContextMenu(testResultTextPane);
-        //Utilities.attachDefaultContextMenu(inputContextVariableName);
-        //Utilities.attachDefaultContextMenu(captureVariablePrefix);
+        Utilities.attachDefaultContextMenu(captureVariablePrefix);
 
         Utilities.enableGrayOnDisabled(replaceTextArea);
         Utilities.enableGrayOnDisabled(encodingField);
@@ -229,7 +227,20 @@ public class RegexDialog extends JDialog {
             regexAssertion.setEncoding(encodingField.getText());
         }
 
-        regexAssertion.setCaptureVar(captureVariablePrefix.getText());
+        regexAssertion.setCaptureVar(emptyToNull(captureVariablePrefix.getText()));
+
+        regexAssertion.setAutoTarget(false);
+        targetMessagePanel.updateModel(regexAssertion);
+    }
+
+
+
+    private static String nullToEmpty(String in) {
+        return in == null || in.trim().length() < 1 ? "" : in;
+    }
+
+    private static String emptyToNull(String in) {
+        return in == null || in.trim().length() < 1 ? null : in;
     }
 
     private void modelToView() {
@@ -251,6 +262,12 @@ public class RegexDialog extends JDialog {
             replaceTextArea.setText(regexAssertion.getReplacement());
         }
         caseInsensitivecheckBox.setSelected(regexAssertion.isCaseInsensitive());
+
+        captureVariablePrefix.setText(nullToEmpty(regexAssertion.getCaptureVar()));
+
+        if (regexAssertion.isAutoTarget())
+            regexAssertion.setTarget(postRouting ? TargetMessageType.RESPONSE : TargetMessageType.REQUEST);
+        targetMessagePanel.setModel(regexAssertion);
     }
 
     private void doTest() {
@@ -360,4 +377,8 @@ public class RegexDialog extends JDialog {
         }
     }
 
+    private void createUIComponents() {
+        targetMessagePanel = new TargetMessagePanel("Source");
+        targetMessagePanel.setAllowNonMessageVariables(true);
+    }
 }

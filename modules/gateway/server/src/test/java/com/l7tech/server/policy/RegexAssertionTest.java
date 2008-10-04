@@ -5,40 +5,36 @@
  */
 package com.l7tech.server.policy;
 
+import com.l7tech.common.TestDocuments;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.TestDocuments;
-import com.l7tech.message.Message;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.message.Message;
+import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.server.MessageProcessorListener;
+import com.l7tech.server.MockServletApi;
+import com.l7tech.server.SoapMessageProcessingServlet;
+import com.l7tech.server.TestMessageProcessor;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.ServerRegex;
+import com.l7tech.server.service.ServicesHelper;
+import com.l7tech.server.transport.http.HttpTransportModuleTester;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.Regex;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.AssertionRegistry;
-//import com.l7tech.server.MessageProcessorListener;
-//import com.l7tech.server.MockServletApi;
-import com.l7tech.server.SoapMessageProcessingServlet;
-import com.l7tech.server.MockServletApi;
-import com.l7tech.server.TestMessageProcessor;
-import com.l7tech.server.MessageProcessorListener;
-import com.l7tech.server.service.ServicesHelper;
-//import com.l7tech.server.TestMessageProcessor;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.ServerPolicyFactory;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.transport.http.HttpTransportModuleTester;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
+import static junit.framework.Assert.*;
+import org.junit.*;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import javax.wsdl.Definition;
 import javax.xml.soap.SOAPMessage;
@@ -46,13 +42,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Arrays;
-import java.util.regex.Pattern;
+import java.util.List;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Test the RegEx assertion
  */
-public class RegexAssertionTest extends TestCase {
+public class RegexAssertionTest {
     private static MockServletApi servletApi;
     private static ServerPolicyFactory serverPolicyFactory;
     private SoapMessageProcessingServlet messageProcessingServlet;
@@ -60,21 +57,6 @@ public class RegexAssertionTest extends TestCase {
     private int tokenCount = 0;
     private static TestMessageProcessor messageProcessor;
     private static AssertionRegistry assertionRegistry;
-
-    /**
-     * test <code>EchoAssertionTest</code> constructor
-     */
-    public RegexAssertionTest(String name) {
-        super(name);
-    }
-
-    /**
-     * create the <code>TestSuite</code> for the
-     * ServerPolicyFactoryTest <code>TestCase</code>
-     */
-    public static Test suite() throws Exception {
-        return new TestSuite(RegexAssertionTest.class);
-    }
 
     private static ServicesHelper getServicesHelper() {
         if (servicesHelper == null) {
@@ -87,6 +69,7 @@ public class RegexAssertionTest extends TestCase {
         return servicesHelper;
     }
 
+    @Before
     public void setUp() throws Exception {
         tokenCount = 0;
         getServicesHelper().deleteAllServices();
@@ -98,15 +81,7 @@ public class RegexAssertionTest extends TestCase {
         });
     }
 
-    public void tearDown() throws Exception {
-        // put tear down code here
-    }
-
-
-    public static void main(String[] args) throws Exception {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testSimpleReplace() throws Exception {
         final String matchToken = "QQQ";
         ServicesHelper.ServiceDescriptor descriptor = servicesHelper.publish("stockQuote", TestDocuments.WSDL, getPolicy("QQQ", "ZZZ"));
@@ -145,6 +120,7 @@ public class RegexAssertionTest extends TestCase {
         assertEquals(verifiedTokens, tokenCount);
     }
 
+    @Test
     public void testBackReferenceReplace() throws Exception {
         final String matchToken = "QQQ";
         ServicesHelper.ServiceDescriptor descriptor = servicesHelper.publish("stockQuote", TestDocuments.WSDL, getPolicy("QQQ", "$0ZZZ"));
@@ -184,6 +160,7 @@ public class RegexAssertionTest extends TestCase {
     }
 
 
+    @Test
     public void testTwoRegexExpressionsInSequence() throws Exception {
         final String matchToken = "QQQ";
         ServicesHelper.ServiceDescriptor descriptor = servicesHelper.publish("stockQuote", TestDocuments.WSDL, getPolicy("QQQ", "ZZZ", "ZZZ", "OOO"));
@@ -223,6 +200,7 @@ public class RegexAssertionTest extends TestCase {
     }
 
 
+    @Test
     public void testPrependXmlDeclNoWhitespace() throws Exception {
         String message = "<foo><bar/></foo>";
 
@@ -236,6 +214,7 @@ public class RegexAssertionTest extends TestCase {
     }
 
 
+    @Test
     public void testPrependXmlDeclWithWhitespace() throws Exception {
         String message = "\n<foo><bar/></foo>";
 
@@ -265,6 +244,7 @@ public class RegexAssertionTest extends TestCase {
     }
 
 
+    @Test
     public void testSimpleReplaceWithVariables() throws Exception {
         final String matchToken = "QQQ";
         ServicesHelper.ServiceDescriptor descriptor = servicesHelper.publish("stockQuote", TestDocuments.WSDL, getPolicy("QQQ", "${bingo}"));
@@ -335,5 +315,246 @@ public class RegexAssertionTest extends TestCase {
         regex2.setReplacement(replace2);
 
         return new AllAssertion(Arrays.asList(regex, regex2, new TestEchoAssertion()));
+    }
+
+    private PolicyEnforcementContext context() throws IOException {
+        return context(PHRASE_ORLY, PHRASE_YARLY);
+    }
+
+    private PolicyEnforcementContext context(String request, String response) throws IOException {
+        return context(request, response, null, null);
+    }
+
+    private PolicyEnforcementContext context(String request, String response, String varname, Object value) throws IOException {
+        Message req = message(request);
+        Message resp = response == null ? new Message() : message(response);
+        PolicyEnforcementContext context = new PolicyEnforcementContext(req, resp);
+        if (varname != null) context.setVariable(varname, value);
+        return context;
+    }
+
+    private Message message(String request) throws IOException {
+        Message req = new Message();
+        req.initialize(ContentTypeHeader.TEXT_DEFAULT, request.getBytes("utf-8"));
+        return req;
+    }
+
+    private void expect(AssertionStatus expected, Regex regex, PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        ServerRegex sass = new ServerRegex(regex, null);
+        AssertionStatus result;
+        try {
+            result = sass.checkRequest(context);
+        } catch (AssertionStatusException ase) {
+            result = ase.getAssertionStatus();
+        }
+        assertEquals(expected, result);
+    }
+
+    private String toString(PartInfo part) throws IOException {
+        final byte[] bytes = part.getBytesIfAlreadyAvailable();
+        assertNotNull("All tests use ByteArrayStashManager, so bytes should always be available", bytes);
+        return new String(bytes, part.getContentType().getEncoding());
+    }
+
+    private String toString(Message message) throws IOException {
+        return toString(message.getMimeKnob().getFirstPart());
+    }
+
+    private Regex regex(String regex) {
+        return regex(regex, null);
+    }
+
+    private Regex regex(String regex, String replacement) {
+        return regex(regex, replacement, null);
+    }
+
+    private Regex regex(String regex, String replacement, String target) {
+        Regex ass = new Regex();
+        ass.setRegex(regex);
+        ass.setReplace(replacement != null);
+        ass.setReplacement(replacement);
+        if (target != null) {
+            ass.setAutoTarget(false);
+            if (REQUEST.equals(target)) {
+                ass.setTarget(TargetMessageType.REQUEST);
+            } else if (RESPONSE.equals(target)) {
+                ass.setTarget(TargetMessageType.RESPONSE);
+            } else {
+                ass.setTarget(TargetMessageType.OTHER);
+                ass.setOtherTargetMessageVariable(target);
+            }
+        }
+        return ass;
+    }
+
+    private static final String REQUEST = "request";
+    private static final String RESPONSE = "response";
+    private static final String VARIABLE = "my.funky.variable";
+
+    private static final String PHRASE_FOO = "My mumbletyfoo is murbled!";
+    private static final String PHRASE_POO = "My mumbletypoo is murbled!";
+    private static final String PHRASE_UNICODE_JOSE = "jos\u00e9hern\u00e1ndez";
+    private static final String PHRASE_UNICDE_GEN = "ingenier\u00eda";
+    private static final String PHRASE_UNICODE_INTERNATIONAL = "International \u0436\u2665\u0152.exe";
+    private static final String SUBSTR_FOO = "mumbletyfoo";
+    private static final String SUBSTR_POO = "mumbletypoo";
+    private static final String PHRASE_ORLY = "orly?";
+    private static final String PHRASE_YARLY = "yarly";
+
+
+
+    @Test
+    public void testNewSimpleMatch() throws Exception {
+        expect(AssertionStatus.NONE, regex(SUBSTR_FOO), context(PHRASE_FOO, PHRASE_ORLY));
+        expect(AssertionStatus.FAILED, regex(SUBSTR_FOO), context(PHRASE_POO, PHRASE_ORLY));
+    }
+    
+    @Test
+    public void testNewSimpleReplace() throws Exception {
+        PolicyEnforcementContext context = context(PHRASE_FOO, PHRASE_ORLY);
+        expect(AssertionStatus.NONE, regex(SUBSTR_FOO, SUBSTR_POO), context);
+        assertEquals(PHRASE_POO, toString(context.getRequest()));
+
+        context = context(PHRASE_POO, PHRASE_ORLY);
+        expect(AssertionStatus.NONE, regex(SUBSTR_FOO, PHRASE_YARLY), context);
+        assertEquals(PHRASE_POO, toString(context.getRequest()));
+
+        context = context(PHRASE_POO, PHRASE_ORLY);
+        expect(AssertionStatus.NONE, regex(SUBSTR_POO, PHRASE_YARLY), context);
+        assertEquals("My yarly is murbled!", toString(context.getRequest()));
+    }
+
+    @Test
+    public void testNewAutoTargetRequestResponse() throws Exception {
+        final PolicyEnforcementContext context = context(PHRASE_FOO, PHRASE_ORLY);
+
+        // Match against request should succeed
+        context.setRoutingStatus(RoutingStatus.NONE);
+        expect(AssertionStatus.NONE, regex(SUBSTR_FOO), context);
+
+        // Match against response should fail
+        context.setRoutingStatus(RoutingStatus.ROUTED);
+        expect(AssertionStatus.FAILED, regex(SUBSTR_FOO), context);
+
+        // Match against response should fail
+        context.setRoutingStatus(RoutingStatus.ATTEMPTED);
+        expect(AssertionStatus.FAILED, regex(SUBSTR_FOO), context);
+
+        // Match against request should succeed again
+        context.setRoutingStatus(RoutingStatus.NONE);
+        expect(AssertionStatus.NONE, regex(SUBSTR_FOO), context);
+    }
+
+    @Test
+    public void testNewTargetRequestResponse() throws Exception {
+        expect(AssertionStatus.NONE, regex(SUBSTR_FOO, null, REQUEST), context(PHRASE_FOO, PHRASE_ORLY));
+        expect(AssertionStatus.FAILED, regex(SUBSTR_FOO, null, RESPONSE), context(PHRASE_FOO, PHRASE_ORLY));
+    }
+
+    @Test
+    public void testNewTargetMessageVariable() throws Exception {
+        expect(AssertionStatus.NONE, regex(SUBSTR_FOO, null, VARIABLE), context(PHRASE_ORLY, PHRASE_YARLY, VARIABLE, message(PHRASE_FOO)));
+        expect(AssertionStatus.FAILED, regex(SUBSTR_FOO, null, VARIABLE), context(PHRASE_ORLY, PHRASE_YARLY, VARIABLE, message(PHRASE_POO)));
+    }
+
+    @Test
+    public void testNewTargetStringVariable() throws Exception {
+        expect(AssertionStatus.NONE, regex(SUBSTR_FOO, null, VARIABLE), context(PHRASE_ORLY, PHRASE_YARLY, VARIABLE, PHRASE_FOO));
+        expect(AssertionStatus.FAILED, regex(SUBSTR_FOO, null, VARIABLE), context(PHRASE_ORLY, PHRASE_YARLY, VARIABLE, PHRASE_POO));
+    }
+    
+    @Test
+    public void testReplaceStringVariable() throws Exception {
+        PolicyEnforcementContext context = context(PHRASE_ORLY, PHRASE_YARLY, VARIABLE, PHRASE_FOO);
+        expect(AssertionStatus.NONE, regex(SUBSTR_FOO, SUBSTR_POO, VARIABLE), context);
+        assertEquals(PHRASE_POO, context.getVariable(VARIABLE));
+
+        context = context(PHRASE_ORLY, PHRASE_YARLY, VARIABLE, PHRASE_POO);
+        expect(AssertionStatus.NONE, regex(SUBSTR_FOO, PHRASE_YARLY, VARIABLE), context);
+        assertEquals(PHRASE_POO, context.getVariable(VARIABLE));
+
+        context = context(PHRASE_ORLY, PHRASE_YARLY, VARIABLE, PHRASE_POO);
+        expect(AssertionStatus.NONE, regex(SUBSTR_POO, PHRASE_YARLY, VARIABLE), context);
+        assertEquals("My yarly is murbled!", context.getVariable(VARIABLE));
+    }
+
+    @Test
+    public void testNewInvalidPattern() throws Exception {
+        expect(AssertionStatus.SERVER_ERROR, regex("["), context());
+    }
+
+    @Test
+    public void testNewInvalidTargetVariable() throws Exception {
+        expect(AssertionStatus.SERVER_ERROR, regex(SUBSTR_FOO, null, "nonexistentvariable"), context());
+    }
+
+    @Test
+    public void testNewResponseTargetNotYetInitialized() throws Exception {
+        try {
+            expect(AssertionStatus.SERVER_ERROR, regex(SUBSTR_FOO, null, RESPONSE), context(PHRASE_ORLY, null));
+            fail("Expected exception not thrown (response not yet attached to an InputStream)");
+        } catch (IllegalStateException ise) {
+            assertTrue(ise.getMessage().contains("This Message has not yet been attached to an InputStream"));
+        }
+    }
+
+    @Test
+    public void testNewOverrideCharsetMatchAgainstMessage() throws Exception {
+        PolicyEnforcementContext context = context();
+
+        // Request is encoded in ISO-8859-1, but lies and claims UTF-8
+        context.getRequest().initialize(ContentTypeHeader.parseValue("text/plain; charset=UTF-8"),
+                PHRASE_UNICODE_JOSE.getBytes("ISO-8859-1"));
+
+        Regex regex = regex(PHRASE_UNICODE_JOSE);
+
+        regex.setEncoding("ISO-8859-1");
+        expect(AssertionStatus.NONE, regex, context);
+
+        regex.setEncoding("UTF-8");
+        expect(AssertionStatus.FAILED, regex, context);
+    }
+
+    @Test
+    public void testNewOverrideCharsetMatchAgainstStringVar() throws Exception {
+        PolicyEnforcementContext context = context(PHRASE_ORLY, PHRASE_YARLY, VARIABLE, PHRASE_UNICODE_JOSE);
+
+        Regex regex = regex(PHRASE_UNICODE_JOSE, null, VARIABLE);
+
+        regex.setEncoding("UTF-8");
+        expect(AssertionStatus.NONE, regex, context);
+
+        regex.setEncoding("ISO-8859-1");
+        expect(AssertionStatus.FAILED, regex, context);
+    }
+
+    @Test
+    public void testNewOverrideCharsetMatchReplaceStringVar() throws Exception {
+        PolicyEnforcementContext context = context(PHRASE_FOO, PHRASE_ORLY, VARIABLE, PHRASE_YARLY);
+
+        Regex regex = regex(PHRASE_YARLY, PHRASE_UNICODE_JOSE, VARIABLE);
+
+        regex.setEncoding("UTF-8");
+        expect(AssertionStatus.NONE, regex, context);
+        assertEquals(PHRASE_UNICODE_JOSE, context.getVariable(VARIABLE));
+
+        regex.setEncoding("ISO-8859-1");
+        expect(AssertionStatus.NONE, regex, context);
+
+        // TODO  This output is probably not correct; this needs more thought about what should actually happen here
+        assertEquals(new String(PHRASE_UNICODE_JOSE.getBytes("UTF-8"), "ISO-8859-1"), context.getVariable(VARIABLE));
+    }
+
+    @Test
+    public void testNewCaptureGroups() throws Exception {
+        Regex regex = regex("m(.*?o)o");
+        regex.setCaptureVar("capture");
+        PolicyEnforcementContext context = context(PHRASE_FOO, PHRASE_ORLY);
+        expect(AssertionStatus.NONE, regex, context);
+
+        //noinspection unchecked
+        List<String> captured = (List<String>) context.getVariable("capture");
+        assertEquals("mumbletyfoo", captured.get(0));
+        assertEquals("umbletyfo", captured.get(1));
     }
 }

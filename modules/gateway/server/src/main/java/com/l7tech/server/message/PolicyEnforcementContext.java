@@ -3,22 +3,19 @@
  */
 package com.l7tech.server.message;
 
-import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.mime.ByteArrayStashManager;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.RequestId;
-import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditDetail;
-import com.l7tech.common.http.HttpCookie;
-import com.l7tech.message.HttpRequestKnob;
+import com.l7tech.gateway.common.mapping.MessageContextMapping;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.identity.User;
 import com.l7tech.message.Message;
 import com.l7tech.message.ProcessingContext;
-import com.l7tech.util.Pair;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.xml.SoapFaultLevel;
-import com.l7tech.wsdl.Wsdl;
-import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetable;
@@ -30,22 +27,29 @@ import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.util.SoapFaultManager;
-import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.Pair;
+import com.l7tech.wsdl.Wsdl;
+import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.xml.soap.SoapUtil;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
-import java.text.MessageFormat;
 
 /**
  * Holds message processing state needed by policy enforcement server (SSG) message processor and policy assertions.
@@ -166,6 +170,15 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public void setRoutingStatus(RoutingStatus routingStatus) {
         this.routingStatus = routingStatus;
+    }
+
+    /**
+     * Check if this context's routing status is ROUTED or ATTEMPTED.
+     *
+     * @return true iff. this context routing status is ROUTED or ATTEMPTED.
+     */
+    public boolean isPostRouting() {
+        return RoutingStatus.ROUTED.equals(getRoutingStatus()) || RoutingStatus.ATTEMPTED.equals(getRoutingStatus());
     }
 
     public boolean isReplyExpected() {
@@ -537,32 +550,71 @@ public class PolicyEnforcementContext extends ProcessingContext {
     }
 
     public Message getTargetMessage(final MessageTargetable targetable) throws NoSuchVariableException {
+        return getTargetMessage(targetable, false);
+    }
+
+    public Message getTargetMessage(final MessageTargetable targetable, boolean allowNonMessageVar) throws NoSuchVariableException {
         switch(targetable.getTarget()) {
             case REQUEST:
                 return getRequest();
+
             case RESPONSE:
                 return getResponse();
+
             case OTHER:
                 final String variableName = targetable.getOtherTargetMessageVariable();
-                if (variableName == null) throw new IllegalArgumentException("Target is OTHER but no variable name was set");
+                if (variableName == null)
+                    throw new IllegalArgumentException("Target is OTHER but no variable name was set");
 
-                final Object messageSrc = getVariable(variableName);
-                if (!(messageSrc instanceof Message)) {
-                    // Should never happen.
-                    throw new RuntimeException(MessageFormat.format("Request message source (\"{0}\") is a context variable of the wrong type (expected={1}, actual={2}).", variableName, Message.class, messageSrc.getClass()));
-                }
-                final Message msg = (Message)messageSrc;
-                final HttpRequestKnob existingHrk = (HttpRequestKnob) msg.getKnob(HttpRequestKnob.class);
-                if (existingHrk == null) {
-                    // Inherits the HttpRequestKnob from the default request if present.
-                    final HttpRequestKnob defaultHRK = (HttpRequestKnob)getRequest().getKnob(HttpRequestKnob.class);
-                    if (defaultHRK != null) {
-                        msg.attachHttpRequestKnob(defaultHRK);
-                    }
-                }
-                return msg;
+                final Object value = getVariable(variableName);
+
+                if (value == null)
+                    throw new NoSuchVariableException(variableName, "Variable value is null");
+
+                if (value instanceof Message)
+                    return (Message) value;
+
+                if (!allowNonMessageVar)
+                    throw new NoSuchVariableException(variableName,
+                            MessageFormat.format("Request message source (\"{0}\") is a context variable of the wrong type (expected={1}, actual={2}).",
+                                    variableName, Message.class, value.getClass()));
+
+                return createContextVariableBackedMessage(variableName, value.toString());
+
             default:
                 throw new IllegalArgumentException("Unsupported message target: " + targetable.getTarget());
+        }
+    }
+
+    private Message createContextVariableBackedMessage(final String variableName, String initialValue) {
+        Message mess = new Message();
+        final ContentTypeHeader ctype = ContentTypeHeader.TEXT_DEFAULT;
+        try {
+            final ContextVariableKnob cvk = new ContextVariableKnob(variableName);
+
+            StashManager sm = new ByteArrayStashManager() {
+                public void stash(int ordinal, byte[] in, int offset, int length) {
+                    super.stash(ordinal, in, offset, length);
+                    if (ordinal != 0) // Probably won't happen but you never knob 
+                        return;
+
+                    // Write back the modified context variable
+                    try {
+                        String encoding = ctype.getEncoding();
+                        if (cvk.getOverrideEncoding() != null)
+                            encoding = cvk.getOverrideEncoding();
+                        setVariable(variableName, new String(in, offset, length, encoding));
+                    } catch (UnsupportedEncodingException e) {
+                        throw new RuntimeException(e); // can't happen
+                    }
+                }
+            };
+
+            mess.initialize(sm, ctype, new ByteArrayInputStream(initialValue.getBytes(ctype.getEncoding())));
+            mess.attachKnob(ContextVariableKnob.class, cvk);
+            return mess;
+        } catch (IOException e) {
+            throw new RuntimeException(e); // can't happen
         }
     }
 

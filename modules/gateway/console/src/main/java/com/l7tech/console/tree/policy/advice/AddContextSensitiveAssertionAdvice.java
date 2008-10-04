@@ -1,12 +1,8 @@
 package com.l7tech.console.tree.policy.advice;
 
-import java.util.Iterator;
-
 import com.l7tech.console.tree.policy.PolicyChange;
-import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.PolicyUtil;
 
 /**
  * Abstract add assertion advice that provides pre/post routing notification.
@@ -61,38 +57,6 @@ public abstract class AddContextSensitiveAssertionAdvice implements Advice {
 
     private boolean isInsertPostRouting(PolicyChange pc) {
         Assertion ass = pc.getParent().asAssertion();
-        if (ass instanceof AllAssertion) {
-            AllAssertion parent = (AllAssertion)ass;
-            Iterator i = parent.children();
-            int pos = 0;
-            while (i.hasNext()) {
-                Assertion child = (Assertion)i.next();
-                if (pos < pc.getChildLocation()) {
-                    if (child instanceof RoutingAssertion) {
-                        return true;
-                    }
-                }
-                pos++;
-            }
-        }
-        Assertion previous = ass;
-        ass = ass.getParent();
-        while (ass != null) {
-            if (ass instanceof AllAssertion) {
-                AllAssertion parent = (AllAssertion)ass;
-                Iterator i = parent.children();
-                while (i.hasNext()) {
-                    Assertion child = (Assertion)i.next();
-                    System.out.println(child.getClass().getName());
-                    if (child instanceof RoutingAssertion) {
-                        return true;
-                    }
-                    if (child == previous) break;
-                }
-            }
-            previous = ass;
-            ass = ass.getParent();
-        }
-        return false;
+        return PolicyUtil.isLocationPostRouting(ass, pc.getChildLocation());
     }
 }

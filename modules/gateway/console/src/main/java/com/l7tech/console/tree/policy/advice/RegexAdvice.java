@@ -18,15 +18,10 @@ import java.awt.*;
  * Regex properties dialog.
  * <p/>
  */
-public class RegexAdvice implements Advice {
-    public void proceed(final PolicyChange pc) {
-        Assertion[] assertions = pc.getEvent().getChildren();
-        if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof Regex)) {
-            throw new IllegalArgumentException();
-        }
+public class RegexAdvice extends AddContextSensitiveAssertionAdvice {
+    private void showDialog(final PolicyChange pc, Regex regexAssertion, boolean postRouting) {
         Frame f = TopComponents.getInstance().getTopParent();
-        Regex r = (Regex)assertions[0];
-        RegexDialog rd = new RegexDialog(f, r, false);
+        RegexDialog rd = new RegexDialog(f, regexAssertion, postRouting, false);        
         rd.setModal(true);
         final Collection result = new ArrayList();
         rd.getBeanEditSupport().addBeanListener(new BeanAdapter() {
@@ -45,5 +40,15 @@ public class RegexAdvice implements Advice {
                 }
             }
         });
+    }
+
+    protected void notifyPreRouting(PolicyChange pc, Assertion assertion) {
+        Regex regexAssertion = (Regex) assertion;
+        showDialog(pc, regexAssertion, false);
+    }
+
+    protected void notifyPostRouting(PolicyChange pc, Assertion assertion) {
+        Regex regexAssertion = (Regex) assertion;
+        showDialog(pc, regexAssertion, true);
     }
 }

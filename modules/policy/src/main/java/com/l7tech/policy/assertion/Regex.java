@@ -5,15 +5,16 @@
  */
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.DataType;
+import com.l7tech.util.ArrayUtils;
 
 /**
  * @author emil
  * @version Mar 21, 2005
  */
-public class Regex extends Assertion implements UsesVariables, SetsVariables {
+public class Regex extends MessageTargetableAssertion implements UsesVariables, SetsVariables {
     private String regex;
     private String replacement;
     private boolean caseInsensitive;
@@ -26,16 +27,31 @@ public class Regex extends Assertion implements UsesVariables, SetsVariables {
     private boolean proceedIfPatternMatches = true;
     private String encoding;
     private String regexName;
-    private String captureVar = "regex.group";
+    private String captureVar = null;
+    private boolean autoTarget = true;
 
     /**
-     * Test whether the assertion is a credential source. The <code>RegexAssertion</code>
-     * is never an credential source assertion.
+     * Check whether the assertion should use pre-4.7 style automatic targeting of request/response messages.
+     * <p/>
+     * New regex assertions created in the UI post-4.6 will always use message targeting, but assertions
+     * created before 4.7 should preserve the old behavior when thawed from an older policy XML.
      *
-     * @return always false
+     * @return true if this assertion should automatically target request or response, ignoring
+     *              the message target; false if the message target should be used instead.
      */
-    public final boolean isCredentialSource() {
-        return false;
+    public boolean isAutoTarget() {
+        return autoTarget;
+    }
+
+    /**
+     * Set whether the assertion should use MessageTargetable, or should ignore the message targeting
+     * and behave as Regex did pre-4.7.
+     *
+     * @param autoTarget true if this assertion should automatically target request or response, ignoring
+     *              the message target; false if the message target should be used instead.
+     */
+    public void setAutoTarget(boolean autoTarget) {
+        this.autoTarget = autoTarget;
     }
 
     public String getRegex() {
@@ -150,6 +166,9 @@ public class Regex extends Assertion implements UsesVariables, SetsVariables {
         this.regexName = regexName;
     }
 
+    /**
+     * @return variable to which to save captured groups, or null to skip doing so.
+     */
     public String getCaptureVar() {
         return captureVar;
     }
@@ -169,7 +188,7 @@ public class Regex extends Assertion implements UsesVariables, SetsVariables {
         if (replacement == null)
             return new String[0];
 
-        return Syntax.getReferencedNames(replacement);
+        return ArrayUtils.concat(super.getVariablesUsed(), Syntax.getReferencedNames(replacement));
     }
 
     public VariableMetadata[] getVariablesSet() {

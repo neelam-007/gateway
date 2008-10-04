@@ -1,19 +1,20 @@
 package com.l7tech.console.action;
 
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.beaneditor.BeanAdapter;
 import com.l7tech.console.panels.RegexDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.RegexPolicyNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.policy.PolicyUtil;
 import com.l7tech.policy.assertion.Regex;
 
 import javax.swing.*;
+import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.awt.*;
 
 /**
  * The <code>RegexPropertiesAction</code> edits the Regex assertion
@@ -60,7 +61,7 @@ public class RegexPropertiesAction extends NodeAction {
     protected void performAction() {
         Regex ra = (Regex)node.asAssertion();
         Frame f = TopComponents.getInstance().getTopParent();
-        RegexDialog rd = new RegexDialog(f, ra, !node.canEdit());
+        RegexDialog rd = new RegexDialog(f, ra, PolicyUtil.isAssertionPostRouting(ra), !node.canEdit());
         rd.setModal(true);
         rd.getBeanEditSupport().addBeanListener(new BeanAdapter() {
             public void onEditAccepted(Object source, Object bean) {
