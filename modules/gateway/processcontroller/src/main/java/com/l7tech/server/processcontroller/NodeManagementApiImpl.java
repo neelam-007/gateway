@@ -21,6 +21,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.handler.MessageContext;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
@@ -44,6 +46,16 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     private void checkRequest() {
         final HttpServletRequest req = (HttpServletRequest)webServiceContext.getMessageContext().get(MessageContext.SERVLET_REQUEST);
         if (req == null) throw new IllegalStateException("Couldn't get HttpServletRequest");
+
+        try {
+            InetAddress addr = InetAddress.getByName(req.getRemoteAddr());
+            if (addr.isLoopbackAddress()) {
+                logger.fine("Allowing connection from localhost with no client certificate");
+                return;
+            }
+        } catch (UnknownHostException e) {
+            throw new IllegalStateException("Couldn't get client address", e);
+        }
 
         final Object maybeCert = req.getParameter("javax.servlet.request.X509Certificate");
         final X509Certificate certificate;
