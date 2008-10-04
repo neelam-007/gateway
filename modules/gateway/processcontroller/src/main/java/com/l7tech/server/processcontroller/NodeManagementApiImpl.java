@@ -77,7 +77,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         logger.log(Level.FINE, "Accepted client certificate {0}", certificate.getSubjectDN().getName());
     }
 
-    public NodeConfig createNode(String newNodeName, String desiredVersion, Set<DatabaseConfigRow> databaseConfigs)
+    public NodeConfig createNode(String newNodeName, String desiredVersion, String clusterPassphrase, Set<DatabaseConfigRow> databaseConfigs)
             throws SaveException {
         checkRequest();
         final Map<String,NodeConfig> nodes = configService.getHost().getNodes();
@@ -116,9 +116,10 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         }
 
         try {
-            NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), null, "surprise!", databaseConfig );
+            NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), null, clusterPassphrase, databaseConfig );
         } catch ( IOException ioe ) {
-            throw new SaveException( "Error during node configuration.", ioe);
+            logger.log(Level.WARNING, "Error during node configuration.", ioe );
+            throw new SaveException( "Error during node configuration '"+ExceptionUtils.getMessage(ioe)+"'");
         }
 
         configService.addServiceNode(node);

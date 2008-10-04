@@ -3,10 +3,8 @@
  */
 package com.l7tech.server.boot;
 
-import com.l7tech.server.ServerConfig;
-
-import java.io.File;
 import java.util.logging.Logger;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Extracted from {@link GatewayBoot} so that it can be a Spring bean.
@@ -14,38 +12,31 @@ import java.util.logging.Logger;
  * @author alex
  */
 public final class ShutdownWatcher {
-    private static final Logger logger = Logger.getLogger(ShutdownWatcher.class.getName());
 
-    private final ServerConfig serverConfig;
-    private static final String SHUTDOWN_FILENAME = "SHUTDOWN.NOW";
-    private static final long SHUTDOWN_POLL_INTERVAL = 1987L;
-    private volatile boolean shutdown = false;
+    //- PUBLIC
 
-    public ShutdownWatcher(ServerConfig serverConfig) {
-        this.serverConfig = serverConfig;
+    public ShutdownWatcher() {
     }
 
     public void shutdownNow() {
-        this.shutdown = true;
+        CountDownLatch latch = this.latch;
+        if ( latch != null ) {
+            logger.info("Shutdown requested");
+            latch.countDown();
+        } else {
+            logger.warning("Shutdown requested but watcher is not configured!");            
+        }
     }
 
-    void waitForShutdown() {
-        if (serverConfig == null)
-            throw new IllegalStateException("Unable to wait for shutdown - no serverConfig available");
-        File configDir = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_CONFIG_DIRECTORY, "/ssg", false);
-        if (configDir == null || !configDir.isDirectory())
-            throw new IllegalStateException("Config directory not found: " + configDir);
-        File shutFile = new File(configDir, SHUTDOWN_FILENAME);
+    //- PACKAGE
 
-        do {
-            try {
-                Thread.sleep(SHUTDOWN_POLL_INTERVAL);
-            } catch (InterruptedException e) {
-                logger.info("Thread interrupted - treating as shutdown request");
-                break;
-            }
-        } while (!shutdown && !shutFile.exists());
-
-        logger.info("SHUTDOWN.NOW file detected - treating as shutdown request");
+    void setShutdownLatch( final CountDownLatch latch ) {
+        this.latch = latch;   
     }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(ShutdownWatcher.class.getName());
+    private volatile CountDownLatch latch;
+
 }

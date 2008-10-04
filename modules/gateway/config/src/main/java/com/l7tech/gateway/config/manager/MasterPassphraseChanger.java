@@ -5,6 +5,7 @@ import com.l7tech.util.FileUtils;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.JdkLoggerConfigurator;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -28,9 +29,10 @@ public class MasterPassphraseChanger {
     private static final int MAX_LENGTH = 128;
 
     public static void main(String[] args) {
+        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
         try {
             LogManager.getLogManager().getLogger("").setLevel(Level.SEVERE);
-            new MasterPassphraseChanger().run("/opt/SecureSpan/Gateway/Nodes/default/etc/conf", new String[]{ "node.cluster.pass", "node.db.pass" });
+            new MasterPassphraseChanger().run("../node/default/etc/conf", new String[]{ "node.cluster.pass", "node.db.pass" });
         } catch (Throwable e) {
             String msg = "Unable to change master passphrase: " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, e);
@@ -43,6 +45,12 @@ public class MasterPassphraseChanger {
         long currentSalt = DefaultMasterPasswordFinder.getSalt(currentObfuscated);
         String candidateObfuscated = DefaultMasterPasswordFinder.obfuscate(candidatePlaintext, currentSalt);
         return currentObfuscated.equals(candidateObfuscated);
+    }
+
+    private void exitOnQuit( final String perhapsQuit ) {
+        if ( "quit".equals(perhapsQuit) ) {
+            System.exit(1);
+        }
     }
 
     private void run( String configurationDirPath, String[] passwordProperties ) throws IOException, SAXException {
@@ -150,6 +158,8 @@ public class MasterPassphraseChanger {
         while( password == null  ) {
             System.out.println( prompt );
             password = new String(console.readPassword());
+
+            exitOnQuit( password );
 
             if ( !pattern.matcher(password).matches() ) {
                 System.out.println( "Master passphrase should be between " + MIN_LENGTH + " and " + MAX_LENGTH + " characters long.\n" );

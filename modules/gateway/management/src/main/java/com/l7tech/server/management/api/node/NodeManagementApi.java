@@ -48,7 +48,7 @@ public interface NodeManagementApi {
      * @return the newly created NodeConfig
      * @throws SaveException if the new node cannot be created
      */
-    NodeConfig createNode(String newNodeName, String version, Set<DatabaseConfigRow> databaseConfigs) throws SaveException;
+    NodeConfig createNode(String newNodeName, String version, String clusterPassphrase, Set<DatabaseConfigRow> databaseConfigs) throws SaveException;
 
     /**
      * This class only exists because JAXB can't handle a Map in any reasonable way

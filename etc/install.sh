@@ -319,7 +319,7 @@ save_all() {
 
         if [ ! "${DOIT}" == "n" ] ; then
             check_user
-            do_command_as_user "ssgconfig" "${MYCOMMAND}"
+            do_command_as_user "layer7" "${MYCOMMAND}"
             if [ "${?}" == "0" ]; then
                 echo "The configuration was successful."
             else

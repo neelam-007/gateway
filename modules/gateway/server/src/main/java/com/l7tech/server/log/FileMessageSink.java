@@ -136,8 +136,8 @@ class FileMessageSink extends MessageSinkSupport {
                 serverConfig.getPropertyCached( ServerConfig.PARAM_SSG_LOG_DIRECTORY );
         if ( ssgLogs == null ) {
             try {
-                File ssgHome = serverConfig.getLocalDirectoryProperty( ServerConfig.PARAM_SSG_HOME_DIRECTORY, "/ssg", false );
-                ssgLogs = new File(ssgHome, "logs").getAbsolutePath();
+                File ssgHome = serverConfig.getLocalDirectoryProperty( ServerConfig.PARAM_SSG_HOME_DIRECTORY, false );
+                ssgLogs = new File(ssgHome, "var/logs").getAbsolutePath();
             } catch (RuntimeException re) {
                 throw new ConfigurationException("Error with home directory: " + re.getMessage());
             }

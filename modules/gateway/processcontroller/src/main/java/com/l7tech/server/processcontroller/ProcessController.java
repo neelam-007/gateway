@@ -428,34 +428,39 @@ public class ProcessController {
 
                 ssgPwd = new File(nodesDir, node.getName());
                 if (!(ssgPwd.exists() && ssgPwd.isDirectory())) throw new IllegalStateException("Node directory " + ssgPwd.getAbsolutePath() + " does not exist or is not a directory");
-                try {
+                //try {
                     // TODO make this less hard-coded (e.g. use the host profile)
-                    cmds = new LinkedList<String>(Arrays.asList(
-                        configService.getJavaBinary().getCanonicalPath(),
-                        "-Dcom.l7tech.server.home=\"" + ssgPwd.getCanonicalPath() + "\"",
-                        "-Dcom.l7tech.server.processControllerPresent=true"
+                    cmds = new LinkedList<String>(
+//                            Arrays.asList(
+//                        configService.getJavaBinary().getCanonicalPath(),
+//                        "-Dcom.l7tech.server.home=\"" + ssgPwd.getCanonicalPath() + "\"",
+//                        "-Dcom.l7tech.server.processControllerPresent=true"
 //                        "-Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig"
-                    ));
+//                    )
+                    );
 
-                    for (HostFeature hf : node.getHost().getFeatures()) {  // TODO needs more scala.Seq#filter
-                        collectArgs(cmds, hf);
-                    }
+                    cmds.add("/opt/SecureSpan/Appliance/libexec/gateway_control");
+                    cmds.add("run");
 
-                    for (NodeFeature nf : node.getFeatures()) {
-                        collectArgs(cmds, nf);
-                    }
-
-                    cmds.add("-jar");
-                    cmds.add("Gateway.jar");
-                } catch (IOException e) {
-                    throw new RuntimeException(e); // If the
-                }
+//                    for (HostFeature hf : node.getHost().getFeatures()) {  // TODO needs more scala.Seq#filter
+//                        collectArgs(cmds, hf);
+//                    }
+//
+//                    for (NodeFeature nf : node.getFeatures()) {
+//                        collectArgs(cmds, nf);
+//                    }
+//
+//                    cmds.add("-jar");
+//                    cmds.add("Gateway.jar");
+//                } catch (IOException e) {
+//                    throw new RuntimeException(e); // If the
+//                }
                 break;
             default:
                 throw new UnsupportedOperationException();
         }
 
-        processBuilder = new ProcessBuilder(cmds.toArray(new String[0]));
+        processBuilder = new ProcessBuilder(cmds.toArray(new String[cmds.size()]));
         processBuilder.redirectErrorStream(true);
         processBuilder.directory(ssgPwd);
         processBuilders.put(node.getName(), processBuilder);

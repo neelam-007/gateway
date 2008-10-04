@@ -74,7 +74,7 @@ public class ConfigurationWizard {
 
     private void initLogging() {
         System.setProperty(COMMONS_LOGGING_PROP, COMMONS_LOGGING_JDK14_LOGGER);
-        JdkLoggerConfigurator.configure(L7TECH_CLASSNAME, "com/l7tech/server/processcontroller/resources/logging.properties", LOGCONFIG_NAME, false, true);
+        JdkLoggerConfigurator.configure(L7TECH_CLASSNAME, "com/l7tech/server/config/resources/logging.properties", LOGCONFIG_NAME, false, true);
     }
 
     private void addSteps(List<ConfigWizardConsoleStep> steps) {

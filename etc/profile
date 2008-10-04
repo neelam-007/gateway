@@ -2,7 +2,7 @@ origdir=`pwd`
 me=${BASH_ARGV[0]}
 
 cd `dirname $me`
-pushd .. > /dev/null
+pushd ../.. > /dev/null
 SSG_HOME=`pwd`
 popd > /dev/null
 cd $origdir
@@ -11,7 +11,7 @@ export SSG_HOME
 SSG_JAVA_OPTS=""
 SSG_JAVA_HOME=""
 
-for i in ${SSG_HOME}/etc/profile.d/*.sh ; do
+for i in ${SSG_HOME}/runtime/etc/profile.d/*.sh ; do
     if [ -r "$i" ]; then
         . $i
     fi

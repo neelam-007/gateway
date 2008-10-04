@@ -3,20 +3,11 @@ set -e
 
 trap doLogout INT
 
-SYSWIZARD="/opt/SecureSpan/Appliance/sysconfigwizard/systemconfig.sh"
-CONFWIZARD="/opt/SecureSpan/Gateway/configwizard/ssgconfig.sh"
-UPDATEWIZARD="/ssg/updatewizard/ssgupdatewizard.sh" 
+SYSWIZARD="sudo -u layer7 /opt/SecureSpan/Appliance/sysconfig/systemconfig.sh"
+CONFWIZARD="sudo -u layer7 /opt/SecureSpan/Gateway/config/ssgconfig.sh"
 MASTERKEYMANAGE="/opt/SecureSpan/Appliance/libexec/masterkey-manage.pl"
 GETROOT="su -"
 MASTER_KEY_BACKUP_FILE_NAME="ssg_mkey.bak"
-
-checkForUpdater() {
-    if [ -e "${UPDATEWIZARD}" ] ; then
-        UPDATER_PRESENT="true"
-    else
-        UPDATER_PRESENT=""
-    fi
-}
 
 checkForSca() {
     SCADIAG="/opt/sun/sca6000/sbin/scadiag"
@@ -39,7 +30,6 @@ doLogout() {
     exit
 }
 
-checkForUpdater
 checkForSca
 checkForEm
 isValid="n"
@@ -60,16 +50,12 @@ do
             echo "7) Back up the Master Key to USB flash drive"
         fi
 
-        if [ "${UPDATER_PRESENT}" == "true" ] ; then
-            echo "8) Upgrade the SecureSpan Appliance"
-        fi
-
         if [ "${EM_PRESENT}" == "true" ] ; then
             /sbin/chkconfig ssem && true # && true due to set -e
             if [ ${?} -eq 0 ] ; then
-                echo "9) Disable Enterprise Manager server (root)"
+                echo "8) Disable Enterprise Manager server"
             else
-                echo "9) Enable Enterprise Manager server (root)"
+                echo "8) Enable Enterprise Manager server"
             fi
         fi
 
@@ -125,10 +111,10 @@ do
                             echo "Found the USB drive. Continuing..."
                             echo -n "Enter the keystore password:"
                             read -s ksPassword;
-			    echo ""
+			                echo ""
                             echo -n "Enter the master key backup password:"
                             read -s masterKeyBackupPassword;
-			    echo "" 
+			                echo "" 
                             (sudo ${MASTERKEYMANAGE} backup ${ksPassword} ${MASTER_KEY_BACKUP_FILE_NAME} ${masterKeyBackupPassword});
                             if [ ${?} != 0 ] ; then
                                 echo ""
@@ -140,21 +126,15 @@ do
                             echo "Press enter to continue."
                             read;
                         fi
-                    elif [ "$choice" == "8" ] && [ "${UPDATER_PRESENT}" == "true" ]; then
-                        clear;
-                        (${UPDATEWIZARD})
-                        echo "Press enter to continue";
-                        read;
-                        clear;
-                    elif [ "$choice" == "9" ] && [ "${EM_PRESENT}" == "true" ]; then
+                    elif [ "$choice" == "8" ] && [ "${EM_PRESENT}" == "true" ]; then
                         /sbin/chkconfig ssem && true # && true due to set -e
                         if [ ${?} -eq 0 ] ; then
-                            echo "Disabing Enterprise Manager server, root password required."
-                            su - -c "chkconfig ssem off"
+                            echo "Disabing Enterprise Manager server."
+                            sudo /sbin/chkconfig ssem off
                             echo "Enterprise Manager server disabled."
                         else
-                            echo "Enabling Enterprise Manager server, root password required."
-                            su - -c "chkconfig ssem on"
+                            echo "Enabling Enterprise Manager server."
+                            sudo /sbin/chkconfig ssem on
                             echo "Enterprise Manager server enabled."
                         fi
                         sleep 3

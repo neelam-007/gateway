@@ -105,6 +105,7 @@ case "$foo" in
 		exec $JAVA_HOME/bin/java $JAVA_OPTS \
 			-Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl \
 			-Dcom.l7tech.server.home=${SSG_HOME} \
+			-Dcom.l7tech.server.runtime=${SSG_HOME} \
 			-jar Gateway.jar $*
 		;;
 	textproxy)

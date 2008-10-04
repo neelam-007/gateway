@@ -51,9 +51,7 @@
         <constructor-arg index="2"  ref="serverConfig"/>
     </bean>
 
-    <bean id="ssgShutdown" class="com.l7tech.server.boot.ShutdownWatcher">
-        <constructor-arg ref="serverConfig"/>
-    </bean>
+    <bean id="ssgShutdown" class="com.l7tech.server.boot.ShutdownWatcher"/>
 
     <!-- JMS boot process  -->
     <bean id="jmsBootProcess" class="com.l7tech.server.transport.jms2.JmsBootProcess">

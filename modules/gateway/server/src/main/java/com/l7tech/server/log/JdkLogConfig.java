@@ -1,10 +1,15 @@
 package com.l7tech.server.log;
 
 import java.io.File;
+import java.io.OutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.StreamHandler;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 
 import com.l7tech.util.JdkLoggerConfigurator;
+import com.l7tech.util.ConfigurableLogFormatter;
 import com.l7tech.server.ServerConfig;
 
 /**
@@ -28,18 +33,29 @@ public class JdkLogConfig {
      * <p>When used in this way the JDK out/err streams are redirected to
      * logging.</p>
      *
+     * <p>You can output startup logs to the console by setting:</p>
+     *
+     * <pre>
+     *   com.l7tech.server.log.console = true
+     * </pre>
+     *
      * <p>WARNING: Do not use this at the same time as a console handler!</p>
      */
     public JdkLogConfig() {
         try {
-            System.setProperty(StartupHandler.SYSPROP_LOG_TO_CONSOLE, "false");
-            captureSystemStreams();
-
             // This ensures logging of any error when loading server config
             JdkLoggerConfigurator.configure(null, "com/l7tech/server/resources/logging.properties", null, false, false);
 
-            // Init logging based on partion config
+            // Redirect STDOUT/STDERR to logging and optionally send all startup logs to the console
+            System.setProperty(StartupHandler.SYSPROP_LOG_TO_CONSOLE, "false");
+            Handler handler = captureSystemStreams(Boolean.getBoolean("com.l7tech.server.log.console"));
+
             initLogging(true);
+
+            // Add handler after stdin/out streams are redirected
+            if ( handler != null ) {
+                Logger.getLogger("").addHandler(handler);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -80,10 +96,27 @@ public class JdkLogConfig {
     /**
      * Capture System.X streams and send to logging.
      */
-    private static void captureSystemStreams() {
+    private static Handler captureSystemStreams( final boolean logToConsole ) {
+        Handler handler = null;
+        if ( logToConsole ) {
+            OutputStream logOut = System.err;
+            handler = new StreamHandler( logOut, new ConfigurableLogFormatter() ){
+                public void publish(LogRecord record) {
+                    super.publish(record);
+                    flush();
+                }
+                public void close() {
+                    flush();
+                }
+            };
+            handler.setLevel( Level.CONFIG );
+        }
+
         //noinspection IOResourceOpenedButNotSafelyClosed
         System.setOut(new LoggingPrintStream(Logger.getLogger("STDOUT"), Level.INFO));
         //noinspection IOResourceOpenedButNotSafelyClosed
         System.setErr(new LoggingPrintStream(Logger.getLogger("STDERR"), Level.WARNING));
+
+        return handler;
     }
 }

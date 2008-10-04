@@ -36,131 +36,92 @@ rm -fr %{buildroot}
 %dir /opt/SecureSpan/Gateway
 
 # Group writable config files
-%dir /opt/SecureSpan/Gateway/Nodes/default/etc
-%attr(0755,gateway,gateway) %config(noreplace) /opt/SecureSpan/Gateway/Nodes/default/etc/conf
-%attr(0755,gateway,gateway) /opt/SecureSpan/Gateway/Nodes/default/etc/profile
+%defattr(0644,layer7,layer7,0755)
+%dir /opt/SecureSpan/Gateway/controller
+%dir /opt/SecureSpan/Gateway/node
+%dir /opt/SecureSpan/Gateway/runtime
+%dir /opt/SecureSpan/Gateway/runtime/etc
+/opt/SecureSpan/Gateway/runtime/etc/profile
+/opt/SecureSpan/Gateway/controller/etc/conf
+%dir /opt/SecureSpan/Gateway/node/default/etc
+%config(noreplace) /opt/SecureSpan/Gateway/node/default/etc/conf
 
-# Group writeable directories and files
+# Group directories and files
+%defattr(0444,layer7,layer7,0755)
+/opt/SecureSpan/Gateway/controller/Controller.jar
+%dir /opt/SecureSpan/Gateway/controller/bin
+%dir /opt/SecureSpan/Gateway/controller/etc
+%dir /opt/SecureSpan/Gateway/controller/etc/conf
+%attr(0555,layer7,layer7) /opt/SecureSpan/Gateway/controller/bin/*
+/opt/SecureSpan/Gateway/controller/lib
+/opt/SecureSpan/Gateway/runtime/modules
 
-/opt/SecureSpan/Gateway/Controller/Controller.jar
-%dir /opt/SecureSpan/Gateway/Controller/bin
-%dir /opt/SecureSpan/Gateway/Controller/etc
-%dir /opt/SecureSpan/Gateway/Controller/etc/conf
-%attr(0755,root,root) /opt/SecureSpan/Gateway/Controller/bin/*
-/opt/SecureSpan/Gateway/Controller/lib
-%defattr(0644,gateway,gateway,0755)
-/opt/SecureSpan/Gateway/Controller/var
-/opt/SecureSpan/Gateway/Controller/etc/conf/omp.dat
+# Gateway process controller writeable files
+%defattr(0644,layer7,layer7,0755)
+/opt/SecureSpan/Gateway/controller/var
 
 # The main Gateway jar
-%defattr(0644,root,root,0755)
-/opt/SecureSpan/Gateway/Nodes/default/Gateway.jar
+%defattr(0444,layer7,layer7,0755)
+/opt/SecureSpan/Gateway/runtime/Gateway.jar
 
 # Ssg bin
-%dir /opt/SecureSpan/Gateway/Nodes/default/bin
-%attr(0755,root,root) /opt/SecureSpan/Gateway/Nodes/default/bin/*
-
-%defattr(0775,gateway,gateway,0755)
-%dir /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d
-%config(noreplace) /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/ssgruntimedefs.sh
-%config(noreplace) /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/ssg-utilities.sh
-%config(noreplace) /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/setopts.sh
-%config(noreplace) /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/java.sh
-%config(noreplace) /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/jvmoptions
-%config(noreplace) /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/output_redirection.sh
+%defattr(0555,layer7,layer7,0755)
+%dir /opt/SecureSpan/Gateway/runtime/bin
+/opt/SecureSpan/Gateway/runtime/bin/*
+%dir /opt/SecureSpan/Gateway/runtime/etc/profile.d
+%config(noreplace) /opt/SecureSpan/Gateway/runtime/etc/profile.d/ssgruntimedefs.sh
+%config(noreplace) /opt/SecureSpan/Gateway/runtime/etc/profile.d/ssg-utilities.sh
 
 # Other stuff
-%defattr(0644,root,root,0755)
-/opt/SecureSpan/Gateway/Nodes/default/etc/sql
-/opt/SecureSpan/Gateway/Nodes/default/web
-/opt/SecureSpan/Gateway/Nodes/default/lib
-%defattr(0644,root,root,0755)
-/opt/SecureSpan/Gateway/Nodes/default/modules
+%defattr(0444,layer7,layer7,0755)
+/opt/SecureSpan/Gateway/config/etc
+/opt/SecureSpan/Gateway/runtime/web
+/opt/SecureSpan/Gateway/runtime/lib
+%defattr(0444,root,root,0755)
+/opt/SecureSpan/Gateway/runtime/modules
 %defattr(0644,gateway,gateway,0755)
-/opt/SecureSpan/Gateway/Nodes/default/var
+/opt/SecureSpan/Gateway/node/default/var
 
-#Config Wizard
-%defattr(0664,gateway,gateway,0775)
-%dir /opt/SecureSpan/Gateway/configwizard
-/opt/SecureSpan/Gateway/configwizard/lib
-/opt/SecureSpan/Gateway/configwizard/*.properties
-%attr(0775,gateway,gateway) /opt/SecureSpan/Gateway/configwizard/*.sh
-/opt/SecureSpan/Gateway/configwizard/*.jar
+#Configuration
+%defattr(0644,layer7,layer7,0755)
+%dir /opt/SecureSpan/Gateway/config
+/opt/SecureSpan/Gateway/config/*.properties
+%defattr(0444,layer7,layer7,0755)
+/opt/SecureSpan/Gateway/config/lib
+/opt/SecureSpan/Gateway/config/*.jar
+%defattr(0555,layer7,layer7,0755)
+/opt/SecureSpan/Gateway/config/*.sh
 
-# Group writable for migration stuff
-%defattr(0664,gateway,gateway,0755)
-%dir /opt/SecureSpan/Gateway/migration
-/opt/SecureSpan/Gateway/migration/cfg
-/opt/SecureSpan/Gateway/migration/lib
-/opt/SecureSpan/Gateway/migration/*.jar
-/opt/SecureSpan/Gateway/migration/*.properties
-%attr(0775,gateway,gateway) /opt/SecureSpan/Gateway/migration/*.sh
+%defattr(0644,layer7,layer7,0755)
+%dir /opt/SecureSpan/Gateway/config/migration
+/opt/SecureSpan/Gateway/config/migration/cfg
+/opt/SecureSpan/Gateway/config/migration/*.properties
+%defattr(0444,layer7,layer7,0755)
+/opt/SecureSpan/Gateway/config/migration/lib
+/opt/SecureSpan/Gateway/config/migration/*.jar
+%defattr(0555,layer7,layer7,0755)
+/opt/SecureSpan/Gateway/config/migration/*.sh
 
 %pre
-if [ `grep ^gateway: /etc/group` ]; then
-	echo -n ""
-else
-	groupadd gateway
-fi
+grep -q ^gateway: /etc/group || groupadd gateway
+grep -q ^layer7: /etc/group || groupadd layer7
 
-if [ `grep ^gateway: /etc/passwd` ]; then
-    #user gateway already exists, but needs it's group membership modified
-    usermod -G gateway gateway
-else
-    useradd -G gateway -g gateway gateway
-fi
+# If user gateway already exists ensure group membership is ok, if it doesn't exist add it
+grep -qvL ^gateway: /etc/passwd || usermod -g gateway -G '' gateway
+grep -q   ^gateway: /etc/passwd || useradd -g gateway -G '' gateway
 
-if [ `grep ^ssgconfig: /etc/passwd` ]; then
-    #user ssgconfig already exists, but needs it's group membership modified
-    usermod -G gateway ssgconfig
-else
-    useradd -G gateway -g gateway ssgconfig
-
-    # GEN001880
-    # Update the permissions on ssgconfig's initialization files
-    if [ -e /home/ssgconfig/.bash_logout ]; then
-      chmod 740 /home/ssgconfig/.bash_logout
-    fi
-    if [ -e /home/ssgconfig/.bash_profile ]; then
-      chmod 740 /home/ssgconfig/.bash_profile
-    fi
-    if [ -e /home/ssgconfig/.bashrc ]; then
-      chmod 740 /home/ssgconfig/.bashrc
-    fi
-fi
-
-%post
-
-# After above item has executed, on first install only 
-# we need to set password for ssgconfig and pre-expire it
-# $1 equals what for first install?
-
-if [ "$1" = "1" ] ; then
-  # $1 is 1 on first install, not for upgrade
-  echo "7layer" | passwd ssgconfig --stdin >/dev/null
-  chage -M 365 ssgconfig
-  chage -d 0   ssgconfig
-fi
+# If user layer7 already exists ensure group membership is ok, if it doesn't exist add it
+grep -qvL ^layer7: /etc/passwd || usermod -g layer7 -G '' layer7
+grep -q   ^layer7: /etc/passwd || useradd -g layer7 -G '' layer7
 
 %preun
 # Modifications to handle upgrades properly
 if [ "$1" = "0" ] ; then
     # $1 is  on last uninstall, ie, package remove, not upgrade
-    if [ `grep ^gateway: /etc/passwd` ]; then
-        userdel -r gateway
-    else
-        echo -n ""
-    fi
 
-    if [ `grep ^ssgconfig: /etc/passwd` ]; then
-        userdel -r ssgconfig
-    else
-        echo -n ""
-    fi
+    grep -qvL ^gateway: /etc/passwd || userdel -r gateway
+    grep -qvL ^layer7: /etc/passwd || userdel -r layer7
 
-    if [ `grep ^gateway: /etc/group` ]; then
-        groupdel gateway
-    else
-        echo -n ""
-    fi
+    grep -qvL ^gateway: /etc/group || groupdel gateway
+    grep -qvL ^layer7: /etc/group || groupdel layer7
 fi

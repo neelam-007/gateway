@@ -81,7 +81,7 @@ public class ProcessControllerConfigurationBeanProvider implements Configuration
                 NodeManagementApi.DatabaseConfigRow config = new NodeManagementApi.DatabaseConfigRow();
                 config.setType(DatabaseType.NODE_ALL);
                 config.setConfig(dbConfig);
-                managementService.createNode( "default", null, new HashSet<NodeManagementApi.DatabaseConfigRow>( Collections.singleton( config ) ) );
+                managementService.createNode( "default", null, getPassword(configuration),new HashSet<NodeManagementApi.DatabaseConfigRow>( Collections.singleton( config ) ) );
             }
         } catch ( ObjectModelException ome ) {
             throw new ConfigurationException( "Error storing node configuration", ome );
@@ -182,6 +182,19 @@ public class ProcessControllerConfigurationBeanProvider implements Configuration
         }
 
         return configuration;
+    }
+
+    private String getPassword( final Collection<ConfigurationBean> beans ) {
+        String passphrase = null;
+
+        for ( ConfigurationBean bean : beans ) {
+            if ( "cluster.pass".equals(bean.getConfigName()) ) {
+                passphrase = bean.getConfigValue();
+                break;
+            }
+        }
+
+        return passphrase;
     }
 
     private void fromBeans( final DatabaseConfig databaseConfig, final Collection<ConfigurationBean> beans ) throws ConfigurationException {

@@ -36,7 +36,7 @@ public class Main {
 
         File file = new File( args.length > 0 ? args[0] : "fake.properties");
         //ConfigurationBeanProvider provider = new PropertiesConfigurationBeanProvider(file);
-        ConfigurationBeanProvider provider = new ProcessControllerConfigurationBeanProvider(new URL("http://127.0.0.1:8765/services/nodeManagementApi"));
+        ConfigurationBeanProvider provider = new ProcessControllerConfigurationBeanProvider(new URL("https://127.0.0.1:8765/services/nodeManagementApi"));
         Collection<ConfigurationBean> configBeanList = Collections.emptyList();
         if ( file.exists() ) {
           configBeanList = provider.loadConfiguration();

@@ -89,63 +89,71 @@ mv %{buildroot}/jdk %{buildroot}/opt/SecureSpan/JDK
 %attr(0755,root,root) /opt/SecureSpan/Appliance/libexec
 
 # Extra ssg files
-%attr(0775,gateway,gateway) %dir /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d
-%attr(0775,gateway,gateway) /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/*.sh
-%attr(0644,gateway,gateway) /opt/SecureSpan/Gateway/Nodes/default/bin/samples/fix_banner.sh
+%attr(0555,layer7,layer7) /opt/SecureSpan/Gateway/runtime/etc/profile.d/*.sh
 
 #System Config Wizard
-%defattr(0664,gateway,gateway,0775)
-%dir /opt/SecureSpan/Appliance/sysconfigwizard
-/opt/SecureSpan/Appliance/sysconfigwizard/configfiles
-/opt/SecureSpan/Appliance/sysconfigwizard/lib
-/opt/SecureSpan/Appliance/sysconfigwizard/*.jar
-/opt/SecureSpan/Appliance/sysconfigwizard/*.properties
+%defattr(0444,layer7,layer7,0775)
+%dir /opt/SecureSpan/Appliance/sysconfig
+/opt/SecureSpan/Appliance/sysconfig/configfiles
+/opt/SecureSpan/Appliance/sysconfig/lib
+/opt/SecureSpan/Appliance/sysconfig/*.jar
 # this script does not need to be executable
-/opt/SecureSpan/Appliance/sysconfigwizard/ssg_sys_config.pl
-%attr(0755,gateway,gateway) /opt/SecureSpan/Appliance/sysconfigwizard/*.sh
+/opt/SecureSpan/Appliance/sysconfig/ssg_sys_config.pl
+%attr(0755,layer7,layer7) /opt/SecureSpan/Appliance/sysconfig/*.sh
+%defattr(0644,layer7,layer7,0775)
+/opt/SecureSpan/Appliance/sysconfig/*.properties
 
-%attr(0664,ssgconfig,gateway) /home/ssgconfig/.bash_profile
-/opt/SecureSpan/Gateway/migration/cfg
+# SSG config user files
+%attr(0664,ssgconfig,ssgconfig) /home/ssgconfig/.bash_profile
+
+# Appliance migration configuration
+%attr(0644,layer7,layer7) /opt/SecureSpan/Gateway/config/migration/cfg/grandmaster_flash
 
 %pre
-if [ `grep ^gateway: /etc/group` ]; then
-	echo -n ""
-else
-	groupadd gateway
-fi
 
-if [ `grep ^pkcs11: /etc/group` ]; then
-	echo -n ""
-else
-	groupadd pkcs11
-fi
+grep -q ^gateway: /etc/group || groupadd gateway
+grep -q ^pkcs11: /etc/group || groupadd pkcs11
 
-if [ `grep ^gateway: /etc/passwd` ]; then
-    #user gateway already exists, but needs it's group membership modified
-    usermod -G gateway,pkcs11 gateway
-else
-    useradd -G gateway,pkcs11 -g gateway gateway
-fi
+# If user gateway already exists ensure group membership is ok, if it doesn't exist add it
+grep -qvL ^gateway: /etc/passwd || usermod -g gateway -G 'pkcs11' gateway
+grep -q   ^gateway: /etc/passwd || useradd -g gateway -G 'pkcs11' gateway
 
-if [ `grep ^ssgconfig: /etc/passwd` ]; then
+# If user layer7 already exists ensure group membership is ok, if it doesn't exist add it
+grep -qvL ^layer7: /etc/passwd || usermod -g layer7 -G 'pkcs11' layer7
+grep -q   ^layer7: /etc/passwd || useradd -g layer7 -G 'pkcs11' layer7
+
+
+grep -q ^ssgconfig: /etc/group || groupadd ssgconfig
+if [ -n "`grep ^ssgconfig: /etc/passwd`" ]; then
     #user ssgconfig already exists, but needs it's group membership modified
-    usermod -G gateway,pkcs11 ssgconfig
+    usermod -G '' -g ssgconfig ssgconfig
 else
-    useradd -G gateway,pkcs11 -g gateway ssgconfig
+    useradd -g ssgconfig ssgconfig
+
+    # GEN001880
+    # Update the permissions on ssgconfig's initialization files
+    if [ -e /home/ssgconfig/.bash_logout ]; then
+      chmod 740 /home/ssgconfig/.bash_logout
+    fi
+    if [ -e /home/ssgconfig/.bash_profile ]; then
+      chmod 740 /home/ssgconfig/.bash_profile
+    fi
+    if [ -e /home/ssgconfig/.bashrc ]; then
+      chmod 740 /home/ssgconfig/.bashrc
+    fi
 fi
 
 SSGCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
 if [ -n "${SSGCONFIGENTRY}" ]; then
-    #user already exists in the sudoers file but since the paths have changed we'll remove everything and reset
+    #user already exists in the sudoers file but since the paths may have changed we'll remove everything and reset
     perl -pi.bak -e 's/^ssgconfig.*$//gs' /etc/sudoers
 fi
 
-#the ssgconfig user is allowed to reboot the system, even when not at the console
-echo "ssgconfig  ALL = NOPASSWD: /sbin/reboot" >> /etc/sudoers
-#the ssgconfig user is allowed to run the sca stuff without having to enter a password
-echo "ssgconfig    ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
-echo "ssgconfig    ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /etc/sudoers
-echo "ssgconfig    ALL = NOPASSWD: /opt/sun/sca6000/sbin/scadiag" >> /etc/sudoers
+SSPANENTRY=`grep ^layer7 /etc/sudoers`
+if [ -n "${SSPANENTRY}" ]; then
+    #user already exists in the sudoers file but since the paths may have changed we'll remove everything and reset
+    perl -pi.bak -e 's/^layer7.*$//gs' /etc/sudoers
+fi
 
 GATEWAYCONFIGENTRY=`grep ^gateway /etc/sudoers`
 if [ -n "${GATEWAYCONFIGENTRY}" ]; then
@@ -153,13 +161,26 @@ if [ -n "${GATEWAYCONFIGENTRY}" ]; then
     perl -pi.bak -e 's/^gateway.*$//gs' /etc/sudoers
 fi
 
-#the gateway user is allowed to run the sca stuff without having to enter a password
-echo "gateway    ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
-echo "gateway    ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /etc/sudoers
+# The ssgconfig user is allowed to reboot the system, even when not at the console
+# The ssgconfig user can run system and software configuration as layer7 user
+echo "ssgconfig ALL = NOPASSWD: /sbin/reboot" >> /etc/sudoers
+echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/sysconfig/systemconfig.sh" >> /etc/sudoers
+echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Gateway/config/ssgconfig.sh" >> /etc/sudoers
+echo "ssgconfig ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/masterkey-manage.pl" >> /etc/sudoers
+echo "ssgconfig ALL = NOPASSWD: /sbin/chkconfig ssem on, /sbin/chkconfig ssem off" >> /etc/sudoers
 
-rebootparam=`grep kernel.panic /etc/sysctl.conf`
+# The layer7 user is allowed to run the sca stuff without having to enter a password
+echo "layer7 ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
+echo "layer7 ALL = NOPASSWD: /opt/sun/sca6000/sbin/scadiag" >> /etc/sudoers
+echo "layer7 ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /etc/sudoers
 
-if [ "$rebootparam" ]; then
+# The gateway user is allowed to run the sca stuff without having to enter a password
+# The gateway user is allowed to update the firewall configuration
+echo "gateway ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
+echo "gateway ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/update_firewall" >> /etc/sudoers
+
+REBOOTPARAM=`grep kernel.panic /etc/sysctl.conf`
+if [ "${REBOOTPARAM}" ]; then
 	echo -n ""
 	# its got the panic time in there already"
 else
@@ -168,13 +189,8 @@ else
 fi
 
 # fix file limits
-
-limits=`egrep -e \^\*\.\*soft\.\*nofile\.\*4096\$ /etc/security/limits.conf`
-
-if [ "$limits" ]; then
-	echo -n ""
-	# already installed
-else
+LIMITS=`egrep -e \^\*\.\*soft\.\*nofile\.\*4096\$ /etc/security/limits.conf`
+if [ -z "${LIMITS}" ]; then
 	echo "# Layer 7 Limits"  >> /etc/security/limits.conf
 	echo "*               soft    nproc   2047"  >> /etc/security/limits.conf
 	echo "*               hard    nproc   16384"  >> /etc/security/limits.conf
@@ -185,43 +201,34 @@ fi
 
 # fix the getty
 
-gettys=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
-
-if [ "$gettys" ]; then
-	echo -n ""
-	# serial line agetty exists
-else
+GETTYS=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
+if [ -z "${GETTYS}" ]; then
 	echo 	's0:2345:respawn:/sbin/agetty -L 9600 ttyS0 vt100' >> /etc/inittab
 	echo 	'ttyS0' >> /etc/securetty
 fi
 
-connt=`grep "options ip_conntrack" /etc/modprobe.conf`
-
-if [ "$connt" ]; then
-	echo -n ""
-	# connection tracking already set
-else
-	echo "options ip_conntrack hashsize=65536" >> /etc/modprobe.conf
+CONNTRACK=`grep "options ip_conntrack" /etc/modprobe.conf`
+if [ -z "${CONNTRACK}" ]; then
 	# add in larger hash size. final conntrack size will be 8* hashsize
 	# This allows larger number of in-flight connections
+	echo "options ip_conntrack hashsize=65536" >> /etc/modprobe.conf
 fi
 
 
 %post
 
-#modify java.sh to use the appliance jdk
-cat > /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/java.sh <<-EOF
-SSG_JAVA_HOME="/opt/SecureSpan/JDK"
-export SSG_JAVA_HOME
-EOF
+# After above item has executed, on first install only
+# we need to set password for ssgconfig and pre-expire it
+# $1 equals what for first install?
 
-if [ -e '/opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/output_redirection.sh' ]; then
-    sed -i -e 's/^export LOG_REDIRECTION_OPERATOR=">"/export LOG_REDIRECTION_OPERATOR="|"/' /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/output_redirection.sh
-    sed -i -e 's/^export LOG_REDIRECTION_DEST="\/dev\/null"/export LOG_REDIRECTION_DEST="logger -t SSG-default_"/' /opt/SecureSpan/Gateway/Nodes/default/etc/profile.d/output_redirection.sh
+if [ "$1" = "1" ] ; then
+  # $1 is 1 on first install, not for upgrade
+  echo "7layer" | passwd ssgconfig --stdin >/dev/null
+  chage -M 365 ssgconfig
+  chage -d 0   ssgconfig
 fi
 
 # Change issue. This may move to a layer7-release file
-
 echo "Layer 7 SecureSpan(tm) Gateway v%{version}" >/etc/issue
 echo "Kernel \r on an \m" >>/etc/issue
 #add the ssg and the configuration service to chkconfig if they are not already there
@@ -243,15 +250,20 @@ if [ "$1" = "0" ] ; then
         perl -pi.bak -e 's/^ssgconfig.*$//gs' /etc/sudoers
     fi
 
+    SSPANENTRY=`grep ^layer7 /etc/sudoers`
+    if [ -n "${SSPANENTRY}" ]; then
+        #remove the sudoers entry for layer7
+        perl -pi.bak -e 's/^layer7.*$//gs' /etc/sudoers
+    fi
+
     GATEWAYENTRY=`grep ^gateway /etc/sudoers`
     if [ -n "${GATEWAYENTRY}" ]; then
         #remove the sudoers entry for gateway
         perl -pi.bak -e 's/^gateway.*$//gs' /etc/sudoers
     fi
 
-    gettys=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
-
-	if [ "$gettys" ]; then
+    GETTYS=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
+	if [ -n "${GETTYS}" ]; then
 		perl -pi.bak -e 's/^s0.*agetty.*//' /etc/inittab
 		perl -pi.bak -e 's/ttyS0//' /etc/securetty
 	fi

@@ -148,21 +148,13 @@ public class SsgConnectorManagerImpl
     }
 
     private void openFirewallForConnectors() {
-        File conf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_CONFIG_DIRECTORY, "/opt/SecureSpan/Gateway/Nodes/default/etc/conf", true);
-        int rmiPort = serverConfig.getIntProperty(ServerConfig.PARAM_CLUSTER_PORT, 2124);
-
+        File conf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_VAR_DIRECTORY, true);
         List<SsgConnector> connectors = new ArrayList<SsgConnector>(knownConnectors.values());
-
-        // Add a pseudo-connector for the inter-node communication port
-        SsgConnector rc = new SsgConnector();
-        rc.setPort(rmiPort);
-        connectors.add(rc);
-
         FirewallUtils.openFirewallForConnectors( conf, connectors );
     }
 
     private void closeFirewallForConnectors() {
-        File conf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_CONFIG_DIRECTORY, "/opt/SecureSpan/Gateway/Nodes/default/etc/conf", true);
+        File conf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_VAR_DIRECTORY, true);
         FirewallUtils.closeFirewallForConnectors( conf );
     }
 

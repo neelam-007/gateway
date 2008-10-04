@@ -18,7 +18,7 @@ fi
 
 # Config
 PID_FILE="ssemd"
-EM_USER="gateway"
+EM_USER="ssem"
 EM_SCRIPT="/opt/SecureSpan/EnterpriseManager/bin/enterprisemanager.sh"
 
 start() {

@@ -15,11 +15,14 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import java.sql.SQLException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Object that represents a complete, running Gateway instance.
+ * 
  * TODO: merge this with BootProcess
  */
 public class GatewayBoot {
@@ -53,7 +56,7 @@ public class GatewayBoot {
         // This thread is responsible for attempting to start the server, and for clearing "running" flag if it fails
         boolean itworked = false;
         try {
-            ServerConfig.getInstance().getLocalDirectoryProperty(ServerConfig.PARAM_LOG_DIRECTORY, null, true);
+            ServerConfig.getInstance().getLocalDirectoryProperty(ServerConfig.PARAM_LOG_DIRECTORY, true);
             spawnDbWarner();
             createApplicationContext();
             String ipAddress = startBootProcess();
@@ -87,9 +90,17 @@ public class GatewayBoot {
      *                                              or if there was an exception while attempting a normal shutdown.
      */
     public void runUntilShutdown() throws LifecycleException {
+        final CountDownLatch shutdownlatch = new CountDownLatch(1);
+        final CountDownLatch exitLatch = new CountDownLatch(1);
+
         start();
-        shutdowner.waitForShutdown();
-        destroy();
+        addShutdownHook( shutdownlatch, exitLatch );
+        waitForShutdown( shutdownlatch );
+        try {
+            destroy();
+        } finally {
+            notifyExit( exitLatch );
+        }
     }
 
     // Launch a background thread that warns if no DB connections appear within a reasonable period of time (Bug #4271)
@@ -142,5 +153,43 @@ public class GatewayBoot {
 
     private void startListeners(String ipAddress) {
         applicationContext.publishEvent(new ReadyForMessages(this, Component.GW_SERVER, ipAddress));
+    }
+
+    private void addShutdownHook( final CountDownLatch shutdown, final CountDownLatch exitSync ) {
+        // add hook for shutdown bean
+        shutdowner.setShutdownLatch( shutdown );
+
+        // add shutdown handler
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
+            /**
+             * Run before shutdown, we need to be ready to exit when this thread dies.
+             */
+            public void run() {
+                // notify to start shutdown process
+                shutdown.countDown();
+
+                // wait for shutdown to complete, we'll assume that the process is killed if it takes too long
+                // but we don't want to block forever so timeout after 5 mins
+                try {
+                    exitSync.await( 5, TimeUnit.MINUTES );
+                } catch (InterruptedException e) {
+                    // thread exits immediately
+                }
+            }
+        }));
+    }
+
+    private static void notifyExit( final CountDownLatch exitSync ){
+        // notify to start shutdown process
+        exitSync.countDown();
+    }
+
+    private static void waitForShutdown( final CountDownLatch shutdown ) {
+        // Wait forever until server is shut down
+        try {
+            shutdown.await();
+        } catch (InterruptedException e) {
+            logger.info("Shutting down due to interrruped.");
+        }
     }
 }

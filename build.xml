@@ -775,7 +775,7 @@
             <param name="idea.teamcity.user" expression="${idea.teamcity.user}"/>
             <param name="idea.teamcity.password" expression="${idea.teamcity.password}" if="idea.teamcity.password"/>
             <param name="idea.teamcity.remember" expression="${idea.teamcity.remember}" if="idea.teamcity.remember"/>
-            <param name="idea.gateway.vmOptions" expression="-Dcom.l7tech.server.home=&quot;${deploy.dir}&quot; -Dcom.l7tech.util.buildVersion=${build.version}"/>
+            <param name="idea.gateway.vmOptions" expression="-Dcom.l7tech.server.home=&quot;${deploy.dir}&quot; -Dcom.l7tech.server.runtime=&quot;${deploy.dir}&quot; -Dcom.l7tech.util.buildVersion=${build.version}"/>
             <param name="idea.client.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.version}"/>
             <param name="idea.manager.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.version}"/>
             <param name="idea.ems.vmOptions" expression="-Dcom.l7tech.util.buildVersion=${build.em.version} -Dcom.l7tech.ems.outputDbScript=overwrite -Dcom.l7tech.ems.showExceptions=true"/>
@@ -2197,7 +2197,7 @@
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
                 <attribute name="Class-Path" value="lib/layer7-utility-${build.version}.jar"/>
-                <attribute name="X-Layer7-Jar" value="../Nodes/default/Gateway.jar"/>
+                <attribute name="X-Layer7-Jar" value="../../runtime/Gateway.jar"/>
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.server.flasher.FlashUtilityLauncher"/>
             </manifest>
         </jar>
@@ -2234,14 +2234,21 @@
             </fileset>
         </copy>
 
-        <replace file="${build.dir}/configwizard/configlogging.properties" token="LOGFILE_NAME" value="ssgconfig%g.log"/>
-
         <jar jarfile="${build.dir}/configwizard/ConfigWizard.jar">
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
                 <attribute name="Class-Path" value="lib/layer7-utility.jar"/>
-                <attribute name="X-Layer7-Jar" value="../Controller/lib/layer7-gateway-config-${build.version}-dev-b1.jar"/> <!-- TODO [steve] fix configuration jar naming -->
+                <attribute name="X-Layer7-Jar" value="../controller/lib/layer7-gateway-config-${build.version}-dev-b1.jar"/> <!-- TODO [steve] fix configuration jar naming -->
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.client.Main"/>
+            </manifest>
+        </jar>
+
+        <jar jarfile="${build.dir}/configwizard/ConfigMasterPassphrase.jar">
+            <manifest>
+                <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
+                <attribute name="Class-Path" value="lib/layer7-utility.jar"/>
+                <attribute name="X-Layer7-Jar" value="../controller/lib/layer7-gateway-config-${build.version}-dev-b1.jar"/> <!-- TODO [steve] fix configuration jar naming -->
+                <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.manager.MasterPassphraseChanger"/>
             </manifest>
         </jar>
     </target>
@@ -2273,13 +2280,11 @@
             </fileset>
         </copy>
 
-        <replace file="${build.dir}/sysconfigwizard/configlogging.properties" token="LOGFILE_NAME" value="ssg_networkingconfig_log.txt"/>
-
         <jar jarfile="${build.dir}/sysconfigwizard/SystemConfigWizard.jar">
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
                 <attribute name="Class-Path" value="lib/layer7-utility.jar"/>
-                <attribute name="X-Layer7-Jar" value="../../Gateway/Nodes/default/Gateway.jar"/>
+                <attribute name="X-Layer7-Jar" value="../../Gateway/runtime/Gateway.jar"/>
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.server.config.systemconfig.SysConfigWizardLauncher"/>
             </manifest>
         </jar>
@@ -2653,7 +2658,6 @@
         <mkdir dir="${install.src.app.libexec}"/>
         <mkdir dir="${install.src.app.ssgconfig}"/>
         <mkdir dir="${install.src.app.ssgprofile}"/>
-        <mkdir dir="${install.src.app.ssgsamples}"/>
         <mkdir dir="${install.src.app.sysconfigwizard}"/>
 
         <!-- Gateway directories -->
@@ -2677,8 +2681,8 @@
         <mkdir dir="${install.src.ssg.libext}"/>
         <mkdir dir="${install.src.ssg.logs}"/>
         <mkdir dir="${install.src.ssg.profile}"/>        
+        <mkdir dir="${install.src.ssg.profilebase}"/>
         <mkdir dir="${install.src.ssg.aarmods}"/>
-        <mkdir dir="${install.src.ssg.samples}"/>
         <mkdir dir="${install.src.ssg.sql}"/>
         <mkdir dir="${install.src.ssg.web}"/>
     </target>
@@ -2768,23 +2772,21 @@
         </copy>
 
         <!-- profile files -->
-        <copy todir="${install.src.ssg.profile}">
-            <fileset dir="${src.root}/etc">
-                <include name="ssgruntimedefs.sh"/>
-                <include name="java.sh"/>
-                <include name="ssg-utilities.sh"/>
-                <include name="setopts.sh"/>
-                <include name="jvmoptions"/>
-                <include name="output_redirection.sh"/>
-            </fileset>
-        </copy>
-
-        <!-- etc files -->
-        <copy todir="${install.src.ssg.etc}">
+        <copy todir="${install.src.ssg.profilebase}">
             <fileset dir="${src.root}/etc">
                 <include name="profile"/>
             </fileset>
         </copy>
+        <copy todir="${install.src.ssg.profile}">
+            <fileset dir="${src.root}/etc">
+                <include name="ssgruntimedefs.sh"/>
+                <include name="ssg-utilities.sh"/>
+            </fileset>
+        </copy>
+
+        <!-- etc files -->
+        <!--<copy todir="${install.src.ssg.etc}">-->
+        <!--</copy>-->
 
         <!-- conf files -->
         <copy file="${src.root}/etc/ssg-java.security" tofile="${install.src.ssg.conf}/java.security"/>
@@ -2795,17 +2797,10 @@
         <copy todir="${install.src.ssg.bin}">
             <fileset dir="${src.root}/etc">
                 <include name="gateway.sh"/>
-                <include name="partitionControl.sh"/>
                 <include name="install.sh"/>
                 <include name="configure.sh"/>
             </fileset>
         </copy>
-
-        <!--copy this in so that users have an example to use in case they are acually installing the "software mode" on a RedHat system-->
-        <copy file="${src.root}/etc/appliance/ssg-initd" todir="${install.src.ssg.samples}"/>
-
-        <!--copy this in so that users have a sample my.cnf to refer to when configuring mysql in a software installation-->
-        <copy file="${src.root}/etc/db/mysql/my.cnf" tofile="${install.src.ssg.samples}/my.cnf.example"/>
 
         <mkdir dir="${install.src.ssg.web}/ssg"/>
         <copy todir="${install.src.ssg.web}/ssg">
@@ -2826,9 +2821,7 @@
         <!-- copy new sudo exececuted files to new libexec directory -->
         <copy file="${src.root}/etc/grandmaster_flash" todir="${install.src.app.migconfig}"/>
         <copy file="${src.root}/etc/db/mysql/my.cnf" tofile="${install.src.app}/etc/my.cnf.ssg"/>
-        <copy file="${src.root}/etc/appliance/fix_banner.sh" todir="${install.src.app.ssgsamples}"/>
         <copy file="${src.root}/etc/appliance/appliancedefs.sh" todir="${install.src.app.ssgprofile}"/>
-        <!--<copy file="${src.root}/etc/appliance/ssg-initd" tofile="${install.src.app}/etc/init.d/ssg"/>-->
         <copy file="${src.root}/etc/processcontroller/sspc-initd" tofile="${install.src.app}/etc/init.d/ssg"/>
         <copy file="${src.root}/etc/appliance/sysconfigscript-initd" tofile="${install.src.app}/etc/init.d/ssgsysconfig"/>
         <copy file="${src.root}/etc/appliance/ssg-dbstatus-initd" tofile="${install.src.app}/etc/init.d/ssg-dbstatus"/>
@@ -2845,18 +2838,14 @@
                 <include name="zerohsm.sh"/>
                 <include name="masterkey-manage.pl"/>
                 <include name="update_firewall"/>
+                <include name="gateway_control"/>
             </fileset>
         </copy>
 
         <copy todir="${install.src.app.bin}">
             <fileset dir="${src.root}/etc/appliance">
-                <include name="setkeys.sh"/>
                 <include name="md5passwd.pl"/>
                 <include name="resetAdmin.sh"/>
-                <include name="rpass.pl"/>
-                <include name="install.pl"/>
-                <include name="upgrade.sh"/>
-                <include name="buildVersion.txt"/>
                 <include name="passServiceUsage.sh"/>
                 <include name="ssg_appliance_startup_config.sh"/>
                 <include name="firewall_control.sh"/>

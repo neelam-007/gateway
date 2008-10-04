@@ -5,7 +5,9 @@
 
 #
 if [ -z "${SSPC_HOME}" ] ; then
-  SSPC_HOME="/opt/SecureSpan/Gateway/Controller"
+  cd $(dirname ${0})
+  cd ..
+  SSPC_HOME="$(pwd)"
 fi
 if [ -z "${JAVA_HOME}" ] ; then
   JAVA_HOME="/opt/SecureSpan/JDK"

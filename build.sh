@@ -74,7 +74,7 @@ if [ -z "${ANT_PERFORMANCE}" ] || [ "yes" = "${ANT_PERFORMANCE}" ] || [ "true" =
   OPTIONS_PERF="-listener net.sf.antcontrib.perf.AntPerformanceListener"
 fi
 
-"${JAVA_HOME}/bin/java" ${JAVA_OPTS} ${OPTIONS_PROPS} org.apache.tools.ant.Main ${OPTIONS_PERF} ${OPTIONS_ARGS}
+"${JAVA_HOME}/bin/java" ${JAVA_OPTS} ${OPTIONS_PROPS} org.apache.tools.ant.Main ${OPTIONS_PERF} ${OPTIONS_ARGS} | tee build/build.log
 RESULT=${?}
 if [ "${1}" == "package" ] || [ "${1}" == "compile" ] ; then
   if [ ${RESULT} -eq 0 ] ; then

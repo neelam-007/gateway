@@ -144,9 +144,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         engine.setDefaultHost(getListenAddress());
         embedded.addEngine(engine);
 
-        File ssgHome = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_SSG_HOME_DIRECTORY, null, false);
-        if (ssgHome == null) throw new LifecycleException("No ssgHome set");
-        File inf = new File(ssgHome, "web");
+        File inf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_WEB_DIRECTORY, null, false);
+        if (inf == null) throw new LifecycleException("No web directory set");
         if (!inf.exists() || !inf.isDirectory()) throw new LifecycleException("No such directory: " + inf.getPath());
 
         final String s = inf.getAbsolutePath();

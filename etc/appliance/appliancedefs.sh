@@ -1,18 +1,14 @@
 # LAYER 7 TECHNOLOGIES
-# Defines JAVA_HOME, etc
+# Defines SSG_JAVA_HOME, etc
 
 ulimit -s 2048
 
 # add to path
 if [ -z "${PATH}" ] ; then
-        PATH="$JAVA_HOME/bin:SSG_HOME/bin"
+        PATH="SSG_HOME/runtime/bin"
 else 
-	if ! echo $PATH | /bin/egrep -q "(^|:)$JAVA_HOME/bin($|:)" ; then
-        	PATH="$PATH:$JAVA_HOME/bin"
-	fi
-
-	if ! echo $PATH | /bin/egrep -q "(^|:)$SSG_HOME/bin($|:)" ; then
-        	PATH="$PATH:$SSG_HOME/bin"
+	if ! echo $PATH | /bin/egrep -q "(^|:)$SSG_HOME/runtime/bin($|:)" ; then
+        	PATH="$PATH:$SSG_HOME/runtime/bin"
 	fi
 fi
 
@@ -32,9 +28,12 @@ if [ `expr $java_ram \> 2074412` == 1 ]; then
 	# CAP at 2 gigs
 fi
 
+SSG_JAVA_HOME="/opt/SecureSpan/JDK"
+
 # Setting larger permsize for java 1.6
 NODE_OPTS="-Xmx${java_ram}k -XX:MaxPermSize=128M -Xss256k"
 
+export SSG_JAVA_HOME
 export NODE_OPTS
 export PATH
 

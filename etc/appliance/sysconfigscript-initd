@@ -9,8 +9,8 @@ if [ -z "$SSGHOME" ]; then
 	SSGHOME="/opt/SecureSpan/Gateway"
 fi                           
 
-ssgconfigutil="/usr/bin/perl /opt/SecureSpan/Appliance/sysconfigwizard/ssg_sys_config.pl"
-#migrationdeamon="${SSGHOME}/migration/ssgmigration.sh cfgdeamon"
+ssgconfigutil="/usr/bin/perl /opt/SecureSpan/Appliance/sysconfig/ssg_sys_config.pl"
+migrationdeamon="${SSGHOME}/config/migration/ssgmigration.sh cfgdeamon"
 
 MESSAGE="Applying Network (Re)Configuration"
 USER=`whoami`
@@ -24,7 +24,7 @@ start() {
         (${ssgconfigutil})
         RETVAL=$?
         # plugin of migration utility copying system files at the right place
-        # (${migrationdeamon})
+        (${migrationdeamon})
 	else
 		echo "Need to be root to run this script";
 		exit

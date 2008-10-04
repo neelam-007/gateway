@@ -1,13 +1,37 @@
 #!/bin/bash
 umask 0002
 
+# Source profile for standard environment
 cd `dirname $0`
-pushd .. > /dev/null
-SSG_HOME=`pwd`
-popd > /dev/null
+. ../etc/profile
 
-. ${SSG_HOME}/etc/profile
+# Set options
+SSGUSER="gateway"
+SSGNODE="default"
+GATEWAY_PID="${SSG_HOME}/node/${SSGNODE}/var/ssg.pid"
+JAVA_OPTS="-Dcom.l7tech.server.home=${SSG_HOME}/node/${SSGNODE} -Djava.ext.dirs=${SSG_JAVA_HOME}/jre/lib/ext:${SSG_HOME}/lib/ext"
+if [ -n "${SSG_JAVA_OPTS}" ] ; then
+  JAVA_OPTS="${JAVA_OPTS} ${SSG_JAVA_OPTS}"
+fi
+if [ -n "${NODE_OPTS}" ] ; then
+  JAVA_OPTS="${JAVA_OPTS} ${NODE_OPTS}"
+fi
 
+# Sanity checks
+if [ -z "${SSG_JAVA_HOME}" ] ; then
+    echo "Java is not configured for gateway."
+    exit 13
+fi
+if [ ! -x "${SSG_JAVA_HOME}/bin/java" ] ; then
+    echo "Java not found: ${SSG_JAVA_HOME}"
+    exit 13
+fi
+if [ "$(whoami)" != "${SSGUSER}" ] ; then
+    echo "Please run as the user: ${SSGUSER}"
+    exit 13
+fi
+
+# Helper functions
 pid_exited() {
   if [ -f "${GATEWAY_PID}" ]  && [ -d "/proc/$(< ${GATEWAY_PID})" ] ; then
     return 1;
@@ -30,6 +54,15 @@ wait_for_pid() {
   return 1
 }
 
+echoOptions() {
+    echo "Gateway commands:"
+    echo -e "\trun   - Run the gateway with console output"
+    echo -e "\tstart - Start the gateway (option: -console)"
+    echo -e "\tstop  - Stop the gateway (option: -force)"
+    echo ""
+}
+
+# Debug options
 if [ "$1" = "jpda" ] ; then
   if [ -z "$JPDA_TRANSPORT" ]; then
     JPDA_TRANSPORT="dt_socket"
@@ -44,39 +77,34 @@ if [ "$1" = "jpda" ] ; then
   shift
 fi
 
-if [ -z "${SSG_HOME}" ] ; then
-  echo SSG_HOME not set
-  exit 17
-fi
-
-cd ${SSG_HOME}
+# Move to node directory and perform action
+cd "${SSG_HOME}/node/${SSGNODE}"
 
 if [ "$1" = "start" ] ; then
-   shift
-   if [ ! -z "$GATEWAY_SHUTDOWN" ]; then
-       rm -f $GATEWAY_SHUTDOWN
-   fi
+    shift
+
+    if [ "$1" = "-console" ]; then
+        shift
+        JAVA_OPTS="${JAVA_OPTS} -Dcom.l7tech.server.log.console=true"
+    fi
 
     #enable logging of stdout/stderr using JDK logging as well as the standard SSG logging facilities
-    ${SSG_JAVA_HOME}/bin/java -Djava.ext.dirs="${SSG_JAVA_HOME}/jre/lib/ext:${SSG_HOME}/lib/ext" -Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig $JAVA_OPTS -jar Gateway.jar "$@" &
+    "${SSG_JAVA_HOME}/bin/java" -Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "$@" &
 
-    if [ ! -z "$GATEWAY_PID" ]; then
-        rm -f $GATEWAY_PID
-        echo $! > $GATEWAY_PID
+    if [ ! -z "${GATEWAY_PID}" ]; then
+        rm -f "${GATEWAY_PID}"
+        echo $! > "${GATEWAY_PID}"
     fi
 
 elif [ "$1" = "run" ] ; then
    shift
-   if [ ! -z "$GATEWAY_SHUTDOWN" ]; then
-       rm -f $GATEWAY_SHUTDOWN
-   fi
-
-    if [ ! -z "$GATEWAY_PID" ]; then
-        rm -f $GATEWAY_PID
-        echo $$ > $GATEWAY_PID
+    if [ -n "${GATEWAY_PID}" ]; then
+        rm -f "${GATEWAY_PID}"
+        echo $$ > "${GATEWAY_PID}"
     fi
 
-    ${SSG_JAVA_HOME}/bin/java -Djava.ext.dirs="${SSG_JAVA_HOME}/jre/lib/ext:${SSG_HOME}/lib/ext" $JAVA_OPTS -jar Gateway.jar "$@"
+    set -x
+    "${SSG_JAVA_HOME}/bin/java" ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "$@"
 
 elif [ "$1" = "stop" ] ; then
   shift
@@ -87,20 +115,25 @@ elif [ "$1" = "stop" ] ; then
     FORCE=1
   fi
 
-  if [ ! -z "$GATEWAY_SHUTDOWN" ]; then
-    touch $GATEWAY_SHUTDOWN
-    if wait_for_pid; then
-      exit 0
+  if [ $FORCE -eq 0 ]; then
+    if [ -n "${GATEWAY_PID}" ] && [ -f "${GATEWAY_PID}" ]; then
+        # signal process to stop
+        kill -TERM $(<"${GATEWAY_PID}") >/dev/null 2>&1
+
+        if wait_for_pid; then
+          exit 0
+        fi
+    else
+        echo "Shutdown failed -- unable to determine process ID, use --force"
+        exit 21
     fi
-  else
-    if [ $FORCE -eq 0 ]; then
-      echo Shutdown failed -- must either provide GATEWAY_SHUTDOWN or use -force
-      exit 21
-    fi
+
+    echo "Shutdown failed -- must use -force"
+    exit 21
   fi
 
   if [ $FORCE -eq 0 ]; then
-    echo Shutdown failed -- to forcibly terminate the process, use -force
+    echo "Shutdown failed -- to forcibly terminate the process, use -force"
     exit 21
   fi
 
@@ -114,6 +147,13 @@ elif [ "$1" = "stop" ] ; then
        exit 21;
     fi
   fi
+elif [ -n "$1" ] ; then
+  echo -e "\nInvalid command \"${1}\"\n"
+  echoOptions
+  exit 17
+else
+  echoOptions
+  exit 17
 fi
 
 

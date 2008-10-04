@@ -160,7 +160,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
         if ("-".equals(extsList)) // scanning disabled
             return false;
 
-        File dir = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_MODULAR_ASSERTIONS_DIRECTORY, "/ssg/modules/assertions", false).getAbsoluteFile();
+        File dir = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_MODULAR_ASSERTIONS_DIRECTORY, false).getAbsoluteFile();
         long dirLastModified = dir.lastModified();
         if (!isScanNeeded(dir, dirLastModified)) {
             // No files added/removed since last scan, and no failures to retry

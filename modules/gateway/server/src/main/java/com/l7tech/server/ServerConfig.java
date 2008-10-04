@@ -60,6 +60,8 @@ public class ServerConfig implements ClusterPropertyListener {
     public static final String PARAM_MULTICAST_ADDRESS = "multicastAddress";
     public static final String PARAM_SSG_HOME_DIRECTORY = "ssgHome";
     public static final String PARAM_CONFIG_DIRECTORY = "configDirectory";
+    public static final String PARAM_VAR_DIRECTORY = "varDirectory";
+    public static final String PARAM_WEB_DIRECTORY = "webDirectory";
     public static final String PARAM_SSG_LOG_DIRECTORY = "logDirectory";
     public static final String PARAM_SSG_LOG_FILE_PATTERN_TEMPLATE = "logFileTemplate";
     public static final String PARAM_ATTACHMENT_DIRECTORY = "attachmentDirectory";
@@ -563,7 +565,24 @@ public class ServerConfig implements ClusterPropertyListener {
     }
 
     public File getAttachmentDirectory() {
-        return getLocalDirectoryProperty(PARAM_ATTACHMENT_DIRECTORY, "/ssg/var/attachments", true);
+        return getLocalDirectoryProperty(PARAM_ATTACHMENT_DIRECTORY, true);
+    }
+
+    /**
+     * Get a configured local directory, ensuring that it exists, is a directory, is readable, and optionally
+     * is writable.
+     *
+     * @param propName    the name of the serverconfig property that is expected to define a directory
+     * @param mustBeWritable  if true, the directory will be checked to ensure that it is writable
+     * @return a File that points at what (at the time this method returns) is an existing readable directory.
+     *         If mustBeWritable, then it will be writable as well.
+     */
+    public File getLocalDirectoryProperty( final String propName, final boolean mustBeWritable ) {
+        File file = getLocalDirectoryProperty( propName, null, mustBeWritable );
+        if ( file == null ) {
+            throw new IllegalStateException( "Missing file configuration property '"+propName+"'." );
+        }
+        return file;
     }
 
     /**

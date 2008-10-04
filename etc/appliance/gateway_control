@@ -1,0 +1,7 @@
+#!/bin/sh
+
+if [ "$(whoami)" = "layer7" ] ; then
+    sudo $0 $1 $2
+else
+    /sbin/runuser gateway -c "/opt/SecureSpan/Gateway/runtime/bin/gateway.sh $1 $2"
+fi

@@ -25,8 +25,8 @@ import org.apache.commons.configuration.ConfigurationException;
 public class NodeConfigurationManager {
 
     private static final Logger logger = Logger.getLogger(NodeConfigurationManager.class.getName());
-    private static final String configPath = "../Nodes/{0}/etc/conf";
-    private static final String sqlPath = "../Nodes/{0}/etc/sql/ssg.sql";
+    private static final String configPath = "../node/{0}/etc/conf";
+    private static final String sqlPath = "../config/etc/sql/ssg.sql";
 
     //only these files will be copied. Anything else left in SSG_ROOT/etc/conf is likley custom, like a custom assertion
 //    private static String[] configFileWhitelist = new String[] {
@@ -110,8 +110,6 @@ public class NodeConfigurationManager {
         props.setProperty( "node.db.name", databaseConfig.getName() );
         props.setProperty( "node.db.user", databaseConfig.getNodeUsername() );
         props.setProperty( "node.db.pass", encDatabasePassword );
-
-
 
         FileOutputStream origFos = null;
         try {
