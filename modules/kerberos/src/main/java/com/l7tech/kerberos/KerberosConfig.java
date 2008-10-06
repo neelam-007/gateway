@@ -130,7 +130,7 @@ class KerberosConfig {
 
     private static final Logger logger = Logger.getLogger(KerberosConfig.class.getName());
 
-    private static final String SYSPROP_SSG_HOME = "com.l7tech.server.configDirectory";
+    private static final String SYSPROP_SSG_HOME = "com.l7tech.server.varDirectory";
     private static final String SYSPROP_LINE_SEP = "line.separator";
     private static final String SYSPROP_LOGINCFG_PATH = "java.security.auth.login.config";
     private static final String SYSPROP_KRB5CFG_PATH = "java.security.krb5.conf";
