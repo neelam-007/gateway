@@ -40,7 +40,7 @@ import java.util.logging.Logger;
  */
 class MessageViewerModel extends AbstractListModel implements RequestInterceptor {
     private static final String PER_MESSAGE_STORAGE_SIZE = "com.l7tech.client.gui.perMessageStorageSize";
-    private static final int MAX_PER_MESSAGE_STORAGE_SIZE = 50 * 1024; //50kb
+    private static final int MAX_PER_MESSAGE_STORAGE_SIZE = 500 * 1024; //500kb
 
     private static final Logger log = Logger.getLogger(MessageViewerModel.class.getName());
     private static final int MAX_MESSAGES = 64;
@@ -60,7 +60,6 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     private boolean recordPolicies = true;
     private boolean recordErrors = true;
     private int perMessageStorageSize = 0;
-    private int messagesListSize = 0;
 
     MessageViewerModel() {
         //initialize message viewer
@@ -149,6 +148,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
                  messageSize = message.getBytes("UTF-8").length * 2;
                 if (messageSize  > getTruncateSize()) {
                     setMessageTruncated(true);
+                    log.info("Message was truncated");
                     this.message = (new String(message.getBytes("UTF-8"), 0, getTruncateSize(), "UTF-8")) + "\n   [Message truncated...]" ;
                 } else {
                     this.message = message;
@@ -322,6 +322,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
                 //process the unformated message
                 messageSize = buf.toString().getBytes("UTF-8").length * 2;
                 if (messageSize > getTruncateSize()) {
+                    log.info("Message was truncated");
                     setMessageTruncated(true);
                     this.unformatted = (new String(buf.toString().getBytes("UTF-8"), 0, getTruncateSize(), "UTF-8")) + "\n   [Message truncated...]" ;
                     isTruncated = true;
@@ -333,6 +334,10 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
                 buf = new StringBuffer(XmlUtil.nodeToFormattedString(document));
                 messageSize = buf.toString().getBytes("UTF-8").length * 2;
                 if (messageSize > getTruncateSize()) {
+                    if (!isMessageTruncated()) {
+                        log.info("Message was truncated");
+                    }
+
                     setMessageTruncated(true);
                     this.formatted = (new String(buf.toString().getBytes("UTF-8"), 0, getTruncateSize(), "UTF-8")) + "\n   [Message truncated...]" ;
                     isTruncated = true;
