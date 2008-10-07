@@ -3,11 +3,10 @@
  */
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.util.ConstructorInvocation;
-import com.l7tech.util.Functions;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
@@ -25,6 +24,8 @@ import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
+import com.l7tech.util.ConstructorInvocation;
+import com.l7tech.util.Functions;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -47,6 +48,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(SpecificUser.class, SpecificUserAssertionTreeNode.class);
         assertionMap.put(MemberOfGroup.class, MemberOfGroupAssertionTreeNode.class);
         assertionMap.put(OneOrMoreAssertion.class, OneOrMoreAssertionTreeNode.class);
+        assertionMap.put(ExactlyOneAssertion.class, ExactlyOneAssertionTreeNode.class);
         assertionMap.put(AllAssertion.class, AllAssertionTreeNode.class);
         assertionMap.put(TrueAssertion.class, TrueAssertionPolicyNode.class);
         assertionMap.put(FalseAssertion.class, FalseAssertionPolicyNode.class);
