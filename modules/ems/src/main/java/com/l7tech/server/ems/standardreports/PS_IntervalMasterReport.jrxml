@@ -80,7 +80,9 @@
 		backcolor="#DBD3B0"
 		vAlign="Middle"
 	>
-					<box>					<leftPen lineWidth="1.0"/>
+					<box>					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid"/>
 					<rightPen lineWidth="1.0"/>
 </box>
 	</style>
@@ -209,7 +211,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></def
 		<initialValueExpression><![CDATA[($P{IS_RELATIVE}.booleanValue())
 ?(new com.l7tech.server.ems.standardreports.TimePeriodDataSource($P{startTimeMilli}.longValue(), $P{endTimeMilli}.longValue(), $P{INTERVAL_NUM_OF_TIME_UNITS}.intValue(), $P{INTERVAL_TIME_UNIT})):null]]></initialValueExpression>
 	</variable>
-	<variable name="THROUGHPUT_SUM" class="java.lang.Long" resetType="Group" resetGroup="MAPPINGS" calculation="Nothing">
+	<variable name="THROUGHPUT_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_AND_MAPPINGS" calculation="Nothing">
 	</variable>
 	<variable name="FRTM_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_AND_MAPPINGS" calculation="Nothing">
 	</variable>
@@ -228,7 +230,6 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></def
 	<variable name="AP_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_AND_MAPPINGS" calculation="Nothing">
 	</variable>
 	<variable name="THROUGHPUT_SUM_MAPPING" class="java.lang.Long" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
-		<variableExpression><![CDATA[$V{THROUGHPUT_SUM}]]></variableExpression>
 	</variable>
 	<variable name="FRTM_MIN_MAPPING" class="java.lang.Integer" resetType="Group" resetGroup="MAPPINGS" calculation="Lowest">
 		<variableExpression><![CDATA[$V{FRTM_MIN}]]></variableExpression>
@@ -277,8 +278,13 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></def
 					<textElement>
 						<font isBold="true"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{MAPPING_VALUE_1}+" "+$F{MAPPING_VALUE_2}+" "+$F{MAPPING_VALUE_3}+" "+
-$F{MAPPING_VALUE_4}+" "+$F{MAPPING_VALUE_5}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Mapping Value: " +
+((($F{MAPPING_VALUE_1}.equals("1"))?"":$F{MAPPING_VALUE_1})+" "+
+(($F{MAPPING_VALUE_2}.equals("1"))?"":$F{MAPPING_VALUE_2})+" "+
+(($F{MAPPING_VALUE_3}.equals("1"))?"":$F{MAPPING_VALUE_3})+" "+
+(($F{MAPPING_VALUE_4}.equals("1"))?"":$F{MAPPING_VALUE_4})+" "+
+(($F{MAPPING_VALUE_5}.equals("1"))?"":$F{MAPPING_VALUE_5})
+).trim()]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupHeader>
@@ -288,7 +294,7 @@ $F{MAPPING_VALUE_4}+" "+$F{MAPPING_VALUE_5}]]></textFieldExpression>
 						style="FrameTableTop"
 						mode="Opaque"
 						x="0"
-						y="18"
+						y="0"
 						width="534"
 						height="18"
 						backcolor="#D6D6D6"
@@ -301,7 +307,7 @@ $F{MAPPING_VALUE_4}+" "+$F{MAPPING_VALUE_5}]]></textFieldExpression>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
-						x="118"
+						x="117"
 						y="0"
 						width="52"
 						height="18"
@@ -315,7 +321,7 @@ $F{MAPPING_VALUE_4}+" "+$F{MAPPING_VALUE_5}]]></textFieldExpression>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
-						x="170"
+						x="169"
 						y="0"
 						width="52"
 						height="18"
@@ -329,7 +335,7 @@ $F{MAPPING_VALUE_4}+" "+$F{MAPPING_VALUE_5}]]></textFieldExpression>
 				<staticText>
 					<reportElement
 						style="TableCell"
-						x="5"
+						x="4"
 						y="0"
 						width="112"
 						height="18"
@@ -338,12 +344,12 @@ $F{MAPPING_VALUE_4}+" "+$F{MAPPING_VALUE_5}]]></textFieldExpression>
 					<textElement>
 						<font pdfFontName="Helvetica-Bold" isBold="false"/>
 					</textElement>
-				<text><![CDATA[Totals]]></text>
+				<text><![CDATA[Mapping Totals]]></text>
 				</staticText>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
-						x="222"
+						x="221"
 						y="0"
 						width="52"
 						height="18"
@@ -357,7 +363,7 @@ $F{MAPPING_VALUE_4}+" "+$F{MAPPING_VALUE_5}]]></textFieldExpression>
 				<textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
-						x="274"
+						x="273"
 						y="0"
 						width="52"
 						height="18"
@@ -371,7 +377,7 @@ $F{MAPPING_VALUE_4}+" "+$F{MAPPING_VALUE_5}]]></textFieldExpression>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
-						x="326"
+						x="325"
 						y="0"
 						width="52"
 						height="18"
@@ -385,7 +391,7 @@ $F{MAPPING_VALUE_4}+" "+$F{MAPPING_VALUE_5}]]></textFieldExpression>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
-						x="378"
+						x="377"
 						y="0"
 						width="52"
 						height="18"
@@ -399,7 +405,7 @@ $F{MAPPING_VALUE_4}+" "+$F{MAPPING_VALUE_5}]]></textFieldExpression>
 				<textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
-						x="430"
+						x="429"
 						y="0"
 						width="52"
 						height="18"
@@ -413,7 +419,7 @@ $F{MAPPING_VALUE_4}+" "+$F{MAPPING_VALUE_5}]]></textFieldExpression>
 				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
-						x="482"
+						x="481"
 						y="0"
 						width="52"
 						height="18"
@@ -436,7 +442,7 @@ $F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}+$F{MAPPING_VALUE_5}]]></groupExpression>
 						style="FrameHeaderTableRow"
 						mode="Opaque"
 						x="0"
-						y="17"
+						y="18"
 						width="534"
 						height="18"
 						key="frame-2"/>
@@ -446,7 +452,7 @@ $F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}+$F{MAPPING_VALUE_5}]]></groupExpression>
 					<reportElement
 						style="TableCell"
 						x="482"
-						y="0"
+						y="-1"
 						width="52"
 						height="17"
 						key="staticText-20"/>
@@ -460,7 +466,7 @@ $F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}+$F{MAPPING_VALUE_5}]]></groupExpression>
 					<reportElement
 						style="TableCell"
 						x="430"
-						y="0"
+						y="-1"
 						width="52"
 						height="17"
 						key="staticText-21"/>
@@ -474,7 +480,7 @@ $F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}+$F{MAPPING_VALUE_5}]]></groupExpression>
 					<reportElement
 						style="TableCell"
 						x="118"
-						y="0"
+						y="-1"
 						width="52"
 						height="17"
 						key="staticText-22"/>
@@ -488,7 +494,7 @@ $F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}+$F{MAPPING_VALUE_5}]]></groupExpression>
 					<reportElement
 						style="TableCell"
 						x="170"
-						y="0"
+						y="-1"
 						width="52"
 						height="17"
 						key="staticText-23"/>
@@ -502,7 +508,7 @@ $F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}+$F{MAPPING_VALUE_5}]]></groupExpression>
 					<reportElement
 						style="TableCell"
 						x="222"
-						y="0"
+						y="-1"
 						width="52"
 						height="17"
 						key="staticText-24"/>
@@ -516,7 +522,7 @@ $F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}+$F{MAPPING_VALUE_5}]]></groupExpression>
 					<reportElement
 						style="TableCell"
 						x="274"
-						y="0"
+						y="-1"
 						width="52"
 						height="17"
 						key="staticText-25"/>
@@ -530,7 +536,7 @@ $F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}+$F{MAPPING_VALUE_5}]]></groupExpression>
 					<reportElement
 						style="TableCell"
 						x="326"
-						y="0"
+						y="-1"
 						width="52"
 						height="17"
 						key="staticText-26"/>
@@ -544,7 +550,7 @@ $F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}+$F{MAPPING_VALUE_5}]]></groupExpression>
 					<reportElement
 						style="TableCell"
 						x="378"
-						y="0"
+						y="-1"
 						width="52"
 						height="17"
 						key="staticText-27"/>
@@ -558,7 +564,7 @@ $F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}+$F{MAPPING_VALUE_5}]]></groupExpression>
 					<reportElement
 						style="TableCell"
 						x="5"
-						y="0"
+						y="-1"
 						width="113"
 						height="17"
 						key="textField-53"/>
@@ -572,7 +578,7 @@ $F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}+$F{MAPPING_VALUE_5}]]></groupExpression>
 						style="FrameTableTop"
 						mode="Opaque"
 						x="0"
-						y="-1"
+						y="0"
 						width="534"
 						height="18"
 						key="frame-15"/>
@@ -581,7 +587,7 @@ $F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}+$F{MAPPING_VALUE_5}]]></groupExpression>
 					<reportElement
 						style="TableCell"
 						x="5"
-						y="0"
+						y="-1"
 						width="436"
 						height="17"
 						key="textField-93"/>
@@ -589,7 +595,7 @@ $F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}+$F{MAPPING_VALUE_5}]]></groupExpression>
 					<textElement>
 						<font isBold="true"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Service: "+$F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupHeader>
@@ -743,7 +749,7 @@ $F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}+$F{MAPPING_VALUE_5}]]></groupExpression>
 			</band>
 		</background>
 		<title>
-			<band height="207"  isSplitAllowed="true" >
+			<band height="225"  isSplitAllowed="true" >
 				<frame>					<reportElement
 						style="FrameTableBottom"
 						mode="Opaque"
@@ -1013,7 +1019,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.Boolean"><![CDATA[$P{IS_DETAIL}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($P{IS_DETAIL}.booleanValue())?"Yes":"No"]]></textFieldExpression>
 				</textField>
 			</band>
 		</title>
@@ -1040,7 +1046,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					<reportElement
 						style="TableCell"
 						x="0"
-						y="1"
+						y="0"
 						width="534"
 						height="17"
 						key="subreport-1"/>
@@ -1092,6 +1098,14 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					<returnValue subreportVariable="BRTMX_MAX" toVariable="BRTMX_MAX"/>
 					<returnValue subreportVariable="BRTA_AVG" toVariable="BRTA_AVG"/>
 					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG"/>
+					<returnValue subreportVariable="THROUGHPUT_SUM" toVariable="THROUGHPUT_SUM_MAPPING" calculation="Sum"/>
+					<returnValue subreportVariable="FRTM_MIN" toVariable="FRTM_MIN_MAPPING" calculation="Lowest"/>
+					<returnValue subreportVariable="FRTMX_MAX" toVariable="FRTMX_MAX_MAPPING" calculation="Highest"/>
+					<returnValue subreportVariable="FRTA_AVG" toVariable="FRTA_AVG_MAPPING" calculation="Average"/>
+					<returnValue subreportVariable="BRTM_MIN" toVariable="BRTM_MIN_MAPPING" calculation="Lowest"/>
+					<returnValue subreportVariable="BRTMX_MAX" toVariable="BRTMX_MAX_MAPPING" calculation="Highest"/>
+					<returnValue subreportVariable="BRTA_AVG" toVariable="BRTA_AVG_MAPPING" calculation="Average"/>
+					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG_MAPPING" calculation="Average"/>
 					<subreportExpression  class="java.lang.String"><![CDATA["./PS_SubIntervalMasterReport.jasper"]]></subreportExpression>
 				</subreport>
 				</frame>				<staticText>
