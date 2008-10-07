@@ -121,7 +121,10 @@
 	<parameter name="MAPPING_KEYS" isForPrompting="false" class="java.util.List"/>
 	<parameter name="MAPPING_VALUES" isForPrompting="false" class="java.util.List"/>
 	<parameter name="VALUE_EQUAL_OR_LIKE" isForPrompting="false" class="java.util.List"/>
-	<parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
+    <parameter name="OPERATIONS" isForPrompting="false" class="java.util.List">
+        <defaultValueExpression ><![CDATA[new ArrayList()]]></defaultValueExpression>
+    </parameter>
+    <parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(com.l7tech.server.ems.standardreports.Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
 	</parameter>
 	<parameter name="relativeEndTimeMilli" isForPrompting="false" class="java.lang.Long">
@@ -172,9 +175,9 @@ IN clause with and 'AND before it]]></parameterDescription>
 		<defaultValueExpression ><![CDATA[" sm.period_start >= "+$P{startTimeMilli} + " AND sm.period_start < " + $P{endTimeMilli}]]></defaultValueExpression>
 	</parameter>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.createMappingQuery($P{timePeriodSql}, 
-$P{serviceIdInClause}, $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE}, 
-$P{resolution}.intValue())]]></defaultValueExpression>
+		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.createMappingQuery($P{startTimeMilli},
+		 $P{endTimeMilli}, $P{SERVICE_NAME_TO_ID_MAP}.values(), $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE},
+$P{resolution}.intValue(), false, $P{OPERATIONS})]]></defaultValueExpression>
 	</parameter>
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
@@ -189,7 +192,7 @@ $P{resolution}.intValue())]]></defaultValueExpression>
 	<field name="BRTMX" class="java.lang.Integer"/>
 	<field name="BRTA" class="java.lang.Double"/>
 	<field name="AP" class="java.lang.Double"/>
-	<field name="SERVICE_OPERATION" class="java.lang.String"/>
+	<field name="SERVICE_OPERATION_VALUE" class="java.lang.String"/>
 	<field name="MAPPING_VALUE_1" class="java.lang.String"/>
 	<field name="MAPPING_VALUE_2" class="java.lang.String"/>
 	<field name="MAPPING_VALUE_3" class="java.lang.String"/>
@@ -461,8 +464,7 @@ $P{resolution}.intValue())]]></defaultValueExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[($V{FRTM_MIN}.equals(new Integer(Integer.MAX_VALUE)))?0+"?":$V{FRTM_MIN}+"ms"
-]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($V{FRTM_MIN}.equals(new Integer(Integer.MAX_VALUE)))?0+"?":$V{FRTM_MIN}+"ms"]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement

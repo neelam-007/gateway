@@ -170,6 +170,12 @@ public class Utilities {
         return calendar;
     }
 
+    /**
+     * Get the absolute period of time for either HOUR, DAY or WEEK
+     * @param unitOfTime HOUR, DAY or WEEK. Month not supported as a month does not have a fixed number of milliseconds
+     * @return long representing the absolute time unit in milli seconds
+     * @throws IllegalArgumentException if an incorrect unit of time is supplied
+     */
     private static long getMilliSecondsForTimeUnit(String unitOfTime){
 
         if(unitOfTime.equals("HOUR")){
@@ -179,7 +185,8 @@ public class Utilities {
         }else if(unitOfTime.equals("WEEK")){
             return 604800000L;
         }else{
-            return Calendar.getInstance().getTimeInMillis();
+            throw new IllegalArgumentException("Unsupported unitOfTime: " + unitOfTime+ " Supported units are " +
+                    "HOUR, DAY and WEEK");
         }
     }
 
@@ -396,23 +403,230 @@ public class Utilities {
         **********SECTION D**********
      GROUP BY p.objectid, IP_ADDRESS, Customer
 
-     *
-     * @param timeConstraintSQL sql to be inserted as is into the where clause, no preseding 'AND' and no trailing comma
-     * can be null and the empty string, in which case it's ignored
-     * @param serviceIdConstraintSQL a complete IN clause start and closing bracket included, no preceding AND
-     * or trailing comma. If null or empty string, then it's ignored
+
+    /**
+     * @param startTimeInclusiveMilli
+     * @param endTimeInclusiveMilli
+     * @param serviceIds
      * @param keys the list of keys representing the mapping keys
      * @param keyValueConstraints the values which each key must be equal to, Can be null or empty
      * @param valueConstraintAndOrLike for each key and value, if a value constraint exists as the index, the index into this
      * list dictitates whether an = or like constraint is applied. Can be null or empty. Cannot have values if
      * keyValueConstraints is null or empty
      * @param resolution 1 = hourly, 2 = daily. Which resolution from service_metrics to use
-     * @return
+     * @param isDetail if true then the service_operation's real value is used in the select, group and order by,
+     * otherwise operation is selected as 1. To facilitate this service_operation is always selected as
+     * SERVICE_OPERATION_VALUE so that the real column is not used when isDetail is false
+     * @return String query
      * @throws IllegalArgumentException If all the lists are not the same size and if they are empty.
      */
-    public static String createMappingQuery(String timeConstraintSQL, String serviceIdConstraintSQL, List<String> keys, List<String> keyValueConstraints,
-                                            List<String> valueConstraintAndOrLike, int resolution){
+    public static String createMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                            Collection<String> serviceIds, List<String> keys,
+                                            List<String> keyValueConstraints,
+                                            List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
+                                            List<String> operations){
 
+        boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
+
+        boolean keyValuesSupplied = checkMappingQueryParams(keys,
+                keyValueConstraints, valueConstraintAndOrLike);
+
+        if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
+        
+        StringBuilder sb = new StringBuilder(aggregateSelect);
+        
+        addOperationToSelect(isDetail, sb);
+
+        createCaseSQL(keys, sb);
+
+        sb.append(mappingJoin);
+
+        addResolutionConstraint(resolution, sb);
+
+        if(useTime){
+            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
+        }
+
+        if(serviceIds != null && !serviceIds.isEmpty()){
+            addServiceIdConstraint(serviceIds, sb);
+        }
+
+        if(isDetail && operations != null && !operations.isEmpty()){
+            addOperationConstraint(operations, sb);
+        }
+
+        if(keyValuesSupplied){
+            createMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
+        }
+
+        addGroupBy(sb);
+
+        addMappingOrder(sb, true);
+
+        System.out.println(sb.toString());
+        return sb.toString();
+    }
+
+    /**
+     * Helper method to turn single service id and operation value into collections
+     * @param startTimeInclusiveMilli
+     * @param endTimeInclusiveMilli
+     * @param serviceId
+     * @param keys
+     * @param keyValueConstraints
+     * @param valueConstraintAndOrLike
+     * @param resolution
+     * @param isDetail
+     * @param operation
+     * @return
+     */
+    public static String createMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                            Long serviceId, List<String> keys,
+                                            List<String> keyValueConstraints,
+                                            List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
+                                            String operation){
+
+        if(serviceId == null) throw new IllegalArgumentException("Service Id must be supplied");
+        List<String> sIds = new ArrayList<String>();
+        sIds.add(serviceId.toString());
+        List<String> operationList = null;
+        if(operation != null){
+            operationList = new ArrayList<String>();
+        }
+        return createMappingQuery(startTimeInclusiveMilli, endTimeInclusiveMilli, sIds, keys, keyValueConstraints,
+                valueConstraintAndOrLike, resolution, isDetail, operationList);
+    }
+
+    private static void addOperationToSelect(boolean isDetail, StringBuilder sb) {
+        if(isDetail){
+            sb.append(",  mcmv.service_operation AS SERVICE_OPERATION_VALUE");
+        }else{
+            sb.append(",  1 AS SERVICE_OPERATION_VALUE");
+        }
+    }
+
+    private final static String distinctFrom = "SELECT distinct p.objectid as SERVICE_ID, p.name as SERVICE_NAME, " +
+            "p.routing_uri as ROUTING_URI ";
+
+    private final static String aggregateSelect = "SELECT count(*) as count, p.objectid as SERVICE_ID, " +
+            "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
+            "SUM(if(smd.completed, smd.completed,0)) as THROUGHPUT, MIN(smd.front_min) as FRTM, " +
+            "MAX(smd.front_max) as FRTMX, if(SUM(smd.front_sum), if(SUM(smd.attempted), " +
+            "SUM(smd.front_sum)/SUM(smd.attempted),0), 0) as FRTA, MIN(smd.back_min) as BRTM, " +
+            "MAX(smd.back_max) as BRTMX, if(SUM(smd.back_sum), if(SUM(smd.completed), " +
+            "SUM(smd.back_sum)/SUM(smd.completed),0), 0) as BRTA, " +
+            "if(SUM(smd.attempted), ( 1.0 - ( ( (SUM(smd.authorized) - SUM(smd.completed)) / SUM(smd.attempted) ) ) ) , 0) as 'AP' ";
+
+    private final static String mappingJoin = " FROM service_metrics sm, published_service p, service_metrics_details smd," +
+            " message_context_mapping_values mcmv, message_context_mapping_keys mcmk WHERE p.objectid = sm.published_service_oid " +
+            "AND sm.objectid = smd.service_metrics_oid AND smd.mapping_values_oid = mcmv.objectid AND mcmv.mapping_keys_oid = mcmk.objectid ";
+
+    /**
+     *
+     * @param startTimeInclusiveMilli start of the time period to query for inclusive, can be null, so long as
+     * endTimeInclusiveMilli is also null
+     * @param endTimeInclusiveMilli end of the time period to query for exclusive, can be null, so long as
+     * startTimeInclusiveMilli is also null
+     * @param serviceIds service ids to constrain query with
+     * @param keys mapping keys to use, must be at least 1
+     * @param keyValueConstraints values to constrain possible key values with
+     * @param valueConstraintAndOrLike and or like in sql for any values supplied as constraints on keys, can be null
+     * and empty. If it is, then AND is used by default.
+     * @param resolution hourly or daily = 1 or 2
+     * @param isDetail true when the sql represents a detail master report, which means service_operation is included
+     * in the distinct select list. When isDetail is true, the values in the operations list is used as a filter constraint.
+     * @param operations if isDetail is true and operations is non null and non empty, then the sql returned
+     * will be filtered by the values in operations
+     * @return String sql
+     * @throws NullPointerException if startIntervalMilliSeconds or endIntervalMilliSeconds is null
+     */
+    public static String createMasterMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                                  Collection<String> serviceIds, List<String> keys,
+                                                  List<String> keyValueConstraints,
+                                            List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
+                                            List<String> operations){
+        boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
+
+        boolean keyValuesSupplied = checkMappingQueryParams(keys,
+                keyValueConstraints, valueConstraintAndOrLike);
+
+        if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
+        
+        StringBuilder sb = new StringBuilder(distinctFrom);
+
+        createCaseSQL(keys,sb);
+
+        addOperationToSelect(isDetail, sb);
+
+        sb.append(mappingJoin);
+
+        addResolutionConstraint(resolution, sb);
+
+        if(useTime){
+            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
+        }
+
+        if(serviceIds != null && !serviceIds.isEmpty()){
+            addServiceIdConstraint(serviceIds, sb);
+        }
+
+        if(isDetail && operations != null && !operations.isEmpty()){
+            addOperationConstraint(operations, sb);
+        }
+        
+        if(keyValuesSupplied){//then the lengths have to match from above constraint
+            createMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
+        }
+
+        addMappingOrder(sb, true);
+
+        System.out.println(sb.toString());
+        return sb.toString();
+    }
+
+    /**
+     * Convert a list of string params into a list. This is needed by a sub query which is going to select out
+     * aggregate values for SPECIFIC values of keys for a specific interval.
+     * We are only interested in values of args, which have an index within the size of keys. Keys will hold up to
+     * 5 values, and args WILL hold 5 values, currently. However some of args will just be placeholders, with the value
+     * '1'. This is as all queries always include all mapping_value_x (x:1-5), so when less than 5 keys are used, then
+     * their select value is just 1, so it has no affect on group and order by operations.
+     * If any of the string values equal '1' indicating a placeholder, then null is added into that location
+     * in the returned list
+     * @param args String values for the keys
+     * @return List representation of the args
+     */
+    public static List<String> createValueList(List<String> keys, String... args){
+
+        List<String> returnList = new ArrayList<String>();
+
+        for (int i = 0; i < args.length && i < keys.size(); i++) {
+            String s = args[i];
+            if (s == null || s.equals("1")) throw new IllegalArgumentException("Any value of args with a valid index " +
+                    "into keys, must contain a real value and not null or 1");
+            returnList.add(s);
+        }
+
+        return returnList;
+    }
+
+    private static void addResolutionConstraint(int resolution, StringBuilder sb) {
+        sb.append(" AND sm.resolution = " + resolution+" ");
+    }
+
+    private static void addTimeConstraint(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli, StringBuilder sb) {
+        sb.append(" AND sm.period_start >=").append(startTimeInclusiveMilli);
+        sb.append(" AND sm.period_start <").append(endTimeInclusiveMilli);
+    }
+
+    private static void addGroupBy(StringBuilder sb) {
+        sb.append(" GROUP BY p.objectid, SERVICE_OPERATION_VALUE ");
+        for(int i = 0; i < NUM_MAPPING_KEYS; i++){
+            sb.append(", ").append("MAPPING_VALUE_" + (i+1));
+        }
+    }
+
+    private static boolean checkMappingQueryParams(List<String> keys, List<String> keyValueConstraints, List<String> valueConstraintAndOrLike) {
         if(keys == null || keys.isEmpty()){
             throw new IllegalArgumentException("Mapping queries require at least one value in the keys list");
         }
@@ -432,26 +646,87 @@ public class Utilities {
             //if keyValueConstraint are not supplied, then we can't have valueConstraintAndOrLike supplied either
             if(valueConstraintAndOrLike != null && !valueConstraintAndOrLike.isEmpty()){
                 throw new IllegalArgumentException("Cannot supply valueConstraintAndOrLike with values if no values in" +
-                        " keyValueConstraints have been supplied, on which they would be applied");                
+                        " keyValueConstraints have been supplied, on which they would be applied");
             }
         }
+        return keyValuesSupplied;
+    }
 
-        //SECTION A
-        StringBuilder sb = new StringBuilder("     SELECT count(*) as count, p.objectid as SERVICE_ID, " +
-                "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI," +
-                " mcmv.service_operation AS SERVICE_OPERATION, "+
-                " SUM(if(smd.completed, smd.completed,0)) as THROUGHPUT," +
-                " MIN(smd.front_min) as FRTM," +
-                " MAX(smd.front_max) as FRTMX," +
-                " if(SUM(smd.front_sum), if(SUM(smd.attempted), " +
-                " SUM(smd.front_sum)/SUM(smd.attempted),0), 0) as FRTA," +
-                " MIN(smd.back_min) as BRTM," +
-                " MAX(smd.back_max) as BRTMX," +
-                " if(SUM(smd.back_sum), if(SUM(smd.completed), " +
-                " SUM(smd.back_sum)/SUM(smd.completed),0), 0) as BRTA," +
-                " if(SUM(smd.attempted), ( 1.0 - ( ( (SUM(smd.authorized) - SUM(smd.completed)) / SUM(smd.attempted) ) ) ) , 0) as 'AP' ");
+    /**
+     * Find out if the time paramters should be included in the query
+     * @param startTimeInclusiveMilli
+     * @param endTimeInclusiveMilli
+     * @return
+     * @throws IllegalArgumentException if both params are not both null or both not null, or of startTimeInclusiveMilli
+     * is >= endIntervalMilliSeconds 
+     */
+    private static boolean checkTimeParameters(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli) {
+        boolean bothNull = (startTimeInclusiveMilli == null) && (endTimeInclusiveMilli == null);
+        boolean bothNotNull = (startTimeInclusiveMilli != null) && (endTimeInclusiveMilli != null);
+        if(!(bothNull || bothNotNull)){
+            throw new IllegalArgumentException("startTimeInclusiveMilli and endTimeInclusiveMilli must both be null" +
+                    "or not null");
+        }
+        if(bothNotNull){
+            if(startTimeInclusiveMilli >= endTimeInclusiveMilli){
+                throw new IllegalArgumentException("startTimeInclusiveMilli must be < than endTimeInclusiveMilli");
+            }
+            return true;
+        }
+        return false;
+    }
 
-        //SECTION B
+    private static void addMappingOrder(StringBuilder sb, boolean mappingsFirst) {
+        sb.append(" ORDER BY ");
+        if(mappingsFirst){
+            for(int i = 0; i < NUM_MAPPING_KEYS; i++){
+                if(i != 0) sb.append(", ");
+                sb.append("MAPPING_VALUE_" + (i+1));
+            }
+            sb.append(" ,p.objectid, SERVICE_OPERATION_VALUE ");
+        }else{
+            sb.append(" p.objectid, SERVICE_OPERATION_VALUE, ");
+            for(int i = 0; i < NUM_MAPPING_KEYS; i++){
+                if(i != 0) sb.append(", ");
+                sb.append("MAPPING_VALUE_" + (i+1));
+            }
+        }
+    }
+
+    private static void createMappingConstraint(List<String> keys, List<String> keyValueConstraints, List<String> valueConstraintAndOrLike, StringBuilder sb) {
+        for(int i = 0; i < keys.size(); i++){
+            boolean useAnd = true;
+            if( i < valueConstraintAndOrLike.size()){
+                useAnd = valueConstraintAndOrLike.get(i) == null || valueConstraintAndOrLike.get(i).equalsIgnoreCase("AND");                
+            }
+
+            sb.append(" AND (").append( createOrKeyValueBlock(keys.get(i), keyValueConstraints.get(i), useAnd) );
+            sb.append(")");
+        }
+    }
+
+    private static void addOperationConstraint(List<String> operations, StringBuilder sb) {
+        sb.append(" AND mcmv.service_operation IN (");
+        for (int i = 0; i < operations.size(); i++) {
+            String s = operations.get(i);
+            if(i != 0) sb.append(",");
+            sb.append("'" + s + "'");
+        }
+        sb.append(") ");
+    }
+
+    private static void addServiceIdConstraint(Collection<String> serviceIds, StringBuilder sb) {
+        sb.append(" AND p.objectid IN (");
+        boolean first = true;
+        for(String s: serviceIds){
+            if(!first) sb.append(", ");
+            else first = false;
+            sb.append(s);
+        }
+        sb.append(")");
+    }
+
+    private static void createCaseSQL(List<String> keys, StringBuilder sb) {
         int max = 0;
         for(int i = 0; i < keys.size(); i++,max++){
             sb.append(",").append(createCaseSection(keys.get(i), i+1));
@@ -461,48 +736,8 @@ public class Utilities {
         for(int i = max+1; i <= NUM_MAPPING_KEYS; i++){
             sb.append(", 1 AS MAPPING_VALUE_"+i);
         }
-
-        sb.append(" FROM service_metrics sm, published_service p, service_metrics_details smd, " +
-                " message_context_mapping_values mcmv, message_context_mapping_keys mcmk" +
-                " WHERE p.objectid = sm.published_service_oid" +
-                " AND sm.objectid = smd.service_metrics_oid" +
-                " AND smd.mapping_values_oid = mcmv.objectid" +
-                " AND mcmv.mapping_keys_oid = mcmk.objectid ");
-
-        sb.append(" AND sm.resolution = " + resolution+" ");
-        
-        if(timeConstraintSQL != null && !timeConstraintSQL.equals("")){
-            sb.append(" AND ").append(timeConstraintSQL).append(" ");
-        }
-
-        if(serviceIdConstraintSQL != null && !serviceIdConstraintSQL.equals("")){
-            sb.append(" AND p.objectid IN ").append(serviceIdConstraintSQL).append(" ");
-        }
-
-        if(keyValuesSupplied){//then the lengths have to match from above constraint
-            for(int i = 0; i < keys.size(); i++){
-                boolean useAnd = valueConstraintAndOrLike.get(i) == null || valueConstraintAndOrLike.get(i).equalsIgnoreCase("AND");
-                sb.append(" AND (").append( createOrKeyValueBlock(keys.get(i), keyValueConstraints.get(i), useAnd) );
-                sb.append(")");
-            }
-        }
-
-        sb.append(" GROUP BY p.objectid, SERVICE_OPERATION ");
-        for(int i = 0; i < NUM_MAPPING_KEYS; i++){
-            sb.append(", ").append("MAPPING_VALUE_" + (i+1));
-        }
-
-        sb.append(" ORDER BY  ");
-        for(int i = 0; i < NUM_MAPPING_KEYS; i++){
-            if(i != 0) sb.append(", ");
-            sb.append("MAPPING_VALUE_" + (i+1));
-        }
-
-        sb.append(" ,p.objectid, SERVICE_OPERATION ");
-
-        System.out.println(sb.toString());
-        return sb.toString();
     }
+
 
     private static String createCaseSection(String key, int index){
        /*CASE WHEN mcmk.mapping1_key = 'IP_ADDRESS' THEN mcmv.mapping1_value
@@ -522,6 +757,13 @@ END as IP_ADDRESS,
         return sb.toString();
     }
 
+    /**
+     *
+     * @param key
+     * @param value can be null, when it is then we are just constraining rows which the the correct key with any value
+     * @param andValue
+     * @return
+     */
     private static String createOrKeyValueBlock(String key, String value, boolean andValue){
 /*(
 Value is included in all or none, comment is just illustrative
@@ -628,16 +870,35 @@ Value is included in all or none, comment is just illustrative
         keys.add("Customer");
 
         List<String> values = new ArrayList<String>();
-        values.add("127.0.0.%");
+        values.add("127.0.0.1");
         values.add("Gold");
 
         List<String> useAnd = new ArrayList<String>();
         useAnd.add("AND");
         useAnd.add("AND");
 
-        String sql = createMappingQuery(null, null, keys, values, useAnd,2);
-        System.out.println("Sql is: " + sql);
+        String sql = createMappingQuery(null, null, null, keys, null, null,2, false, new ArrayList<String>());
+        System.out.println("Mapping sql is: " + sql);
 
+        sql = createMappingQuery(null, null, null, keys, null, null,2, true, new ArrayList<String>());
+        System.out.println("Mapping sql with operation is: " + sql);
+
+        sql = createMasterMappingQuery(null, null, new ArrayList<String>(), keys, null, null,2, false, null);
+        System.out.println("Master sql is: " + sql);
+        sql = createMasterMappingQuery(null, null, new ArrayList<String>(), keys, null, null,2, true, null);
+        System.out.println("Master sql with operaitons is: " + sql);
+
+//        List<String> valuesList = createValueList(keys, new String[]{"one", "two", "three"});
+//        for(String s: valuesList){
+//            System.out.println(s);
+//        }
+
+        values = new ArrayList<String>();
+        values.add("127.0.0.1");
+        values.add("Bronze");
+        sql = createMappingQuery(null, null, 229376L, keys, values, null,2, false, null);
+        System.out.println("Subreport no detail sql is: " + sql);
+        
 
     }
 

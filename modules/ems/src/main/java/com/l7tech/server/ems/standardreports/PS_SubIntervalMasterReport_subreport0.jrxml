@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"  ?>
+<!-- Created with iReport - A designer for JasperReports -->
+<!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN" "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
+<jasperReport
+		 name="PS_SubIntervalMasterReport_subreport0"
+		 columnCount="1"
+		 printOrder="Vertical"
+		 orientation="Portrait"
+		 pageWidth="535"
+		 pageHeight="802"
+		 columnWidth="535"
+		 columnSpacing="0"
+		 leftMargin="0"
+		 rightMargin="0"
+		 topMargin="0"
+		 bottomMargin="0"
+		 whenNoDataType="NoDataSection"
+		 isTitleNewPage="false"
+		 isSummaryNewPage="false">
+	<property name="ireport.scriptlethandling" value="0" />
+	<property name="ireport.encoding" value="UTF-8" />
+	<import value="java.util.*" />
+	<import value="net.sf.jasperreports.engine.*" />
+	<import value="net.sf.jasperreports.engine.data.*" />
+
+	<parameter name="INTERVAL_START" isForPrompting="false" class="java.lang.Long"/>
+	<parameter name="INTERVAL_END" isForPrompting="false" class="java.lang.Long"/>
+	<parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
+	<parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="MAPPING_KEYS" isForPrompting="false" class="java.util.List"/>
+	<parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="MAPPING_VALUE_1" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="MAPPING_VALUE_2" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="MAPPING_VALUE_3" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="MAPPING_VALUE_4" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="MAPPING_VALUE_5" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
+		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
+	</parameter>
+	<parameter name="resolution" isForPrompting="false" class="java.lang.Integer">
+		<defaultValueExpression ><![CDATA[($P{INTERVAL_UNIT_OF_TIME}.equals( "HOUR" ))?new Integer(1):new Integer(2)]]></defaultValueExpression>
+	</parameter>
+	<parameter name="valueList" isForPrompting="false" class="java.util.List">
+		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.createValueList($P{MAPPING_KEYS}, 
+new String[]{$P{MAPPING_VALUE_1}, $P{MAPPING_VALUE_2}, $P{MAPPING_VALUE_3}, $P{MAPPING_VALUE_4},
+$P{MAPPING_VALUE_5}})]]></defaultValueExpression>
+	</parameter>
+	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
+		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.createMappingQuery($P{INTERVAL_START},
+$P{INTERVAL_END},$P{SERVICE_ID}, $P{MAPPING_KEYS}, $P{valueList}, null,
+$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VALUE})]]></defaultValueExpression>
+	</parameter>
+	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
+
+	<field name="THROUGHPUT" class="java.lang.Long"/>
+	<field name="FRTM" class="java.lang.Integer"/>
+	<field name="FRTMX" class="java.lang.Integer"/>
+	<field name="FRTA" class="java.lang.Double"/>
+	<field name="BRTM" class="java.lang.Integer"/>
+	<field name="BRTMX" class="java.lang.Integer"/>
+	<field name="BRTA" class="java.lang.Double"/>
+	<field name="AP" class="java.lang.Double"/>
+
+	<variable name="RESOLUTION" class="java.lang.Integer" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[($P{INTERVAL_UNIT_OF_TIME}.equals( "HOUR" ))?new Integer(1):new Integer(2)]]></variableExpression>
+	</variable>
+	<variable name="TEST_OBJ" class="java.lang.Object" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[$F{FRTM}.toString()]]></variableExpression>
+	</variable>
+	<variable name="THROUGHPUT" class="java.lang.Long" resetType="None" calculation="Nothing">
+		<variableExpression><![CDATA[$F{THROUGHPUT}]]></variableExpression>
+		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+	</variable>
+	<variable name="FRTM_MIN" class="java.lang.Integer" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[($F{FRTM} == null || $F{FRTM}.equals(new Integer(0)) )? new Integer(Integer.MAX_VALUE): $F{FRTM}]]></variableExpression>
+		<initialValueExpression><![CDATA[new Integer(Integer.MAX_VALUE)]]></initialValueExpression>
+	</variable>
+	<variable name="FRTMX_MAX" class="java.lang.Integer" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[($F{FRTMX} == null || $F{FRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
+		<initialValueExpression><![CDATA[new Integer(Integer.MIN_VALUE)]]></initialValueExpression>
+	</variable>
+	<variable name="FRTA_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
+		<variableExpression><![CDATA[($F{FRTA}.equals(new Double(0)))? null: $F{FRTA}]]></variableExpression>
+	</variable>
+	<variable name="BRTM_MIN" class="java.lang.Integer" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[($F{BRTM} == null || $F{BRTM}.equals(new Integer(0)))? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
+		<initialValueExpression><![CDATA[new Integer(Integer.MAX_VALUE)]]></initialValueExpression>
+	</variable>
+	<variable name="BRTMX_MAX" class="java.lang.Integer" resetType="Report" calculation="Nothing">
+		<variableExpression><![CDATA[($F{BRTMX} == null || $F{BRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
+		<initialValueExpression><![CDATA[new Integer(Integer.MIN_VALUE)]]></initialValueExpression>
+	</variable>
+	<variable name="BRTA_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
+		<variableExpression><![CDATA[($F{BRTA}.equals(new Double(0)))? null: $F{BRTA}]]></variableExpression>
+	</variable>
+	<variable name="AP_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
+		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
+	</variable>
+		<background>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</background>
+		<title>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</title>
+		<pageHeader>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</pageHeader>
+		<columnHeader>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</columnHeader>
+		<detail>
+			<band height="18"  isSplitAllowed="true" >
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="0"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-1"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$F{THROUGHPUT}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="52"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-2"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Integer"><![CDATA[$F{FRTM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="104"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-3"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Integer"><![CDATA[$F{FRTMX}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="156"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-4"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[$F{FRTA}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="208"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-5"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Integer"><![CDATA[$F{BRTM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="260"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-6"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Integer"><![CDATA[$F{BRTMX}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="312"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-7"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[$F{BRTA}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="364"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-8"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[$F{AP}]]></textFieldExpression>
+				</textField>
+			</band>
+		</detail>
+		<columnFooter>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</columnFooter>
+		<pageFooter>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</pageFooter>
+		<summary>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+		</summary>
+		<noData>
+			<band height="18"  isSplitAllowed="true" >
+				<staticText>
+					<reportElement
+						x="0"
+						y="0"
+						width="52"
+						height="17"
+						key="staticText-1"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[NA]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="52"
+						y="0"
+						width="52"
+						height="17"
+						key="staticText-2"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[NA]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="104"
+						y="0"
+						width="52"
+						height="17"
+						key="staticText-3"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[NA]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="156"
+						y="0"
+						width="52"
+						height="17"
+						key="staticText-4"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[NA]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="208"
+						y="0"
+						width="52"
+						height="17"
+						key="staticText-5"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[NA]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="260"
+						y="0"
+						width="52"
+						height="17"
+						key="staticText-6"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[NA]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="312"
+						y="0"
+						width="52"
+						height="17"
+						key="staticText-7"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[NA]]></text>
+				</staticText>
+				<staticText>
+					<reportElement
+						x="364"
+						y="0"
+						width="52"
+						height="17"
+						key="staticText-8"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[NA]]></text>
+				</staticText>
+			</band>
+		</noData>
+</jasperReport>
