@@ -5,6 +5,7 @@ import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.console.action.GenericUserPropertiesAction;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -59,7 +60,7 @@ public class NewInternalUserDialog extends JDialog {
     /* the user instance */
     private final UserBean user;
 
-    private int MIN_PASSWORD_LENGTH = 6;
+    private int MIN_PASSWORD_LENGTH = SyspropUtil.getInteger("com.l7tech.ui.minPasswordLength", 6);
     private EventListenerList listenerList = new EventListenerList();
     private boolean UserIdFieldFilled = false;
     private boolean passwordFieldFilled = false;

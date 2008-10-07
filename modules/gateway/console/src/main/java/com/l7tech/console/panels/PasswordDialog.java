@@ -1,15 +1,16 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.util.HexUtils;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -59,8 +60,8 @@ public class PasswordDialog extends JDialog {
     /* the user to change the password for */
     private InternalUser user;
 
-    private int MIN_PASSWORD_LENGTH = 6;
-    private int MAX_PASSWORD_LENGTH = 32;
+    private int MIN_PASSWORD_LENGTH = SyspropUtil.getInteger("com.l7tech.ui.minPasswordLength", 6);
+    private int MAX_PASSWORD_LENGTH = SyspropUtil.getInteger("com.l7tech.ui.maxPasswordLength", 32);
     private EntityListener listener;
     private UserPanel userPanel;
 
