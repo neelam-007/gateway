@@ -308,6 +308,8 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 thrown = ioe;
                 if (ExceptionUtils.causedBy(ioe, SocketTimeoutException.class)) {
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_SOCKET_TIMEOUT);
+                } else if (ExceptionUtils.causedBy(ioe, GenericHttpException.class)) {
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_SOCKET_TIMEOUT, ioe.getMessage());
                 } else {
                     // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
                     auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ioe);

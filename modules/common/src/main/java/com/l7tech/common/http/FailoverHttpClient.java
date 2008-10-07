@@ -10,6 +10,7 @@ import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.common.io.failover.FailoverStrategy;
+import com.l7tech.util.ExceptionUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -207,14 +208,14 @@ public class FailoverHttpClient implements GenericHttpClient {
                 } catch (GenericHttpException e) {
                     if (logger != null)
                         logger.log(Level.INFO,
-                                   "HTTP request to " + host + " failed: " + e.getMessage(), e);
+                                   "HTTP request to " + host + " failed: " + e.getMessage(), ExceptionUtils.getDebugException(e));
                     failoverStrategy.reportFailure(host);
                     lastFailure = e;
                     /* FALLTHROUGH and try again */
                 } catch (MalformedURLException e) {
                     if (logger != null)
                         logger.log(Level.INFO,
-                                   "HTTP request to " + host + " failed: " + e.getMessage(), e);
+                                   "HTTP request to " + host + " failed: " + e.getMessage(), ExceptionUtils.getDebugException(e));
                     failoverStrategy.reportFailure(host);
                     lastFailure = e;
                     /* FALLTHROUGH and try again */
