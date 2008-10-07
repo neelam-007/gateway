@@ -16,6 +16,7 @@
     <property name="src.root" location="${basedir}"/>
 
     <!-- get the version -->
+    <property file="${src.root}/local.build.version"/>
     <property file="${src.root}/build.version"/>
 
     <!--
@@ -1416,6 +1417,12 @@
         <property name="build.em.version" value="${build.em.version.major}.${build.em.version.minor}.${build.em.version.subminor}${build.em.version.label}"/>
     </target>
     <target name="package.defaultrpmversion" if="build.version" unless="build.rpmversion">
+        <!-- default em props if not set -->
+        <property name="build.em.version.major" value=""/>
+        <property name="build.em.version.minor" value=""/>
+        <property name="build.em.version.subminor" value=""/>
+        <property name="build.em.version.label" value=""/>
+
         <property name="build.rpmversion" value="${build.version}"/>        
 
         <property name="build.em.rpmversion" value="${build.em.version.major}.${build.em.version.minor}.${build.em.version.subminor}"/>
@@ -2988,7 +2995,7 @@
         </condition>
         <fail if="die" message="Aborted at user request."/>
 
-        <input message="Enter a version number" addproperty="build.version"/>
+        <input message="Enter a version number" addproperty="official.build.version"/>
 
         <echo level="info">Running svn switch for build.number (to trunk/HEAD)</echo>
         <svn>
@@ -2997,7 +3004,7 @@
 
         <buildnumber/>
 
-        <property name="buildinfo.update" value="true"/>
+        <echo file="local.build.version">build.version=${official.build.version}</echo>
     </target>
 
     <!--

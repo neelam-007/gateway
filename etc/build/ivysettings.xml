@@ -9,12 +9,12 @@
     <resolvers>
         <chain name="libs-and-build">
             <filesystem name="localfile" checksums="">
-                <artifact pattern="lib/repository/[organisation]/[artifact]-[revision].[ext]"/>
-                <ivy pattern="lib/repository/[organisation]/[module]-ivy-[revision].xml"/>
+                <artifact pattern="${src.root}/lib/repository/[organisation]/[artifact]-[revision].[ext]"/>
+                <ivy pattern="${src.root}/lib/repository/[organisation]/[module]-ivy-[revision].xml"/>
             </filesystem>
             <filesystem name="shared" checksums="">
-                <artifact pattern="build/repository/[artifact]-[revision].[ext]"/>
-                <ivy pattern="build/repository/[module]-ivy-[revision].xml"/>
+                <artifact pattern="${src.root}/build/repository/[artifact]-[revision].[ext]"/>
+                <ivy pattern="${src.root}/build/repository/[module]-ivy-[revision].xml"/>
             </filesystem>
         </chain>
     </resolvers>
