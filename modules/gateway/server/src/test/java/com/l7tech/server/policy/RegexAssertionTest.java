@@ -360,6 +360,11 @@ public class RegexAssertionTest {
         return toString(message.getMimeKnob().getFirstPart());
     }
 
+    private Regex negate(Regex regex) {
+        regex.setProceedIfPatternMatches(!regex.isProceedIfPatternMatches());
+        return regex;
+    }
+
     private Regex regex(String regex) {
         return regex(regex, null);
     }
@@ -408,7 +413,13 @@ public class RegexAssertionTest {
         expect(AssertionStatus.NONE, regex(SUBSTR_FOO), context(PHRASE_FOO, PHRASE_ORLY));
         expect(AssertionStatus.FAILED, regex(SUBSTR_FOO), context(PHRASE_POO, PHRASE_ORLY));
     }
-    
+
+    @Test
+    public void testNewSimpleMatchNegated() throws Exception {
+        expect(AssertionStatus.FAILED, negate(regex(SUBSTR_FOO)), context(PHRASE_FOO, PHRASE_ORLY));
+        expect(AssertionStatus.NONE, negate(regex(SUBSTR_FOO)), context(PHRASE_POO, PHRASE_ORLY));
+    }
+
     @Test
     public void testNewSimpleReplace() throws Exception {
         PolicyEnforcementContext context = context(PHRASE_FOO, PHRASE_ORLY);
@@ -556,5 +567,33 @@ public class RegexAssertionTest {
         List<String> captured = (List<String>) context.getVariable("capture");
         assertEquals("mumbletyfoo", captured.get(0));
         assertEquals("umbletyfo", captured.get(1));
+    }
+
+    @Test
+    public void testNewCaseInsensitiveMatch() throws Exception {
+        final Regex regex = regex("BlAh");
+        regex.setCaseInsensitive(true);
+        expect(AssertionStatus.NONE, regex, context("bLaH", ""));
+        expect(AssertionStatus.FAILED, regex, context("HaLb", ""));
+    }
+
+    @Test
+    public void testNewNoSuchPart() throws Exception {
+        final Regex regex = regex(SUBSTR_FOO);
+        regex.setMimePart(3); // nonexistent part
+        expect(AssertionStatus.FAILED, regex, context(PHRASE_FOO, PHRASE_ORLY));
+    }
+
+    @Test
+    public void testNewNoReplacement() throws Exception {
+        final Regex regex = regex(SUBSTR_FOO);
+        regex.setReplace(true);
+        regex.setReplacement(null);
+        try {
+            expect(AssertionStatus.FAILED, regex, context(PHRASE_FOO, PHRASE_ORLY));
+            fail("Expected assertion was not thrown");
+        } catch (PolicyAssertionException e) {
+            // Ok
+        }
     }
 }
