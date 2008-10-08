@@ -308,7 +308,7 @@ p.objectid]]></queryString>
 					<textElement>
 						<font isUnderline="false"/>
 					</textElement>
-				<text><![CDATA[TP]]></text>
+				<text><![CDATA[TP(#)]]></text>
 				</staticText>
 				<staticText>
 					<reportElement
@@ -581,7 +581,7 @@ p.objectid]]></queryString>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$P{REPORT_TYPE}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Performance Statistics No Context Mapping"]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement
@@ -1049,7 +1049,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					<textElement>
 						<font/>
 					</textElement>
-				<text><![CDATA[Throughput]]></text>
+				<text><![CDATA[Throughput, # completed in time period]]></text>
 				</staticText>
 				<staticText>
 					<reportElement

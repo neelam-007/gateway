@@ -121,10 +121,10 @@
 	<parameter name="MAPPING_KEYS" isForPrompting="false" class="java.util.List"/>
 	<parameter name="MAPPING_VALUES" isForPrompting="false" class="java.util.List"/>
 	<parameter name="VALUE_EQUAL_OR_LIKE" isForPrompting="false" class="java.util.List"/>
-    <parameter name="OPERATIONS" isForPrompting="false" class="java.util.List">
-        <defaultValueExpression ><![CDATA[new ArrayList()]]></defaultValueExpression>
-    </parameter>
-    <parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
+	<parameter name="OPERATIONS" isForPrompting="false" class="java.util.List">
+		<defaultValueExpression ><![CDATA[new ArrayList()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(com.l7tech.server.ems.standardreports.Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
 	</parameter>
 	<parameter name="relativeEndTimeMilli" isForPrompting="false" class="java.lang.Long">
@@ -255,6 +255,31 @@ $P{resolution}.intValue(), false, $P{OPERATIONS})]]></defaultValueExpression>
 	<variable name="AP_SERVICE_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Average">
 		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
 	</variable>
+	<variable name="THROUGHPUT_REPORT_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
+		<variableExpression><![CDATA[$F{THROUGHPUT}]]></variableExpression>
+	</variable>
+	<variable name="FRTM_REPORT_MIN" class="java.lang.Integer" resetType="Report" calculation="Lowest">
+		<variableExpression><![CDATA[($F{FRTM} == null || $F{FRTM}.equals(new Integer(0)) )? new Integer(Integer.MAX_VALUE)
+: $F{FRTM}]]></variableExpression>
+	</variable>
+	<variable name="FRTMX_REPORT_MAX" class="java.lang.Integer" resetType="Report" calculation="Highest">
+		<variableExpression><![CDATA[($F{FRTMX} == null || $F{FRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
+	</variable>
+	<variable name="FRTA_REPORT_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
+		<variableExpression><![CDATA[($F{FRTA}.equals(new Double(0)))? null: $F{FRTA}]]></variableExpression>
+	</variable>
+	<variable name="BRTM_REPORT_MIN" class="java.lang.Integer" resetType="Report" calculation="Lowest">
+		<variableExpression><![CDATA[($F{BRTM} == null || $F{BRTM}.equals(new Integer(0)))? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
+	</variable>
+	<variable name="BRTMX_REPORT_MAX" class="java.lang.Integer" resetType="Report" calculation="Highest">
+		<variableExpression><![CDATA[($F{BRTMX} == null || $F{BRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
+	</variable>
+	<variable name="BRTA_REPORT_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
+		<variableExpression><![CDATA[($F{BRTA}.equals(new Double(0)))? null: $F{BRTA}]]></variableExpression>
+	</variable>
+	<variable name="AP_REPORT_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
+		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
+	</variable>
 
 		<group  name="MAPPING_VALUES_GROUP" >
 			<groupExpression><![CDATA[$F{MAPPING_VALUE_1}+$F{MAPPING_VALUE_2}+$F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}
@@ -282,7 +307,13 @@ $P{resolution}.intValue(), false, $P{OPERATIONS})]]></defaultValueExpression>
 					<textElement>
 						<font isBold="true"/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$V{TABLE_HEADER}]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Mapping Value: " +
+((($F{MAPPING_VALUE_1}.equals("1"))?"":$F{MAPPING_VALUE_1})+" "+
+(($F{MAPPING_VALUE_2}.equals("1"))?"":$F{MAPPING_VALUE_2})+" "+
+(($F{MAPPING_VALUE_3}.equals("1"))?"":$F{MAPPING_VALUE_3})+" "+
+(($F{MAPPING_VALUE_4}.equals("1"))?"":$F{MAPPING_VALUE_4})+" "+
+(($F{MAPPING_VALUE_5}.equals("1"))?"":$F{MAPPING_VALUE_5})
+).trim()]]></textFieldExpression>
 				</textField>
 				</frame>				<frame>					<reportElement
 						style="FrameHeaderTableRow"
@@ -334,7 +365,7 @@ $P{resolution}.intValue(), false, $P{OPERATIONS})]]></defaultValueExpression>
 					<textElement>
 						<font isUnderline="false"/>
 					</textElement>
-				<text><![CDATA[TP]]></text>
+				<text><![CDATA[TP(#)]]></text>
 				</staticText>
 				<staticText>
 					<reportElement
@@ -1072,7 +1103,7 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 					<textElement>
 						<font/>
 					</textElement>
-				<text><![CDATA[Throughput]]></text>
+				<text><![CDATA[Throughput, # completed in time period]]></text>
 				</staticText>
 				<staticText>
 					<reportElement
@@ -1273,8 +1304,148 @@ com.l7tech.server.ems.standardreports.Utilities.getMilliSecondAsStringDate($P{st
 				</frame>			</band>
 		</pageFooter>
 		<summary>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
+			<band height="18"  isSplitAllowed="true" >
+				<frame>					<reportElement
+						style="TableCell"
+						mode="Opaque"
+						x="0"
+						y="0"
+						width="534"
+						height="18"
+						backcolor="#D6D6D6"
+						key="frame-16"/>
+					<box>					<topPen lineWidth="1.0" lineStyle="Solid"/>
+					<leftPen lineWidth="1.0" lineStyle="Solid"/>
+					<bottomPen lineWidth="1.0" lineStyle="Solid"/>
+					<rightPen lineWidth="1.0" lineStyle="Solid"/>
+</box>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="118"
+						y="0"
+						width="52"
+						height="18"
+						key="textField-121"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{THROUGHPUT_REPORT_SUM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="170"
+						y="0"
+						width="52"
+						height="18"
+						key="textField-122"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($V{FRTM_REPORT_MIN}.equals(new Integer(Integer.MAX_VALUE)))?0+"?":$V{FRTM_REPORT_MIN}+"ms"]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement
+						style="TableCell"
+						x="5"
+						y="0"
+						width="112"
+						height="18"
+						key="staticText-103"/>
+					<box></box>
+					<textElement>
+						<font pdfFontName="Helvetica-Bold" isBold="false"/>
+					</textElement>
+				<text><![CDATA[Report Totals]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="222"
+						y="0"
+						width="52"
+						height="18"
+						key="textField-123"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($V{FRTMX_REPORT_MAX}.equals(new Integer(Integer.MIN_VALUE)))?0+"?":$V{FRTMX_REPORT_MAX}+"ms"]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="274"
+						y="0"
+						width="52"
+						height="18"
+						key="textField-124"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{FRTA_REPORT_AVG} == null)? new Double(0) : $V{FRTA_REPORT_AVG}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="326"
+						y="0"
+						width="52"
+						height="18"
+						key="textField-125"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($V{BRTM_REPORT_MIN}.equals(new Integer(Integer.MAX_VALUE)))?0+"?":$V{BRTM_REPORT_MIN}+"ms"]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="378"
+						y="0"
+						width="52"
+						height="18"
+						key="textField-126"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($V{BRTMX_REPORT_MAX}.equals(new Integer(Integer.MIN_VALUE)))?0+"?":$V{BRTMX_REPORT_MAX}+"ms"]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="430"
+						y="0"
+						width="52"
+						height="18"
+						key="textField-127"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{BRTA_REPORT_AVG} == null)? new Double(0) : $V{BRTA_REPORT_AVG}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="482"
+						y="0"
+						width="52"
+						height="18"
+						key="textField-128"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{AP_REPORT_AVG} == null)? new Double(0) : $V{AP_REPORT_AVG}]]></textFieldExpression>
+				</textField>
+				</frame>			</band>
 		</summary>
 		<noData>
 			<band height="500"  isSplitAllowed="true" >
