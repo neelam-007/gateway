@@ -66,6 +66,10 @@ public class EsmMetricsAssertion extends Assertion implements UsesVariables {
         // that is, we want our required feature set to be "assertion:Bogus" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(WSP_EXTERNAL_NAME, "ESMAssertion");
+
+        //set the routing assertion flag
+        meta.put(AssertionMetadata.IS_ROUTING_ASSERTION, Boolean.TRUE);
+        
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

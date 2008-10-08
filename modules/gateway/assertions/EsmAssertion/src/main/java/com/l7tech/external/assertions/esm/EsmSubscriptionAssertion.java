@@ -93,6 +93,9 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
 
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, EsmSubscriptionAssertion.Validator.class.getName());
 
+        //set the routing assertion flag
+        meta.put(AssertionMetadata.IS_ROUTING_ASSERTION, Boolean.TRUE);
+
         // request default feature set name for our claslss name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:Bogus" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");

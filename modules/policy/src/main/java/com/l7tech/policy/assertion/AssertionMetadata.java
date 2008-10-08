@@ -526,6 +526,15 @@ public interface AssertionMetadata {
      */
     String MODULE_CLASS_LOADER_DELEGATE_INSTANCE = "moduleClassLoaderDelegateInstance";
 
+    /**
+     * Boolean.  A holder to determine a paritcular assertion is treated as a routing assertion.
+     * TRUE means that the assertion will act as an routing assertion.  FALSE means that the assertion
+     * does not act as a routing assertion.
+     * <p/>
+     * This key was introduced in SecureSpan Gateway version 4.7
+     */
+    String IS_ROUTING_ASSERTION = "isRoutingAssertion";
+
     /** @return the concrete Assertion class.  Returned class is never null and is always assignable to Assertion. */
     Class getAssertionClass();
 

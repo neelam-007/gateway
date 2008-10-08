@@ -189,6 +189,9 @@ class PathValidator {
             }
         }
 
+        //process other assertions, ie modular assertions
+        processOtherRemainingAssertion(a);
+
         setSeen(a.getClass());
     }
 
@@ -233,6 +236,25 @@ class PathValidator {
             result.addWarning(new PolicyValidatorResult.Warning(htmlFormDataAssertion, assertionPath,
                                                                 "This assertion should occur before the request is routed.",
                                                                 null));
+        }
+    }
+
+    /**
+     * This method will be able to process other assertions that cannot be differentiated by their instance by using
+     * "instanceof" because of modular dependencies.  And because of that, one way is to use the meta data within
+     * the assertion to assist in the processing.
+     *
+     * @param assertion The assertion that will be processed.
+     */
+    private void processOtherRemainingAssertion(Assertion assertion) {
+        //check if assertion is considered to be enabled
+        if (assertion != null && assertion.isEnabled() ){
+            if (assertion.meta().get(AssertionMetadata.IS_ROUTING_ASSERTION) != null) {
+                boolean isRoutingAssertion = (Boolean) assertion.meta().get(AssertionMetadata.IS_ROUTING_ASSERTION);
+                if (isRoutingAssertion) {
+                    seenResponse = true;
+                }
+            }
         }
     }
 

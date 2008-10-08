@@ -280,6 +280,13 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
                 return null;
             }
         });
+
+        //default holder value for routing assertion
+        put(IS_ROUTING_ASSERTION, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, Boolean.FALSE);
+            }
+        });
     }});
 
     /**
