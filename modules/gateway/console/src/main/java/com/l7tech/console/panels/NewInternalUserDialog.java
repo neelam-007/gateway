@@ -598,6 +598,8 @@ public class NewInternalUserDialog extends JDialog {
             if (field.getLength() > 0) {
                 if (validateIdTextField()) {
                     UserIdFieldFilled = true;
+                } else {
+                    UserIdFieldFilled = false;
                 }
             } else {
                 UserIdFieldFilled = false;
