@@ -10,6 +10,8 @@ import org.junit.Test;
 import org.junit.Before;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @Copyright: Layer 7 Tech. Inc.
@@ -63,6 +65,10 @@ public class ServerMessageContextAssertionTest {
         for (MessageContextMapping mapping: policyEnforcementContext.getMappings()) {
             if (mapping.getMappingType().equals(MessageContextMapping.MappingType.IP_ADDRESS)) {
                 fail("The IP Address mapping has been dropped.");
+            } else if (! mapping.getMappingType().equals(MessageContextMapping.MappingType.AUTH_USER)) {
+                assertTrue("The max distinct number of mappings is five",
+                    (mapping.getKey().equals("myvar") || mapping.getKey().equals("existingVar") ||
+                        mapping.getKey().equals("notExistingVar") || mapping.getKey().equals("yourvar")));
             }
         }
     }
@@ -84,8 +90,9 @@ public class ServerMessageContextAssertionTest {
         smca.checkRequest(policyEnforcementContext);
 
         for (MessageContextMapping mapping: policyEnforcementContext.getMappings()) {
-            if (mapping.getKey().equals("myvar") && mapping.getValue().equals("Hello!")) {
-                fail("The myvar mapping has been overridden.");
+            if (mapping.getKey().equals("myvar")) {
+                assertFalse("The myvar mapping has been overridden.", mapping.getValue().equals("Hello!"));
+                assertTrue("The myvar mapping has been overridden.", mapping.getValue().equals("foo bar"));
             }
         }
     }
@@ -103,10 +110,13 @@ public class ServerMessageContextAssertionTest {
         smca.checkRequest(policyEnforcementContext);
 
         for (MessageContextMapping mapping: policyEnforcementContext.getMappings()) {
-            if (mapping.getKey().equals("existingVar") && ! mapping.getValue().equals("http://hugh")) {
-                fail("The existingVar mapping is supposed to have a preset variable, httpRouting.url with a value, http://hugh.");
-            } else if (mapping.getKey().equals("notExistingVar") && ! mapping.getValue().equals("")) {
-                fail("The notExistingVar mapping is supposed to have a non-preset variable, abc.");
+            if (mapping.getKey().equals("existingVar")) {
+                assertEquals("The existingVar mapping is supposed to have a preset variable, httpRouting.url " +
+                    "with a value, http://hugh.", mapping.getValue(), "http://hugh");
+            } else if (mapping.getKey().equals("notExistingVar")) {
+                assertEquals("The notExistingVar mapping is supposed to have a non-preset variable, abc.", mapping.getValue(), "");
+            } else {
+                fail("Invalid mapping: " + mapping.getMappingType().getName());
             }
         }
     }
