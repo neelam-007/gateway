@@ -2,13 +2,12 @@ package com.l7tech.server.admin.ws;
 
 import javax.xml.namespace.QName;
 
-import org.codehaus.xfire.aegis.MessageReader;
-import org.codehaus.xfire.aegis.MessageWriter;
-import org.codehaus.xfire.aegis.type.Type;
-import org.codehaus.xfire.MessageContext;
-import org.codehaus.xfire.fault.XFireFault;
-
 import com.l7tech.policy.Policy;
+import org.apache.cxf.aegis.type.Type;
+import org.apache.cxf.aegis.xml.MessageReader;
+import org.apache.cxf.aegis.xml.MessageWriter;
+import org.apache.cxf.aegis.Context;
+import org.apache.cxf.aegis.DatabindingException;
 
 /**
  * Aegis type mapping for Policy -> policy XML
@@ -21,8 +20,8 @@ public class PolicyType extends Type {
      * Not implemented
      */
     public Object readObject(final MessageReader messageReader,
-                             final MessageContext messageContext) throws XFireFault {
-        throw new XFireFault(new UnsupportedOperationException("Read not supported"));
+                             final Context messageContext) throws DatabindingException {
+        throw new DatabindingException("Read not supported", new UnsupportedOperationException("Read not supported"));
     }
 
     /**
@@ -30,7 +29,7 @@ public class PolicyType extends Type {
      */
     public void writeObject(final Object object,
                             final MessageWriter messageWriter,
-                            final MessageContext messageContext) throws XFireFault {
+                            final Context messageContext) throws DatabindingException {
         Policy policy = (Policy) object;
 
         messageWriter.writeValue(policy.getXml());

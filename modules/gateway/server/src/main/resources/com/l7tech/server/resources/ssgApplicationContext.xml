@@ -1012,4 +1012,11 @@
 
     <bean id="trustedEmsUserManager" class="com.l7tech.server.TrustedEmsUserManagerImpl" parent="hibernateBean">
     </bean>
+
+    <context:annotation-config/>
+
+    <bean id="processControllerNodeApiImpl" class="com.l7tech.server.NodeApiImpl"/>
+
+    <bean id="processControllerEventProxy" class="com.l7tech.server.ProcessControllerEventProxyImpl"/>
+
 </beans>

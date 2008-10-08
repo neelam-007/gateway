@@ -139,8 +139,8 @@ public class GatewayBoot {
                 "com/l7tech/server/resources/dataAccessContext.xml",
                 "com/l7tech/server/resources/ssgApplicationContext.xml",
                 "com/l7tech/server/resources/adminContext.xml",
-                "org/codehaus/xfire/spring/xfire.xml",
-                "com/l7tech/server/resources/ssgProcessControllerSupportContext.xml",
+                //"org/codehaus/xfire/spring/xfire.xml",
+                "com/l7tech/server/resources/cxfSupportContext.xml",
         });
         shutdowner = (ShutdownWatcher)applicationContext.getBean("ssgShutdown", ShutdownWatcher.class);
     }

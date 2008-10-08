@@ -19,6 +19,7 @@
         <dependency org="org.apache.cxf" name="cxf-rt-bindings-soap" rev="2.1.1" force="true" conf="core"/>
         <dependency org="org.apache.cxf" name="cxf-rt-core" rev="2.1.1" force="true" conf="core"/>
         <dependency org="org.apache.cxf" name="cxf-rt-databinding-jaxb" rev="2.1.1" force="true" conf="core"/>
+        <dependency org="org.apache.cxf" name="cxf-rt-databinding-aegis" rev="2.1.1" force="true" conf="core"/>
         <dependency org="org.apache.cxf" name="cxf-rt-frontend-jaxws" rev="2.1.1" force="true" conf="core"/>
         <dependency org="org.apache.cxf" name="cxf-rt-frontend-simple" rev="2.1.1" force="true" conf="core"/>
         <dependency org="org.apache.cxf" name="cxf-rt-transports-http" rev="2.1.1" force="true" conf="core"/>

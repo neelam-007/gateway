@@ -74,32 +74,9 @@
         <dependency org="org.springframework" name="spring-webmvc" rev="2.5.4" force="true" conf="core"/>
         <dependency org="org.springframework" name="aspectjweaver" rev="2.5.4" force="true" conf="core"/> <!-- Used for parsing pointcut expressions only -->
         <dependency org="com.tarari" name="tarari-raxj" rev="4.4.3.31" force="true" conf="optional"/>
-        <dependency org="org.codehaus.xfire" name="xfire-core" rev="1.2.2" force="true" conf="core">
-            <exclude org="org.apache.ws.commons" module="XmlSchema" name="*" type="*" ext="*" conf="" matcher="exact"/>
-            <exclude org="stax" module="stax-api" name="*" type="*" ext="*" conf="" matcher="exact"/>
-            <exclude org="stax" module="stax" name="*" type="*" ext="*" conf="" matcher="exact"/>
-            <exclude org="woodstox" module="wstx-asl" name="*" type="*" ext="*" conf="" matcher="exact"/>
-        </dependency>
-        <dependency org="org.codehaus.xfire" name="xfire-aegis" rev="1.2.2" force="true" conf="core">
-            <exclude org="org.apache.ws.commons" module="XmlSchema" name="*" type="*" ext="*" conf="" matcher="exact"/>
-            <exclude org="stax" module="stax-api" name="*" type="*" ext="*" conf="" matcher="exact"/>
-            <exclude org="stax" module="stax" name="*" type="*" ext="*" conf="" matcher="exact"/>
-            <exclude org="stax-utils" module="stax-utils" name="*" type="*" ext="*" conf="" matcher="exact"/>
-            <exclude org="woodstox" module="wstx-asl" name="*" type="*" ext="*" conf="" matcher="exact"/>
-        </dependency>
-        <dependency org="org.codehaus.xfire" name="xfire-spring" rev="1.2.2" force="true" conf="core">
-            <exclude org="org.apache.ws.commons" module="XmlSchema" name="*" type="*" ext="*" conf="" matcher="exact"/>
-            <exclude org="stax" module="stax-api" name="*" type="*" ext="*" conf="" matcher="exact"/>
-            <exclude org="woodstox" module="wstx-asl" name="*" type="*" ext="*" conf="" matcher="exact"/>
-            <exclude org="org.apache.xbean" module="xbean-spring" name="*" type="*" ext="*" conf="" matcher="exact"/>
-            <exclude org="org.codehaus.xfire" module="xfire-xmlbeans" name="*" type="*" ext="*" conf=""
-                     matcher="exact"/>
-            <exclude org="org.codehaus.xfire" module="xfire-annotations" name="*" type="*" ext="*" conf=""
-                     matcher="exact"/>
-            <exclude org="org.springframework" module="spring" name="*" type="*" ext="*" conf="" matcher="exact"/>
-            <exclude org="easymock" module="easymock" name="*" type="*" ext="*" conf="" matcher="exact"/>
-            <exclude org="junit" module="junit" name="*" type="*" ext="*" conf="" matcher="exact"/>
-        </dependency>
+
+        <dependency org="com.l7tech.lib" name="apache-cxf-lib" rev="2.1.1" force="true" conf="core"/>
+
         <dependency org="trove" name="trove" rev="1.0.2" force="true" conf="core"/>
         <dependency org="org.apache.ftpserver" name="ftpserver-parent" rev="1.0-543677-20070601" force="true"
                     conf="core"/>

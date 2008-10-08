@@ -258,8 +258,9 @@
         <url-pattern>/ssg/wsmf/*</url-pattern>
     </servlet-mapping>
 
+    <!-- map the public admin API to the CXF servlet -->
     <servlet-mapping>
-        <servlet-name>xfire</servlet-name>
+        <servlet-name>CXFServlet</servlet-name>
         <url-pattern>/ssg/admin/services/*</url-pattern>
     </servlet-mapping>
 
