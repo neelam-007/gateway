@@ -31,9 +31,6 @@ public class JmsThreadPool<T extends Runnable> {
     /** Configured global thread size limit */
     private int maxPoolSize;
 
-    /** The thread distribution scheme the pool will used to deploy worker threads across all Jms endpoints */
-    private ThreadDistributionScheme distributionScheme = ThreadDistributionScheme.EVENLY_DISTRIBUTED;
-
     /** Thread pool initialized flag */
     private boolean initialized;
 
@@ -89,16 +86,6 @@ public class JmsThreadPool<T extends Runnable> {
                 // max Jms processing thread pool size
                 // - what is emergency default??
                 maxPoolSize = serverCfg.getIntProperty(ServerConfig.PARAM_JMS_LISTENER_THREAD_LIMIT, 25); // or DEFAULT_JMS_THREAD_POOL_SIZE?
-
-                // thread distribution scheme
-                String distSetting;
-                if ((distSetting = serverCfg.getProperty(ServerConfig.PARAM_JMS_ENDPOINT_THREAD_DISTRIBUTION)) != null && distSetting.length() > 0) {
-                    try {
-                        distributionScheme = ThreadDistributionScheme.valueOf(distSetting);
-                    } catch (IllegalArgumentException ill) {
-                        distributionScheme = ThreadDistributionScheme.getDefault();
-                    }
-                }
 
                 // create the pool executor
                 workerPool = new ThreadPoolExecutor(
@@ -174,14 +161,5 @@ public class JmsThreadPool<T extends Runnable> {
 
     private int getMaxSize() {
         return maxPoolSize;
-    }
-
-    protected enum ThreadDistributionScheme {
-        EVENLY_DISTRIBUTED,
-        ADHOC;
-
-        static ThreadDistributionScheme getDefault() {
-            return EVENLY_DISTRIBUTED;
-        }
     }
 }
