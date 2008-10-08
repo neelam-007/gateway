@@ -46,9 +46,11 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     public static final String PROP_HTTP_DISABLE_KEEP_ALIVE = CommonsHttpClient.class.getName() + ".noKeepAlive";
     public static final String PROP_DEFAULT_CONNECT_TIMEOUT = CommonsHttpClient.class.getName() + ".defaultConnectTimeout";
     public static final String PROP_DEFAULT_READ_TIMEOUT = CommonsHttpClient.class.getName() + ".defaultReadTimeout";
+    public static final String PROP_CREDENTIAL_CHARSET = CommonsHttpClient.class.getName() + ".credentialCharset";
 
-    public static final int DEFAULT_CONNECT_TIMEOUT = Integer.getInteger(PROP_DEFAULT_CONNECT_TIMEOUT, 30000).intValue();
-    public static final int DEFAULT_READ_TIMEOUT = Integer.getInteger(PROP_DEFAULT_READ_TIMEOUT, 60000).intValue();
+    public static final String DEFAULT_CREDENTIAL_CHARSET = "ISO-8859-1"; // see bugzilla #5729
+    public static final int DEFAULT_CONNECT_TIMEOUT = SyspropUtil.getInteger(PROP_DEFAULT_CONNECT_TIMEOUT, 30000);
+    public static final int DEFAULT_READ_TIMEOUT = SyspropUtil.getInteger(PROP_DEFAULT_READ_TIMEOUT, 60000);
 
     private static HttpParams httpParams;
     private static final Map protoBySockFac = Collections.synchronizedMap(new WeakHashMap());
@@ -110,17 +112,17 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     }
 
     public static int getDefaultMaxConnectionsPerHost() {
-        int maxConnPerHost = SyspropUtil.getInteger(PROP_MAX_CONN_PER_HOST, 200).intValue();
+        int maxConnPerHost = SyspropUtil.getInteger(PROP_MAX_CONN_PER_HOST, 200);
         return maxConnPerHost;
     }
 
     public static int getDefaultMaxTotalConnections() {
-        int maxTotalConnections = SyspropUtil.getInteger(PROP_MAX_TOTAL_CONN, 2000).intValue();
+        int maxTotalConnections = SyspropUtil.getInteger(PROP_MAX_TOTAL_CONN, 2000);
         return maxTotalConnections;
     }
 
     public static int getDefaultStaleCheckCount() {
-        int maxTotalConnections = SyspropUtil.getInteger(PROP_STALE_CHECKS, 1).intValue();
+        int maxTotalConnections = SyspropUtil.getInteger(PROP_STALE_CHECKS, 1);
         return maxTotalConnections;
     }
 
@@ -204,6 +206,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
             state.setCredentials(AuthScope.ANY,
                                  new UsernamePasswordCredentials(username, new String(password)));
             clientParams.setAuthenticationPreemptive(params.isPreemptiveAuthentication());
+            clientParams.setCredentialCharset(SyspropUtil.getString(PROP_CREDENTIAL_CHARSET, DEFAULT_CREDENTIAL_CHARSET));
         }
 
         final Long contentLen = params.getContentLength();
