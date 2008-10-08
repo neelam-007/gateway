@@ -1396,7 +1396,7 @@
     <!--
       Generate a version string if not supplied
     -->
-    <target name="package.readversion" unless="build.version" depends="package.defaultrpmversion">
+    <target name="package.readversion" unless="build.version" depends="package.defaultrpmversion, package.defaultemrpmversion">
         <!-- Set properties to keep IDEA happy -->
         <property name="build.version.major" value=""/>
         <property name="build.version.minor" value=""/>
@@ -1417,16 +1417,10 @@
         <property name="build.em.version" value="${build.em.version.major}.${build.em.version.minor}.${build.em.version.subminor}${build.em.version.label}"/>
     </target>
     <target name="package.defaultrpmversion" if="build.version" unless="build.rpmversion">
-        <!-- default em props if not set -->
-        <property name="build.em.version.major" value=""/>
-        <property name="build.em.version.minor" value=""/>
-        <property name="build.em.version.subminor" value=""/>
-        <property name="build.em.version.label" value=""/>
-
         <property name="build.rpmversion" value="${build.version}"/>        
-
-        <property name="build.em.rpmversion" value="${build.em.version.major}.${build.em.version.minor}.${build.em.version.subminor}"/>
-        <property name="build.em.version" value="${build.em.version.major}.${build.em.version.minor}.${build.em.version.subminor}${build.em.version.label}"/>
+    </target>
+    <target name="package.defaultemrpmversion" if="build.em.version" unless="build.em.rpmversion">
+        <property name="build.em.rpmversion" value="${build.em.version}"/>        
     </target>
 
     <!--
@@ -2995,7 +2989,8 @@
         </condition>
         <fail if="die" message="Aborted at user request."/>
 
-        <input message="Enter a version number" addproperty="official.build.version"/>
+        <input message="Enter SecureSpan version number" addproperty="official.build.version"/>
+        <input message="Enter EM version number" addproperty="official.build.em.version"/>
 
         <echo level="info">Running svn switch for build.number (to trunk/HEAD)</echo>
         <svn>
@@ -3004,7 +2999,7 @@
 
         <buildnumber/>
 
-        <echo file="local.build.version">build.version=${official.build.version}</echo>
+        <echo file="local.build.version"># Generated local build properties file ${line.separator}build.version=${official.build.version}${line.separator}build.em.version=${official.build.em.version}${line.separator}</echo>
     </target>
 
     <!--
