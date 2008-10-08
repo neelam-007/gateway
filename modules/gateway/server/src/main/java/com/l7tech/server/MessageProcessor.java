@@ -626,7 +626,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     // Must catch before ProcessorException
                     // Use appropriate fault to warn client about unresolvable KeyInfo
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
-                    context.setAuditLevel(Level.SEVERE);
+                    context.setAuditLevel(Level.WARNING);
                     SoapFaultLevel cfault = new SoapFaultLevel();
                     cfault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
                     cfault.setFaultTemplate(SoapFaultUtils.badKeyInfoFault(getIncomingURL(context)));
@@ -650,12 +650,12 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     return false;
                 } catch (GeneralSecurityException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
-                    context.setAuditLevel(Level.SEVERE);
+                    context.setAuditLevel(Level.WARNING);
                     assertionStatusHolder[0] = AssertionStatus.SERVER_ERROR;
                     return false;
                 } catch (SAXException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_RETRIEVE_XML, null, e);
-                    context.setAuditLevel(Level.SEVERE);
+                    context.setAuditLevel(Level.WARNING);
                     assertionStatusHolder[0] = AssertionStatus.SERVER_ERROR;
                     return false;
                 } catch (IOException ioe) {
