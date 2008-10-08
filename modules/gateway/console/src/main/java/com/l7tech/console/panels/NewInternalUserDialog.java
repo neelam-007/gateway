@@ -596,8 +596,9 @@ public class NewInternalUserDialog extends JDialog {
         Document field = e.getDocument();
         if (field.getProperty("name").equals("identityId")) {
             if (field.getLength() > 0) {
-                UserIdFieldFilled = true;
-                validateIdTextField();
+                if (validateIdTextField()) {
+                    UserIdFieldFilled = true;
+                }
             } else {
                 UserIdFieldFilled = false;
                 idTextField.setModelessFeedback(null);
@@ -634,6 +635,9 @@ public class NewInternalUserDialog extends JDialog {
         String t = idTextField.getText();
         if (CERT_NAME_CHECKER.matcher(t).find()) {
             idTextField.setModelessFeedback(resources.getString("idTextField.warning.tooltip.badCertChars"));
+            return false;
+        } else if (t.trim().length() == 0) {
+            idTextField.setModelessFeedback(resources.getString("idTextField.error.badchar"));
             return false;
         } else {
             idTextField.setModelessFeedback(null);
