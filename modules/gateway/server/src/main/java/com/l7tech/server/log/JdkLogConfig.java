@@ -1,15 +1,13 @@
 package com.l7tech.server.log;
 
 import java.io.File;
-import java.io.OutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.StreamHandler;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
+import java.util.logging.ConsoleHandler;
 
 import com.l7tech.util.JdkLoggerConfigurator;
-import com.l7tech.util.ConfigurableLogFormatter;
 import com.l7tech.server.ServerConfig;
 
 /**
@@ -43,18 +41,27 @@ public class JdkLogConfig {
      */
     public JdkLogConfig() {
         try {
+            boolean logToConsole = Boolean.getBoolean("com.l7tech.server.log.console");
+            System.setProperty(StartupHandler.SYSPROP_LOG_TO_CONSOLE, "false");
+
+            if ( !logToConsole ) {
+                captureSystemStreams();
+            }
+
             // This ensures logging of any error when loading server config
             JdkLoggerConfigurator.configure(null, "com/l7tech/server/resources/logging.properties", null, false, false);
+            if ( logToConsole ) {
+                if (!hasConsoleHandler())
+                    addConsoleHandler();
+            }
 
-            // Redirect STDOUT/STDERR to logging and optionally send all startup logs to the console
-            System.setProperty(StartupHandler.SYSPROP_LOG_TO_CONSOLE, "false");
-            Handler handler = captureSystemStreams(Boolean.getBoolean("com.l7tech.server.log.console"));
-
+            // Init logging based config
             initLogging(true);
 
-            // Add handler after stdin/out streams are redirected
-            if ( handler != null ) {
-                Logger.getLogger("").addHandler(handler);
+            if ( logToConsole ) {
+                if (!hasConsoleHandler())
+                    addConsoleHandler();
+                captureSystemStreamsOnStarted();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -96,27 +103,68 @@ public class JdkLogConfig {
     /**
      * Capture System.X streams and send to logging.
      */
-    private static Handler captureSystemStreams( final boolean logToConsole ) {
-        Handler handler = null;
-        if ( logToConsole ) {
-            OutputStream logOut = System.err;
-            handler = new StreamHandler( logOut, new ConfigurableLogFormatter() ){
-                public void publish(LogRecord record) {
-                    super.publish(record);
-                    flush();
-                }
-                public void close() {
-                    flush();
-                }
-            };
-            handler.setLevel( Level.CONFIG );
-        }
-
+    private static void captureSystemStreams() {
         //noinspection IOResourceOpenedButNotSafelyClosed
         System.setOut(new LoggingPrintStream(Logger.getLogger("STDOUT"), Level.INFO));
         //noinspection IOResourceOpenedButNotSafelyClosed
         System.setErr(new LoggingPrintStream(Logger.getLogger("STDERR"), Level.WARNING));
+    }
 
-        return handler;
+    /**
+     *
+     */
+    private static void captureSystemStreamsOnStarted() {
+        Logger.getLogger("").addHandler( new StreamCaptureHandler() );
+    }
+
+    /**
+     *
+     */
+    private static void addConsoleHandler() {
+        ConsoleHandler handler = new ConsoleHandler();
+        handler.setLevel(Level.CONFIG);
+        Logger.getLogger("").addHandler( new ConsoleHandler() );            
+    }
+
+    /**
+     *
+     */
+    private static boolean hasConsoleHandler() {
+        boolean hasHandler = false;
+
+        Logger rootLogger = Logger.getLogger("");
+        for ( Handler handler : rootLogger.getHandlers() ) {
+            if ( handler instanceof ConsoleHandler ) {
+                hasHandler = true;
+            }
+        }
+
+        return hasHandler;
+    }
+
+    /**
+     *
+     */
+    private static void removeConsoleHandler() {
+        Logger rootLogger = Logger.getLogger("");
+        for ( Handler handler : rootLogger.getHandlers() ) {
+            if ( handler instanceof ConsoleHandler ) {
+                rootLogger.removeHandler( handler );
+            }
+        }
+    }
+
+    /**
+     * Dummy handler that only captures
+     */
+    private static class StreamCaptureHandler extends Handler implements StartupAwareHandler {
+        public void publish( final LogRecord record ) {}
+        public void flush() { }
+        public void close() throws SecurityException { }
+
+        public void notifyStarted() {
+            removeConsoleHandler();
+            captureSystemStreams();
+        }
     }
 }

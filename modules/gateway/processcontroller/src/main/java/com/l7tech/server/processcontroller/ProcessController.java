@@ -428,34 +428,30 @@ public class ProcessController {
 
                 ssgPwd = new File(nodesDir, node.getName());
                 if (!(ssgPwd.exists() && ssgPwd.isDirectory())) throw new IllegalStateException("Node directory " + ssgPwd.getAbsolutePath() + " does not exist or is not a directory");
-                //try {
+                try {
                     // TODO make this less hard-coded (e.g. use the host profile)
                     cmds = new LinkedList<String>(
-//                            Arrays.asList(
-//                        configService.getJavaBinary().getCanonicalPath(),
-//                        "-Dcom.l7tech.server.home=\"" + ssgPwd.getCanonicalPath() + "\"",
-//                        "-Dcom.l7tech.server.processControllerPresent=true"
-//                        "-Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig"
-//                    )
+                        Arrays.asList(
+                            "/opt/SecureSpan/Appliance/libexec/gateway_control",
+                            "run",
+                            "-J-Dcom.l7tech.server.home=\"" + ssgPwd.getCanonicalPath() + "\"",
+                            "-J-Dcom.l7tech.server.processControllerPresent=true",
+                            "-J-Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig",
+                            "-J-Dcom.l7tech.server.log.console=true"
+                        )
                     );
 
-                    cmds.add("/opt/SecureSpan/Appliance/libexec/gateway_control");
-                    cmds.add("run");
-                    cmds.add("-pc");
+                    for (HostFeature hf : node.getHost().getFeatures()) {  // TODO needs more scala.Seq#filter
+                        collectArgs(cmds, hf);
+                    }
 
-//                    for (HostFeature hf : node.getHost().getFeatures()) {  // TODO needs more scala.Seq#filter
-//                        collectArgs(cmds, hf);
-//                    }
-//
-//                    for (NodeFeature nf : node.getFeatures()) {
-//                        collectArgs(cmds, nf);
-//                    }
-//
-//                    cmds.add("-jar");
-//                    cmds.add("Gateway.jar");
-//                } catch (IOException e) {
-//                    throw new RuntimeException(e); // If the
-//                }
+                    for (NodeFeature nf : node.getFeatures()) {
+                        collectArgs(cmds, nf);
+                    }
+
+                } catch (IOException e) {
+                    throw new RuntimeException(e); 
+                }
                 break;
             default:
                 throw new UnsupportedOperationException();

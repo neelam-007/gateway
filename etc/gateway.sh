@@ -1,9 +1,42 @@
 #!/bin/bash
+#######################################################################
+# Script to run the SecureSpan Gateway
+#######################################################################
+#
+# This script will set environment options using the shared profile
+# and control the Gateway process.
+#
+# Usage:
+#
+#   ./gateway.sh COMMAND [OPTION]*
+#
+# Commands are:
+#
+#   run   - run in foreground (CTRL-C to exit)
+#   start - start as a daemon
+#   stop  - stop daemon
+#
+# Options starting with -J are passed through to the Java VM, other
+# options are passed to the Gateway process.
+#
+
+# Set environment
 umask 0002
 
 # Source profile for standard environment
 cd `dirname $0`
 . ../etc/profile
+
+# Process script options
+declare -a SSGARGS
+declare -a SSGOPTS
+for OPTION in "$@" ; do
+    if [ "${OPTION}" = "${OPTION#-J}" ] ; then
+        SSGARGS[$((${#SSGARGS[*]} + 1))]="${OPTION}"
+    else
+        SSGOPTS[$((${#SSGOPTS[*]} + 1))]="${OPTION#-J}"
+    fi
+done
 
 # Set options
 SSGUSER="gateway"
@@ -16,6 +49,7 @@ fi
 if [ -n "${NODE_OPTS}" ] ; then
   JAVA_OPTS="${JAVA_OPTS} ${NODE_OPTS}"
 fi
+JAVA_OPTS="${JAVA_OPTS} ${SSGOPTS[@]}"
 
 # Sanity checks
 if [ -z "${SSG_JAVA_HOME}" ] ; then
@@ -89,7 +123,7 @@ if [ "$1" = "start" ] ; then
     fi
 
     #enable logging of stdout/stderr using JDK logging as well as the standard SSG logging facilities
-    "${SSG_JAVA_HOME}/bin/java" -Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "$@" &
+    "${SSG_JAVA_HOME}/bin/java" -Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "${SSGARGS[@]}" &
 
     if [ ! -z "${GATEWAY_PID}" ]; then
         rm -f "${GATEWAY_PID}"
@@ -98,18 +132,13 @@ if [ "$1" = "start" ] ; then
 
 elif [ "$1" = "run" ] ; then
     shift
-    if [ "$1" = "-pc" ]; then
-        shift
-        JAVA_OPTS="${JAVA_OPTS} -Dcom.l7tech.server.processControllerPresent=true -Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig  -Dcom.l7tech.server.log.console=true"
-    fi
 
     if [ -n "${GATEWAY_PID}" ]; then
         rm -f "${GATEWAY_PID}"
         echo $$ > "${GATEWAY_PID}"
     fi
 
-    set -x
-    "${SSG_JAVA_HOME}/bin/java" ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "$@"
+    exec "${SSG_JAVA_HOME}/bin/java" ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "${SSGARGS[@]}"
 
 elif [ "$1" = "stop" ] ; then
   shift

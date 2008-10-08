@@ -12,6 +12,11 @@ import java.util.Collection;
 public interface ConfigurationBeanProvider {
 
     /**
+     * Check if the provider is valid
+     */
+    boolean isValid();
+
+    /**
      * Load a configuration from this provider.
      *
      * @return The collections of configurations (not null)

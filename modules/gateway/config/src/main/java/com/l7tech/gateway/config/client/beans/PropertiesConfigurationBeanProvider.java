@@ -25,7 +25,11 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
     public PropertiesConfigurationBeanProvider( File file ) {
         this.propertiesFile = file;
     }
-    
+
+    public boolean isValid() {
+        return propertiesFile.isFile() && propertiesFile.canWrite();
+    }
+
     @SuppressWarnings({"unchecked"})
     public Collection<ConfigurationBean> loadConfiguration() throws ConfigurationException {
         Properties properties = new Properties();

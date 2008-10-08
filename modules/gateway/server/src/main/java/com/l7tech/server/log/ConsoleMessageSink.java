@@ -2,7 +2,6 @@ package com.l7tech.server.log;
 
 import java.util.logging.LogRecord;
 import java.util.logging.Handler;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.logging.ConsoleHandler;
 
@@ -52,17 +51,25 @@ public class ConsoleMessageSink extends MessageSinkSupport {
     private Handler getConsoleHandler() {
         Handler consoleHandler = null;
 
-        LogManager manager = LogManager.getLogManager();
-        Logger rootLogger = manager.getLogger("");
+        boolean hasStartupHandler = false;
+        Logger rootLogger = Logger.getLogger("");
         Handler[] rootHandlers = rootLogger.getHandlers();
         for ( Handler handler : rootHandlers ) {
-            if ( handler instanceof ConsoleHandler) {
-                consoleHandler = handler;
-                break;
-            } else if ( handler instanceof StartupHandler ) {
+            if ( handler instanceof StartupHandler ) {
+                hasStartupHandler = true;
                 StartupHandler sh = (StartupHandler) handler;
                 if ( sh.isConsole() ) {
                     consoleHandler = handler;
+                    break;
+                }
+            }
+        }
+
+        if ( !hasStartupHandler ) {
+            for ( Handler handler : rootHandlers ) {
+                if ( handler instanceof ConsoleHandler ) {
+                    consoleHandler = handler;
+                    break;
                 }
             }
         }

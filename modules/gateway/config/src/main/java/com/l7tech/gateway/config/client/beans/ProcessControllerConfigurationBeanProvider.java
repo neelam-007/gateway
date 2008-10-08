@@ -11,6 +11,7 @@ import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.frontend.ClientProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
+import org.apache.cxf.binding.soap.SoapFault;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -32,19 +33,43 @@ public class ProcessControllerConfigurationBeanProvider implements Configuration
         this.nodeManagementUrl = nodeManagementUrl;
     }
 
+    public boolean isValid() {
+        boolean valid = false;
+
+        NodeManagementApi managementService = getManagementService();
+        try {
+            Set<NodeManagementApi.NodeHeader> nodeHeaders = managementService.listNodes();
+            valid = nodeHeaders == null || nodeHeaders.isEmpty();
+        } catch ( FindException fe ) {
+            logger.log(Level.WARNING, "Error listing nodes", fe );
+        } catch ( SoapFault sf ) {
+            logger.log(Level.WARNING, "Error listing nodes", sf );
+        }
+
+        return valid;
+    }
+
     public Collection<ConfigurationBean> loadConfiguration() throws ConfigurationException {
         NodeManagementApi managementService = getManagementService();
-
-
         try {
-            for (NodeManagementApi.NodeHeader node : managementService.listNodes() ) {
-                if ( config != null ) {
-                    throw new ConfigurationException("Multiple nodes found, only single node is supported.");
+            Set<NodeManagementApi.NodeHeader> nodeHeaders = managementService.listNodes();
+            if ( nodeHeaders != null && nodeHeaders.size() > 0) {
+                for (NodeManagementApi.NodeHeader node : nodeHeaders ) {
+                    if ( config != null ) {
+                        throw new ConfigurationException("Multiple nodes found, only single node is supported.");
+                    }
+                    config = managementService.getNode(node.getName());
+                    if ( config == null ) {
+                        logger.warning("Could not get configuration for node '"+node.getName()+"'.");
+                    }
                 }
-                config = managementService.getNode(node.getName());
+            } else {
+                logger.info("No nodes configured.");
             }
         } catch ( FindException fe ) {
             throw new ConfigurationException( "Error loading node configuration.", fe );
+        } catch ( SoapFault sf ) {
+            throw new ConfigurationException( "Error loading node configuration", sf );
         }
 
         return toBeans( config );
@@ -52,7 +77,6 @@ public class ProcessControllerConfigurationBeanProvider implements Configuration
 
     public void storeConfiguration(Collection<ConfigurationBean> configuration) throws ConfigurationException {
         NodeManagementApi managementService = getManagementService();
-
         try {
             if ( config != null ) {
                 boolean updated = false;
@@ -81,10 +105,12 @@ public class ProcessControllerConfigurationBeanProvider implements Configuration
                 NodeManagementApi.DatabaseConfigRow config = new NodeManagementApi.DatabaseConfigRow();
                 config.setType(DatabaseType.NODE_ALL);
                 config.setConfig(dbConfig);
-                managementService.createNode( "default", null, getPassword(configuration),new HashSet<NodeManagementApi.DatabaseConfigRow>( Collections.singleton( config ) ) );
+                managementService.createNode( "default", null, getPassword(configuration), new HashSet<NodeManagementApi.DatabaseConfigRow>( Collections.singleton( config ) ) );
             }
         } catch ( ObjectModelException ome ) {
             throw new ConfigurationException( "Error storing node configuration", ome );
+        } catch ( SoapFault sf ) {
+            throw new ConfigurationException( "Error storing node configuration", sf );
         } catch ( NodeManagementApi.RestartRequiredException rre ) {
             logger.log( Level.WARNING, "Restart required to apply configuration." );
         }

@@ -11,6 +11,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.LogManager;
+import java.util.logging.Handler;
 import java.util.*;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
@@ -194,7 +195,7 @@ public class SinkManagerImpl
 
         // Log a message to both startup and regular logs
         logger.info("Redirecting logging to configured log sinks.");
-        StartupHandler.notifyStarted();
+        notifyStarted();
     }
 
     // - PACKAGE
@@ -246,6 +247,17 @@ public class SinkManagerImpl
         String value = LogManager.getLogManager().getProperty(TRAFFIC_LOGGER_NAME + ".useParentHandlers");
         if ( value != null ) {
             trafficLogger.setUseParentHandlers( Boolean.valueOf(value) );
+        }
+    }
+
+    /**
+     * Notify any startup aware Handlers
+     */
+    private void notifyStarted() {
+        for ( Handler handler : Logger.getLogger("").getHandlers() )  {
+            if ( handler instanceof StartupAwareHandler ) {
+                ((StartupAwareHandler)handler).notifyStarted();
+            }
         }
     }
 

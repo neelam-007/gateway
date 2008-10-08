@@ -27,7 +27,7 @@ import java.io.File;
  *
  * @author Steve Jones
  */
-public class StartupHandler extends Handler {
+public class StartupHandler extends Handler implements StartupAwareHandler {
 
     //- PUBLIC
 
@@ -37,7 +37,8 @@ public class StartupHandler extends Handler {
         if ( logToConsole )  {
             delegate = new ConsoleHandler();
         } else {
-            String filepath = getStartupLogFile().getAbsolutePath();
+            File file = getStartupLogFile();
+            String filepath = file.getAbsolutePath();
             delegate =  new FileHandler( filepath, LOG_LIMIT, LOG_COUNT, LOG_APPEND);
         }
     }
@@ -45,7 +46,7 @@ public class StartupHandler extends Handler {
     /**
      * Notify that the system is started so output may be stopped.
      */
-    public static void notifyStarted() {
+    public void notifyStarted() {
         enabled.set(false);
     }
 
@@ -148,8 +149,8 @@ public class StartupHandler extends Handler {
         return logToConsole || enabled.get();
     }
 
-    private File getStartupLogFile() {
-        String path = System.getProperty("com.l7tech.server.home", "/opt/SecureSpan/Gateway/Nodes/default");
+    private File getStartupLogFile() {                              
+        String path = System.getProperty("com.l7tech.server.home", "/opt/SecureSpan/Gateway/node/default");
 
         return new File(new File(new File(path), "var/logs"), "startup_%g_%u.log");
     }

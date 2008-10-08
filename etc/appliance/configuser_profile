@@ -80,6 +80,13 @@ do
                     clear;;
                 2)  clear;
                     (${CONFWIZARD});
+                    if [ $? -eq 2 ] ; then
+                      echo "Node is already configured."
+                    elif [ $? -eq 3 ] ; then
+                      echo "Configuration service not available (please reboot)"
+                    elif [ $? -eq 5 ] ; then
+                      echo "Unexpected error in configuration service."
+                    fi
                     echo "Press enter to continue";
                     read;
                     clear;;

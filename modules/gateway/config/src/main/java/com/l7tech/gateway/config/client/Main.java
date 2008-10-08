@@ -9,17 +9,20 @@ import com.l7tech.gateway.config.client.options.OptionGroup;
 import com.l7tech.util.JdkLoggerConfigurator;
 
 import java.io.Console;
-import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.net.URL;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.JAXBException;
 
 /**
  * Main class for configuration wizard.
@@ -29,62 +32,80 @@ import javax.xml.bind.Unmarshaller;
  * @author steve
  */
 public class Main {
-    
-    public static void main( String[] args ) throws Exception {
+
+    //- PUBLIC
+
+    public static void main( String[] args ) {
         System.setProperty("org.apache.cxf.nofastinfoset", "true");
         JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
 
-        File file = new File( args.length > 0 ? args[0] : "fake.properties");
-        //ConfigurationBeanProvider provider = new PropertiesConfigurationBeanProvider(file);
-        ConfigurationBeanProvider provider = new ProcessControllerConfigurationBeanProvider(new URL("https://127.0.0.1:8765/services/nodeManagementApi"));
-        Collection<ConfigurationBean> configBeanList = Collections.emptyList();
-        if ( file.exists() ) {
-          configBeanList = provider.loadConfiguration();
+        boolean success = false;
+        try {
+            ConfigurationBeanProvider provider = new ProcessControllerConfigurationBeanProvider(new URL("https://127.0.0.1:8765/services/nodeManagementApi"));
+            if ( !provider.isValid() ) {
+                System.exit(3);
+            } else if ( !provider.loadConfiguration().isEmpty() ) {
+                System.exit(2);
+            }
+
+            Collection<ConfigurationBean> configBeanList = Collections.emptyList();
+
+            Map<String,ConfigurationBean> configBeans = new TreeMap<String,ConfigurationBean>();
+            JAXBContext context = JAXBContext.newInstance("com.l7tech.gateway.config.client.options");
+            Unmarshaller unmarshaller = context.createUnmarshaller();
+            OptionSet os = (OptionSet) unmarshaller.unmarshal( Main.class.getResourceAsStream("configTemplates/NewAppliance.xml") );
+
+            initConfig( os, configBeans, configBeanList );
+
+            doWizard( os, configBeans );
+            //doEdit( os, configBeans );
+
+            String summary =
+                    "---------------------\n" +
+                    "Configuration Summary\n" +
+                    "---------------------\n" +
+                    "At any time type \"quit\" to quit\n" +
+                    "Press \"<\" to go to the previous step\n" +
+                    "\n" +
+                    "The following configuration will be applied:";
+
+            System.out.println( summary );
+
+            System.out.println( getConfigurationSummary(os, configBeans) );
+    //        *Database Configuration - Configures the database properties for an SSG
+    //            Setup connection to a database:
+    //                HOSTNAME = gateway.l7tech.com
+    //                USERNAME = gateway
+    //                DATABASE = ssg
+
+            System.out.print( "Press <Enter> to continue.");
+            System.console().readLine();
+
+            System.out.println( "Please wait while the configuration is applied ...\n" +
+                    "\n" +
+                    "---------------------\n" +
+                    "Configuration Results\n" +
+                    "---------------------\n" +
+                    "\n" +
+                    "The configuration was successfully applied.\n" +
+                    "You must restart the SSG in order for the configuration to take effect." );
+
+            provider.storeConfiguration( configBeans.values() );
+            success = true;
+        } catch ( IOException ioe ) {
+            logger.log(Level.WARNING, "Error during configuration", ioe );
+        } catch ( ConfigurationException ce ) {
+            logger.log(Level.WARNING, "Error during configuration", ce );
+        } catch ( JAXBException je ) {
+            logger.log(Level.WARNING, "Error during configuration", je );
         }
-        
-        Map<String,ConfigurationBean> configBeans = new TreeMap<String,ConfigurationBean>();
-        
-        JAXBContext context = JAXBContext.newInstance("com.l7tech.gateway.config.client.options");
-        Unmarshaller unmarshaller = context.createUnmarshaller();
-        OptionSet os = (OptionSet) unmarshaller.unmarshal( Main.class.getResourceAsStream("configTemplates/NewAppliance.xml") );
-        
-        initConfig( os, configBeans, configBeanList );
-        
-        doWizard( os, configBeans );
-        //doEdit( os, configBeans );
 
-        String summary =
-                "---------------------\n" +
-                "Configuration Summary\n" +
-                "---------------------\n" +
-                "At any time type \"quit\" to quit\n" +
-                "Press \"<\" to go to the previous step\n" +
-                "\n" +
-                "The following configuration will be applied:";
-
-        System.out.println( summary );
-
-        System.out.println( getConfigurationSummary(os, configBeans) );
-//        *Database Configuration - Configures the database properties for an SSG
-//            Setup connection to a database:
-//                HOSTNAME = gateway.l7tech.com
-//                USERNAME = gateway
-//                DATABASE = ssg
-
-        System.out.print( "Press <Enter> to continue.");
-        System.console().readLine();
-
-        System.out.println( "Please wait while the configuration is applied ...\n" +
-                "\n" +
-                "---------------------\n" +
-                "Configuration Results\n" +
-                "---------------------\n" +
-                "\n" +
-                "The configuration was successfully applied.\n" +
-                "You must restart the SSG in order for the configuration to take effect." );
-
-        provider.storeConfiguration( configBeans.values() );
+        if (!success) System.exit(5);
     }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(Main.class.getName());
 
     private static String getConfigurationSummary( OptionSet os,
                                                    Map<String,ConfigurationBean> configBeans) {
@@ -120,7 +141,8 @@ public class Main {
         return summary.toString();
     }
 
-    private static void doEdit( OptionSet os, 
+    @SuppressWarnings({"UnusedDeclaration"})
+    private static void doEdit( OptionSet os,
                                 Map<String,ConfigurationBean> configBeans ) throws Exception {
         Console console = System.console();
         System.out.println( os.getDescription() );
@@ -193,7 +215,7 @@ public class Main {
     }    
     
     private static void doWizard( OptionSet os, 
-                                  Map<String,ConfigurationBean> configBeans ) throws Exception {
+                                  Map<String,ConfigurationBean> configBeans ) {
         Console console = System.console();
         if ( os.getPrompt() != null ) {
             System.out.println( os.getPrompt() );
