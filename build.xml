@@ -1396,21 +1396,27 @@
     <!--
       Generate a version string if not supplied
     -->
-    <target name="package.readversion" unless="build.version" depends="package.defaultrpmversion, package.defaultemrpmversion">
+    <target name="package.readversion" depends="package.readversion.securespan, package.readversion.em">
+        <echo level="info">Build is using SS version: "${build.version}" [${build.rpmversion}]</echo>
+        <echo level="info">Build is using EM version: "${build.em.version}" [${build.em.rpmversion}]</echo>
+    </target>
+    <target name="package.readversion.securespan" unless="build.version" depends="package.defaultrpmversion">
         <!-- Set properties to keep IDEA happy -->
         <property name="build.version.major" value=""/>
         <property name="build.version.minor" value=""/>
         <property name="build.version.subminor" value=""/>
         <property name="build.version.label" value=""/>
-        <property name="build.em.version.major" value=""/>
-        <property name="build.em.version.minor" value=""/>
-        <property name="build.em.version.subminor" value=""/>
-        <property name="build.em.version.label" value=""/>
 
         <!-- Generate build.version from parts in build.version file, rpm version omits the label since '-' is not permitted in rpms -->
         <property name="build.rpmversion" value="${build.version.major}.${build.version.minor}.${build.version.subminor}"/>
         <property name="build.version" value="${build.version.major}.${build.version.minor}.${build.version.subminor}${build.version.label}"/>
-        <echo level="info">Build is using version: "${build.version}"</echo>
+    </target>
+    <target name="package.readversion.em" unless="build.em.version" depends="package.defaultemrpmversion">
+        <!-- Set properties to keep IDEA happy -->
+        <property name="build.em.version.major" value=""/>
+        <property name="build.em.version.minor" value=""/>
+        <property name="build.em.version.subminor" value=""/>
+        <property name="build.em.version.label" value=""/>
 
         <!-- Generate build.em.version from parts in build.version file, rpm version omits the label since '-' is not permitted in rpms -->
         <property name="build.em.rpmversion" value="${build.em.version.major}.${build.em.version.minor}.${build.em.version.subminor}"/>
