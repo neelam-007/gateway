@@ -26,6 +26,7 @@ import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.TestingHttpClientFactory;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.HexUtils;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.GlobalTarariContext;
@@ -49,6 +50,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.PasswordAuthentication;
 
 /**
  * Functional tests for message processing.
@@ -90,6 +92,7 @@ public class PolicyProcessingTest extends TestCase {
         {"/ipaddressrange", "POLICY_iprange.xml"},
         {"/xpathcreds", "POLICY_xpathcreds.xml"},
         {"/usernametoken", "POLICY_usernametoken.xml"},
+        {"/httpbasic", "POLICY_httpbasic.xml"},
         {"/httproutecookie", "POLICY_httproutecookie.xml"},
         {"/httproutenocookie", "POLICY_httproutenocookie.xml"},
         {"/httproutetaicredchain", "POLICY_httproutetaicredchain.xml"},
@@ -267,7 +270,7 @@ public class PolicyProcessingTest extends TestCase {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
 
         processMessage("/ipaddressrange", requestMessage1, 0);
-        processMessage("/ipaddressrange", requestMessage1, "10.0.0.2", AssertionStatus.FALSIFIED.getNumeric(), false);
+        processMessage("/ipaddressrange", requestMessage1, "10.0.0.2", AssertionStatus.FALSIFIED.getNumeric(), null, null);
     }
 
     /**
@@ -292,6 +295,18 @@ public class PolicyProcessingTest extends TestCase {
         processMessage("/usernametoken", requestMessage1, 0);
         processMessage("/usernametoken", requestMessage2, 0);
         processMessage("/usernametoken", requestMessage3, AssertionStatus.AUTH_REQUIRED.getNumeric());
+    }
+
+    /**
+     * Test http basic auth with latin-1 charset
+     */
+    public void testHttpBasic() throws Exception {
+        String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
+
+        String username = "\u00e9\u00e2\u00e4\u00e5";
+        Result result = processMessage("/httpbasic", requestMessage1, "10.0.0.1", 0, null, new PasswordAuthentication(username, "password".toCharArray()));
+        assertTrue("Credential present", !result.context.getCredentials().isEmpty());
+        assertEquals("Username correct", username, result.context.getCredentials().iterator().next().getLogin());
     }
 
     /**
@@ -333,7 +348,7 @@ public class PolicyProcessingTest extends TestCase {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
 
-        processMessage("/httproutetaicredchain", requestMessage1, "10.0.0.1", 0, true);
+        processMessage("/httproutetaicredchain", requestMessage1, "10.0.0.1", 0, new PasswordAuthentication("test", "password".toCharArray()), null);
 
         assertTrue("Outbound request TAI header missing", headerExists(mockClient.getParams().getExtraHeaders(), "IV_USER", "test"));
         assertTrue("Outbound request TAI cookie missing", headerExists(mockClient.getParams().getExtraHeaders(), "Cookie", "IV_USER=test"));
@@ -427,13 +442,13 @@ public class PolicyProcessingTest extends TestCase {
      *
      */
     private Result processMessage(String uri, String message, int expectedStatus) throws IOException {
-        return processMessage(uri, message, "10.0.0.1", expectedStatus, false);
+        return processMessage(uri, message, "10.0.0.1", expectedStatus, null, null);
     }
 
     /**
      *
      */
-    private Result processMessage(String uri, String message, String requestIp, int expectedStatus, boolean addAuth) throws IOException {
+    private Result processMessage(String uri, String message, String requestIp, int expectedStatus, PasswordAuthentication contextAuth, PasswordAuthentication transportAuth) throws IOException {
         MockServletContext servletContext = new MockServletContext();
         MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
         MockHttpServletResponse hresponse = new MockHttpServletResponse();
@@ -452,6 +467,9 @@ public class PolicyProcessingTest extends TestCase {
         hrequest.setContent(message.getBytes());
         ConnectionId.setConnectionId(new ConnectionId(0,0));
         hrequest.setAttribute("com.l7tech.server.connectionIdentifierObject", ConnectionId.getConnectionId());
+        if ( transportAuth != null ) {
+            hrequest.addHeader( "Authorization", "Basic " + HexUtils.encodeBase64( (transportAuth.getUserName() + ":" + new String(transportAuth.getPassword())).getBytes("ISO-8859-1") ) );    
+        }
 
         // Initialize processing context
         final Message response = new Message();
@@ -486,10 +504,10 @@ public class PolicyProcessingTest extends TestCase {
             request.initialize(stashManager, ctype, hrequest.getInputStream());
 
             // Add fake auth if requested
-            if (addAuth) {
+            if (contextAuth != null) {
                 UserBean user = new UserBean();
-                user.setLogin("test");
-                user.setCleartextPassword("password");
+                user.setLogin(contextAuth.getUserName());
+                user.setCleartextPassword(new String(contextAuth.getPassword()));
                 context.addAuthenticationResult(new AuthenticationResult(user));
             }
 
