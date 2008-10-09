@@ -15,17 +15,19 @@
 		 topMargin="20"
 		 bottomMargin="20"
 		 whenNoDataType="NoDataSection"
+		 scriptletClass="com.l7tech.server.ems.standardreports.ScripletHelper"
 		 isTitleNewPage="false"
 		 isSummaryNewPage="false">
-	<property name="ireport.scriptlethandling" value="0" />
+	<property name="ireport.scriptlethandling" value="2" />
 	<property name="ireport.encoding" value="UTF-8" />
 	<import value="java.util.*" />
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
 
-	<style 
+	<style
 		name="TableCell"
 		isDefault="true"
+		mode="Transparent"
 		vAlign="Middle"
 		fontName="SansSerif"
 		fontSize="10"
@@ -38,7 +40,7 @@
 		isPdfEmbedded="false"
 	>
 	</style>
-	<style 
+	<style
 		name="FrameStyle"
 		isDefault="false"
 		vAlign="Middle"
@@ -50,7 +52,7 @@
 					<rightPen lineWidth="1.0" lineStyle="Solid"/>
 </box>
 	</style>
-	<style 
+	<style
 		name="FrameTableBottom"
 		isDefault="false"
 		backcolor="#D6D6D6"
@@ -63,7 +65,7 @@
 					<rightPen lineWidth="1.0"/>
 </box>
 	</style>
-	<style 
+	<style
 		name="FrameTableTop"
 		isDefault="false"
 		backcolor="#E8EDB4"
@@ -74,7 +76,7 @@
 					<rightPen lineWidth="1.0"/>
 </box>
 	</style>
-	<style 
+	<style
 		name="FrameHeaderTableRow"
 		isDefault="false"
 		backcolor="#DBD3B0"
@@ -84,11 +86,20 @@
 					<rightPen lineWidth="1.0"/>
 </box>
 	</style>
-	<style 
+	<style
 		name="FrameDetailTableRow"
 		isDefault="false"
 		backcolor="#F8F8F8"
 		vAlign="Middle"
+	>
+					<box>					<leftPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+</box>
+	</style>
+	<style
+		name="FrameTotalTableRow"
+		isDefault="false"
+		backcolor="#D6D6D6"
 	>
 					<box>					<leftPen lineWidth="1.0"/>
 					<rightPen lineWidth="1.0"/>
@@ -124,6 +135,7 @@
 	<parameter name="OPERATIONS" isForPrompting="false" class="java.util.List">
 		<defaultValueExpression ><![CDATA[new ArrayList()]]></defaultValueExpression>
 	</parameter>
+	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean"/>
 	<parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(com.l7tech.server.ems.standardreports.Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
 	</parameter>
@@ -145,13 +157,13 @@
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?$P{relativeEndTimeMilli}:$P{absoluteEndTimeMilli}]]></defaultValueExpression>
 	</parameter>
 	<parameter name="timePeriodAsString" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[$P{RELATIVE_NUM_OF_TIME_UNITS} + " " 
+		<defaultValueExpression ><![CDATA[$P{RELATIVE_NUM_OF_TIME_UNITS} + " "
 + $P{RELATIVE_TIME_UNIT}.substring(0,1).toUpperCase()
 + $P{RELATIVE_TIME_UNIT}.toLowerCase().substring(1, $P{RELATIVE_TIME_UNIT}.length())
 + (($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue() > 1)? "s":"")]]></defaultValueExpression>
 	</parameter>
 	<parameter name="serviceIdInClause" isForPrompting="false" class="java.lang.String">
-		<parameterDescription><![CDATA[When SERVICE_NAME_TO_ID_MAP is null or has empty values, then this parameter is the empty string '' otherwise it has a valid 
+		<parameterDescription><![CDATA[When SERVICE_NAME_TO_ID_MAP is null or has empty values, then this parameter is the empty string '' otherwise it has a valid
 IN clause with and 'AND before it]]></parameterDescription>
 		<defaultValueExpression ><![CDATA[($P{SERVICE_NAME_TO_ID_MAP} == null || $P{SERVICE_NAME_TO_ID_MAP}.values() == null
  || $P{SERVICE_NAME_TO_ID_MAP}.values().isEmpty())?
@@ -177,8 +189,9 @@ IN clause with and 'AND before it]]></parameterDescription>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.createMappingQuery($P{startTimeMilli},
 		 $P{endTimeMilli}, $P{SERVICE_NAME_TO_ID_MAP}.values(), $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE},
-$P{resolution}.intValue(), false, $P{OPERATIONS})]]></defaultValueExpression>
+$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></defaultValueExpression>
 	</parameter>
+	<parameter name="JR_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport"/>
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
 	<field name="SERVICE_ID" class="java.lang.Long"/>
@@ -278,6 +291,31 @@ $P{resolution}.intValue(), false, $P{OPERATIONS})]]></defaultValueExpression>
 		<variableExpression><![CDATA[($F{BRTA}.equals(new Double(0)))? null: $F{BRTA}]]></variableExpression>
 	</variable>
 	<variable name="AP_REPORT_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
+		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
+	</variable>
+	<variable name="THROUGHPUT_OPERATION_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Sum">
+		<variableExpression><![CDATA[$F{THROUGHPUT}]]></variableExpression>
+	</variable>
+	<variable name="FRTM_OPERATION_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Lowest">
+		<variableExpression><![CDATA[($F{FRTM} == null || $F{FRTM}.equals(new Integer(0)) )? new Integer(Integer.MAX_VALUE)
+: $F{FRTM}]]></variableExpression>
+	</variable>
+	<variable name="FRTMX_OPERATION_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Highest">
+		<variableExpression><![CDATA[($F{FRTMX} == null || $F{FRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
+	</variable>
+	<variable name="FRTA_OPERATION_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Average">
+		<variableExpression><![CDATA[($F{FRTA}.equals(new Double(0)))? null: $F{FRTA}]]></variableExpression>
+	</variable>
+	<variable name="BRTM_OPERATION_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Lowest">
+		<variableExpression><![CDATA[($F{BRTM} == null || $F{BRTM}.equals(new Integer(0)))? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
+	</variable>
+	<variable name="BRTMX_OPERATION_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Highest">
+		<variableExpression><![CDATA[($F{BRTMX} == null || $F{BRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
+	</variable>
+	<variable name="BRTA_OPERATION_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Average">
+		<variableExpression><![CDATA[($F{BRTA}.equals(new Double(0)))? null: $F{BRTA}]]></variableExpression>
+	</variable>
+	<variable name="AP_OPERATION_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Average">
 		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
 	</variable>
 
@@ -449,7 +487,7 @@ $P{resolution}.intValue(), false, $P{OPERATIONS})]]></defaultValueExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA["Service Name"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Service & Operation"]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupHeader>
@@ -509,7 +547,7 @@ $P{resolution}.intValue(), false, $P{OPERATIONS})]]></defaultValueExpression>
 					<textElement>
 						<font pdfFontName="Helvetica-Bold" isBold="false"/>
 					</textElement>
-				<text><![CDATA[Totals]]></text>
+				<text><![CDATA[Mapping Totals]]></text>
 				</staticText>
 				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
@@ -601,13 +639,37 @@ $P{resolution}.intValue(), false, $P{OPERATIONS})]]></defaultValueExpression>
 		<group  name="SERVICE_ID_GROUP" >
 			<groupExpression><![CDATA[$F{SERVICE_ID}]]></groupExpression>
 			<groupHeader>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
+			<band height="18"  isSplitAllowed="true" >
+				<printWhenExpression><![CDATA[new Boolean(!$F{SERVICE_OPERATION_VALUE}.equals("1"))]]></printWhenExpression>
+				<frame>					<reportElement
+						style="FrameDetailTableRow"
+						mode="Opaque"
+						x="0"
+						y="0"
+						width="534"
+						height="18"
+						key="frame-18"/>
+					<box></box>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="3"
+						y="0"
+						width="529"
+						height="17"
+						key="textField-138"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Service: "+$F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
+				</textField>
+				</frame>			</band>
 			</groupHeader>
 			<groupFooter>
 			<band height="18"  isSplitAllowed="true" >
 				<frame>					<reportElement
-						style="FrameDetailTableRow"
+						style="FrameTotalTableRow"
 						mode="Opaque"
 						x="0"
 						y="0"
@@ -731,7 +793,146 @@ $P{resolution}.intValue(), false, $P{OPERATIONS})]]></defaultValueExpression>
 					<textElement>
 						<font/>
 					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[$F{SERVICE_NAME} + "[" + $F{ROUTING_URI} + "]"]]></textFieldExpression>
+				<textFieldExpression   class="java.lang.String"><![CDATA["Service Totals"]]></textFieldExpression>
+				</textField>
+				</frame>			</band>
+			</groupFooter>
+		</group>
+		<group  name="SERVICE_OPERATION" >
+			<groupExpression><![CDATA[$F{SERVICE_OPERATION_VALUE}]]></groupExpression>
+			<groupHeader>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+			</groupHeader>
+			<groupFooter>
+			<band height="18"  isSplitAllowed="true" >
+				<printWhenExpression><![CDATA[new Boolean(!$F{SERVICE_OPERATION_VALUE}.equals("1"))]]></printWhenExpression>
+				<frame>					<reportElement
+						style="FrameDetailTableRow"
+						mode="Opaque"
+						x="0"
+						y="0"
+						width="534"
+						height="18"
+						key="frame-17"/>
+					<box></box>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="118"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-129"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{THROUGHPUT_OPERATION_SUM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="170"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-130"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Integer"><![CDATA[$V{FRTM_OPERATION_MIN}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="222"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-131"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Integer"><![CDATA[$V{FRTMX_OPERATION_MAX}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="274"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-132"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[$V{FRTA_OPERATION_AVG}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="326"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-133"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Integer"><![CDATA[$V{BRTM_OPERATION_MIN}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="378"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-134"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Integer"><![CDATA[$V{BRTMX_OPERATION_MAX}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="430"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-135"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[$V{BRTA_OPERATION_AVG}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						x="482"
+						y="0"
+						width="52"
+						height="17"
+						key="textField-136"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[$V{AP_OPERATION_AVG}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="TableCell"
+						x="5"
+						y="0"
+						width="113"
+						height="17"
+						key="textField-137"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[$F{SERVICE_OPERATION_VALUE}]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
 			</groupFooter>

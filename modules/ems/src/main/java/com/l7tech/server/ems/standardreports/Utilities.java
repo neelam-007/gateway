@@ -429,7 +429,7 @@ public class Utilities {
         boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
 
         boolean keyValuesSupplied = checkMappingQueryParams(keys,
-                keyValueConstraints, valueConstraintAndOrLike);
+                keyValueConstraints, valueConstraintAndOrLike, isDetail, operations);
 
         if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
         
@@ -437,7 +437,7 @@ public class Utilities {
         
         addOperationToSelect(isDetail, sb);
 
-        createCaseSQL(keys, sb);
+        addCaseSQL(keys, sb);
 
         sb.append(mappingJoin);
 
@@ -456,12 +456,12 @@ public class Utilities {
         }
 
         if(keyValuesSupplied){
-            createMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
+            addMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
         }
 
         addGroupBy(sb);
 
-        addMappingOrder(sb, true);
+        addMappingOrder(sb);
 
         System.out.println(sb.toString());
         return sb.toString();
@@ -548,13 +548,13 @@ public class Utilities {
         boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
 
         boolean keyValuesSupplied = checkMappingQueryParams(keys,
-                keyValueConstraints, valueConstraintAndOrLike);
+                keyValueConstraints, valueConstraintAndOrLike, isDetail, operations);
 
         if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
         
         StringBuilder sb = new StringBuilder(distinctFrom);
 
-        createCaseSQL(keys,sb);
+        addCaseSQL(keys,sb);
 
         addOperationToSelect(isDetail, sb);
 
@@ -575,10 +575,10 @@ public class Utilities {
         }
         
         if(keyValuesSupplied){//then the lengths have to match from above constraint
-            createMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
+            addMappingConstraint(keys, keyValueConstraints, valueConstraintAndOrLike, sb);
         }
 
-        addMappingOrder(sb, true);
+        addMappingOrder(sb);
 
         System.out.println(sb.toString());
         return sb.toString();
@@ -626,9 +626,14 @@ public class Utilities {
         }
     }
 
-    private static boolean checkMappingQueryParams(List<String> keys, List<String> keyValueConstraints, List<String> valueConstraintAndOrLike) {
+    private static boolean checkMappingQueryParams(List<String> keys, List<String> keyValueConstraints,
+                                                   List<String> valueConstraintAndOrLike,
+                                                   boolean isDetail,
+                                                   List<String> operations) {
         if(keys == null || keys.isEmpty()){
-            throw new IllegalArgumentException("Mapping queries require at least one value in the keys list");
+            if(!isDetail){
+                throw new IllegalArgumentException("Mapping queries require at least one value in the keys list");
+            }
         }
 
         boolean keyValuesSupplied = false;
@@ -676,24 +681,16 @@ public class Utilities {
         return false;
     }
 
-    private static void addMappingOrder(StringBuilder sb, boolean mappingsFirst) {
+    private static void addMappingOrder(StringBuilder sb) {
         sb.append(" ORDER BY ");
-        if(mappingsFirst){
-            for(int i = 0; i < NUM_MAPPING_KEYS; i++){
-                if(i != 0) sb.append(", ");
-                sb.append("MAPPING_VALUE_" + (i+1));
-            }
-            sb.append(" ,p.objectid, SERVICE_OPERATION_VALUE ");
-        }else{
-            sb.append(" p.objectid, SERVICE_OPERATION_VALUE, ");
-            for(int i = 0; i < NUM_MAPPING_KEYS; i++){
-                if(i != 0) sb.append(", ");
-                sb.append("MAPPING_VALUE_" + (i+1));
-            }
+        for(int i = 0; i < NUM_MAPPING_KEYS; i++){
+            if(i != 0) sb.append(", ");
+            sb.append("MAPPING_VALUE_" + (i+1));
         }
+        sb.append(" ,p.objectid, SERVICE_OPERATION_VALUE ");
     }
 
-    private static void createMappingConstraint(List<String> keys, List<String> keyValueConstraints, List<String> valueConstraintAndOrLike, StringBuilder sb) {
+    private static void addMappingConstraint(List<String> keys, List<String> keyValueConstraints, List<String> valueConstraintAndOrLike, StringBuilder sb) {
         for(int i = 0; i < keys.size(); i++){
             boolean useAnd = true;
             if( i < valueConstraintAndOrLike.size()){
@@ -726,10 +723,12 @@ public class Utilities {
         sb.append(")");
     }
 
-    private static void createCaseSQL(List<String> keys, StringBuilder sb) {
+    private static void addCaseSQL(List<String> keys, StringBuilder sb) {
         int max = 0;
-        for(int i = 0; i < keys.size(); i++,max++){
-            sb.append(",").append(createCaseSection(keys.get(i), i+1));
+        if(keys != null && !keys.isEmpty()){
+            for(int i = 0; i < keys.size(); i++,max++){
+                sb.append(",").append(addCaseSQLForKey(keys.get(i), i+1));
+            }
         }
 
         //if were not using all 5 possible mappings, then we need to create the missing to help jasper report impl
@@ -739,7 +738,7 @@ public class Utilities {
     }
 
 
-    private static String createCaseSection(String key, int index){
+    private static String addCaseSQLForKey(String key, int index){
        /*CASE WHEN mcmk.mapping1_key = 'IP_ADDRESS' THEN mcmv.mapping1_value
 WHEN mcmk.mapping1_key = 'IP_ADDRESS' THEN mcmv.mapping1_value
 WHEN mcmk.mapping2_key = 'IP_ADDRESS' THEN mcmv.mapping2_value
@@ -898,7 +897,19 @@ Value is included in all or none, comment is just illustrative
         values.add("Bronze");
         sql = createMappingQuery(null, null, 229376L, keys, values, null,2, false, null);
         System.out.println("Subreport no detail sql is: " + sql);
-        
+
+        List<String> operations = new ArrayList<String>();
+        operations.add("listProducts");
+        operations.add("listOrders");
+
+        sql = createMappingQuery(null, null, new ArrayList<String>(), keys, values, null,2, true, operations);
+        System.out.println("Operation sql specific keys and value is: " + sql);
+
+        sql = createMappingQuery(null, null, new ArrayList<String>(), null, null, null,2, true, operations);
+        System.out.println("Operation sql is: " + sql);
+
+        sql = createMappingQuery(null, null, new ArrayList<String>(), null, null, null,2, true, null);
+        System.out.println("Empty operation sql is: " + sql);
 
     }
 
