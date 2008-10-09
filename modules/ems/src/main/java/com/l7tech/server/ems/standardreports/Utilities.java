@@ -492,6 +492,7 @@ public class Utilities {
         List<String> operationList = null;
         if(operation != null){
             operationList = new ArrayList<String>();
+            operationList.add(operation);
         }
         return createMappingQuery(startTimeInclusiveMilli, endTimeInclusiveMilli, sIds, keys, keyValueConstraints,
                 valueConstraintAndOrLike, resolution, isDetail, operationList);

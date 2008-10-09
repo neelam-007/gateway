@@ -206,7 +206,7 @@ public class ReportApp
         b = Boolean.parseBoolean(prop.getProperty(IS_DETAIL).toString());
         parameters.put(IS_DETAIL, b);
         List<String> operations = loadListFromProperties(OPERATIONS, prop);
-        parameters.put(OPERATIONS, operations);        
+        parameters.put(OPERATIONS, operations);
 
         //Object o = JRLoader.loadObject("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/"+fileName+".jasper");
         Object o = JRLoader.loadObject(fileName+".jasper");

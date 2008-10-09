@@ -24,7 +24,7 @@
 	<import value="net.sf.jasperreports.engine.*" />
 	<import value="net.sf.jasperreports.engine.data.*" />
 
-	<style 
+	<style
 		name="DefaultText"
 		isDefault="true"
 	>
@@ -143,6 +143,9 @@
 					<subreportParameter  name="MAPPING_KEYS">
 						<subreportParameterExpression><![CDATA[$P{MAPPING_KEYS}]]></subreportParameterExpression>
 					</subreportParameter>
+					<subreportParameter  name="IS_DETAIL">
+						<subreportParameterExpression><![CDATA[$P{IS_DETAIL}]]></subreportParameterExpression>
+					</subreportParameter>
 					<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 					<returnValue subreportVariable="THROUGHPUT" toVariable="THROUGHPUT_SUM" calculation="Sum"/>
 					<returnValue subreportVariable="FRTM_MIN" toVariable="FRTM_MIN" calculation="Lowest"/>
@@ -152,7 +155,7 @@
 					<returnValue subreportVariable="BRTMX_MAX" toVariable="BRTMX_MAX" calculation="Highest"/>
 					<returnValue subreportVariable="BRTA_AVG" toVariable="BRTA_AVG" calculation="Average"/>
 					<returnValue subreportVariable="AP_AVG" toVariable="AP_AVG" calculation="Average"/>
-					<subreportExpression  class="java.lang.String"><![CDATA["./PS_SubIntervalMasterReport_subreport0.jasper"]]></subreportExpression>
+					<subreportExpression  class="java.lang.String"><![CDATA["./PS_SubIntervalMasterReport_subreport0_Detail.jasper"]]></subreportExpression>
 				</subreport>
 			</band>
 		</detail>

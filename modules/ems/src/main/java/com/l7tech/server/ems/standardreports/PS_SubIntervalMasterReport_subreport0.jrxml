@@ -41,7 +41,7 @@
 		<defaultValueExpression ><![CDATA[($P{INTERVAL_UNIT_OF_TIME}.equals( "HOUR" ))?new Integer(1):new Integer(2)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="valueList" isForPrompting="false" class="java.util.List">
-		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.createValueList($P{MAPPING_KEYS}, 
+		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.createValueList($P{MAPPING_KEYS},
 new String[]{$P{MAPPING_VALUE_1}, $P{MAPPING_VALUE_2}, $P{MAPPING_VALUE_3}, $P{MAPPING_VALUE_4},
 $P{MAPPING_VALUE_5}})]]></defaultValueExpression>
 	</parameter>
