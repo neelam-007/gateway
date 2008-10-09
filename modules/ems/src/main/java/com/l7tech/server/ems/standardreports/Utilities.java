@@ -23,6 +23,12 @@ public class Utilities {
     private static final SimpleDateFormat WEEK_YEAR_DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd");
     private static final SimpleDateFormat MONTH_DATE_FORMAT = new SimpleDateFormat("yyyy MMM");
 
+    /**
+     * The ';' character is used as a placeholder for sql column values, primiarly because no operation name of
+     * value ';' is valid in a wsdl.
+     */
+    public static final String SQL_PLACE_HOLDER =  ";";
+
     public static final String HOUR = "HOUR";
     public static final String DAY = "DAY";
     public static final String WEEK = "WEEK";
@@ -502,7 +508,8 @@ public class Utilities {
         if(isDetail){
             sb.append(",  mcmv.service_operation AS SERVICE_OPERATION_VALUE");
         }else{
-            sb.append(",  1 AS SERVICE_OPERATION_VALUE");
+            //sb.append(",  1 AS SERVICE_OPERATION_VALUE");
+            sb.append(",  '" + SQL_PLACE_HOLDER + "' AS SERVICE_OPERATION_VALUE");
         }
     }
 
@@ -603,8 +610,8 @@ public class Utilities {
 
         for (int i = 0; i < args.length && i < keys.size(); i++) {
             String s = args[i];
-            if (s == null || s.equals("1")) throw new IllegalArgumentException("Any value of args with a valid index " +
-                    "into keys, must contain a real value and not null or 1");
+            if (s == null || s.equals(SQL_PLACE_HOLDER)) throw new IllegalArgumentException("Any value of args with a valid index " +
+                    "into keys, must contain a real value and not null or " + SQL_PLACE_HOLDER);
             returnList.add(s);
         }
 
@@ -734,7 +741,8 @@ public class Utilities {
 
         //if were not using all 5 possible mappings, then we need to create the missing to help jasper report impl
         for(int i = max+1; i <= NUM_MAPPING_KEYS; i++){
-            sb.append(", 1 AS MAPPING_VALUE_"+i);
+            //sb.append(", 1 AS MAPPING_VALUE_"+i);
+            sb.append(", '"+SQL_PLACE_HOLDER+"' AS MAPPING_VALUE_"+i);
         }
     }
 
@@ -797,6 +805,11 @@ Value is included in all or none, comment is just illustrative
             sb.append(")");
         }
         return sb.toString();
+    }
+
+    public static boolean isPlaceHolderValue(String testVal){
+        if(testVal == null || testVal.equals("")) return false;
+        else return testVal.equals(SQL_PLACE_HOLDER);
     }
     
     public static void main(String [] args) throws ParseException {

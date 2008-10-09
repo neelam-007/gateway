@@ -47,8 +47,7 @@ public class ScripletHelper extends JRDefaultScriptlet {
 
             JRFillField jrFillField = (JRFillField) this.fieldsMap.get(SERVICE_OPERATION_VALUE);
             String operation = (String) jrFillField.getValue();
-            //todo [Donal] Remove constraint on operation name not being possible to be equal to 1
-            if(operation.equals("1")){
+            if(operation.equals(Utilities.SQL_PLACE_HOLDER)){
                 JRFillGroup jrFillGroup = null;
                 for(JRFillGroup fillGroup: this.groups){
                     if(fillGroup.getName().equals(s)){

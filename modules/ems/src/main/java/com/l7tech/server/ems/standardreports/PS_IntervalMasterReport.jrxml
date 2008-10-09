@@ -302,11 +302,12 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></def
 						<font isBold="true"/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["Mapping Value: " +
-((($F{MAPPING_VALUE_1}.equals("1"))?"":$F{MAPPING_VALUE_1})+" "+
-(($F{MAPPING_VALUE_2}.equals("1"))?"":$F{MAPPING_VALUE_2})+" "+
-(($F{MAPPING_VALUE_3}.equals("1"))?"":$F{MAPPING_VALUE_3})+" "+
-(($F{MAPPING_VALUE_4}.equals("1"))?"":$F{MAPPING_VALUE_4})+" "+
-(($F{MAPPING_VALUE_5}.equals("1"))?"":$F{MAPPING_VALUE_5})
+(
+((com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{MAPPING_VALUE_1}))?"":$F{MAPPING_VALUE_1})+" "+
+((com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{MAPPING_VALUE_2}))?"":$F{MAPPING_VALUE_2})+" "+
+((com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{MAPPING_VALUE_3}))?"":$F{MAPPING_VALUE_3})+" "+
+((com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{MAPPING_VALUE_4}))?"":$F{MAPPING_VALUE_4})+" "+
+((com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{MAPPING_VALUE_5}))?"":$F{MAPPING_VALUE_5})
 ).trim()]]></textFieldExpression>
 				</textField>
 				</frame>			</band>
@@ -770,7 +771,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></def
 			<groupExpression><![CDATA[$F{SERVICE_OPERATION_VALUE}]]></groupExpression>
 			<groupHeader>
 			<band height="18"  isSplitAllowed="true" >
-				<printWhenExpression><![CDATA[new Boolean(!$F{SERVICE_OPERATION_VALUE}.equals("1"))]]></printWhenExpression>
+				<printWhenExpression><![CDATA[new Boolean(!com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE}))]]></printWhenExpression>
 				<frame>					<reportElement
 						style="FrameDetailTableRow"
 						mode="Opaque"
@@ -798,7 +799,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></def
 			</groupHeader>
 			<groupFooter>
 			<band height="18"  isSplitAllowed="true" >
-				<printWhenExpression><![CDATA[new Boolean(!$F{SERVICE_OPERATION_VALUE}.equals("1"))]]></printWhenExpression>
+				<printWhenExpression><![CDATA[new Boolean(!com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE}))]]></printWhenExpression>
 				<frame>					<reportElement
 						style="TableCell"
 						mode="Opaque"
