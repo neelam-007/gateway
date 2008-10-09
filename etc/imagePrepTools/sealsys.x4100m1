@@ -308,8 +308,14 @@ update)
 echo ""
 echo "updating sealsys with latest version from trunk"
 echo ""
-wget "http://sarek.l7tech.com:9090/browse/~raw,r=trunk/UneasyRooster/trunk/etc/imagePrepTools/sealsys.x4100m1" -O sealsys
-chmod +x ./sealsys
+wget -nv "http://sarek.l7tech.com:9090/browse/~raw,r=trunk/UneasyRooster/trunk/etc/imagePrepTools/sealsys.x4100m1" -O sealsys.new
+if [ -s sealsys.new ] ; then
+	mv sealsys.new sealsys
+	chmod +x ./sealsys
+else 
+	echo "Error updating sealsys.  Is the network up?"
+fi
+
 
 ;;
 
