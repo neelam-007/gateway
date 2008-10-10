@@ -136,6 +136,8 @@
 		<defaultValueExpression ><![CDATA[new ArrayList()]]></defaultValueExpression>
 	</parameter>
 	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean"/>
+	<parameter name="USE_USER" isForPrompting="false" class="java.lang.Boolean"/>
+	<parameter name="AUTHENTICATED_USER" isForPrompting="false" class="java.util.List"/>
 	<parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
 		<defaultValueExpression ><![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(com.l7tech.server.ems.standardreports.Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT})): null]]></defaultValueExpression>
 	</parameter>
@@ -189,7 +191,7 @@ IN clause with and 'AND before it]]></parameterDescription>
 	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
 		<defaultValueExpression ><![CDATA[com.l7tech.server.ems.standardreports.Utilities.createMappingQuery($P{startTimeMilli},
 		 $P{endTimeMilli}, $P{SERVICE_NAME_TO_ID_MAP}.values(), $P{MAPPING_KEYS}, $P{MAPPING_VALUES}, $P{VALUE_EQUAL_OR_LIKE},
-$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></defaultValueExpression>
+$P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS}, $P{USE_USER}.booleanValue(), $P{AUTHENTICATED_USER})]]></defaultValueExpression>
 	</parameter>
 	<parameter name="JR_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport"/>
 	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
@@ -211,6 +213,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></def
 	<field name="MAPPING_VALUE_3" class="java.lang.String"/>
 	<field name="MAPPING_VALUE_4" class="java.lang.String"/>
 	<field name="MAPPING_VALUE_5" class="java.lang.String"/>
+	<field name="AUTHENTICATED_USER" class="java.lang.String"/>
 
 	<variable name="SERVICE_ID" class="java.lang.Long" resetType="Report" calculation="Nothing">
 		<variableExpression><![CDATA[$F{SERVICE_ID}]]></variableExpression>
@@ -321,7 +324,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></def
 
 		<group  name="MAPPING_VALUES_GROUP" >
 			<groupExpression><![CDATA[$F{MAPPING_VALUE_1}+$F{MAPPING_VALUE_2}+$F{MAPPING_VALUE_3}+$F{MAPPING_VALUE_4}
-+$F{MAPPING_VALUE_5}]]></groupExpression>
++$F{MAPPING_VALUE_5}+$F{AUTHENTICATED_USER}]]></groupExpression>
 			<groupHeader>
 			<band height="36"  isSplitAllowed="true" >
 				<frame>					<reportElement
@@ -333,12 +336,12 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></def
 						height="18"
 						key="frame-7"/>
 					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Group" evaluationGroup="MAPPING_VALUES_GROUP"  hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Group" evaluationGroup="MAPPING_VALUES_GROUP"  hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
 						x="3"
 						y="0"
-						width="436"
+						width="531"
 						height="17"
 						key="textField-102"/>
 					<box></box>
@@ -346,13 +349,10 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></def
 						<font isBold="true"/>
 					</textElement>
 				<textFieldExpression   class="java.lang.String"><![CDATA["Mapping Value: " +
-(
-((com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{MAPPING_VALUE_1}))?"":$F{MAPPING_VALUE_1})+" "+
-((com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{MAPPING_VALUE_2}))?"":$F{MAPPING_VALUE_2})+" "+
-((com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{MAPPING_VALUE_3}))?"":$F{MAPPING_VALUE_3})+" "+
-((com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{MAPPING_VALUE_4}))?"":$F{MAPPING_VALUE_4})+" "+
-((com.l7tech.server.ems.standardreports.Utilities.isPlaceHolderValue($F{MAPPING_VALUE_5}))?"":$F{MAPPING_VALUE_5})
-).trim()]]></textFieldExpression>
+com.l7tech.server.ems.standardreports.Utilities.getMappingValueDisplayString(
+$F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, 
+$F{MAPPING_VALUE_5}}, $P{MAPPING_KEYS})
+]]></textFieldExpression>
 				</textField>
 				</frame>				<frame>					<reportElement
 						style="FrameHeaderTableRow"
@@ -651,7 +651,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{OPERATIONS})]]></def
 						height="18"
 						key="frame-18"/>
 					<box></box>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
 					<reportElement
 						style="TableCell"
 						x="3"

@@ -47,6 +47,7 @@ public class ScripletHelper extends JRDefaultScriptlet {
 
             JRFillField jrFillField = (JRFillField) this.fieldsMap.get(SERVICE_OPERATION_VALUE);
             String operation = (String) jrFillField.getValue();
+            if(operation == null) return;//no data in report
             if(operation.equals(Utilities.SQL_PLACE_HOLDER)){
                 JRFillGroup jrFillGroup = null;
                 for(JRFillGroup fillGroup: this.groups){

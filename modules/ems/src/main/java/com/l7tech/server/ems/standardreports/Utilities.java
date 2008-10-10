@@ -297,7 +297,7 @@ public class Utilities {
     /**
      * Convert the strings in the supplied collection into a valid SQL 'IN' style query e.g.
      * (1,2,3,4) where 1,2,3 and 4 are service oid's.
-     * @param Collection of Service string oid's
+     * @param values Is a Collection of Service string oid's
      * @return String to be used as the 'x' -> select * from y where where objectid in x
      */
     public static String getServiceIdInQuery(Collection values){
@@ -430,17 +430,19 @@ public class Utilities {
                                             Collection<String> serviceIds, List<String> keys,
                                             List<String> keyValueConstraints,
                                             List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
-                                            List<String> operations){
+                                            List<String> operations, boolean useUser, List<String> authenticatedUsers){
 
         boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
 
         boolean keyValuesSupplied = checkMappingQueryParams(keys,
-                keyValueConstraints, valueConstraintAndOrLike, isDetail, operations);
+                keyValueConstraints, valueConstraintAndOrLike, isDetail, useUser);
 
         if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
         
         StringBuilder sb = new StringBuilder(aggregateSelect);
-        
+
+        addUserToSelect(useUser, sb);
+
         addOperationToSelect(isDetail, sb);
 
         addCaseSQL(keys, sb);
@@ -459,6 +461,10 @@ public class Utilities {
 
         if(isDetail && operations != null && !operations.isEmpty()){
             addOperationConstraint(operations, sb);
+        }
+
+        if(useUser && authenticatedUsers != null && !authenticatedUsers.isEmpty()){
+            addUserConstraint(authenticatedUsers, sb);
         }
 
         if(keyValuesSupplied){
@@ -490,7 +496,7 @@ public class Utilities {
                                             Long serviceId, List<String> keys,
                                             List<String> keyValueConstraints,
                                             List<String> valueConstraintAndOrLike, int resolution, boolean isDetail,
-                                            String operation){
+                                            String operation, boolean useUser, List<String> authenticatedUser){
 
         if(serviceId == null) throw new IllegalArgumentException("Service Id must be supplied");
         List<String> sIds = new ArrayList<String>();
@@ -501,7 +507,16 @@ public class Utilities {
             operationList.add(operation);
         }
         return createMappingQuery(startTimeInclusiveMilli, endTimeInclusiveMilli, sIds, keys, keyValueConstraints,
-                valueConstraintAndOrLike, resolution, isDetail, operationList);
+                valueConstraintAndOrLike, resolution, isDetail, operationList, useUser, authenticatedUser);
+    }
+
+    private static void addUserToSelect(boolean useUser, StringBuilder sb) {
+        if(useUser){
+            sb.append(", mcmv.auth_user_id AS AUTHENTICATED_USER");
+        }else{
+            //sb.append(",  1 AS SERVICE_OPERATION_VALUE");
+            sb.append(",  '" + SQL_PLACE_HOLDER + "' AS AUTHENTICATED_USER");
+        }
     }
 
     private static void addOperationToSelect(boolean isDetail, StringBuilder sb) {
@@ -556,7 +571,7 @@ public class Utilities {
         boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
 
         boolean keyValuesSupplied = checkMappingQueryParams(keys,
-                keyValueConstraints, valueConstraintAndOrLike, isDetail, operations);
+                keyValueConstraints, valueConstraintAndOrLike, isDetail, true);//todo [Donal] update this
 
         if(valueConstraintAndOrLike == null) valueConstraintAndOrLike = new ArrayList<String>();
         
@@ -628,7 +643,7 @@ public class Utilities {
     }
 
     private static void addGroupBy(StringBuilder sb) {
-        sb.append(" GROUP BY p.objectid, SERVICE_OPERATION_VALUE ");
+        sb.append(" GROUP BY p.objectid, SERVICE_OPERATION_VALUE, AUTHENTICATED_USER ");
         for(int i = 0; i < NUM_MAPPING_KEYS; i++){
             sb.append(", ").append("MAPPING_VALUE_" + (i+1));
         }
@@ -637,10 +652,14 @@ public class Utilities {
     private static boolean checkMappingQueryParams(List<String> keys, List<String> keyValueConstraints,
                                                    List<String> valueConstraintAndOrLike,
                                                    boolean isDetail,
-                                                   List<String> operations) {
+                                                   boolean useUser) {
+        //we need at least one key. However both user and operation are technically keys, so if we have either
+        //a user or an operation, they we have conceptually a key
         if(keys == null || keys.isEmpty()){
-            if(!isDetail){
-                throw new IllegalArgumentException("Mapping queries require at least one value in the keys list");
+            if(!useUser){
+                if(!isDetail){
+                    throw new IllegalArgumentException("Mapping queries require at least one value in the keys list");
+                }
             }
         }
 
@@ -690,7 +709,7 @@ public class Utilities {
     }
 
     private static void addMappingOrder(StringBuilder sb) {
-        sb.append(" ORDER BY ");
+        sb.append(" ORDER BY AUTHENTICATED_USER, ");
         for(int i = 0; i < NUM_MAPPING_KEYS; i++){
             if(i != 0) sb.append(", ");
             sb.append("MAPPING_VALUE_" + (i+1));
@@ -708,6 +727,16 @@ public class Utilities {
             sb.append(" AND (").append( createOrKeyValueBlock(keys.get(i), keyValueConstraints.get(i), useAnd) );
             sb.append(")");
         }
+    }
+
+    private static void addUserConstraint(List<String> authenticatedUsers, StringBuilder sb) {
+        sb.append(" AND mcmv.auth_user_id IN (");
+        for (int i = 0; i < authenticatedUsers.size(); i++) {
+            String s = authenticatedUsers.get(i);
+            if(i != 0) sb.append(",");
+            sb.append("'" + s + "'");
+        }
+        sb.append(") ");
     }
 
     private static void addOperationConstraint(List<String> operations, StringBuilder sb) {
@@ -811,7 +840,53 @@ Value is included in all or none, comment is just illustrative
         if(testVal == null || testVal.equals("")) return false;
         else return testVal.equals(SQL_PLACE_HOLDER);
     }
-    
+
+    /**
+     * Creates a display string from the supplied parameters. Any values which are the place holder are ignored.
+     * The display string starts with the authenticated user, if valid, then moves through the keys list and for each
+     * key it will display its value.
+     * @param authUser value for the authenticated user, can be the place holder value
+     * @param keyValues array of Strings. Array is used as it's easier from with Jasper reports than using a
+     * Collection
+     * @param keys the keys chosen by the user
+     * @return display String
+     * @throws IllegalArgumentException if the length of keyValues is less than the size of keys
+     * @throws NullPointerException if any argument is null or empty for it's type
+     * @throws IllegalStateException if keyValues ever has the place holder value for any value from keys
+     */
+    public static String getMappingValueDisplayString(String authUser, String [] keyValues, List<String> keys){
+
+        if(authUser == null || authUser.equals("")) throw new NullPointerException("authUser must have a non null and non empty value");
+        if(keyValues == null || keyValues.length == 0) throw new NullPointerException("keyValues must be non null and have at least 1 value");
+        if(keys == null || keys.size()== 0) throw new NullPointerException("keys must be non null and have at least 1 value");        
+        if(keyValues.length < keys.size()) throw new IllegalArgumentException("Length of keyValues must equal length of keys");
+
+
+        StringBuilder sb = new StringBuilder();
+        boolean firstComma = false;
+        if(!authUser.equals(SQL_PLACE_HOLDER)){
+            sb.append("Authenticated User: " + authUser+ " ");
+            firstComma = true;
+        }
+
+        for (int i1 = 0; i1 < keys.size(); i1++) {
+            String s = keys.get(i1);
+            if(keyValues[i1].equals(SQL_PLACE_HOLDER)){
+                throw new IllegalStateException("Place holder should not be found as the value for a valid key");
+            }
+            if(firstComma){
+                sb.append(", ");
+                firstComma = false;
+            }
+            if(i1 != 0){
+                sb.append(", ");
+            }
+            sb.append(s+": " + keyValues[i1]);
+        }
+
+        return sb.toString();
+    }
+
     public static void main(String [] args) throws ParseException {
 //        String date = "2008-09-18 15:08";
 //        System.out.println(Utilities.getAbsoluteMilliSeconds(date));
@@ -890,10 +965,10 @@ Value is included in all or none, comment is just illustrative
         useAnd.add("AND");
         useAnd.add("AND");
 
-        String sql = createMappingQuery(null, null, null, keys, null, null,2, false, new ArrayList<String>());
+        String sql = createMappingQuery(null, null, null, keys, null, null,2, false, new ArrayList<String>(), false, null);
         System.out.println("Mapping sql is: " + sql);
 
-        sql = createMappingQuery(null, null, null, keys, null, null,2, true, new ArrayList<String>());
+        sql = createMappingQuery(null, null, null, keys, null, null,2, true, new ArrayList<String>(), false, null);
         System.out.println("Mapping sql with operation is: " + sql);
 
         sql = createMasterMappingQuery(null, null, new ArrayList<String>(), keys, null, null,2, false, null);
@@ -909,22 +984,30 @@ Value is included in all or none, comment is just illustrative
         values = new ArrayList<String>();
         values.add("127.0.0.1");
         values.add("Bronze");
-        sql = createMappingQuery(null, null, 229376L, keys, values, null,2, false, null);
+        sql = createMappingQuery(null, null, 229376L, keys, values, null,2, false, null, false, null);
         System.out.println("Subreport no detail sql is: " + sql);
 
         List<String> operations = new ArrayList<String>();
         operations.add("listProducts");
         operations.add("listOrders");
 
-        sql = createMappingQuery(null, null, new ArrayList<String>(), keys, values, null,2, true, operations);
+        sql = createMappingQuery(null, null, new ArrayList<String>(), keys, values, null,2, true, operations, false, null);
         System.out.println("Operation sql specific keys and value is: " + sql);
 
-        sql = createMappingQuery(null, null, new ArrayList<String>(), null, null, null,2, true, operations);
+        sql = createMappingQuery(null, null, new ArrayList<String>(), null, null, null,2, true, operations, false, null);
         System.out.println("Operation sql is: " + sql);
 
-        sql = createMappingQuery(null, null, new ArrayList<String>(), null, null, null,2, true, null);
+        sql = createMappingQuery(null, null, new ArrayList<String>(), null, null, null,2, true, null, false, null);
         System.out.println("Empty operation sql is: " + sql);
 
+        sql = createMappingQuery(null, null, new ArrayList<String>(), null, null, null,2, true, null, true, null);
+        System.out.println("User sql is: " + sql);
+
+        List<String> authUsers = new ArrayList<String>();
+        authUsers.add("Donal");
+        
+        sql = createMappingQuery(null, null, new ArrayList<String>(), null, null, null,2, true, null, true, authUsers);
+        System.out.println("User value sql is: " + sql);
     }
 
 }

@@ -50,6 +50,7 @@ public class CreateTestData {
     private List<Integer> mappingKeyObjectIdList =  new ArrayList<Integer>();
     private final LinkedHashMap<String,List<String>> values;
     private final List<String> operations;
+    private final List<String> authenticatedUser;
     private List<List<Map<Integer, String>>> valueInsertsList = new ArrayList<List<Map<Integer, String>>>();
 
     private static final String NODE_ID = "NODE_ID";
@@ -61,11 +62,12 @@ public class CreateTestData {
      * @param operations
      */
     public CreateTestData(String nodeId, List<LinkedHashMap<String, String>> mappingKeys, LinkedHashMap<String, List<String>> values,
-                          List<String> operations) {
+                          List<String> operations, List<String> authenticatedUser) {
         this.nodeId = nodeId;
         this.mappingKeys = mappingKeys;
         this.values = values;
         this.operations = operations;
+        this.authenticatedUser = authenticatedUser;
         initMappingRecords();
         initValueRecords();
     }
@@ -104,7 +106,7 @@ public class CreateTestData {
             List<Map<Integer, String>> currentValueListMap = new ArrayList<Map<Integer, String>>();
             objectId++;
             StringBuilder sb = new StringBuilder("INSERT INTO message_context_mapping_values (  objectid, digested, " +
-                    "mapping_keys_oid, service_operation");
+                    "mapping_keys_oid, auth_user_id, service_operation");
 
             for (int i = 0; i < currentKeyMap.keySet().size(); i++) {
                 sb.append(",mapping" + (i + 1) + "_value");
@@ -125,6 +127,11 @@ public class CreateTestData {
                 sb = new StringBuilder(halfInsert);
                 int newValueKey = objectId++;
                 sb.append(newValueKey + ",\"NOT USED\", " + mappingKeyObjectIdList.get(i1));
+                if(objectId % 2 == 0){
+                    sb.append(", '" + authenticatedUser.get(0) +"'");
+                }else{
+                    sb.append(", '" + authenticatedUser.get(1) +"'");
+                }
                 for (String s : list) {
                     sb.append(",\"" + s + "\"");
                 }
@@ -412,10 +419,11 @@ public class CreateTestData {
         }
 
         List<String> operations = ReportApp.loadListFromProperties("OPERATION", prop);
-
+        List<String> authenticatedUser = ReportApp.loadListFromProperties("AUTH_USER_ID", prop);
+        if(authenticatedUser.size() != 2) throw new IllegalArgumentException("Must be two and only two authenticated users");
 
         String nodeId = prop.getProperty(NODE_ID);
-        CreateTestData testData = new CreateTestData(nodeId, mappingKeyList, values, operations);
+        CreateTestData testData = new CreateTestData(nodeId, mappingKeyList, values, operations, authenticatedUser);
         testData.createMappingData();
         for(String s: nameToId.values()){
             testData.createMetricData(Utilities.HOUR, s);

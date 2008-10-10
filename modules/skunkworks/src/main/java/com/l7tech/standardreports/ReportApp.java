@@ -56,6 +56,9 @@ public class ReportApp
     private static final String MAPPING_VALUE = "MAPPING_VALUE";
     private static final String OPERATIONS = "OPERATIONS";
 
+    private static final String USE_USER = "USE_USER";
+    private static final String AUTHENTICATED_USER = "AUTHENTICATED_USER";
+
     //db props
     private static final String CONNECTION_STRING = "CONNECTION_STRING";
     private static final String DB_USER = "DB_USER";
@@ -207,6 +210,12 @@ public class ReportApp
         parameters.put(IS_DETAIL, b);
         List<String> operations = loadListFromProperties(OPERATIONS, prop);
         parameters.put(OPERATIONS, operations);
+
+        b = Boolean.parseBoolean(prop.getProperty(USE_USER).toString());
+        parameters.put(USE_USER, b);
+        List<String> authUser = loadListFromProperties(AUTHENTICATED_USER, prop);
+        parameters.put(AUTHENTICATED_USER, authUser);
+
 
         //Object o = JRLoader.loadObject("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/"+fileName+".jasper");
         Object o = JRLoader.loadObject(fileName+".jasper");
