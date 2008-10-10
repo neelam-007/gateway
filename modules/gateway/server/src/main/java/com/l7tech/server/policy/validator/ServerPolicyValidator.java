@@ -183,7 +183,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                             r.addError(new PolicyValidatorResult.Error(a,
                               ap,
                               "This identity can only authenticate with " +
-                              "a SAML token or SSL Client Certificate" +
+                              "a SAML token or SSL Client Certificate " +
                               "but another type of credential " +
                               "source is specified.",
                               null));
