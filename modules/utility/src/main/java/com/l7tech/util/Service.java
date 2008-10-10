@@ -48,6 +48,20 @@ public final class Service {
      * @return an Iterator of objects castable to serviceClass
      */
     public static Iterator providers(final Class serviceClass, final ClassLoader classLoader) {
+        return providers( serviceClass, classLoader, null );
+    }
+
+    /**
+     * Get the provider implementations for the given service.
+     *
+     * <p>Locate and instantiate providers of the given type.</p>
+     *
+     * @param serviceClass the service interface
+     * @param classLoader the class loader to use
+     * @param defaultProvider the class name for the default service implementation
+     * @return an Iterator of objects castable to serviceClass
+     */
+    public static Iterator providers(final Class serviceClass, final ClassLoader classLoader, final String defaultProvider ) {
         Iterator iter = Collections.EMPTY_LIST.iterator();
         Collection classNameUrlPairs = lookupProviderClassNames(SERVICE_PREFIX + serviceClass.getName(), classLoader);
         if(!classNameUrlPairs.isEmpty()) {
@@ -60,6 +74,9 @@ public final class Service {
                 if(instance!=null) providers.add(instance);
             }
             iter = Collections.unmodifiableCollection(providers).iterator();
+        } else  if ( defaultProvider != null ) {
+            List provider = Collections.singletonList( instantiateProvider( serviceClass, classLoader, defaultProvider, "Default" ) );
+            iter = Collections.unmodifiableCollection(provider).iterator();            
         }
         return iter;
     }
@@ -162,7 +179,7 @@ public final class Service {
      *
      * @return the instance or null.
      */
-    private static Object instantiateProvider(Class desiredType, ClassLoader classLoader, String className, String sourceUrl) {
+    private static Object instantiateProvider(Class desiredType, ClassLoader classLoader, String className, String sourceDescription ) {
         Object instance = null;
         try {
             Class clazz = Class.forName(className, true, classLoader);
@@ -170,17 +187,17 @@ public final class Service {
                 instance = clazz.newInstance();
             }
             else {
-                logger.warning("The provider class '"+className+"', defined in '"+sourceUrl+"', is not of the correct type.");
+                logger.warning("The provider class '"+className+"', defined in '"+sourceDescription +"', is not of the correct type.");
             }
         }
         catch(ClassNotFoundException cnfe) {
-            logger.warning("The provider class '"+className+"', defined in '"+sourceUrl+"', was not found.");
+            logger.warning("The provider class '"+className+"', defined in '"+sourceDescription +"', was not found.");
         }
         catch(IllegalAccessException iae) {
-            logger.warning("The provider class '"+className+"', defined in '"+sourceUrl+"', has an constructor that cannot be accessed.");
+            logger.warning("The provider class '"+className+"', defined in '"+sourceDescription +"', has an constructor that cannot be accessed.");
         }
         catch(InstantiationException ie) {
-            logger.warning("The provider class '"+className+"', defined in '"+sourceUrl+"', cannot be instantiated (could be abstract or an interface, etc).");
+            logger.warning("The provider class '"+className+"', defined in '"+sourceDescription +"', cannot be instantiated (could be abstract or an interface, etc).");
         }
         return instance;
     }

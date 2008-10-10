@@ -176,6 +176,11 @@ public class UDDITemplateManager {
      */
     private String buildName(final String filename) {
         String name = filename.substring(0, filename.length() - NAME_SUFFIX_LENGTH);
+
+        if ( name.indexOf('/') >= 0 ) {
+            name = name.substring( name.lastIndexOf('/') + 1 );            
+        }
+
         return name.replace('_', ' ');
     }
 

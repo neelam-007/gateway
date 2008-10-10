@@ -66,7 +66,7 @@ public class UddiAgentFactory {
     public UddiAgent getUddiAgent() throws UddiAgentException {
         ClassLoader uddiClassLoader = UddiAgentFactory.class.getClassLoader();
         if (uddiClassLoader != null) {
-            Iterator serviceIter = Service.providers(UddiAgent.class, uddiClassLoader);
+            Iterator serviceIter = Service.providers(UddiAgent.class, uddiClassLoader, FALLBACK_AGENT);
             if (serviceIter.hasNext()) {
                 UddiAgent agentImpl = (UddiAgent) serviceIter.next();
 
@@ -86,6 +86,7 @@ public class UddiAgentFactory {
 
     private static final Logger logger = Logger.getLogger(UddiAgentFactory.class.getName());
 
+    private static final String FALLBACK_AGENT = "com.l7tech.uddi.impl.generic.UDDIClientAgent";
     private static final String UDDI_CONFIG_FILENAME = "uddi.properties";
 
     private ServerConfig serverConfig;
