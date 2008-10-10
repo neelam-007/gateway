@@ -25,7 +25,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import javax.xml.soap.SOAPConstants;
-import javax.xml.XMLConstants;
 import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.util.*;
@@ -60,6 +59,14 @@ public class SoapFaultManager implements ApplicationContextAware {
         if (timer == null) timer = new Timer("Soap fault manager refresh", true);
         this.serverConfig = serverConfig;
         this.checker = timer;
+    }
+
+    /**
+     * For tests only 
+     */
+    SoapFaultManager() {
+        serverConfig = null;
+        checker = null;
     }
 
     /**
@@ -327,7 +334,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                         "</soapenv:Envelope>";
 
     private static final String GENERIC_FAULT_SOAP_1_2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<soapenv:Envelope xmlns:xml=\"" + XMLConstants.XML_NS_URI + "\" xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
                          "    <soapenv:Body>\n" +
                          "        <soapenv:Fault>\n" +
                          "            <soapenv:Code>\n" +
@@ -359,7 +366,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                         "</soapenv:Envelope>";
 
     private static final String EXCEPTION_FAULT_SOAP_1_2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<soapenv:Envelope xmlns:xml=\"" + XMLConstants.XML_NS_URI + "\" xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
                         "    <soapenv:Body>\n" +
                         "        <soapenv:Fault>\n" +
                         "            <soapenv:Code>\n" +
@@ -388,7 +395,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                         "</soapenv:Envelope>";
 
     private static final String POLICY_VERSION_EXCEPTION_FAULT_SOAP_1_2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<soapenv:Envelope xml:lang=\"" + XMLConstants.XML_NS_URI + "\" xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
                         "    <soapenv:Body>\n" +
                         "        <soapenv:Fault>\n" +
                         "            <soapenv:Code>\n" +
